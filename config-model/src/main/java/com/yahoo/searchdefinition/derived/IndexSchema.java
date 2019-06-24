@@ -114,7 +114,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                 .prefix(f.hasPrefix())
                 .phrases(f.hasPhrases())
                 .positions(f.hasPositions())
-                .experimentalpostinglistformat(f.useExperimentalPostingListFormat());
+                .interleavedfeatures(f.useExperimentalPostingListFormat());
             if (!f.getCollectionType().equals("SINGLE")) {
                 ifB.collectiontype(IndexschemaConfig.Indexfield.Collectiontype.Enum.valueOf(f.getCollectionType()));
             }

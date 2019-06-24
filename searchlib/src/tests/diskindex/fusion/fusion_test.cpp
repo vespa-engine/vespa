@@ -124,7 +124,7 @@ Schema::IndexField
 make_index_field(vespalib::stringref name, CollectionType collection_type, bool interleaved_features)
 {
     Schema::IndexField index_field(name, DataType::STRING, collection_type);
-    index_field.set_experimental_posting_list_format(interleaved_features);
+    index_field.set_interleaved_features(interleaved_features);
     return index_field;
 }
 

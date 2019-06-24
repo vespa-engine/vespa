@@ -77,8 +77,8 @@ public:
     class IndexField : public Field {
     private:
         uint32_t _avgElemLen;
-        // TODO: Remove when experimental posting list format is made default
-        bool _experimental_posting_list_format;
+        // TODO: Remove when posting list format with interleaved features is made default
+        bool _interleaved_features;
 
     public:
         IndexField(vespalib::stringref name, DataType dt);
@@ -89,8 +89,8 @@ public:
         IndexField(const std::vector<vespalib::string> &lines);
 
         IndexField &setAvgElemLen(uint32_t avgElemLen) { _avgElemLen = avgElemLen; return *this; }
-        IndexField &set_experimental_posting_list_format(bool value) {
-            _experimental_posting_list_format = value;
+        IndexField &set_interleaved_features(bool value) {
+            _interleaved_features = value;
             return *this;
         }
 
@@ -98,7 +98,7 @@ public:
                    vespalib::stringref prefix) const override;
 
         uint32_t getAvgElemLen() const { return _avgElemLen; }
-        bool use_experimental_posting_list_format() const { return _experimental_posting_list_format; }
+        bool use_interleaved_features() const { return _interleaved_features; }
 
         bool operator==(const IndexField &rhs) const;
         bool operator!=(const IndexField &rhs) const;

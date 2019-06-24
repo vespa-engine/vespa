@@ -83,8 +83,8 @@ public:
             return _schema.getIndexField(_index).getName();
         }
 
-        bool use_experimental_posting_list_format() const {
-            return _schema.getIndexField(_index).use_experimental_posting_list_format();
+        bool use_interleaved_features() const {
+            return _schema.getIndexField(_index).use_interleaved_features();
         }
 
         IndexIterator &operator++() {
@@ -120,7 +120,7 @@ public:
          */
         bool hasMatchingOldFields(const Schema &oldSchema) const;
 
-        bool has_matching_experimental_posting_list_format(const Schema &oldSchema) const;
+        bool has_matching_use_interleaved_features(const Schema &oldSchema) const;
     };
 
     static IndexSettings getIndexSettings(const Schema &schema, const uint32_t index);
