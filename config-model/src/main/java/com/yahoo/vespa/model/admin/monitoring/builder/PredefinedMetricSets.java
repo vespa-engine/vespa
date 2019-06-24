@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicMetrics.defaultPublicMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.SystemMetrics.systemMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
@@ -21,7 +20,6 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricS
 public class PredefinedMetricSets {
 
     public static final Map<String, MetricSet> predefinedMetricSets = toMapById(
-            defaultPublicMetricSet,
             defaultVespaMetricSet,
             vespaMetricSet,
             systemMetricSet,
@@ -30,11 +28,8 @@ public class PredefinedMetricSets {
 
     private static Map<String, MetricSet> toMapById(MetricSet... metricSets) {
         Map<String, MetricSet> availableMetricSets = new LinkedHashMap<>();
-        for (MetricSet metricSet : metricSets) {
-            var existing = availableMetricSets.put(metricSet.getId(), metricSet);
-            if (existing != null)
-                throw new IllegalArgumentException("There are two predefined metric sets with id " + existing.getId());
-        }
+        for (MetricSet metricSet : metricSets)
+            availableMetricSets.put(metricSet.getId(), metricSet);
         return Collections.unmodifiableMap(availableMetricSets);
     }
 

@@ -25,17 +25,14 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.C
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_INSTANCE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.MY_TENANT;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.checkMetric;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromXml;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getHostedModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getQrStartConfig;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicMetrics.defaultPublicMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultVespaMetrics.defaultVespaMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.NetworkMetrics.networkMetricSet;
@@ -57,14 +54,14 @@ public class MetricsProxyContainerClusterTest {
     private static int numVespaMetrics = vespaMetricSet.getMetrics().size();
     private static int numSystemMetrics = systemMetricSet.getMetrics().size();
     private static int numNetworkMetrics = networkMetricSet.getMetrics().size();
-    private static int numMetricsForVespaConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
+    private static int numMetricsForDefaultConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void metrics_proxy_bundle_is_included_in_bundles_config() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+        VespaModel model = getModel(servicesWithAdminOnly());
         var builder = new BundlesConfig.Builder();
         model.getConfig(builder, CLUSTER_CONFIG_ID);
         BundlesConfig config = builder.build();
@@ -74,7 +71,7 @@ public class MetricsProxyContainerClusterTest {
 
     @Test
     public void cluster_is_prepared_so_that_application_metadata_config_is_produced() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+        VespaModel model = getModel(servicesWithAdminOnly());
         var builder = new ApplicationMetadataConfig.Builder();
         model.getConfig(builder, CLUSTER_CONFIG_ID);
         ApplicationMetadataConfig config = builder.build();
@@ -85,44 +82,26 @@ public class MetricsProxyContainerClusterTest {
 
     @Test
     public void verbose_gc_logging_is_disabled() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+        VespaModel model = getModel(servicesWithAdminOnly());
         QrStartConfig config = getQrStartConfig(model);
         assertFalse(config.jvm().verbosegc());
     }
 
-
     @Test
-    public void default_public_consumer_is_set_up_for_self_hosted() {
-        ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
-        assertEquals(2, config.consumer().size());
-        assertEquals(config.consumer(1).name(), DEFAULT_PUBLIC_CONSUMER_ID);
-
-        int numMetricsForPublicDefaultConsumer = defaultPublicMetricSet.getMetrics().size() + numDefaultVespaMetrics + numSystemMetrics;
-        assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(1).metric().size());
-    }
-
-    @Test
-    public void default_public_consumer_is_not_set_up_for_hosted() {
-        ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), hosted);
-        assertEquals(1, config.consumer().size());
+    public void default_consumer_is_always_present_and_has_all_vespa_metrics_and_all_system_metrics() {
+        ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly());
         assertEquals(config.consumer(0).name(), VESPA_CONSUMER_ID);
+        assertEquals(numMetricsForDefaultConsumer, config.consumer(0).metric().size());
     }
 
     @Test
-    public void vespa_consumer_is_always_present_and_has_all_vespa_metrics_and_all_system_metrics() {
-        ConsumersConfig config = consumersConfigFromXml(servicesWithAdminOnly(), self_hosted);
-        assertEquals(config.consumer(0).name(), VESPA_CONSUMER_ID);
-        assertEquals(numMetricsForVespaConsumer, config.consumer(0).metric().size());
-    }
-
-    @Test
-    public void vespa_consumer_can_be_amended_via_admin_object() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
+    public void default_consumer_can_be_amended_via_admin_object() {
+        VespaModel model = getModel(servicesWithAdminOnly());
         var additionalMetric = new Metric("additional-metric");
         model.getAdmin().setAdditionalDefaultMetrics(new MetricSet("amender-metrics", singleton(additionalMetric)));
 
         ConsumersConfig config = consumersConfigFromModel(model);
-        assertEquals(numMetricsForVespaConsumer + 1, config.consumer(0).metric().size());
+        assertEquals(numMetricsForDefaultConsumer + 1, config.consumer(0).metric().size());
 
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
         assertTrue("Did not contain additional metric", checkMetric(vespaConsumer, additionalMetric));
@@ -130,28 +109,19 @@ public class MetricsProxyContainerClusterTest {
 
     @Test
     public void vespa_is_a_reserved_consumer_id() {
-        assertReservedConsumerId("Vespa");
-    }
-
-    @Test
-    public void public_is_a_reserved_consumer_id() {
-        assertReservedConsumerId("default");
-    }
-
-    private void assertReservedConsumerId(String consumerId) {
         String services = String.join("\n",
-                                      "<services>",
-                                      "    <admin version='2.0'>",
-                                      "        <adminserver hostalias='node1'/>",
-                                      "        <metrics>",
-                                      "            <consumer id='"  + consumerId + "'/>",
-                                      "        </metrics>",
-                                      "    </admin>",
-                                      "</services>"
+                "<services>",
+                "    <admin version='2.0'>",
+                "        <adminserver hostalias='node1'/>",
+                "        <metrics>",
+                "            <consumer id='vespa'/>",
+                "        </metrics>",
+                "    </admin>",
+                "</services>"
         );
         thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("'" + consumerId + "' is not allowed as metrics consumer id");
-        consumersConfigFromXml(services, self_hosted);
+        thrown.expectMessage("'Vespa' is not allowed as metrics consumer id");
+        consumersConfigFromXml(services);
     }
 
     @Test
@@ -168,13 +138,12 @@ public class MetricsProxyContainerClusterTest {
                 "    </admin>",
                 "</services>"
         );
-        VespaModel hostedModel = getModel(services, hosted);
-        ConsumersConfig config = consumersConfigFromModel(hostedModel);
+        ConsumersConfig config = consumersConfigFromXml(services);
         assertEquals(1, config.consumer().size());
 
         // All default metrics are retained
         ConsumersConfig.Consumer vespaConsumer = config.consumer(0);
-        assertEquals(numMetricsForVespaConsumer + 1, vespaConsumer.metric().size());
+        assertEquals(numMetricsForDefaultConsumer + 1, vespaConsumer.metric().size());
 
         Metric customMetric1 = new Metric("custom.metric1");
         assertTrue("Did not contain metric: " + customMetric1, checkMetric(vespaConsumer, customMetric1));
@@ -195,7 +164,7 @@ public class MetricsProxyContainerClusterTest {
         );
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("'a' is used as id for two metrics consumers");
-        consumersConfigFromXml(services, self_hosted);
+        consumersConfigFromXml(services);
     }
 
     @Test
@@ -247,7 +216,7 @@ public class MetricsProxyContainerClusterTest {
 
     @Test
     public void hosted_application_propagates_application_dimensions() {
-        VespaModel hostedModel = getModel(servicesWithAdminOnly(), hosted);
+        VespaModel hostedModel = getHostedModel(servicesWithAdminOnly());
         ApplicationDimensionsConfig config = getApplicationDimensionsConfig(hostedModel);
 
         assertEquals(zoneString(Zone.defaultZone()), config.dimensions(AppDimensionNames.ZONE));

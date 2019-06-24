@@ -66,7 +66,7 @@ class ConsumersConfigGenerator {
         return original != null ? newMetric.addDimensionsFrom(original) : newMetric;
     }
 
-    static Consumer.Builder toConsumerBuilder(MetricsConsumer consumer) {
+    private static Consumer.Builder toConsumerBuilder(MetricsConsumer consumer) {
         Consumer.Builder builder = new Consumer.Builder().name(consumer.getId());
         consumer.getMetrics().values().forEach(metric -> builder.metric(toConsumerMetricBuilder(metric)));
         return builder;

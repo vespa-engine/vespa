@@ -140,7 +140,6 @@ public class MetricsManagerTest {
         service0.setSystemMetrics(oldSystemMetrics);
     }
 
-    // TODO: test that non-whitelisted metrics are filtered out, but this is currently not the case, see ExternalMetrics.setExtraMetrics
     @Test
     public void extra_metrics_packets_containing_whitelisted_metrics_are_added() {
         metricsManager.setExtraMetrics(ImmutableList.of(
