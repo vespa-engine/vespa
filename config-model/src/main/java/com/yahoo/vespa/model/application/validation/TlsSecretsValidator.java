@@ -2,6 +2,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.vespa.model.VespaModel;
 
 public class TlsSecretsValidator extends Validator {
@@ -10,7 +11,7 @@ public class TlsSecretsValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         if (deployState.tlsSecrets().isPresent() && deployState.tlsSecrets().get() == TlsSecrets.MISSING) {
-            throw new IllegalArgumentException("TLS enabled, but could not retrieve certificate yet");
+            throw new CertificateNotReadyException("TLS enabled, but could not retrieve certificate yet");
         }
     }
 }
