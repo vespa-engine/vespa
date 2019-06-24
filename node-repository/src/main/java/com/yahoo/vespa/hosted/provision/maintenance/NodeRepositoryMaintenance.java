@@ -76,7 +76,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval));
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
-                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), lbService));
+                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expirer_interval").orElse(defaults.loadBalancerExpirerInterval), lbService));
         hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
@@ -143,7 +143,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
-        private final Duration loadBalancerExpiry;
+        private final Duration loadBalancerExpirerInterval;
         private final Duration hostProvisionerInterval;
         private final Duration hostDeprovisionerInterval;
 
@@ -161,7 +161,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpiry = Duration.ofMinutes(10);
+            loadBalancerExpirerInterval = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             hostProvisionerInterval = Duration.ofMinutes(5);
             hostDeprovisionerInterval = Duration.ofMinutes(5);
