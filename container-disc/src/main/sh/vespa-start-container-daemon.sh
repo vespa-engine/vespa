@@ -71,6 +71,11 @@ configure_memory() {
             available="$VESPA_TOTAL_MEMORY_MB"
         else
             available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
+            if hash cgget 2>/dev/null; then
+                available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes /)
+                available_cgroup=$((available_cgroup_bytes >> 20))
+                available=$((available > available_cgroup ? available_cgroup : available))
+            fi
         fi
 
         jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))
