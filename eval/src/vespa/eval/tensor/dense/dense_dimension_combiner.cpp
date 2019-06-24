@@ -11,17 +11,16 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                                                const eval::ValueType &rhs)
   : _leftDims(), _rightDims(), _commonDims(),
     _leftIndex(0), _rightIndex(0), _outputIndex(0),
-    _leftOnlySize(1u), _rightOnlySize(1u), _outputSize(1u)
+    _leftOnlySize(1u), _rightOnlySize(1u), _outputSize(1u),
+    result_type(eval::ValueType::join(lhs, rhs))
 {
-    eval::ValueType outputType = eval::ValueType::join(lhs, rhs);
-
     assert(lhs.is_dense());
     assert(rhs.is_dense());
-    assert(outputType.is_dense());
+    assert(result_type.is_dense());
 
     const auto &lDims = lhs.dimensions();
     const auto &rDims = rhs.dimensions();
-    const auto &oDims = outputType.dimensions();
+    const auto &oDims = result_type.dimensions();
 
     size_t i = lDims.size();
     size_t j = rDims.size();

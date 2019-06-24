@@ -127,6 +127,8 @@ public:
         _outputIndex += _outputSize;
     }
 
+    const eval::ValueType result_type;
+
     DenseDimensionCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
 
     ~DenseDimensionCombiner();
