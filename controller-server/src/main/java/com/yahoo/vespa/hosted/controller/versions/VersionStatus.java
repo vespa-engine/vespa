@@ -6,6 +6,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -155,20 +156,17 @@ public class VersionStatus {
     }
 
     private static ListMap<Version, HostName> findSystemApplicationVersions(Controller controller) {
-        List<ZoneId> zones = controller.zoneRegistry().zones()
-                                       .controllerUpgraded()
-                                       .ids();
         ListMap<Version, HostName> versions = new ListMap<>();
-        for (ZoneId zone : zones) {
+        for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
                 List<Node> eligibleForUpgradeApplicationNodes = controller.configServer().nodeRepository()
-                        .list(zone, application.id()).stream()
+                        .list(zone.getId(), application.id()).stream()
                         .filter(SystemUpgrader::eligibleForUpgrade)
                         .collect(Collectors.toList());
                 if (eligibleForUpgradeApplicationNodes.isEmpty())
                     continue;
 
-                boolean configConverged = application.configConvergedIn(zone, controller, Optional.empty());
+                boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
                     log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
                 }

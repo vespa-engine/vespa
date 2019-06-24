@@ -1,10 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision.zone;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Provides filters for and access to a list of ZoneIds.
@@ -32,7 +35,9 @@ public interface ZoneList extends ZoneFilter {
     /** Returns the ZoneApi of all zones in this list. */
     List<? extends ZoneApi> zones();
 
-    /** Returns the id of all zones in this list as — you guessed it — a list. */
-    List<ZoneId> ids();
+    /** Returns the ZoneIds of all zones in this list. */
+    default List<ZoneId> ids() {
+        return zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
+    }
 
 }

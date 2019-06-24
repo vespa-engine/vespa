@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -123,10 +124,10 @@ public class DeploymentTester {
 
     /** Upgrade system applications in all zones to given version */
     public void upgradeSystemApplications(Version version) {
-        for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
+        for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
-                tester.configServer().setVersion(application.id(), zone, version);
-                tester.configServer().convergeServices(application.id(), zone);
+                tester.configServer().setVersion(application.id(), zone.getId(), version);
+                tester.configServer().convergeServices(application.id(), zone.getId());
             }
         }
         computeVersionStatus();

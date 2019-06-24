@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
@@ -34,8 +35,8 @@ public class CostCalculator {
         String date = LocalDate.now(clock).toString();
 
         List<NodeRepositoryNode> nodes = controller.zoneRegistry().zones()
-                .reachable().in(Environment.prod).ofCloud(cloudName).ids().stream()
-                .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
+                .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
+                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId(), true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .collect(Collectors.toList());
 

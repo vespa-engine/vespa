@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.config.provision.ApplicationId;
@@ -81,8 +82,8 @@ public class ResourceMeterMaintainer extends Maintainer {
     private List<NodeRepositoryNode> getNodes() {
         return controller().zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
-                .reachable().ids().stream()
-                .flatMap(zoneId -> uncheck(() -> nodeRepository.listNodes(zoneId, true).nodes().stream()))
+                .reachable().zones().stream()
+                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId(), true).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .filter(node -> node.getState() == NodeState.active)
                 .collect(Collectors.toList());

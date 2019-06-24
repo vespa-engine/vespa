@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -60,10 +61,10 @@ public class VersionStatusTest {
         Version version0 = Version.fromString("6.1");
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
-        for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                                    node.owner(), version1, node.wantedVersion()));
+        for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+                Node upgradedNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), version1, node.wantedVersion());
+                tester.configServer().nodeRepository().putByHostname(zone.getId(), upgradedNode);
                 break;
             }
         }
@@ -105,10 +106,10 @@ public class VersionStatusTest {
 
         // Downgrade one config server in each zone
         Version ancientVersion = Version.fromString("5.1");
-        for (ZoneId zone : tester.controller().zoneRegistry().zones().all().ids()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                                    node.owner(), ancientVersion, node.wantedVersion()));
+        for (ZoneApi zone : tester.controller().zoneRegistry().zones().all().zones()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+                Node downgradedNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), ancientVersion, node.wantedVersion());
+                tester.configServer().nodeRepository().putByHostname(zone.getId(), downgradedNode);
                 break;
             }
         }

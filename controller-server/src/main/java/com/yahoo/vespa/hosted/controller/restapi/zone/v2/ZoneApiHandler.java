@@ -94,16 +94,16 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
         Cursor root = slime.setObject();
         Cursor uris = root.setArray("uris");
         ZoneList zoneList = zoneRegistry.zones().reachable();
-        zoneList.ids().forEach(zoneId -> uris.addString(request.getUri()
+        zoneList.zones().forEach(zone -> uris.addString(request.getUri()
                                                                .resolve("/zone/v2/")
-                                                               .resolve(zoneId.environment().value() + "/")
-                                                               .resolve(zoneId.region().value())
+                                                               .resolve(zone.getEnvironment().value() + "/")
+                                                               .resolve(zone.getRegionName().value())
                                                                .toString()));
         Cursor zones = root.setArray("zones");
-        zoneList.ids().forEach(zoneId -> {
+        zoneList.zones().forEach(zone -> {
             Cursor object = zones.addObject();
-            object.setString("environment", zoneId.environment().value());
-            object.setString("region", zoneId.region().value());
+            object.setString("environment", zone.getEnvironment().value());
+            object.setString("region", zone.getRegionName().value());
         });
         return new SlimeJsonResponse(slime);
     }
