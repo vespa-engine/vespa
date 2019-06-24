@@ -102,6 +102,7 @@ public:
     bool should_optimize_children() const override { return false; }
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -122,6 +123,7 @@ public:
     bool should_optimize_children() const override { return false; }
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
