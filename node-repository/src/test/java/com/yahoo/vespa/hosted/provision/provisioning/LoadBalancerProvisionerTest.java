@@ -135,7 +135,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     @Test
-    public void does_not_provision_load_balancers_for_non_tenant_host() {
+    public void does_not_provision_load_balancers_for_non_tenant_node_type() {
         tester.activate(infraApp1, prepare(infraApp1, Capacity.fromRequiredNodeType(NodeType.host),
                                            clusterRequest(ClusterSpec.Type.container,
                                                           ClusterSpec.Id.from("tenant-host"))));
