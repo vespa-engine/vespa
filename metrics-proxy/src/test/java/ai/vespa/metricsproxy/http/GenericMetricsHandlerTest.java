@@ -6,7 +6,6 @@ package ai.vespa.metricsproxy.http;
 
 import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
-import ai.vespa.metricsproxy.core.ConsumersConfig.Consumer;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.HealthMetric;
@@ -30,13 +29,12 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.http.GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.core.VespaMetrics.VESPA_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
@@ -45,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -58,69 +55,38 @@ public class GenericMetricsHandlerTest {
             new DummyService(1, ""),
             new DownService(HealthMetric.getDown("No response")));
 
-    private static final VespaServices vespaServices = new VespaServices(testServices);
-
-    private static final String DEFAULT_CONSUMER = "default";
-    private static final String CUSTOM_CONSUMER = "custom-consumer";
-
     private static final String CPU_METRIC = "cpu";
 
     private static final String URI = "http://localhost/metrics/v1/values";
 
+    private static final VespaServices vespaServices = new VespaServices(testServices);
 
     private static RequestHandlerTestDriver testDriver;
 
     @BeforeClass
-    public static void setup() {
+    public static void setupMetricsManager() {
         MetricsManager metricsManager = TestUtil.createMetricsManager(vespaServices, getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
         metricsManager.setExtraMetrics(ImmutableList.of(
                 new MetricsPacket.Builder(toServiceId("foo"))
                         .timestamp(Instant.now().getEpochSecond())
                         .putMetrics(ImmutableList.of(new Metric(CPU_METRIC, 12.345)))));
-        GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices, getMetricsConsumers());
+        GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices);
         testDriver = new RequestHandlerTestDriver(handler);
-    }
-
-    private GenericJsonModel getResponseAsJsonModel(String consumer) {
-        String response = testDriver.sendRequest(URI + "?consumer=" + consumer).readAll();
-        try {
-            return createObjectMapper().readValue(response, GenericJsonModel.class);
-        } catch (IOException e) {
-            fail("Failed to create json model: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
     }
 
     @Ignore
     @Test
     public void visually_inspect_response() throws Exception{
-        String response = testDriver.sendRequest(URI+ "?consumer=default").readAll();
+        String response = testDriver.sendRequest(URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericJsonModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }
 
     @Test
-    public void no_explicit_consumer_gives_the_default_consumer() {
-        String responseDefaultConsumer = testDriver.sendRequest(URI + "?consumer=default").readAll();
-        String responseNoConsumer = testDriver.sendRequest(URI).readAll();
-        assertEqualsExceptTimestamps(responseDefaultConsumer, responseNoConsumer);
-    }
-
-    @Test
-    public void unknown_consumer_gives_the_default_consumer() {
+    public void response_contains_node_metrics() throws Exception {
         String response = testDriver.sendRequest(URI).readAll();
-        String responseUnknownConsumer = testDriver.sendRequest(URI + "?consumer=not_defined").readAll();
-        assertEqualsExceptTimestamps(response, responseUnknownConsumer);
-    }
-
-    private void assertEqualsExceptTimestamps(String s1, String s2) {
-        assertEquals(replaceTimestamps(s1), replaceTimestamps(s2));
-    }
-
-    @Test
-    public void response_contains_node_metrics() {
-        GenericJsonModel jsonModel = getResponseAsJsonModel(DEFAULT_CONSUMER);
+        var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
 
         assertNotNull(jsonModel.node);
         assertEquals(1, jsonModel.node.metrics.size());
@@ -128,8 +94,9 @@ public class GenericMetricsHandlerTest {
     }
 
     @Test
-    public void response_contains_service_metrics() {
-        GenericJsonModel jsonModel = getResponseAsJsonModel(DEFAULT_CONSUMER);
+    public void response_contains_service_metrics() throws Exception {
+        String response = testDriver.sendRequest(URI).readAll();
+        var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
 
         assertEquals(2, jsonModel.services.size());
         GenericService dummyService = jsonModel.services.get(0);
@@ -137,50 +104,17 @@ public class GenericMetricsHandlerTest {
 
         GenericMetrics dummy0Metrics = getMetricsForInstance("dummy0", dummyService);
         assertEquals(1L, dummy0Metrics.values.get(METRIC_1).longValue());
-        assertEquals("default-val", dummy0Metrics.dimensions.get("consumer-dim"));
+        assertEquals("metric-dim", dummy0Metrics.dimensions.get("dim0"));
 
         GenericMetrics dummy1Metrics = getMetricsForInstance("dummy1", dummyService);
         assertEquals(6L, dummy1Metrics.values.get(METRIC_1).longValue());
-        assertEquals("default-val", dummy1Metrics.dimensions.get("consumer-dim"));
+        assertEquals("metric-dim", dummy1Metrics.dimensions.get("dim0"));
     }
 
     @Test
-    public void all_consumers_get_health_from_service_that_is_down() {
-        assertDownServiceHealth(DEFAULT_CONSUMER);
-        assertDownServiceHealth(CUSTOM_CONSUMER);
-    }
-
-    @Test
-    public void all_timestamps_are_equal_and_non_zero() {
-        GenericJsonModel jsonModel = getResponseAsJsonModel(DEFAULT_CONSUMER);
-
-        Long nodeTimestamp = jsonModel.node.timestamp;
-        assertNotEquals(0L, (long) nodeTimestamp);
-        for (var service : jsonModel.services)
-            assertEquals(nodeTimestamp, service.timestamp);
-    }
-
-    @Test
-    public void custom_consumer_gets_only_its_whitelisted_metrics() {
-        GenericJsonModel jsonModel = getResponseAsJsonModel(CUSTOM_CONSUMER);
-
-        assertNotNull(jsonModel.node);
-        // TODO: see comment in ExternalMetrics.setExtraMetrics
-        // assertEquals(0, jsonModel.node.metrics.size());
-
-        assertEquals(2, jsonModel.services.size());
-        GenericService dummyService = jsonModel.services.get(0);
-        assertEquals(2, dummyService.metrics.size());
-
-        GenericMetrics dummy0Metrics = getMetricsForInstance("dummy0", dummyService);
-        assertEquals("custom-val", dummy0Metrics.dimensions.get("consumer-dim"));
-
-        GenericMetrics dummy1Metrics = getMetricsForInstance("dummy1", dummyService);
-        assertEquals("custom-val", dummy1Metrics.dimensions.get("consumer-dim"));
-    }
-
-    private void assertDownServiceHealth(String consumer) {
-        GenericJsonModel jsonModel = getResponseAsJsonModel(consumer);
+    public void response_contains_health_from_service_that_is_down() throws Exception {
+        String response = testDriver.sendRequest(URI).readAll();
+        var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
 
         GenericService downService = jsonModel.services.get(1);
         assertEquals(DOWN.status, downService.status.code);
@@ -193,8 +127,15 @@ public class GenericMetricsHandlerTest {
         assertEquals(DownService.NAME, downService.metrics.get(0).dimensions.get(INSTANCE_DIMENSION_ID.id));
     }
 
-    private String replaceTimestamps(String s) {
-        return s.replaceAll("timestamp\":\\d+,", "timestamp\":1,");
+    @Test
+    public void all_timestamps_are_equal_and_non_zero() throws Exception {
+        String response = testDriver.sendRequest(URI).readAll();
+        var jsonModel = createObjectMapper().readValue(response, GenericJsonModel.class);
+
+        Long nodeTimestamp = jsonModel.node.timestamp;
+        assertNotEquals(0L, (long) nodeTimestamp);
+        for (var service : jsonModel.services)
+            assertEquals(nodeTimestamp, service.timestamp);
     }
 
     private static GenericMetrics getMetricsForInstance(String instance, GenericService service) {
@@ -202,33 +143,23 @@ public class GenericMetricsHandlerTest {
             if (metrics.dimensions.get(INSTANCE_DIMENSION_ID.id).equals(instance))
                 return metrics;
         }
-        fail("Could not find metrics for service instance " + instance);
-        throw new RuntimeException();
+        throw new RuntimeException("Could not find metrics for service instance " + instance);
     }
 
     private static MetricsConsumers getMetricsConsumers() {
-        var defaultConsumerDimension = new Consumer.Metric.Dimension.Builder()
-                .key("consumer-dim").value("default-val");
-
-        var customConsumerDimension = new Consumer.Metric.Dimension.Builder()
-                .key("consumer-dim").value("custom-val");
+        ConsumersConfig.Consumer.Metric.Dimension.Builder metricDimension = new ConsumersConfig.Consumer.Metric.Dimension.Builder()
+                .key("dim0").value("metric-dim");
 
         return new MetricsConsumers(new ConsumersConfig.Builder()
-                                            .consumer(new Consumer.Builder()
-                                                              .name(DEFAULT_PUBLIC_CONSUMER_ID.id)
-                                                              .metric(new Consumer.Metric.Builder()
+                                            .consumer(new ConsumersConfig.Consumer.Builder()
+                                                              .name(VESPA_CONSUMER_ID.id)
+                                                              .metric(new ConsumersConfig.Consumer.Metric.Builder()
                                                                               .name(CPU_METRIC)
                                                                               .outputname(CPU_METRIC))
-                                                              .metric(new Consumer.Metric.Builder()
+                                                              .metric(new ConsumersConfig.Consumer.Metric.Builder()
                                                                               .name(METRIC_1)
                                                                               .outputname(METRIC_1)
-                                                                              .dimension(defaultConsumerDimension)))
-                                            .consumer(new Consumer.Builder()
-                                                    .name(CUSTOM_CONSUMER)
-                                                              .metric(new Consumer.Metric.Builder()
-                                                                              .name(METRIC_1)
-                                                                              .outputname(METRIC_1)
-                                                                              .dimension(customConsumerDimension)))
+                                                                              .dimension(metricDimension)))
                                             .build());
     }
 

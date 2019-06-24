@@ -16,9 +16,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.test.VespaModelTester;
 
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
-import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
 import static org.junit.Assert.assertEquals;
 
@@ -36,17 +33,20 @@ class MetricsProxyModelTester {
     // Used for all configs that are produced by the container, not the cluster.
     static final String CONTAINER_CONFIG_ID = CLUSTER_CONFIG_ID + "/localhost";
 
-    enum TestMode {
-        self_hosted,
-        hosted
-    }
-
-    static VespaModel getModel(String servicesXml, TestMode testMode) {
-        var numberOfHosts = testMode == hosted ? 2 : 1;
+    static VespaModel getModel(String servicesXml) {
+        var numberOfHosts = 1;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        tester.setHosted(testMode == hosted);
-        if (testMode == hosted) tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
+        tester.setHosted(false);
+        return tester.createModel(servicesXml, true);
+    }
+
+    static VespaModel getHostedModel(String servicesXml) {
+        var numberOfHosts = 2;
+        var tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.setHosted(true);
+        tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
         return tester.createModel(servicesXml, true);
     }
 
@@ -59,16 +59,17 @@ class MetricsProxyModelTester {
     }
 
     static ConsumersConfig.Consumer getCustomConsumer(String servicesXml) {
-        ConsumersConfig config = consumersConfigFromXml(servicesXml, self_hosted);
+        ConsumersConfig config = consumersConfigFromXml(servicesXml);
+        assertEquals(2, config.consumer().size());
         for (ConsumersConfig.Consumer consumer : config.consumer()) {
-            if (! consumer.name().equals(VESPA_CONSUMER_ID) && ! consumer.name().equals(DEFAULT_PUBLIC_CONSUMER_ID))
+            if (! consumer.name().equals(VESPA_CONSUMER_ID))
                 return consumer;
         }
-        throw new RuntimeException("Custom consumer not found!");
+        throw new RuntimeException("Two consumers with the reserved id - this cannot happen.");
     }
 
-    static ConsumersConfig consumersConfigFromXml(String servicesXml, TestMode testMode) {
-        return consumersConfigFromModel(getModel(servicesXml, testMode));
+    static ConsumersConfig consumersConfigFromXml(String servicesXml) {
+        return consumersConfigFromModel(getModel(servicesXml));
     }
 
     static ConsumersConfig consumersConfigFromModel(VespaModel model) {
@@ -88,7 +89,7 @@ class MetricsProxyModelTester {
     }
 
     static VespaServicesConfig getVespaServicesConfig(String servicesXml) {
-        VespaModel model = getModel(servicesXml, self_hosted);
+        VespaModel model = getModel(servicesXml);
         return new VespaServicesConfig((VespaServicesConfig.Builder) model.getConfig(new VespaServicesConfig.Builder(), CONTAINER_CONFIG_ID));
     }
 

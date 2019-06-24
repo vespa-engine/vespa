@@ -13,6 +13,7 @@ import static java.util.Collections.singleton;
  *
  * @author gjoranv
  */
+@SuppressWarnings("UnusedDeclaration") // Used by model amenders
 public class VespaMetricSet {
 
     public static final MetricSet vespaMetricSet = new MetricSet("vespa",

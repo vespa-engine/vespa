@@ -53,8 +53,6 @@ public class ExternalMetrics {
     }
 
     public void setExtraMetrics(List<MetricsPacket.Builder> externalPackets) {
-        // TODO: Metrics filtering per consumer is not yet implemented.
-        //       Split each packet per metric, and re-aggregate based on the metrics each consumer wants. Then filter out all packages with no consumers.
         log.log(DEBUG, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
         externalPackets.forEach(packet -> {
             packet.addConsumers(consumers.getAllConsumers())
