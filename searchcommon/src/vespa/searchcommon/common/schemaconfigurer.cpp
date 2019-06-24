@@ -145,7 +145,7 @@ SchemaBuilder::build(const IndexschemaConfig &cfg, Schema &schema)
         schema.addIndexField(Schema::IndexField(f.name, convertIndexDataType(f.datatype),
                                                 convertIndexCollectionType(f.collectiontype)).
                 setAvgElemLen(f.averageelementlen).
-                set_experimental_posting_list_format(f.experimentalpostinglistformat));
+                set_interleaved_features(f.interleavedfeatures));
     }
     for (size_t i = 0; i < cfg.fieldset.size(); ++i) {
         const IndexschemaConfig::Fieldset &fs = cfg.fieldset[i];

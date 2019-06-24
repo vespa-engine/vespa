@@ -195,8 +195,8 @@ FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
 {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
-        if (!index.use_experimental_posting_list_format() ||
-            index.has_matching_experimental_posting_list_format(oldSchema)) {
+        if (!index.use_interleaved_features() ||
+            index.has_matching_use_interleaved_features(oldSchema)) {
             return std::make_unique<FieldReader>();      // The common case
         }
     }
@@ -238,7 +238,7 @@ FieldReaderEmpty::getFeatureParams(PostingListParams &params)
 FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner> field_length_scanner)
     : _hasElements(false),
       _hasElementWeights(false),
-      _want_interleaved_features(index.use_experimental_posting_list_format()),
+      _want_interleaved_features(index.use_interleaved_features()),
       _regenerate_interleaved_features(false),
       _field_length_scanner(std::move(field_length_scanner))
 {

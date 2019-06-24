@@ -34,7 +34,7 @@ FieldIndexCollection::FieldIndexCollection(const Schema& schema, const IFieldLen
 {
     for (uint32_t fieldId = 0; fieldId < _numFields; ++fieldId) {
         const auto& field = schema.getIndexField(fieldId);
-        if (field.use_experimental_posting_list_format()) {
+        if (field.use_interleaved_features()) {
             _fieldIndexes.push_back(std::make_unique<FieldIndex<true>>(schema, fieldId,
                                                                        inspector.get_field_length_info(field.getName())));
         } else {

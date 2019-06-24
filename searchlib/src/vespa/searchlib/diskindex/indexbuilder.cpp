@@ -105,7 +105,7 @@ FileHandle::open(vespalib::stringref dir,
     _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds);
 
     if (!_fieldWriter->open(dir + "/", 64, 262144u, false,
-                            index.use_experimental_posting_list_format(),
+                            index.use_interleaved_features(),
                             index.getSchema(), index.getIndex(),
                             field_length_info,
                             tuneFileWrite, fileHeaderContext)) {

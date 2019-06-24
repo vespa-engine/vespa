@@ -69,7 +69,7 @@ SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema &oldSchema) const
 }
 
 bool
-SchemaUtil::IndexIterator::has_matching_experimental_posting_list_format(const Schema &oldSchema) const
+SchemaUtil::IndexIterator::has_matching_use_interleaved_features(const Schema &oldSchema) const
 {
     assert(isValid());
     const Schema::IndexField &newField = getSchema().getIndexField(getIndex());
@@ -79,7 +79,7 @@ SchemaUtil::IndexIterator::has_matching_experimental_posting_list_format(const S
         return false;
     }
     const Schema::IndexField &oldField = oldSchema.getIndexField(oldFieldId);
-    return (oldField.use_experimental_posting_list_format() == newField.use_experimental_posting_list_format());
+    return (oldField.use_interleaved_features() == newField.use_interleaved_features());
 }
 
 bool

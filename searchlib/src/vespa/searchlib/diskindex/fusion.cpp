@@ -311,7 +311,7 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
 std::shared_ptr<FieldLengthScanner>
 Fusion::allocate_field_length_scanner(const SchemaUtil::IndexIterator &index)
 {
-    if (index.use_experimental_posting_list_format()) {
+    if (index.use_interleaved_features()) {
         PosOccFieldsParams fieldsParams;
         fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
         assert(fieldsParams.getNumFields() > 0);
@@ -320,7 +320,7 @@ Fusion::allocate_field_length_scanner(const SchemaUtil::IndexIterator &index)
             for (const auto &old_index : _oldIndexes) {
                 const Schema &old_schema = old_index.getSchema();
                 if (index.hasOldFields(old_schema) &&
-                    !index.has_matching_experimental_posting_list_format(old_schema)) {
+                    !index.has_matching_use_interleaved_features(old_schema)) {
                     return std::make_shared<FieldLengthScanner>(_docIdLimit);
                 }
             }
@@ -357,7 +357,7 @@ Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter &wri
     vespalib::string dir = _outDir + "/" + index.getName();
 
     if (!writer.open(dir + "/", 64, 262144, _dynamicKPosIndexFormat,
-                     index.use_experimental_posting_list_format(), index.getSchema(),
+                     index.use_interleaved_features(), index.getSchema(),
                      index.getIndex(),
                      field_length_info,
                      _tuneFileIndexing._write, _fileHeaderContext)) {

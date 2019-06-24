@@ -865,7 +865,7 @@ struct FieldIndexCollectionTypeTest : public ::testing::Test {
         Schema result;
         result.addIndexField(Schema::IndexField("normal", DataType::STRING));
         Schema::IndexField interleaved("interleaved", DataType::STRING);
-        interleaved.set_experimental_posting_list_format(true);
+        interleaved.set_interleaved_features(true);
         result.addIndexField(interleaved);
         return result;
     }
