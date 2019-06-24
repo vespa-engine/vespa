@@ -253,7 +253,7 @@ public class LogFileHandler extends StreamHandler {
     }
 
 
-    private void runCompression(File oldFile) {
+    static void runCompression(File oldFile) {
         File gzippedFile = new File(oldFile.getPath() + ".gz");
         try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
              FileInputStream inputStream = new FileInputStream(oldFile))
