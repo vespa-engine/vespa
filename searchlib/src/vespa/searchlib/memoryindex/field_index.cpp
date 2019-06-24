@@ -32,20 +32,6 @@ using vespalib::GenerationHandler;
 
 namespace search::memoryindex {
 
-namespace {
-
-void set_interleaved_features(DocIdAndFeatures &features)
-{
-    // Set cheap features based on normal features.
-    // TODO: Update when proper cheap features are present in memory index.
-    assert(!features.elements().empty());
-    const auto &element = features.elements().front();
-    features.set_field_length(element.getElementLen());
-    features.set_num_occs(element.getNumOccs());
-}
-
-}
-
 using datastore::EntryRef;
 
 template <bool interleaved_features>
@@ -194,12 +180,12 @@ FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilde
             auto pitr = tree->begin(_postingListStore.getAllocator());
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
-                uint32_t docId = pitr.getKey();
-                EntryRef featureRef(pitr.getData().get_features());
-                _featureStore.setupForReadFeatures(featureRef, decoder);
+                features.set_doc_id(pitr.getKey());
+                const PostingListEntryType &entry(pitr.getData());
+                features.set_num_occs(entry.get_num_occs());
+                features.set_field_length(entry.get_field_length());
+                _featureStore.setupForReadFeatures(entry.get_features(), decoder);
                 decoder.readFeatures(features);
-                features.set_doc_id(docId);
-                set_interleaved_features(features);
                 indexBuilder.add_document(features);
             }
         } else {
@@ -207,12 +193,12 @@ FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilde
                 _postingListStore.getKeyDataEntry(plist, clusterSize);
             const PostingListKeyDataType *kde = kd + clusterSize;
             for (; kd != kde; ++kd) {
-                uint32_t docId = kd->_key;
-                EntryRef featureRef(kd->getData().get_features());
-                _featureStore.setupForReadFeatures(featureRef, decoder);
+                features.set_doc_id(kd->_key);
+                const PostingListEntryType &entry(kd->getData());
+                features.set_num_occs(entry.get_num_occs());
+                features.set_field_length(entry.get_field_length());
+                _featureStore.setupForReadFeatures(entry.get_features(), decoder);
                 decoder.readFeatures(features);
-                features.set_doc_id(docId);
-                set_interleaved_features(features);
                 indexBuilder.add_document(features);
             }
         }

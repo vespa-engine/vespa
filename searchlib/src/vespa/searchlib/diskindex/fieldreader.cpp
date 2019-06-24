@@ -17,6 +17,8 @@ namespace {
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
 vespalib::string interleaved_features("interleaved_features");
 
+uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
+
 }
 
 using vespalib::getLastErrorString;
@@ -346,8 +348,9 @@ FieldReaderStripInfo::read()
         if (_hasElements && _field_length_scanner) {
             field_length = _field_length_scanner->get_field_length(features.doc_id());
         }
-        features.set_field_length(field_length);
-        features.set_num_occs(num_occs);
+        // cap interleaved features to 16 bits each, to match memory index
+        features.set_field_length(cap_u16(field_length));
+        features.set_num_occs(cap_u16(num_occs));
     }
 }
 
