@@ -58,6 +58,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
         addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
+        addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
     }
 
