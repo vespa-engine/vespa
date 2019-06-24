@@ -103,10 +103,11 @@ public class LoadBalancerProvisioner {
             try (var loadBalancersLock = db.lockLoadBalancers()) {
                 var id = new LoadBalancerId(application, clusterId);
                 var now = nodeRepository.clock().instant();
-                var instance = create(application, clusterId, allocatedContainers(application, clusterId));
                 var loadBalancer = db.readLoadBalancers().get(id);
+                if (loadBalancer == null && activate) return; // Nothing to activate as this load balancer was never prepared
+
+                var instance = create(application, clusterId, allocatedContainers(application, clusterId));
                 if (loadBalancer == null) {
-                    if (activate) return; // Nothing to activate as this load balancer was never prepared
                     loadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
                 } else {
                     var newState = activate ? LoadBalancer.State.active : loadBalancer.state();
