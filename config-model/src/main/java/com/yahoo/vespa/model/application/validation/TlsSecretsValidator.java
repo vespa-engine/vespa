@@ -1,0 +1,16 @@
+package com.yahoo.vespa.model.application.validation;
+
+import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.vespa.model.VespaModel;
+
+public class TlsSecretsValidator extends Validator {
+
+    /** This check is delayed until validation to allow node provisioning to complete while we are waiting for cert */
+    @Override
+    public void validate(VespaModel model, DeployState deployState) {
+        if (deployState.tlsSecrets().isPresent() && deployState.tlsSecrets().get() == TlsSecrets.MISSING) {
+            throw new IllegalArgumentException("TLS enabled, but could not retrieve certificate yet");
+        }
+    }
+}
