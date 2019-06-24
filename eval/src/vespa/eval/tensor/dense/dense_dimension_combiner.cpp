@@ -5,6 +5,8 @@
 
 namespace vespalib::tensor {
 
+DenseDimensionCombiner::~DenseDimensionCombiner() = default;
+
 DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                                                const eval::ValueType &rhs)
   : _leftDims(), _rightDims(), _commonDims(),
