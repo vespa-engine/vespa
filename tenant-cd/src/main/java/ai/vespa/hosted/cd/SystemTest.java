@@ -15,6 +15,10 @@ package ai.vespa.hosted.cd;
  * @author jonmv
  */
 public interface SystemTest {
+
+    /** Use with JUnit 5 @Tag to have this run in the system test job in the pipeline. */
+    String name = "ai.vespa.hosted.cd.SystemTest";
+
     // Want to feed some documents.
     // Want to verify document processing and routing is as expected.
     // Want to check recall on those documents.
