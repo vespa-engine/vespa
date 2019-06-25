@@ -35,26 +35,6 @@ public class ClusterMembershipTest {
             assertFalse(instance.retired());
             assertTrue(instance.cluster().isExclusive());
         }
-
-        // TODO: Remove after June 2019. This ensures stale rotation data is handled
-        {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/rotation1,rotation2", Vtag.currentVersion);
-            assertFalse(instance.retired());
-            assertFalse(instance.cluster().isExclusive());
-        }
-
-        {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/rotation1,rotation2", Vtag.currentVersion);
-            assertFalse(instance.retired());
-            assertTrue(instance.cluster().isExclusive());
-        }
-
-        {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired/rotation1,rotation2", Vtag.currentVersion);
-            assertTrue(instance.retired());
-            assertTrue(instance.cluster().isExclusive());
-        }
-        // end TODO
     }
 
     @Test
