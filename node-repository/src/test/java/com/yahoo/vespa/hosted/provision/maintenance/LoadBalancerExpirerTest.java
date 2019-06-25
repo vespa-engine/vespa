@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -127,7 +126,7 @@ public class LoadBalancerExpirerTest {
     private void deployApplication(ApplicationId application, ClusterSpec.Id cluster, boolean activate) {
         tester.makeReadyNodes(10, "d-1-1-1");
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
-                                                                               Vtag.currentVersion, false, Collections.emptySet()),
+                                                                               Vtag.currentVersion, false),
                                               2, 1,
                                               new NodeResources(1, 1, 1));
         if (activate) {

@@ -50,7 +50,7 @@ public class NodePrioritizerTest {
         Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
 
         // Unallocated over allocated
-        ClusterSpec spec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false, Collections.emptySet());
+        ClusterSpec spec = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false);
         c = c.allocate(ApplicationId.defaultId(), ClusterMembership.from(spec, 0), Instant.now());
         nodes.remove(c);
         nodes.add(c);
@@ -60,7 +60,7 @@ public class NodePrioritizerTest {
         Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
 
         // Container over content
-        ClusterSpec spec2 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false, Collections.emptySet());
+        ClusterSpec spec2 = ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("mycluster"), ClusterSpec.Group.from(0), Version.fromString("6.142.22"), false);
         d = d.allocate(ApplicationId.defaultId(), ClusterMembership.from(spec2, 0), Instant.now());
         nodes.remove(d);
         nodes.add(d);
