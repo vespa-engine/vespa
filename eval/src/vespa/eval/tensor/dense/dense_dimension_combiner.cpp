@@ -53,9 +53,9 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                 _outputSize *= cd.size;
                 _commonDims.push_back(cd);
             } else {
-                LeftDim ld;
+                SideDim ld;
                 ld.idx = 0;
-                ld.leftMultiplier = lMul;
+                ld.sideMultiplier = lMul;
                 ld.outputMultiplier = oMul;
                 assert(lDims[i].size == oDims[k].size);
                 ld.size = oDims[k].size;
@@ -70,9 +70,9 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
             assert(j > 0);
             assert(rDims[j-1].name == oDims[k].name);
             --j;
-            RightDim rd;
+            SideDim rd;
             rd.idx = 0;
-            rd.rightMultiplier = rMul;
+            rd.sideMultiplier = rMul;
             rd.outputMultiplier = oMul;
             assert(rDims[j].size == oDims[k].size);
             rd.size = oDims[k].size;
@@ -89,13 +89,13 @@ void
 DenseDimensionCombiner::dump() const
 {
     fprintf(stderr, "DenseDimensionCombiner: %u * %u -> %u\n", _leftOnlySize, _rightOnlySize, _outputSize);
-    for (const LeftDim& ld : _leftDims) {
+    for (const SideDim& ld : _leftDims) {
         fprintf(stderr, "ld curidx=%u (of %u) leftmul=%u outmul=%u\n",
-                ld.idx, ld.size, ld.leftMultiplier, ld.outputMultiplier);
+                ld.idx, ld.size, ld.sideMultiplier, ld.outputMultiplier);
     }
-    for (const RightDim& rd : _rightDims) {
+    for (const SideDim& rd : _rightDims) {
         fprintf(stderr, "rd curidx=%u (of %u) rightmul=%u outmul=%u\n",
-                rd.idx, rd.size, rd.rightMultiplier, rd.outputMultiplier);
+                rd.idx, rd.size, rd.sideMultiplier, rd.outputMultiplier);
     }
     for (const CommonDim& cd : _commonDims) {
         fprintf(stderr, "cd curidx=%u (of %u) leftmul=%u rightmul=%u outmul=%u\n",

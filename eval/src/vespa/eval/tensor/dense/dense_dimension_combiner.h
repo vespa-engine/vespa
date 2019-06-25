@@ -10,16 +10,10 @@ namespace vespalib::tensor {
 
 class DenseDimensionCombiner {
 
-    struct LeftDim {
+    struct SideDim {
         uint32_t idx;
         uint32_t size;
-        uint32_t leftMultiplier;
-        uint32_t outputMultiplier;
-    };
-    struct RightDim {
-        uint32_t idx;
-        uint32_t size;
-        uint32_t rightMultiplier;
+        uint32_t sideMultiplier;
         uint32_t outputMultiplier;
     };
     struct CommonDim {
@@ -30,8 +24,8 @@ class DenseDimensionCombiner {
         uint32_t outputMultiplier;
     };
 
-    std::vector<LeftDim> _leftDims;
-    std::vector<RightDim> _rightDims;
+    std::vector<SideDim> _leftDims;
+    std::vector<SideDim> _rightDims;
     std::vector<CommonDim> _commonDims;
 
     uint32_t _leftIndex;
@@ -52,8 +46,8 @@ public:
     bool commonInRange() const { return _outputIndex < _outputSize; }
 
     void leftReset() {
-        for (LeftDim& ld : _leftDims) {
-            _leftIndex -= ld.idx * ld.leftMultiplier;
+        for (SideDim& ld : _leftDims) {
+            _leftIndex -= ld.idx * ld.sideMultiplier;
             _outputIndex -= ld.idx * ld.outputMultiplier;
             ld.idx = 0;
         }
@@ -65,12 +59,12 @@ public:
     void stepLeft() {
         size_t lim = _leftDims.size();
         for (size_t i = 0; i < lim; ++i) {
-            LeftDim& ld = _leftDims[i];
+            SideDim& ld = _leftDims[i];
             ld.idx++;
-            _leftIndex += ld.leftMultiplier;
+            _leftIndex += ld.sideMultiplier;
             _outputIndex += ld.outputMultiplier;
             if (ld.idx < ld.size) return;
-            _leftIndex -= ld.idx * ld.leftMultiplier;
+            _leftIndex -= ld.idx * ld.sideMultiplier;
             _outputIndex -= ld.idx * ld.outputMultiplier;
             ld.idx = 0;
         }
@@ -79,8 +73,8 @@ public:
 
 
     void rightReset() {
-        for (RightDim& rd : _rightDims) {
-            _rightIndex -= rd.idx * rd.rightMultiplier;
+        for (SideDim& rd : _rightDims) {
+            _rightIndex -= rd.idx * rd.sideMultiplier;
             _outputIndex -= rd.idx * rd.outputMultiplier;
             rd.idx = 0;
         }
@@ -92,12 +86,12 @@ public:
     void stepRight() {
         size_t lim = _rightDims.size();
         for (size_t i = 0; i < lim; ++i) {
-            RightDim& rd = _rightDims[i];
+            SideDim& rd = _rightDims[i];
             rd.idx++;
-            _rightIndex += rd.rightMultiplier;
+            _rightIndex += rd.sideMultiplier;
             _outputIndex += rd.outputMultiplier;
             if (rd.idx < rd.size) return;
-            _rightIndex -= rd.idx * rd.rightMultiplier;
+            _rightIndex -= rd.idx * rd.sideMultiplier;
             _outputIndex -= rd.idx * rd.outputMultiplier;
             rd.idx = 0;
         }
