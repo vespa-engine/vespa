@@ -127,12 +127,12 @@ public class LoadBalancerProvisioner {
             ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
-                               ", targeting: " + nodes);
+                               ", targeting: " + reals);
         try {
             return service.create(application, cluster, reals);
         } catch (Exception e) {
             throw new LoadBalancerServiceException("Failed to (re)configure load balancer for " + cluster + " in " +
-                                                   application + ", targeting: " + nodes + ". The operation will be " +
+                                                   application + ", targeting: " + reals + ". The operation will be " +
                                                    "retried on next deployment", e);
         }
     }
