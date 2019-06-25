@@ -85,27 +85,6 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
     }
 }
 
-void
-DenseDimensionCombiner::dump() const
-{
-    fprintf(stderr, "DenseDimensionCombiner: %u * %u -> %u\n", _leftOnlySize, _rightOnlySize, _outputSize);
-    for (const SideDim& ld : _leftDims) {
-        fprintf(stderr, "ld curidx=%u (of %u) leftmul=%u outmul=%u\n",
-                ld.idx, ld.size, ld.sideMultiplier, ld.outputMultiplier);
-    }
-    for (const SideDim& rd : _rightDims) {
-        fprintf(stderr, "rd curidx=%u (of %u) rightmul=%u outmul=%u\n",
-                rd.idx, rd.size, rd.sideMultiplier, rd.outputMultiplier);
-    }
-    for (const CommonDim& cd : _commonDims) {
-        fprintf(stderr, "cd curidx=%u (of %u) leftmul=%u rightmul=%u outmul=%u\n",
-                cd.idx, cd.size, cd.leftMultiplier, cd.rightMultiplier, cd.outputMultiplier);
-    }
-    fprintf(stderr, "Left Index: %u\n", _leftIndex);
-    fprintf(stderr, "Right Index: %u\n", _rightIndex);
-    fprintf(stderr, "Output Index: %u\n", _outputIndex);
-}
-
 
 } // namespace
 

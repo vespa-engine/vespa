@@ -132,8 +132,6 @@ public:
     DenseDimensionCombiner(const eval::ValueType &lhs, const eval::ValueType &rhs);
 
     ~DenseDimensionCombiner();
-
-    void dump() const;
 };
 
 }
