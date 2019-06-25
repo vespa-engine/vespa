@@ -5,6 +5,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,8 +22,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -41,12 +40,14 @@ public class LogFileHandler extends StreamHandler {
     private long[] rotationTimes = {0}; //default to one log per day, at midnight
     private String filePattern = "./log.%T";  // default to current directory, ms time stamp
     private long nextRotationTime = 0;
-    private OutputStream currentOutputStream = null;
+    private FileOutputStream currentOutputStream = null;
     private String fileName;
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
     private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+    private final NativeIO nativeIO = new NativeIO();
+    private long lastDropPosition = 0;
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -116,6 +117,20 @@ public class LogFileHandler extends StreamHandler {
         try {
             logQueue.put(r);
         } catch (InterruptedException e) {
+        }
+    }
+
+    @Override
+    public synchronized void flush() {
+        super.flush();
+        try {
+            if (currentOutputStream != null) {
+                long newPos = currentOutputStream.getChannel().position();
+                nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
+                lastDropPosition = newPos;
+            }
+        } catch (IOException e) {
+            logger.warning("Failed dropping from cache : " + Exceptions.toMessageString(e));
         }
     }
 
@@ -192,7 +207,7 @@ public class LogFileHandler extends StreamHandler {
             } catch (InterruptedException e) {
             }
         }
-        super.flush();
+        flush();
     }
 
     private void checkAndCreateDir(String pathname) {
@@ -245,7 +260,6 @@ public class LogFileHandler extends StreamHandler {
                 if (compressOnRotation) {
                     executor.execute(() -> runCompression(oldFile));
                 } else {
-                    NativeIO nativeIO = new NativeIO();
                     nativeIO.dropFileFromCache(oldFile);
                 }
             }
@@ -260,8 +274,8 @@ public class LogFileHandler extends StreamHandler {
         {
             byte [] buffer = new byte[0x400000]; // 4M buffer
 
-            NativeIO nativeIO = new NativeIO();
             long totalBytesRead = 0;
+            NativeIO nativeIO = new NativeIO();
             for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
                 compressor.write(buffer, 0, read);
                 nativeIO.dropPartialFileFromCache(inputStream.getFD(), totalBytesRead, read, false);
