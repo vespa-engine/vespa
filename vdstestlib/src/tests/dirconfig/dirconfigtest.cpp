@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/config/dirconfig.h>
 #include <fstream>
 #include <iostream>
 

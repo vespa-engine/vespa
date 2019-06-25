@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/config/dirconfig.h>
 
 namespace storage {
 

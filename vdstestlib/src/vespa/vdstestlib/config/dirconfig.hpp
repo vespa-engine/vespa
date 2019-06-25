@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/config/dirconfig.h>
 
 #include <sstream>
 #include <boost/lexical_cast.hpp>
