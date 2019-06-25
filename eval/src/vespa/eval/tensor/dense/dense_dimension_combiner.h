@@ -57,7 +57,9 @@ public:
             _outputIndex -= ld.idx * ld.outputMultiplier;
             ld.idx = 0;
         }
-        if (_leftIndex >= _leftOnlySize) _leftIndex -= _leftOnlySize;
+        if (_leftIndex >= _leftOnlySize) {
+            _leftIndex -= _leftOnlySize;
+        }
     }
 
     void stepLeft() {
@@ -82,7 +84,9 @@ public:
             _outputIndex -= rd.idx * rd.outputMultiplier;
             rd.idx = 0;
         }
-        if (_rightIndex >= _rightOnlySize) _rightIndex -= _rightOnlySize;
+        if (_rightIndex >= _rightOnlySize) {
+            _rightIndex -= _rightOnlySize;
+        }
     }
 
     void stepRight() {
@@ -107,7 +111,9 @@ public:
             _outputIndex -= cd.idx * cd.outputMultiplier;
             cd.idx = 0;
         }
-        if (_outputIndex >= _outputSize) _outputIndex -= _outputSize;
+        if (_outputIndex >= _outputSize) {
+            _outputIndex -= _outputSize;
+        }
     }
 
     void stepCommon() {
