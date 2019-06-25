@@ -81,6 +81,9 @@ public class ApplicationSerializer {
     private final String queryQualityField = "queryQuality";
     private final String pemDeployKeyField = "pemDeployKey";
     private final String assignedRotationsField = "assignedRotations";
+    private final String assignedRotationEndpointField = "endpointId";
+    private final String assignedRotationClusterField = "clusterId";
+    private final String assignedRotationRotationField = "rotationId";
     private final String rotationsField = "endpoints";
     private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
@@ -333,9 +336,9 @@ public class ApplicationSerializer {
         final var rotationsArray = parent.setArray(fieldName);
         for (var rotation : rotations) {
             final var object = rotationsArray.addObject();
-            object.setString("endpoint", rotation.endpointId().id());
-            object.setString("rotation", rotation.rotationId().asString());
-            object.setString("container", rotation.clusterId().value());
+            object.setString(assignedRotationEndpointField, rotation.endpointId().id());
+            object.setString(assignedRotationRotationField, rotation.rotationId().asString());
+            object.setString(assignedRotationClusterField, rotation.clusterId().value());
         }
     }
 
@@ -566,9 +569,9 @@ public class ApplicationSerializer {
 
         // Last - add the actual entries we want.  Do _not_ remove this during clean-up
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
-            final var clusterId = new ClusterSpec.Id(inspector.field("container").asString());
-            final var endpointId = EndpointId.of(inspector.field("endpoint").asString());
-            final var rotationId = new RotationId(inspector.field("rotation").asString());
+            final var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
+            final var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
+            final var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
             assignedRotations.add(new AssignedRotation(clusterId, endpointId, rotationId));
         });
 
