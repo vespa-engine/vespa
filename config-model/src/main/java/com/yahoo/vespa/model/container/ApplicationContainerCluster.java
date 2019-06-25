@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,13 +47,18 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
+    private Optional<TlsSecrets> tlsSecrets;
+
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
+
+        this.tlsSecrets = deployState.tlsSecrets();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
 
         addSimpleComponent(DEFAULT_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
+        addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
     }
 
@@ -137,6 +144,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
+    }
+
+    public Optional<TlsSecrets> getTlsSecrets() {
+        return tlsSecrets;
     }
 
 }
