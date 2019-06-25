@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -36,6 +37,8 @@ public class LoadBalancerProvisionerTest {
 
     private final ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
     private final ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
+
+    private final ApplicationId infraApp1 = ApplicationId.from("vespa", "tenant-host", "default");
 
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
@@ -131,15 +134,36 @@ public class LoadBalancerProvisionerTest {
                                  .orElseThrow());
     }
 
+    @Test
+    public void does_not_provision_load_balancers_for_non_tenant_node_type() {
+        tester.activate(infraApp1, prepare(infraApp1, Capacity.fromRequiredNodeType(NodeType.host),
+                                           clusterRequest(ClusterSpec.Type.container,
+                                                          ClusterSpec.Id.from("tenant-host"))));
+        assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
+        assertEquals(List.of(), tester.nodeRepository().loadBalancers().owner(infraApp1).asList());
+    }
+
+    @Test
+    public void does_not_provision_load_balancers_for_non_container_cluster() {
+        tester.activate(app1, prepare(app1, clusterRequest(ClusterSpec.Type.content,
+                                                           ClusterSpec.Id.from("tenant-host"))));
+        assertTrue("No load balancer provisioned", tester.loadBalancerService().instances().isEmpty());
+        assertEquals(List.of(), tester.nodeRepository().loadBalancers().owner(app1).asList());
+    }
+
     private void dirtyNodesOf(ApplicationId application) {
         tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
-        tester.makeReadyNodes(specs.length * 2, "d-1-1-1");
+        return prepare(application, Capacity.fromCount(2, new NodeResources(1, 1, 1), false, true), specs);
+    }
+
+    private Set<HostSpec> prepare(ApplicationId application, Capacity capacity, ClusterSpec... specs) {
+        tester.makeReadyNodes(specs.length * 2, "d-1-1-1", capacity.type());
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
-            allNodes.addAll(tester.prepare(application, spec, Capacity.fromCount(2, new NodeResources(1, 1, 1), false, true), 1, false));
+            allNodes.addAll(tester.prepare(application, spec, capacity, 1, false));
         }
         return allNodes;
     }
