@@ -260,8 +260,8 @@ public class LockedApplication {
 
     public LockedApplication with(List<AssignedRotation> assignedRotations) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                metrics, pemDeployKey, assignedRotations, rotationStatus);
+                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                                     metrics, pemDeployKey, assignedRotations, rotationStatus);
     }
 
     public LockedApplication withRotationStatus(Map<HostName, RotationStatus> rotationStatus) {
