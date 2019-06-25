@@ -13,8 +13,17 @@ import java.util.Set;
  */
 public interface LoadBalancerService {
 
-    /** Create a load balancer for given application cluster. Implementations are expected to be idempotent */
-    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals);
+    /**
+     * Create a load balancer for given application cluster. Implementations are expected to be idempotent
+     *
+     * @param application Application owning the LB
+     * @param cluster     Target cluster of the LB
+     * @param reals       Reals that should be configured on the LB
+     * @param force       Whether reconfiguration should be forced (e.g. allow configuring an empty set of reals on a
+     *                    pre-existing load balancer).
+     * @return The provisioned load balancer instance
+     */
+    LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force);
 
     /** Permanently remove load balancer for given application cluster */
     void remove(ApplicationId application, ClusterSpec.Id cluster);
