@@ -515,6 +515,16 @@
                 <version>${curator.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
@@ -765,7 +775,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <test.hide>true</test.hide>
         <doclint>all</doclint>
-        <surefire.version>2.21.0</surefire.version>
+        <surefire.version>2.22.0</surefire.version>
+        <junit.version>5.4.2</junit.version>
         <protobuf.version>3.7.0</protobuf.version>
     </properties>
 
