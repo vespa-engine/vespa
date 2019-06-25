@@ -54,18 +54,27 @@ public class NativeIO {
     }
 
     /**
+     * Will hint the OS that data read so far will not be accessed again and should hence be dropped from the buffer cache.
+     * @param fd The file descriptor to drop from buffer cache.
+     */
+    public void dropPartialFileFromCache(FileDescriptor fd, long offset, long len, boolean sync) {
+        if (sync) {
+            try {
+                fd.sync();
+            } catch (SyncFailedException e) {
+                logger.warning("Sync failed while dropping cache: " + e.getMessage());
+            }
+        }
+        if (initialized) {
+            posix_fadvise(getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
+        }
+    }
+    /**
      * Will hint the OS that this is will not be accessed again and should hence be dropped from the buffer cache.
      * @param fd The file descriptor to drop from buffer cache.
      */
     public void dropFileFromCache(FileDescriptor fd) {
-        try {
-            fd.sync();
-        } catch (SyncFailedException e) {
-            logger.warning("Sync failed while dropping cache: " + e.getMessage());
-        }
-        if (initialized) {
-            posix_fadvise(getNativeFD(fd), 0, 0, POSIX_FADV_DONTNEED);
-        }
+        dropPartialFileFromCache(fd, 0, 0, true);
     }
 
     /**
