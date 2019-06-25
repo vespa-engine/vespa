@@ -50,7 +50,6 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     storage_testhostreporter
     storage_distributor
     gtest
-    gmock
 )
 
 vespa_add_test(

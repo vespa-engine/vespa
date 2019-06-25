@@ -1445,7 +1445,10 @@ TEST_F(StateCheckersTest, context_populates_ideal_state_containers) {
     StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket({17, 0}));
 
     ASSERT_THAT(c.idealState, ElementsAre(1, 3));
-    ASSERT_THAT(c.unorderedIdealState, UnorderedElementsAre(1, 3));
+    // TODO replace with UnorderedElementsAre once we can build gmock without issues
+    std::vector<uint16_t> ideal_state(c.unorderedIdealState.begin(), c.unorderedIdealState.end());
+    std::sort(ideal_state.begin(), ideal_state.end());
+    ASSERT_THAT(ideal_state, ElementsAre(1, 3));
 }
 
 namespace {
