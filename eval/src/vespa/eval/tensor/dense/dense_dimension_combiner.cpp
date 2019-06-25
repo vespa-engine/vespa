@@ -9,9 +9,10 @@ DenseDimensionCombiner::~DenseDimensionCombiner() = default;
 
 DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                                                const eval::ValueType &rhs)
-  : _leftDims(), _rightDims(), _commonDims(),
-    _leftIndex(0), _rightIndex(0), _outputIndex(0),
-    _leftOnlySize(1u), _rightOnlySize(1u), _outputSize(1u),
+  : _left(), _right(),
+    _commonDims(),
+    _outputIndex(0),
+    _outputSize(1u),
     result_type(eval::ValueType::join(lhs, rhs))
 {
     assert(lhs.is_dense());
@@ -48,8 +49,8 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                 lMul *= cd.size;
                 rMul *= cd.size;
                 oMul *= cd.size;
-                _leftOnlySize *= cd.size;
-                _rightOnlySize *= cd.size;
+                _left.totalSize *= cd.size;
+                _right.totalSize *= cd.size;
                 _outputSize *= cd.size;
                 _commonDims.push_back(cd);
             } else {
@@ -61,9 +62,9 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
                 ld.size = oDims[k].size;
                 lMul *= ld.size;
                 oMul *= ld.size;
-                _leftOnlySize *= ld.size;
                 _outputSize *= ld.size;
-                _leftDims.push_back(ld);
+                _left.totalSize *= ld.size;
+                _left.dims.push_back(ld);
             }
         } else {
             // right dim match
@@ -78,9 +79,9 @@ DenseDimensionCombiner::DenseDimensionCombiner(const eval::ValueType &lhs,
             rd.size = oDims[k].size;
             rMul *= rd.size;
             oMul *= rd.size;
-            _rightOnlySize *= rd.size;
             _outputSize *= rd.size;
-            _rightDims.push_back(rd);
+            _right.totalSize *= rd.size;
+            _right.dims.push_back(rd);
         }
     }
 }
