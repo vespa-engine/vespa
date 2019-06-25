@@ -237,7 +237,7 @@ public class LogFileHandler extends StreamHandler {
         String oldFileName = fileName;
         long now = System.currentTimeMillis();
         fileName = LogFormatter.insertDate(filePattern, now);
-        super.flush();
+        flush();
         super.close();
 
         try {
@@ -245,6 +245,7 @@ public class LogFileHandler extends StreamHandler {
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
             super.setOutputStream(os);
             currentOutputStream = os;
+            lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
