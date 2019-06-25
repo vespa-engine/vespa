@@ -32,7 +32,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
         final var proxyNodes = nodeRepository.getNodes(NodeType.proxy);
         proxyNodes.sort(hostnameComparator);
 

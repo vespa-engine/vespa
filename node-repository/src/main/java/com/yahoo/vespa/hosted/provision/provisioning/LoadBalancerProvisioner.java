@@ -106,7 +106,8 @@ public class LoadBalancerProvisioner {
                 var loadBalancer = db.readLoadBalancers().get(id);
                 if (loadBalancer == null && activate) return; // Nothing to activate as this load balancer was never prepared
 
-                var instance = create(application, clusterId, allocatedContainers(application, clusterId));
+                var force = loadBalancer != null && loadBalancer.state() != LoadBalancer.State.active;
+                var instance = create(application, clusterId, allocatedContainers(application, clusterId), force);
                 if (loadBalancer == null) {
                     loadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
                 } else {
@@ -118,7 +119,7 @@ public class LoadBalancerProvisioner {
         }
     }
 
-    private LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes) {
+    private LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes, boolean force) {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
@@ -127,12 +128,12 @@ public class LoadBalancerProvisioner {
             ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
-                               ", targeting: " + nodes);
+                               ", targeting: " + reals);
         try {
-            return service.create(application, cluster, reals);
+            return service.create(application, cluster, reals, force);
         } catch (Exception e) {
             throw new LoadBalancerServiceException("Failed to (re)configure load balancer for " + cluster + " in " +
-                                                   application + ", targeting: " + nodes + ". The operation will be " +
+                                                   application + ", targeting: " + reals + ". The operation will be " +
                                                    "retried on next deployment", e);
         }
     }

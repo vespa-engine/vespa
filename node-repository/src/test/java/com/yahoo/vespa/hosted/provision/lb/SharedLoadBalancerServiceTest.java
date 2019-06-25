@@ -29,7 +29,7 @@ public class SharedLoadBalancerServiceTest {
     @Test
     public void test_create_lb() {
         tester.makeReadyNodes(2, "default", NodeType.proxy);
-        final var lb = loadBalancerService.create(applicationId, clusterId, reals);
+        final var lb = loadBalancerService.create(applicationId, clusterId, reals, false);
 
         assertEquals(HostName.from("host-1.yahoo.com"), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
@@ -39,7 +39,7 @@ public class SharedLoadBalancerServiceTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_exception_on_missing_proxies() {
-        loadBalancerService.create(applicationId, clusterId, reals);
+        loadBalancerService.create(applicationId, clusterId, reals, false);
     }
 
     @Test

@@ -107,7 +107,7 @@ public class CuratorDatabaseClient {
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
-                throw new IllegalArgumentException(node + " is not in the " + node.state() + " state");
+                throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
             node = node.with(node.history().recordStateTransition(null, expectedState, Agent.system, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
