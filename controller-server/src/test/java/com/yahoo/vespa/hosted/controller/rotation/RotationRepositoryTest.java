@@ -15,7 +15,6 @@ import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
