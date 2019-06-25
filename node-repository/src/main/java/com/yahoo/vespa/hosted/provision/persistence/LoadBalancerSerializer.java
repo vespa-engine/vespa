@@ -39,7 +39,6 @@ public class LoadBalancerSerializer {
     private static final String stateField = "state";
     private static final String changedAtField = "changedAt";
     private static final String dnsZoneField = "dnsZone";
-    private static final String inactiveField = "inactive";
     private static final String portsField = "ports";
     private static final String networksField = "networks";
     private static final String realsField = "reals";
@@ -73,7 +72,7 @@ public class LoadBalancerSerializer {
         }
     }
 
-    public static LoadBalancer fromJson(byte[] data, Instant defaultChangedAt) {
+    public static LoadBalancer fromJson(byte[] data) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
         var reals = new LinkedHashSet<Real>();
@@ -98,21 +97,8 @@ public class LoadBalancerSerializer {
                                         networks,
                                         reals
                                 ),
-                                stateFromSlime(object),
-                                instantFromSlime(object.field(changedAtField), defaultChangedAt));
-    }
-
-    private static Instant instantFromSlime(Cursor field, Instant defaultValue) {
-        return optionalValue(field, (value) -> Instant.ofEpochMilli(value.asLong())).orElse(defaultValue);
-    }
-
-    private static LoadBalancer.State stateFromSlime(Inspector object) {
-        var inactiveValue = optionalValue(object.field(inactiveField), Inspector::asBool);
-        if (inactiveValue.isPresent()) { // TODO(mpolden): Remove reading of "inactive" field after June 2019
-            return inactiveValue.get() ? LoadBalancer.State.inactive : LoadBalancer.State.active;
-        } else {
-            return stateFromString(object.field(stateField).asString());
-        }
+                                stateFromString(object.field(stateField).asString()),
+                                Instant.ofEpochMilli(object.field(changedAtField).asLong()));
     }
 
     private static <T> Optional<T> optionalValue(Inspector field, Function<Inspector, T> fieldMapper) {

@@ -484,7 +484,7 @@ public class CuratorDatabaseClient {
     }
 
     private Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
-        return read(loadBalancerPath(id), (data) -> LoadBalancerSerializer.fromJson(data, clock.instant()));
+        return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
     public void writeLoadBalancer(LoadBalancer loadBalancer) {

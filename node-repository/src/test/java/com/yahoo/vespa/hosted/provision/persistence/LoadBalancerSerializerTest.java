@@ -12,13 +12,11 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 /**
  * @author mpolden
@@ -46,7 +44,7 @@ public class LoadBalancerSerializerTest {
                                             LoadBalancer.State.active,
                                             now);
 
-        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer), now);
+        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.instance().hostname(), serialized.instance().hostname());
         assertEquals(loadBalancer.instance().dnsZone(), serialized.instance().dnsZone());
@@ -55,33 +53,6 @@ public class LoadBalancerSerializerTest {
         assertEquals(loadBalancer.state(), serialized.state());
         assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
         assertEquals(loadBalancer.instance().reals(), serialized.instance().reals());
-    }
-
-    @Test
-    public void test_serialization_legacy() { // TODO(mpolden): Remove after June 2019
-        var now = Instant.now();
-
-        var deserialized = LoadBalancerSerializer.fromJson(legacyJson(true).getBytes(StandardCharsets.UTF_8), now);
-        assertSame(LoadBalancer.State.inactive, deserialized.state());
-        assertEquals(now, deserialized.changedAt());
-
-        deserialized = LoadBalancerSerializer.fromJson(legacyJson(false).getBytes(StandardCharsets.UTF_8), now);
-        assertSame(LoadBalancer.State.active, deserialized.state());
-    }
-
-    private static String legacyJson(boolean inactive) {
-        return "{\n" +
-               "  \"id\": \"tenant1:application1:default:qrs\",\n" +
-               "  \"hostname\": \"lb-host\",\n" +
-               "  \"dnsZone\": \"zone-id-1\",\n" +
-               "  \"ports\": [\n" +
-               "    4080,\n" +
-               "    4443\n" +
-               "  ],\n" +
-               "  \"networks\": [],\n" +
-               "  \"reals\": [],\n" +
-               "  \"inactive\": " + inactive + "\n" +
-               "}\n";
     }
 
 }
