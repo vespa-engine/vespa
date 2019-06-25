@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -114,9 +115,9 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         if ( ! environmentName.isEmpty())
             zones = zones.in(Environment.from(environmentName));
 
-        for (ZoneId zoneId : zones.ids()) {
+        for (ZoneApi zone : zones.zones()) {
             responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +
-                                       zoneId.environment().value() + "/" + zoneId.region().value());
+                                       zone.getEnvironment().value() + "/" + zone.getRegionName().value());
         }
         JsonNode node = mapper.valueToTree(responseStructure);
         return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");
