@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -116,8 +118,7 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               Optional.of(new RotationId("my-rotation")),
-                                               List.of(new RotationId("my-rotation")),
+                                               List.of(new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.default_(), new RotationId("my-rotation"))),
                                                rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
@@ -266,9 +267,9 @@ public class ApplicationSerializerTest {
 
         assertEquals(
                 List.of(
-                    new RotationId("multiple-rotation-1"),
-                    new RotationId("multiple-rotation-2"),
-                    new RotationId("single-rotation")
+                        new RotationId("single-rotation"),
+                        new RotationId("multiple-rotation-1"),
+                        new RotationId("multiple-rotation-2")
                 ),
                 application.rotations()
         );

@@ -43,9 +43,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -439,7 +441,7 @@ public class ApplicationController {
         if (zone.environment() == Environment.prod && application.get().deploymentSpec().globalServiceId().isPresent()) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
                 Rotation rotation = rotationRepository.getOrAssignRotation(application.get(), rotationLock);
-                application = application.with(rotation.id());
+                application = application.with(List.of(new AssignedRotation(new ClusterSpec.Id(application.get().deploymentSpec().globalServiceId().get()), EndpointId.default_(), rotation.id())));
                 store(application); // store assigned rotation even if deployment fails
 
                 boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
