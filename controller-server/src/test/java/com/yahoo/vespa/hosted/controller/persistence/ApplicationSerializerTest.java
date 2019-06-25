@@ -262,6 +262,12 @@ public class ApplicationSerializerTest {
         rotations.addString("multiple-rotation-1");
         rotations.addString("multiple-rotation-2");
 
+        final var assignedRotations = cursor.setArray("assignedRotations");
+        final var assignedRotation = assignedRotations.addObject();
+        assignedRotation.setString("clusterId", "foobar");
+        assignedRotation.setString("endpointId", "nice-endpoint");
+        assignedRotation.setString("rotationId", "assigned-rotation");
+
         // Parse and test the output from parsing contains both legacy rotation and multiple rotations
         final var application = applicationSerializer.fromSlime(slime);
 
@@ -269,13 +275,24 @@ public class ApplicationSerializerTest {
                 List.of(
                         new RotationId("single-rotation"),
                         new RotationId("multiple-rotation-1"),
-                        new RotationId("multiple-rotation-2")
+                        new RotationId("multiple-rotation-2"),
+                        new RotationId("assigned-rotation")
                 ),
                 application.rotations()
         );
 
         assertEquals(
                 Optional.of(new RotationId("single-rotation")), application.legacyRotation()
+        );
+
+        assertEquals(
+                List.of(
+                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("single-rotation")),
+                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("multiple-rotation-1")),
+                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("multiple-rotation-2")),
+                        new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"))
+                ),
+                application.assignedRotations()
         );
     }
 
