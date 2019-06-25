@@ -114,7 +114,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                 .prefix(f.hasPrefix())
                 .phrases(f.hasPhrases())
                 .positions(f.hasPositions())
-                .interleavedfeatures(f.useExperimentalPostingListFormat());
+                .interleavedfeatures(f.useInterleavedFeatures());
             if (!f.getCollectionType().equals("SINGLE")) {
                 ifB.collectiontype(IndexschemaConfig.Indexfield.Collectiontype.Enum.valueOf(f.getCollectionType()));
             }
@@ -175,8 +175,8 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         private boolean phrases = false; // TODO dead, but keep a while to ensure config compatibility?
         private boolean positions = true;// TODO dead, but keep a while to ensure config compatibility?
         private BooleanIndexDefinition boolIndex = null;
-        // TODO: Remove when experimental posting list format is made default
-        private boolean experimentalPostingListFormat = false;
+        // Whether the posting lists of this index field should have interleaved features (num occs, field length) in document id stream.
+        private boolean interleavedFeatures = false;
 
         public IndexField(String name, Index.Type type, DataType sdFieldType) {
             this.name = name;
@@ -186,7 +186,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         public void setIndexSettings(com.yahoo.searchdefinition.Index index) {
             if (type.equals(Index.Type.TEXT)) {
                 prefix = index.isPrefix();
-                experimentalPostingListFormat = index.useExperimentalPostingListFormat();
+                interleavedFeatures = index.useInterleavedFeatures();
             }
             sdType = index.getType();
             boolIndex = index.getBooleanIndexDefiniton();
@@ -209,7 +209,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         public boolean hasPrefix() { return prefix; }
         public boolean hasPhrases() { return phrases; }
         public boolean hasPositions() { return positions; }
-        public boolean useExperimentalPostingListFormat() { return experimentalPostingListFormat; }
+        public boolean useInterleavedFeatures() { return interleavedFeatures; }
 
         public BooleanIndexDefinition getBooleanIndexDefinition() {
             return boolIndex;
