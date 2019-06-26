@@ -12,9 +12,6 @@ vespa_define_module(
     vdslib
     vsm
 
-    TEST_EXTERNAL_DEPENDS
-    cppunit
-
     LIBS
     src/vespa/searchvisitor
 

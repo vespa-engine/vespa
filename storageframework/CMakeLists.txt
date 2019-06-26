@@ -20,7 +20,6 @@ vespa_define_module(
     src/vespa/storageframework/generic/thread
 
     TEST_EXTERNAL_DEPENDS
-    cppunit
     vdstestlib
 
     TESTS

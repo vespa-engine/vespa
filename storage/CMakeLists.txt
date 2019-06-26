@@ -49,9 +49,6 @@ vespa_define_module(
     vdstestlib
     atomic
 
-    TEST_EXTERNAL_DEPENDS
-    cppunit
-
     TESTS
     src/tests
     src/tests/bucketdb

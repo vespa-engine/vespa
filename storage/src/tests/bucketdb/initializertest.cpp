@@ -12,8 +12,8 @@
 #include <vespa/storageapi/message/state.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
-#include <tests/common/testhelper.h> // TODO decouple from CppUnit
-#include <vespa/vdstestlib/cppunit/dirconfig.hpp> // TODO decouple from CppUnit
+#include <tests/common/testhelper.h>
+#include <vespa/vdstestlib/config/dirconfig.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>

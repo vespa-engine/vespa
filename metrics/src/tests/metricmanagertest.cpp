@@ -895,8 +895,6 @@ public:
     void verifyDimensions(size_t metricIndex,
                           const std::string& name,
                           const Metric::Tags& dimensions) {
-        // Works to do this outside of main test body because cppunit uses
-        // exceptions for its failures.
         EXPECT_EQ(name, nthMetricName(metricIndex)) << _jsonText;
         EXPECT_EQ(dimensions.size(), nthMetricDimensionCount(metricIndex)) << _jsonText;
         for (auto& dim : dimensions) {
