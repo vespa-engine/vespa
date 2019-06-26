@@ -29,6 +29,7 @@ public class Endpoint {
      */
     private static final Pattern endpointPattern = Pattern.compile("^[a-z](?:-?[a-z0-9]+)*$");
     private static final int endpointMaxLength = 12;
+    private static final String defaultEndpointId = "default";
 
     private final Optional<String> endpointId;
     private final String containerId;
@@ -48,7 +49,7 @@ public class Endpoint {
     }
 
     public String endpointId() {
-        return endpointId.orElse(containerId);
+        return endpointId.orElse(defaultEndpointId);
     }
 
     public String containerId() {
