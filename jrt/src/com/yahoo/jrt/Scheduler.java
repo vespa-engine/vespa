@@ -3,7 +3,7 @@ package com.yahoo.jrt;
 
 
 class Scheduler {
-    private static final int TICK  = 100;
+    private static final int TICK  = 10;
     private static final int SLOTS = 512;
     private static final int MASK  = 511;
     private static final int SHIFT = 9;
@@ -61,7 +61,7 @@ class Scheduler {
         if (seconds < 0.0) {
             throw new IllegalArgumentException("cannot schedule a Task in the past");
         }
-        int ticks = 1 + (int) (seconds * 10.0 + 0.5);
+        int ticks = 1 + (int) (seconds * (double) (1000 / TICK) + 0.5);
         if (isActive(task)) {
             linkOut(task);
         }
