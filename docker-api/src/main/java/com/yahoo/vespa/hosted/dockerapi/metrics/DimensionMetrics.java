@@ -26,7 +26,7 @@ public class DimensionMetrics {
         this.application = Objects.requireNonNull(application);
         this.dimensions = Objects.requireNonNull(dimensions);
         this.metrics = metrics.entrySet().stream()
-                .filter(DimensionMetrics::metricIsNotNaN)
+                .filter(DimensionMetrics::metricIsFinite)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -68,8 +68,8 @@ public class DimensionMetrics {
         return Objects.hash(application, dimensions, metrics);
     }
 
-    private static boolean metricIsNotNaN(Map.Entry<String, Number> metric) {
-        return ! (metric.getValue() instanceof Double && Double.isNaN((double) metric.getValue()));
+    private static boolean metricIsFinite(Map.Entry<String, Number> metric) {
+        return ! (metric.getValue() instanceof Double) || Double.isFinite((double) metric.getValue());
     }
 
     public static class Builder {
