@@ -679,6 +679,17 @@ TEST_F(FieldIndexInterleavedFeaturesTest, no_features_are_unpacked)
     expect_features_unpacked("{1000000:}", 0, 0);
 }
 
+TEST_F(FieldIndexInterleavedFeaturesTest, interleaved_features_are_capped)
+{
+    FeatureStore::DecodeContextCooked decoder(nullptr);
+    WrapInserter(idx).word("b").add(11, getFeatures(66001, 66000)).flush();
+    auto itr = this->idx.find("b");
+    EXPECT_EQ(11, itr.getKey());
+    auto &entry = itr.getData();
+    EXPECT_EQ(std::numeric_limits<uint16_t>::max(), entry.get_num_occs());
+    EXPECT_EQ(std::numeric_limits<uint16_t>::max(), entry.get_field_length());
+}
+
 Schema
 make_multi_field_schema()
 {

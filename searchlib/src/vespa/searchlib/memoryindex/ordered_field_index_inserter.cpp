@@ -25,6 +25,8 @@ namespace {
 
 const vespalib::string emptyWord = "";
 
+uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
+
 }
 
 template <bool interleaved_features>
@@ -119,8 +121,8 @@ OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
            (_prevDocId == docId && !_prevAdd));
     datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
     _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
-                                                                       features.num_occs(),
-                                                                       features.field_length())));
+                                                                       cap_u16(features.num_occs()),
+                                                                       cap_u16(features.field_length()))));
     _listener.insert(_dItr.getKey()._wordRef, docId);
     _prevDocId = docId;
     _prevAdd = true;
