@@ -20,7 +20,7 @@ public class SystemNameTest {
 
     @Test
     public void allOf() {
-        assertEquals(Set.of(SystemName.cd, SystemName.PublicCd), SystemName.allOf(SystemName::isCd));
+        assertEquals(Set.of(SystemName.cd, SystemName.PublicCd, SystemName.Public), SystemName.allOf(SystemName::isCd));
         assertEquals(Set.of(SystemName.PublicCd, SystemName.Public), SystemName.allOf(SystemName::isPublic));
     }
 }

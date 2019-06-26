@@ -21,7 +21,7 @@ public enum SystemName {
     main(false, false),
 
     /** System accessible to the public */
-    Public(true, false),
+    Public(true, true),
 
     /** Continuous deployment system for testing the Public system */
     PublicCd(true, true),
