@@ -1,15 +1,16 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "messagesenderstub.h"
-#include "distributortestutil.h"
+#include "message_sender_stub.h"
+#include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/storageapi/messageapi/storagereply.h>
+#include <string>
+#include <sstream>
+#include <stdexcept>
 
 namespace storage {
 
-MessageSenderStub::MessageSenderStub()
-    : _clusterName("storage"),
-      _pendingMessageTracker(0)
-{}
-MessageSenderStub::~MessageSenderStub() {}
+MessageSenderStub::MessageSenderStub() = default;
+MessageSenderStub::~MessageSenderStub() = default;
 
 std::string
 MessageSenderStub::getLastCommand(bool verbose) const
@@ -22,8 +23,8 @@ MessageSenderStub::getLastCommand(bool verbose) const
 
 std::string
 MessageSenderStub::dumpMessage(const api::StorageMessage& msg,
-                                 bool includeAddress,
-                                 bool verbose) const
+                               bool includeAddress,
+                               bool verbose) const
 {
     std::ostringstream ost;
 

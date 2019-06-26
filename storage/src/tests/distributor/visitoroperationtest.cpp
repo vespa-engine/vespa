@@ -1,7 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <iomanip>
-#include <iostream>
-#include <memory>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/datagram.h>
@@ -13,127 +10,36 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/common/dummystoragelink.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <ostream>
 
 using namespace document;
 using namespace storage::api;
 using namespace storage::lib;
-using namespace std::string_literals;
+using namespace ::testing;
 using document::test::makeBucketSpace;
 
 namespace storage::distributor {
 
-class VisitorOperationTest : public CppUnit::TestFixture,
-                             public DistributorTestUtil {
-    CPPUNIT_TEST_SUITE(VisitorOperationTest);
-    CPPUNIT_TEST(testParameterForwarding);
-    CPPUNIT_TEST(testShutdown);
-    CPPUNIT_TEST(testNoBucket);
-    CPPUNIT_TEST(testOnlySuperBucketAndProgressAllowed);
-    CPPUNIT_TEST(testRetiredStorageNode);
-    CPPUNIT_TEST(testNoResendAfterTimeoutPassed);
-    CPPUNIT_TEST(testDistributorNotReady);
-    CPPUNIT_TEST(testInvalidOrderDocSelection);
-    CPPUNIT_TEST(testNonExistingBucket);
-    CPPUNIT_TEST(testUserSingleBucket);
-    CPPUNIT_TEST(testUserInconsistentlySplitBucket);
-    CPPUNIT_TEST(testBucketRemovedWhileVisitorPending);
-    CPPUNIT_TEST(testEmptyBucketsVisitedWhenVisitingRemoves);
-    CPPUNIT_TEST(testResendToOtherStorageNodeOnFailure);
-    CPPUNIT_TEST(testTimeoutOnlyAfterReplyFromAllStorageNodes);
-    CPPUNIT_TEST(testTimeoutDoesNotOverrideCriticalError);
-    CPPUNIT_TEST(testWrongDistribution);
-    CPPUNIT_TEST(testWrongDistributionInPendingState);
-    CPPUNIT_TEST(testVisitorAbortedIfNodeIsMarkedAsDown);
-    CPPUNIT_TEST(testBucketHighBitCount);
-    CPPUNIT_TEST(testBucketLowBitCount);
-    CPPUNIT_TEST(testParallelVisitorsToOneStorageNode);
-    CPPUNIT_TEST(testParallelVisitorsResendOnlyFailing);
-    CPPUNIT_TEST(testParallelVisitorsToOneStorageNodeOneSuperBucket);
-    CPPUNIT_TEST(testVisitWhenOneBucketCopyIsInvalid);
-    CPPUNIT_TEST(testVisitingWhenAllBucketsAreInvalid);
-    CPPUNIT_TEST(testInconsistencyHandling);
-    CPPUNIT_TEST(testVisitIdealNode);
-    CPPUNIT_TEST(testNoResendingOnCriticalFailure);
-    CPPUNIT_TEST(testFailureOnAllNodes);
-    CPPUNIT_TEST(testVisitOrder);
-    CPPUNIT_TEST(testVisitInChunks);
-    CPPUNIT_TEST(testVisitOrderSplitPastOrderBits);
-    CPPUNIT_TEST(testVisitOrderInconsistentlySplit);
-    CPPUNIT_TEST(testUserVisitorOrder);
-    CPPUNIT_TEST(testUserVisitorOrderSplitPastOrderBits);
-    CPPUNIT_TEST(testNoClientReplyBeforeAllStorageRepliesReceived);
-    CPPUNIT_TEST(testSkipFailedSubBucketsWhenVisitingInconsistent);
-    CPPUNIT_TEST(testQueueTimeoutIsFactorOfTotalTimeout);
-    CPPUNIT_TEST(metrics_are_updated_with_visitor_statistics_upon_replying);
-    CPPUNIT_TEST(statistical_metrics_not_updated_on_wrong_distribution);
-    CPPUNIT_TEST_SUITE_END();
-
-protected:
-    void testParameterForwarding();
-    void testShutdown();
-    void testNoBucket();
-    void testOnlySuperBucketAndProgressAllowed();
-    void testRetiredStorageNode();
-    void testNoResendAfterTimeoutPassed();
-    void testDistributorNotReady();
-    void testInvalidOrderDocSelection();
-    void testNonExistingBucket();
-    void testUserSingleBucket();
-    void testUserInconsistentlySplitBucket();
-    void testBucketRemovedWhileVisitorPending();
-    void testEmptyBucketsVisitedWhenVisitingRemoves();
-    void testResendToOtherStorageNodeOnFailure();
-    void testTimeoutOnlyAfterReplyFromAllStorageNodes();
-    void testTimeoutDoesNotOverrideCriticalError();
-    void testAbortNonExisting();
-    void testAbort();
-    void testWrongDistribution();
-    void testWrongDistributionInPendingState();
-    void testVisitorAbortedIfNodeIsMarkedAsDown();
-    void testBucketHighBitCount();
-    void testBucketLowBitCount();
-    void testParallelVisitorsToOneStorageNode();
-    void testParallelVisitorsResendOnlyFailing();
-    void testParallelVisitorsToOneStorageNodeOneSuperBucket();
-    void testVisitWhenOneBucketCopyIsInvalid();
-    void testVisitingWhenAllBucketsAreInvalid();
-    void testInconsistencyHandling();
-    void testVisitIdealNode();
-    void testNoResendingOnCriticalFailure();
-    void testFailureOnAllNodes();
-    void testVisitOrder();
-    void testVisitInChunks();
-    void testVisitOrderSplitPastOrderBits();
-    void testVisitOrderInconsistentlySplit();
-    void testUserVisitorOrder();
-    void testUserVisitorOrderSplitPastOrderBits();
-    void testUserVisitorOrderInconsistentlySplit();
-    void testNoClientReplyBeforeAllStorageRepliesReceived();
-    void testSkipFailedSubBucketsWhenVisitingInconsistent();
-    void testQueueTimeoutIsFactorOfTotalTimeout();
-    void metrics_are_updated_with_visitor_statistics_upon_replying();
-    void statistical_metrics_not_updated_on_wrong_distribution();
-public:
+struct VisitorOperationTest : Test, DistributorTestUtil {
     VisitorOperationTest()
         : defaultConfig(100, 100)
     {}
 
-    void setUp() override {
+    void SetUp() override {
         createLinks();
         nullId = document::BucketId(0, 0);
-        doneId = document::BucketId(INT_MAX);
     };
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
     enum {MAX_PENDING = 2};
-private:
+
     document::BucketId nullId;
-    document::BucketId doneId;
     VisitorOperation::Config defaultConfig;
 
     api::CreateVisitorCommand::SP
@@ -149,8 +55,8 @@ private:
                          document::OrderingSpecification::ASCENDING,
                          const std::string& docSelection = "")
     {
-        api::CreateVisitorCommand::SP cmd(
-                new api::CreateVisitorCommand(makeBucketSpace(), libraryName, instanceId, docSelection));
+        auto cmd = std::make_shared<api::CreateVisitorCommand>(
+                makeBucketSpace(), libraryName, instanceId, docSelection);
         cmd->setControlDestination("controldestination");
         cmd->setDataDestination("datadestination");
         cmd->setFieldSet("[header]");
@@ -176,13 +82,13 @@ private:
     std::string
     serializeVisitorCommand(int idx = -1) {
         if (idx == -1) {
-            idx = _sender.commands.size() - 1;
+            idx = _sender.commands().size() - 1;
         }
 
         std::ostringstream ost;
 
-        CreateVisitorCommand* cvc = dynamic_cast<CreateVisitorCommand*>(
-                _sender.commands[idx].get());
+        auto* cvc = dynamic_cast<CreateVisitorCommand*>(_sender.command(idx).get());
+        assert(cvc != nullptr);
 
         ost << *cvc << " Buckets: [ ";
         for (uint32_t i = 0; i < cvc->getBuckets().size(); ++i) {
@@ -225,9 +131,8 @@ private:
     }
 
     const std::vector<BucketId>& getBucketsFromLastCommand() {
-        const CreateVisitorCommand& cvc(
-                dynamic_cast<const CreateVisitorCommand&>(
-                    *_sender.commands[_sender.commands.size() - 1]));
+        const auto& cvc = dynamic_cast<const CreateVisitorCommand&>(
+                *_sender.commands().back());
         return cvc.getBuckets();
     }
 
@@ -236,7 +141,7 @@ private:
                            document::BucketId lastId,
                            uint32_t maxBuckets);
 
-    std::string doOrderedVisitor(document::BucketId startBucket);
+    void doOrderedVisitor(document::BucketId startBucket, std::string& out);
 
     void doStandardVisitTest(const std::string& clusterState);
 
@@ -246,11 +151,7 @@ private:
     void do_visitor_roundtrip_with_statistics(const api::ReturnCode& result);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(VisitorOperationTest);
-
-void
-VisitorOperationTest::testParameterForwarding()
-{
+TEST_F(VisitorOperationTest, parameter_forwarding) {
     doStandardVisitTest("distributor:1 storage:1");
 }
 
@@ -267,11 +168,8 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     vespalib::string instanceId("testParameterForwarding");
     vespalib::string libraryName("dumpvisitor");
     vespalib::string docSelection("");
-    api::CreateVisitorCommand::SP msg(
-            new api::CreateVisitorCommand(makeBucketSpace(),
-                                          libraryName,
-                                          instanceId,
-                                          docSelection));
+    auto msg = std::make_shared<api::CreateVisitorCommand>(
+            makeBucketSpace(), libraryName, instanceId, docSelection);
     vespalib::string controlDestination("controldestination");
     msg->setControlDestination(controlDestination);
     vespalib::string dataDestination("datadestination");
@@ -291,41 +189,37 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     // Receive create visitor command for storage and simulate reply
-    api::StorageMessage::SP rep0 = _sender.commands[0];
-    CreateVisitorCommand* cvc = dynamic_cast<CreateVisitorCommand*>(rep0.get());
-    CPPUNIT_ASSERT(cvc);
-    CPPUNIT_ASSERT_EQUAL(libraryName, cvc->getLibraryName());
-    CPPUNIT_ASSERT_EQUAL(instanceId, cvc->getInstanceId().substr(0, instanceId.length()));
-    CPPUNIT_ASSERT_EQUAL(docSelection, cvc->getDocumentSelection());
-    CPPUNIT_ASSERT_EQUAL(controlDestination, cvc->getControlDestination());
-    CPPUNIT_ASSERT_EQUAL(dataDestination, cvc->getDataDestination());
-    CPPUNIT_ASSERT_EQUAL((unsigned int) VisitorOperationTest::MAX_PENDING, cvc->getMaximumPendingReplyCount());
-    CPPUNIT_ASSERT_EQUAL((unsigned int) 8, cvc->getMaxBucketsPerVisitor());
-    CPPUNIT_ASSERT_EQUAL((size_t) 1, cvc->getBuckets().size());
-    CPPUNIT_ASSERT_EQUAL((api::Timestamp) 10, cvc->getFromTime());
-    CPPUNIT_ASSERT(cvc->getToTime() > 0);
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("[header]"), cvc->getFieldSet());
-    CPPUNIT_ASSERT_EQUAL((bool) 1, cvc->visitRemoves());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1234), cvc->getTimeout());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(7), cvc->getTrace().getLevel());
+    api::StorageMessage::SP rep0 = _sender.command(0);
+    auto* cvc = dynamic_cast<CreateVisitorCommand*>(rep0.get());
+    ASSERT_TRUE(cvc != nullptr);
+    EXPECT_EQ(libraryName, cvc->getLibraryName());
+    EXPECT_EQ(instanceId, cvc->getInstanceId().substr(0, instanceId.length()));
+    EXPECT_EQ(docSelection, cvc->getDocumentSelection());
+    EXPECT_EQ(controlDestination, cvc->getControlDestination());
+    EXPECT_EQ(dataDestination, cvc->getDataDestination());
+    EXPECT_EQ(VisitorOperationTest::MAX_PENDING, cvc->getMaximumPendingReplyCount());
+    EXPECT_EQ(8, cvc->getMaxBucketsPerVisitor());
+    EXPECT_EQ(1, cvc->getBuckets().size());
+    EXPECT_EQ(api::Timestamp(10), cvc->getFromTime());
+    EXPECT_GT(cvc->getToTime(), 0);
+    EXPECT_EQ("[header]", cvc->getFieldSet());
+    EXPECT_TRUE(cvc->visitRemoves());
+    EXPECT_EQ(1234, cvc->getTimeout());
+    EXPECT_EQ(7, cvc->getTrace().getLevel());
 
     sendReply(*op);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("CreateVisitorReply("
-                                     "last=BucketId(0x000000007fffffff)) "
-                                     "ReturnCode(NONE)"),
-                         _sender.getLastReply());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().
-                                     ok.getLongValue("count"));
+    ASSERT_EQ("CreateVisitorReply("
+              "last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
+    EXPECT_EQ(1, defaultVisitorMetrics().ok.getLongValue("count"));
 }
 
-void
-VisitorOperationTest::testShutdown()
-{
+TEST_F(VisitorOperationTest, shutdown) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create bucket in bucketdb
@@ -336,11 +230,8 @@ VisitorOperationTest::testShutdown()
     vespalib::string instanceId("testShutdown");
     vespalib::string libraryName("dumpvisitor");
     vespalib::string docSelection("");
-    api::CreateVisitorCommand::SP msg(
-            new api::CreateVisitorCommand(makeBucketSpace(),
-                                          libraryName,
-                                          instanceId,
-                                          docSelection));
+    auto msg = std::make_shared<api::CreateVisitorCommand>(
+            makeBucketSpace(), libraryName, instanceId, docSelection);
     msg->addBucketToBeVisited(id);
     msg->addBucketToBeVisited(nullId);
 
@@ -348,36 +239,29 @@ VisitorOperationTest::testShutdown()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     op->onClose(_sender); // This will fail the visitor
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(ABORTED, Process is shutting down)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ABORTED, Process is shutting down)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testNoBucket()
-{
+TEST_F(VisitorOperationTest, no_bucket) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Send create visitor
-    api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
-            makeBucketSpace(), "dumpvisitor", "instance", ""));
+    auto msg = std::make_shared<api::CreateVisitorCommand>(
+            makeBucketSpace(), "dumpvisitor", "instance", "");
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                     "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                     "ReturnCode(ILLEGAL_PARAMETERS, No buckets in "
-                     "CreateVisitorCommand for visitor 'instance')"),
-                 runEmptyVisitor(msg));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ILLEGAL_PARAMETERS, No buckets in "
+              "CreateVisitorCommand for visitor 'instance')",
+              runEmptyVisitor(msg));
 }
 
-void
-VisitorOperationTest::testOnlySuperBucketAndProgressAllowed()
-{
+TEST_F(VisitorOperationTest, only_super_bucket_and_progress_allowed) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Send create visitor
@@ -387,23 +271,18 @@ VisitorOperationTest::testOnlySuperBucketAndProgressAllowed()
     msg->addBucketToBeVisited(nullId);
     msg->addBucketToBeVisited(nullId);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                 "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                 "ReturnCode(ILLEGAL_PARAMETERS, CreateVisitorCommand "
-                 "does not contain 2 buckets for visitor "
-                 "'instance')"),
-            runEmptyVisitor(msg));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ILLEGAL_PARAMETERS, CreateVisitorCommand "
+              "does not contain 2 buckets for visitor "
+              "'instance')",
+              runEmptyVisitor(msg));
 }
 
-void
-VisitorOperationTest::testRetiredStorageNode()
-{
+TEST_F(VisitorOperationTest, retired_storage_node) {
     doStandardVisitTest("distributor:1 storage:1 .0.s:r");
 }
 
-void
-VisitorOperationTest::testNoResendAfterTimeoutPassed()
-{
+TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
     document::BucketId id(uint64_t(0x400000000000007b));
 
     enableDistributorClusterState("distributor:1 storage:2");
@@ -414,78 +293,57 @@ VisitorOperationTest::testNoResendAfterTimeoutPassed()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(22);
 
     sendReply(*op, -1, api::ReturnCode::BUSY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                    "ReturnCode(ABORTED, Timeout of 20 ms is running out)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ABORTED, Timeout of 20 ms is running out)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testDistributorNotReady()
-{
+TEST_F(VisitorOperationTest, distributor_not_ready) {
     enableDistributorClusterState("distributor:0 storage:0");
     document::BucketId id(uint64_t(0x400000000000007b));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-              "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(NODE_NOT_READY, No distributors available when "
-              "processing visitor 'notready')"),
-            runEmptyVisitor(createVisitorCommand("notready", id, nullId)));
+              "processing visitor 'notready')",
+              runEmptyVisitor(createVisitorCommand("notready", id, nullId)));
 }
 
 // Distributor only parses selection if in the order doc case (which is detected
 // by first checking if string contains "order" which it must to refer to
 // "id.order" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-void
-VisitorOperationTest::testInvalidOrderDocSelection()
-{
+TEST_F(VisitorOperationTest, invalid_order_doc_selection) {
     enableDistributorClusterState("distributor:1 storage:1");
     document::BucketId id(0x400000000000007b);
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(ILLEGAL_PARAMETERS, Failed to parse document select "
-                        "string 'id.order(10,3)=1 and dummy': Document type 'dummy' not "
-                        "found at column 22 when parsing selection 'id.order(10,3)=1 and dummy')"),
-            runEmptyVisitor(
-                    createVisitorCommand("invalidOrderDoc",
-                            id,
-                            nullId,
-                            8,
-                            500,
-                            false,
-                            false,
-                            "dumpvisitor",
-                            document::OrderingSpecification::ASCENDING,
-                            "id.order(10,3)=1 and dummy")));
+    auto res = runEmptyVisitor(
+            createVisitorCommand("invalidOrderDoc", id, nullId, 8, 500,
+                                 false, false, "dumpvisitor",
+                                 document::OrderingSpecification::ASCENDING,
+                                 "id.order(10,3)=1 and dummy"));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ILLEGAL_PARAMETERS, Failed to parse document select "
+              "string 'id.order(10,3)=1 and dummy': Document type 'dummy' not "
+              "found at column 22 when parsing selection 'id.order(10,3)=1 and dummy')",
+              res);
+
 }
 
-void
-VisitorOperationTest::testNonExistingBucket()
-{
+TEST_F(VisitorOperationTest, non_existing_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
     enableDistributorClusterState("distributor:1 storage:1");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                        "ReturnCode(NONE)"),
-            runEmptyVisitor(
-                    createVisitorCommand("nonExistingBucket",
-                            id,
-                            nullId)));
+    auto res = runEmptyVisitor(
+            createVisitorCommand("nonExistingBucket", id, nullId));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)", res);
 }
 
-void
-VisitorOperationTest::testUserSingleBucket()
-{
+TEST_F(VisitorOperationTest, user_single_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
     document::BucketId userid(uint64_t(0x800000000000007b));
     enableDistributorClusterState("distributor:1 storage:1");
@@ -507,14 +365,11 @@ VisitorOperationTest::testUserSingleBucket()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL_MSG(_sender.getLastReply(),
-                             std::string("Visitor Create => 0"),
-                             _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true)) << _sender.getLastReply();
     sendReply(*op);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
 std::pair<std::string, std::string>
@@ -546,9 +401,7 @@ VisitorOperationTest::runVisitor(document::BucketId id,
     return retVal;
 }
 
-void
-VisitorOperationTest::testUserInconsistentlySplitBucket()
-{
+TEST_F(VisitorOperationTest, user_inconsistently_split_bucket) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Not containing (19, 0x40001)
@@ -575,27 +428,23 @@ VisitorOperationTest::testUserInconsistentlySplitBucket()
         std::pair<std::string, std::string> val(
                 runVisitor(id, nullId, 100));
 
-        CPPUNIT_ASSERT_EQUAL(std::string(
-                "CreateVisitorCommand(dumpvisitor, true, 7 buckets) "
-                "Buckets: [ BucketId(0x4400000000000001) "
-                           "BucketId(0x4800000000000001) "
-                           "BucketId(0x4c00000000040001) "
-                           "BucketId(0x5000000000040001) "
-                           "BucketId(0x5400000000040001) "
-                           "BucketId(0x5400000000140001) "
-                           "BucketId(0x50000000000c0001) ]"),
-                             val.first);
+        EXPECT_EQ("CreateVisitorCommand(dumpvisitor, true, 7 buckets) "
+                  "Buckets: [ BucketId(0x4400000000000001) "
+                             "BucketId(0x4800000000000001) "
+                             "BucketId(0x4c00000000040001) "
+                             "BucketId(0x5000000000040001) "
+                             "BucketId(0x5400000000040001) "
+                             "BucketId(0x5400000000140001) "
+                             "BucketId(0x50000000000c0001) ]",
+                  val.first);
 
-        CPPUNIT_ASSERT_EQUAL(std::string(
-                "CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                "ReturnCode(NONE)"),
-                             val.second);
+        EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+                  "ReturnCode(NONE)",
+                  val.second);
     }
 }
 
-void
-VisitorOperationTest::testBucketRemovedWhileVisitorPending()
-{
+TEST_F(VisitorOperationTest, bucket_removed_while_visitor_pending) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create bucket in bucketdb
@@ -608,24 +457,19 @@ VisitorOperationTest::testBucketRemovedWhileVisitorPending()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     removeFromBucketDB(id);
 
     sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(BUCKET_NOT_FOUND)"),
-            _sender.getLastReply());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
-                                     inconsistent_bucket.getLongValue("count"));
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              _sender.getLastReply());
+    EXPECT_EQ(1, defaultVisitorMetrics().failures.inconsistent_bucket.getLongValue("count"));
 }
 
-void
-VisitorOperationTest::testEmptyBucketsVisitedWhenVisitingRemoves()
-{
+TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
     enableDistributorClusterState("distributor:1 storage:1");
     document::BucketId id(uint64_t(0x400000000000007b));
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
@@ -642,13 +486,10 @@ VisitorOperationTest::testEmptyBucketsVisitedWhenVisitingRemoves()
     op->start(_sender, framework::MilliSecTime(0));
 
     // Since visitRemoves is true, the empty bucket will be visited
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 }
 
-void
-VisitorOperationTest::testResendToOtherStorageNodeOnFailure()
-{
+TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
     enableDistributorClusterState("distributor:1 storage:2");
     document::BucketId id(uint64_t(0x400000000000007b));
 
@@ -659,23 +500,20 @@ VisitorOperationTest::testResendToOtherStorageNodeOnFailure()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
-    CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies());
+    ASSERT_EQ("", _sender.getReplies());
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 1"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
+            _sender.getCommands(true));
 }
 
 // Since MessageBus handles timeouts for us implicitly, we make the assumption
 // that we can safely wait for all replies to be received before sending a
 // client reply and that this won't cause things to hang for indeterminate
 // amounts of time.
-void
-VisitorOperationTest::testTimeoutOnlyAfterReplyFromAllStorageNodes()
-{
+TEST_F(VisitorOperationTest, timeout_only_after_reply_from_all_storage_nodes) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     // Contained in (16, 0x1)
@@ -690,33 +528,30 @@ VisitorOperationTest::testTimeoutOnlyAfterReplyFromAllStorageNodes()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL("Visitor Create => 0,Visitor Create => 1"s,
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
+              _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
 
     sendReply(*op, 0);
-    CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies()); // No reply yet.
+    ASSERT_EQ("", _sender.getReplies()); // No reply yet.
 
     sendReply(*op, 1, api::ReturnCode::BUSY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            "CreateVisitorReply(last=BucketId(0x4400000000000001)) "
-            "ReturnCode(ABORTED, Timeout of 500 ms is running out)"s,
-            _sender.getLastReply());
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x4400000000000001)) "
+              "ReturnCode(ABORTED, Timeout of 500 ms is running out)",
+              _sender.getLastReply());
 
     // XXX This is sub-optimal in the case that we time out but all storage
     // visitors return OK, as we'll then be failing an operation that
     // technically went fine. However, this is assumed to happen sufficiently
     // rarely (requires timing to be so that mbus timouts don't happen for
     // neither client -> distributor nor distributor -> storage for the
-    // operation to possibly could have been considered successful) that we
+    // operation to possibly have been considered successful) that we
     // don't bother to add complexity for handling it as a special case.
 }
 
-void
-VisitorOperationTest::testTimeoutDoesNotOverrideCriticalError()
-{
+TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
     enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
@@ -729,41 +564,33 @@ VisitorOperationTest::testTimeoutDoesNotOverrideCriticalError()
                 500)); // ms timeout
 
     op->start(_sender, framework::MilliSecTime(0));
-    CPPUNIT_ASSERT_EQUAL("Visitor Create => 0,Visitor Create => 1"s,
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
+              _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
     // Technically has timed out at this point, but should still report the
     // critical failure.
     sendReply(*op, 0, api::ReturnCode::INTERNAL_FAILURE);
-    CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies());
+    ASSERT_EQ("", _sender.getReplies());
     sendReply(*op, 1, api::ReturnCode::BUSY);
 
-    CPPUNIT_ASSERT_EQUAL(
-            "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-            "ReturnCode(INTERNAL_FAILURE, [from content node 0] )"s,
-            _sender.getLastReply());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
-                                     storagefailure.getLongValue("count"));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(INTERNAL_FAILURE, [from content node 0] )",
+              _sender.getLastReply());
+    EXPECT_EQ(1, defaultVisitorMetrics().failures.storagefailure.getLongValue("count"));
 }
 
-void
-VisitorOperationTest::testWrongDistribution()
-{
+TEST_F(VisitorOperationTest, wrong_distribution) {
     setupDistributor(1, 100, "distributor:100 storage:2");
 
     document::BucketId id(uint64_t(0x400000000000127b));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
-            runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
-                                     wrongdistributor.getLongValue("count"));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)",
+              runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+    EXPECT_EQ(1, defaultVisitorMetrics().failures.wrongdistributor.getLongValue("count"));
 }
 
-void
-VisitorOperationTest::testWrongDistributionInPendingState()
-{
+TEST_F(VisitorOperationTest, wrong_distribution_in_pending_state) {
     // Force bucket to belong to this distributor in currently enabled state.
     setupDistributor(1, 100, "distributor:1 storage:2");
     // Trigger pending cluster state. Note: increase in storage node count
@@ -773,10 +600,9 @@ VisitorOperationTest::testWrongDistributionInPendingState()
     getBucketDBUpdater().onSetSystemState(stateCmd);
 
     document::BucketId id(uint64_t(0x400000000000127b));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:3)"),
-            runEmptyVisitor(createVisitorCommand("wrongdistpending", id, nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:3)",
+              runEmptyVisitor(createVisitorCommand("wrongdistpending", id, nullId)));
 }
 
 // If the current node state changes, this alters the node's cluster state
@@ -784,30 +610,24 @@ VisitorOperationTest::testWrongDistributionInPendingState()
 // we cannot answer with WRONG_DISTRIBUTION as the client expects to see a
 // higher version number.
 // See ticket 6353382 for details.
-void
-VisitorOperationTest::testVisitorAbortedIfNodeIsMarkedAsDown()
-{
+TEST_F(VisitorOperationTest, visitor_aborted_if_node_is_marked_as_down) {
     setupDistributor(1, 10, "distributor:10 .0.s:s storage:10");
 
     document::BucketId id(uint64_t(0x400000000000127b));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(ABORTED, Distributor is shutting down)"),
-            runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ABORTED, Distributor is shutting down)",
+              runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
 }
 
-void
-VisitorOperationTest::testBucketHighBitCount()
-{
+TEST_F(VisitorOperationTest, bucket_high_bit_count) {
     enableDistributorClusterState("distributor:1 storage:1 bits:16");
 
     document::BucketId id(18, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
-            runEmptyVisitor(createVisitorCommand("buckethigbit", id, nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)",
+              runEmptyVisitor(createVisitorCommand("buckethigbit", id, nullId)));
 
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("buckethighbitcount",
@@ -823,22 +643,18 @@ VisitorOperationTest::testBucketHighBitCount()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    EXPECT_EQ("Visitor Create => 0", _sender.getCommands(true));
 }
 
-void
-VisitorOperationTest::testBucketLowBitCount()
-{
+TEST_F(VisitorOperationTest, bucket_low_bit_count) {
     enableDistributorClusterState("distributor:1 storage:1 bits:16");
 
     document::BucketId id(1, 0x0);
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
-            runEmptyVisitor(createVisitorCommand("bucketlowbit", id, nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)",
+              runEmptyVisitor(createVisitorCommand("bucketlowbit", id, nullId)));
 
     auto op = createOpWithDefaultConfig(
             createVisitorCommand("buckethighbitcount",
@@ -853,15 +669,12 @@ VisitorOperationTest::testBucketLowBitCount()
                 "true"));
 
     op->start(_sender, framework::MilliSecTime(0));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testParallelVisitorsToOneStorageNode()
-{
+TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
@@ -878,47 +691,42 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
-                                     "Visitor Create => 0,Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 0,"
+              "Visitor Create => 0,Visitor Create => 0",
+              _sender.getCommands(true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
-                        "BucketId(0x5400000000000001) BucketId(0x5400000000040001) "
-                        "BucketId(0x5400000000020001) BucketId(0x5400000000060001) "
-                        "BucketId(0x5400000000010001) BucketId(0x5400000000050001) "
-                        "BucketId(0x5400000000030001) BucketId(0x5400000000070001) ]"),
-            serializeVisitorCommand(0));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
-                        "BucketId(0x5400000000100001) BucketId(0x5400000000140001) "
-                        "BucketId(0x5400000000120001) BucketId(0x5400000000160001) "
-                        "BucketId(0x5400000000110001) BucketId(0x5400000000150001) "
-                        "BucketId(0x5400000000130001) BucketId(0x5400000000170001) ]"),
-            serializeVisitorCommand(1));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
-                        "BucketId(0x5400000000080001) BucketId(0x54000000000c0001) "
-                        "BucketId(0x54000000000a0001) BucketId(0x54000000000e0001) "
-                        "BucketId(0x5400000000090001) BucketId(0x54000000000d0001) "
-                        "BucketId(0x54000000000b0001) BucketId(0x54000000000f0001) ]"),
-                         serializeVisitorCommand(2));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 7 buckets) Buckets: [ "
-                        "BucketId(0x5400000000180001) BucketId(0x54000000001c0001) "
-                        "BucketId(0x54000000001a0001) BucketId(0x54000000001e0001) "
-                        "BucketId(0x5400000000190001) BucketId(0x54000000001d0001) "
-                        "BucketId(0x54000000001b0001) ]"),
-            serializeVisitorCommand(3));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
+              "BucketId(0x5400000000000001) BucketId(0x5400000000040001) "
+              "BucketId(0x5400000000020001) BucketId(0x5400000000060001) "
+              "BucketId(0x5400000000010001) BucketId(0x5400000000050001) "
+              "BucketId(0x5400000000030001) BucketId(0x5400000000070001) ]",
+              serializeVisitorCommand(0));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
+              "BucketId(0x5400000000100001) BucketId(0x5400000000140001) "
+              "BucketId(0x5400000000120001) BucketId(0x5400000000160001) "
+              "BucketId(0x5400000000110001) BucketId(0x5400000000150001) "
+              "BucketId(0x5400000000130001) BucketId(0x5400000000170001) ]",
+              serializeVisitorCommand(1));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
+              "BucketId(0x5400000000080001) BucketId(0x54000000000c0001) "
+              "BucketId(0x54000000000a0001) BucketId(0x54000000000e0001) "
+              "BucketId(0x5400000000090001) BucketId(0x54000000000d0001) "
+              "BucketId(0x54000000000b0001) BucketId(0x54000000000f0001) ]",
+              serializeVisitorCommand(2));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 7 buckets) Buckets: [ "
+              "BucketId(0x5400000000180001) BucketId(0x54000000001c0001) "
+              "BucketId(0x54000000001a0001) BucketId(0x54000000001e0001) "
+              "BucketId(0x5400000000190001) BucketId(0x54000000001d0001) "
+              "BucketId(0x54000000001b0001) ]",
+              serializeVisitorCommand(3));
 
     for (uint32_t i = 0; i < 4; ++i) {
         sendReply(*op, i);
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x54000000000f0001)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x54000000000f0001)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 
     _sender.clear();
 
@@ -930,20 +738,16 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 
     op2->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     sendReply(*op2);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
-{
+TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     // Create buckets in bucketdb
@@ -962,32 +766,29 @@ VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
-                                     "Visitor Create => 0,Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 0,"
+              "Visitor Create => 0,Visitor Create => 0",
+              _sender.getCommands(true));
 
     for (uint32_t i = 0; i < 2; ++i) {
         sendReply(*op, i, api::ReturnCode::NOT_CONNECTED);
     }
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
-                                     "Visitor Create => 0,Visitor Create => 0,"
-                                     "Visitor Create => 1,Visitor Create => 1"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 0,"
+              "Visitor Create => 0,Visitor Create => 0,"
+              "Visitor Create => 1,Visitor Create => 1",
+              _sender.getCommands(true));
 
     for (uint32_t i = 2; i < 6; ++i) {
         sendReply(*op, i);
     }
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x54000000000f0001)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x54000000000f0001)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
-{
+TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_bucket) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
@@ -1004,74 +805,56 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
-                        "BucketId(0x8c000000e3362b6a) BucketId(0x8c000004e3362b6a) "
-                        "BucketId(0x8c000002e3362b6a) BucketId(0x8c000006e3362b6a) "
-                        "BucketId(0x8c000001e3362b6a) BucketId(0x8c000005e3362b6a) "
-                        "BucketId(0x8c000003e3362b6a) BucketId(0x8c000007e3362b6a) ]"),
-            serializeVisitorCommand(0));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
+              "BucketId(0x8c000000e3362b6a) BucketId(0x8c000004e3362b6a) "
+              "BucketId(0x8c000002e3362b6a) BucketId(0x8c000006e3362b6a) "
+              "BucketId(0x8c000001e3362b6a) BucketId(0x8c000005e3362b6a) "
+              "BucketId(0x8c000003e3362b6a) BucketId(0x8c000007e3362b6a) ]",
+              serializeVisitorCommand(0));
 
     sendReply(*op);
     
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testVisitWhenOneBucketCopyIsInvalid()
-{
+TEST_F(VisitorOperationTest, visit_when_one_bucket_copy_is_invalid) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
     addNodesToBucketDB(id, "0=100,1=0/0/1");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(BUCKET_NOT_FOUND)"),
-            runEmptyVisitor(createVisitorCommand("incompletehandling",
-                                               id,
-                                               nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              runEmptyVisitor(createVisitorCommand("incompletehandling", id, nullId)));
 }
 
-void
-VisitorOperationTest::testVisitingWhenAllBucketsAreInvalid()
-{
+TEST_F(VisitorOperationTest, visiting_when_all_buckets_are_invalid) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
     addNodesToBucketDB(id, "0=0/0/1,1=0/0/1");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(BUCKET_NOT_FOUND)"),
-            runEmptyVisitor(createVisitorCommand("allincompletehandling",
-                                               id,
-                                               nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              runEmptyVisitor(createVisitorCommand("allincompletehandling", id, nullId)));
 }
 
-void
-VisitorOperationTest::testInconsistencyHandling()
-{
+TEST_F(VisitorOperationTest, inconsistency_handling) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     document::BucketId id(16, 0);
 
     addNodesToBucketDB(id, "0=1/1/1,1=2/2/2");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(BUCKET_NOT_FOUND)"),
-            runEmptyVisitor(createVisitorCommand("testinconsistencyhandling",
-                                               id,
-                                               nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              runEmptyVisitor(createVisitorCommand("testinconsistencyhandling", id, nullId)));
     _sender.clear();
 
     auto op = createOpWithConfig(
@@ -1080,20 +863,16 @@ VisitorOperationTest::testInconsistencyHandling()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 1"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 1", _sender.getCommands(true));
 
     sendReply(*op);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testVisitIdealNode()
-{
+TEST_F(VisitorOperationTest, visit_ideal_node) {
     ClusterState state("distributor:1 storage:3");
     _distributor->enableClusterStateBundle(lib::ClusterStateBundle(state));
 
@@ -1109,28 +888,23 @@ VisitorOperationTest::testVisitIdealNode()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
-                        "BucketId(0x5400000000000001) BucketId(0x5400000000100001) "
-                        "BucketId(0x5400000000080001) BucketId(0x5400000000180001) "
-                        "BucketId(0x5400000000040001) BucketId(0x5400000000140001) "
-                        "BucketId(0x54000000000c0001) BucketId(0x54000000001c0001) ]"),
-            serializeVisitorCommand(0));
+    ASSERT_EQ("CreateVisitorCommand(dumpvisitor, , 8 buckets) Buckets: [ "
+              "BucketId(0x5400000000000001) BucketId(0x5400000000100001) "
+              "BucketId(0x5400000000080001) BucketId(0x5400000000180001) "
+              "BucketId(0x5400000000040001) BucketId(0x5400000000140001) "
+              "BucketId(0x54000000000c0001) BucketId(0x54000000001c0001) ]",
+              serializeVisitorCommand(0));
 
     sendReply(*op);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x54000000001c0001)) "
-                        "ReturnCode(NONE)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x54000000001c0001)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testNoResendingOnCriticalFailure()
-{
+TEST_F(VisitorOperationTest, no_resending_on_critical_failure) {
     enableDistributorClusterState("distributor:1 storage:3");
 
     // Create buckets in bucketdb
@@ -1145,20 +919,16 @@ VisitorOperationTest::testNoResendingOnCriticalFailure()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     sendReply(*op, -1, api::ReturnCode::ILLEGAL_PARAMETERS);
 
-    CPPUNIT_ASSERT_EQUAL(
-            "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-            "ReturnCode(ILLEGAL_PARAMETERS, [from content node 0] )"s,
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ILLEGAL_PARAMETERS, [from content node 0] )",
+              _sender.getLastReply());
 }
 
-void
-VisitorOperationTest::testFailureOnAllNodes()
-{
+TEST_F(VisitorOperationTest, failure_on_all_nodes) {
     enableDistributorClusterState("distributor:1 storage:3");
 
     // Create buckets in bucketdb
@@ -1173,29 +943,23 @@ VisitorOperationTest::testFailureOnAllNodes()
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 1"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1", _sender.getCommands(true));
 
     sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(BUCKET_NOT_FOUND)"),
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              _sender.getLastReply());
     // TODO it'd be much more accurate to increase the "notconnected" metric
     // here, but our metrics are currently based on the reply sent back to the
     // client, not the ones sent from the content nodes to the distributor.
 }
 
-
-void
-VisitorOperationTest::testVisitOrder()
-{
+TEST_F(VisitorOperationTest, visit_order) {
     std::vector<document::BucketId> buckets;
 
     document::BucketId id000(35, 0x0000004d2);
@@ -1211,43 +975,28 @@ VisitorOperationTest::testVisitOrder()
               buckets.end(),
               VisitorOrder(document::OrderingSpecification(
                   document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-
-    CPPUNIT_ASSERT_EQUAL(buckets[0], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id1);
+    EXPECT_THAT(buckets, ElementsAre(id000, id001, id01, id1));
 
     std::sort(buckets.begin(),
               buckets.end(),
               VisitorOrder(document::OrderingSpecification(
                   document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id000);
+    EXPECT_THAT(buckets, ElementsAre(id1, id01, id001, id000));
 
     std::sort(buckets.begin(),
               buckets.end(),
               VisitorOrder(document::OrderingSpecification(
                   document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id001);
+    EXPECT_THAT(buckets, ElementsAre(id01, id1, id000, id001));
 
     std::sort(buckets.begin(),
               buckets.end(),
               VisitorOrder(document::OrderingSpecification(
                   document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id1);
+    EXPECT_THAT(buckets, ElementsAre(id01, id001, id000, id1));
 }
 
-void
-VisitorOperationTest::testVisitInChunks()
-{
+TEST_F(VisitorOperationTest, visit_in_chunks) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     for (int i = 0; i < 9; ++i) {
@@ -1257,48 +1006,40 @@ VisitorOperationTest::testVisitInChunks()
     document::BucketId id(16, 0);
 
     std::pair<std::string, std::string> val(runVisitor(id, nullId, 3));
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
-                         "Buckets: [ BucketId(0x7800000000000000) "
-                         "BucketId(0x7800000000080000) "
-                         "BucketId(0x7800000000040000) ]"),
-                         val.first);
+    EXPECT_EQ("CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
+              "Buckets: [ BucketId(0x7800000000000000) "
+              "BucketId(0x7800000000080000) "
+              "BucketId(0x7800000000040000) ]",
+              val.first);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorReply(last=BucketId(0x7800000000040000)) "
-                         "ReturnCode(NONE)"),
-                         val.second);
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x7800000000040000)) "
+              "ReturnCode(NONE)",
+              val.second);
 
     val = runVisitor(id, document::BucketId(0x7800000000040000), 3);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
-                         "Buckets: [ BucketId(0x7800000000020000) "
-                         "BucketId(0x7800000000060000) "
-                         "BucketId(0x7800000000010000) ]"),
-                         val.first);
+    EXPECT_EQ("CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
+              "Buckets: [ BucketId(0x7800000000020000) "
+              "BucketId(0x7800000000060000) "
+              "BucketId(0x7800000000010000) ]",
+              val.first);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorReply(last=BucketId(0x7800000000010000)) "
-                         "ReturnCode(NONE)"),
-                         val.second);
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x7800000000010000)) "
+              "ReturnCode(NONE)",
+              val.second);
 
     val = runVisitor(id, document::BucketId(0x7800000000010000), 3);
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
-                         "Buckets: [ BucketId(0x7800000000050000) "
-                         "BucketId(0x7800000000030000) "
-                         "BucketId(0x7800000000070000) ]"),
-                         val.first);
+    EXPECT_EQ("CreateVisitorCommand(dumpvisitor, true, 3 buckets) "
+              "Buckets: [ BucketId(0x7800000000050000) "
+              "BucketId(0x7800000000030000) "
+              "BucketId(0x7800000000070000) ]",
+              val.first);
 
-    CPPUNIT_ASSERT_EQUAL(std::string(
-                         "CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-                         "ReturnCode(NONE)"),
-                         val.second);
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              val.second);
 }
 
-void
-VisitorOperationTest::testVisitOrderSplitPastOrderBits()
-{
+TEST_F(VisitorOperationTest, visit_order_split_past_order_bits) {
     std::vector<document::BucketId> buckets;
 
     document::BucketId max(INT_MAX);
@@ -1316,46 +1057,24 @@ VisitorOperationTest::testVisitOrderSplitPastOrderBits()
     document::BucketId null(0, 0);
     buckets.push_back(null);
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id0000);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id00000);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id00001);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, id0000, id00000, id00001, id01, id1, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id0000);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id00000);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id00001);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, id1, id01, id0000, id00000, id00001, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id0000);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id00000);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id00001);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, id01, id1, id0000, id00000, id00001, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id0000);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id00000);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id00001);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, id01, id0000, id00000, id00001, id1, max));
 }
 
-void
-VisitorOperationTest::testVisitOrderInconsistentlySplit()
-{
+TEST_F(VisitorOperationTest, visit_order_inconsistently_split) {
     std::vector<document::BucketId> buckets;
 
     document::BucketId max(INT_MAX);
@@ -1373,45 +1092,25 @@ VisitorOperationTest::testVisitOrderInconsistentlySplit()
     document::BucketId null(0, 0);
     buckets.push_back(null);
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], idsuper);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id000, id001, id01, id1, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], idsuper);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id1, id01, id001, id000, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], idsuper);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id01, id1, id000, id001, max));
 
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    CPPUNIT_ASSERT_EQUAL(buckets[0], null);
-    CPPUNIT_ASSERT_EQUAL(buckets[1], idsuper);
-    CPPUNIT_ASSERT_EQUAL(buckets[2], id01);
-    CPPUNIT_ASSERT_EQUAL(buckets[3], id001);
-    CPPUNIT_ASSERT_EQUAL(buckets[4], id000);
-    CPPUNIT_ASSERT_EQUAL(buckets[5], id1);
-    CPPUNIT_ASSERT_EQUAL(buckets[6], max);
+    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
+            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
+    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id01, id001, id000, id1, max));
 }
 
-std::string
-VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
+void
+VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket, std::string& out)
 {
     std::vector<document::BucketId> buckets;
 
@@ -1434,13 +1133,12 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
 
         op->start(_sender, framework::MilliSecTime(0));
 
-        CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                             _sender.getCommands(true));
+        ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
-        for (uint32_t i = 0; i < _sender.commands.size(); ++i) {
+        for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
             const api::CreateVisitorCommand cmd(
                     static_cast<const api::CreateVisitorCommand&>(
-                            *_sender.commands[i]));
+                            *_sender.command(i)));
 
             for (uint32_t j = 0; j < cmd.getBuckets().size(); ++j) {
                 buckets.push_back(cmd.getBuckets()[j]);
@@ -1449,10 +1147,9 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
 
         sendReply(*op);
 
-        CPPUNIT_ASSERT_EQUAL(1, (int)_sender.replies.size());
+        ASSERT_EQ(1, _sender.replies().size());
 
-        const api::CreateVisitorReply& reply(
-                static_cast<const api::CreateVisitorReply&>(*_sender.replies[0]));
+        auto& reply = dynamic_cast<const api::CreateVisitorReply&>(*_sender.reply(0));
 
         if (reply.getLastBucket() == document::BucketId(0x000000007fffffff)) {
             break;
@@ -1464,12 +1161,10 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
         ost << buckets[i] << "\n";
     }
 
-    return ost.str();
+    out = ost.str();
 }
 
-void
-VisitorOperationTest::testUserVisitorOrder()
-{
+TEST_F(VisitorOperationTest, user_visitor_order) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
@@ -1489,16 +1184,16 @@ VisitorOperationTest::testUserVisitorOrder()
 
     document::BucketId id(16, 0x04d2);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x88000002000004d2)\n"
-                                     "BucketId(0x8c000004000004d2)\n"
-                                     "BucketId(0x8c000000000004d2)\n"
-                                     "BucketId(0x84000001000004d2)\n"),
-                         doOrderedVisitor(id));
+    std::string res;
+    ASSERT_NO_FATAL_FAILURE(doOrderedVisitor(id, res));
+    EXPECT_EQ("BucketId(0x88000002000004d2)\n"
+              "BucketId(0x8c000004000004d2)\n"
+              "BucketId(0x8c000000000004d2)\n"
+              "BucketId(0x84000001000004d2)\n",
+              res);
 }
 
-void
-VisitorOperationTest::testUserVisitorOrderSplitPastOrderBits()
-{
+TEST_F(VisitorOperationTest, user_visitor_order_split_past_order_bits) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     // Create buckets in bucketdb
@@ -1519,12 +1214,14 @@ VisitorOperationTest::testUserVisitorOrderSplitPastOrderBits()
 
     document::BucketId id(16, 0x04d2);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("BucketId(0x88000002000004d2)\n"
-                                     "BucketId(0x90000000000004d2)\n"
-                                     "BucketId(0x94000000000004d2)\n"
-                                     "BucketId(0x94000010000004d2)\n"
-                                     "BucketId(0x84000001000004d2)\n"),
-                         doOrderedVisitor(id));
+    std::string res;
+    ASSERT_NO_FATAL_FAILURE(doOrderedVisitor(id, res));
+    EXPECT_EQ("BucketId(0x88000002000004d2)\n"
+              "BucketId(0x90000000000004d2)\n"
+              "BucketId(0x94000000000004d2)\n"
+              "BucketId(0x94000010000004d2)\n"
+              "BucketId(0x84000001000004d2)\n",
+              res);
 }
 
 std::unique_ptr<VisitorOperation>
@@ -1533,8 +1230,7 @@ VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
     enableDistributorClusterState("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(17, 1), "0=1/1/1/t");
-    addNodesToBucketDB(document::BucketId(17, 1 << 16 | 1),
-                       "1=1/1/1/t");
+    addNodesToBucketDB(document::BucketId(17, 1ULL << 16 | 1), "1=1/1/1/t");
 
     document::BucketId id(16, 1);
     auto op = createOpWithDefaultConfig(
@@ -1548,57 +1244,48 @@ VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
 
     op->start(_sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL("Visitor Create => 0,Visitor Create => 1"s,
-                         _sender.getCommands(true));
+    assert(_sender.getCommands(true) == "Visitor Create => 0,Visitor Create => 1");
     return op;
 }
 
-void
-VisitorOperationTest::testNoClientReplyBeforeAllStorageRepliesReceived()
-{
+TEST_F(VisitorOperationTest, no_client_reply_before_all_storage_replies_received) {
     auto op = startOperationWith2StorageNodeVisitors(false);
 
     sendReply(*op, 0, api::ReturnCode::BUSY);
     // We don't want to see a reply here until the other node has replied.
-    CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies(true));
+    ASSERT_EQ("", _sender.getReplies(true));
     // OK reply from 1, but have to retry from client anyhow since one of
     // the sub buckets failed to be processed and we don't have inconsistent
     // visiting set in the client visitor command.
     sendReply(*op, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-            "ReturnCode(BUCKET_NOT_FOUND)"s,
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(BUCKET_NOT_FOUND)",
+              _sender.getLastReply());
     // XXX we should consider wether we want BUSY to be returned instead.
     // Non-critical error codes are currently converted to a generic "not found"
     // code to let the client silently retry until the bucket has hopefully
     // become consistent/available.
 }
 
-void
-VisitorOperationTest::testSkipFailedSubBucketsWhenVisitingInconsistent()
-{
+TEST_F(VisitorOperationTest, skip_failed_sub_buckets_when_visiting_inconsistent) {
     auto op = startOperationWith2StorageNodeVisitors(true);
 
     sendReply(*op, 0, api::ReturnCode::BUSY);
-    CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies(true));
+    ASSERT_EQ("", _sender.getReplies(true));
     // Subset of buckets could not be visited, but visit inconsistent flag is
     // set in the client visitor so we treat it as a success anyway. In this
     // case we've expanded the entire superbucket sub-tree so return with magic
     // number to signify this.
     sendReply(*op, 1);
-    CPPUNIT_ASSERT_EQUAL(
-            "CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-            "ReturnCode(NONE)"s,
-            _sender.getLastReply());
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
+              "ReturnCode(NONE)",
+              _sender.getLastReply());
 }
 
 // By default, queue timeout should be half of remaining visitor time. This
 // is a highly un-scientific heuristic, but seems rather more reasonable than
 // having it hard-coded to 2000 ms as was the case earlier.
-void
-VisitorOperationTest::testQueueTimeoutIsFactorOfTotalTimeout()
-{
+TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     document::BucketId id(uint64_t(0x400000000000007b));
     enableDistributorClusterState("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
@@ -1607,11 +1294,10 @@ VisitorOperationTest::testQueueTimeoutIsFactorOfTotalTimeout()
             createVisitorCommand("foo", id, nullId, 8, 10000));
 
     op->start(_sender, framework::MilliSecTime(0));
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
-    auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
-    CPPUNIT_ASSERT_EQUAL(uint32_t(5000), cmd.getQueueTimeout());
+    auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
+    EXPECT_EQ(5000, cmd.getQueueTimeout());
 }
 
 void
@@ -1626,49 +1312,43 @@ VisitorOperationTest::do_visitor_roundtrip_with_statistics(
             createVisitorCommand("metricstats", id, nullId));
 
     op->start(_sender, framework::MilliSecTime(0));
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
-                         _sender.getCommands(true));
-    auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+    auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
     auto reply = cmd.makeReply();
     vdslib::VisitorStatistics stats;
     stats.setBucketsVisited(50);
     stats.setDocumentsVisited(100);
     stats.setBytesVisited(2000);
-    static_cast<CreateVisitorReply&>(*reply).setVisitorStatistics(stats);
+    dynamic_cast<CreateVisitorReply&>(*reply).setVisitorStatistics(stats);
     reply->setResult(result);
 
     op->receive(_sender, api::StorageReply::SP(std::move(reply)));
 }
 
-void
-VisitorOperationTest::metrics_are_updated_with_visitor_statistics_upon_replying()
-{
-    do_visitor_roundtrip_with_statistics(api::ReturnCode(api::ReturnCode::OK));
+TEST_F(VisitorOperationTest, metrics_are_updated_with_visitor_statistics_upon_replying) {
+    ASSERT_NO_FATAL_FAILURE(do_visitor_roundtrip_with_statistics(api::ReturnCode(api::ReturnCode::OK)));
 
-    CPPUNIT_ASSERT_EQUAL(int64_t(50), defaultVisitorMetrics().buckets_per_visitor.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(100), defaultVisitorMetrics().docs_per_visitor.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(2000), defaultVisitorMetrics().bytes_per_visitor.getLast());
+    EXPECT_EQ(50, defaultVisitorMetrics().buckets_per_visitor.getLast());
+    EXPECT_EQ(100, defaultVisitorMetrics().docs_per_visitor.getLast());
+    EXPECT_EQ(2000, defaultVisitorMetrics().bytes_per_visitor.getLast());
 }
 
-void
-VisitorOperationTest::statistical_metrics_not_updated_on_wrong_distribution()
-{
+TEST_F(VisitorOperationTest, statistical_metrics_not_updated_on_wrong_distribution) {
     setupDistributor(1, 100, "distributor:100 storage:2");
 
     document::BucketId id(uint64_t(0x400000000000127b));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-                        "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
-            runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+    ASSERT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)",
+              runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
 
     // Note that we're testing the number of _times_ the metric has been
     // updated, not the value with which it's been updated (which would be zero
     // even in the case we actually did update the statistical metrics).
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().buckets_per_visitor.getCount());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().docs_per_visitor.getCount());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().bytes_per_visitor.getCount());
+    EXPECT_EQ(0, defaultVisitorMetrics().buckets_per_visitor.getCount());
+    EXPECT_EQ(0, defaultVisitorMetrics().docs_per_visitor.getCount());
+    EXPECT_EQ(0, defaultVisitorMetrics().bytes_per_visitor.getCount());
     // Fascinating that count is also a double...
-    CPPUNIT_ASSERT_EQUAL(0.0, defaultVisitorMetrics().latency.getCount());
+    EXPECT_DOUBLE_EQ(0.0, defaultVisitorMetrics().latency.getCount());
 }
 
 }

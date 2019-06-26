@@ -14,6 +14,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -211,16 +212,12 @@ TEST_F(MetricsTest, filestor_metrics) {
     std::ostringstream ost;
     framework::HttpUrlPath path("metrics?interval=-1&format=text");
     bool retVal = _metricsConsumer->reportStatus(ost, path);
-    CPPUNIT_ASSERT_MESSAGE("_metricsConsumer->reportStatus failed", retVal);
+    ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
     std::string s = ost.str();
-    CPPUNIT_ASSERT_MESSAGE("No get statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.get.sum.count count=240") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No put statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.put.sum.count count=200") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No remove statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.remove.sum.count count=120") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No removenotfound stats in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.remove.sum.not_found count=20") != std::string::npos);
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.get.sum.count count=240"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.put.sum.count count=200"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.count count=120"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.not_found count=20"));
 }
 
 #define ASSERT_METRIC(interval, metric, count) \

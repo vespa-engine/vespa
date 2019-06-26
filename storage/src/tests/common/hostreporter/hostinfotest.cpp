@@ -1,15 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "util.h"
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/hostreporter/hostreporter.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/jsonstream.h>
-#include "util.h"
+#include <vespa/vespalib/gtest/gtest.h>
+
+using namespace ::testing;
 
 namespace storage {
 namespace {
+
 using Object = vespalib::JsonStream::Object;
 using End = vespalib::JsonStream::End;
 using JsonFormat = vespalib::slime::JsonFormat;
@@ -21,22 +24,10 @@ public:
         jsonreport << "dummy" << Object()  << "foo" << "bar" << End();
     }
 };
+
 }
 
-struct HostInfoReporterTest : public CppUnit::TestFixture
-{
-    void testHostInfoReporter();
-
-    CPPUNIT_TEST_SUITE(HostInfoReporterTest);
-    CPPUNIT_TEST(testHostInfoReporter);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(HostInfoReporterTest);
-
-void
-HostInfoReporterTest::testHostInfoReporter()
-{
+TEST(HostInfoReporterTest, host_info_reporter) {
     HostInfo hostinfo;
     DummyReporter dummyReporter;
     hostinfo.registerReporter(&dummyReporter);
@@ -50,8 +41,8 @@ HostInfoReporterTest::testHostInfoReporter()
     std::string jsonData = json.str();
     vespalib::Slime slime;
     JsonFormat::decode(Memory(jsonData), slime);
-    CPPUNIT_ASSERT(slime.get()["dummy"]["foo"].asString() == "bar");
-    CPPUNIT_ASSERT(!slime.get()["vtag"]["version"].asString().make_string().empty());
+    EXPECT_EQ(slime.get()["dummy"]["foo"].asString(), "bar");
+    EXPECT_FALSE(slime.get()["vtag"]["version"].asString().make_string().empty());
 }
-} // storage
 
+} // storage

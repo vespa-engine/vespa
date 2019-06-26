@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/testhelper.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>

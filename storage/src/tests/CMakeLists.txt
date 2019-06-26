@@ -8,7 +8,6 @@ vespa_add_executable(storage_testrunner_app TEST
     DEPENDS
     storage_testcommon
     storage_testhostreporter
-    storage_testdistributor
 )
 
 vespa_add_test(

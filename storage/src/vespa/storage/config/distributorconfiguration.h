@@ -10,7 +10,7 @@
 namespace storage {
 
 namespace distributor {
-    class Distributor_Test;
+struct DistributorTest;
 }
 
 class DistributorConfiguration {
@@ -242,6 +242,8 @@ public:
     void setAllowStaleReadsDuringClusterStateTransitions(bool allow) noexcept {
         _allowStaleReadsDuringClusterStateTransitions = allow;
     }
+
+    bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
     DistributorConfiguration(const DistributorConfiguration& other);
@@ -285,9 +287,7 @@ private:
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     
-    friend class distributor::Distributor_Test;
-    
-    bool containsTimeStatement(const std::string& documentSelection) const; 
+    friend struct distributor::DistributorTest;
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);
 };

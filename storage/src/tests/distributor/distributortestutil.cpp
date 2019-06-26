@@ -295,11 +295,11 @@ DistributorTestUtil::sendReply(Operation& op,
                                api::ReturnCode::Result result)
 {
     if (idx == -1) {
-        idx = _sender.commands.size() - 1;
+        idx = _sender.commands().size() - 1;
     }
-    assert(idx >= 0 && idx < static_cast<int>(_sender.commands.size()));
+    assert(idx >= 0 && idx < static_cast<int>(_sender.commands().size()));
 
-    std::shared_ptr<api::StorageCommand> cmd = _sender.commands[idx];
+    std::shared_ptr<api::StorageCommand> cmd = _sender.command(idx);
     api::StorageReply::SP reply(cmd->makeReply().release());
     reply->setResult(result);
     op.receive(_sender, reply);

@@ -9,10 +9,8 @@
 #include <tests/distributor/distributortestutil.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <iomanip>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using std::shared_ptr;
 using config::ConfigGetter;
@@ -57,15 +55,15 @@ public:
                       = api::ReturnCode::OK,
                       api::BucketInfo info = api::BucketInfo(1,2,3,4,5))
     {
-        ASSERT_FALSE(_sender.commands.empty());
+        ASSERT_FALSE(_sender.commands().empty());
         if (idx == -1) {
-            idx = _sender.commands.size() - 1;
-        } else if (static_cast<size_t>(idx) >= _sender.commands.size()) {
+            idx = _sender.commands().size() - 1;
+        } else if (static_cast<size_t>(idx) >= _sender.commands().size()) {
             throw std::logic_error("Specified message index is greater "
                                    "than number of received messages");
         }
 
-        std::shared_ptr<api::StorageCommand> msg =  _sender.commands[idx];
+        std::shared_ptr<api::StorageCommand> msg =  _sender.command(idx);
         api::StorageReply::SP reply(msg->makeReply().release());
         dynamic_cast<api::BucketInfoReply*>(reply.get())->setBucketInfo(info);
         reply->setResult(result);
@@ -99,16 +97,12 @@ PutOperationTest::~PutOperationTest() = default;
 
 document::BucketId
 PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
-    Document::SP
-        doc(new Document(doc_type(), DocumentId(DocIdString("test", "test"))));
+    auto doc = std::make_shared<Document>(doc_type(), DocumentId(DocIdString("test", "test")));
 
     document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
     addIdealNodes(id);
 
-    std::shared_ptr<api::PutCommand> msg(
-            new api::PutCommand(makeDocumentBucket(document::BucketId(0)),
-                                doc,
-                                0));
+    auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), doc, 0);
     msg->setTimestamp(100);
     msg->setPriority(128);
     msg->setTimeout(timeout);
@@ -118,10 +112,10 @@ PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
 
 namespace {
 
-typedef int Redundancy;
-typedef int NodeCount;
-typedef uint32_t ReturnAfter;
-typedef bool RequirePrimaryWritten;
+using Redundancy = int;
+using NodeCount = int;
+using ReturnAfter = uint32_t;
+using RequirePrimaryWritten = bool;
 
 }
 
@@ -306,7 +300,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done)
     sendReply(4);
     sendReply(5);
 
-    ASSERT_EQ(0, _sender.replies.size());
+    ASSERT_EQ(0, _sender.replies().size());
 }
 
 TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
@@ -395,9 +389,9 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
 
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
-    for (size_t i = 0; i < _sender.commands.size(); ++i) {
+    for (size_t i = 0; i < _sender.commands().size(); ++i) {
         getExternalOperationHandler().getDistributor().getPendingMessageTracker()
-            .insert(_sender.commands[i]);
+            .insert(_sender.command(i));
     }
 
     sendPut(createPut(doc));
@@ -420,17 +414,14 @@ TEST_F(PutOperationTest, no_storage_nodes) {
 TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
-    Document::SP doc(new Document(doc_type(), DocumentId(
-                            UserDocIdString("userdoc:test:13:uri"))));
-
+    auto doc = std::make_shared<Document>(doc_type(), DocumentId(UserDocIdString("userdoc:test:13:uri")));
     addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
-
     sendPut(createPut(doc));
 
     ASSERT_EQ("Put => 0,Put => 1", _sender.getCommands(true));
 
     {
-        std::shared_ptr<api::StorageCommand> msg2  = _sender.commands[0];
+        std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
         std::shared_ptr<api::StorageReply> reply(msg2->makeReply().release());
         PutReply* sreply = (PutReply*)reply.get();
         sreply->remapBucketId(document::BucketId(17, 13));
@@ -610,7 +601,7 @@ void PutOperationTest::do_test_creation_with_bucket_activation_disabled(bool dis
     sendPut(createPut(doc));
 
     ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
-    auto cmd = _sender.commands[0];
+    auto cmd = _sender.command(0);
     auto createCmd = std::dynamic_pointer_cast<api::CreateBucketCommand>(cmd);
     ASSERT_TRUE(createCmd.get() != nullptr);
     // There's only 1 content node, so if activation were not disabled, it
