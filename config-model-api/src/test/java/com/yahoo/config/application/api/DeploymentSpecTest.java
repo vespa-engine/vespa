@@ -482,7 +482,7 @@ public class DeploymentSpecTest {
                 "</deployment>");
 
         assertEquals(
-                List.of("foo", "nalle", "quux"),
+                List.of("foo", "nalle", "default"),
                 spec.endpoints().stream().map(Endpoint::endpointId).collect(Collectors.toList())
         );
 
@@ -507,8 +507,8 @@ public class DeploymentSpecTest {
 
     @Test
     public void validEndpoints() {
-        assertEquals(List.of("qrs"), endpointIds("<endpoint container-id='qrs'/>"));
-        assertEquals(List.of("qrs"), endpointIds("<endpoint id='' container-id='qrs'/>"));
+        assertEquals(List.of("default"), endpointIds("<endpoint container-id='qrs'/>"));
+        assertEquals(List.of("default"), endpointIds("<endpoint id='' container-id='qrs'/>"));
         assertEquals(List.of("f"), endpointIds("<endpoint id='f' container-id='qrs'/>"));
         assertEquals(List.of("foo"), endpointIds("<endpoint id='foo' container-id='qrs'/>"));
         assertEquals(List.of("foo-bar"), endpointIds("<endpoint id='foo-bar' container-id='qrs'/>"));
