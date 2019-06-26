@@ -50,7 +50,7 @@ public class FailedExpirerTest {
 
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
     private static final ClusterSpec tenantHostApplicationClusterSpec =  ClusterSpec.request(
-            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false, Set.of());
+            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
     @Test
@@ -136,7 +136,7 @@ public class FailedExpirerTest {
                 .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
                 .setReady("proxy1", "proxy2", "proxy3")
                 .allocate( ApplicationId.from("vespa", "zone-app", "default"),
-                        ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false, Set.of()),
+                        ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false),
                         Capacity.fromRequiredNodeType(NodeType.proxy))
                 .failNode(1, "proxy1");
 
@@ -344,8 +344,8 @@ public class FailedExpirerTest {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
-                                                          false,
-                                                          Set.of());
+                                                          false
+            );
             Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }

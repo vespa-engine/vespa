@@ -200,7 +200,7 @@ public class AclProvisioningTest {
 
     private List<Node> deploy(ApplicationId application, Capacity capacity) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false, Collections.emptySet());
+                                                  Version.fromString("6.42"), false);
         List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
         tester.activate(application, new HashSet<>(prepared));
         return tester.getNodes(application, Node.State.active).asList();

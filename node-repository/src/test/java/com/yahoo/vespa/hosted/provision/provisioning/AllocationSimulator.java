@@ -112,7 +112,7 @@ public class AllocationSimulator {
     }
 
     private ClusterSpec cluster() {
-        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false, Collections.emptySet());
+        return ClusterSpec.from(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), ClusterSpec.Group.from(1), Version.fromString("6.41"), false);
     }
 
     /* ------------ Methods to add events to the system ----------------*/
