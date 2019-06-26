@@ -25,6 +25,7 @@ vespa_define_module(
     src/tests/eval/value_cache
     src/tests/eval/value_type
     src/tests/gp/ponder_nov2017
+    src/tests/tensor/dense_dimension_combiner
     src/tests/tensor/dense_add_dimension_optimizer
     src/tests/tensor/dense_dot_product_function
     src/tests/tensor/dense_fast_rename_optimizer
@@ -32,7 +33,6 @@ vespa_define_module(
     src/tests/tensor/dense_inplace_map_function
     src/tests/tensor/dense_remove_dimension_optimizer
     src/tests/tensor/dense_replace_type_function
-    src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_xw_product_function
     src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/direct_sparse_tensor_builder
