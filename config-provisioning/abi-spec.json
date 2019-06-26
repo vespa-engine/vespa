@@ -149,6 +149,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.CertificateNotReadyException": {
+    "superClass": "com.yahoo.config.provision.TransientException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.CloudName": {
     "superClass": "java.lang.Object",
     "interfaces": [
