@@ -226,6 +226,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     total_matching_time.start();
     MatchingStats my_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
+    size_t covered = 0;
+    uint32_t numActiveLids = 0;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
         GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
@@ -289,7 +291,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         reply = std::move(result->_reply);
 
-        uint32_t numActiveLids = metaStore.getNumActiveLids();
+        numActiveLids = metaStore.getNumActiveLids();
         // note: this is actually totalSpace+1, since 0 is reserved
         uint32_t totalSpace = metaStore.getCommittedDocIdLimit();
         LOG(debug, "docid limit = %d", totalSpace);
@@ -302,7 +304,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             // account for docid 0 reserved
             spaceEstimate += 1;
         }
-        size_t covered = (spaceEstimate *  numActiveLids) / totalSpace;
+        covered = (spaceEstimate *  numActiveLids) / totalSpace;
         LOG(debug, "covered = %zd", covered);
 
         SearchReply::Coverage & coverage = reply->coverage;
