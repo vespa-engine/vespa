@@ -103,18 +103,19 @@ public class LoadBalancerProvisioner {
             try (var loadBalancersLock = db.lockLoadBalancers()) {
                 var id = new LoadBalancerId(application, clusterId);
                 var now = nodeRepository.clock().instant();
-                var loadBalancer = db.readLoadBalancers().get(id);
-                if (loadBalancer == null && activate) return; // Nothing to activate as this load balancer was never prepared
+                var loadBalancer = db.readLoadBalancer(id);
+                if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
 
-                var force = loadBalancer != null && loadBalancer.state() != LoadBalancer.State.active;
+                var force = loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
                 var instance = create(application, clusterId, allocatedContainers(application, clusterId), force);
-                if (loadBalancer == null) {
-                    loadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
+                LoadBalancer newLoadBalancer;
+                if (loadBalancer.isEmpty()) {
+                    newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
                 } else {
-                    var newState = activate ? LoadBalancer.State.active : loadBalancer.state();
-                    loadBalancer = loadBalancer.with(instance).with(newState, now);
+                    var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
+                    newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
                 }
-                db.writeLoadBalancer(loadBalancer);
+                db.writeLoadBalancer(newLoadBalancer);
             }
         }
     }

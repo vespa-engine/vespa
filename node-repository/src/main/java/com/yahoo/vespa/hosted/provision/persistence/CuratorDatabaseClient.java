@@ -483,7 +483,7 @@ public class CuratorDatabaseClient {
                                                          Collections::unmodifiableMap));
     }
 
-    private Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
+    public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
         return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
