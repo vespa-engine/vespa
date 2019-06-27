@@ -45,7 +45,11 @@ public class SoftTimeout implements Cloneable {
         this.enabled = enable;
     }
 
-    public Boolean getEnable() { return enabled; }
+    /** Returns whether softtimeout is enabled. Defauyt is true. */
+    public Boolean getEnable() {
+        if (enabled == null) return Boolean.TRUE;
+        return enabled;
+    }
 
     /** Override the adaptive factor determined on the content nodes */
     public void setFactor(double factor) {

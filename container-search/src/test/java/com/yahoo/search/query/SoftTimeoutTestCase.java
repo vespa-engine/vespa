@@ -13,7 +13,7 @@ public class SoftTimeoutTestCase {
     @Test
     public void testDefaultsInQuery() {
         Query query=new Query("?query=test");
-        assertNull(query.getRanking().getSoftTimeout().getEnable());
+        assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertNull(query.getRanking().getSoftTimeout().getFactor());
         assertNull(query.getRanking().getSoftTimeout().getTailcost());
     }
@@ -21,7 +21,7 @@ public class SoftTimeoutTestCase {
     @Test
     public void testQueryOverride() {
         Query query=new Query("?query=test&ranking.softtimeout.factor=0.7&ranking.softtimeout.tailcost=0.3");
-        assertNull(query.getRanking().getSoftTimeout().getEnable());
+        assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertEquals(Double.valueOf(0.7), query.getRanking().getSoftTimeout().getFactor());
         assertEquals(Double.valueOf(0.3), query.getRanking().getSoftTimeout().getTailcost());
         query.prepare();
