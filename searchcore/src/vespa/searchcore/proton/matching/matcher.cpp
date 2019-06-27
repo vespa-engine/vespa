@@ -338,7 +338,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                 adjustedDuration = 0;
             }
             _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, adjustedDuration);
-            LOG(info, "Triggered softtimeout factor adjustment. Coverage = %lu of %u . request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
+            LOG(info, "Triggered softtimeout factor adjustment. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
                       ", factor adjusted from %1.3f to %1.3f",
                 covered, numActiveLids,
                 request.getTimeout().sec(), my_stats.doomOvertime().sec(), softLimit.sec(), duration.sec(),
