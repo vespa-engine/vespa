@@ -9,12 +9,12 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
@@ -84,6 +84,7 @@ public class Controller extends AbstractComponent {
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
+    private final ApplicationCertificateProvider applicationCertificateProvider;
     private final MavenRepository mavenRepository;
 
     /**
@@ -98,12 +99,12 @@ public class Controller extends AbstractComponent {
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
-                      MavenRepository mavenRepository) {
+                      MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
              configServer, metricsService, routingGenerator, chef,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
-             mavenRepository);
+             mavenRepository, applicationCertificateProvider);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
@@ -113,7 +114,7 @@ public class Controller extends AbstractComponent {
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository) {
+                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -126,6 +127,7 @@ public class Controller extends AbstractComponent {
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.nameServiceForwarder = new NameServiceForwarder(curator);
+        this.applicationCertificateProvider = Objects.requireNonNull(applicationCertificateProvider);
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
@@ -302,6 +304,10 @@ public class Controller extends AbstractComponent {
 
     public AuditLogger auditLogger() {
         return auditLogger;
+    }
+
+    public ApplicationCertificateProvider applicationCertificateProvider() {
+        return applicationCertificateProvider;
     }
 
     /** Returns all other roles the given tenant role implies. */

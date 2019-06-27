@@ -15,6 +15,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -87,6 +88,7 @@ public class ApplicationSerializer {
     private final String rotationsField = "endpoints";
     private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
+    private final String applicationCertificateField = "applicationCertificate";
 
     // Deployment fields
     private final String zoneField = "zone";
@@ -181,6 +183,7 @@ public class ApplicationSerializer {
         rotationsToSlime(application.assignedRotations(), root, rotationsField);
         assignedRotationsToSlime(application.assignedRotations(), root, assignedRotationsField);
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
+        application.applicationCertificate().ifPresent(cert -> root.setString(applicationCertificateField, cert.secretsKeyNamePrefix()));
         return slime;
     }
 
@@ -363,10 +366,11 @@ public class ApplicationSerializer {
         Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
+        Optional<ApplicationCertificate> applicationCertificate = optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, assignedRotations, rotationStatus);
+                               pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {

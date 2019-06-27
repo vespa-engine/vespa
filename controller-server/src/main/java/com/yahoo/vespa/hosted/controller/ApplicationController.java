@@ -26,6 +26,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
@@ -125,6 +127,8 @@ public class ApplicationController {
     private final Clock clock;
     private final BooleanFlag redirectLegacyDnsFlag;
     private final DeploymentTrigger deploymentTrigger;
+    private final BooleanFlag provisionApplicationCertificate;
+    private final ApplicationCertificateProvider applicationCertificateProvider;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
@@ -144,6 +148,9 @@ public class ApplicationController {
         this.applicationStore = applicationStore;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
+
+        this.provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
+        this.applicationCertificateProvider = controller.applicationCertificateProvider();
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -287,6 +294,7 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<String> rotationNames = new HashSet<>();
+            ApplicationCertificate applicationCertificate;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -332,6 +340,10 @@ public class ApplicationController {
                 // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
                 app.rotations().stream().map(RotationId::asString).forEach(rotationNames::add);
 
+                // Get application certificate (provisions a new certificate if missing)
+                application = withApplicationCertificate(application);
+                applicationCertificate = application.get().applicationCertificate().orElse(null);
+
                 // Update application with information from application package
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
@@ -342,7 +354,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames);
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames, applicationCertificate);
 
             lockOrThrow(applicationId, application ->
                     store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
@@ -409,7 +421,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of());
+            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ null);
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -417,16 +429,16 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Set.of());
+        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ null);
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, DeployOptions deployOptions,
-                                  Set<String> rotationNames) {
+                                  Set<String> rotationNames, ApplicationCertificate applicationCertificate) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
+                    configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationCertificate, applicationPackage.zippedContent());
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
@@ -459,6 +471,18 @@ public class ApplicationController {
                     }
                 });
             }
+        }
+        return application;
+    }
+
+    private LockedApplication withApplicationCertificate(LockedApplication application) {
+        ApplicationId applicationId = application.get().id();
+
+        // TODO: Verify that the application is deploying to a zone where certificate provisioning is enabled
+        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+        if (provisionCertificate) {
+            application = application.withApplicationCertificate(
+                    Optional.of(applicationCertificateProvider.requestCaSignedCertificate(applicationId)));
         }
         return application;
     }
