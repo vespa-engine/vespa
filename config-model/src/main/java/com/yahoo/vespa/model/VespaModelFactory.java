@@ -20,6 +20,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
@@ -166,7 +167,7 @@ public class VespaModelFactory implements ModelFactory {
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
             return Validation.validate(model, validationParameters, deployState);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | TransientException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -174,7 +175,7 @@ public class VespaModelFactory implements ModelFactory {
         return new ArrayList<>();
     }
 
-    private static void rethrowUnlessIgnoreErrors(IllegalArgumentException e, boolean ignoreValidationErrors) {
+    private static void rethrowUnlessIgnoreErrors(RuntimeException e, boolean ignoreValidationErrors) {
         if (!ignoreValidationErrors) {
             throw e;
         }
