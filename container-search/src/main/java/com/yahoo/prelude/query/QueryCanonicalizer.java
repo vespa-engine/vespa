@@ -83,9 +83,16 @@ public class QueryCanonicalizer {
             parentIterator.remove();
 
         if (composite.getItemCount() == 1 && ! (composite instanceof NonReducibleCompositeItem)) {
+            Item child = composite.getItem(0);
             if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
-                composite.getItem(0).setWeight(composite.getWeight());
-            parentIterator.set(composite.getItem(0));
+                child.setWeight(composite.getWeight());
+            parentIterator.set(child);
+        }
+        if ((composite.getItemCount() == 1) && (composite instanceof SameElementItem)) {
+            SameElementItem sameElement = (SameElementItem) composite;
+            WordItem child = (WordItem) sameElement.getItem(0);
+            child.setIndexName(sameElement.getFieldName() + "." + child.getIndexName());
+            parentIterator.set(child);
         }
 
         return CanonicalizationResult.success();
