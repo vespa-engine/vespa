@@ -1,6 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.cd;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Tests that compare the behaviour of a Vespa application deployment against a fixed specification.
  *
@@ -14,10 +26,11 @@ package ai.vespa.hosted.cd;
  *
  * @author jonmv
  */
-public interface SystemTest {
-
-    /** Use with JUnit 5 @Tag to have this run in the system test job in the pipeline. */
-    String name = "ai.vespa.hosted.cd.SystemTest";
+@Target({TYPE, ANNOTATION_TYPE})
+@Retention(RUNTIME)
+@Test
+@Tag("ai.vespa.hosted.cd.SystemTest")
+public @interface SystemTest {
 
     // Want to feed some documents.
     // Want to verify document processing and routing is as expected.

@@ -1,6 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.cd;
 
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Tests that verify the health of production deployments of Vespa applications.
  *
@@ -14,10 +24,11 @@ package ai.vespa.hosted.cd;
  *
  * @author jonmv
  */
-public interface ProductionTest {
-
-    /** Use with JUnit 5 @Tag to have this run in the production jobs in the pipeline. */
-    String name = "ai.vespa.hosted.cd.ProductionTest";
+@Target({TYPE, ANNOTATION_TYPE})
+@Retention(RUNTIME)
+@Test
+@Tag("ai.vespa.hosted.cd.ProductionTest")
+public @interface ProductionTest {
 
     // Want to verify metrics (Vespa).
     // Want to verify external metrics (YAMAS, other).
