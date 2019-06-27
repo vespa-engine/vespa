@@ -123,7 +123,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDataTypes() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDataTypes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
