@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/searchlib/memoryindex/feature_store.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("feature_store_test");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/memoryindex/feature_store.h>
 
 using namespace search::btree;
 using namespace search::datastore;
@@ -11,61 +13,54 @@ using namespace search::index;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
 
-namespace search
-{
+namespace search::memoryindex {
 
-
-namespace memoryindex
-{
-
-
-class Test : public vespalib::TestApp
-{
-private:
-    Schema _schema;
-
-    const Schema & getSchema() const { return _schema; }
-    bool assertFeatures(const DocIdAndFeatures &exp, const DocIdAndFeatures &act);
-    void requireThatFeaturesCanBeAddedAndRetrieved();
-    void requireThatNextWordsAreWorking();
-    void requireThatAddFeaturesTriggersChangeOfBuffer();
-
+class FeatureStoreTest : public ::testing::Test {
 public:
-    Test();
-    int Main() override;
+    Schema schema;
+    FeatureStore fs;
+
+    Schema make_schema() const;
+    FeatureStoreTest();
 };
 
-
-bool
-Test::assertFeatures(const DocIdAndFeatures &exp,
-                     const DocIdAndFeatures &act)
+Schema
+FeatureStoreTest::make_schema() const
 {
-    // docid is not encoded as part of features
-    if (!EXPECT_EQUAL(exp.elements().size(),
-                      act.elements().size()))
-        return false;
-    for (size_t i = 0; i < exp.elements().size(); ++i) {
-        if (!EXPECT_EQUAL(exp.elements()[i].getElementId(),
-                          act.elements()[i].getElementId()))
-            return false;
-        if (!EXPECT_EQUAL(exp.elements()[i].getNumOccs(),
-                          act.elements()[i].getNumOccs()))
-            return false;
-        if (!EXPECT_EQUAL(exp.elements()[i].getWeight(), act.elements()[i].getWeight()))
-            return false;
-        if (!EXPECT_EQUAL(exp.elements()[i].getElementLen(),
-                          act.elements()[i].getElementLen()))
-            return false;
-    }
-    if (!EXPECT_EQUAL(exp.word_positions().size(), act.word_positions().size()))
-        return false;
-    for (size_t i = 0; i < exp.word_positions().size(); ++i) {
-        if (!EXPECT_EQUAL(exp.word_positions()[i].getWordPos(),
-                          act.word_positions()[i].getWordPos())) return false;
-    }
-    return true;
+    Schema result;
+    result.addIndexField(Schema::IndexField("f0", DataType::STRING));
+    result.addIndexField(Schema::IndexField("f1", DataType::STRING, CollectionType::WEIGHTEDSET));
+    return result;
 }
 
+FeatureStoreTest::FeatureStoreTest()
+    : schema(make_schema()),
+      fs(schema)
+{
+}
+
+void
+assertFeatures(const DocIdAndFeatures& exp,
+               const DocIdAndFeatures& act)
+{
+    // docid is not encoded as part of features
+    ASSERT_EQ(exp.elements().size(),
+              act.elements().size());
+    for (size_t i = 0; i < exp.elements().size(); ++i) {
+        EXPECT_EQ(exp.elements()[i].getElementId(),
+                  act.elements()[i].getElementId());
+        EXPECT_EQ(exp.elements()[i].getNumOccs(),
+                  act.elements()[i].getNumOccs());
+        EXPECT_EQ(exp.elements()[i].getWeight(), act.elements()[i].getWeight());
+        EXPECT_EQ(exp.elements()[i].getElementLen(),
+                  act.elements()[i].getElementLen());
+    }
+    ASSERT_EQ(exp.word_positions().size(), act.word_positions().size());
+    for (size_t i = 0; i < exp.word_positions().size(); ++i) {
+        EXPECT_EQ(exp.word_positions()[i].getWordPos(),
+                  act.word_positions()[i].getWordPos());
+    }
+}
 
 DocIdAndFeatures
 getFeatures(uint32_t numOccs,
@@ -84,11 +79,8 @@ getFeatures(uint32_t numOccs,
     return f;
 }
 
-
-void
-Test::requireThatFeaturesCanBeAddedAndRetrieved()
+TEST_F(FeatureStoreTest, features_can_be_added_and_retrieved)
 {
-    FeatureStore fs(getSchema());
     DocIdAndFeatures act;
     EntryRef r1;
     EntryRef r2;
@@ -98,9 +90,9 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved()
         r = fs.addFeatures(0, f);
         r1 = r.first;
         EXPECT_TRUE(r.second > 0);
-        EXPECT_EQUAL(FeatureStore::RefType::align(1u),
-                     FeatureStore::RefType(r1).offset());
-        EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
+        EXPECT_EQ(FeatureStore::RefType::align(1u),
+                  FeatureStore::RefType(r1).offset());
+        EXPECT_EQ(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
             "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
@@ -108,7 +100,7 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved()
             FeatureStore::RefType(r1).bufferId());
         fs.getFeatures(0, r1, act);
         // weight not encoded for single value
-        EXPECT_TRUE(assertFeatures(getFeatures(2, 1, 8), act));
+        ASSERT_NO_FATAL_FAILURE(assertFeatures(getFeatures(2, 1, 8), act));
     }
     {
         DocIdAndFeatures f = getFeatures(4, 8, 16);
@@ -117,22 +109,19 @@ Test::requireThatFeaturesCanBeAddedAndRetrieved()
         EXPECT_TRUE(r.second > 0);
         EXPECT_TRUE(FeatureStore::RefType(r2).offset() >
                     FeatureStore::RefType(r1).offset());
-        EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
+        EXPECT_EQ(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
             "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r2).offset(),
             FeatureStore::RefType(r2).bufferId());
         fs.getFeatures(1, r2, act);
-        EXPECT_TRUE(assertFeatures(f, act));
+        ASSERT_NO_FATAL_FAILURE(assertFeatures(f, act));
     }
 }
 
-
-void
-Test::requireThatNextWordsAreWorking()
+TEST_F(FeatureStoreTest, next_words_are_working)
 {
-    FeatureStore fs(getSchema());
     DocIdAndFeatures act;
     EntryRef r1;
     EntryRef r2;
@@ -142,9 +131,9 @@ Test::requireThatNextWordsAreWorking()
         r = fs.addFeatures(0, f);
         r1 = r.first;
         EXPECT_TRUE(r.second > 0);
-        EXPECT_EQUAL(FeatureStore::RefType::align(1u),
-                     FeatureStore::RefType(r1).offset());
-        EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
+        EXPECT_EQ(FeatureStore::RefType::align(1u),
+                  FeatureStore::RefType(r1).offset());
+        EXPECT_EQ(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
             "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
@@ -152,7 +141,7 @@ Test::requireThatNextWordsAreWorking()
             FeatureStore::RefType(r1).bufferId());
         fs.getFeatures(0, r1, act);
         // weight not encoded for single value
-        EXPECT_TRUE(assertFeatures(getFeatures(2, 1, 8), act));
+        ASSERT_NO_FATAL_FAILURE(assertFeatures(getFeatures(2, 1, 8), act));
     }
     {
         DocIdAndFeatures f = getFeatures(4, 8, 16);
@@ -161,22 +150,19 @@ Test::requireThatNextWordsAreWorking()
         EXPECT_TRUE(r.second > 0);
         EXPECT_TRUE(FeatureStore::RefType(r2).offset() >
                     FeatureStore::RefType(r1).offset());
-        EXPECT_EQUAL(0u, FeatureStore::RefType(r1).bufferId());
+        EXPECT_EQ(0u, FeatureStore::RefType(r1).bufferId());
         LOG(info,
             "bits(%" PRIu64 "), ref.offset(%zu), ref.bufferId(%u)",
             r.second,
             FeatureStore::RefType(r2).offset(),
             FeatureStore::RefType(r2).bufferId());
         fs.getFeatures(1, r2, act);
-        EXPECT_TRUE(assertFeatures(f, act));
+        ASSERT_NO_FATAL_FAILURE(assertFeatures(f, act));
     }
 }
 
-
-void
-Test::requireThatAddFeaturesTriggersChangeOfBuffer()
+TEST_F(FeatureStoreTest, add_features_triggers_change_of_buffer)
 {
-    FeatureStore fs(getSchema());
     size_t cnt = 1;
     DocIdAndFeatures act;
     uint32_t lastId = 0;
@@ -185,7 +171,7 @@ Test::requireThatAddFeaturesTriggersChangeOfBuffer()
         DocIdAndFeatures f = getFeatures(numOccs, 1, numOccs + 1);
         std::pair<EntryRef, uint64_t> r = fs.addFeatures(0, f);
         fs.getFeatures(0, r.first, act);
-        EXPECT_TRUE(assertFeatures(f, act));
+        ASSERT_NO_FATAL_FAILURE(assertFeatures(f, act));
         uint32_t bufferId = FeatureStore::RefType(r.first).bufferId();
         if (bufferId > lastId) {
             LOG(info,
@@ -197,36 +183,10 @@ Test::requireThatAddFeaturesTriggersChangeOfBuffer()
             break;
         }
     }
-    EXPECT_EQUAL(1u, lastId);
+    EXPECT_EQ(1u, lastId);
     LOG(info, "Added %zu feature sets in 1 buffer", cnt);
 }
 
-
-Test::Test()
-    : _schema()
-{
-    _schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
-    _schema.addIndexField(Schema::IndexField("f1", DataType::STRING, CollectionType::WEIGHTEDSET));
 }
 
-
-int
-Test::Main()
-{
-    TEST_INIT("feature_store_test");
-
-    requireThatFeaturesCanBeAddedAndRetrieved();
-    requireThatNextWordsAreWorking();
-    requireThatAddFeaturesTriggersChangeOfBuffer();
-
-    TEST_DONE();
-}
-
-
-}
-
-
-}
-
-
-TEST_APPHOOK(search::memoryindex::Test);
+GTEST_MAIN_RUN_ALL_TESTS()
