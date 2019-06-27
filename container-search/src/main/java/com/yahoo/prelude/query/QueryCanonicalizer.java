@@ -4,7 +4,10 @@ package com.yahoo.prelude.query;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.ListIterator;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Query normalizer and sanity checker.
@@ -82,20 +85,15 @@ public class QueryCanonicalizer {
         if (composite.getItemCount() == 0)
             parentIterator.remove();
 
-        if (composite.getItemCount() == 1 && ! (composite instanceof NonReducibleCompositeItem)) {
-            Item child = composite.getItem(0);
-            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
-                child.setWeight(composite.getWeight());
-            parentIterator.set(child);
-        }
-        if ((composite.getItemCount() == 1) && (composite instanceof SameElementItem)) {
-            SameElementItem sameElement = (SameElementItem) composite;
-            WordItem child = (WordItem) sameElement.getItem(0);
-            child.setIndexName(sameElement.getFieldName() + "." + child.getIndexName());
-            parentIterator.set(child);
-        }
+        composite.extractSingleChild().ifPresent( (Item child) -> reduce(composite, parentIterator, child));
 
         return CanonicalizationResult.success();
+    }
+
+    private static void reduce(CompositeItem composite, ListIterator<Item> parentIterator, Item child) {
+        if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
+            child.setWeight(composite.getWeight());
+        parentIterator.set(child);
     }
     
     private static void collapseLevels(CompositeItem composite) {
