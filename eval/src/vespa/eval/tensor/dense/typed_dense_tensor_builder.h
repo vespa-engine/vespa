@@ -6,18 +6,19 @@
 
 namespace vespalib::tensor {
 
+extern size_t num_typed_tensor_builder_inserts;
+
 /**
  * Class for building a dense tensor by inserting cell values directly into underlying array of cells.
  */
-class DirectDenseTensorBuilder
+template <typename CT>
+class TypedDenseTensorBuilder
 {
 public:
-    using Cells = DenseTensor::Cells;
-    using Address = DenseTensor::Address;
-
+    using Address = DenseTensorView::Address;
 private:
     eval::ValueType _type;
-    Cells _cells;
+    std::vector<CT> _cells;
 
     static size_t calculateCellAddress(const Address &address, const eval::ValueType &type) {
         size_t result = 0;
@@ -28,16 +29,16 @@ private:
         return result;
     }
 public:
-    DirectDenseTensorBuilder(const eval::ValueType &type_in);
-    ~DirectDenseTensorBuilder();
-    void insertCell(const Address &address, double cellValue) {
+    TypedDenseTensorBuilder(const eval::ValueType &type_in);
+    ~TypedDenseTensorBuilder();
+    void insertCell(const Address &address, CT cellValue) {
         insertCell(calculateCellAddress(address, _type), cellValue);
     }
-    void insertCell(size_t index, double cellValue) {
+    void insertCell(size_t index, CT cellValue) {
         _cells[index] = cellValue;
+        ++num_typed_tensor_builder_inserts;
     }
     Tensor::UP build();
 };
 
 }
-

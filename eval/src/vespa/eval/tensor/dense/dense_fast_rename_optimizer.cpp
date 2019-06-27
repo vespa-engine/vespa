@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;

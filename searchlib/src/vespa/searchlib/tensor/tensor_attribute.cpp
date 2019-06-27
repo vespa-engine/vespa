@@ -54,7 +54,12 @@ createEmptyTensor(const ValueType &type)
         for (const auto &dimension : type.dimensions()) {
             size *= dimension.size;
         }
-        return std::make_unique<DenseTensor>(type, DenseTensor::Cells(size));
+        if (type.cell_type() == ValueType::CellType::DOUBLE) {
+            return std::make_unique<DenseTensor<double>>(ValueType(type), std::vector<double>(size));
+        } else {
+            assert(type.cell_type() == ValueType::CellType::FLOAT);
+            return std::make_unique<DenseTensor<float>>(ValueType(type), std::vector<float>(size));
+        }
     } else {
         return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
     }

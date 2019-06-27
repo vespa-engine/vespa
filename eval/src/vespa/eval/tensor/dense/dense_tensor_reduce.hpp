@@ -6,29 +6,26 @@
 
 namespace vespalib::tensor::dense {
 
-using Cells = DenseTensorView::Cells;
-using CellsRef = DenseTensorView::CellsRef;
-
 class DimensionReducer
 {
 private:
     eval::ValueType _type;
-    Cells _cellsResult;
     size_t _innerDimSize;
     size_t _sumDimSize;
     size_t _outerDimSize;
 
+    static size_t calcCellsSize(const eval::ValueType &type);
     void setup(const eval::ValueType &oldType, const vespalib::string &dimensionToRemove);
-
 public:
     DimensionReducer(const eval::ValueType &oldType, const string &dimensionToRemove);
     ~DimensionReducer();
 
-    template <typename Function>
+    template <typename T, typename Function>
     std::unique_ptr<DenseTensorView>
-    reduceCells(CellsRef cellsIn, Function &&func) {
+    reduceCells(ConstArrayRef<T> cellsIn, Function &&func) {
+        std::vector<T> cellsOut(calcCellsSize(_type));
         auto itr_in = cellsIn.cbegin();
-        auto itr_out = _cellsResult.begin();
+        auto itr_out = cellsOut.begin();
         for (size_t outerDim = 0; outerDim < _outerDimSize; ++outerDim) {
             auto saved_itr = itr_out;
             for (size_t innerDim = 0; innerDim < _innerDimSize; ++innerDim) {
@@ -45,20 +42,29 @@ public:
                 }
             }
         }
-        assert(itr_out == _cellsResult.end());
+        assert(itr_out == cellsOut.end());
         assert(itr_in == cellsIn.cend());
-        return std::make_unique<DenseTensor>(std::move(_type), std::move(_cellsResult));
+        return std::make_unique<DenseTensor<T>>(std::move(_type), std::move(cellsOut));
     }
 };
 
 namespace {
+
+struct CallReduceCells {
+    template <typename CT, typename Function>
+    static std::unique_ptr<DenseTensorView>
+    call(const ConstArrayRef<CT> &oldCells, DimensionReducer &reducer, Function &&func) {
+        return reducer.reduceCells(oldCells, func);
+    }
+};
 
 template <typename Function>
 std::unique_ptr<DenseTensorView>
 reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
     DimensionReducer reducer(tensor.fast_type(), dimensionToRemove);
-    return reducer.reduceCells(tensor.cellsRef(), func);
+    TypedCells oldCells = tensor.cellsRef();
+    return dispatch_1<CallReduceCells>(oldCells, reducer, func);
 }
 
 }

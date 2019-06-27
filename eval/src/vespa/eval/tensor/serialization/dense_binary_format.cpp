@@ -29,9 +29,10 @@ size_t encodeDimensions(nbostream &stream, const eval::ValueType & type) {
 }
 
 template<typename T>
-void encodeCells(nbostream &stream, DenseTensorView::CellsRef cells) {
-    for (const auto &value : cells) {
-        stream << static_cast<T>(value);
+void encodeCells(nbostream &stream, TypedCells cells) {
+    auto arr = cells.typify<T>();
+    for (const auto &value : arr) {
+        stream << value;
     }
 }
 
@@ -50,16 +51,16 @@ size_t decodeDimensions(nbostream & stream, std::vector<Dimension> & dimensions)
 }
 
 template<typename T, typename V>
-void decodeCells(nbostream &stream, size_t cellsSize, V &cells) {
+void decodeCells(nbostream &stream, size_t cellsSize, ArrayRef<V> cells) {
     T cellValue = 0.0;
     for (size_t i = 0; i < cellsSize; ++i) {
         stream >> cellValue;
-        cells.emplace_back(cellValue);
+        cells[i] = cellValue;
     }
 }
 
 template <typename V>
-void decodeCells(CellType cell_type, nbostream &stream, size_t cellsSize, V &cells) {
+void decodeCells(CellType cell_type, nbostream &stream, size_t cellsSize, ArrayRef<V> cells) {
     switch (cell_type) {
     case CellType::DOUBLE:
         decodeCells<double>(stream, cellsSize, cells);
@@ -76,8 +77,8 @@ void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
     size_t cellsSize = encodeDimensions(stream, tensor.fast_type());
-    DenseTensorView::CellsRef cells = tensor.cellsRef();
-    assert(cells.size() == cellsSize);
+    TypedCells cells = tensor.cellsRef();
+    assert(cells.size == cellsSize);
     switch (tensor.fast_type().cell_type()) {
     case CellType::DOUBLE:
         encodeCells<double>(stream, cells);
@@ -88,15 +89,24 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
     }
 }
 
-std::unique_ptr<DenseTensor>
+std::unique_ptr<DenseTensorView>
 DenseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
 {
     std::vector<Dimension> dimensions;
-    size_t cellsSize = decodeDimensions(stream,dimensions);
-    DenseTensor::Cells cells;
-    cells.reserve(cellsSize);
-    decodeCells(cell_type, stream, cellsSize, cells);
-    return std::make_unique<DenseTensor>(ValueType::tensor_type(std::move(dimensions), cell_type), std::move(cells));
+
+    size_t numCells = decodeDimensions(stream,dimensions);
+
+    ValueType newType = ValueType::tensor_type(std::move(dimensions), cell_type);
+    if (cell_type == CellType::DOUBLE) {
+	std::vector<double> newCells(numCells);
+        decodeCells(cell_type, stream, numCells, ArrayRef(newCells));
+	return std::make_unique<DenseTensor<double>>(std::move(newType), std::move(newCells));
+    } else {
+        assert(cell_type == CellType::FLOAT);
+	std::vector<float> newCells(numCells);
+        decodeCells(cell_type, stream, numCells, ArrayRef(newCells));
+	return std::make_unique<DenseTensor<float>>(std::move(newType), std::move(newCells));
+    }
 }
 
 template <typename T>
@@ -104,10 +114,9 @@ void
 DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<T> &cells, CellType cell_type)
 {
     std::vector<Dimension> dimensions;
-    size_t cellsSize = decodeDimensions(stream,dimensions);
-    cells.clear();
-    cells.reserve(cellsSize);
-    decodeCells(cell_type, stream, cellsSize, cells);
+    size_t cellsSize = decodeDimensions(stream, dimensions);
+    cells.resize(cellsSize);
+    decodeCells(cell_type, stream, cellsSize, ArrayRef<T>(cells));
 }
 
 template void DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<double> &cells, CellType cell_type);

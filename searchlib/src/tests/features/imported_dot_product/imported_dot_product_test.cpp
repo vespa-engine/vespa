@@ -197,25 +197,25 @@ TEST_F("prepareSharedState emits double vector for double imported attribute", A
 
 TEST_F("prepareSharedState handles tensor as float from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    vespalib::tensor::DenseTensor<float> tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for double imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::DOUBLE);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
+    vespalib::tensor::DenseTensor<double> tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<double>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as float from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
+    vespalib::tensor::DenseTensor<float> tensor(vespalib::eval::ValueType::from_spec("tensor<float>(x[3])"), {10.1, 20.2, 30.3});
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 
 TEST_F("prepareSharedState handles tensor as double from tensor for float imported attribute", ArrayFixture) {
     f.setup_float_mappings(BasicType::FLOAT);
-    vespalib::tensor::DenseTensor tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
+    vespalib::tensor::DenseTensor<double> tensor(vespalib::eval::ValueType::from_spec("tensor(x[3])"), {10.1, 20.2, 30.3});
     f.template check_prepare_state_output(tensor, dotproduct::ArrayParam<float>({10.1, 20.2, 30.3}));
 }
 

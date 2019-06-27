@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::as;
@@ -19,17 +18,61 @@ using namespace eval::operation;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
     return denseTensor.cellsRef();
 }
 
+struct CallDotProduct {
+    template<typename LCT, typename RCT>
+    static double
+    call(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
+         size_t numCells, hwaccelrated::IAccelrated *hw_accelerator);
+};
+
+template<> double
+CallDotProduct::call<double, double>(const ConstArrayRef<double> &lhs, const ConstArrayRef<double> &rhs,
+                                     size_t numCells, hwaccelrated::IAccelrated *hw_accelerator)
+{
+    return hw_accelerator->dotProduct(lhs.cbegin(), rhs.cbegin(), numCells);
+}
+
+template<> double
+CallDotProduct::call<float, float>(const ConstArrayRef<float> &lhs, const ConstArrayRef<float> &rhs,
+                                   size_t numCells,  hwaccelrated::IAccelrated *hw_accelerator)
+{
+    return hw_accelerator->dotProduct(lhs.cbegin(), rhs.cbegin(), numCells);
+}
+
+template<> double
+CallDotProduct::call<float, double>(const ConstArrayRef<float> &lhs, const ConstArrayRef<double> &rhs,
+                                    size_t numCells, hwaccelrated::IAccelrated *)
+{
+    double result = 0.0;
+    for (size_t i = 0; i < numCells; ++i) {
+        result += lhs[i] * rhs[i];
+    }
+    return result;
+}
+
+template<> double
+CallDotProduct::call<double, float>
+(const ConstArrayRef<double> &lhs, const ConstArrayRef<float> &rhs,
+ size_t numCells, hwaccelrated::IAccelrated *)
+{
+    double result = 0.0;
+    for (size_t i = 0; i < numCells; ++i) {
+        result += lhs[i] * rhs[i];
+    }
+    return result;
+}
+
 void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     auto *hw_accelerator = (hwaccelrated::IAccelrated *)(param);
-    DenseTensorView::CellsRef lhsCells = getCellsRef(state.peek(1));
-    DenseTensorView::CellsRef rhsCells = getCellsRef(state.peek(0));
-    size_t numCells = std::min(lhsCells.size(), rhsCells.size());
-    double result = hw_accelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
+    TypedCells lhsCells = getCellsRef(state.peek(1));
+    TypedCells rhsCells = getCellsRef(state.peek(0));
+    size_t numCells = std::min(lhsCells.size, rhsCells.size);
+    double result = dispatch_2<CallDotProduct>(lhsCells, rhsCells, numCells, hw_accelerator);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
 

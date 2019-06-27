@@ -7,7 +7,7 @@
 #include "sparse/sparse_tensor_address_builder.h"
 #include "sparse/direct_sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
-#include "dense/direct_dense_tensor_builder.h"
+#include "dense/typed_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
@@ -165,6 +165,25 @@ DefaultTensorEngine::to_spec(const Value &value) const
     }
 }
 
+struct CallDenseTensorBuilder {
+    template <typename CT>
+    static Value::UP
+    call(ConstArrayRef<CT> dummy, const ValueType &type, const TensorSpec &spec)
+    {
+        (void) dummy;
+        TypedDenseTensorBuilder<CT> builder(type);
+        for (const auto &cell: spec.cells()) {
+            const auto &address = cell.first;
+            size_t cell_idx = calculate_cell_index(type, address);
+            if (cell_idx == UNDEFINED_IDX) {
+                bad_spec(spec);
+            }
+            builder.insertCell(cell_idx, cell.second);
+        }
+        return builder.build();
+    }
+};
+
 Value::UP
 DefaultTensorEngine::from_spec(const TensorSpec &spec) const
 {
@@ -175,16 +194,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
         double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
         return std::make_unique<DoubleValue>(value);
     } else if (type.is_dense()) {
-        DirectDenseTensorBuilder builder(type);
-        for (const auto &cell: spec.cells()) {
-            const auto &address = cell.first;
-            size_t cell_idx = calculate_cell_index(type, address);
-            if (cell_idx == UNDEFINED_IDX) {
-                bad_spec(spec);
-            }
-            builder.insertCell(cell_idx, cell.second);
-        }
-        return builder.build();
+        return dispatch_1<CallDenseTensorBuilder>(TypedCells(type.cell_type()), type, spec);
     } else if (type.is_sparse()) {
         DirectSparseTensorBuilder builder(type);
         SparseTensorAddressBuilder address_builder;
@@ -229,7 +239,7 @@ DefaultTensorEngine::encode(const Value &value, nbostream &output) const
     if (auto tensor = value.as_tensor()) {
         TypedBinaryFormat::serialize(output, static_cast<const tensor::Tensor &>(*tensor));
     } else {
-        TypedBinaryFormat::serialize(output, DenseTensor(ValueType::double_type(), {value.as_double()}));
+	TypedBinaryFormat::serialize(output, DenseTensor<double>(ValueType::double_type(), {value.as_double()}));
     }
 }
 
@@ -367,12 +377,18 @@ size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     }
 }
 
+struct CallAppendVector {
+    template <typename CT>
+    static void call(const ConstArrayRef<CT> &arr, double *&pos) {
+        for (CT cell : arr) { *pos++ = cell; }
+    }
+};
+
 void append_vector(double *&pos, const Value &value) {
     if (auto tensor = value.as_tensor()) {
         const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
-        for (double cell: view->cellsRef()) {
-            *pos++ = cell;
-        }
+        TypedCells cellsRef = view->cellsRef();
+        dispatch_1<CallAppendVector>(cellsRef, pos);
     } else {
         *pos++ = value.as_double();
     }
@@ -385,7 +401,7 @@ const Value &concat_vectors(const Value &a, const Value &b, const vespalib::stri
     append_vector(pos, b);
     assert(pos == cells.end());
     const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}));
-    return stash.create<DenseTensorView>(type, cells);
+    return stash.create<DenseTensorView>(type, TypedCells(cells));
 }
 
 const Value &

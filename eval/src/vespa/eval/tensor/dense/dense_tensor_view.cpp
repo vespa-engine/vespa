@@ -54,12 +54,12 @@ void
 checkCellsSize(const DenseTensorView &arg)
 {
     auto cellsSize = calcCellsSize(arg.fast_type());
-    if (arg.cellsRef().size() != cellsSize) {
+    if (arg.cellsRef().size != cellsSize) {
         throw IllegalStateException(make_string("wrong cell size, "
                                                 "expected=%zu, "
                                                 "actual=%zu",
                                                 cellsSize,
-                                                arg.cellsRef().size()));
+                                                arg.cellsRef().size));
     }
 }
 
@@ -67,7 +67,7 @@ void
 checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
                 vespalib::stringref operation)
 {
-    if (lhs.fast_type() != rhs.fast_type()) {
+    if (lhs.fast_type().dimensions() != rhs.fast_type().dimensions()) {
         throw IllegalStateException(make_string("mismatching dimensions for "
                                                 "dense tensor %s, "
                                                 "lhs dimensions = '%s', "
@@ -87,23 +87,51 @@ checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
  * The given function is used to calculate the resulting cell value
  * for overlapping cells.
  */
+template <typename LCT, typename RCT, typename Function>
+static Tensor::UP
+sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
+	      const eval::ValueType &lhs_type, const eval::ValueType &rhs_type,
+              Function &&func)
+{
+    size_t sz = lhs.size();
+    assert(sz == rhs.size());
+    using OCT = typename OutputCellType<LCT, RCT>::output_type;
+    CellType oct = OutputCellType<LCT, RCT>::output_cell_type();
+    std::vector<OCT> newCells;
+    newCells.reserve(sz);
+    auto rhsCellItr = rhs.cbegin();
+    for (const auto &lhsCell : lhs) {
+        OCT v = func(lhsCell, *rhsCellItr);
+        newCells.push_back(v);
+        ++rhsCellItr;
+    }
+    assert(rhsCellItr == rhs.cend());
+    assert(newCells.size() == sz);
+    eval::ValueType newType = (lhs_type.cell_type() == oct) ? lhs_type : rhs_type;
+    return std::make_unique<DenseTensor<OCT>>(std::move(newType), std::move(newCells));
+}
+
+struct CallJoin
+{
+    template <typename LCT, typename RCT, typename Function>
+    static Tensor::UP
+    call(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
+	 const eval::ValueType &lhs_type, const eval::ValueType &rhs_type,
+	 Function &&func)
+    {
+        return sameShapeJoin(lhs, rhs, lhs_type, rhs_type, std::move(func));
+    }
+};
+
 template <typename Function>
 Tensor::UP
 joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
                  Function &&func)
 {
-    DenseTensor::Cells cells;
-    cells.reserve(lhs.cellsRef().size());
-    auto rhsCellItr = rhs.cellsRef().cbegin();
-    for (const auto &lhsCell : lhs.cellsRef()) {
-        cells.push_back(func(lhsCell, *rhsCellItr));
-        ++rhsCellItr;
-    }
-    assert(rhsCellItr == rhs.cellsRef().cend());
-    return std::make_unique<DenseTensor>(lhs.fast_type(),
-                                         std::move(cells));
+    TypedCells lhsCells = lhs.cellsRef();
+    TypedCells rhsCells = rhs.cellsRef();
+    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type(), rhs.fast_type(), std::move(func));
 }
-
 
 template <typename Function>
 Tensor::UP
@@ -119,13 +147,13 @@ joinDenseTensors(const DenseTensorView &lhs, const Tensor &rhs,
     return Tensor::UP();
 }
 
-bool sameCells(DenseTensorView::CellsRef lhs, DenseTensorView::CellsRef rhs)
+bool sameCells(TypedCells lhs, TypedCells rhs)
 {
-    if (lhs.size() != rhs.size()) {
+    if (lhs.size != rhs.size) {
         return false;
     }
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        if (lhs[i] != rhs[i]) {
+    for (size_t i = 0; i < lhs.size; ++i) {
+        if (lhs.get(i) != rhs.get(i)) {
             return false;
         }
     }
@@ -146,27 +174,43 @@ DenseTensorView::type() const
     return _typeRef;
 }
 
+struct CallSum {
+    template <typename CT>
+    static double
+    call(const ConstArrayRef<CT> &arr) {
+        double res = 0.0;
+        for (CT val : arr) {
+            res += val;
+        }
+        return res;
+    }
+};
+
 double
 DenseTensorView::as_double() const
 {
-    double result = 0.0;
-    for (const auto &cell : _cellsRef) {
-        result += cell;
-    }
-    return result;
+    return dispatch_1<CallSum>(_cellsRef);
 }
+
+struct CallApply {
+    template <typename CT>
+    static Tensor::UP
+    call(const ConstArrayRef<CT> &oldCells, eval::ValueType newType, const CellFunction &func)
+    {
+	std::vector<CT> newCells;
+	newCells.reserve(oldCells.size());
+        for (const auto &cell : oldCells) {
+	    CT nv = func.apply(cell);
+            newCells.push_back(nv);
+        }
+	return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+    }
+};
 
 Tensor::UP
 DenseTensorView::apply(const CellFunction &func) const
 {
-    Cells newCells(_cellsRef.size());
-    auto itr = newCells.begin();
-    for (const auto &cell : _cellsRef) {
-        *itr = func.apply(cell);
-        ++itr;
-    }
-    assert(itr == newCells.end());
-    return std::make_unique<DenseTensor>(_typeRef, std::move(newCells));
+    return dispatch_1<CallApply>(_cellsRef, _typeRef, func);
 }
 
 bool
@@ -179,11 +223,20 @@ DenseTensorView::equals(const Tensor &arg) const
     return false;
 }
 
+struct CallClone {
+    template<class CT>
+    static Tensor::UP
+    call(const ConstArrayRef<CT> &cells, eval::ValueType newType)
+    {
+	std::vector<CT> newCells(cells.begin(), cells.end());
+	return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+    }
+};
+
 Tensor::UP
 DenseTensorView::clone() const
 {
-    return std::make_unique<DenseTensor>(_typeRef,
-                                         Cells(_cellsRef.cbegin(), _cellsRef.cend()));
+    return dispatch_1<CallClone>(_cellsRef, _typeRef);
 }
 
 namespace {
@@ -277,12 +330,25 @@ DenseTensorView::reduce(join_fun_t op, const std::vector<vespalib::string> &dime
             : reduce_all(op, dimensions);
 }
 
+struct CallModify
+{
+    using join_fun_t = DenseTensorView::join_fun_t;
+
+    template <typename CT>
+    static std::unique_ptr<Tensor>
+    call(const ConstArrayRef<CT> &arr, join_fun_t op, const eval::ValueType &typeRef, const CellValues &cellValues)
+    {
+        std::vector newCells(arr.begin(), arr.end());
+        DenseTensorModify<CT> modifier(op, typeRef, std::move(newCells));
+        cellValues.accept(modifier);
+        return modifier.build();
+    }
+};
+
 std::unique_ptr<Tensor>
 DenseTensorView::modify(join_fun_t op, const CellValues &cellValues) const
 {
-    DenseTensorModify modifier(op, _typeRef, Cells(_cellsRef.cbegin(), _cellsRef.cend()));
-    cellValues.accept(modifier);
-    return modifier.build();
+    return dispatch_1<CallModify>(_cellsRef, op, _typeRef, cellValues);
 }
 
 std::unique_ptr<Tensor>

@@ -4,21 +4,23 @@
 
 #include "dense_tensor_apply.h"
 #include "dense_dimension_combiner.h"
-#include "direct_dense_tensor_builder.h"
+#include "typed_dense_tensor_builder.h"
 
 namespace vespalib::tensor::dense {
 
-template <typename Function>
+template <typename LCT, typename RCT, typename OCT, typename Function>
 std::unique_ptr<Tensor>
-apply(DenseDimensionCombiner & combiner, DirectDenseTensorBuilder & builder,
-      const DenseTensorView::CellsRef & lhsCells,
-      const DenseTensorView::CellsRef & rhsCells, Function &&func) __attribute__((noinline));
+apply(DenseDimensionCombiner & combiner,
+      TypedDenseTensorBuilder<OCT> & builder,
+      const ConstArrayRef<LCT> & lhsCells,
+      const ConstArrayRef<RCT> & rhsCells, Function &&func) __attribute__((noinline));
 
-template <typename Function>
+template <typename LCT, typename RCT, typename OCT, typename Function>
 std::unique_ptr<Tensor>
-apply(DenseDimensionCombiner & combiner, DirectDenseTensorBuilder & builder,
-      const DenseTensorView::CellsRef & lhsCells,
-      const DenseTensorView::CellsRef & rhsCells, Function &&func)
+apply(DenseDimensionCombiner & combiner,
+      TypedDenseTensorBuilder<OCT> & builder,
+      const ConstArrayRef<LCT> & lhsCells,
+      const ConstArrayRef<RCT> & rhsCells, Function &&func)
 {
     for (combiner.leftReset(); combiner.leftInRange(); combiner.stepLeft()) {
         for (combiner.rightReset(); combiner.rightInRange(); combiner.stepRight()) {
@@ -33,6 +35,20 @@ apply(DenseDimensionCombiner & combiner, DirectDenseTensorBuilder & builder,
     return builder.build();
 }
 
+struct CallApply {
+    template <typename LCT, typename RCT, typename Function>
+    static std::unique_ptr<Tensor>
+    call(const ConstArrayRef<LCT> & lhsArr,
+         const ConstArrayRef<RCT> & rhsArr,
+         DenseDimensionCombiner & combiner,
+         Function &&func)
+    {
+        using OCT = typename OutputCellType<LCT, RCT>::output_type;
+        TypedDenseTensorBuilder<OCT> builder(combiner.result_type);
+        return apply(combiner, builder, lhsArr, rhsArr, std::move(func));
+    }
+};
+
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
@@ -40,8 +56,9 @@ apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
     const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&rhs);
     if (view) {
         DenseDimensionCombiner combiner(lhs.fast_type(), view->fast_type());
-        DirectDenseTensorBuilder builder(combiner.result_type);
-        return apply(combiner, builder, lhs.cellsRef(), view->cellsRef(), std::move(func));
+        TypedCells lhsCells = lhs.cellsRef();
+        TypedCells rhsCells = view->cellsRef();
+        return dispatch_2<CallApply>(lhsCells, rhsCells, combiner, std::move(func));
     }
     return Tensor::UP();
 }

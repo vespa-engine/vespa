@@ -10,20 +10,20 @@ namespace vespalib::tensor {
  * A dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
+template <typename CT>
 class DenseTensor : public DenseTensorView
 {
 public:
-    DenseTensor();
+    DenseTensor() = delete;
     ~DenseTensor() override;
-    DenseTensor(const eval::ValueType &type_in, const Cells &cells_in);
-    DenseTensor(const eval::ValueType &type_in, Cells &&cells_in);
-    DenseTensor(eval::ValueType &&type_in, Cells &&cells_in);
-    bool operator==(const DenseTensor &rhs) const;
+    DenseTensor(eval::ValueType &&type_in, std::vector<CT> &&cells_in);
+
+    // for unit tests
+    template <typename RCT>
+    bool operator==(const DenseTensor<RCT> &rhs) const;
 private:
     eval::ValueType _type;
-    Cells           _cells;
-
+    std::vector<CT> _cells;
 };
 
 }
-

@@ -8,7 +8,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -19,7 +18,7 @@ namespace {
 
 ArrayRef<double> getMutableCells(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return unconstify(denseTensor.cellsRef());
+    return unconstify(denseTensor.cellsRef().typify<double>());
 }
 
 void my_inplace_map_op(eval::InterpretedFunction::State &state, uint64_t param) {

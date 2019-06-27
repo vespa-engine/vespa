@@ -12,16 +12,16 @@ namespace vespalib::tensor {
  * For all cells visited, a join function is applied to determine
  * the new cell value.
  */
+template <class CT>
 class DenseTensorModify : public TensorVisitor
 {
     using join_fun_t = Tensor::join_fun_t;
-    using Cells = DenseTensorView::Cells;
     join_fun_t             _op;
     eval::ValueType        _type;
-    Cells                  _cells;
+    std::vector<CT>        _cells;
 
 public:
-    DenseTensorModify(join_fun_t op, const eval::ValueType &type, Cells cells);
+    DenseTensorModify(join_fun_t op, const eval::ValueType &type, std::vector<CT> &&cells);
     ~DenseTensorModify();
     void visit(const TensorAddress &address, double value) override;
     std::unique_ptr<Tensor> build();

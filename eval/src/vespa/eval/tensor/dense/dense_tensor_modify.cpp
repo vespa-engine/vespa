@@ -6,28 +6,37 @@
 
 namespace vespalib::tensor {
 
-DenseTensorModify::DenseTensorModify(join_fun_t op, const eval::ValueType &type, Cells cells)
+template <class CT>
+DenseTensorModify<CT>::DenseTensorModify(join_fun_t op, const eval::ValueType &type, std::vector<CT> &&cells)
     : _op(op),
       _type(type),
       _cells(std::move(cells))
 {
+    assert(check_type<CT>(type.cell_type()));
 }
-    
-DenseTensorModify::~DenseTensorModify() = default;
 
+template <class CT>
+DenseTensorModify<CT>::~DenseTensorModify() = default;
+
+template <class CT>
 void
-DenseTensorModify::visit(const TensorAddress &address, double value)
+DenseTensorModify<CT>::visit(const TensorAddress &address, double value)
 {
     uint32_t idx = DenseTensorAddressMapper::mapAddressToIndex(address, _type);
     if (idx != DenseTensorAddressMapper::BAD_ADDRESS) {
-        _cells[idx] = _op(_cells[idx], value);
+        double nv = _op(_cells[idx], value);
+        _cells[idx] = (CT) nv;
     }
 }
 
+template <class CT>
 std::unique_ptr<Tensor>
-DenseTensorModify::build()
+DenseTensorModify<CT>::build()
 {
-    return std::make_unique<DenseTensor>(std::move(_type), std::move(_cells));
+    return std::make_unique<DenseTensor<CT>>(std::move(_type), std::move(_cells));
 }
 
-}
+template class DenseTensorModify<float>;
+template class DenseTensorModify<double>;
+
+} // namespace

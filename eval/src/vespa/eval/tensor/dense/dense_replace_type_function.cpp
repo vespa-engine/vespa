@@ -6,7 +6,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -15,14 +14,14 @@ using namespace eval::tensor_function;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
     return denseTensor.cellsRef();
 }
 
 void my_replace_type_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const ValueType *type = (const ValueType *)(param);
-    CellsRef cells = getCellsRef(state.peek(0));
+    TypedCells cells = getCellsRef(state.peek(0));
     state.pop_push(state.stash.create<DenseTensorView>(*type, cells));
 }
 

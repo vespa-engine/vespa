@@ -16,7 +16,7 @@ class ValueType
 {
 public:
     enum class Type { ERROR, DOUBLE, TENSOR };
-    enum class CellType { FLOAT, DOUBLE };
+    enum class CellType : char { FLOAT, DOUBLE };
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;

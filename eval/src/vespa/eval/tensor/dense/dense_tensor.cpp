@@ -21,68 +21,57 @@ calcCellsSize(const eval::ValueType &type)
     return cellsSize;
 }
 
+template<typename T>
 void
-checkCellsSize(const DenseTensor &arg)
+checkCellsSize(const DenseTensor<T> &arg)
 {
     auto cellsSize = calcCellsSize(arg.fast_type());
-    if (arg.cellsRef().size() != cellsSize) {
+    if (arg.cellsRef().size != cellsSize) {
         throw IllegalStateException(make_string("Wrong cell size, "
                                                 "expected=%zu, "
                                                 "actual=%zu",
                                                 cellsSize,
-                                                arg.cellsRef().size()));
+                                                arg.cellsRef().size));
+    }
+    if (arg.fast_type().cell_type() != arg.cellsRef().type) {
+        throw IllegalStateException(make_string("Wrong cell type, "
+                                                "expected=%u, "
+                                                "actual=%u",
+                                                (unsigned char)arg.fast_type().cell_type(),
+                                                (unsigned char)arg.cellsRef().type));
     }
 }
 
 }
 
-DenseTensor::DenseTensor()
-    : DenseTensorView(_type),
-      _type(eval::ValueType::double_type()),
-      _cells(1)
-{
-    initCellsRef(CellsRef(_cells));
-}
-
-DenseTensor::DenseTensor(const eval::ValueType &type_in,
-                         const Cells &cells_in)
-    : DenseTensorView(_type),
-      _type(type_in),
-      _cells(cells_in)
-{
-    initCellsRef(CellsRef(_cells));
-    checkCellsSize(*this);
-}
-
-
-DenseTensor::DenseTensor(const eval::ValueType &type_in,
-                         Cells &&cells_in)
-    : DenseTensorView(_type),
-      _type(type_in),
-      _cells(std::move(cells_in))
-{
-    initCellsRef(CellsRef(_cells));
-    checkCellsSize(*this);
-}
-
-DenseTensor::DenseTensor(eval::ValueType &&type_in,
-                         Cells &&cells_in)
-    : DenseTensorView(_type),
+template <typename CT>
+DenseTensor<CT>::DenseTensor(eval::ValueType &&type_in,
+                             std::vector<CT> &&cells_in)
+    : DenseTensorView(_type, type_in.cell_type()),
       _type(std::move(type_in)),
       _cells(std::move(cells_in))
 {
-    initCellsRef(CellsRef(_cells));
+    initCellsRef(TypedCells(_cells));
     checkCellsSize(*this);
 }
 
-DenseTensor::~DenseTensor() = default;
+template <typename CT>
+DenseTensor<CT>::~DenseTensor() = default;
 
+template <typename CT>
+template <typename RCT>
 bool
-DenseTensor::operator==(const DenseTensor &rhs) const
+DenseTensor<CT>::operator==(const DenseTensor<RCT> &rhs) const
 {
-    return (_type == rhs._type) &&
-            (_cells == rhs._cells);
+    if (_type != rhs._type) return false;
+    if (_cells.size != rhs._cells.size) return false;
+    for (size_t i = 0; i < _cells.size; i++) {
+        if (_cells[i]  != rhs._cells[i]) return false;
+    }
+    return true;
 }
 
-}
+template class DenseTensor<float>;
+template class DenseTensor<double>;
 
+}
