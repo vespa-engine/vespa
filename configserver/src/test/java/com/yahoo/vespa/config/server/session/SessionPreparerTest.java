@@ -9,6 +9,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
@@ -276,31 +277,21 @@ public class SessionPreparerTest {
         assertEquals("CERT", tlsSecrets.get().certificate());
     }
 
-    @Test
+    @Test(expected = CertificateNotReadyException.class)
     public void require_that_tlssecretkey_is_missing_when_not_in_secretstore() throws IOException {
         var tlskey = "vespa.tlskeys.tenant1--app1";
         var applicationId = applicationId("test");
         var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
-
-        // Read from zk and verify key/cert is missing
-        Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
-        assertTrue(tlsSecrets.isPresent());
-        assertTrue(tlsSecrets.get().isMissing());
     }
 
-    @Test
+    @Test(expected = CertificateNotReadyException.class)
     public void require_that_tlssecretkey_is_missing_when_certificate_not_in_secretstore() throws IOException {
         var tlskey = "vespa.tlskeys.tenant1--app1";
         var applicationId = applicationId("test");
         var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
         secretStore.put(tlskey+"-key", "KEY");
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
-
-        // Read from zk and verify key/cert is missing
-        Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
-        assertTrue(tlsSecrets.isPresent());
-        assertTrue(tlsSecrets.get().isMissing());
     }
 
     private void prepare(File app) throws IOException {
