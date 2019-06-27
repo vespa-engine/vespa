@@ -28,7 +28,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({TYPE, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-@Test
 @Tag("ai.vespa.hosted.cd.SystemTest")
 public @interface SystemTest {
 
