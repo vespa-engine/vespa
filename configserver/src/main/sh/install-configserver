@@ -1,0 +1,558 @@
+#!/usr/bin/env bash
+#
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Author: hakonhall
+
+set -e
+shopt -s nullglob
+
+declare VESPA_HOME
+declare SILENT=false
+
+# Used as output variable
+declare OUT=""
+
+function UsageError {
+    if (( $# > 0 )); then
+	printf "%s" "$@"
+	echo
+    fi
+
+    echo "Try --help/-h to get more info."
+    exit 1
+}
+
+function Usage {
+    cat <<EOF
+Usage: ${0##*/} [OPTION...]
+Installs config server to Vespa home.
+
+<root> must be a fully built Vespa repository.  This script pulls artifacts
+from <root> and installs them at the correct place under <home> (aka Vespa home
+and VESPA_HOME).  On success, a config server can be started by executing
+<home>/libexec/vespa/start-configserver.
+
+Options:
+    --delete-home, -d
+        Delete Vespa home before installing.
+    --help, -h
+        Print this help text.
+    --home-exists, -e
+        Allow installation to an existing (Vespa home) directory.
+    --java, -j
+        Only install the Java-part of the config server. Some features may be
+        sub-par.
+    --home, -H <home> [defaults to the VESPA_HOME environment variable]
+        The destination/installation directory.
+    --root, -r <root> [defaults to current working directory]
+        The root directory of a built github.com/vespa-engine/vespa repository.
+    --silent, -s
+        Avoid printing operations
+EOF
+
+    exit 0
+}
+
+function Fail {
+    printf "%s" "$@"
+    echo
+    exit 1
+}
+
+function Run {
+    if ! $SILENT; then
+	printf "%s " "$@"
+	echo
+    fi
+    "$@"
+}
+
+function MakeDirs {
+    # If $1 is a relative path, it is relative VESPA_HOME. ALL mutable
+    # operations MUST be within VESPA_HOME.
+    if test "${1:0:1}" == /; then
+	local dir="$1"
+    else
+	local dir="$VESPA_HOME/$1"
+    fi
+
+    if ! test -d "$dir"; then
+	Run mkdir -p "$dir"
+    fi
+}
+
+function MakeParentDirs {
+    MakeDirs "$(dirname "$1")"
+}
+
+function Install {
+    local x_option=
+    if test "$1" == "+x"; then
+	x_option=+x
+	shift
+    fi
+
+    local module="$1"
+
+    # A relative-path $2 is relative the module ($1)
+    if test "${2:0:1}" == /; then
+	local fromPath="$2"
+    else
+	local fromPath="$module"/"$2"
+    fi
+
+    # The sole purpose of RecursiveInstall is that it gets a proper path for
+    # $2, while Install gets a module-relative path for $2.
+    shift 2
+    RecursiveInstall $x_option "$module" "$fromPath" "$@"
+}
+
+function RecursiveInstall {
+    local x_option=
+    if test "$1" == "+x"; then
+	x_option=+x
+	shift
+    fi
+
+    local module="$1"
+    local fromPath="$2"
+
+    # A relative-path $3 is relative VESPA_HOME
+    if test "${3:0:1}" == /; then
+	local toPath="$3"
+    else
+	local toPath="$VESPA_HOME/$3"
+    fi
+
+    if [[ "$toPath" =~ ^(.*)/$ ]]; then
+	local toDir="${BASH_REMATCH[1]}"
+	local toName=$(basename "$fromPath")
+    else
+	local toDir=$(dirname "$toPath")
+	local toName=$(basename "$toPath")
+    fi
+    toPath="$toDir/$toName"
+
+    if test -f "$fromPath"; then
+	MakeDirs "$toDir"
+	Run cp "$fromPath" "$toPath"
+	if $executable && ! test -x "$toPath"; then
+	    Run chmod +x "$toPath"
+	fi
+    elif test -d "$fromPath"; then
+	if test -d "$toPath"; then
+	    # A naive cp -r would put a new toName directory below the existing
+	    # toName directory.
+	    local dentry
+	    for dentry in "$fromPath"/*; do
+		# Here's the reason we need to split RecursiveInstall into a
+		# separate function from Install. Note that $dentry has a
+		# proper path (that exists), as opposed to the fromPath passed
+		# to Install which is relative the module (unless absolute).
+		RecursiveInstall $x_option "$module" "$dentry" "$toPath"/
+	    done
+	else
+	    MakeDirs "$toDir"
+	    Run cp -r "$fromPath" "$toPath"
+	fi
+    else
+	Fail "There is no file or directory '$fromPath'"$'\n' \
+	     "Has module '$module' been built?"
+    fi
+
+    OUT="$toPath"
+}
+
+# Make a symlink between files in VESPA_HOME, from $2 to existing file or
+# directory $1. The order of $1 & $2 matches 'ln -s $1 $2'.
+function Symlink {
+    local symlinkTarget="$VESPA_HOME/$1"
+    local symlinkToMake="$VESPA_HOME/$2"
+
+    MakeParentDirs "$symlinkToMake"
+    Run ln -snf "$symlinkTarget" "$symlinkToMake"
+}
+
+function MakeConfigServerComponentSymlinkTo {
+    local libJarsFilename="$1"
+
+    # For some reason, the JAR files in components have been prettified
+    local stem="${libJarsFilename%-jar-with-dependencies.jar}"
+    if test "$stem" == "$libJarsFilename"; then
+	# libJarsFilename did indeed have the -jar-with-dependencies.jar suffix
+	local componentsFilename="$stem".jar
+    else
+	local componentsFilename="$libJarsFilename"
+    fi
+
+    Symlink lib/jars/"$libJarsFilename" conf/configserver-app/components/"$componentsFilename"
+}
+
+function Configure {
+    Install "$@"
+    local toPath="$OUT"
+
+    Run sed -i '' "s,@CMAKE_INSTALL_PREFIX@,$VESPA_HOME,g" "$toPath"
+    Run sed -i '' "s,@VESPA_USER@,$USER,g" "$toPath"
+    Run sed -i '' "s,@VESPA_UNPRIVILEGED@,yes,g" "$toPath"
+}
+
+function InstallDependencies {
+    local module="$1"
+
+    local depDir="$module"/target/dependency
+    if ! test -d "$depDir"; then
+	Fail "'$depDir' does not exist"$'\n'"Forgot to build module '$module'?"
+    fi
+
+    local libJars="$VESPA_HOME/lib/jars"
+    local destDir="$libJars/$module"
+    MakeDirs "$destDir"
+
+    local fromPath
+    for fromPath in "$depDir"/*.jar; do
+	local filename="${fromPath##*/}"
+	local toPath="$destDir/$filename"
+
+	Run cp "$fromPath" "$toPath"
+	Run ln -sf "$module/$filename" "$libJars/$filename"
+    done
+}
+
+function InstallDef {
+    local module="$1"
+    local fromPath="$2"
+
+    if (( $# <= 2 )); then
+	local toName=$(basename "$fromPath")
+    else
+	local toName="$3"
+    fi
+
+    Install "$module" "$fromPath" share/vespa/configdefinitions/
+}
+
+function InstallFatJar {
+    local module="$1"
+    Install "$module" target/"$module"-jar-with-dependencies.jar lib/jars/
+}
+
+function InstallJar {
+    local module="$1"
+    Install "$module" target/"$module".jar lib/jars/
+}
+
+function InstallConfigServer {
+    InstallJar config-model-fat
+    InstallJar document
+    InstallJar jdisc_jetty
+    InstallJar searchlib
+    InstallJar vespajlib
+
+    InstallFatJar application-model
+    InstallFatJar application-preprocessor
+    InstallFatJar clustercontroller-apps
+    InstallFatJar clustercontroller-apputil
+    InstallFatJar clustercontroller-core
+    InstallFatJar clustercontroller-utils
+    InstallFatJar component
+    InstallFatJar config-bundle
+    InstallFatJar config-model
+    InstallFatJar config-model-api
+    InstallFatJar config-provisioning
+    InstallFatJar config-proxy
+    InstallFatJar configdefinitions
+    InstallFatJar configserver
+    InstallFatJar configserver-flags
+    InstallFatJar container-disc
+    InstallFatJar container-jersey2
+    InstallFatJar container-search-and-docproc
+    InstallFatJar container-search-gui
+    InstallFatJar defaults
+    InstallFatJar docprocs
+    InstallFatJar filedistribution
+    InstallFatJar flags
+    InstallFatJar jdisc-security-filters
+    InstallFatJar jdisc_core
+    InstallFatJar jdisc_http_service
+    InstallFatJar logserver
+    InstallFatJar model-evaluation
+    InstallFatJar model-integration
+    InstallFatJar node-repository
+    InstallFatJar orchestrator
+    InstallFatJar searchlib
+    InstallFatJar security-utils
+    InstallFatJar service-monitor
+    InstallFatJar simplemetrics
+    InstallFatJar standalone-container
+    InstallFatJar vespa-athenz
+    InstallFatJar vespa-http-client
+    InstallFatJar vespa_feed_perf
+    InstallFatJar vespaclient-container-plugin
+    InstallFatJar vespaclient-java
+    InstallFatJar zkfacade
+
+    # A bug with CMakeLists.txt?
+    #InstallDependencies jdisc-security-filters
+    #InstallDependencies security-utils
+
+    InstallDependencies jdisc_http_service
+    InstallDependencies jdisc_jetty
+    InstallDependencies vespa_jersey2
+
+    Install config-model target/jing.jar lib/jars/
+
+    InstallDef docker-api src/main/resources/configdefinitions/docker.def vespa.hosted.dockerapi.docker.def
+    InstallDef statistics src/main/resources/configdefinitions/statistics.def container.statistics.def
+    InstallDef jdisc-security-filters src/main/resources/configdefinitions/cors-filter.def
+    InstallDef logd src/logd/../main/resources/configdefinitions/logd.def cloud.config.log.logd.def
+    InstallDef metrics src/vespa/metrics/metricsmanager.def metrics.metricsmanager.def
+    InstallDef configdefinitions src/vespa/application-id.def cloud.config.application-id.def
+    InstallDef configdefinitions src/vespa/athenz-provider-service.def vespa.hosted.athenz.instanceproviderservice.config.athenz-provider-service.def
+    InstallDef configdefinitions src/vespa/attributes.def vespa.config.search.attributes.def
+    InstallDef configdefinitions src/vespa/cluster-info.def cloud.config.cluster-info.def
+    InstallDef configdefinitions src/vespa/cluster-list.def cloud.config.cluster-list.def
+    InstallDef configdefinitions src/vespa/configserver.def cloud.config.configserver.def
+    InstallDef configdefinitions src/vespa/dispatch.def vespa.config.search.dispatch.def
+    InstallDef configdefinitions src/vespa/filereferences.def cloud.config.filedistribution.filereferences.def
+    InstallDef configdefinitions src/vespa/fleetcontroller.def vespa.config.content.fleetcontroller.def
+    InstallDef configdefinitions src/vespa/ilscripts.def vespa.configdefinition.ilscripts.def
+    InstallDef configdefinitions src/vespa/imported-fields.def vespa.config.search.imported-fields.def
+    InstallDef configdefinitions src/vespa/indexschema.def vespa.config.search.indexschema.def
+    InstallDef configdefinitions src/vespa/lb-services.def cloud.config.lb-services.def
+    InstallDef configdefinitions src/vespa/load-type.def vespa.config.content.load-type.def
+    InstallDef configdefinitions src/vespa/logforwarder.def cloud.config.logforwarder.def
+    InstallDef configdefinitions src/vespa/messagetyperouteselectorpolicy.def vespa.config.content.messagetyperouteselectorpolicy.def
+    InstallDef configdefinitions src/vespa/model.def cloud.config.model.def
+    InstallDef configdefinitions src/vespa/orchestrator.def vespa.orchestrator.config.orchestrator.def
+    InstallDef configdefinitions src/vespa/persistence.def vespa.config.content.persistence.def
+    InstallDef configdefinitions src/vespa/rank-profiles.def vespa.config.search.rank-profiles.def
+    InstallDef configdefinitions src/vespa/routing.def cloud.config.routing.def
+    InstallDef configdefinitions src/vespa/routing-provider.def cloud.config.routing-provider.def
+    InstallDef configdefinitions src/vespa/sentinel.def cloud.config.sentinel.def
+    InstallDef configdefinitions src/vespa/slobroks.def cloud.config.slobroks.def
+    InstallDef configdefinitions src/vespa/specialtokens.def vespa.configdefinition.specialtokens.def
+    InstallDef configdefinitions src/vespa/stor-distribution.def vespa.config.content.stor-distribution.def
+    InstallDef configdefinitions src/vespa/stor-filestor.def vespa.config.content.stor-filestor.def
+    InstallDef configdefinitions src/vespa/summary.def vespa.config.search.summary.def
+    InstallDef configdefinitions src/vespa/summarymap.def vespa.config.search.summarymap.def
+    InstallDef configdefinitions src/vespa/upgrading.def vespa.config.content.upgrading.def
+    InstallDef configdefinitions src/vespa/ymon.def cloud.config.ymon.def
+    InstallDef configdefinitions src/vespa/zookeeper-server.def cloud.config.zookeeper-server.def
+    InstallDef configdefinitions src/vespa/zookeepers.def cloud.config.zookeepers.def
+    InstallDef configdefinitions src/vespa/bucketspaces.def vespa.config.content.core.bucketspaces.def
+    InstallDef configdefinitions src/vespa/all-clusters-bucket-spaces.def vespa.config.content.all-clusters-bucket-spaces.def
+    InstallDef configdefinitions src/vespa/stateserver.def vespa.config.core.stateserver.def
+    InstallDef searchcore src/vespa/searchcore/config/partitions.def vespa.config.search.core.partitions.def
+    InstallDef searchcore src/vespa/searchcore/config/fdispatchrc.def vespa.config.search.core.fdispatchrc.def
+    InstallDef searchcore src/vespa/searchcore/config/proton.def vespa.config.search.core.proton.def
+    InstallDef searchcore src/vespa/searchcore/config/ranking-constants.def vespa.config.search.core.ranking-constants.def
+    InstallDef container-core src/main/resources/configdefinitions/application-metadata.def container.core.application-metadata.def
+    InstallDef container-core src/main/resources/configdefinitions/container-document.def container.core.document.container-document.def
+    InstallDef container-core src/main/resources/configdefinitions/container-http.def container.core.container-http.def
+    InstallDef container-core src/main/resources/configdefinitions/health-monitor.def container.jdisc.config.health-monitor.def
+    InstallDef container-core src/main/resources/configdefinitions/http-filter.def container.core.http.http-filter.def
+    InstallDef container-core src/main/resources/configdefinitions/metrics-presentation.def metrics.metrics-presentation.def
+    InstallDef container-core src/main/resources/configdefinitions/mockservice.def container.handler.test.mockservice.def
+    InstallDef container-core src/main/resources/configdefinitions/qr-searchers.def container.qr-searchers.def
+    InstallDef container-core src/main/resources/configdefinitions/qr.def container.qr.def
+    InstallDef container-core src/main/resources/configdefinitions/servlet-config.def container.servlet.servlet-config.def
+    InstallDef container-core src/main/resources/configdefinitions/threadpool.def container.handler.threadpool.def
+    InstallDef container-core src/main/resources/configdefinitions/vip-status.def container.core.vip-status.def
+    InstallDef container-search-and-docproc src/main/resources/configdefinitions/application-userdata.def container.handler.observability.application-userdata.def
+    InstallDef searchsummary src/vespa/searchsummary/config/juniperrc.def vespa.config.search.summary.juniperrc.def
+    InstallDef docproc src/main/resources/configdefinitions/docproc.def config.docproc.docproc.def
+    InstallDef docproc src/main/resources/configdefinitions/schemamapping.def config.docproc.schemamapping.def
+    InstallDef docproc src/main/resources/configdefinitions/splitter-joiner-document-processor.def config.docproc.splitter-joiner-document-processor.def
+    InstallDef searchlib src/vespa/searchlib/config/translogserver.def searchlib.translogserver.def
+    InstallDef messagebus src/vespa/messagebus/../../main/config/messagebus.def messagebus.messagebus.def
+    InstallDef chain src/main/resources/configdefinitions/chains.def container.core.chains.def
+    InstallDef document src/vespa/document/config/documenttypes.def document.documenttypes.def
+    InstallDef document src/vespa/document/config/documentmanager.def document.config.documentmanager.def
+    InstallDef container-messagebus src/main/resources/configdefinitions/container-mbus.def container.jdisc.container-mbus.def
+    InstallDef container-messagebus src/main/resources/configdefinitions/session.def container.jdisc.config.session.def
+    InstallDef documentapi src/vespa/documentapi/messagebus/policies/../../../../main/resources/configdefinitions/documentrouteselectorpolicy.def documentapi.messagebus.protocol.documentrouteselectorpolicy.def
+    InstallDef storage src/vespa/storage/config/stor-communicationmanager.def vespa.config.content.core.stor-communicationmanager.def
+    InstallDef storage src/vespa/storage/config/stor-distributormanager.def vespa.config.content.core.stor-distributormanager.def
+    InstallDef storage src/vespa/storage/config/stor-server.def vespa.config.content.core.stor-server.def
+    InstallDef storage src/vespa/storage/config/stor-status.def vespa.config.content.core.stor-status.def
+    InstallDef storage src/vespa/storage/config/stor-messageforwarder.def vespa.config.content.core.stor-messageforwarder.def
+    InstallDef storage src/vespa/storage/config/stor-opslogger.def vespa.config.content.core.stor-opslogger.def
+    InstallDef storage src/vespa/storage/config/stor-visitordispatcher.def vespa.config.content.core.stor-visitordispatcher.def
+    InstallDef storage src/vespa/storage/config/stor-integritychecker.def vespa.config.content.core.stor-integritychecker.def
+    InstallDef storage src/vespa/storage/config/stor-bucketmover.def vespa.config.content.core.stor-bucketmover.def
+    InstallDef storage src/vespa/storage/config/stor-bouncer.def vespa.config.content.core.stor-bouncer.def
+    InstallDef storage src/vespa/storage/config/stor-prioritymapping.def vespa.config.content.core.stor-prioritymapping.def
+    InstallDef storage src/vespa/storage/config/rpc-provider.def vespa.config.content.core.rpc-provider.def
+    InstallDef storage src/vespa/storage/bucketdb/stor-bucketdb.def vespa.config.content.core.stor-bucketdb.def
+    InstallDef storage src/vespa/storage/bucketdb/stor-bucket-init.def vespa.config.content.core.stor-bucket-init.def
+    InstallDef storage src/vespa/storage/visiting/stor-visitor.def vespa.config.content.core.stor-visitor.def
+    InstallDef jdisc_http_service src/main/resources/configdefinitions/jdisc.http.client.http-client.def
+    InstallDef jdisc_http_service src/main/resources/configdefinitions/jdisc.http.connector.def
+    InstallDef jdisc_http_service src/main/resources/configdefinitions/jdisc.http.server.def
+    InstallDef jdisc_http_service src/main/resources/configdefinitions/jdisc.http.servlet-paths.def
+    InstallDef container-accesslogging src/main/resources/configdefinitions/access-log.def container.core.access-log.def
+    InstallDef container-disc src/main/resources/configdefinitions/jdisc-bindings.def container.jdisc.jdisc-bindings.def
+    InstallDef container-disc src/main/resources/configdefinitions/jersey-connection.def container.config.jersey.jersey-connection.def
+    InstallDef container-disc src/main/resources/configdefinitions/jersey-web-app-pool.def container.config.jersey.jersey-web-app-pool.def
+    InstallDef container-disc src/main/resources/configdefinitions/score-board.def jdisc.metrics.yamasconsumer.cloud.score-board.def
+    InstallDef vespaclient-core src/main/resources/configdefinitions/feeder.def vespaclient.config.feeder.def
+    InstallDef container-search src/main/resources/configdefinitions/cluster.def search.config.cluster.def
+    InstallDef container-search src/main/resources/configdefinitions/documentdb-info.def prelude.fastsearch.documentdb-info.def
+    InstallDef container-search src/main/resources/configdefinitions/emulation.def prelude.emulation.def
+    InstallDef container-search src/main/resources/configdefinitions/federation.def search.federation.federation.def
+    InstallDef container-search src/main/resources/configdefinitions/fs4.def container.search.fs4.def
+    InstallDef container-search src/main/resources/configdefinitions/index-info.def search.config.index-info.def
+    InstallDef container-search src/main/resources/configdefinitions/keyvalue.def prelude.searcher.keyvalue.def
+    InstallDef container-search src/main/resources/configdefinitions/lowercasing.def search.querytransform.lowercasing.def
+    InstallDef container-search src/main/resources/configdefinitions/measure-qps.def search.statistics.measure-qps.def
+    InstallDef container-search src/main/resources/configdefinitions/page-templates.def search.pagetemplates.page-templates.def
+    InstallDef container-search src/main/resources/configdefinitions/provider.def search.federation.provider.def
+    InstallDef container-search src/main/resources/configdefinitions/qr-monitor.def prelude.cluster.qr-monitor.def
+    InstallDef container-search src/main/resources/configdefinitions/qr-quotetable.def prelude.searcher.qr-quotetable.def
+    InstallDef container-search src/main/resources/configdefinitions/qr-start.def search.config.qr-start.def
+    InstallDef container-search src/main/resources/configdefinitions/query-profiles.def search.query.profile.config.query-profiles.def
+    InstallDef container-search src/main/resources/configdefinitions/rate-limiting.def search.config.rate-limiting.def
+    InstallDef container-search src/main/resources/configdefinitions/resolvers.def search.pagetemplates.resolvers.def
+    InstallDef container-search src/main/resources/configdefinitions/rewrites.def search.query.rewrite.rewrites.def
+    InstallDef container-search src/main/resources/configdefinitions/search-nodes.def search.config.dispatchprototype.search-nodes.def
+    InstallDef container-search src/main/resources/configdefinitions/search-with-renderer-handler.def search.handler.search-with-renderer-handler.def
+    InstallDef container-search src/main/resources/configdefinitions/searchchain-forward.def search.federation.searchchain-forward.def
+    InstallDef container-search src/main/resources/configdefinitions/semantic-rules.def prelude.semantics.semantic-rules.def
+    InstallDef container-search src/main/resources/configdefinitions/strict-contracts.def search.federation.strict-contracts.def
+    InstallDef container-search src/main/resources/configdefinitions/timing-searcher.def search.statistics.timing-searcher.def
+    InstallDef vsm src/vespa/vsm/config/vsmfields.def vespa.config.search.vsm.vsmfields.def
+    InstallDef vsm src/vespa/vsm/config/vsm.def vespa.config.search.vsm.vsm.def
+    InstallDef vsm src/vespa/vsm/config/vsmsummary.def vespa.config.search.vsm.vsmsummary.def
+    InstallDef simplemetrics src/main/resources/configdefinitions/manager.def metrics.manager.def
+    InstallDef fileacquirer src/main/resources/configdefinitions/filedistributorrpc.def cloud.config.filedistribution.filedistributorrpc.def
+    InstallDef config-provisioning src/main/resources/configdefinitions/flavors.def config.provisioning.flavors.def
+    InstallDef container-di src/main/resources/configdefinitions/bundles.def container.bundles.def
+    InstallDef container-di src/main/resources/configdefinitions/components.def container.components.def
+    InstallDef container-di src/main/resources/configdefinitions/jersey-bundles.def container.di.config.jersey-bundles.def
+    InstallDef container-di src/main/resources/configdefinitions/jersey-injection.def container.di.config.jersey-injection.def
+
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-get-config
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-verify-ranksetup
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-config-status
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-doclocator
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-model-inspect
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-proton-cmd
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-route
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-transactionlog-inspect
+    Install +x vespabase src/start-cbinaries.sh bin/vespa-vds-disktool
+    Install +x vespabase src/start-cbinaries.sh sbin/vespa-distributord
+    Install +x vespabase src/start-cbinaries.sh sbin/vespa-dispatch
+    Install +x vespabase src/start-cbinaries.sh sbin/vespa-proton
+    Install +x vespabase src/start-cbinaries.sh sbin/vespa-storaged
+    Install +x vespabase src/start-tool.sh bin/vespa-start-tool.sh
+    Install +x vespabase src/rhel-prestart.sh bin/vespa-prestart.sh
+    Install +x vespabase src/common-env.sh libexec/vespa/common-env.sh
+    Install +x vespabase src/start-vespa-base.sh libexec/vespa/start-vespa-base.sh
+    Install +x vespabase src/stop-vespa-base.sh libexec/vespa/stop-vespa-base.sh
+    Install +x vespabase src/vespa-start-configserver.sh bin/vespa-start-configserver
+    Install +x vespabase src/vespa-start-services.sh bin/vespa-start-services
+    Install +x vespabase src/vespa-stop-configserver.sh bin/vespa-stop-configserver
+    Install +x vespabase src/vespa-stop-services.sh bin/vespa-stop-services
+
+    Install vespabase src/Defaults.pm lib/perl5/site_perl/Yahoo/Vespa/
+
+    Configure vespabase conf/default-env.txt.in conf/vespa/default-env.txt
+
+    Install +x configserver src/main/sh/ping-configserver libexec/vespa/
+    Install +x configserver src/main/sh/start-configserver libexec/vespa/
+    Install +x configserver src/main/sh/start-logd libexec/vespa/
+    Install +x configserver src/main/sh/stop-configserver libexec/vespa/
+    Install +x configserver src/main/sh/vespa-configserver-remove-state bin/
+
+    # conf/configserver-app
+
+    MakeDirs conf/configserver-app/config-models
+
+    Install configserver src/main/resources/configserver-app conf/
+    Install configserver src/main/resources/logd conf/
+    Install node-repository src/main/config/node-repository.xml conf/configserver-app/
+    Install config-model-fat src/main/resources/config-models.xml conf/configserver-app/
+    Install model-integration src/main/config/model-integration.xml conf/configserver-app/
+
+    MakeConfigServerComponentSymlinkTo config-model-fat.jar
+    MakeConfigServerComponentSymlinkTo configserver-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo configserver-flags-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo flags-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo orchestrator-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo service-monitor-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo application-model-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo node-repository-jar-with-dependencies.jar
+    MakeConfigServerComponentSymlinkTo zkfacade-jar-with-dependencies.jar
+    
+    Symlink conf/configserver-app/components lib/jars/config-models
+
+    if ! $SILENT; then
+	echo "Config server successfully installed to $VESPA_HOME"
+    fi
+}
+
+function Main {
+    local javaOnly=false
+    local root=.
+    local deleteHome=false
+    local homeAllowedToExist=false
+
+    while (($# > 0)); do
+	case "$1" in
+	    --delete-home|-d)
+		deleteHome=true
+		homeAllowedToExist=true
+		;;
+	    --help|-h|help) Usage ;;
+	    --home-exists|-e) homeAllowedToExist=true ;;
+	    --java|-j) javaOnly=true ;;
+	    --home|-H)
+		VESPA_HOME="$2"
+		shift
+		;;
+	    --root|-r)
+		root="$2"
+		shift
+		;;
+	    --silent|-s) SILENT=true ;;
+	    -*) UsageError "Unknown option '$1'." ;;
+	    *) UsageError "Unexpected argument '$1'." ;;
+	esac
+	shift || true
+    done
+
+    if ! $javaOnly; then
+	UsageError "--java (-j) is required for now."
+    fi
+
+    if ! test -d "$root"; then
+	UsageError "'$root' is not a directory."
+    fi
+
+    if test "$VESPA_HOME" == ""; then
+	UsageError "Vespa home (--home/-H) not set."
+    fi
+
+    if test -e "$VESPA_HOME"; then
+	if ! $homeAllowedToExist; then
+	    UsageError "Vespa home '$VESPA_HOME' already exists"$'\n' \
+		       "You may want to specify either --home-exists (-e) " \
+		       "or --delete-home (-d)."
+	fi
+	if $deleteHome; then
+	    Run rm -r "$VESPA_HOME"
+	fi
+    fi
+
+    cd "$root"
+    if ! test -r configserver/pom.xml; then
+	Fail "'$root' does not look like the root of a Vespa repository"$'\n' \
+	     "You can specify the root with --root (-r)."
+    fi
+
+    InstallConfigServer
+}
+
+Main "$@"
