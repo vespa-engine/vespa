@@ -473,14 +473,19 @@ public class CuratorDatabaseClient {
 
 
     // Load balancers
-    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
+    public List<LoadBalancerId> readLoadBalancerIds() {
         return curatorDatabase.getChildren(loadBalancersRoot).stream()
                               .map(LoadBalancerId::fromSerializedForm)
-                              .map(this::readLoadBalancer)
-                              .filter(Optional::isPresent)
-                              .map(Optional::get)
-                              .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
-                                                         Collections::unmodifiableMap));
+                              .collect(Collectors.toUnmodifiableList());
+    }
+
+    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
+        return readLoadBalancerIds().stream()
+                                    .map(this::readLoadBalancer)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
+                                    .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                                           Collections::unmodifiableMap));
     }
 
     public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
@@ -489,7 +494,7 @@ public class CuratorDatabaseClient {
 
     public void writeLoadBalancer(LoadBalancer loadBalancer) {
         NestedTransaction transaction = new NestedTransaction();
-        writeLoadBalancers(Collections.singletonList(loadBalancer), transaction);
+        writeLoadBalancers(List.of(loadBalancer), transaction);
         transaction.commit();
     }
 

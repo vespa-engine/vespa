@@ -48,6 +48,13 @@ public class LoadBalancerProvisioner {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
+        // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
+        try (var lock = db.lockLoadBalancers()) {
+            for (var id : db.readLoadBalancerIds()) {
+                var loadBalancer = db.readLoadBalancer(id);
+                loadBalancer.ifPresent(db::writeLoadBalancer);
+            }
+        }
     }
 
     /**
