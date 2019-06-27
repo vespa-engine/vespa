@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::as;
@@ -19,17 +18,19 @@ using namespace eval::operation;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
     return denseTensor.cellsRef();
 }
 
 void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     auto *hw_accelerator = (hwaccelrated::IAccelrated *)(param);
-    DenseTensorView::CellsRef lhsCells = getCellsRef(state.peek(1));
-    DenseTensorView::CellsRef rhsCells = getCellsRef(state.peek(0));
-    size_t numCells = std::min(lhsCells.size(), rhsCells.size());
-    double result = hw_accelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
+    TypedCells lhsCells = getCellsRef(state.peek(1));
+    TypedCells rhsCells = getCellsRef(state.peek(0));
+    size_t numCells = std::min(lhsCells.size, rhsCells.size);
+    const ConstArrayRef<double> lhs = lhsCells.typify<double>();
+    const ConstArrayRef<double> rhs = rhsCells.typify<double>();
+    double result = hw_accelerator->dotProduct(lhs.cbegin(), rhs.cbegin(), numCells);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
 

@@ -13,11 +13,9 @@ using namespace vespalib::eval;
 using namespace vespalib::tensor;
 using namespace vespalib;
 
-using CellsRef = DenseTensorView::CellsRef;
-
 const TensorEngine &engine = DefaultTensorEngine::ref();
 
-CellsRef getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const eval::Value &value) {
     return static_cast<const DenseTensorView &>(value).cellsRef();
 }
 
@@ -58,8 +56,8 @@ TEST_F("require that DenseReplaceTypeFunction works as expected", Fixture()) {
     f1.mock_child.is_mutable = false;
     EXPECT_EQUAL(f1.my_fun.result_is_mutable(), false);
     EXPECT_EQUAL(&f1.children[0].get().get(), &f1.mock_child);
-    EXPECT_EQUAL(getCellsRef(f1.state.stack[0]).begin(), getCellsRef(*f1.my_value).begin());
-    EXPECT_EQUAL(getCellsRef(f1.state.stack[0]).end(), getCellsRef(*f1.my_value).end());
+    EXPECT_EQUAL(getCellsRef(f1.state.stack[0]).data, getCellsRef(*f1.my_value).data);
+    EXPECT_EQUAL(getCellsRef(f1.state.stack[0]).size, getCellsRef(*f1.my_value).size);
     EXPECT_EQUAL(f1.state.stack[0].get().type(), f1.new_type);
     fprintf(stderr, "%s\n", f1.my_fun.as_string().c_str());
 }

@@ -4,7 +4,6 @@
 
 namespace vespalib::tensor {
     class Tensor;
-    class DenseTensor;
 }
 
 namespace vespalib::tensor::dense {
@@ -17,6 +16,7 @@ namespace vespalib::tensor::dense {
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func);
+
 template <typename Function>
 std::unique_ptr<Tensor>
 apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func);

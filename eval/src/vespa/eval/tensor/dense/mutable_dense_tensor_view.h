@@ -42,8 +42,8 @@ private:
 
 public:
     MutableDenseTensorView(eval::ValueType type_in);
-    MutableDenseTensorView(eval::ValueType type_in, CellsRef cells_in);
-    void setCells(CellsRef cells_in) {
+    MutableDenseTensorView(eval::ValueType type_in, TypedCells cells_in);
+    void setCells(TypedCells cells_in) {
         initCellsRef(cells_in);
     }
     void setUnboundDimensions(const uint32_t *unboundDimSizeBegin, const uint32_t *unboundDimSizeEnd) {

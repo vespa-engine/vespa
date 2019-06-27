@@ -21,12 +21,12 @@ MutableDenseTensorView::MutableValueType::MutableValueType(ValueType type_in)
 MutableDenseTensorView::MutableValueType::~MutableValueType() = default;
 
 MutableDenseTensorView::MutableDenseTensorView(ValueType type_in)
-    : DenseTensorView(_concreteType._type, CellsRef()),
+    : DenseTensorView(_concreteType._type),
       _concreteType(type_in)
 {
 }
 
-MutableDenseTensorView::MutableDenseTensorView(ValueType type_in, CellsRef cells_in)
+MutableDenseTensorView::MutableDenseTensorView(ValueType type_in, TypedCells cells_in)
     : DenseTensorView(_concreteType._type, cells_in),
       _concreteType(type_in)
 {

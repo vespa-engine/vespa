@@ -12,7 +12,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::as;
@@ -22,9 +21,11 @@ using namespace eval::operation;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+XWInput getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return denseTensor.cellsRef();
+    TypedCells ref = denseTensor.cellsRef();
+    assert(ref.type == CellType::DOUBLE);
+    return ref.typify<double>();
 }
 
 void multiDotProduct(const DenseXWProductFunction::Self &self,
@@ -62,8 +63,8 @@ template <bool commonDimensionInnermost>
 void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     DenseXWProductFunction::Self *self = (DenseXWProductFunction::Self *)(param);
 
-    CellsRef vectorCells = getCellsRef(state.peek(1));
-    CellsRef matrixCells = getCellsRef(state.peek(0));
+    XWInput vectorCells = getCellsRef(state.peek(1));
+    XWInput matrixCells = getCellsRef(state.peek(0));
 
     ArrayRef<double> outputCells = state.stash.create_array<double>(self->_resultSize);
 
@@ -72,7 +73,7 @@ void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     } else {
         transposedProduct(*self, vectorCells, matrixCells, outputCells);
     }
-    state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, outputCells));
+    state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, TypedCells(outputCells)));
 }
 
 bool isConcreteDenseTensor(const ValueType &type, size_t d) {

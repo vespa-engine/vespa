@@ -29,9 +29,10 @@ size_t encodeDimensions(nbostream &stream, const eval::ValueType & type) {
 }
 
 template<typename T>
-void encodeCells(nbostream &stream, DenseTensorView::CellsRef cells) {
-    for (const auto &value : cells) {
-        stream << static_cast<T>(value);
+void encodeCells(nbostream &stream, TypedCells cells) {
+    auto arr = cells.typify<T>();
+    for (const auto &value : arr) {
+        stream << value;
     }
 }
 
@@ -76,8 +77,8 @@ void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
 {
     size_t cellsSize = encodeDimensions(stream, tensor.fast_type());
-    DenseTensorView::CellsRef cells = tensor.cellsRef();
-    assert(cells.size() == cellsSize);
+    TypedCells cells = tensor.cellsRef();
+    assert(cells.size == cellsSize);
     switch (tensor.fast_type().cell_type()) {
     case CellType::DOUBLE:
         encodeCells<double>(stream, cells);
@@ -88,15 +89,24 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
     }
 }
 
-std::unique_ptr<DenseTensor>
+struct CallDecodeCells {
+    template <typename CT>
+    static std::unique_ptr<DenseTensorView>
+    call(nbostream &stream, size_t numCells, ValueType &&newType) {
+        std::vector<CT> newCells;
+        newCells.reserve(numCells);
+        decodeCells<CT>(stream, numCells, newCells);
+        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+    }
+};
+
+std::unique_ptr<DenseTensorView>
 DenseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
 {
     std::vector<Dimension> dimensions;
-    size_t cellsSize = decodeDimensions(stream,dimensions);
-    DenseTensor::Cells cells;
-    cells.reserve(cellsSize);
-    decodeCells(cell_type, stream, cellsSize, cells);
-    return std::make_unique<DenseTensor>(ValueType::tensor_type(std::move(dimensions), cell_type), std::move(cells));
+    size_t numCells = decodeDimensions(stream, dimensions);
+    ValueType newType = ValueType::tensor_type(std::move(dimensions), cell_type);
+    return dispatch_0<CallDecodeCells>(cell_type, stream, numCells, std::move(newType));
 }
 
 template <typename T>
@@ -104,7 +114,7 @@ void
 DenseBinaryFormat::deserializeCellsOnly(nbostream &stream, std::vector<T> &cells, CellType cell_type)
 {
     std::vector<Dimension> dimensions;
-    size_t cellsSize = decodeDimensions(stream,dimensions);
+    size_t cellsSize = decodeDimensions(stream, dimensions);
     cells.clear();
     cells.reserve(cellsSize);
     decodeCells(cell_type, stream, cellsSize, cells);
