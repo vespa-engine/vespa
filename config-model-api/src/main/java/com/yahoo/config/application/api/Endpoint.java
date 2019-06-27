@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * endpoint (endpointId) and the name of the container cluster that the endpoint
  * should point to.
  *
- * If the endpointId is not set, it will default to the same as the containerId.
+ * If the endpoint is not set it will default to the string "default".
  *
  * @author ogronnesby
  */
