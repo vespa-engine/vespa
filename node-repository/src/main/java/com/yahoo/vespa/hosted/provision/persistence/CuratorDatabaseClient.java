@@ -62,7 +62,6 @@ public class CuratorDatabaseClient {
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
-    private static final Path flagsRoot = root.append("flags");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -75,7 +74,6 @@ public class CuratorDatabaseClient {
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        curator.delete(flagsRoot); // TODO: Remove after 7.42 has been released
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
