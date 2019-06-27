@@ -69,12 +69,6 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag SUPPORT_DHCPV6_IN_AWS = defineFeatureFlag(
-            "support-dhcpv6-in-aws", true,
-            "Whether to open up for DHCPv6 traffic in AWS. Old behavior is false.",
-            "Takes effect on next tick in host-admin, except FirewallTask which requires a restart of host-admin",
-            HOSTNAME);
-
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "tls_client_mixed_server",
             "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
