@@ -6,6 +6,7 @@
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -142,7 +143,8 @@ BucketDBUpdater::removeSuperfluousBuckets(
         if (!is_distribution_config_change
             && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
         {
-            LOG(debug, "Eliding DB pruning for state transition '%s' -> '%s'",
+            LOG(info, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
+                document::FixedBucketSpaces::to_string(elem.first).data(),
                 oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
         }
