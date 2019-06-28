@@ -38,6 +38,8 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.VespaDocumentDeserializerHead;
+import com.yahoo.document.serialization.VespaDocumentSerializerHead;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.tensor.Tensor;
@@ -278,9 +280,7 @@ public class DocumentGenPluginTest {
         assertEquals(twelve, new IntegerFieldValue(12));
     }
 
-    @Test
-    public void testArrayOfStruct() {
-        Book book = getBook();
+    private void verifyArrayOfStruct(Book book) {
         assertEquals(book.getMysinglestructarray().get(0).getS1(), "YEPS");
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)456);
         Struct s1 = (Struct) ((Array)book.getFieldValue("mysinglestructarray")).get(0);
@@ -297,6 +297,25 @@ public class DocumentGenPluginTest {
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
         book.getMysinglestructarray().remove(0);
         assertEquals(book.getMysinglestructarray().get(0).getI1(), (Integer)123);
+    }
+
+    private Document copyBySerialization(Document orig) {
+        GrowableByteBuffer buf = new GrowableByteBuffer();
+        VespaDocumentSerializerHead serializer = new VespaDocumentSerializerHead(buf);
+        orig.serialize(serializer);
+        buf.flip();
+        VespaDocumentDeserializerHead deserializerHead = new VespaDocumentDeserializerHead(typeManagerForBookType(), buf);
+        return new Document(deserializerHead);
+    }
+    private Book toBook(Document doc) {
+        return (Book) new ConcreteDocumentFactory().getDocumentCopy(doc.getDataType().getName(), doc, doc.getId());
+    }
+
+    @Test
+    public void testArrayOfStruct() {
+        Book book = getBook();
+        verifyArrayOfStruct(book);
+        verifyArrayOfStruct(toBook(copyBySerialization(book)));
     }
 
     @Test
