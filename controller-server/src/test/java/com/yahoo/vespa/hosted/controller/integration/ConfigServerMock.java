@@ -225,7 +225,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                                      List<ContainerEndpoint> containerEndpoints, byte[] content) {
+                                      Set<ContainerEndpoint> containerEndpoints, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -237,7 +237,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        this.rotationNames.put(deployment, Set.copyOf(rotationNames));
+        this.rotationNames.put(deployment, containerEndpoints.stream().flatMap(e -> e.names().stream()).collect(Collectors.toSet()));
 
         return () -> {
             Application application = applications.get(deployment.applicationId());
