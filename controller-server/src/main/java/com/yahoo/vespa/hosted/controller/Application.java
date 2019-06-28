@@ -12,6 +12,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -62,6 +63,7 @@ public class Application {
     private final Optional<String> pemDeployKey;
     private final List<AssignedRotation> rotations;
     private final Map<HostName, RotationStatus> rotationStatus;
+    private final Optional<ApplicationCertificate> applicationCertificate;
 
     /** Creates an empty application */
     public Application(ApplicationId id, Instant now) {
@@ -69,7 +71,7 @@ public class Application {
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0),
-             Optional.empty(), Collections.emptyList(), Collections.emptyMap());
+             Optional.empty(), Collections.emptyList(), Collections.emptyMap(), Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
@@ -77,18 +79,19 @@ public class Application {
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                       List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus) {
+                       List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, 
+                       Optional<ApplicationCertificate> applicationCertificate) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
              deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-             metrics, pemDeployKey, rotations, rotationStatus);
+             metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);
     }
 
     Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                 OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus) {
+                List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -104,6 +107,7 @@ public class Application {
         this.pemDeployKey = pemDeployKey;
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
+        this.applicationCertificate = Objects.requireNonNull(applicationCertificate, "applicationCertificate cannot be null");
     }
 
     public ApplicationId id() { return id; }
@@ -248,6 +252,10 @@ public class Application {
                              .map(Map.Entry::getValue)
                              .findFirst()
                              .orElse(RotationStatus.unknown);
+    }
+
+    public Optional<ApplicationCertificate> applicationCertificate() {
+        return applicationCertificate;
     }
 
     @Override

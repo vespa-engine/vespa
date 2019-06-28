@@ -10,9 +10,6 @@ vespa_define_module(
     LIBS
     src/vespa/metrics
 
-    TEST_EXTERNAL_DEPENDS
-    cppunit
-
     TESTS
     src/tests
 )

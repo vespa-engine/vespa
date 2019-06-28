@@ -3,7 +3,7 @@
 #include <vespa/storage/storageserver/service_layer_error_listener.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/config/dirconfig.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vespalib/gtest/gtest.h>

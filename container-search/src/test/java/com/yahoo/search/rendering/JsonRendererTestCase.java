@@ -36,6 +36,7 @@ import com.yahoo.search.grouping.result.RootGroup;
 import com.yahoo.search.grouping.result.StringId;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
@@ -51,6 +52,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.trace.TraceNode;
 import org.json.JSONArray;
@@ -123,7 +125,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    public void testDataTypes() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public void testDataTypes() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -139,7 +141,13 @@ public class JsonRendererTestCase {
                 + "                    \"predicate\": \"a in [b]\","
                 + "                    \"tensor1\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] },"
                 + "                    \"tensor2\": { \"cells\": [] },"
-                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] }"
+                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] },"
+                + "                    \"summaryfeatures\": {"
+                + "                        \"scalar1\":1.5,"
+                + "                        \"scalar2\":2.5,"
+                + "                        \"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]},"
+                + "                        \"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}"
+                + "                    }"
                 + "                },"
                 + "                \"id\": \"datatypestuff\","
                 + "                \"relevance\": 1.0"
@@ -166,12 +174,24 @@ public class JsonRendererTestCase {
         h.setField("tensor2", new TensorFieldValue(TensorType.empty));
         h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
         h.setField("object", new Thingie());
+        h.setField("summaryfeatures", createSummaryFeatures());
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
         assertEqualJson(expected, summary);
     }
 
+    private FeatureData createSummaryFeatures() {
+        Slime slime = new Slime();
+        Cursor features = slime.setObject();
+        features.setDouble("scalar1", 1.5);
+        features.setDouble("scalar2", 2.5);
+        Tensor tensor1 = Tensor.from("tensor(x[3]):[1.5, 2, 2.5]");
+        features.setData("tensor1", TypedBinaryFormat.encode(tensor1));
+        Tensor tensor2 = Tensor.from(0.5);
+        features.setData("tensor2", TypedBinaryFormat.encode(tensor2));
+        return new FeatureData(new SlimeAdapter(slime.get()));
+    }
 
     @Test
     public void testTracing() throws IOException, InterruptedException, ExecutionException {
@@ -679,12 +699,10 @@ public class JsonRendererTestCase {
                 + "}";
         Result r = newEmptyResult();
         Hit h = new Hit("moredatatypestuff");
-        h.setField("byte", Byte.valueOf((byte) 8));
-        h.setField("short", Short.valueOf((short) 16));
-        h.setField("bigInteger", new BigInteger(
-                "340282366920938463463374607431768211455"));
-        h.setField("bigDecimal", new BigDecimal(
-                "340282366920938463463374607431768211456.5"));
+        h.setField("byte", (byte)8);
+        h.setField("short", (short)16);
+        h.setField("bigInteger", new BigInteger("340282366920938463463374607431768211455"));
+        h.setField("bigDecimal", new BigDecimal("340282366920938463463374607431768211456.5"));
         h.setField("nanNumber", NanNumber.NaN);
         r.hits().add(h);
         r.setTotalHitCount(1L);

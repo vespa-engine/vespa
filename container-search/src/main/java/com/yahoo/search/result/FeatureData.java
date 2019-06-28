@@ -18,13 +18,15 @@ import java.util.Set;
 
 /**
  * A wrapper for structured data representing feature values: A map of floats and tensors.
- * This class is not thread safe even when it is only consumed.
+ * This class is immutable but not thread safe.
  */
 public class FeatureData implements Inspectable, JsonProducer {
 
     private final Inspector value;
 
     private Set<String> featureNames = null;
+
+    private String jsonForm = null;
 
     public FeatureData(Inspector value) {
         this.value = value;
@@ -39,14 +41,11 @@ public class FeatureData implements Inspectable, JsonProducer {
     public Inspector inspect() { return value; }
 
     @Override
-    public String toString() {
-        if (value.type() == Type.EMPTY) return "";
-        return toJson();
-    }
-
-    @Override
     public String toJson() {
-        return writeJson(new StringBuilder()).toString();
+        if (jsonForm != null) return jsonForm;
+
+        jsonForm = writeJson(new StringBuilder()).toString();
+        return jsonForm;
     }
 
     @Override
@@ -93,6 +92,22 @@ public class FeatureData implements Inspectable, JsonProducer {
         featureNames = new HashSet<>();
         value.fields().forEach(field -> featureNames.add(field.getKey()));
         return featureNames;
+    }
+
+    @Override
+    public String toString() {
+        if (value.type() == Type.EMPTY) return "";
+        return toJson();
+    }
+
+    @Override
+    public int hashCode() { return toJson().hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof FeatureData)) return false;
+        return ((FeatureData)other).toJson().equals(this.toJson());
     }
 
     /** A JSON encoder which encodes DATA as a tensor */

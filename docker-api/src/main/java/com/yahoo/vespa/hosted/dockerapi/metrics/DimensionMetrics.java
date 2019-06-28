@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * @author freva
@@ -24,7 +25,9 @@ public class DimensionMetrics {
     DimensionMetrics(String application, Dimensions dimensions, Map<String, Number> metrics) {
         this.application = Objects.requireNonNull(application);
         this.dimensions = Objects.requireNonNull(dimensions);
-        this.metrics = Objects.requireNonNull(metrics);
+        this.metrics = metrics.entrySet().stream()
+                .filter(DimensionMetrics::metricIsFinite)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public String toSecretAgentReport() throws JsonProcessingException {
@@ -63,6 +66,10 @@ public class DimensionMetrics {
     @Override
     public int hashCode() {
         return Objects.hash(application, dimensions, metrics);
+    }
+
+    private static boolean metricIsFinite(Map.Entry<String, Number> metric) {
+        return ! (metric.getValue() instanceof Double) || Double.isFinite((double) metric.getValue());
     }
 
     public static class Builder {

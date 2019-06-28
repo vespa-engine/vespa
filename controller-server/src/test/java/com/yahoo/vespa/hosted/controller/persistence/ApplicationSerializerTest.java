@@ -11,6 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -121,7 +122,8 @@ public class ApplicationSerializerTest {
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                List.of(new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.default_(), new RotationId("my-rotation"), Set.of())),
-                                               rotationStatus);
+                                               rotationStatus,
+                                               Optional.of(new ApplicationCertificate("vespa.certificate")));
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -158,6 +160,8 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.rotations(), serialized.rotations());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
+
+        assertEquals(original.applicationCertificate(), serialized.applicationCertificate());
 
         // Test cluster utilization
         assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());

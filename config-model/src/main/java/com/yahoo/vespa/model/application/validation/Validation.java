@@ -56,6 +56,7 @@ public class Validation {
         new DeploymentFileValidator().validate(model, deployState);
         new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
+        new TlsSecretsValidator().validate(model, deployState);
 
         List<ConfigChangeAction> result = Collections.emptyList();
         if (deployState.getProperties().isFirstTimeDeployment()) {

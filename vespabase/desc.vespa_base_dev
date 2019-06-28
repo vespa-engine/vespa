@@ -33,5 +33,3 @@ Development tools and 3rd party libraries:
 
     * vespa_boost_dev: Boost headers,
       prepared for use with the Vespa compiler.
-    * vespa_cppunit_dev: Headers and libraries prepared with the
-      Vespa compiler.

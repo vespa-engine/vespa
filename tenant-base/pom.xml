@@ -36,7 +36,6 @@
         <target_jdk_version>11</target_jdk_version>
         <compiler_plugin_version>3.8.0</compiler_plugin_version>
         <surefire_version>2.22.0</surefire_version>
-        <junit.jupiter.version>5.4.2</junit.jupiter.version>
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
     </properties>
 
@@ -71,13 +70,6 @@
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd</artifactId>
             <version>${vespaversion}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -29,13 +28,14 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -640,8 +640,7 @@ public class NodeAgentImplTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetRelevantMetrics() throws Exception {
-        ClassLoader classLoader = getClass().getClassLoader();
-        String json = IOUtils.readAll(classLoader.getResourceAsStream("docker.stats.json"), StandardCharsets.UTF_8);
+        String json = Files.readString(Paths.get("src/test/resources/docker.stats.json"));
         ContainerStats stats2 = ContainerStats.fromJson(json);
         ContainerStats stats1 = ContainerStats.fromJson(json.replace("\"cpu_stats\"", "\"cpu_stats2\"").replace("\"precpu_stats\"", "\"cpu_stats\""));
 
@@ -667,15 +666,14 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(eq(context)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
-        
-        nodeAgent.updateContainerNodeMetrics(); // Update metrics once to init and lastCpuMetric
 
-        Path pathToExpectedMetrics = Paths.get(classLoader.getResource("expected.container.system.metrics.txt").getPath());
-        String expectedMetrics = new String(Files.readAllBytes(pathToExpectedMetrics))
-                .replaceAll("\\s", "")
-                .replaceAll("\\n", "");
+        List<String> expectedMetrics = Stream.of(0, 1)
+                .map(i -> Paths.get("src/test/resources/expected.container.system.metrics." + i + ".txt"))
+                .map(path -> uncheck(() -> Files.readString(path)))
+                .map(content -> content.replaceAll("\\s", "").replaceAll("\\n", ""))
+                .collect(Collectors.toList());
+        int[] counter = {0};
 
-        String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19095",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
             NodeAgentContext calledContainerName = (NodeAgentContext) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];
@@ -687,10 +685,14 @@ public class NodeAgentImplTest {
 
             assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);
-            assertArrayEquals(expectedCommand, calledCommand);
+            String[] expectedCommand = {"vespa-rpc-invoke", "-t", "2", "tcp/localhost:19095",
+                    "setExtraMetrics", expectedMetrics.get(counter[0])};
+            assertArrayEquals("Ivocation #" + counter[0], expectedCommand, calledCommand);
+            counter[0]++;
             return null;
         }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), any());
 
+        nodeAgent.updateContainerNodeMetrics();
         nodeAgent.updateContainerNodeMetrics();
     }
 

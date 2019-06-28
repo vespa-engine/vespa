@@ -149,6 +149,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.CertificateNotReadyException": {
+    "superClass": "com.yahoo.config.provision.TransientException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.CloudName": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -263,9 +274,7 @@
       "public com.yahoo.config.provision.ClusterSpec with(java.util.Optional)",
       "public com.yahoo.config.provision.ClusterSpec exclusive(boolean)",
       "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean)",
-      "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean, java.util.Set)",
       "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean)",
-      "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean, java.util.Set)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",

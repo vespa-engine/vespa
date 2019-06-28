@@ -7146,12 +7146,14 @@
     "methods": [
       "public void <init>(com.yahoo.data.access.Inspector)",
       "public com.yahoo.data.access.Inspector inspect()",
-      "public java.lang.String toString()",
       "public java.lang.String toJson()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",
-      "public java.util.Set featureNames()"
+      "public java.util.Set featureNames()",
+      "public java.lang.String toString()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields": []
   },

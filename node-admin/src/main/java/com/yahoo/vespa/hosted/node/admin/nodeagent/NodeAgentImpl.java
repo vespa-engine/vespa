@@ -638,12 +638,16 @@ public class NodeAgentImpl implements NodeAgent {
         private long deltaThrottledPeriods;
 
         private void updateCpuDeltas(ContainerStats.CpuStats cpuStats) {
-            deltaSystemUsage = totalSystemUsage == 0 ? 0 : (cpuStats.getSystemCpuUsage() - totalSystemUsage);
-            deltaContainerUsage = cpuStats.getTotalUsage() - totalContainerUsage;
-            deltaContainerKernelUsage = cpuStats.getUsageInKernelMode() - containerKernelUsage;
-            deltaThrottledTime = cpuStats.getThrottledTime() - throttledTime;
-            deltaThrottlingActivePeriods = cpuStats.getThrottlingActivePeriods() - throttlingActivePeriods;
-            deltaThrottledPeriods = cpuStats.getThrottledPeriods() - throttledPeriods;
+            // Do not calculate delta during the first tick - that will result in a metric value that is
+            // average since container start
+            if (totalSystemUsage != 0) {
+                deltaSystemUsage = cpuStats.getSystemCpuUsage() - totalSystemUsage;
+                deltaContainerUsage = cpuStats.getTotalUsage() - totalContainerUsage;
+                deltaContainerKernelUsage = cpuStats.getUsageInKernelMode() - containerKernelUsage;
+                deltaThrottledTime = cpuStats.getThrottledTime() - throttledTime;
+                deltaThrottlingActivePeriods = cpuStats.getThrottlingActivePeriods() - throttlingActivePeriods;
+                deltaThrottledPeriods = cpuStats.getThrottledPeriods() - throttledPeriods;
+            }
 
             totalSystemUsage = cpuStats.getSystemCpuUsage();
             totalContainerUsage = cpuStats.getTotalUsage();

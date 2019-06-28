@@ -8,7 +8,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.hpp>
+#include <vespa/vdstestlib/config/dirconfig.hpp>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vespalib/gtest/gtest.h>
