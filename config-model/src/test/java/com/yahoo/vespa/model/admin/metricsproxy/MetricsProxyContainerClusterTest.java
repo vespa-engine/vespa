@@ -134,7 +134,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
     @Test
-    public void public_is_a_reserved_consumer_id() {
+    public void default_is_a_reserved_consumer_id() {
         assertReservedConsumerId("default");
     }
 
