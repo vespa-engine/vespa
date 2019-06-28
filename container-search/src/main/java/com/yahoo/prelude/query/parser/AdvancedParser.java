@@ -11,7 +11,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
  * Parser for queries of type advanced.
  *
  * @author Steinar Knutsen
- * @deprecated since 5.11, YQL+ should be used for formal queries
+ * @deprecated YQL should be used for formal queries
  */
 @Deprecated // DO NOT REMOVE (we'll keep this around longer)
 public class AdvancedParser extends StructuredParser {

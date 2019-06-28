@@ -20,13 +20,14 @@ public @interface Accesses {
 
     /**
      * Describes the annotations produced and consumed on one field in a document
-     * @author vegardh
      *
+     * @author vegardh
      */
     @Documented
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
-    public @interface Field {
+    @interface Field {
+
         /** The name of the document field */
         String name();
         /** The datatype of the field */
@@ -37,13 +38,13 @@ public @interface Accesses {
 
         /**
          * Describes the annotations produced and consumed in one tree on a field
-         * @author vegardh
          *
+         * @author vegardh
          */
         @Documented
         @Target(ElementType.TYPE)
         @Retention(RetentionPolicy.RUNTIME)
-        public @interface Tree {
+        @interface Tree {
             /** The name of the tree */
             String name() default "";
             /** The annotation types that this docproc writes in this tree */

@@ -29,4 +29,5 @@ class FastLogger {
     public static FastLogger getLogger(String name) {
         return new FastLogger(Logger.getLogger(name));
     }
+
 }

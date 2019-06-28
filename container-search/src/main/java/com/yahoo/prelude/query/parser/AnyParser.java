@@ -3,7 +3,6 @@ package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.Collections;

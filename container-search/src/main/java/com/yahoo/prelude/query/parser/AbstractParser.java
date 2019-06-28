@@ -94,10 +94,10 @@ public abstract class AbstractParser implements CustomParser {
     }
 
     /**
-     * <p>Creates a new instance of this class, storing the given {@link ParserEnvironment} for parse-time access to the
-     * environment.</p>
+     * Creates a new instance of this class, storing the given {@link ParserEnvironment} for parse-time access to the
+     * environment.
      *
-     * @param environment The environment settings to attach to the Parser.
+     * @param environment the environment settings to attach to the Parser
      */
     protected AbstractParser(ParserEnvironment environment) {
         this.environment = ParserEnvironment.fromParserEnvironment(environment);

@@ -19,7 +19,7 @@ import com.yahoo.log.LogLevel;
  * it is not possible to return a {@link DocumentProcessor.LaterProgress} from any of the process() methods that SimpleDocumentProcessor
  * provides - since their return type is void.</p>
  *
- * <p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
+ * <p></p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
  * like returning instances of {@link DocumentProcessor.LaterProgress}, subclass {@link DocumentProcessor} instead.</p>
  *
  * @author Einar M R Rosenvinge
@@ -86,7 +86,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      */
     @Override
     public final Progress process(Processing processing) {
-        final int initialSize = processing.getDocumentOperations().size();
+        int initialSize = processing.getDocumentOperations().size();
         for (DocumentOperation op : processing.getDocumentOperations()) {
             try {
                 if (op instanceof DocumentPut) {
