@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
@@ -19,7 +18,7 @@ import com.yahoo.log.LogLevel;
  * it is not possible to return a {@link DocumentProcessor.LaterProgress} from any of the process() methods that SimpleDocumentProcessor
  * provides - since their return type is void.</p>
  *
- * <p></p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
+ * <p>SimpleDocumentProcessor is for the <em>simple</em> cases. For complete control over document processing,
  * like returning instances of {@link DocumentProcessor.LaterProgress}, subclass {@link DocumentProcessor} instead.</p>
  *
  * @author Einar M R Rosenvinge
