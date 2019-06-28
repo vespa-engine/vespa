@@ -3,6 +3,15 @@ package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BlockItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
 import java.util.Collections;
