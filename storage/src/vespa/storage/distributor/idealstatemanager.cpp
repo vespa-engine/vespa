@@ -32,7 +32,8 @@ IdealStateManager::IdealStateManager(
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),
       _metrics(new IdealStateMetricSet),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
-      _bucketSpaceRepo(bucketSpaceRepo)
+      _bucketSpaceRepo(bucketSpaceRepo),
+      _has_logged_phantom_replica_warning(false)
 {
     _distributorComponent.registerStatusPage(*this);
     _distributorComponent.registerMetric(*_metrics);
@@ -52,9 +53,7 @@ IdealStateManager::IdealStateManager(
     _stateCheckers.push_back(StateChecker::SP(new GarbageCollectionStateChecker()));
 }
 
-IdealStateManager::~IdealStateManager()
-{
-}
+IdealStateManager::~IdealStateManager() = default;
 
 void
 IdealStateManager::print(std::ostream& out, bool verbose,
@@ -143,6 +142,26 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     return highestPri;
 }
 
+void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Context& c) const {
+    if (_has_logged_phantom_replica_warning) {
+        return;
+    }
+    for (const auto& n : c.entry->getRawNodes()) {
+        const uint16_t index = n.getNode();
+        const auto& state = c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, index));
+        // Only nodes in Up, Initializing or Retired should ever be present in the DB.
+        if (!state.getState().oneOf("uir")) {
+            LOG(warning, "%s in bucket DB is on node %u, which is in unavailable state %s. "
+                         "Current cluster state is '%s'",
+                         c.entry.getBucketId().toString().c_str(),
+                         index,
+                         state.getState().toString().c_str(),
+                         c.systemState.toString().c_str());
+            _has_logged_phantom_replica_warning = true;
+        }
+    }
+}
+
 StateChecker::Result
 IdealStateManager::generateHighestPriority(
         const document::Bucket &bucket,
@@ -160,6 +179,7 @@ IdealStateManager::generateHighestPriority(
     LOG(spam, "Checking bucket %s", e->toString().c_str());
 
     c.entry = *e;
+    verify_only_live_nodes_in_context(c);
     return runStateCheckers(c);
 }
 
