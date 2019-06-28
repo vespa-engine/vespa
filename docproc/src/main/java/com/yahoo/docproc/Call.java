@@ -91,10 +91,10 @@ public class Call implements Cloneable {
      * if schema mapping or @Accesses is in effect.
      *
      * <p>
-     * public for testing
+     * Public for testing
      */
     public DocumentPut configDoc(DocumentProcessor docProc, DocumentPut documentPut) {
-        if (!docProc.getFieldMap().isEmpty() || docProc.hasAnnotations()) {
+        if ( ! docProc.getFieldMap().isEmpty() || docProc.hasAnnotations()) {
             Document document = documentPut.getDocument();
             document = new ProxyDocument(docProc, document, docProc.getDocMap(document.getDataType().getName()));
 

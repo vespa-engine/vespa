@@ -29,65 +29,48 @@ public class HitField {
 
     private Object original;
 
-    /**
-     * @param f The field name
-     * @param c The field content
-     */
-    public HitField(String f, String c) {
-        this(f, c, c.indexOf(JuniperSearcher.RAW_HIGHLIGHT_CHAR) > -1);
+    public HitField(String fieldName, String content) {
+        this(fieldName, content, content.indexOf(JuniperSearcher.RAW_HIGHLIGHT_CHAR) > -1);
+    }
+
+    public HitField(String fieldName, XMLString content) {
+        this(fieldName, content, content.toString().indexOf(JuniperSearcher.RAW_HIGHLIGHT_CHAR) > -1);
+    }
+
+    public HitField(String fieldName, String content, boolean cjk) {
+        this(fieldName, content, cjk, false);
     }
 
     /**
-     * @param f The field name
-     * @param c The field content
-     */
-    public HitField(String f, XMLString c) {
-        this(f, c, c.toString().indexOf(JuniperSearcher.RAW_HIGHLIGHT_CHAR) > -1);
-    }
-
-    /**
-     * @param f The field name
-     * @param c The field content
+     * Creates a hit field
+     *
      * @param cjk true if the content is CJK text
      */
-    public HitField(String f, String c, boolean cjk) {
-        this(f, c, cjk, false);
+    public HitField(String fieldName, XMLString content, boolean cjk) {
+        this(fieldName, content.toString(), cjk, true);
     }
 
     /**
-     * @param f The field name
-     * @param c The field content
-     * @param cjk true if the content is CJK text
-     */
-    public HitField(String f, XMLString c, boolean cjk) {
-        this(f, c.toString(), cjk, true);
-    }
-
-    /**
-     * @param f The field name
-     * @param c The field content
+     * Creates a hit field
+     *
+     * @param fieldname The field name
+     * @param content The field content
      * @param cjk true if the content is CJK text
      * @param xmlProperty true if this should not quote XML syntax
      */
-    public HitField(String f, String c, boolean cjk, boolean xmlProperty) {
-        name = f;
-        rawContent = c;
-        content = null;
+    public HitField(String fieldname, String content, boolean cjk, boolean xmlProperty) {
+        name = fieldname;
+        rawContent = content;
+        this.content = null;
         isCJK = cjk;
         this.xmlProperty = xmlProperty;
     }
 
 
-    /**
-     * @return the name of this field
-     */
     public String getName() {
         return name;
     }
 
-    /**
-     * @return the raw/original content of this field
-     */
     public String getRawContent() {
         return rawContent;
     }
@@ -243,18 +226,13 @@ public class HitField {
         }
         return tokenizedContent;
     }
-    /**
-     * Return an iterator for the tokens, delimiters and markup elements
-     * of the field.
-     */
+    /** Return an iterator for the tokens, delimiters and markup elements of the field. */
     public ListIterator<FieldPart> listIterator() {
         return new FieldIterator(ensureTokenized(),
                 this);
     }
 
-    /**
-     * Return an iterator for the tokens in the field
-     */
+    /** Return an iterator over the tokens of this field */
     public ListIterator<FieldPart> tokenIterator() {
         return new TokenFieldIterator(ensureTokenized(),
                 this);

@@ -36,7 +36,7 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
      * Sets the destroyed flag to true. The very first time this method is called, it cleans up all its dependencies.
      * Even if you retain a reference to this object, all of its content is allowed to be garbage collected.
      *
-     * @return True if content existed and was destroyed.
+     * @return true if content existed and was destroyed
      */
     public boolean destroy() {
         if (!destroyed.getAndSet(true)) {
@@ -73,11 +73,7 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
         }
     }
 
-    /**
-     * Returns the message handler of this session.
-     *
-     * @return The message handler.
-     */
+    /** Returns the message handler of this session */
     public MessageHandler getMessageHandler() {
         return msgHandler;
     }
@@ -94,18 +90,12 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
     /**
      * Returns the connection spec string for this session. This returns a combination of the owning message bus' own
      * spec string and the name of this session.
-     *
-     * @return The connection string.
      */
     public String getConnectionSpec() {
         return mbus.getConnectionSpec() + "/" + name;
     }
 
-    /**
-     * Returns the name of this session.
-     *
-     * @return The session name.
-     */
+    /** Returns the name of this session */
     public String getName() {
         return name;
     }
@@ -123,4 +113,5 @@ public final class IntermediateSession implements MessageHandler, ReplyHandler {
             replyHandler.handleReply(reply);
         }
     }
+
 }

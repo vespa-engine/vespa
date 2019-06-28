@@ -84,14 +84,15 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
-
 /**
- * Testcases for vespa-documentgen-plugin
+ * Tests vespa-documentgen-plugin
  *
  * @author vegardh
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DocumentGenPluginTest {
+
+    // NOTE: Most assertEquals in this use the wrong argument order
 
     private static final int NUM_BOOKS = 10000;
 
@@ -188,7 +189,7 @@ public class DocumentGenPluginTest {
     }
 
     @Test
-    public void testremoveFieldValue() {
+    public void testRemoveFieldValue() {
         Book book = getBook();
         book.setAuthor(null);
         Field a = new Field("author", DataType.STRING);
@@ -231,9 +232,13 @@ public class DocumentGenPluginTest {
     @Test
     public void testStructs() {
         Book book = getBook();
+        assertBook(book);
+    }
+
+    private void assertBook(Book book) {
         assertTrue(Struct.class.isInstance(book.getMystruct()));
-        assertEquals(book.getMystruct().getSs01().getD0(), -238472634.78, 0);
-        assertEquals(book.getMystruct().getI1(), (Integer)999);
+        assertEquals(-238472634.78, book.getMystruct().getSs01().getD0(), 0);
+        assertEquals((Integer)999, book.getMystruct().getI1());
         assertEquals(book.getAuthor(), "Herman Melville");
         book.getMystruct().getSs01().setD0(4d);
         assertEquals(book.getMystruct().getSs01().getD0(), 4.0, 1E-6);

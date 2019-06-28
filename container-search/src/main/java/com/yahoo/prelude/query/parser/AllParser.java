@@ -1,7 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
+import com.yahoo.prelude.query.RankItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
@@ -86,14 +94,14 @@ public class AllParser extends SimpleParser {
         return and;
     }
 
-    protected OrItem addOr(Item item,OrItem or) {
+    protected OrItem addOr(Item item, OrItem or) {
         if (or == null)
             or = new OrItem();
         or.addItem(item);
         return or;
     }
 
-    protected NotItem addNot(Item item,NotItem not) {
+    protected NotItem addNot(Item item, NotItem not) {
         if (not == null)
             not = new NotItem();
         not.addNegativeItem(item);
@@ -129,9 +137,9 @@ public class AllParser extends SimpleParser {
             // Interpret -N as a positive item matching a negative number (by backtracking out of this)
             // but not if there is an explicit index (such as -a:b)
             // but interpret --N as a negative item matching a negative number
-            if ( item instanceof IntItem &&
-                 ((IntItem)item).getIndexName().isEmpty() &&
-                 ! ((IntItem)item).getNumber().startsWith(("-")))
+            if (item instanceof IntItem &&
+                ((IntItem)item).getIndexName().isEmpty() &&
+                ! ((IntItem)item).getNumber().startsWith(("-")))
                 item = null;
 
             return item;

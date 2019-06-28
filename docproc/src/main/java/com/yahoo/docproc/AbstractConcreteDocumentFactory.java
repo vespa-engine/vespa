@@ -14,7 +14,6 @@ import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 
-
 /**
  * Subtyped by factory classes for concrete document types. The factory classes are auto-generated
  * by vespa-documentgen-plugin. This superclass is used to manage the factories in OSGI.
@@ -30,10 +29,9 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
     /**
      * Used by the docproc framework to get an instance of a concrete document type without resorting to reflection in a bundle
      *
-     * @return A concrete document instance
+     * @return a concrete document instance
      */
     public abstract Document getDocumentCopy(java.lang.String type, StructuredFieldValue src, DocumentId id);
-
 
     /**
      * If the FieldValue is a StructuredFieldValue it will upgrade to the concrete type
@@ -44,6 +42,7 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
     public FieldValue optionallyUpgrade(Field field, FieldValue fv) {
         return optionallyUpgrade(field.getDataType(), fv);
     }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     private FieldValue optionallyUpgrade(DataType dataType, FieldValue fv) {
         if (fv instanceof StructuredFieldValue) {
@@ -69,4 +68,5 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
         }
         return fv;
     }
+
 }

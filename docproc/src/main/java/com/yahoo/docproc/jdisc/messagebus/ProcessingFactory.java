@@ -74,9 +74,8 @@ class ProcessingFactory {
         Document document = msg.getDocumentPut().getDocument();
         String typeName = document.getDataType().getName();
         ContainerDocumentConfig.Doctype typeConfig = getDocumentConfig(typeName);
-        if (typeConfig == null) {
-            return document;
-        }
+        if (typeConfig == null) return document;
+
         return createConcreteDocument(document, typeConfig);
     }
 

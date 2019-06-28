@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
@@ -86,7 +85,7 @@ public class SimpleDocumentProcessor extends DocumentProcessor {
      */
     @Override
     public final Progress process(Processing processing) {
-        final int initialSize = processing.getDocumentOperations().size();
+        int initialSize = processing.getDocumentOperations().size();
         for (DocumentOperation op : processing.getDocumentOperations()) {
             try {
                 if (op instanceof DocumentPut) {
