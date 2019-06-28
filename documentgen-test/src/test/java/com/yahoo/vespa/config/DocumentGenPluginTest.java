@@ -38,6 +38,8 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.VespaDocumentDeserializerHead;
+import com.yahoo.document.serialization.VespaDocumentSerializerHead;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.tensor.Tensor;
@@ -278,9 +280,7 @@ public class DocumentGenPluginTest {
         assertEquals(twelve, new IntegerFieldValue(12));
     }
 
-    @Test
-    public void testArrayOfStruct() {
-        Book book = getBook();
+    private void verifyArrayOfStruct(Book book) {
         assertEquals(book.getMysinglestructarray().get(0).getS1(), "YEPS");
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)456);
         Struct s1 = (Struct) ((Array)book.getFieldValue("mysinglestructarray")).get(0);
@@ -295,8 +295,25 @@ public class DocumentGenPluginTest {
         assertEquals(ifv2.getInteger(), 456);
         s2.setFieldValue("i1", new IntegerFieldValue(123));
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
-        book.getMysinglestructarray().remove(0);
+        Book.Ss1 prev = book.getMysinglestructarray().remove(0);
         assertEquals(book.getMysinglestructarray().get(0).getI1(), (Integer)123);
+        book.getMysinglestructarray().add(0, prev);
+        assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
+        s2.setFieldValue("i1", new IntegerFieldValue(456));
+    }
+
+    private static Document copyBySerialization(Document orig) {
+        return roundtripSerialize(orig, typeManagerForBookType());
+    }
+    private Book toBook(Document doc) {
+        return (Book) new ConcreteDocumentFactory().getDocumentCopy(doc.getDataType().getName(), doc, doc.getId());
+    }
+
+    @Test
+    public void testArrayOfStruct() {
+        Book book = getBook();
+        verifyArrayOfStruct(book);
+        verifyArrayOfStruct(toBook(copyBySerialization(book)));
     }
 
     @Test
@@ -484,13 +501,13 @@ public class DocumentGenPluginTest {
         }
     }
 
-    private DocumentTypeManager typeManagerFromSDs(String... files) {
+    private static DocumentTypeManager typeManagerFromSDs(String... files) {
         final DocumentTypeManager mgr = new DocumentTypeManager();
         mgr.configure("raw:" + getDocumentConfig(Arrays.asList(files)));
         return mgr;
     }
 
-    private DocumentTypeManager typeManagerForBookType() {
+    private static DocumentTypeManager typeManagerForBookType() {
         return typeManagerFromSDs("etc/complex/common.sd", "etc/complex/parent.sd", "etc/complex/book.sd");
     }
 
@@ -506,7 +523,7 @@ public class DocumentGenPluginTest {
         assertEquals(NUM_BOOKS, manyGenericBooks.size());
     }
 
-    private String getDocumentConfig(List<String> sds) {
+    private static String getDocumentConfig(List<String> sds) {
         return new DocumentmanagerConfig(Deriver.getDocumentManagerConfig(sds)).toString();
     }
 
