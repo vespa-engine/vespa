@@ -48,7 +48,7 @@ public class VespaModelFactory implements ModelFactory {
     private final Clock clock;
     private final Version version;
 
-    /** Creates a factory for vespa models for this version of the source */
+    /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<MlModelImporter> modelImporters,
@@ -63,6 +63,7 @@ public class VespaModelFactory implements ModelFactory {
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
+
         this.clock = Clock.systemUTC();
     }
     

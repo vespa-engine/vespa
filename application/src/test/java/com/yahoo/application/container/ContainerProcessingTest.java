@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Einar M R Rosenvinge
  */
-public class JDiscContainerProcessingTest {
+public class ContainerProcessingTest {
 
     private static String getXML(String chainName, String... processorIds) {
         String xml =

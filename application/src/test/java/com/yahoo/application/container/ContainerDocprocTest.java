@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Einar M R Rosenvinge
  */
-public class JDiscContainerDocprocTest {
+public class ContainerDocprocTest {
 
     private static final String DOCUMENT = "document music {\n"
                                            + "  field title type string { }\n"

@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
+import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
+import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.google.common.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
@@ -109,9 +114,13 @@ public final class Application implements AutoCloseable {
 
     private VespaModel createVespaModel() {
         try {
+            List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
+                                                           new TensorFlowImporter(),
+                                                           new OnnxImporter(),
+                                                           new XGBoostImporter());
             DeployState deployState = new DeployState.Builder()
-                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), 
-                                                                         /* Include source files */ true))
+                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
+                    .modelImporters(modelImporters)
                     .deployLogger((level, s) -> { })
                     .build();
             return new VespaModel(new NullConfigModelRegistry(), deployState);
@@ -133,6 +142,7 @@ public final class Application implements AutoCloseable {
     @Override
     public void close() {
         container.close();
+        IOUtils.recursiveDeleteDir(new File(path.toFile(), "models.generated"));
         if (deletePathWhenClosing)
             IOUtils.recursiveDeleteDir(path.toFile());
     }

@@ -16,7 +16,8 @@ import static org.junit.Assert.assertThat;
  * @author gjoranv
  * @author ollivir
  */
-public class JDiscContainerSearchTest {
+public class ContainerSearchTest {
+
     @Test
     public void processing_and_rendering_works() throws Exception {
         final String searcherId = AddHitSearcher.class.getName();
@@ -30,7 +31,7 @@ public class JDiscContainerSearchTest {
     }
 
     @Test
-    public void searching_works() throws Exception {
+    public void searching_works() {
         final String searcherId = AddHitSearcher.class.getName();
 
         try (JDisc container = containerWithSearch(searcherId)) {
@@ -52,9 +53,10 @@ public class JDiscContainerSearchTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void retrieving_search_from_container_without_search_is_illegal() throws Exception {
+    public void retrieving_search_from_container_without_search_is_illegal() {
         try (JDisc container = JDisc.fromServicesXml("<container version=\"1.0\" />", Networking.disable)) {
             container.search(); // throws
         }
+
     }
 }
