@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * A term which contains a phrase - a collection of word terms
@@ -125,6 +126,13 @@ public class PhraseItem extends CompositeIndexedItem {
         } else {
             throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
+    }
+
+    @Override
+    public Optional<Item> extractSingleChild() {
+        Optional<Item> extracted = super.extractSingleChild();
+        extracted.ifPresent(e -> e.setWeight(this.getWeight()));
+        return extracted;
     }
 
     private void addIndexedItem(IndexedItem word) {

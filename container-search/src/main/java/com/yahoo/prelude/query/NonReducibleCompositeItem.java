@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import java.util.Optional;
+
 /**
  * A composite item which specifies semantics which are not maintained
  * if an instance with a single child is replaced by the single child.
@@ -12,4 +14,8 @@ package com.yahoo.prelude.query;
  * @author bratseth
  */
 public abstract class NonReducibleCompositeItem extends CompositeItem {
+    @Override
+    public Optional<Item> extractSingleChild() {
+        return Optional.empty();
+    }
 }
