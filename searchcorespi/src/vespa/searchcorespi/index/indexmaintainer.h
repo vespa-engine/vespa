@@ -91,6 +91,7 @@ class IndexMaintainer : public IIndexManager,
     uint32_t          _next_id;          // Protected by SL + IUL
     uint32_t          _current_index_id; // Protected by SL + IUL
     IMemoryIndex::SP  _current_index;    // Protected by SL + IUL
+    bool              _flush_empty_current_index;
     SerialNum         _current_serial_num;// Protected by IUL
     SerialNum         _flush_serial_num;  // Protected by SL
     fastos::TimeStamp _lastFlushTime; // Protected by SL
