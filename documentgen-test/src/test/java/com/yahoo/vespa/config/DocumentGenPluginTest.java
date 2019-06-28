@@ -302,13 +302,8 @@ public class DocumentGenPluginTest {
         s2.setFieldValue("i1", new IntegerFieldValue(456));
     }
 
-    private Document copyBySerialization(Document orig) {
-        GrowableByteBuffer buf = new GrowableByteBuffer();
-        VespaDocumentSerializerHead serializer = new VespaDocumentSerializerHead(buf);
-        orig.serialize(serializer);
-        buf.flip();
-        VespaDocumentDeserializerHead deserializerHead = new VespaDocumentDeserializerHead(typeManagerForBookType(), buf);
-        return new Document(deserializerHead);
+    private static Document copyBySerialization(Document orig) {
+        return roundtripSerialize(orig, typeManagerForBookType());
     }
     private Book toBook(Document doc) {
         return (Book) new ConcreteDocumentFactory().getDocumentCopy(doc.getDataType().getName(), doc, doc.getId());
@@ -506,13 +501,13 @@ public class DocumentGenPluginTest {
         }
     }
 
-    private DocumentTypeManager typeManagerFromSDs(String... files) {
+    private static DocumentTypeManager typeManagerFromSDs(String... files) {
         final DocumentTypeManager mgr = new DocumentTypeManager();
         mgr.configure("raw:" + getDocumentConfig(Arrays.asList(files)));
         return mgr;
     }
 
-    private DocumentTypeManager typeManagerForBookType() {
+    private static DocumentTypeManager typeManagerForBookType() {
         return typeManagerFromSDs("etc/complex/common.sd", "etc/complex/parent.sd", "etc/complex/book.sd");
     }
 
@@ -528,7 +523,7 @@ public class DocumentGenPluginTest {
         assertEquals(NUM_BOOKS, manyGenericBooks.size());
     }
 
-    private String getDocumentConfig(List<String> sds) {
+    private static String getDocumentConfig(List<String> sds) {
         return new DocumentmanagerConfig(Deriver.getDocumentManagerConfig(sds)).toString();
     }
 
