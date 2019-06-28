@@ -12,5 +12,6 @@ vespa_add_executable(searchlib_word_store_test_app TEST
     word_store_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_word_store_test_app COMMAND searchlib_word_store_test_app)
