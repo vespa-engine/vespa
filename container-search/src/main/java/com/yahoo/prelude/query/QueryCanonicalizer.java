@@ -4,7 +4,10 @@ package com.yahoo.prelude.query;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.ListIterator;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Query normalizer and sanity checker.
@@ -82,15 +85,11 @@ public class QueryCanonicalizer {
         if (composite.getItemCount() == 0)
             parentIterator.remove();
 
-        if (composite.getItemCount() == 1 && ! (composite instanceof NonReducibleCompositeItem)) {
-            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
-                composite.getItem(0).setWeight(composite.getWeight());
-            parentIterator.set(composite.getItem(0));
-        }
+        composite.extractSingleChild().ifPresent(extractedChild -> parentIterator.set(extractedChild));
 
         return CanonicalizationResult.success();
     }
-    
+
     private static void collapseLevels(CompositeItem composite) {
         if (composite instanceof RankItem || composite instanceof NotItem) {
             collapseLevels(composite, composite.getItemIterator()); // collapse the first item only

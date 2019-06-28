@@ -18,6 +18,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.lang.MutableBoolean;
+import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
@@ -39,6 +40,7 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
@@ -781,7 +783,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderFieldContents(Object field) throws IOException {
-            if (field instanceof Inspectable) {
+            if (field instanceof Inspectable && ! (field instanceof FeatureData)) {
                 renderInspector(((Inspectable)field).inspect());
             } else {
                 renderFieldContentsDirect(field);
@@ -799,6 +801,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
+            } else if (field instanceof FeatureData) {
+                generator.writeRawValue(((FeatureData)field).toJson());
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -811,8 +815,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 // the null below is the field which has already been written
                 ((FieldValue) field).serialize(null, new JsonWriter(generator));
             } else if (field instanceof JSONArray || field instanceof JSONObject) {
-                // org.json returns null if the object would not result in
-                // syntactically correct JSON
+                // org.json returns null if the object would not result in syntactically correct JSON
                 String s = field.toString();
                 if (s == null) {
                     generator.writeNull();

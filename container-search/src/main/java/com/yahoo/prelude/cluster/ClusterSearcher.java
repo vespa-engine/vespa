@@ -145,7 +145,6 @@ public class ClusterSearcher extends Searcher {
                                                        documentDbConfig);
             addBackendSearcher(searcher);
         } else {
-            System.out.println("Dispatchers: " + searchClusterConfig.dispatcher().size());
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {

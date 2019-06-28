@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Optional;
 
 
 /**
@@ -55,10 +56,12 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         super(rawWord, current, isFromQuery, stemmed, substring);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.PHRASE;
     }
 
+    @Override
     public String getName() {
         return "SPHRASE";
     }
@@ -87,12 +90,20 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
      *
      * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
      */
+    @Override
     public void addItem(Item item) {
         if (item instanceof WordItem) {
             addWordItem((WordItem) item);
         } else {
             throw new IllegalArgumentException("Can not add " + item + " to a segment phrase");
         }
+    }
+
+    @Override
+    public Optional<Item> extractSingleChild() {
+        Optional<Item> extracted = super.extractSingleChild();
+        extracted.ifPresent(e -> e.setWeight(this.getWeight()));
+        return extracted;
     }
 
     private void addWordItem(WordItem word) {
