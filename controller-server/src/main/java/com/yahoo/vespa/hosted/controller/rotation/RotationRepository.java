@@ -1,18 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
+import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,6 +58,11 @@ public class RotationRepository {
         return application.rotations().stream().map(allRotations::get).findFirst();
     }
 
+    /** Get rotation for the given rotationId */
+    public Optional<Rotation> getRotation(RotationId rotationId) {
+        return Optional.of(allRotations.get(rotationId));
+    }
+
     /**
      * Returns a rotation for the given application
      *
@@ -73,6 +86,57 @@ public class RotationRepository {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }
         return findAvailableRotation(application, lock);
+    }
+
+    public List<AssignedRotation> getOrAssignRotations(Application application, RotationLock lock) {
+        if (application.deploymentSpec().globalServiceId().isPresent() && ! application.deploymentSpec().endpoints().isEmpty()) {
+            throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
+        }
+
+        // Support the older case of setting global-service-id
+        if (application.deploymentSpec().globalServiceId().isPresent()) {
+            final var regions = application.deploymentSpec().zones().stream()
+                    .flatMap(zone -> zone.region().stream())
+                    .collect(Collectors.toSet());
+
+            final var rotation = getOrAssignRotation(application, lock);
+
+            return List.of(
+                    new AssignedRotation(
+                            new ClusterSpec.Id(application.deploymentSpec().globalServiceId().get()),
+                            EndpointId.default_(),
+                            rotation.id(),
+                            regions
+                    )
+            );
+        }
+
+        final var availableRotations = new ArrayList<>(availableRotations(lock).values());
+        final var assignments = application.assignedRotations().stream()
+                .collect(
+                        Collectors.toMap(
+                                AssignedRotation::endpointId,
+                                Function.identity(),
+                                (a, b) -> { throw new IllegalStateException("Duplicate entries: " + a + ", " + b); },
+                                LinkedHashMap::new
+                        )
+                );
+
+        application.deploymentSpec().endpoints().stream()
+                .filter(endpoint -> ! assignments.containsKey(new EndpointId(endpoint.endpointId())))
+                .map(endpoint -> {
+                    return new AssignedRotation(
+                            new ClusterSpec.Id(endpoint.containerId()),
+                            EndpointId.of(endpoint.endpointId()),
+                            availableRotations.remove(0).id(),
+                            endpoint.regions()
+                    );
+                })
+                .forEach(assignment -> {
+                    assignments.put(assignment.endpointId(), assignment);
+                });
+
+        return List.copyOf(assignments.values());
     }
 
     /**
