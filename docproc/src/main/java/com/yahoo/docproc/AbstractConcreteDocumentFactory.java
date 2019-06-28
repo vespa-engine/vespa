@@ -10,6 +10,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 
@@ -55,11 +56,16 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
         } else if (fv instanceof Array) {
             Array<FieldValue> array = (Array<FieldValue>) fv;
             DataType nestedType = array.getDataType().getNestedType();
-            for (int i=0; i < array.size(); i++) {
-                array.set(i, optionallyUpgrade(nestedType, array.get(i)));
+            if (nestedType.getPrimitiveType() == null) {
+                array.replaceAll((item) -> optionallyUpgrade(nestedType, item));
+            }
+        } else if (fv instanceof MapFieldValue) {
+            MapFieldValue<FieldValue, FieldValue> map = (MapFieldValue<FieldValue, FieldValue>) fv;
+            DataType valueTypeType = map.getDataType().getValueType();
+            if (valueTypeType.getPrimitiveType() == null) {
+                map.replaceAll((key, value) -> optionallyUpgrade(valueTypeType, value));
             }
         }
-        // TODO We also need special handling for weighted set/map. Limiting to array until verified.
         return fv;
     }
 

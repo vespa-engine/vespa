@@ -321,9 +321,7 @@ public class DocumentGenPluginTest {
         verifyArrayOfStruct(toBook(copyBySerialization(book)));
     }
 
-    @Test
-    public void testMaps() {
-        Book book = getBook();
+    private void verifyMaps(Book book) {
         assertTrue(book.getField("stringmap").getDataType() instanceof MapDataType);
         MapFieldValue mfv = (MapFieldValue) book.getFieldValue("stringmap");
         assertEquals(mfv.get(new StringFieldValue("Melville")), new StringFieldValue("Moby Dick"));
@@ -333,12 +331,21 @@ public class DocumentGenPluginTest {
         assertEquals(mfv.keySet().size(), 2);
         book.getStringmap().put("Melville", "MD");
         assertEquals(mfv.keySet().size(), 3);
+        book.getStringmap().put("Melville", "Moby Dick");
+        assertEquals(mfv.keySet().size(), 3);
 
         assertEquals(book.getStructmap().get(50).getS1(), "test s1");
         MapFieldValue mfv2 = (MapFieldValue) book.getFieldValue("structmap");
         Struct fifty = (Struct)(mfv2.get(new IntegerFieldValue(50)));
         assertEquals(fifty.getFieldValue("s1").getWrappedValue(), "test s1");
         assertEquals(((Ss1)mfv2.get(new IntegerFieldValue(50))).getS1(), "test s1");
+    }
+
+    @Test
+    public void testMaps() {
+        Book book = getBook();
+        verifyMaps(book);
+        verifyMaps(toBook(copyBySerialization(book)));
     }
 
     @Test

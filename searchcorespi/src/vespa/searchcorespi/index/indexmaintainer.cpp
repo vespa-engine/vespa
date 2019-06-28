@@ -11,6 +11,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
+#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -28,6 +29,7 @@ using document::Document;
 using search::FixedSourceSelector;
 using search::TuneFileAttributes;
 using search::index::Schema;
+using search::index::SchemaUtil;
 using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
@@ -466,7 +468,9 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
     {
         LockGuard lock(_index_update_lock);
         if (!_current_index->hasReceivedDocumentInsert() &&
-            _source_selector_changes == 0) {
+            _source_selector_changes == 0 &&
+            !_flush_empty_current_index)
+        {
             args->_skippedEmptyLast = true; // Skip flush of empty memory index
         }
 
@@ -480,6 +484,7 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
             _source_selector_changes = 0;
         }
         _current_index = *new_index;
+        _flush_empty_current_index = false;
     }
     if (args->_skippedEmptyLast) {
         replaceSource(_current_index_id, _current_index);
@@ -723,6 +728,23 @@ IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
     }
 }
 
+namespace {
+
+bool
+has_matching_interleaved_features(const Schema& old_schema, const Schema& new_schema)
+{
+    for (SchemaUtil::IndexIterator itr(new_schema); itr.isValid(); ++itr) {
+        if (itr.hasMatchingOldFields(old_schema) &&
+                !itr.has_matching_use_interleaved_features(old_schema))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}
+
 
 void
 IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
@@ -758,6 +780,12 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
             _frozenMemoryIndexes.emplace_back(args._oldIndex, freezeSerialNum, std::move(saveInfo), oldAbsoluteId);
         }
         _current_index = newIndex;
+        // Non-matching interleaved features in schemas means that we need to
+        // reconstruct or drop interleaved features in posting lists.
+        // If so, we must flush the new index to disk even if it is empty.
+        // This ensures that 2x triggerFlush will run fusion
+        // to reconstruct or drop interleaved features in the posting lists.
+        _flush_empty_current_index = !has_matching_interleaved_features(args._oldSchema, args._newSchema);
     }
     if (dropEmptyLast) {
         replaceSource(_current_index_id, _current_index);
@@ -822,6 +850,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _next_id(),
       _current_index_id(),
       _current_index(),
+      _flush_empty_current_index(false),
       _current_serial_num(0),
       _flush_serial_num(0),
       _lastFlushTime(),
