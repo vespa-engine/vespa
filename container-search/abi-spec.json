@@ -436,6 +436,7 @@
       "public void lock()",
       "public boolean isLocked()",
       "public int getTermCount()",
+      "public java.util.Optional extractSingleChild()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -854,7 +855,8 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>()"
+      "public void <init>()",
+      "public java.util.Optional extractSingleChild()"
     ],
     "fields": []
   },
@@ -1239,6 +1241,7 @@
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "protected void adding(com.yahoo.prelude.query.Item)",
+      "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
       "public java.lang.String getFieldName()"
