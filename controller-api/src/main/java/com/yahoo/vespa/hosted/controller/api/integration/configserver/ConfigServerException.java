@@ -37,7 +37,8 @@ public class ConfigServerException extends RuntimeException {
         OUT_OF_CAPACITY,
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
-        PARENT_HOST_NOT_READY
+        PARENT_HOST_NOT_READY,
+        CERTIFICATE_NOT_READY
     }
 
 }

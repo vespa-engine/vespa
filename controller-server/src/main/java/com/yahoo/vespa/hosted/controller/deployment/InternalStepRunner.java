@@ -61,6 +61,7 @@ import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.CERTIFICATE_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.PARENT_HOST_NOT_READY;
@@ -231,7 +232,8 @@ public class InternalStepRunner implements StepRunner {
             if (   e.getErrorCode() == OUT_OF_CAPACITY && type.isTest()
                 || e.getErrorCode() == ACTIVATION_CONFLICT
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE
-                || e.getErrorCode() == PARENT_HOST_NOT_READY) {
+                || e.getErrorCode() == PARENT_HOST_NOT_READY
+                || e.getErrorCode() == CERTIFICATE_NOT_READY) {
                 logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
                 return Optional.empty();
             }
