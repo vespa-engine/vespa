@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -45,6 +46,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -118,7 +120,7 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               List.of(new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.default_(), new RotationId("my-rotation"))),
+                                               List.of(new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.default_(), new RotationId("my-rotation"), Set.of())),
                                                rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
@@ -254,6 +256,11 @@ public class ApplicationSerializerTest {
         final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         final var slime = SlimeUtils.jsonToSlime(applicationJson);
 
+        final var regions = Set.of(
+                RegionName.from("us-east-3"),
+                RegionName.from("us-west-1")
+        );
+
         // Add the necessary fields to the Slime representation of the application
         final var cursor = slime.get();
         cursor.setString("rotation", "single-rotation");
@@ -271,11 +278,11 @@ public class ApplicationSerializerTest {
         // Parse and test the output from parsing contains both legacy rotation and multiple rotations
         final var application = applicationSerializer.fromSlime(slime);
 
+        // Since only one AssignedEndpoint can be "default", we make sure that we are ignoring the
+        // multiple-rotation entries as the globalServiceId will override them
         assertEquals(
                 List.of(
                         new RotationId("single-rotation"),
-                        new RotationId("multiple-rotation-1"),
-                        new RotationId("multiple-rotation-2"),
                         new RotationId("assigned-rotation")
                 ),
                 application.rotations()
@@ -285,12 +292,13 @@ public class ApplicationSerializerTest {
                 Optional.of(new RotationId("single-rotation")), application.legacyRotation()
         );
 
+        // The same goes here for AssignedRotations with "default" EndpointId as in the .rotations() test above.
+        // Note that we are only using Set.of() on "assigned-rotation" because in this test we do not have access
+        // to a deployment.xml that describes the zones a rotation should map to.
         assertEquals(
                 List.of(
-                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("single-rotation")),
-                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("multiple-rotation-1")),
-                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("multiple-rotation-2")),
-                        new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"))
+                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("single-rotation"), regions),
+                        new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"), Set.of())
                 ),
                 application.assignedRotations()
         );

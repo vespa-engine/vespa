@@ -290,59 +290,57 @@ public class ControllerTest {
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
                          Set.of("rotation-id-01",
-                                "app1--tenant1.global.vespa.oath.cloud",
-                                "app1.tenant1.global.vespa.yahooapis.com",
-                                "app1--tenant1.global.vespa.yahooapis.com"),
+                                "app1--tenant1.global.vespa.oath.cloud"),
                          tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
-        assertEquals(3, tester.controllerTester().nameService().records().size());
 
-        Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
-        assertTrue(record.isPresent());
-        assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+        assertEquals(1, tester.controllerTester().nameService().records().size());
 
-        record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
+        var record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record.isPresent());
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().data().asString());
-
-        record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-        assertTrue(record.isPresent());
-        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
     }
 
     @Test
-    public void testRedirectLegacyDnsNames() { // TODO: Remove together with Flags.REDIRECT_LEGACY_DNS_NAMES
+    public void testDnsAliasRegistrationWithEndpoints() {
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .globalServiceId("foo")
+                .endpoint("foobar", "qrs", "us-west-1", "us-central-1")
+                .endpoint("default", "qrs", "us-west-1", "us-central-1")
                 .region("us-west-1")
-                .region("us-central-1")
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.REDIRECT_LEGACY_DNS_NAMES.id(), true);
-
         tester.deployCompletely(application, applicationPackage);
-        assertEquals(3, tester.controllerTester().nameService().records().size());
+        Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
+        assertFalse(deployments.isEmpty());
+        for (Deployment deployment : deployments) {
+            assertEquals("Rotation names are passed to config server in " + deployment.zone(),
+                    Set.of(
+                            "rotation-id-01",
+                            "rotation-id-02",
+                            "app1--tenant1.global.vespa.oath.cloud",
+                            "foobar--app1--tenant1.global.vespa.oath.cloud"
+                    ),
+                    tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
+        }
+        tester.flushDnsRequests();
 
-        Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
-        assertTrue(record.isPresent());
-        assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("app1--tenant1.global.vespa.oath.cloud.", record.get().data().asString());
+        assertEquals(2, tester.controllerTester().nameService().records().size());
 
-        record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-        assertTrue(record.isPresent());
-        assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+        var record1 = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
+        assertTrue(record1.isPresent());
+        assertEquals("app1--tenant1.global.vespa.oath.cloud", record1.get().name().asString());
+        assertEquals("rotation-fqdn-02.", record1.get().data().asString());
 
-        record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-        assertTrue(record.isPresent());
-        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("app1--tenant1.global.vespa.oath.cloud.", record.get().data().asString());
+        var record2 = tester.controllerTester().findCname("foobar--app1--tenant1.global.vespa.oath.cloud");
+        assertTrue(record2.isPresent());
+        assertEquals("foobar--app1--tenant1.global.vespa.oath.cloud", record2.get().name().asString());
+        assertEquals("rotation-fqdn-01.", record2.get().data().asString());
     }
 
     @Test
@@ -358,16 +356,11 @@ public class ControllerTest {
                     .build();
 
             tester.deployCompletely(app1, applicationPackage);
-            assertEquals(3, tester.controllerTester().nameService().records().size());
+            assertEquals(1, tester.controllerTester().nameService().records().size());
 
-            Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
+            Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
             assertTrue(record.isPresent());
-            assertEquals("app1--tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().data().asString());
-
-            record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
-            assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
+            assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
             assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
             // Application is deleted and rotation is unassigned
@@ -408,21 +401,11 @@ public class ControllerTest {
                     .region("us-central-1")
                     .build();
             tester.deployCompletely(app2, applicationPackage);
-            assertEquals(3, tester.controllerTester().nameService().records().size());
+            assertEquals(1, tester.controllerTester().nameService().records().size());
 
-            Optional<Record> record = tester.controllerTester().findCname("app2--tenant2.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
-            assertEquals("app2--tenant2.global.vespa.yahooapis.com", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().data().asString());
-
-            record = tester.controllerTester().findCname("app2--tenant2.global.vespa.oath.cloud");
+            var record = tester.controllerTester().findCname("app2--tenant2.global.vespa.oath.cloud");
             assertTrue(record.isPresent());
             assertEquals("app2--tenant2.global.vespa.oath.cloud", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().data().asString());
-
-            record = tester.controllerTester().findCname("app2.tenant2.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
-            assertEquals("app2.tenant2.global.vespa.yahooapis.com", record.get().name().asString());
             assertEquals("rotation-fqdn-01.", record.get().data().asString());
         }
 
@@ -441,19 +424,15 @@ public class ControllerTest {
             assertEquals("rotation-id-02", app1.rotations().get(0).asString());
 
             // DNS records are created for the newly assigned rotation
-            assertEquals(6, tester.controllerTester().nameService().records().size());
+            assertEquals(2, tester.controllerTester().nameService().records().size());
 
-            Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
-            assertEquals("rotation-fqdn-02.", record.get().data().asString());
+            var record1 = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
+            assertTrue(record1.isPresent());
+            assertEquals("rotation-fqdn-02.", record1.get().data().asString());
 
-            record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-            assertTrue(record.isPresent());
-            assertEquals("rotation-fqdn-02.", record.get().data().asString());
-
-            record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isPresent());
-            assertEquals("rotation-fqdn-02.", record.get().data().asString());
+            var record2 = tester.controllerTester().findCname("app2--tenant2.global.vespa.oath.cloud");
+            assertTrue(record2.isPresent());
+            assertEquals("rotation-fqdn-01.", record2.get().data().asString());
         }
 
     }
