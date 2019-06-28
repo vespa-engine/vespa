@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
@@ -85,6 +86,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -95,6 +97,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -286,7 +289,7 @@ public class ApplicationController {
             Version platformVersion;
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
-            Set<String> rotationNames = new HashSet<>();
+            Set<ContainerEndpoint> endpoints = new LinkedHashSet<>();
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -328,9 +331,18 @@ public class ApplicationController {
                 application = withRotation(application, zone);
                 Application app = application.get();
                 // Include global DNS names
-                app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).forEach(rotationNames::add);
-                // Include rotation ID to ensure that deployment can respond to health checks with rotation ID as Host header
-                app.rotations().stream().map(RotationId::asString).forEach(rotationNames::add);
+                app.assignedRotations().stream()
+                        .filter(assignedRotation -> assignedRotation.regions().contains(zone.region()))
+                        .map(assignedRotation -> {
+                            return new ContainerEndpoint(
+                                    assignedRotation.clusterId().value(),
+                                    Stream.concat(
+                                            app.endpointsIn(controller.system(), assignedRotation.endpointId()).legacy(false).asList().stream().map(Endpoint::dnsName),
+                                            app.rotations().stream().map(RotationId::asString)
+                                    ).collect(Collectors.toList())
+                            );
+                        })
+                        .forEach(endpoints::add);
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
@@ -342,7 +354,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, rotationNames);
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, endpoints);
 
             lockOrThrow(applicationId, application ->
                     store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
@@ -422,11 +434,11 @@ public class ApplicationController {
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
                                   ZoneId zone, DeployOptions deployOptions,
-                                  Set<String> rotationNames) {
+                                  Set<ContainerEndpoint> endpoints) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, rotationNames, List.of(), applicationPackage.zippedContent());
+                    configServer.deploy(deploymentId, deployOptions, Set.of(), endpoints, applicationPackage.zippedContent());
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
@@ -438,29 +450,35 @@ public class ApplicationController {
 
     /** Makes sure the application has a global rotation, if eligible. */
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
-        if (zone.environment() == Environment.prod && application.get().deploymentSpec().globalServiceId().isPresent()) {
+        if (zone.environment() == Environment.prod && applicationNeedsRotations(application.get().deploymentSpec())) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
-                Rotation rotation = rotationRepository.getOrAssignRotation(application.get(), rotationLock);
-                application = application.with(List.of(new AssignedRotation(new ClusterSpec.Id(application.get().deploymentSpec().globalServiceId().get()), EndpointId.default_(), rotation.id())));
+                final var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
+                application = application.with(rotations);
                 store(application); // store assigned rotation even if deployment fails
-
-                boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
-                                                                 .value();
-
-                EndpointList globalEndpoints = application.get()
-                                                          .endpointsIn(controller.system())
-                                                          .scope(Endpoint.Scope.global);
-                globalEndpoints.main().ifPresent(mainEndpoint -> {
-                    registerCname(mainEndpoint.dnsName(), rotation.name());
-                    if (redirectLegacyDns) {
-                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), mainEndpoint.dnsName()));
-                    } else {
-                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
-                    }
-                });
+                registerAssignedRotationCnames(application.get());
             }
         }
         return application;
+    }
+
+    private boolean applicationNeedsRotations(DeploymentSpec spec) {
+        return spec.globalServiceId().isPresent() || !spec.endpoints().isEmpty();
+    }
+
+    private void registerAssignedRotationCnames(Application application) {
+        application.assignedRotations().forEach(assignedRotation -> {
+            final var endpoints = application
+                    .endpointsIn(controller.system(), assignedRotation.endpointId())
+                    .scope(Endpoint.Scope.global);
+
+            final var maybeRotation = rotationRepository.getRotation(assignedRotation.rotationId());
+
+            maybeRotation.ifPresent(rotation -> {
+                endpoints.main().ifPresent(mainEndpoint -> {
+                    registerCname(mainEndpoint.dnsName(), rotation.name());
+                });
+            });
+        });
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
@@ -607,8 +625,14 @@ public class ApplicationController {
             applicationStore.removeAll(id);
             applicationStore.removeAll(TesterId.of(id));
 
-            EndpointList endpoints = application.get().endpointsIn(controller.system());
-            endpoints.asList().stream().map(Endpoint::dnsName).forEach(name -> controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal));
+            application.get().assignedRotations().forEach(assignedRotation -> {
+                final var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
+                endpoints.asList().stream()
+                        .map(Endpoint::dnsName)
+                        .forEach(name -> {
+                            controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
+                        });
+            });
 
             log.info("Deleted " + application);
         }));
