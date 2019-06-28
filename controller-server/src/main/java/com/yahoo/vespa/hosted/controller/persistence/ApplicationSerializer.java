@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Serializes {@link Application} to/from slime.
@@ -547,23 +549,25 @@ public class ApplicationSerializer {
     }
 
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, Inspector root) {
-        final var assignedRotations = new LinkedHashSet<AssignedRotation>();
+        final var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
 
         // Add the legacy rotation field to the set - this needs to be first
         // TODO: Remove when we retire the rotations field
         final var legacyRotation = legacyRotationFromSlime(root.field(deprecatedRotationField));
         if (legacyRotation.isPresent() && deploymentSpec.globalServiceId().isPresent()) {
             final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
-            assignedRotations.add(new AssignedRotation(clusterId, EndpointId.default_(), legacyRotation.get()));
+            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
+            assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), legacyRotation.get(), regions));
         }
 
         // Now add the same entries from "stupid" list of rotations
         // TODO: Remove when we retire the rotations field
         final var rotations = rotationListFromSlime(root.field(rotationsField));
         for (var rotation : rotations) {
+            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
             if (deploymentSpec.globalServiceId().isPresent()) {
                 final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
-                assignedRotations.add(new AssignedRotation(clusterId, EndpointId.default_(), rotation));
+                assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), rotation, regions));
             }
         }
 
@@ -572,10 +576,14 @@ public class ApplicationSerializer {
             final var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             final var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             final var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
-            assignedRotations.add(new AssignedRotation(clusterId, endpointId, rotationId));
+            final var regions = deploymentSpec.endpoints().stream()
+                    .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
+                    .flatMap(endpoint -> endpoint.regions().stream())
+                    .collect(Collectors.toSet());
+            assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
-        return List.copyOf(assignedRotations);
+        return List.copyOf(assignedRotations.values());
     }
 
     private List<RotationId> rotationListFromSlime(Inspector field) {
