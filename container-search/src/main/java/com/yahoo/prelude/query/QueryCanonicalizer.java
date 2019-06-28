@@ -85,17 +85,11 @@ public class QueryCanonicalizer {
         if (composite.getItemCount() == 0)
             parentIterator.remove();
 
-        composite.extractSingleChild().ifPresent( (Item child) -> reduce(composite, parentIterator, child));
+        composite.extractSingleChild().ifPresent(extractedChild -> parentIterator.set(extractedChild));
 
         return CanonicalizationResult.success();
     }
 
-    private static void reduce(CompositeItem composite, ListIterator<Item> parentIterator, Item child) {
-        if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
-            child.setWeight(composite.getWeight());
-        parentIterator.set(child);
-    }
-    
     private static void collapseLevels(CompositeItem composite) {
         if (composite instanceof RankItem || composite instanceof NotItem) {
             collapseLevels(composite, composite.getItemIterator()); // collapse the first item only

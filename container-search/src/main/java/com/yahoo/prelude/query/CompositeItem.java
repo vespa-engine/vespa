@@ -381,8 +381,9 @@ public abstract class CompositeItem extends Item {
     }
 
     /**
-     * Will return its single child if itself can safely be ommitted.
-     * @return A valid Item or empty Optional if it can not be done.
+     * Will return its single child if itself can safely be omitted.
+     *
+     * @return a valid Item or empty Optional if it can not be done
      */
     public Optional<Item> extractSingleChild() {
         return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
