@@ -295,8 +295,11 @@ public class DocumentGenPluginTest {
         assertEquals(ifv2.getInteger(), 456);
         s2.setFieldValue("i1", new IntegerFieldValue(123));
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
-        book.getMysinglestructarray().remove(0);
+        Book.Ss1 prev = book.getMysinglestructarray().remove(0);
         assertEquals(book.getMysinglestructarray().get(0).getI1(), (Integer)123);
+        book.getMysinglestructarray().add(0, prev);
+        assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
+        s2.setFieldValue("i1", new IntegerFieldValue(456));
     }
 
     private Document copyBySerialization(Document orig) {

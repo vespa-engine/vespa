@@ -2,10 +2,13 @@
 package com.yahoo.docproc;
 
 import java.util.Map;
+
+import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -30,6 +33,7 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
      */
     public abstract Document getDocumentCopy(java.lang.String type, StructuredFieldValue src, DocumentId id);
 
+
     /**
      * If the FieldValue is a StructuredFieldValue it will upgrade to the concrete type
      * @param field
@@ -37,15 +41,26 @@ public abstract class AbstractConcreteDocumentFactory extends com.yahoo.componen
      * @return fv or upgraded fv
      */
     public FieldValue optionallyUpgrade(Field field, FieldValue fv) {
+        return optionallyUpgrade(field.getDataType(), fv);
+    }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private FieldValue optionallyUpgrade(DataType dataType, FieldValue fv) {
         if (fv instanceof StructuredFieldValue) {
             try {
-                return structTypes().get(field.getDataType().getName())
+                return structTypes().get(dataType.getName())
                         .getConstructor(StructuredFieldValue.class)
                         .newInstance(fv);
             } catch (java.lang.Exception ex) {
                 throw new RuntimeException(ex);
             }
+        } else if (fv instanceof Array) {
+            Array<FieldValue> array = (Array<FieldValue>) fv;
+            DataType nestedType = array.getDataType().getNestedType();
+            for (int i=0; i < array.size(); i++) {
+                array.set(i, optionallyUpgrade(nestedType, array.get(i)));
+            }
         }
+        // TODO We also need specialhandling for weighted set/map. Limiting to array until verified.
         return fv;
     }
 }
