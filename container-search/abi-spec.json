@@ -6810,6 +6810,25 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.rendering.JsonRenderer$FieldConsumer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.search.result.Hit$RawUtf8Consumer"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
+      "public void accept(java.lang.String, java.lang.Object)",
+      "public void accept(java.lang.String, byte[], int, int)",
+      "protected boolean shouldRender(java.lang.String, java.lang.Object)",
+      "protected boolean shouldRenderUtf8Value(java.lang.String, int)",
+      "protected void renderFieldContents(java.lang.Object)",
+      "public bridge synthetic void accept(java.lang.Object, java.lang.Object)"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.rendering.JsonRenderer": {
     "superClass": "com.yahoo.processing.rendering.AsynchronousSectionedRenderer",
     "interfaces": [],
@@ -6822,13 +6841,25 @@
       "protected static com.fasterxml.jackson.databind.ObjectMapper createJsonCodec()",
       "public void init()",
       "public void beginResponse(java.io.OutputStream)",
+      "protected void renderTrace(com.yahoo.processing.execution.Execution$Trace)",
       "public void beginList(com.yahoo.processing.response.DataList)",
       "protected void moreChildren()",
+      "protected void renderHitGroupHead(com.yahoo.search.result.HitGroup)",
+      "protected void renderErrors(java.util.Set)",
+      "protected void renderCoverage()",
+      "protected void renderHit(com.yahoo.search.result.Hit)",
+      "protected boolean shouldRender(com.yahoo.search.result.Hit)",
+      "protected void renderHitContents(com.yahoo.search.result.Hit)",
+      "protected void renderAllFields(com.yahoo.search.result.Hit)",
+      "protected void renderContinuations(java.util.Map)",
+      "protected void renderGroupMetadata(com.yahoo.search.grouping.result.GroupId)",
+      "protected void renderTotalHitCount(com.yahoo.search.result.Hit)",
       "public void data(com.yahoo.processing.response.Data)",
       "public void endList(com.yahoo.processing.response.DataList)",
       "public void endResponse()",
       "public java.lang.String getEncoding()",
-      "public java.lang.String getMimeType()"
+      "public java.lang.String getMimeType()",
+      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(com.fasterxml.jackson.core.JsonGenerator, boolean)"
     ],
     "fields": []
   },
