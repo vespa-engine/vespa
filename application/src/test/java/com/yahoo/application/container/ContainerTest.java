@@ -32,9 +32,10 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  * @author ollivir
  */
-public class JDiscTest {
+public class ContainerTest {
+
     @Test
-    public void jdisc_can_be_used_as_top_level_element() throws Exception {
+    public void jdisc_can_be_used_as_top_level_element() {
         try (JDisc container = fromServicesXml("<jdisc version=\"1.0\">" + //
                 "<search />" + //
                 "</jdisc>", Networking.disable)) {
@@ -43,7 +44,7 @@ public class JDiscTest {
     }
 
     @Test
-    public void jdisc_id_can_be_set() throws Exception {
+    public void jdisc_id_can_be_set() {
         try (JDisc container = fromServicesXml("<jdisc version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
                 "</jdisc>", Networking.disable)) {
@@ -52,7 +53,7 @@ public class JDiscTest {
     }
 
     @Test
-    public void jdisc_can_be_embedded_in_services_tag() throws Exception {
+    public void jdisc_can_be_embedded_in_services_tag() {
         try (JDisc container = fromServicesXml("<services>" + //
                 "<jdisc version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
@@ -77,7 +78,7 @@ public class JDiscTest {
     }
 
     @Test
-    public void handleRequest_yields_response_from_correct_request_handler() throws Exception {
+    public void handleRequest_yields_response_from_correct_request_handler() {
         final String handlerClass = TestHandler.class.getName();
         try (JDisc container = fromServicesXml("<container version=\"1.0\">" + //
                 "<handler id=\"test-handler\" class=\"" + handlerClass + "\">" + //
@@ -94,7 +95,7 @@ public class JDiscTest {
     }
 
     @Test
-    public void load_searcher_from_bundle() throws Exception {
+    public void load_searcher_from_bundle() {
         try (JDisc container = JDisc.fromPath(FileSystems.getDefault().getPath("src/test/app-packages/searcher-app"),
                 Networking.disable)) {
             Result result = container.search().process(ComponentSpecification.fromString("default"),
@@ -175,4 +176,5 @@ public class JDiscTest {
         }
         throw new RuntimeException("No http server found");
     }
+
 }

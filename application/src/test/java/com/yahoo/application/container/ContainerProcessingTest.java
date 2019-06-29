@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Einar M R Rosenvinge
  */
-public class JDiscContainerProcessingTest {
+public class ContainerProcessingTest {
 
     private static String getXML(String chainName, String... processorIds) {
         String xml =
@@ -55,17 +55,15 @@ public class JDiscContainerProcessingTest {
 
     @Test
     public void requireThatBasicProcessingDoesNotTruncateBigResponse() {
-        final int SIZE = 50*1000;
+        int SIZE = 50*1000;
         StringBuilder foo = new StringBuilder();
         for (int j = 0 ; j < SIZE ; j++) {
             foo.append('b');
         }
 
         try (JDisc container = getContainerWithRot13()) {
-            final int NUM_TIMES = 100;
+            int NUM_TIMES = 100;
             for (int i = 0; i < NUM_TIMES; i++) {
-
-
                 com.yahoo.application.container.handler.Response response =
                         container.handleRequest(
                                 new com.yahoo.application.container.handler.Request("http://foo/processing/?chain=foo&title=" + foo.toString()));

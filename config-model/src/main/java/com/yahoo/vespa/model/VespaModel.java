@@ -161,18 +161,19 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
+        createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
+                                 deployState.rankProfileRegistry(), deployState.getQueryProfiles());
+        this.rankProfileList = new RankProfileList(null, // null search -> global
+                                                   rankingConstants,
+                                                   AttributeFields.empty,
+                                                   deployState.rankProfileRegistry(),
+                                                   deployState.getQueryProfiles().getRegistry(),
+                                                   deployState.getImportedModels());
+
+
+
         HostSystem hostSystem = root.getHostSystem();
-
         if (complete) { // create a a completed, frozen model
-            createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
-                    deployState.rankProfileRegistry(), deployState.getQueryProfiles());
-            this.rankProfileList = new RankProfileList(null, // null search -> global
-                                                  rankingConstants,
-                                                  AttributeFields.empty,
-                                                  deployState.rankProfileRegistry(),
-                                                  deployState.getQueryProfiles().getRegistry(),
-                                                  deployState.getImportedModels());
-
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState, builder);
             setupRouting(deployState);
@@ -189,7 +190,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.rankProfileList = RankProfileList.empty;
         }
     }
 
@@ -621,7 +621,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     /**
-     * @return this root's model repository
+     * Returns this root's model repository
      */
     public ConfigModelRepo configModelRepo() {
         return configModelRepo;

@@ -93,7 +93,7 @@ public class StandaloneContainerApplication implements Application {
 
         try {
             Pair<VespaModel, Container> tpl = withTempDir(preprocessedApplicationDir -> createContainerModel(applicationPath,
-                    distributedFiles, preprocessedApplicationDir, networkingOption, configModelRepo));
+                                                          distributedFiles, preprocessedApplicationDir, networkingOption, configModelRepo));
             this.modelRoot = tpl.getFirst();
             this.container = tpl.getSecond();
         } catch (RuntimeException r) {

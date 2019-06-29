@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 /**
  * @author Einar M R Rosenvinge
  */
-public class JDiscContainerRequestTest {
+public class ContainerRequestTest {
 
     private static String getXML(String className, String binding) {
         return "<container version=\"1.0\">\n" +
@@ -37,7 +37,7 @@ public class JDiscContainerRequestTest {
     }
 
     @Test
-    public void requireThatRequestBodyWorks() throws InterruptedException, CharacterCodingException {
+    public void requireThatRequestBodyWorks() throws CharacterCodingException {
         String DATA = "we have no bananas today";
         Request req = new Request("http://banana/echo", DATA.getBytes(Utf8.getCharset()));
 
@@ -50,7 +50,7 @@ public class JDiscContainerRequestTest {
     }
 
     @Test
-    public void requireThatCustomRequestHeadersWork() throws InterruptedException {
+    public void requireThatCustomRequestHeadersWork() {
         Request req = new Request("http://banana/echo");
         req.getHeaders().add("X-Foo", "Bar");
 
@@ -63,7 +63,7 @@ public class JDiscContainerRequestTest {
     }
 
     @Test(expected = WriteException.class)
-    public void requireThatRequestHandlerThatThrowsInWriteWorks() throws InterruptedException {
+    public void requireThatRequestHandlerThatThrowsInWriteWorks() {
         String DATA = "we have no bananas today";
         Request req = new Request("http://banana/throwwrite", DATA.getBytes(Utf8.getCharset()));
 
@@ -73,9 +73,8 @@ public class JDiscContainerRequestTest {
         }
     }
 
-
     @Test(expected = DelayedWriteException.class)
-    public void requireThatRequestHandlerThatThrowsDelayedInWriteWorks() throws InterruptedException {
+    public void requireThatRequestHandlerThatThrowsDelayedInWriteWorks() {
         String DATA = "we have no bananas today";
         Request req = new Request("http://banana/delayedthrowwrite", DATA.getBytes(Utf8.getCharset()));
 
@@ -83,6 +82,7 @@ public class JDiscContainerRequestTest {
             Response response = container.handleRequest(req);
             req.toString();
         }
+
     }
 
 }
