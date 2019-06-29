@@ -4,12 +4,15 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.TransientException;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -73,6 +76,9 @@ public class RetiredExpirer extends Maintainer {
 
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);
+            } catch (TransientException e) {
+                log.log(LogLevel.INFO, "Failed to redeploy " + application +
+                        " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
             } catch (RuntimeException e) {
                 String nodeList = retiredNodes.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.log(Level.WARNING, "Exception trying to deactivate retired nodes from " + application
