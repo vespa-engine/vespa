@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class MockDeployer implements Deployer {
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
-        this(null, Clock.systemUTC(), Collections.emptyMap());
+        this(null, Clock.systemUTC(), Map.of());
     }
 
     /**
@@ -53,7 +52,7 @@ public class MockDeployer implements Deployer {
                         Map<ApplicationId, ApplicationContext> applications) {
         this.provisioner = provisioner;
         this.clock = clock;
-        this.applications = applications;
+        this.applications = new HashMap<>(applications);
     }
 
     public ReentrantLock lock() {
@@ -73,8 +72,8 @@ public class MockDeployer implements Deployer {
             throw new RuntimeException(e);
         }
         try {
-            lastDeployTimes.put(id, clock.instant());
-            return Optional.of(new MockDeployment(provisioner, applications.get(id)));
+            return Optional.ofNullable(applications.get(id))
+                    .map(application -> new MockDeployment(provisioner, application));
         } finally {
             lock.unlock();
         }
@@ -88,6 +87,13 @@ public class MockDeployer implements Deployer {
     @Override
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         return Optional.ofNullable(lastDeployTimes.get(application));
+    }
+
+    public void removeApplication(ApplicationId applicationId) {
+        new MockDeployment(provisioner, new ApplicationContext(applicationId, List.of())).activate();
+
+        applications.remove(applicationId);
+        lastDeployTimes.remove(applicationId);
     }
 
     public class MockDeployment implements Deployment {
@@ -116,6 +122,7 @@ public class MockDeployer implements Deployer {
             try (NestedTransaction t = new NestedTransaction()) {
                 provisioner.activate(t, application.id(), preparedHosts);
                 t.commit();
+                lastDeployTimes.put(application.id, clock.instant());
             }
         }
 
@@ -136,7 +143,7 @@ public class MockDeployer implements Deployer {
         }
 
         public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
-            this(id, Collections.singletonList(new ClusterContext(id, cluster, capacity, groups)));
+            this(id, List.of(new ClusterContext(id, cluster, capacity, groups)));
         }
 
         public ApplicationId id() { return id; }

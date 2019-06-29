@@ -10,7 +10,6 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -19,10 +18,8 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -46,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
@@ -68,7 +64,7 @@ public class PeriodicApplicationMaintainerTest {
                                                  new MockNameResolver().mockAnyLookup(),
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true);
-        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
+        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors);
 
         createReadyNodes(15, fixture.nodeResources, nodeRepository);
         createHostNodes(2, nodeRepository, nodeFlavors);
@@ -149,27 +145,32 @@ public class PeriodicApplicationMaintainerTest {
     public void application_deploy_inhibits_redeploy_for_a_while() {
         fixture.activate();
 
+        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+
         // Holds off on deployments a while after starting
         fixture.runApplicationMaintainer();
-        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app1).isPresent());
-        assertFalse("No deployment expected", fixture.deployer.lastDeployTime(fixture.app2).isPresent());
+        assertEquals("No deployment expected", 2, fixture.deployer.redeployments);
+
         // Exhaust initial wait period
         clock.advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
 
         // First deployment of applications
         fixture.runApplicationMaintainer();
+        assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
         Instant firstDeployTime = clock.instant();
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
         clock.advance(Duration.ofMinutes(5));
         fixture.runApplicationMaintainer();
         // Too soon: Not redeployed:
+        assertEquals("No deployment expected", 4, fixture.deployer.redeployments);
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(firstDeployTime, fixture.deployer.lastDeployTime(fixture.app2).get());
 
         clock.advance(Duration.ofMinutes(30));
         fixture.runApplicationMaintainer();
         // Redeployed:
+        assertEquals("No deployment expected", 6, fixture.deployer.redeployments);
         assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app1).get());
         assertEquals(clock.instant(), fixture.deployer.lastDeployTime(fixture.app2).get());
     }
@@ -238,12 +239,10 @@ public class PeriodicApplicationMaintainerTest {
 
     private class Fixture {
 
-        final NodeResources nodeResources = new NodeResources(2, 8, 50);
         final NodeRepository nodeRepository;
-        final NodeRepositoryProvisioner provisioner;
-        final Curator curator;
         final MockDeployer deployer;
 
+        final NodeResources nodeResources = new NodeResources(2, 8, 50);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
@@ -253,39 +252,28 @@ public class PeriodicApplicationMaintainerTest {
 
         private final TestablePeriodicApplicationMaintainer maintainer;
 
-        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
+        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors) {
             this.nodeRepository = nodeRepository;
-            this.curator = curator;
-            this.provisioner =  new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
+            NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(
+                    nodeRepository, flavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
 
-            Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1,
-                                                               Capacity.fromCount(wantedNodesApp1, nodeResources), 1));
-            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
-                                                               Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
+            Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, nodeResources), 1),
+                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
             this.maintainer = new TestablePeriodicApplicationMaintainer(deployer, nodeRepository, Duration.ofDays(1), // Long duration to prevent scheduled runs during test
                                                                         Duration.ofMinutes(30));
         }
 
         void activate() {
-            activate(app1, clusterApp1, wantedNodesApp1, provisioner);
-            activate(app2, clusterApp2, wantedNodesApp2, provisioner);
+            deployer.deployFromLocalActive(app1, false).get().activate();
+            deployer.deployFromLocalActive(app2, false).get().activate();
             assertEquals(wantedNodesApp1, nodeRepository.getNodes(app1, Node.State.active).size());
             assertEquals(wantedNodesApp2, nodeRepository.getNodes(app2, Node.State.active).size());
         }
 
-        private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount, NodeRepositoryProvisioner provisioner) {
-            List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodeCount, nodeResources), 1, null);
-            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, hosts);
-            transaction.commit();
-        }
-
         void remove(ApplicationId application) {
-            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.remove(transaction, application);
-            transaction.commit();
+            deployer.removeApplication(application);
         }
 
         void runApplicationMaintainer() {
