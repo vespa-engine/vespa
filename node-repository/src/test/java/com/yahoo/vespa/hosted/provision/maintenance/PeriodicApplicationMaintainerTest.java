@@ -312,11 +312,6 @@ public class PeriodicApplicationMaintainerTest {
                     : super.nodesNeedingMaintenance();
         }
 
-        @Override
-        protected boolean shouldBeDeployedOnThisServer(ApplicationId application) {
-            return true;
-        }
-
     }
 
 }
