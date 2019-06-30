@@ -34,4 +34,14 @@ public class Map extends IntermediateOperation {
         return new com.yahoo.tensor.functions.Map(input.get(), operator);
     }
 
+    @Override
+    public String toString() {
+        return "Map(" + asString(inputs().get(0).type()) + ", " + operator + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "Map(" + inputs().get(0).toFullString() + ", " + operator + ")" + " : " + lazyGetType();
+    }
+
 }

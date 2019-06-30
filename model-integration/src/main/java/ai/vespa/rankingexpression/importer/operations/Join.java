@@ -111,4 +111,15 @@ public class Join extends IntermediateOperation {
         return a.rank() < b.rank() ? inputs.get(0) : inputs.get(1);
     }
 
+    @Override
+    public String toString() {
+        return "Join(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + operator + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "Join(" + inputs().get(0).toFullString() + ", " +
+               inputs().get(1).toFullString() + ", " + operator + ")" + " : " + lazyGetType();
+    }
+
 }

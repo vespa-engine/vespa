@@ -73,14 +73,13 @@ public class BlendingSearcher extends Searcher {
     }
 
     /**
-     * Produce a single blended result list from a group of hitgroups.
+     * Produce a single blended hit list from a group of hitgroups.
      *
-     * It is assumed that the results are ordered in hitgroups. If not, the blend will not be performed
+     * This assumes that all hits are organized into hitgroups. If not, blending will not be performed.
      */
     protected Result blendResults(Result result, Query q, int offset, int hits, Execution execution) {
 
         //Assert that there are more than one hitgroup and that there are only hitgroups on the lowest level
-
         boolean foundNonGroup = false;
         Iterator<Hit> hitIterator = result.hits().iterator();
         List<HitGroup> groups = new ArrayList<>();
@@ -89,14 +88,14 @@ public class BlendingSearcher extends Searcher {
             if (hit instanceof HitGroup) {
                 groups.add((HitGroup)hit);
                 hitIterator.remove();
-            } else if(!hit.isMeta()) {
+            } else if ( ! hit.isMeta()) {
                 foundNonGroup = true;
             }
         }
 
-        if(foundNonGroup) {
+        if( foundNonGroup) {
             result.hits().addError(ErrorMessage.createUnspecifiedError("Blendingsearcher could not blend - there are toplevel hits" +
-                                   " that are not hitgroups"));
+                                                                       " that are not hitgroups"));
             return result;
         }
         if (groups.size() == 0) {

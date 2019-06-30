@@ -107,4 +107,15 @@ public class Sum extends IntermediateOperation {
         return builder.build();
     }
 
+    @Override
+    public String toString() {
+        return "Sum(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + reduceDimensions + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "Sum(" + inputs().get(0).toFullString() + ", " +
+               inputs().get(1).toFullString() + ", " + reduceDimensions + ")" + " : " + lazyGetType();
+    }
+
 }

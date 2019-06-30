@@ -88,12 +88,23 @@ public class ExpandDims extends IntermediateOperation {
         List<String> renamedDimensions = new ArrayList<>(expandDimensions.size());
         for (String name : expandDimensions) {
             Optional<String> newName = renamer.dimensionNameOf(name);
-            if (!newName.isPresent()) {
+            if ( ! newName.isPresent()) {
                 return;  // presumably, already renamed
             }
             renamedDimensions.add(newName.get());
         }
         expandDimensions = renamedDimensions;
+    }
+
+    @Override
+    public String toString() {
+        return "ExpandDims(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + expandDimensions + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "ExpandDims(" + inputs().get(0).toFullString() + ", " +
+               inputs().get(1).toFullString() + ", " + expandDimensions + ")" + " : " + lazyGetType();
     }
 
 }

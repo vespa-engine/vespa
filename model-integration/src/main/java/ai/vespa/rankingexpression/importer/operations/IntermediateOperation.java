@@ -203,4 +203,10 @@ public abstract class IntermediateOperation {
         Optional<List<Value>> getList(String key);
     }
 
+    public String toFullString() { return toString(); }
+
+    String asString(Optional<OrderedTensorType> type) {
+        return type.map(t -> t.toString()).orElse("(unknown)");
+    }
+
 }

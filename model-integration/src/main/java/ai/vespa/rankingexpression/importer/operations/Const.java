@@ -86,4 +86,10 @@ public class Const extends IntermediateOperation {
         }
         return value.get();
     }
+
+    @Override
+    public String toString() {
+        return "Const(" + type + ")" + " : " + lazyGetType();
+    }
+
 }

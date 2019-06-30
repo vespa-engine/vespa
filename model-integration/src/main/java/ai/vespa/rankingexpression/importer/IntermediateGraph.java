@@ -104,4 +104,16 @@ public class IntermediateGraph {
         }
     }
 
+    @Override
+    public String toString() {
+        return "intermediate graph for '" + modelName + "'";
+    }
+
+    public String toFullString() {
+        StringBuilder b = new StringBuilder();
+        for (var input : index.entrySet())
+            b.append(input.getKey()).append(": ").append(input.getValue().toFullString()).append("\n");
+        return b.toString();
+    }
+
 }
