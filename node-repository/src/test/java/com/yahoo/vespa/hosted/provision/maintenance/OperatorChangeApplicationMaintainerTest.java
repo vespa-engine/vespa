@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
@@ -18,10 +17,8 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -36,7 +33,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,33 +58,34 @@ public class OperatorChangeApplicationMaintainerTest {
                                                  new MockNameResolver().mockAnyLookup(),
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true);
-        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors, curator);
+        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors);
 
         createReadyNodes(15, this.fixture.nodeResources, nodeRepository);
         createHostNodes(2, nodeRepository, nodeFlavors);
 
         // Create applications
         fixture.activate();
-        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer, nodeRepository, clock, Duration.ofMinutes(1));
+        assertEquals("Initial applications are deployed", 2, fixture.deployer.redeployments);
+        OperatorChangeApplicationMaintainer maintainer = new OperatorChangeApplicationMaintainer(fixture.deployer, nodeRepository, Duration.ofMinutes(1));
         
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("No changes -> no redeployments", 0, fixture.deployer.redeployments);
+        assertEquals("No changes -> no redeployments", 2, fixture.deployer.redeployments);
 
         nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("System change -> no redeployments", 0, fixture.deployer.redeployments);
+        assertEquals("System change -> no redeployments", 2, fixture.deployer.redeployments);
 
         clock.advance(Duration.ofSeconds(1));
         nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("Operator change -> redeployment", 1, fixture.deployer.redeployments);
+        assertEquals("Operator change -> redeployment", 3, fixture.deployer.redeployments);
 
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
-        assertEquals("No further operator changes -> no (new) redeployments", 1, fixture.deployer.redeployments);
+        assertEquals("No further operator changes -> no (new) redeployments", 3, fixture.deployer.redeployments);
     }
 
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
@@ -118,50 +115,33 @@ public class OperatorChangeApplicationMaintainerTest {
 
     private class Fixture {
 
-        final NodeResources nodeResources = new NodeResources(2, 8, 50);
         final NodeRepository nodeRepository;
-        final NodeRepositoryProvisioner provisioner;
-        final Curator curator;
+        final MockDeployer deployer;
 
+        final NodeResources nodeResources = new NodeResources(2, 8, 50);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         final ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         final int wantedNodesApp1 = 5;
         final int wantedNodesApp2 = 7;
-        MockDeployer deployer; // created on activation
 
-        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors, Curator curator) {
+        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors) {
             this.nodeRepository = nodeRepository;
-            this.curator = curator;
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
-        }
+            NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(
+                    nodeRepository, flavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
 
-        void activate() {
-            activate(app1, clusterApp1, wantedNodesApp1, provisioner);
-            activate(app2, clusterApp2, wantedNodesApp2, provisioner);
-            assertEquals(wantedNodesApp1, nodeRepository.getNodes(app1, Node.State.active).size());
-            assertEquals(wantedNodesApp2, nodeRepository.getNodes(app2, Node.State.active).size());
-
-            Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1,
-                                                               Capacity.fromCount(wantedNodesApp1, nodeResources), 1));
-            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2,
-                                                               Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
+            Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                    app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, nodeResources), 1),
+                    app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromCount(wantedNodesApp2, nodeResources), 1));
             this.deployer = new MockDeployer(provisioner, nodeRepository.clock(), apps);
         }
 
-        private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount, NodeRepositoryProvisioner provisioner) {
-            List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromCount(nodeCount, nodeResources), 1, null);
-            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, hosts);
-            transaction.commit();
-        }
-
-        void remove(ApplicationId application) {
-            NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.remove(transaction, application);
-            transaction.commit();
+        void activate() {
+            deployer.deployFromLocalActive(app1, false).get().activate();
+            deployer.deployFromLocalActive(app2, false).get().activate();
+            assertEquals(wantedNodesApp1, nodeRepository.getNodes(app1, Node.State.active).size());
+            assertEquals(wantedNodesApp2, nodeRepository.getNodes(app2, Node.State.active).size());
         }
 
         NodeList getNodes(Node.State ... states) {

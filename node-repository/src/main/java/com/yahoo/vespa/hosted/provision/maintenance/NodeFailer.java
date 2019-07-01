@@ -5,7 +5,9 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -21,6 +23,7 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -368,8 +371,11 @@ public class NodeFailer extends Maintainer {
             try {
                 deployment.get().activate();
                 return true;
-            }
-            catch (RuntimeException e) {
+            } catch (TransientException e) {
+                log.log(LogLevel.INFO, "Failed to redeploy " + node.allocation().get().owner() +
+                        " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
+                return true;
+            } catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
                 nodeRepository().reactivate(node.hostname(), Agent.system,
