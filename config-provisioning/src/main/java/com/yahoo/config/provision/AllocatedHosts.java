@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class AllocatedHosts {
 
-    private final ImmutableSet<HostSpec> hosts;
+    private final Set<HostSpec> hosts;
 
     private AllocatedHosts(Set<HostSpec> hosts) {
         this.hosts = ImmutableSet.copyOf(hosts);

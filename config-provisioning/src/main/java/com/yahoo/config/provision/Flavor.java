@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
@@ -151,7 +150,7 @@ public class Flavor {
 
     /** Irreversibly freezes the content of this */
     public void freeze() {
-        replacesFlavors = ImmutableList.copyOf(replacesFlavors);
+        replacesFlavors = List.copyOf(replacesFlavors);
     }
 
     @Override
