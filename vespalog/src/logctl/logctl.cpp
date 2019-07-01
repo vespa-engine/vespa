@@ -35,13 +35,13 @@ usage(const char *name)
             "  <level>=<on|off>[,<level>=<on|off>]...\n"
             "<level> is one of:\n"
             "  all, fatal, error, warning, info, event, config, debug or spam\n\n"
-            "component-specification specicies which sub-components of the\n"
+            "component-specification specifies which sub-components of the\n"
             "service should be controlled. If it is empty, all components\n"
             "are controlled:\n"
             " x.              : Matches only component x\n"
             " x               : Matches component x and all its sub-components\n\n"
-            "Example: %s topleveldispatch:log all=on,spam=off,debug=off  : For service\n"
-            "topleveldispatch, set log and all sub-components of log to enable all\n"
+            "Example: %s qrserver:log all=on,spam=off,debug=off  : For service\n"
+            "qrserver, set log and all sub-components of log to enable all\n"
             "except spam and debug.\n\n", name, name, name);
 }
 
