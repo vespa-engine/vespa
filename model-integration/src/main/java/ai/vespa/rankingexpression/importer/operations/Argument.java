@@ -56,6 +56,7 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public String toString() {
-        return "Argument(" + standardNamingType + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tArgument(" + standardNamingType + ")";
     }
+
 }

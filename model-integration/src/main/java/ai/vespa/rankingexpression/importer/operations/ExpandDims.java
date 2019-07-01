@@ -30,7 +30,7 @@ public class ExpandDims extends IntermediateOperation {
         if ( ! allInputTypesPresent(2)) return null;
 
         IntermediateOperation axisOperation = inputs().get(1);
-        if (!axisOperation.getConstantValue().isPresent()) {
+        if (  !axisOperation.getConstantValue().isPresent()) {
             throw new IllegalArgumentException("ExpandDims in " + name + ": Axis must be a constant.");
         }
         Tensor axis = axisOperation.getConstantValue().get().asTensor();
@@ -103,8 +103,8 @@ public class ExpandDims extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "ExpandDims(" + inputs().get(0).toFullString() + ", " +
-               inputs().get(1).toFullString() + ", " + expandDimensions + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tExpandDims(" + inputs().get(0).toFullString() + ", " +
+               inputs().get(1).toFullString() + ", " + expandDimensions + ")";
     }
 
 }

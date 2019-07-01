@@ -118,8 +118,8 @@ public class Join extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "Join(" + inputs().get(0).toFullString() + ", " +
-               inputs().get(1).toFullString() + ", " + operator + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tJoin(" + inputs().get(0).toFullString() + ", " +
+               inputs().get(1).toFullString() + ", " + operator + ")";
     }
 
 }

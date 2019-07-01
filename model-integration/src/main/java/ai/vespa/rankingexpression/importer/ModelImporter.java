@@ -11,8 +11,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
-import com.yahoo.text.ParenthesisExpressionPrettyPrinter;
-import com.yahoo.text.Text;
+import com.yahoo.text.ExpressionFormatter;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -54,7 +53,7 @@ public abstract class ModelImporter implements MlModelImporter {
     protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
         ImportedModel model = new ImportedModel(graph.name(), modelSource);
         log.log(Level.FINE, () -> "Intermediate graph created from '" + modelSource + "':\n" +
-                                  ParenthesisExpressionPrettyPrinter.prettyPrint(graph.toFullString()));
+                                  ExpressionFormatter.inTwoColumnMode(20).format(graph.toFullString()));
         System.out.println("Intermediate graph created from '" + modelSource + "':\n" + graph.toFullString());
 
         graph.optimize();

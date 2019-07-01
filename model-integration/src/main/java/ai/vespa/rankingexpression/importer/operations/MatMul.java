@@ -5,8 +5,7 @@ import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
-import com.yahoo.text.ParenthesisExpressionPrettyPrinter;
-import com.yahoo.text.Text;
+import com.yahoo.text.ExpressionFormatter;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,13 +80,12 @@ public class MatMul extends IntermediateOperation {
 
         throw new IllegalArgumentException("Expected 2 dimensions in the " + inputDescription + " to " + this +
                                            " but got just " + dimensions + " from\n" +
-                                           ParenthesisExpressionPrettyPrinter.prettyPrint(supplier.toFullString()));
+                                           ExpressionFormatter.inTwoColumnMode(70).format(supplier.toFullString()));
     }
 
     @Override
     public String toFullString() {
-        return "MatMul(" + inputs().get(0).toFullString() + ", " +
-                           inputs().get(1).toFullString() + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tMatMul(" + inputs().get(0).toFullString() + ", " + inputs().get(1).toFullString() + ")";
     }
 
     @Override

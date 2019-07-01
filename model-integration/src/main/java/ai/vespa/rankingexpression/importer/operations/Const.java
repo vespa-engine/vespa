@@ -89,7 +89,7 @@ public class Const extends IntermediateOperation {
 
     @Override
     public String toString() {
-        return "Const(" + type + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tConst(" + type + ")";
     }
 
 }

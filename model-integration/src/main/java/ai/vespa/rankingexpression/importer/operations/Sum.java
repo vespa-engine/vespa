@@ -104,6 +104,7 @@ public class Sum extends IntermediateOperation {
                 builder.add(TensorType.Dimension.indexed(dimension.name(), 1L));
             }
         }
+        System.out.println("----------> Sum input type is " + inputType + ", keepDimensions: " + keepDimensions + ", result: " + builder.build());
         return builder.build();
     }
 
@@ -114,8 +115,8 @@ public class Sum extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "Sum(" + inputs().get(0).toFullString() + ", " +
-               inputs().get(1).toFullString() + ", " + reduceDimensions + ")" + " : " + lazyGetType();
+        return "\t" + lazyGetType() + ":\tSum[keep_dims=" + shouldKeepDimensions() + "](" +
+               inputs().get(0).toFullString() + ", " + inputs().get(1).toFullString() + ", " + reduceDimensions + ")";
     }
 
 }
