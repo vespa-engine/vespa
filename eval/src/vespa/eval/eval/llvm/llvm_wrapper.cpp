@@ -17,6 +17,7 @@
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/approx.h>
+#include <limits>
 
 double vespalib_eval_ldexp(double a, double b) { return std::ldexp(a, b); }
 double vespalib_eval_min(double a, double b) { return std::min(a, b); }
@@ -318,7 +319,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         for (size_t i = 0; i < num_children; ++i) {
             discard();
         }
-        push_double(error_value);
+        push_double(std::numeric_limits<double>::quiet_NaN());
     }
 
     void make_call_1(llvm::Function *fun) {

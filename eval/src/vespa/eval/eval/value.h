@@ -12,8 +12,6 @@ namespace eval {
 
 class Tensor;
 
-constexpr double error_value = 31212.0;
-
 /**
  * An abstract Value.
  **/

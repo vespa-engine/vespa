@@ -14,20 +14,14 @@ std::vector<vespalib::string> params({"x", "y", "z", "w"});
 
 double as_number(const Function &f) {
     auto number = as<Number>(f.root());
-    if (number) {
-        return number->value();
-    } else {
-        return error_value;
-    }
+    ASSERT_TRUE(number);
+    return number->value();
 }
 
 vespalib::string as_string(const Function &f) {
     auto string = as<String>(f.root());
-    if (string) {
-        return string->value();
-    } else {
-        return "<error>";
-    }
+    ASSERT_TRUE(string);
+    return string->value();
 }
 
 struct OperatorLayer {
