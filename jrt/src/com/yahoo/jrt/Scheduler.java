@@ -61,7 +61,7 @@ class Scheduler {
         if (seconds < 0.0) {
             throw new IllegalArgumentException("cannot schedule a Task in the past");
         }
-        int ticks = 1 + (int) (seconds * 10.0 + 0.5);
+        int ticks = 1 + (int) Math.ceil(seconds * (1000.0 / TICK));
         if (isActive(task)) {
             linkOut(task);
         }
