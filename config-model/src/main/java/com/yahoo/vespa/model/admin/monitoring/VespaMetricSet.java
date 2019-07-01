@@ -307,6 +307,14 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.transport.query.latency.count"));
         metrics.add(new Metric("content.proton.transport.query.latency.average")); // TODO: Remove in Vespa 8
 
+        // Executors shared between all document dbs
+        metrics.add(new Metric("content.proton.executor.proton.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.flush.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.match.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.docsum.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.shared.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.warmup.maxpending.last"));
+
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
         metrics.add(new Metric("content.proton.documentdb.job.attribute_flush.average"));
@@ -318,7 +326,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.job.lid_space_compact.average"));
         metrics.add(new Metric("content.proton.documentdb.job.removed_documents_prune.average"));
 
-        // Threading service
+        // Threading service (per document db)
         metrics.add(new Metric("content.proton.documentdb.threading_service.master.maxpending.last"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.index.maxpending.last"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.summary.maxpending.last"));
