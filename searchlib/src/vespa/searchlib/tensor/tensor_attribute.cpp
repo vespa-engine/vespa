@@ -4,7 +4,7 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
@@ -12,7 +12,8 @@
 using vespalib::eval::SimpleTensor;
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensor;
+using vespalib::tensor::TypedDenseTensorBuilder;
+using vespalib::tensor::dispatch_0;
 using vespalib::tensor::SparseTensor;
 using vespalib::tensor::WrappedSimpleTensor;
 using document::TensorDataType;
@@ -44,22 +45,21 @@ createEmptyTensorType(const ValueType &type)
     return ValueType::tensor_type(std::move(list));
 }
 
+struct CallMakeEmptyTensor {
+    template <typename CT>
+    static Tensor::UP call(const ValueType &type) {
+        TypedDenseTensorBuilder<CT> builder(type);
+        return builder.build();
+    }
+};
+
 Tensor::UP
 createEmptyTensor(const ValueType &type)
 {
     if (type.is_sparse()) {
         return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
     } else if (type.is_dense()) {
-        size_t size = 1;
-        for (const auto &dimension : type.dimensions()) {
-            size *= dimension.size;
-        }
-        if (type.cell_type() == ValueType::CellType::DOUBLE) {
-            return std::make_unique<DenseTensor<double>>(ValueType(type), std::vector<double>(size));
-        } else {
-            assert(type.cell_type() == ValueType::CellType::FLOAT);
-            return std::make_unique<DenseTensor<float>>(ValueType(type), std::vector<float>(size));
-        }
+        return dispatch_0<CallMakeEmptyTensor>(type.cell_type(), type);
     } else {
         return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
     }

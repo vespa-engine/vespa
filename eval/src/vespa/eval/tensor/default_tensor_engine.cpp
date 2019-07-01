@@ -168,9 +168,8 @@ DefaultTensorEngine::to_spec(const Value &value) const
 struct CallDenseTensorBuilder {
     template <typename CT>
     static Value::UP
-    call(ConstArrayRef<CT> dummy, const ValueType &type, const TensorSpec &spec)
+    call(const ValueType &type, const TensorSpec &spec)
     {
-        (void) dummy;
         TypedDenseTensorBuilder<CT> builder(type);
         for (const auto &cell: spec.cells()) {
             const auto &address = cell.first;
@@ -194,7 +193,7 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
         double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
         return std::make_unique<DoubleValue>(value);
     } else if (type.is_dense()) {
-        return dispatch_1<CallDenseTensorBuilder>(TypedCells(type.cell_type()), type, spec);
+        return dispatch_0<CallDenseTensorBuilder>(type.cell_type(), type, spec);
     } else if (type.is_sparse()) {
         DirectSparseTensorBuilder builder(type);
         SparseTensorAddressBuilder address_builder;

@@ -89,24 +89,23 @@ DenseBinaryFormat::serialize(nbostream &stream, const DenseTensorView &tensor)
     }
 }
 
+struct CallDecodeCells {
+    template <typename CT>
+    static std::unique_ptr<DenseTensorView>
+    call(nbostream &stream, size_t numCells, ValueType &&newType) {
+        std::vector<CT> newCells(numCells);
+        decodeCells<CT>(stream, numCells, ArrayRef<CT>(newCells));
+        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+    }
+};
+
 std::unique_ptr<DenseTensorView>
 DenseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
 {
     std::vector<Dimension> dimensions;
-
-    size_t numCells = decodeDimensions(stream,dimensions);
-
+    size_t numCells = decodeDimensions(stream, dimensions);
     ValueType newType = ValueType::tensor_type(std::move(dimensions), cell_type);
-    if (cell_type == CellType::DOUBLE) {
-	std::vector<double> newCells(numCells);
-        decodeCells(cell_type, stream, numCells, ArrayRef(newCells));
-	return std::make_unique<DenseTensor<double>>(std::move(newType), std::move(newCells));
-    } else {
-        assert(cell_type == CellType::FLOAT);
-	std::vector<float> newCells(numCells);
-        decodeCells(cell_type, stream, numCells, ArrayRef(newCells));
-	return std::make_unique<DenseTensor<float>>(std::move(newType), std::move(newCells));
-    }
+    return dispatch_0<CallDecodeCells>(cell_type, stream, numCells, std::move(newType));
 }
 
 template <typename T>

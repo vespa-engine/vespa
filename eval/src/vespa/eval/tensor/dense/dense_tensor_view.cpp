@@ -95,8 +95,8 @@ sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
 {
     size_t sz = lhs.size();
     assert(sz == rhs.size());
-    using OCT = typename OutputCellType<LCT, RCT>::output_type;
-    CellType oct = OutputCellType<LCT, RCT>::output_cell_type();
+    using OutputSelector = OutputCellType<LCT, RCT>;
+    using OCT = typename OutputSelector::output_type;
     std::vector<OCT> newCells;
     newCells.reserve(sz);
     auto rhsCellItr = rhs.cbegin();
@@ -107,7 +107,7 @@ sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
     }
     assert(rhsCellItr == rhs.cend());
     assert(newCells.size() == sz);
-    eval::ValueType newType = (lhs_type.cell_type() == oct) ? lhs_type : rhs_type;
+    eval::ValueType newType = OutputSelector::result_type(lhs_type, rhs_type);
     return std::make_unique<DenseTensor<OCT>>(std::move(newType), std::move(newCells));
 }
 

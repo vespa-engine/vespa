@@ -16,13 +16,6 @@ template <typename T> inline bool check_type(CellType type);
 template <> inline bool check_type<double>(CellType type) { return (type == CellType::DOUBLE); }
 template <> inline bool check_type<float>(CellType type) { return (type == CellType::FLOAT); }
 
-template <typename CT> struct ToCellType {};
-template <> struct ToCellType<double> {
-    static constexpr CellType cell_type() { return CellType::DOUBLE; };
-};
-template <> struct ToCellType<float> {
-    static constexpr CellType cell_type() { return CellType::FLOAT; };
-};
 
 template<typename LCT, typename RCT> struct OutputCellType;
 template<> struct OutputCellType<double, double> {
@@ -91,8 +84,17 @@ struct TypedCells {
 };
 
 template <typename TGT, typename... Args>
+auto dispatch_0(CellType ct, Args &&...args) {
+    switch (ct) {
+        case CellType::DOUBLE: return TGT::template call<double>(std::forward<Args>(args)...);
+        case CellType::FLOAT:  return TGT::template call<float>(std::forward<Args>(args)...);
+    }
+    abort();
+}
+
+template <typename TGT, typename... Args>
 auto dispatch_1(const TypedCells &a, Args &&...args) {
-    switch(a.type) {
+    switch (a.type) {
         case CellType::DOUBLE: return TGT::call(a.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT:  return TGT::call(a.unsafe_typify<float>(),  std::forward<Args>(args)...);
     }
@@ -101,7 +103,7 @@ auto dispatch_1(const TypedCells &a, Args &&...args) {
 
 template <typename TGT, typename A1, typename... Args>
 auto dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
-    switch(b.type) {
+    switch (b.type) {
         case CellType::DOUBLE: return dispatch_1<TGT>(std::forward<A1>(a), b.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT:  return dispatch_1<TGT>(std::forward<A1>(a), b.unsafe_typify<float>(),  std::forward<Args>(args)...);
     }
