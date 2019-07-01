@@ -90,7 +90,7 @@ checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
 template <typename LCT, typename RCT, typename Function>
 static Tensor::UP
 sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
-	      const eval::ValueType &lhs_type, const eval::ValueType &rhs_type,
+              const eval::ValueType &lhs_type,
               Function &&func)
 {
     size_t sz = lhs.size();
@@ -107,7 +107,7 @@ sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
     }
     assert(rhsCellItr == rhs.cend());
     assert(newCells.size() == sz);
-    eval::ValueType newType = OutputSelector::result_type(lhs_type, rhs_type);
+    auto newType = eval::ValueType::tensor_type(lhs_type.dimensions(), OutputSelector::output_cell_type());
     return std::make_unique<DenseTensor<OCT>>(std::move(newType), std::move(newCells));
 }
 
@@ -116,10 +116,10 @@ struct CallJoin
     template <typename LCT, typename RCT, typename Function>
     static Tensor::UP
     call(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
-	 const eval::ValueType &lhs_type, const eval::ValueType &rhs_type,
-	 Function &&func)
+         const eval::ValueType &lhs_type,
+         Function &&func)
     {
-        return sameShapeJoin(lhs, rhs, lhs_type, rhs_type, std::move(func));
+        return sameShapeJoin(lhs, rhs, lhs_type, std::move(func));
     }
 };
 
@@ -130,7 +130,7 @@ joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
 {
     TypedCells lhsCells = lhs.cellsRef();
     TypedCells rhsCells = rhs.cellsRef();
-    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type(), rhs.fast_type(), std::move(func));
+    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type(), std::move(func));
 }
 
 template <typename Function>
@@ -197,13 +197,13 @@ struct CallApply {
     static Tensor::UP
     call(const ConstArrayRef<CT> &oldCells, eval::ValueType newType, const CellFunction &func)
     {
-	std::vector<CT> newCells;
-	newCells.reserve(oldCells.size());
+        std::vector<CT> newCells;
+        newCells.reserve(oldCells.size());
         for (const auto &cell : oldCells) {
-	    CT nv = func.apply(cell);
+            CT nv = func.apply(cell);
             newCells.push_back(nv);
         }
-	return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
     }
 };
 
@@ -228,8 +228,8 @@ struct CallClone {
     static Tensor::UP
     call(const ConstArrayRef<CT> &cells, eval::ValueType newType)
     {
-	std::vector<CT> newCells(cells.begin(), cells.end());
-	return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+        std::vector<CT> newCells(cells.begin(), cells.end());
+        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
     }
 };
 

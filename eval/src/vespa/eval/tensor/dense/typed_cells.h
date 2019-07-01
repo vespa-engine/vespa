@@ -21,26 +21,18 @@ template<typename LCT, typename RCT> struct OutputCellType;
 template<> struct OutputCellType<double, double> {
     typedef double output_type;
     static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-    static const eval::ValueType & result_type(const eval::ValueType &leftType,
-                                               const eval::ValueType &) { return leftType; }
 };
 template<> struct OutputCellType<float, double> {
     typedef double output_type;
     static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-    static const eval::ValueType & result_type(const eval::ValueType &,
-                                               const eval::ValueType &rightType) { return rightType; }
 };
 template<> struct OutputCellType<double, float> {
     typedef double output_type;
     static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-    static const eval::ValueType & result_type(const eval::ValueType &leftType,
-                                               const eval::ValueType &) { return leftType; }
 };
 template<> struct OutputCellType<float, float> {
     typedef float output_type;
     static constexpr CellType output_cell_type() { return CellType::FLOAT; };
-    static const eval::ValueType & result_type(const eval::ValueType &leftType,
-                                               const eval::ValueType &) { return leftType; }
 };
 
 struct TypedCells {

@@ -238,7 +238,7 @@ DefaultTensorEngine::encode(const Value &value, nbostream &output) const
     if (auto tensor = value.as_tensor()) {
         TypedBinaryFormat::serialize(output, static_cast<const tensor::Tensor &>(*tensor));
     } else {
-	TypedBinaryFormat::serialize(output, DenseTensor<double>(ValueType::double_type(), {value.as_double()}));
+        TypedBinaryFormat::serialize(output, DenseTensor<double>(ValueType::double_type(), {value.as_double()}));
     }
 }
 
