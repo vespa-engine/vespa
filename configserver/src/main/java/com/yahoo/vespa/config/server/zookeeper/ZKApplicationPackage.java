@@ -3,19 +3,20 @@ package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.common.base.Joiner;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
-import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -69,7 +70,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
      */
     private AllocatedHosts readAllocatedHosts(String allocatedHostsPath, Optional<NodeFlavors> nodeFlavors) {
         try {
-            return AllocatedHosts.fromJson(liveApp.getBytes(allocatedHostsPath), nodeFlavors);
+            return AllocatedHostsSerializer.fromJson(liveApp.getBytes(allocatedHostsPath), nodeFlavors);
         } catch (Exception e) {
             throw new RuntimeException("Unable to read allocated hosts", e);
         }

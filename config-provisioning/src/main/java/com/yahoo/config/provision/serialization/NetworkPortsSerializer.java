@@ -1,7 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package com.yahoo.config.provision;
+package com.yahoo.config.provision.serialization;
 
+import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;

@@ -8,8 +8,6 @@
     "methods": [
       "public static com.yahoo.config.provision.AllocatedHosts withHosts(java.util.Set)",
       "public java.util.Set getHosts()",
-      "public byte[] toJson()",
-      "public static com.yahoo.config.provision.AllocatedHosts fromJson(byte[], java.util.Optional)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -564,19 +562,6 @@
       "public int size()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.config.provision.NetworkPortsSerializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static void toSlime(com.yahoo.config.provision.NetworkPorts, com.yahoo.slime.Cursor)",
-      "public static java.util.Optional fromSlime(com.yahoo.slime.Inspector)"
     ],
     "fields": []
   },

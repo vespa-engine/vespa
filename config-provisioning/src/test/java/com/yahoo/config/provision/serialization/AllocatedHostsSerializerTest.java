@@ -1,7 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.provision;
+package com.yahoo.config.provision.serialization;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NetworkPorts;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import org.junit.Test;
 
@@ -12,12 +19,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
+import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
  */
-public class AllocatedHostsTest {
+public class AllocatedHostsSerializerTest {
 
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
@@ -29,7 +38,7 @@ public class AllocatedHostsTest {
         hosts.add(new HostSpec("with-aliases",
                                List.of("alias1", "alias2")));
         hosts.add(new HostSpec("allocated",
-                               Optional.of(ClusterMembership.from("container/test/0/0", com.yahoo.component.Version.fromString("6.73.1")))));
+                               Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1")))));
         hosts.add(new HostSpec("flavor-from-resources-1",
                                Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4))));
         hosts.add(new HostSpec("flavor-from-resources-2",
@@ -47,8 +56,7 @@ public class AllocatedHostsTest {
     }
 
     private void assertAllocatedHosts(AllocatedHosts expectedHosts, NodeFlavors configuredFlavors) throws IOException {
-        AllocatedHosts deserializedHosts = AllocatedHosts.fromJson(expectedHosts.toJson(),
-                                                                   Optional.of(configuredFlavors));
+        AllocatedHosts deserializedHosts = fromJson(toJson(expectedHosts), Optional.of(configuredFlavors));
 
         assertEquals(expectedHosts, deserializedHosts);
         for (HostSpec expectedHost : expectedHosts.getHosts()) {
@@ -69,7 +77,7 @@ public class AllocatedHostsTest {
         throw new IllegalArgumentException("No host " + hostname + " is present");
     }
 
-    public NodeFlavors configuredFlavorsFrom(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
+    private NodeFlavors configuredFlavorsFrom(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
         FlavorsConfig.Builder b = new FlavorsConfig.Builder();
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
