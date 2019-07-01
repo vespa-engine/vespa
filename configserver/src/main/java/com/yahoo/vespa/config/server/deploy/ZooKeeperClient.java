@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -9,7 +10,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.component.Version;
+import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -361,7 +362,9 @@ public class ZooKeeperClient {
     }
 
     public void write(AllocatedHosts hosts) throws IOException {
-        configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(), hosts.toJson());
+        configCurator.putData(
+                rootPath.append(ZKApplicationPackage.allocatedHostsNode).getAbsolute(),
+                AllocatedHostsSerializer.toJson(hosts));
     }
 
     public void write(Map<Version, FileRegistry> fileRegistryMap) {

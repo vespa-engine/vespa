@@ -13,9 +13,9 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -30,10 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.fromJson;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for ZooKeeperClient.
@@ -199,7 +200,7 @@ public class ZooKeeperClientTest {
         Path hostsPath = app.append(ZKApplicationPackage.allocatedHostsNode);
         assertTrue(zk.exists(hostsPath.getAbsolute()));
         
-        AllocatedHosts deserialized = AllocatedHosts.fromJson(zk.getBytes(hostsPath.getAbsolute()), Optional.empty());
+        AllocatedHosts deserialized = fromJson(zk.getBytes(hostsPath.getAbsolute()), Optional.empty());
         assertEquals(hosts, deserialized.getHosts());
     }
 

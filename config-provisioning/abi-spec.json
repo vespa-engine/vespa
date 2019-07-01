@@ -8,8 +8,6 @@
     "methods": [
       "public static com.yahoo.config.provision.AllocatedHosts withHosts(java.util.Set)",
       "public java.util.Set getHosts()",
-      "public byte[] toJson()",
-      "public static com.yahoo.config.provision.AllocatedHosts fromJson(byte[], java.util.Optional)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
