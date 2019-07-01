@@ -567,19 +567,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.provision.NetworkPortsSerializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static void toSlime(com.yahoo.config.provision.NetworkPorts, com.yahoo.slime.Cursor)",
-      "public static java.util.Optional fromSlime(com.yahoo.slime.Inspector)"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.provision.NodeFlavors": {
     "superClass": "java.lang.Object",
     "interfaces": [],
