@@ -2,10 +2,10 @@
 package ai.vespa.rankingexpression.importer;
 
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
+import com.yahoo.collections.ListMap;
+import com.yahoo.lang.MutableInteger;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -25,11 +24,11 @@ import java.util.stream.Collectors;
 public class DimensionRenamer {
 
     private final String dimensionPrefix;
-    private final Map<String, List<Integer>> variables = new HashMap<>();
+    private final ListMap<String, Integer> variables = new ListMap<>();
     private final Map<Arc, Constraint> constraints = new HashMap<>();
-    private final Map<String, Integer> renames = new HashMap<>();
 
-    private int iterations = 0;
+    /** The solution to this, or null if no solution is found (yet) */
+    private Map<String, Integer> renames = null;
 
     public DimensionRenamer() {
         this("d");
@@ -43,7 +42,7 @@ public class DimensionRenamer {
      * Add a dimension name variable.
      */
     public void addDimension(String name) {
-        variables.computeIfAbsent(name, d -> new ArrayList<>());
+        variables.put(name);
     }
 
     /**
@@ -59,7 +58,7 @@ public class DimensionRenamer {
      * Retrieve resulting name of dimension after solving for constraints.
      */
     public Optional<String> dimensionNameOf(String name) {
-        if (!renames.containsKey(name)) {
+        if ( ! renames.containsKey(name)) {
             return Optional.empty();
         }
         return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
@@ -77,21 +76,22 @@ public class DimensionRenamer {
      * not typically result in a guaranteed ordering. If that is needed, the
      * algorithm below needs to be adapted with a backtracking (tree) search
      * to find solutions.
+     *
+     * @return the solution in the form of the renames to perform
      */
-    private void solve(int maxIterations) {
-        initialize();
+    private Map<String, Integer> solve(int maxIterations) {
+        variables.freeze();
+        Map<String, Integer> renames = new HashMap<>();
 
         // Todo: evaluate possible improved efficiency by using a heuristic such as min-conflicts
-        boolean solved = trySolve(maxIterations);
+        boolean solved = trySolve(variables, constraints, maxIterations, renames);
         if ( ! solved) {
-            List<Arc> softConstraints = constraints.entrySet().stream()
-                                                              .filter(e -> e.getValue().isSoft())
-                                                              .map(e -> e.getKey())
-                                                              .collect(Collectors.toList());
-            if ( ! softConstraints.isEmpty()) {
-                softConstraints.forEach(softConstraint -> constraints.remove(softConstraint));
-                trySolve(maxIterations);
-            }
+            renames.clear();
+            Map<Arc, Constraint> hardConstraints = new HashMap<>();
+            constraints.entrySet().stream().filter(e ->  ! e.getValue().isSoft())
+                                           .forEach(e -> hardConstraints.put(e.getKey(), e.getValue()));
+            if (hardConstraints.size() < constraints.size())
+                solved = trySolve(variables, hardConstraints, maxIterations, renames);
         }
         if ( ! solved) {
             throw new IllegalArgumentException("Could not find a dimension naming solution" +
@@ -102,27 +102,36 @@ public class DimensionRenamer {
         // If a solution can't be found, look at the operation node in the arc
         // with the most remaining constraints, and inject a rename operation.
         // Then run this algorithm again.
+
+        return renames;
     }
 
-    private boolean trySolve(int maxIterations) {
+    /** Try the solve the constraint problem given in the arguments, and put the result in renames */
+    private static boolean trySolve(ListMap<String, Integer> inputVariables,
+                                    Map<Arc, Constraint> constraints,
+                                    int maxIterations,
+                                    Map<String, Integer> renames) {
+        var variables = new ListMap<>(inputVariables);
+        initialize(variables);
+        MutableInteger iterations = new MutableInteger(0);
         for (String dimension : variables.keySet()) {
             List<Integer> values = variables.get(dimension);
             if (values.size() > 1) {
-                if ( ! ac3()) return false;
+                if ( ! ac3(iterations, variables, constraints)) return false;
                 values.sort(Integer::compare);
-                variables.put(dimension, Collections.singletonList(values.get(0)));
+                variables.put(dimension, values.get(0));
             }
             renames.put(dimension, variables.get(dimension).get(0));
-            if (iterations > maxIterations) return false;
+            if (iterations.get() > maxIterations) return false;
         }
         return true;
     }
 
     void solve() {
-        solve(100000);
+        renames = solve(100000);
     }
 
-    private void initialize() {
+    private static void initialize(ListMap<String, Integer> variables) {
         for (Map.Entry<String, List<Integer>> variable : variables.entrySet()) {
             List<Integer> values = variable.getValue();
             for (int i = 0; i < variables.size(); ++i) {
@@ -131,12 +140,14 @@ public class DimensionRenamer {
         }
     }
 
-    private boolean ac3() {
+    private static boolean ac3(MutableInteger iterations,
+                               ListMap<String, Integer> variables,
+                               Map<Arc, Constraint> constraints) {
         Deque<Arc> workList = new ArrayDeque<>(constraints.keySet());
-        while (!workList.isEmpty()) {
+        while ( ! workList.isEmpty()) {
             Arc arc = workList.pop();
-            iterations += 1;
-            if (revise(arc)) {
+            iterations.add(1);
+            if (revise(arc, variables, constraints)) {
                 if (variables.get(arc.from).size() == 0) {
                     return false;  // no solution found
                 }
@@ -150,9 +161,11 @@ public class DimensionRenamer {
         return true;
     }
 
-    private boolean revise(Arc arc) {
+    private static boolean revise(Arc arc,
+                                  ListMap<String, Integer> variables,
+                                  Map<Arc, Constraint> constraints) {
         boolean revised = false;
-        for(Iterator<Integer> fromIterator = variables.get(arc.from).iterator(); fromIterator.hasNext(); ) {
+        for (Iterator<Integer> fromIterator = variables.get(arc.from).iterator(); fromIterator.hasNext(); ) {
             Integer from = fromIterator.next();
             boolean satisfied = false;
             for (Iterator<Integer> toIterator = variables.get(arc.to).iterator(); toIterator.hasNext(); ) {
@@ -161,7 +174,7 @@ public class DimensionRenamer {
                     satisfied = true;
                 }
             }
-            if (!satisfied) {
+            if ( ! satisfied) {
                 fromIterator.remove();
                 revised = true;
             }
