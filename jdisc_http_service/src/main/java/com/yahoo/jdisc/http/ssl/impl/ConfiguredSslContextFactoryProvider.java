@@ -37,7 +37,7 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
     public SslContextFactory getInstance(String containerId, int port) {
         ConnectorConfig.Ssl sslConfig = connectorConfig.ssl();
         if (!sslConfig.enabled()) throw new IllegalStateException();
-        SslContextFactory factory = new JDiscSslContextFactory();
+        SslContextFactory.Server factory = new JDiscSslContextFactory();
 
         switch (sslConfig.clientAuth()) {
             case NEED_AUTH:

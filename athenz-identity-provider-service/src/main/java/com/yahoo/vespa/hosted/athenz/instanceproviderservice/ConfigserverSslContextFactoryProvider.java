@@ -110,7 +110,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
 
         // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints)
 
-        SslContextFactory factory = new SslContextFactory();
+        SslContextFactory.Server factory = new SslContextFactory.Server();
 
         factory.setWantClientAuth(true);
 

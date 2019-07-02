@@ -58,7 +58,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
     private SslContextFactory createSslContextFactory(int port) {
         // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints).
 
-        SslContextFactory factory = new SslContextFactory();
+        SslContextFactory.Server factory = new SslContextFactory.Server();
         if (port != 443) {
             factory.setWantClientAuth(true);
         }
