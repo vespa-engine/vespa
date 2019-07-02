@@ -121,7 +121,7 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               List.of(new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.default_(), new RotationId("my-rotation"), Set.of())),
+                                               List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
                                                rotationStatus,
                                                Optional.of(new ApplicationCertificate("vespa.certificate")));
 
