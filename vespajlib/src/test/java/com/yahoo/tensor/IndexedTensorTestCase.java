@@ -146,8 +146,10 @@ public class IndexedTensorTestCase {
         // Lookup from iterator
         Map<TensorAddress, Double> cellsOfIterator = new HashMap<>();
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
-            Map.Entry<TensorAddress, Double> cell = i.next();
+            Tensor.Cell cell = i.next();
             cellsOfIterator.put(cell.getKey(), cell.getValue());
+            assertEquals(cell.getValue(), cell.getDoubleValue(), 0.00001);
+            assertEquals(cell.getValue(), cell.getFloatValue(), 0.00001);
         }
         assertEquals(tensor.size(), cellsOfIterator.size());
         for (int v = 0; v < vSize; v++)

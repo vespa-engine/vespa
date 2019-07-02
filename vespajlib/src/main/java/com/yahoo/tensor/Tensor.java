@@ -397,10 +397,10 @@ public interface Tensor {
         public Double getValue() { return value.doubleValue(); }
 
         /** Returns the value as a float */
-        public float getFloatValue() { return value.floatValue(); }
+        public float getFloatValue() { return getValue().floatValue(); }
 
         /** Returns the value as a double */
-        public double getDoubleValue() { return value.doubleValue(); }
+        public double getDoubleValue() { return getValue(); }
 
         @Override
         public Double setValue(Double value) {
