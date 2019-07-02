@@ -17,7 +17,7 @@ class DenseTensorModify : public TensorVisitor
 {
     using join_fun_t = Tensor::join_fun_t;
     join_fun_t             _op;
-    eval::ValueType        _type;
+    const eval::ValueType &_type;
     std::vector<CT>        _cells;
 
 public:

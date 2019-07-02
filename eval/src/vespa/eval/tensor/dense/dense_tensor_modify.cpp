@@ -33,7 +33,7 @@ template <class CT>
 std::unique_ptr<Tensor>
 DenseTensorModify<CT>::build()
 {
-    return std::make_unique<DenseTensor<CT>>(std::move(_type), std::move(_cells));
+    return std::make_unique<DenseTensor<CT>>(_type, std::move(_cells));
 }
 
 template class DenseTensorModify<float>;
