@@ -15,7 +15,7 @@ import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
@@ -47,7 +47,7 @@ public class DefaultTlsContextTest {
                                 singletonList(new RequiredPeerCredential(RequiredPeerCredential.Field.CN, new HostGlobPattern("dummy"))))));
 
         DefaultTlsContext tlsContext =
-                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, List.of());
+                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, Set.of());
 
         SSLEngine sslEngine = tlsContext.createSslEngine();
         assertThat(sslEngine).isNotNull();

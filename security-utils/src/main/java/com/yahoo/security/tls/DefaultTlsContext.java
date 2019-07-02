@@ -34,20 +34,20 @@ public class DefaultTlsContext implements TlsContext {
                              List<X509Certificate> caCertificates,
                              AuthorizedPeers authorizedPeers,
                              AuthorizationMode mode,
-                             List<String> acceptedCiphers) {
+                             Set<String> acceptedCiphers) {
         this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode),
              acceptedCiphers);
     }
 
 
-    public DefaultTlsContext(SSLContext sslContext, List<String> acceptedCiphers) {
+    public DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers) {
         this.sslContext = sslContext;
         this.validCiphers = getAllowedCiphers(sslContext, acceptedCiphers);
         this.validProtocols = getAllowedProtocols(sslContext);
     }
 
 
-    private static String[] getAllowedCiphers(SSLContext sslContext, List<String> acceptedCiphers) {
+    private static String[] getAllowedCiphers(SSLContext sslContext, Set<String> acceptedCiphers) {
         String[] supportedCipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
         String[] validCipherSuites = Arrays.stream(supportedCipherSuites)
                 .filter(suite -> ALLOWED_CIPHER_SUITES.contains(suite) && (acceptedCiphers.isEmpty() || acceptedCiphers.contains(suite)))
