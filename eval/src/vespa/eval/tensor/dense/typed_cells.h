@@ -12,10 +12,6 @@ namespace vespalib::tensor {
 
 using CellType = vespalib::eval::ValueType::CellType;
 
-template <typename T> inline bool check_type(CellType type);
-template <> inline bool check_type<double>(CellType type) { return (type == CellType::DOUBLE); }
-template <> inline bool check_type<float>(CellType type) { return (type == CellType::FLOAT); }
-
 
 template<typename LCT, typename RCT> struct OutputCellType;
 template<> struct OutputCellType<double, double> {
@@ -46,7 +42,7 @@ struct TypedCells {
     TypedCells(const void *dp, CellType ct, size_t sz) : data(dp), type(ct), size(sz) {}
     TypedCells(CellType ct) : data(nullptr), type(ct), size(0) {}
 
-    template <typename T> bool check_type() const { return vespalib::tensor::check_type<T>(type); }
+    template <typename T> bool check_type() const { return vespalib::eval::check_cell_type<T>(type); }
     template <typename T> ConstArrayRef<T> typify() const {
         assert(check_type<T>());
         return ConstArrayRef<T>((const T *)data, size);

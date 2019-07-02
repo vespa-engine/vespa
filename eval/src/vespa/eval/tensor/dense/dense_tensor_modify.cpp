@@ -12,7 +12,7 @@ DenseTensorModify<CT>::DenseTensorModify(join_fun_t op, const eval::ValueType &t
       _type(type),
       _cells(std::move(cells))
 {
-    assert(check_type<CT>(type.cell_type()));
+    assert(vespalib::eval::check_cell_type<CT>(type.cell_type()));
 }
 
 template <class CT>

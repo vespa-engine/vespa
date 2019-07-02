@@ -85,4 +85,9 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
 
-}
+// utility template
+template <typename T> inline bool check_cell_type(ValueType::CellType type);
+template <> inline bool check_cell_type<double>(ValueType::CellType type) { return (type == ValueType::CellType::DOUBLE); }
+template <> inline bool check_cell_type<float>(ValueType::CellType type) { return (type == ValueType::CellType::FLOAT); }
+
+} // namespace
