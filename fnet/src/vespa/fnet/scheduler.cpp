@@ -69,7 +69,7 @@ FNET_Scheduler::~FNET_Scheduler()
 void
 FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
 {
-    uint32_t ticks = 1 + (uint32_t) std::ceil(seconds * (1000.0 / SLOT_TICK));
+    uint32_t ticks = 2 + (uint32_t) std::ceil(seconds * (1000.0 / SLOT_TICK));
 
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
