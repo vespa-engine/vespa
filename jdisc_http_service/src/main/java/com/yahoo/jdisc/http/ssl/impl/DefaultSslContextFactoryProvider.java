@@ -15,21 +15,38 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
  */
 public class DefaultSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
 
-    private final TlsContext tlsContext = TransportSecurityUtils.getConfigFile()
-            .map(configFile -> new ConfigFiledBasedTlsContext(configFile, TransportSecurityUtils.getInsecureAuthorizationMode()))
-            .orElse(null);
+    private final SslContextFactoryProvider instance = TransportSecurityUtils.getConfigFile()
+            .map(configFile -> (SslContextFactoryProvider) new StaticTlsContextBasedProvider(
+                    new ConfigFiledBasedTlsContext(configFile, TransportSecurityUtils.getInsecureAuthorizationMode())))
+            .orElseGet(ThrowingSslContextFactoryProvider::new);
 
     @Override
     public SslContextFactory getInstance(String containerId, int port) {
-        if (tlsContext != null) {
-            return new TlsContextManagedSslContextFactory(tlsContext);
-        } else {
-            throw new UnsupportedOperationException();
-        }
+        return instance.getInstance(containerId, port);
     }
 
     @Override
     public void deconstruct() {
-        if (tlsContext != null) tlsContext.close();
+        instance.close();
+    }
+
+    private static class ThrowingSslContextFactoryProvider implements SslContextFactoryProvider {
+        @Override
+        public SslContextFactory getInstance(String containerId, int port) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class StaticTlsContextBasedProvider extends TlsContextBasedProvider {
+        final TlsContext tlsContext;
+
+        StaticTlsContextBasedProvider(TlsContext tlsContext) {
+            this.tlsContext = tlsContext;
+        }
+
+        @Override
+        protected TlsContext getTlsContext(String containerId, int port) {
+            return tlsContext;
+        }
     }
 }
