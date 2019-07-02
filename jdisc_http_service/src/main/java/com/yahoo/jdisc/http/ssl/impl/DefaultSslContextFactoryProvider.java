@@ -3,7 +3,7 @@ package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
-import com.yahoo.security.tls.ReloadingTlsContext;
+import com.yahoo.security.tls.ConfigFiledBasedTlsContext;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -16,7 +16,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 public class DefaultSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
 
     private final TlsContext tlsContext = TransportSecurityUtils.getConfigFile()
-            .map(configFile -> new ReloadingTlsContext(configFile, TransportSecurityUtils.getInsecureAuthorizationMode()))
+            .map(configFile -> new ConfigFiledBasedTlsContext(configFile, TransportSecurityUtils.getInsecureAuthorizationMode()))
             .orElse(null);
 
     @Override

@@ -31,20 +31,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A {@link TlsContext} that regularly reloads the credentials referred to from the transport security options file.
+ * A {@link TlsContext} that uses the tls configuration specified in the transport security options file.
+ * The credentials are regularly reloaded to support short-lived certificates.
  *
  * @author bjorncs
  */
-public class ReloadingTlsContext implements TlsContext {
+public class ConfigFiledBasedTlsContext implements TlsContext {
 
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
 
-    private static final Logger log = Logger.getLogger(ReloadingTlsContext.class.getName());
+    private static final Logger log = Logger.getLogger(ConfigFiledBasedTlsContext.class.getName());
 
     private final TlsContext tlsContext;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new ReloaderThreadFactory());
 
-    public ReloadingTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
+    public ConfigFiledBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         MutableX509TrustManager trustManager = new MutableX509TrustManager();
         MutableX509KeyManager keyManager = new MutableX509KeyManager();
