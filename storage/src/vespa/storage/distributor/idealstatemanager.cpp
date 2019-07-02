@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/vespalib/util/assert.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -151,12 +152,13 @@ void IdealStateManager::verify_only_live_nodes_in_context(const StateChecker::Co
         const auto& state = c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, index));
         // Only nodes in Up, Initializing or Retired should ever be present in the DB.
         if (!state.getState().oneOf("uir")) {
-            LOG(warning, "%s in bucket DB is on node %u, which is in unavailable state %s. "
-                         "Current cluster state is '%s'",
-                         c.entry.getBucketId().toString().c_str(),
-                         index,
-                         state.getState().toString().c_str(),
-                         c.systemState.toString().c_str());
+            LOG(error, "%s in bucket DB is on node %u, which is in unavailable state %s. "
+                       "Current cluster state is '%s'",
+                       c.entry.getBucketId().toString().c_str(),
+                       index,
+                       state.getState().toString().c_str(),
+                       c.systemState.toString().c_str());
+            ASSERT_ONCE_OR_LOG(false, "Bucket DB contains replicas on unavailable node", 10000);
             _has_logged_phantom_replica_warning = true;
         }
     }
