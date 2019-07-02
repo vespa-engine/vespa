@@ -462,7 +462,7 @@ public class ApplicationController {
 
     /** Makes sure the application has a global rotation, if eligible. */
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
-        if (zone.environment() == Environment.prod && applicationNeedsRotations(application.get().deploymentSpec())) {
+        if (zone.environment() == Environment.prod) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
                 final var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
                 application = application.with(rotations);

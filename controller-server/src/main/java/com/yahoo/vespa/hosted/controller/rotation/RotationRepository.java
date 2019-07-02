@@ -2,12 +2,14 @@
 package com.yahoo.vespa.hosted.controller.rotation;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.application.api.Endpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -20,7 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -96,6 +100,7 @@ public class RotationRepository {
         // Support the older case of setting global-service-id
         if (application.deploymentSpec().globalServiceId().isPresent()) {
             final var regions = application.deploymentSpec().zones().stream()
+                    .filter(zone -> zone.environment().isProduction())
                     .flatMap(zone -> zone.region().stream())
                     .collect(Collectors.toSet());
 
@@ -112,31 +117,70 @@ public class RotationRepository {
         }
 
         final var availableRotations = new ArrayList<>(availableRotations(lock).values());
-        final var assignments = application.assignedRotations().stream()
+        final Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(application);
+        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(application, existingAssignments, availableRotations);
+
+        existingAssignments.putAll(updatedAssignments);
+
+        return List.copyOf(existingAssignments.values());
+    }
+
+    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Application application, Map<EndpointId, AssignedRotation> existingAssignments, List<Rotation> availableRotations) {
+        return application.deploymentSpec().endpoints().stream()
+                .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
+                .map(endpoint -> {
+                        return new AssignedRotation(
+                                new ClusterSpec.Id(endpoint.containerId()),
+                                EndpointId.of(endpoint.endpointId()),
+                                availableRotations.remove(0).id(),
+                                endpoint.regions()
+                        );
+                })
                 .collect(
                         Collectors.toMap(
                                 AssignedRotation::endpointId,
                                 Function.identity(),
+                                (a, b) -> { throw new IllegalStateException("Duplicate entries:" + a + ", " + b); },
+                                LinkedHashMap::new
+                        )
+                );
+    }
+
+    private Map<EndpointId, AssignedRotation> existingEndpointAssignments(Application application) {
+        //
+        // Get the regions that has been configured for an endpoint.  Empty set if the endpoint
+        // is no longer mentioned in the configuration file.
+        //
+        final Function<EndpointId, Set<RegionName>> configuredRegionsForEndpoint = endpointId -> {
+            return application.deploymentSpec().endpoints().stream()
+                    .filter(endpoint -> endpointId.id().equals(endpoint.endpointId()))
+                    .map(Endpoint::regions)
+                    .findFirst()
+                    .orElse(Set.of());
+        };
+
+        //
+        // Build a new AssignedRotation instance where we update set of regions from the configuration instead
+        // of using the one already mentioned in the assignment.  This allows us to overwrite the set of regions
+        // when
+        final Function<AssignedRotation, AssignedRotation> assignedRotationWithConfiguredRegions = assignedRotation -> {
+            return new AssignedRotation(
+                    assignedRotation.clusterId(),
+                    assignedRotation.endpointId(),
+                    assignedRotation.rotationId(),
+                    configuredRegionsForEndpoint.apply(assignedRotation.endpointId())
+            );
+        };
+
+        return application.assignedRotations().stream()
+                .collect(
+                        Collectors.toMap(
+                                AssignedRotation::endpointId,
+                                assignedRotationWithConfiguredRegions,
                                 (a, b) -> { throw new IllegalStateException("Duplicate entries: " + a + ", " + b); },
                                 LinkedHashMap::new
                         )
                 );
-
-        application.deploymentSpec().endpoints().stream()
-                .filter(endpoint -> ! assignments.containsKey(new EndpointId(endpoint.endpointId())))
-                .map(endpoint -> {
-                    return new AssignedRotation(
-                            new ClusterSpec.Id(endpoint.containerId()),
-                            EndpointId.of(endpoint.endpointId()),
-                            availableRotations.remove(0).id(),
-                            endpoint.regions()
-                    );
-                })
-                .forEach(assignment -> {
-                    assignments.put(assignment.endpointId(), assignment);
-                });
-
-        return List.copyOf(assignments.values());
     }
 
     /**

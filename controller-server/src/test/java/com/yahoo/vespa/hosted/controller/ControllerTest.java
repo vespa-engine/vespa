@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -23,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -344,6 +346,85 @@ public class ControllerTest {
     }
 
     @Test
+    public void testDnsAliasRegistrationWithChangingZones() {
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "qrs", "us-west-1", "us-central-1")
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+
+        assertEquals(
+                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+        );
+
+        assertEquals(
+                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-central-1")))
+        );
+
+
+        ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "qrs", "us-west-1")
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
+
+        assertEquals(
+                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+        );
+
+        assertEquals(
+                Set.of(),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-central-1")))
+        );
+
+        assertEquals(Set.of(RegionName.from("us-west-1")), tester.application(application.id()).assignedRotations().get(0).regions());
+    }
+
+    @Test
+    public void testUnassignRotations() {
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "qrs", "us-west-1", "us-central-1")
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage);
+
+        ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .region("us-central-1") // Two deployments should result in each DNS alias being registered once
+                .build();
+
+        tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
+
+
+        assertEquals(
+                List.of(AssignedRotation.fromStrings("qrs", "default", "rotation-id-01", Set.of())),
+                tester.application(application.id()).assignedRotations()
+        );
+
+        assertEquals(
+                Set.of(),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+        );
+    }
+
+        @Test
     public void testUpdatesExistingDnsAlias() {
         // Application 1 is deployed and deleted
         {
