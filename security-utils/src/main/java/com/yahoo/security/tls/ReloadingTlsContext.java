@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -106,7 +107,8 @@ public class ReloadingTlsContext implements TlsContext {
                                 .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
                                 .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
                 .build();
-        return new DefaultTlsContext(sslContext, new HashSet<>(options.getAcceptedCiphers()));
+        List<String> acceptedCiphers = options.getAcceptedCiphers();
+        return new DefaultTlsContext(sslContext, acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers));
     }
 
     // Wrapped methods from TlsContext

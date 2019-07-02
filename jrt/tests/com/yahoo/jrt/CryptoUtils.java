@@ -48,7 +48,7 @@ class CryptoUtils {
                                             Field.CN, new HostGlobPattern("dummy"))))));
 
     static TlsContext createTestTlsContext() {
-        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, TlsContext.ALLOWED_CIPHER_SUITES);
+        return new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE);
     }
 
 }

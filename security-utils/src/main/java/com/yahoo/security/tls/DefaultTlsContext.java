@@ -33,14 +33,16 @@ public class DefaultTlsContext implements TlsContext {
                              PrivateKey privateKey,
                              List<X509Certificate> caCertificates,
                              AuthorizedPeers authorizedPeers,
-                             AuthorizationMode mode,
-                             Set<String> acceptedCiphers) {
-        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode),
-             acceptedCiphers);
+                             AuthorizationMode mode) {
+        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode));
     }
 
 
-    public DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers) {
+    public DefaultTlsContext(SSLContext sslContext) {
+        this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES);
+    }
+
+    DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers) {
         this.sslContext = sslContext;
         this.validCiphers = getAllowedCiphers(sslContext, acceptedCiphers);
         this.validProtocols = getAllowedProtocols(sslContext);
@@ -50,7 +52,7 @@ public class DefaultTlsContext implements TlsContext {
     private static String[] getAllowedCiphers(SSLContext sslContext, Set<String> acceptedCiphers) {
         String[] supportedCipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
         String[] validCipherSuites = Arrays.stream(supportedCipherSuites)
-                .filter(suite -> ALLOWED_CIPHER_SUITES.contains(suite) && (acceptedCiphers.isEmpty() || acceptedCiphers.contains(suite)))
+                .filter(suite -> ALLOWED_CIPHER_SUITES.contains(suite) && acceptedCiphers.contains(suite))
                 .toArray(String[]::new);
         if (validCipherSuites.length == 0) {
             throw new IllegalStateException(
