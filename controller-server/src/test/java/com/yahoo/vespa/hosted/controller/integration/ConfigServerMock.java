@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author mortent
@@ -238,7 +239,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        this.rotationNames.put(deployment, containerEndpoints.stream().flatMap(e -> e.names().stream()).collect(Collectors.toSet()));
+        this.rotationNames.put(
+                deployment,
+                Stream.concat(
+                        containerEndpoints.stream().flatMap(e -> e.names().stream()),
+                        rotationNames.stream()
+                ).collect(Collectors.toSet())
+        );
 
         return () -> {
             Application application = applications.get(deployment.applicationId());

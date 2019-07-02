@@ -151,6 +151,12 @@ public class Flags {
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag MULTIPLE_GLOBAL_ENDPOINTS = defineFeatureFlag(
+            "multiple-global-endpoints", false,
+            "Allow applications to use new endpoints syntax in deployment.xml",
+            "Takes effect on deployment through controller",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
