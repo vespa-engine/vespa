@@ -82,29 +82,40 @@ public class DimensionRenamer {
         initialize();
 
         // Todo: evaluate possible improved efficiency by using a heuristic such as min-conflicts
-
-        for (String dimension : variables.keySet()) {
-            List<Integer> values = variables.get(dimension);
-            if (values.size() > 1) {
-                if ( ! ac3()) {
-                    throw new IllegalArgumentException("Dimension renamer unable to find a solution" +
-                                                       " given constraints\n" + constraintsToString());
-                }
-                values.sort(Integer::compare);
-                variables.put(dimension, Collections.singletonList(values.get(0)));
+        boolean solved = trySolve(maxIterations);
+        if ( ! solved) {
+            List<Arc> softConstraints = constraints.entrySet().stream()
+                                                              .filter(e -> e.getValue().isSoft())
+                                                              .map(e -> e.getKey())
+                                                              .collect(Collectors.toList());
+            if ( ! softConstraints.isEmpty()) {
+                softConstraints.forEach(softConstraint -> constraints.remove(softConstraint));
+                trySolve(maxIterations);
             }
-            renames.put(dimension, variables.get(dimension).get(0));
-            if (iterations > maxIterations) {
-                throw new IllegalArgumentException("Dimension renamer unable to find a solution within " +
-                                                   maxIterations + " iterations for dimension '" + dimension + "'" +
-                                                   "' given constraints\n" + constraintsToString());
-            }
+        }
+        if ( ! solved) {
+            throw new IllegalArgumentException("Could not find a dimension naming solution" +
+                                               " given constraints\n" + constraintsToString());
         }
 
         // Todo: handle failure more gracefully:
         // If a solution can't be found, look at the operation node in the arc
         // with the most remaining constraints, and inject a rename operation.
         // Then run this algorithm again.
+    }
+
+    private boolean trySolve(int maxIterations) {
+        for (String dimension : variables.keySet()) {
+            List<Integer> values = variables.get(dimension);
+            if (values.size() > 1) {
+                if ( ! ac3()) return false;
+                values.sort(Integer::compare);
+                variables.put(dimension, Collections.singletonList(values.get(0)));
+            }
+            renames.put(dimension, variables.get(dimension).get(0));
+            if (iterations > maxIterations) return false;
+        }
+        return true;
     }
 
     void solve() {
@@ -203,35 +214,39 @@ public class DimensionRenamer {
 
     public static abstract class Constraint {
 
-        private final boolean opposite;
+        private final boolean soft, opposite;
 
-        protected Constraint(boolean opposite) {
+        protected Constraint(boolean soft, boolean opposite) {
+            this.soft = soft;
             this.opposite = opposite;
         }
 
         abstract boolean test(Integer x, Integer y);
         abstract Constraint opposite();
 
+        /** Returns whether this constraint can be violated if that is necessary to achieve a solution */
+        boolean isSoft() { return soft; }
+
         /** Returns whether this is an opposite of another constraint */
         boolean isOpposite() { return opposite; }
 
-        public static Constraint equal() { return new EqualConstraint(false); }
-        public static Constraint lessThan() { return new LessThanConstraint(false); }
-        public static Constraint greaterThan() { return new GreaterThanConstraint(false); }
+        public static Constraint equal(boolean soft) { return new EqualConstraint(soft, false); }
+        public static Constraint lessThan(boolean soft) { return new LessThanConstraint(soft, false); }
+        public static Constraint greaterThan(boolean soft) { return new GreaterThanConstraint(soft, false); }
 
     }
 
     private static class EqualConstraint extends Constraint {
 
-        private EqualConstraint(boolean opposite) {
-            super(opposite);
+        private EqualConstraint(boolean soft, boolean opposite) {
+            super(soft, opposite);
         }
 
         @Override
         public boolean test(Integer x, Integer y) { return Objects.equals(x, y); }
 
         @Override
-        public Constraint opposite() { return new EqualConstraint(true); }
+        public Constraint opposite() { return new EqualConstraint(isSoft(), true); }
 
         @Override
         public String toString() { return "=="; }
@@ -240,15 +255,15 @@ public class DimensionRenamer {
 
     private static class LessThanConstraint extends Constraint {
 
-        private LessThanConstraint(boolean opposite) {
-            super(opposite);
+        private LessThanConstraint(boolean soft, boolean opposite) {
+            super(soft, opposite);
         }
 
         @Override
         public boolean test(Integer x, Integer y) { return x < y; }
 
         @Override
-        public Constraint opposite() { return new GreaterThanConstraint(true); }
+        public Constraint opposite() { return new GreaterThanConstraint(isSoft(), true); }
 
         @Override
         public String toString() { return "<"; }
@@ -257,15 +272,15 @@ public class DimensionRenamer {
 
     private static class GreaterThanConstraint extends Constraint {
 
-        private GreaterThanConstraint(boolean opposite) {
-            super(opposite);
+        private GreaterThanConstraint(boolean soft, boolean opposite) {
+            super(soft, opposite);
         }
 
         @Override
         public boolean test(Integer x, Integer y) { return x > y; }
 
         @Override
-        public Constraint opposite() { return new LessThanConstraint(true); }
+        public Constraint opposite() { return new LessThanConstraint(isSoft(), true); }
 
         @Override
         public String toString() { return ">"; }

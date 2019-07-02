@@ -61,14 +61,14 @@ public class MatMul extends IntermediateOperation {
         String bDim1 = bDimensions.get(1).name();
 
         // The second dimension of a should have the same name as the first dimension of b
-        renamer.addConstraint(aDim1, bDim0, DimensionRenamer.Constraint.equal(), this);
+        renamer.addConstraint(aDim1, bDim0, DimensionRenamer.Constraint.equal(false), this);
 
         // The first dimension of a should have a different name than the second dimension of b
-        renamer.addConstraint(aDim0, bDim1, DimensionRenamer.Constraint.lessThan(), this);
+        renamer.addConstraint(aDim0, bDim1, DimensionRenamer.Constraint.lessThan(false), this);
 
         // For efficiency, the dimensions to join over should be innermost - soft constraint
-        renamer.addConstraint(aDim0, aDim1, DimensionRenamer.Constraint.lessThan(), this);
-        renamer.addConstraint(bDim0, bDim1, DimensionRenamer.Constraint.greaterThan(), this);
+        renamer.addConstraint(aDim0, aDim1, DimensionRenamer.Constraint.lessThan(true), this);
+        renamer.addConstraint(bDim0, bDim1, DimensionRenamer.Constraint.greaterThan(true), this);
     }
 
     private void assertTwoDimensions(List<TensorType.Dimension> dimensions, IntermediateOperation supplier, String inputDescription) {

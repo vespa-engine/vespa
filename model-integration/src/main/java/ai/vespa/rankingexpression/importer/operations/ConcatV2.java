@@ -89,7 +89,7 @@ public class ConcatV2 extends IntermediateOperation {
             OrderedTensorType b = inputs.get(i).type().get();
             String bDim = b.dimensions().get(concatDimensionIndex).name();
             String aDim = a.dimensions().get(concatDimensionIndex).name();
-            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(), this);
+            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(false), this);
         }
     }
 

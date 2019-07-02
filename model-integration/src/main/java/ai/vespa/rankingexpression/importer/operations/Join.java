@@ -95,7 +95,7 @@ public class Join extends IntermediateOperation {
         for (int i = 0; i < b.rank(); ++i) {
             String bDim = b.dimensions().get(i).name();
             String aDim = a.dimensions().get(i + sizeDifference).name();
-            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(), this);
+            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(false), this);
         }
     }
 
