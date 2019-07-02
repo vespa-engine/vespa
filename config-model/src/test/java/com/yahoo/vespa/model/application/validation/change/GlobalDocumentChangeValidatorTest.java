@@ -40,7 +40,9 @@ public class GlobalDocumentChangeValidatorTest {
             assertTrue(allowed);
         } catch (IllegalStateException e) {
             assertFalse(allowed);
-            assertEquals("Document type music in cluster default changed global from " + oldGlobal + " to " + newGlobal,
+            assertEquals("Document type music in cluster default changed global from " + oldGlobal + " to " + newGlobal + ". " +
+                    "Add validation override 'global-document-change' to force this change through. " +
+                    "First, stop services on all content nodes. Then, deploy with validation override. Finally, start services on all content nodes.",
                     e.getMessage());
         }
     }
