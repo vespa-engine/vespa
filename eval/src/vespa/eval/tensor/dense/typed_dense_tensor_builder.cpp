@@ -4,8 +4,6 @@
 
 namespace vespalib::tensor {
 
-size_t num_typed_tensor_builder_inserts = 0;
-
 using Address = DenseTensorView::Address;
 using eval::ValueType;
 

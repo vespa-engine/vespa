@@ -6,8 +6,6 @@
 
 namespace vespalib::tensor {
 
-extern size_t num_typed_tensor_builder_inserts;
-
 /**
  * Class for building a dense tensor by inserting cell values directly into underlying array of cells.
  */
@@ -36,7 +34,6 @@ public:
     }
     void insertCell(size_t index, CT cellValue) {
         _cells[index] = cellValue;
-        ++num_typed_tensor_builder_inserts;
     }
     Tensor::UP build();
 };

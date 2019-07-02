@@ -57,7 +57,6 @@ EvalFixture::ParamRepo param_repo = make_params();
 void verify_equal(const vespalib::string &expr) {
     EvalFixture fixture(prod_engine, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-    fprintf(stderr, "after verification %zu inserts\n", num_typed_tensor_builder_inserts);
 }
 
 
