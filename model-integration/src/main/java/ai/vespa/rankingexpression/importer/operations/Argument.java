@@ -29,7 +29,7 @@ public class Argument extends IntermediateOperation {
     @Override
     protected TensorFunction lazyGetFunction() {
         TensorFunction output = new VariableTensor(vespaName(), standardNamingType.type());
-        if (!standardNamingType.equals(type)) {
+        if ( ! standardNamingType.equals(type)) {
             List<String> renameFrom = standardNamingType.dimensionNames();
             List<String> renameTo = type.dimensionNames();
             output = new Rename(output, renameFrom, renameTo);
@@ -39,8 +39,14 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
+        for (int i = 0; i < type.dimensions().size(); i++) {
+            renamer.addDimension(type.dimensions().get(i).name());
+
+            // Each dimension is distinct:
+            for (int j = i + 1; j < type.dimensions().size(); j++)
+                renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
+                                      DimensionRenamer.Constraint.notEqual(false),
+                                      this);
         }
     }
 

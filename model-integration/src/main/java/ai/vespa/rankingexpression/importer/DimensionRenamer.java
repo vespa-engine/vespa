@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -22,6 +24,8 @@ import java.util.stream.Collectors;
  * @author lesters
  */
 public class DimensionRenamer {
+
+    private static final Logger log = Logger.getLogger(DimensionRenamer.class.getName());
 
     private final String dimensionPrefix;
     private final ListMap<String, Integer> variables = new ListMap<>();
@@ -72,7 +76,7 @@ public class DimensionRenamer {
      * multiple times.
      *
      * This requires having constraints that result in an absolute ordering:
-     * equals, lesserThan and greaterThan do that, but adding notEquals does
+     * equal, lessThan and greaterThan do that, but adding notEqual does
      * not typically result in a guaranteed ordering. If that is needed, the
      * algorithm below needs to be adapted with a backtracking (tree) search
      * to find solutions.
@@ -88,14 +92,14 @@ public class DimensionRenamer {
         if ( ! solved) {
             renames.clear();
             Map<Arc, Constraint> hardConstraints = new HashMap<>();
-            constraints.entrySet().stream().filter(e ->  ! e.getValue().isSoft())
-                                           .forEach(e -> hardConstraints.put(e.getKey(), e.getValue()));
+            constraints.entrySet().stream().filter(e -> !e.getValue().isSoft())
+                       .forEach(e -> hardConstraints.put(e.getKey(), e.getValue()));
             if (hardConstraints.size() < constraints.size())
                 solved = trySolve(variables, hardConstraints, maxIterations, renames);
-        }
-        if ( ! solved) {
-            throw new IllegalArgumentException("Could not find a dimension naming solution" +
-                                               " given constraints\n" + constraintsToString());
+            if ( ! solved) {
+                throw new IllegalArgumentException("Could not find a dimension naming solution " +
+                                                   " given constraints\n" + constraintsToString(hardConstraints));
+            }
         }
 
         // Todo: handle failure more gracefully:
@@ -128,7 +132,17 @@ public class DimensionRenamer {
     }
 
     void solve() {
+        log.log(Level.FINE, () -> "Rename problem:\n" + constraintsToString(constraints));
+        System.out.println("Rename problem:\n" + constraintsToString(constraints));
         renames = solve(100000);
+        log.log(Level.FINE, () -> "Rename solution:\n" + renamesToString(renames));
+        System.out.println("Rename solution:\n" + renamesToString(renames));
+    }
+
+    private static String renamesToString(Map<String, Integer> renames) {
+        return renames.entrySet().stream()
+                                 .map(e -> "  " + e.getKey() + " -> " + e.getValue())
+                                 .collect(Collectors.joining("\n"));
     }
 
     private static void initialize(ListMap<String, Integer> variables) {
@@ -182,10 +196,10 @@ public class DimensionRenamer {
         return revised;
     }
 
-    private String constraintsToString() {
+    private static String constraintsToString(Map<Arc, Constraint> constraints) {
         return constraints.entrySet().stream()
                                      .filter(e -> ! e.getValue().isOpposite())
-                                     .map(e -> e.getKey().from + " " + e.getValue() + " " + e.getKey().to + " (origin: " + e.getKey().operation + ")")
+                                     .map(e -> "  "  + e.getKey().from + " " + e.getValue() + " " + e.getKey().to + " (origin: " + e.getKey().operation + ")")
                                      .collect(Collectors.joining("\n"));
     }
 
@@ -244,6 +258,7 @@ public class DimensionRenamer {
         boolean isOpposite() { return opposite; }
 
         public static Constraint equal(boolean soft) { return new EqualConstraint(soft, false); }
+        public static Constraint notEqual(boolean soft) { return new NotEqualConstraint(soft, false); }
         public static Constraint lessThan(boolean soft) { return new LessThanConstraint(soft, false); }
         public static Constraint greaterThan(boolean soft) { return new GreaterThanConstraint(soft, false); }
 
@@ -263,6 +278,23 @@ public class DimensionRenamer {
 
         @Override
         public String toString() { return "=="; }
+
+    }
+
+    private static class NotEqualConstraint extends Constraint {
+
+        private NotEqualConstraint(boolean soft, boolean opposite) {
+            super(soft, opposite);
+        }
+
+        @Override
+        public boolean test(Integer x, Integer y) { return ! Objects.equals(x, y); }
+
+        @Override
+        public Constraint opposite() { return new NotEqualConstraint(isSoft(), true); }
+
+        @Override
+        public String toString() { return "!="; }
 
     }
 

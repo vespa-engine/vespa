@@ -130,12 +130,15 @@ public class OrderedTensorType {
     }
 
     public OrderedTensorType rename(DimensionRenamer renamer) {
+        System.out.println("Renaming " + this);
         List<TensorType.Dimension> renamedDimensions = new ArrayList<>(dimensions.size());
         for (TensorType.Dimension dimension : dimensions) {
             String oldName = dimension.name();
             Optional<String> newName = renamer.dimensionNameOf(oldName);
             if (!newName.isPresent())
                 return this; // presumably, already renamed
+            if ( ! oldName.equals(newName.get()))
+                System.out.println("  Renaming " + oldName + " to " + newName.get());
             TensorType.Dimension.Type dimensionType = dimension.type();
             if (dimensionType == TensorType.Dimension.Type.indexedBound) {
                 renamedDimensions.add(TensorType.Dimension.indexed(newName.get(), dimension.size().get()));
