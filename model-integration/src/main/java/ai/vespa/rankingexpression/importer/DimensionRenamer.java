@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A constraint satisfier to find suitable dimension names to reduce the
@@ -47,11 +49,10 @@ public class DimensionRenamer {
     /**
      * Add a constraint between dimension names.
      */
-    public void addConstraint(String from, String to, Constraint pred, IntermediateOperation operation) {
+    public void addConstraint(String from, String to, Constraint constraint, IntermediateOperation operation) {
         Arc arc = new Arc(from, to, operation);
-        Arc opposite = arc.opposite();
-        constraints.put(arc, pred);
-        constraints.put(opposite, (x,y) -> pred.test(y, x));  // make constraint graph symmetric
+        constraints.put(arc, constraint);
+        constraints.put(arc.opposite(), constraint.opposite());  // make constraint graph symmetric
     }
 
     /**
@@ -85,8 +86,9 @@ public class DimensionRenamer {
         for (String dimension : variables.keySet()) {
             List<Integer> values = variables.get(dimension);
             if (values.size() > 1) {
-                if (!ac3()) {
-                    throw new IllegalArgumentException("Dimension renamer unable to find a solution.");
+                if ( ! ac3()) {
+                    throw new IllegalArgumentException("Dimension renamer unable to find a solution" +
+                                                       " given constraints\n" + constraintsToString());
                 }
                 values.sort(Integer::compare);
                 variables.put(dimension, Collections.singletonList(values.get(0)));
@@ -94,7 +96,8 @@ public class DimensionRenamer {
             renames.put(dimension, variables.get(dimension).get(0));
             if (iterations > maxIterations) {
                 throw new IllegalArgumentException("Dimension renamer unable to find a solution within " +
-                        maxIterations + " iterations");
+                                                   maxIterations + " iterations for dimension '" + dimension + "'" +
+                                                   "' given constraints\n" + constraintsToString());
             }
         }
 
@@ -155,20 +158,11 @@ public class DimensionRenamer {
         return revised;
     }
 
-    public interface Constraint {
-        boolean test(Integer x, Integer y);
-    }
-
-    public static boolean equals(Integer x, Integer y) {
-        return Objects.equals(x, y);
-    }
-
-    public static boolean lesserThan(Integer x, Integer y) {
-        return x < y;
-    }
-
-    public static boolean greaterThan(Integer x, Integer y) {
-        return x > y;
+    private String constraintsToString() {
+        return constraints.entrySet().stream()
+                                     .filter(e -> ! e.getValue().isOpposite())
+                                     .map(e -> e.getKey().from + " " + e.getValue() + " " + e.getKey().to + " (origin: " + e.getKey().operation + ")")
+                                     .collect(Collectors.joining("\n"));
     }
 
     private static class Arc {
@@ -194,7 +188,7 @@ public class DimensionRenamer {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj == null || !(obj instanceof Arc)) {
+            if (!(obj instanceof Arc)) {
                 return false;
             }
             Arc other = (Arc) obj;
@@ -203,8 +197,79 @@ public class DimensionRenamer {
 
         @Override
         public String toString() {
-            return String.format("%s -> %s", from, to);
+            return from + " -> " + to;
         }
+    }
+
+    public static abstract class Constraint {
+
+        private final boolean opposite;
+
+        protected Constraint(boolean opposite) {
+            this.opposite = opposite;
+        }
+
+        abstract boolean test(Integer x, Integer y);
+        abstract Constraint opposite();
+
+        /** Returns whether this is an opposite of another constraint */
+        boolean isOpposite() { return opposite; }
+
+        public static Constraint equal() { return new EqualConstraint(false); }
+        public static Constraint lessThan() { return new LessThanConstraint(false); }
+        public static Constraint greaterThan() { return new GreaterThanConstraint(false); }
+
+    }
+
+    private static class EqualConstraint extends Constraint {
+
+        private EqualConstraint(boolean opposite) {
+            super(opposite);
+        }
+
+        @Override
+        public boolean test(Integer x, Integer y) { return Objects.equals(x, y); }
+
+        @Override
+        public Constraint opposite() { return new EqualConstraint(true); }
+
+        @Override
+        public String toString() { return "=="; }
+
+    }
+
+    private static class LessThanConstraint extends Constraint {
+
+        private LessThanConstraint(boolean opposite) {
+            super(opposite);
+        }
+
+        @Override
+        public boolean test(Integer x, Integer y) { return x < y; }
+
+        @Override
+        public Constraint opposite() { return new GreaterThanConstraint(true); }
+
+        @Override
+        public String toString() { return "<"; }
+
+    }
+
+    private static class GreaterThanConstraint extends Constraint {
+
+        private GreaterThanConstraint(boolean opposite) {
+            super(opposite);
+        }
+
+        @Override
+        public boolean test(Integer x, Integer y) { return x > y; }
+
+        @Override
+        public Constraint opposite() { return new LessThanConstraint(true); }
+
+        @Override
+        public String toString() { return ">"; }
+
     }
 
 }

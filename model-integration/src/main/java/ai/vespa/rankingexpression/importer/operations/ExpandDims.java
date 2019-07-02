@@ -52,7 +52,7 @@ public class ExpandDims extends IntermediateOperation {
             typeBuilder.add(dimension);
             dimensionIndex++;
         }
-        if (dimensionIndex == inputType.dimensions().size()) { // Insert last dimension
+        if (dimensionToInsert == inputType.dimensions().size()) { // Insert last dimension
             addDimension(dimensionIndex, typeBuilder);
         }
         return typeBuilder.build();
