@@ -149,7 +149,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public Duration subsystemFreezeDuration() {
         if (startOfFreezeConvergence == null) {
-            return Duration.ofSeconds(0);
+            return Duration.ZERO;
         } else {
             return Duration.between(startOfFreezeConvergence, clock.instant());
         }

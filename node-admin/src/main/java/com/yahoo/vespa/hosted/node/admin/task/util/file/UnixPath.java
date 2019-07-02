@@ -60,7 +60,7 @@ public class UnixPath {
 
     public Optional<String> readUtf8FileIfExists() {
         try {
-            return Optional.of(new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
+            return Optional.of(Files.readString(path));
         } catch (NoSuchFileException ignored) {
             return Optional.empty();
         } catch (IOException e) {

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * @author hakonhall
  */
 public class StoredBoolean {
-    private static Logger logger = Logger.getLogger(StoredBoolean.class.getName());
+    private static final Logger logger = Logger.getLogger(StoredBoolean.class.getName());
 
     private final UnixPath path;
 

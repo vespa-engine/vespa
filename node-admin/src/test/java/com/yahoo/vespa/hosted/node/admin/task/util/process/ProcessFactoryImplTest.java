@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ public class ProcessFactoryImplTest {
     @Test
     public void testSpawn() {
         CommandLine commandLine = mock(CommandLine.class);
-        when(commandLine.getArguments()).thenReturn(Arrays.asList("program"));
+        when(commandLine.getArguments()).thenReturn(List.of("program"));
         when(commandLine.getRedirectStderrToStdoutInsteadOfDiscard()).thenReturn(true);
         when(commandLine.programName()).thenReturn("program");
         Path outputPath;
@@ -56,8 +56,8 @@ public class ProcessFactoryImplTest {
     public void testSpawnWithPersistentOutputFile() {
 
         class TemporaryFile implements AutoCloseable {
-            Path path;
-            TemporaryFile() {
+            private final Path path;
+            private TemporaryFile() {
                 String outputFileName = ProcessFactoryImplTest.class.getSimpleName() + "-temporary-test-file.out";
                 FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(
                         PosixFilePermissions.fromString("rw-------"));
@@ -68,7 +68,7 @@ public class ProcessFactoryImplTest {
 
         try (TemporaryFile outputPath = new TemporaryFile()) {
             CommandLine commandLine = mock(CommandLine.class);
-            when(commandLine.getArguments()).thenReturn(Arrays.asList("program"));
+            when(commandLine.getArguments()).thenReturn(List.of("program"));
             when(commandLine.programName()).thenReturn("program");
             when(commandLine.getOutputFile()).thenReturn(Optional.of(outputPath.path));
             try (ChildProcess2Impl child = processFactory.spawn(commandLine)) {
