@@ -92,6 +92,17 @@ public class RotationRepository {
         return findAvailableRotation(application, lock);
     }
 
+    /**
+     * Returns rotation assignments for all endpoints in application.
+     *
+     * If rotations are already assigned, these will be returned.
+     * If rotations are not assigned, a new assignment will be created taking new rotations from the repository.
+     * This method supports both global-service-id as well as the new endpoints tag.
+     *
+     * @param application The application requesting rotations.
+     * @param lock Lock which by acquired by the caller
+     * @return List of rotation assignments - either new or existing.
+     */
     public List<AssignedRotation> getOrAssignRotations(Application application, RotationLock lock) {
         if (application.deploymentSpec().globalServiceId().isPresent() && ! application.deploymentSpec().endpoints().isEmpty()) {
             throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
@@ -116,18 +127,26 @@ public class RotationRepository {
             );
         }
 
-        final var availableRotations = new ArrayList<>(availableRotations(lock).values());
         final Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(application);
-        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(application, existingAssignments, availableRotations);
+        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(application, existingAssignments, lock);
 
         existingAssignments.putAll(updatedAssignments);
 
         return List.copyOf(existingAssignments.values());
     }
 
-    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Application application, Map<EndpointId, AssignedRotation> existingAssignments, List<Rotation> availableRotations) {
-        return application.deploymentSpec().endpoints().stream()
+    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Application application, Map<EndpointId, AssignedRotation> existingAssignments, RotationLock lock) {
+        final var availableRotations = new ArrayList<>(availableRotations(lock).values());
+
+        final var neededRotations = application.deploymentSpec().endpoints().stream()
                 .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
+                .collect(Collectors.toSet());
+
+        if (neededRotations.size() > availableRotations.size()) {
+            throw new IllegalStateException("Hosted Vespa ran out of rotations, unable to assign rotation: need " + neededRotations.size() + ", have " + availableRotations.size());
+        }
+
+        return neededRotations.stream()
                 .map(endpoint -> {
                         return new AssignedRotation(
                                 new ClusterSpec.Id(endpoint.containerId()),
