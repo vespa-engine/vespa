@@ -16,7 +16,7 @@ class DenseTensor : public DenseTensorView
 public:
     DenseTensor() = delete;
     ~DenseTensor() override;
-    DenseTensor(eval::ValueType &&type_in, std::vector<CT> &&cells_in);
+    DenseTensor(eval::ValueType type_in, std::vector<CT> &&cells_in);
 
     // for unit tests
     template <typename RCT>

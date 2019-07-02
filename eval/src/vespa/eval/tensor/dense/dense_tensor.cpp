@@ -45,7 +45,7 @@ checkCellsSize(const DenseTensor<T> &arg)
 }
 
 template <typename CT>
-DenseTensor<CT>::DenseTensor(eval::ValueType &&type_in,
+DenseTensor<CT>::DenseTensor(eval::ValueType type_in,
                              std::vector<CT> &&cells_in)
     : DenseTensorView(_type, type_in.cell_type()),
       _type(std::move(type_in)),

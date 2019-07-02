@@ -195,7 +195,7 @@ DenseTensorView::as_double() const
 struct CallApply {
     template <typename CT>
     static Tensor::UP
-    call(const ConstArrayRef<CT> &oldCells, eval::ValueType newType, const CellFunction &func)
+    call(const ConstArrayRef<CT> &oldCells, const eval::ValueType &newType, const CellFunction &func)
     {
         std::vector<CT> newCells;
         newCells.reserve(oldCells.size());
@@ -203,7 +203,7 @@ struct CallApply {
             CT nv = func.apply(cell);
             newCells.push_back(nv);
         }
-        return std::make_unique<DenseTensor<CT>>(std::move(newType), std::move(newCells));
+        return std::make_unique<DenseTensor<CT>>(newType, std::move(newCells));
     }
 };
 
