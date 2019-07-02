@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -90,8 +91,16 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private static class MessageBusVisitorSessionFactory implements VisitorSessionFactory {
-        private static final LoadTypeSet loadTypes = new LoadTypeSet("client");
-        private static final DocumentAccess access = new MessageBusDocumentAccess(new MessageBusParams(loadTypes));
+        private static final Object initMonitor = new Object();
+        private static final AtomicReference<MessageBusVisitorSessionFactory> instance = new AtomicReference<>();
+
+        private final LoadTypeSet loadTypes;
+        private final DocumentAccess access;
+
+        private MessageBusVisitorSessionFactory() {
+            loadTypes = new LoadTypeSet("client");
+            access = new MessageBusDocumentAccess(new MessageBusParams(loadTypes));
+        }
 
         @Override
         public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
@@ -102,10 +111,32 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         public LoadTypeSet getLoadTypeSet() {
             return loadTypes;
         }
+
+        /**
+         * Returns a single, shared instance of this class which is lazily created in a thread-safe
+         * manner the first time this method is invoked.
+         *
+         * May throw any config-related exception if subscription fails.
+         */
+        static MessageBusVisitorSessionFactory sharedInstance() {
+            var ref = instance.getAcquire();
+            if (ref != null) {
+                return ref;
+            }
+            synchronized (initMonitor) {
+                ref = instance.getAcquire();
+                if (ref != null) {
+                    return ref;
+                }
+                ref = new MessageBusVisitorSessionFactory();
+                instance.setRelease(ref);
+            }
+            return ref;
+        }
     }
 
     public VdsVisitor(Query query, String searchCluster, Route route, String documentType) {
-        this(query, searchCluster, route, documentType, new MessageBusVisitorSessionFactory());
+        this(query, searchCluster, route, documentType, MessageBusVisitorSessionFactory.sharedInstance());
     }
 
     public VdsVisitor(Query query, String searchCluster, Route route,
