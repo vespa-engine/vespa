@@ -52,9 +52,8 @@ public abstract class ModelImporter implements MlModelImporter {
      */
     protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
         ImportedModel model = new ImportedModel(graph.name(), modelSource);
-        log.log(Level.FINE, () -> "Intermediate graph created from '" + modelSource + "':\n" +
-                                  ExpressionFormatter.inTwoColumnMode(20).format(graph.toFullString()));
-        System.out.println("Intermediate graph created from '" + modelSource + "':\n" + graph.toFullString());
+        log.log(Level.FINER, () -> "Intermediate graph created from '" + modelSource + "':\n" +
+                                   ExpressionFormatter.inTwoColumnMode(70, 50).format(graph.toFullString()));
 
         graph.optimize();
 

@@ -104,7 +104,6 @@ public class Sum extends IntermediateOperation {
                 builder.add(TensorType.Dimension.indexed(dimension.name(), 1L));
             }
         }
-        System.out.println("----------> Sum input type is " + inputType + ", keepDimensions: " + keepDimensions + ", result: " + builder.build());
         return builder.build();
     }
 

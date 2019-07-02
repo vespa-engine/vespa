@@ -15,15 +15,26 @@ public class ExpressionFormatter {
     private static final int indentUnit = 2;
 
     /** The size of the first column, or 0 if none */
-    private int firstColumnSize = 0;
+    private final int firstColumnLength;
 
-    private ExpressionFormatter(int firstColumnSize) {
-        this.firstColumnSize = firstColumnSize;
+    /**
+     * The desired size of the second column (or the entire line if no first column),
+     * or 0 to split into multiple lines as much as possible.
+     * Setting this collects larger chunks to one line across markup
+     * but will not split too long lines that have no markup.
+     */
+    private final int secondColumnLength;
+
+    private ExpressionFormatter(int firstColumnLength, int secondColumnLength) {
+        this.firstColumnLength = firstColumnLength;
+        this.secondColumnLength = secondColumnLength;
     }
 
     public String format(String parenthesisExpression) {
         StringBuilder b = new StringBuilder();
         format(parenthesisExpression, 0, b);
+        while (b.length() > 0 && Character.isWhitespace(b.charAt(b.length() - 1)))
+            b.setLength(b.length() - 1);
         return b.toString();
     }
 
@@ -34,8 +45,14 @@ public class ExpressionFormatter {
         Markup next = Markup.next(expression);
 
         appendIndent( ! next.isClose() || next.position() > 0 ? indent : indent - 2, b);
+
+        int endOfBalancedChunk = endOfBalancedChunk(expression, Math.max(0, secondColumnLength - indent));
         if (next.isEmpty()) {
             b.append(expression);
+        }
+        else if (endOfBalancedChunk > 0) {
+            b.append(expression, 0, endOfBalancedChunk + 1).append("\n");
+            format(expression.substring(endOfBalancedChunk + 1), indent, b);
         }
         else if (next.isComma()) {
             b.append(expression, 0, next.position() + 1).append("\n");
@@ -55,8 +72,25 @@ public class ExpressionFormatter {
         }
     }
 
+    /** Returns the position of the end of a balanced chunk of at most the given size, or 0 if there is no such chunk */
+    private int endOfBalancedChunk(String expression, int maxSize) {
+        int chunkSize = 0;
+        int i = 0;
+        int nesting = 0;
+        while (i < maxSize && i < expression.length()) {
+            if (expression.charAt(i) == '\t') return chunkSize;
+            if (expression.charAt(i) == '(') nesting++;
+            if (expression.charAt(i) == ')') nesting--;
+            if (nesting < 0) return chunkSize;
+            if (nesting == 0 && ( expression.charAt(i)==')' || expression.charAt(i)==','))
+                chunkSize = i;
+            i++;
+        }
+        return chunkSize;
+    }
+
     private String appendFirstColumn(String expression, StringBuilder b) {
-        if (firstColumnSize == 0) return expression;
+        if (firstColumnLength == 0) return expression;
 
         while (expression.charAt(0) == ' ')
             expression = expression.substring(1);
@@ -65,11 +99,11 @@ public class ExpressionFormatter {
             int tab2 = expression.indexOf('\t', 1);
             if (tab2 >= 0) {
                 String firstColumn = expression.substring(1, tab2);
-                b.append(asSize(firstColumnSize, firstColumn)).append(" ");
+                b.append(asSize(firstColumnLength, firstColumn)).append(" ");
                 return expression.substring(tab2 + 1);
             }
         }
-        appendIndent(firstColumnSize + 1, b);
+        appendIndent(firstColumnLength + 1, b);
         return expression;
     }
 
@@ -86,11 +120,15 @@ public class ExpressionFormatter {
 
     /** Convenience method creating a formatter and using it to format the given expression */
     public static String on(String parenthesisExpression) {
-        return new ExpressionFormatter(0).format(parenthesisExpression);
+        return new ExpressionFormatter(0, 80).format(parenthesisExpression);
     }
 
-    public static ExpressionFormatter inTwoColumnMode(int firstColumnSize) {
-        return new ExpressionFormatter(firstColumnSize);
+    public static ExpressionFormatter withLineLength(int maxLineLength) {
+        return new ExpressionFormatter(0, maxLineLength);
+    }
+
+    public static ExpressionFormatter inTwoColumnMode(int firstColumnSize, int secondColumnSize) {
+        return new ExpressionFormatter(firstColumnSize, secondColumnSize);
     }
 
     /** Contains the next position of each kind of markup, or Integer.MAX_VALUE if not present */

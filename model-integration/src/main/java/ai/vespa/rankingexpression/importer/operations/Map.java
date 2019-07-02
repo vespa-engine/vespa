@@ -41,7 +41,7 @@ public class Map extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "\t" + lazyGetType() + "\tMap(" + inputs().get(0).toFullString() + ", " + operator + ")";
+        return "\t" + lazyGetType() + ":\tMap(" + inputs().get(0).toFullString() + ", " + operator + ")";
     }
 
 }

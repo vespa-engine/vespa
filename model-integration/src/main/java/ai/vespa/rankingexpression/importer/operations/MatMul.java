@@ -80,7 +80,7 @@ public class MatMul extends IntermediateOperation {
 
         throw new IllegalArgumentException("Expected 2 dimensions in the " + inputDescription + " to " + this +
                                            " but got just " + dimensions + " from\n" +
-                                           ExpressionFormatter.inTwoColumnMode(70).format(supplier.toFullString()));
+                                           ExpressionFormatter.inTwoColumnMode(70, 50).format(supplier.toFullString()));
     }
 
     @Override
