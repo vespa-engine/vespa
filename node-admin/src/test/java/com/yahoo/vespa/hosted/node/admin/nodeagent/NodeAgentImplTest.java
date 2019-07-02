@@ -9,12 +9,8 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -28,16 +24,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,7 +64,6 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final Metrics metrics = new Metrics();
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
     private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final CredentialsMaintainer credentialsMaintainer = mock(CredentialsMaintainer.class);
@@ -635,81 +622,6 @@ public class NodeAgentImplTest {
         verify(dockerOperations, times(2)).createContainer(eq(context), any(), any());
         verify(dockerOperations, times(2)).startContainer(eq(context));
         verify(nodeAgent, times(1)).resumeNodeIfNeeded(any());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testGetRelevantMetrics() throws Exception {
-        String json = Files.readString(Paths.get("src/test/resources/docker.stats.json"));
-        ContainerStats stats2 = ContainerStats.fromJson(json);
-        ContainerStats stats1 = ContainerStats.fromJson(json.replace("\"cpu_stats\"", "\"cpu_stats2\"").replace("\"precpu_stats\"", "\"cpu_stats\""));
-
-        NodeOwner owner = new NodeOwner("tester", "testapp", "testinstance");
-        NodeMembership membership = new NodeMembership("clustType", "clustId", "grp", 3, false);
-        final NodeSpec node = nodeBuilder
-                .wantedDockerImage(dockerImage)
-                .currentDockerImage(dockerImage)
-                .state(NodeState.active)
-                .currentVespaVersion(vespaVersion)
-                .owner(owner)
-                .membership(membership)
-                .memoryGb(2)
-                .allowedToBeDown(true)
-                .parentHostname("parent.host.name.yahoo.com")
-                .build();
-
-        NodeAgentContext context = createContext(node);
-        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
-
-        when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(39625000000L));
-        when(dockerOperations.getContainerStats(eq(context)))
-                .thenReturn(Optional.of(stats1))
-                .thenReturn(Optional.of(stats2));
-
-        List<String> expectedMetrics = Stream.of(0, 1)
-                .map(i -> Paths.get("src/test/resources/expected.container.system.metrics." + i + ".txt"))
-                .map(path -> uncheck(() -> Files.readString(path)))
-                .map(content -> content.replaceAll("\\s", "").replaceAll("\\n", ""))
-                .collect(Collectors.toList());
-        int[] counter = {0};
-
-        doAnswer(invocation -> {
-            NodeAgentContext calledContainerName = (NodeAgentContext) invocation.getArguments()[0];
-            long calledTimeout = (long) invocation.getArguments()[1];
-            String[] calledCommand = new String[invocation.getArguments().length - 2];
-            System.arraycopy(invocation.getArguments(), 2, calledCommand, 0, calledCommand.length);
-            calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1]
-                    .replaceAll("\"timestamp\":\\d+", "\"timestamp\":0")
-                    .replaceAll("([0-9]+\\.[0-9]{1,3})([0-9]*)", "$1"); // Only keep the first 3 decimals
-
-            assertEquals(context, calledContainerName);
-            assertEquals(5L, calledTimeout);
-            String[] expectedCommand = {"vespa-rpc-invoke", "-t", "2", "tcp/localhost:19095",
-                    "setExtraMetrics", expectedMetrics.get(counter[0])};
-            assertArrayEquals("Ivocation #" + counter[0], expectedCommand, calledCommand);
-            counter[0]++;
-            return null;
-        }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), any());
-
-        nodeAgent.updateContainerNodeMetrics();
-        nodeAgent.updateContainerNodeMetrics();
-    }
-
-    @Test
-    public void testGetRelevantMetricsForReadyNode() {
-        final NodeSpec node = nodeBuilder
-                .state(NodeState.ready)
-                .build();
-
-        NodeAgentContext context = createContext(node);
-        NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
-
-        when(dockerOperations.getContainerStats(eq(context))).thenReturn(Optional.empty());
-
-        nodeAgent.updateContainerNodeMetrics();
-
-        assertEquals(List.of(), metrics.getDefaultMetrics());
     }
 
     @Test
