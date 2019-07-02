@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -21,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
@@ -224,14 +222,14 @@ public class Application {
     /** Returns the default global endpoints for this in given system - for a given endpoint ID */
     public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
         if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.defaultGlobal(id, endpointId, system);
+        return EndpointList.create(id, endpointId, system);
     }
 
     /** Returns the default global endpoints for this in given system */
     public EndpointList endpointsIn(SystemName system) {
         if (rotations.isEmpty()) return EndpointList.EMPTY;
         final var endpointStream = rotations.stream()
-                .flatMap(rotation -> EndpointList.defaultGlobal(id, rotation.endpointId(), system).asList().stream());
+                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
         return EndpointList.of(endpointStream);
     }
 

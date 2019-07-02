@@ -67,7 +67,7 @@ public class EndpointList {
     }
 
     /** Returns the default global endpoints in given system. Default endpoints are served by a pre-provisioned routing layer */
-    public static EndpointList defaultGlobal(ApplicationId application, EndpointId endpointId, SystemName system) {
+    public static EndpointList create(ApplicationId application, EndpointId endpointId, SystemName system) {
         switch (system) {
             case cd:
             case main:
