@@ -1,10 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringArray;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.TargetWatcher;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.JRTMethods;
+import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
@@ -12,6 +23,9 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 
@@ -28,6 +42,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     private final Spec spec;
     private final Supervisor supervisor;
     private final ProxyServer proxyServer;
+    private final ExecutorService rpcExecutor = Executors.newFixedThreadPool(8);
 
     ConfigProxyRpcServer(ProxyServer proxyServer, Supervisor supervisor, Spec spec) {
         this.proxyServer = proxyServer;
@@ -50,6 +65,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     void shutdown() {
         supervisor.transport().shutdown();
+        try {
+            rpcExecutor.shutdownNow();
+            rpcExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     Spec getSpec() {
@@ -109,12 +130,16 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      * @param req a Request
      */
     private void getConfigV3(Request req) {
-        log.log(LogLevel.SPAM, () -> "getConfigV3");
-        JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
-        if (isProtocolVersionSupported(request)) {
-            preHandle(req);
-            getConfigImpl(request);
-        }
+        dispatchRpcRequest(req, () -> {
+            JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
+            if (isProtocolVersionSupported(request)) {
+                proxyServer.getStatistics().incRpcRequests();
+                req.target().addWatcher(this);
+                getConfigImpl(request);
+                return;
+            }
+            req.returnRequest();
+        });
     }
 
     /**
@@ -122,8 +147,11 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      *
      * @param req a Request
      */
-    void ping(Request req) {
-        req.returnValues().add(new Int32Value(0));
+    private void ping(Request req) {
+        dispatchRpcRequest(req, () -> {
+            req.returnValues().add(new Int32Value(0));
+            req.returnRequest();
+        });
     }
 
     /**
@@ -131,80 +159,119 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
      *
      * @param req a Request
      */
-    void printStatistics(Request req) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\nDelayed responses queue size: ");
-        sb.append(proxyServer.delayedResponses.size());
-        sb.append("\nContents: ");
-        for (DelayedResponse delayed : proxyServer.delayedResponses.responses()) {
-            sb.append(delayed.getRequest().toString()).append("\n");
-        }
+    private void printStatistics(Request req) {
+        dispatchRpcRequest(req, () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\nDelayed responses queue size: ");
+            sb.append(proxyServer.delayedResponses.size());
+            sb.append("\nContents: ");
+            for (DelayedResponse delayed : proxyServer.delayedResponses.responses()) {
+                sb.append(delayed.getRequest().toString()).append("\n");
+            }
 
-        req.returnValues().add(new StringValue(sb.toString()));
+            req.returnValues().add(new StringValue(sb.toString()));
+            req.returnRequest();
+        });
     }
 
-    void listCachedConfig(Request req) {
-        listCachedConfig(req, false);
+    private void listCachedConfig(Request req) {
+        dispatchRpcRequest(req, () -> listCachedConfig(req, false));
     }
 
-    void listCachedConfigFull(Request req) {
-        listCachedConfig(req, true);
+    private void listCachedConfigFull(Request req) {
+        dispatchRpcRequest(req, () -> listCachedConfig(req, true));
     }
 
-    void listSourceConnections(Request req) {
-        String[] ret = new String[2];
-        ret[0] = "Current source: " + proxyServer.getActiveSourceConnection();
-        ret[1] = "All sources:\n" + printSourceConnections();
-        req.returnValues().add(new StringArray(ret));
+    private void listSourceConnections(Request req) {
+        dispatchRpcRequest(req, () -> {
+            String[] ret = new String[2];
+            ret[0] = "Current source: " + proxyServer.getActiveSourceConnection();
+            ret[1] = "All sources:\n" + printSourceConnections();
+            req.returnValues().add(new StringArray(ret));
+            req.returnRequest();
+        });
     }
 
-    void updateSources(Request req) {
-        String sources = req.parameters().get(0).asString();
-        String ret;
-        System.out.println(proxyServer.getMode());
-        if (proxyServer.getMode().requiresConfigSource()) {
-            proxyServer.updateSourceConnections(Arrays.asList(sources.split(",")));
-            ret = "Updated config sources to: " + sources;
-        } else {
-            ret = "Cannot update sources when in '" + proxyServer.getMode().name() + "' mode";
-        }
-        req.returnValues().add(new StringValue(ret));
+    private void updateSources(Request req) {
+        dispatchRpcRequest(req, () -> {
+            String sources = req.parameters().get(0).asString();
+            String ret;
+            System.out.println(proxyServer.getMode());
+            if (proxyServer.getMode().requiresConfigSource()) {
+                proxyServer.updateSourceConnections(Arrays.asList(sources.split(",")));
+                ret = "Updated config sources to: " + sources;
+            } else {
+                ret = "Cannot update sources when in '" + proxyServer.getMode().name() + "' mode";
+            }
+            req.returnValues().add(new StringValue(ret));
+            req.returnRequest();
+        });
     }
 
-    void invalidateCache(Request req) {
-        proxyServer.getMemoryCache().clear();
-        String[] s = new String[2];
-        s[0] = "0";
-        s[1] = "success";
-        req.returnValues().add(new StringArray(s));
-    }
-
-    void setMode(Request req) {
-        String suppliedMode = req.parameters().get(0).asString();
-        log.log(LogLevel.DEBUG, () -> "Supplied mode=" + suppliedMode);
-        String[] s = new String[2];
-        if (Mode.validModeName(suppliedMode.toLowerCase())) {
-            proxyServer.setMode(suppliedMode);
+    private void invalidateCache(Request req) {
+        dispatchRpcRequest(req, () -> {
+            proxyServer.getMemoryCache().clear();
+            String[] s = new String[2];
             s[0] = "0";
             s[1] = "success";
-        } else {
-            s[0] = "1";
-            s[1] = "Could not set mode to '" + suppliedMode + "'. Legal modes are '" + Mode.modes() + "'";
-        }
-
-        req.returnValues().add(new StringArray(s));
+            req.returnValues().add(new StringArray(s));
+            req.returnRequest();
+        });
     }
 
-    void getMode(Request req) {
-        req.returnValues().add(new StringValue(proxyServer.getMode().name()));
+    private void setMode(Request req) {
+        dispatchRpcRequest(req, () -> {
+            String suppliedMode = req.parameters().get(0).asString();
+            log.log(LogLevel.DEBUG, () -> "Supplied mode=" + suppliedMode);
+            String[] s = new String[2];
+            if (Mode.validModeName(suppliedMode.toLowerCase())) {
+                proxyServer.setMode(suppliedMode);
+                s[0] = "0";
+                s[1] = "success";
+            } else {
+                s[0] = "1";
+                s[1] = "Could not set mode to '" + suppliedMode + "'. Legal modes are '" + Mode.modes() + "'";
+            }
+
+            req.returnValues().add(new StringArray(s));
+            req.returnRequest();
+        });
     }
 
-    void dumpCache(Request req) {
-        final MemoryCache memoryCache = proxyServer.getMemoryCache();
-        req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
+    private void getMode(Request req) {
+        dispatchRpcRequest(req, () -> {
+            req.returnValues().add(new StringValue(proxyServer.getMode().name()));
+            req.returnRequest();
+        });
+    }
+
+    private void dumpCache(Request req) {
+        dispatchRpcRequest(req, () -> {
+            final MemoryCache memoryCache = proxyServer.getMemoryCache();
+            req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
+            req.returnRequest();
+        });
     }
 
     //----------------------------------------------------
+
+    private void dispatchRpcRequest(Request request, Runnable handler) {
+        request.detach();
+        log.log(LogLevel.SPAM, () -> String.format("Dispatching RPC request %s", requestLogId(request)));
+        rpcExecutor.execute(() -> {
+            try {
+                log.log(LogLevel.SPAM, () -> String.format("Executing RPC request %s.", requestLogId(request)));
+                handler.run();
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING,
+                        String.format("Exception thrown during execution of RPC request %s: %s", requestLogId(request), e.getMessage()), e);
+            }
+        });
+    }
+
+    private String requestLogId(Request request) {
+        return String.format("%s/%08X", request.methodName(), request.hashCode());
+    }
 
     private boolean isProtocolVersionSupported(JRTServerConfigRequest request) {
         Set<Long> supportedProtocolVersions = JRTConfigRequestFactory.supportedProtocolVersions();
@@ -217,12 +284,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
             request.addErrorResponse(ErrorCode.ILLEGAL_PROTOCOL_VERSION, message);
         }
         return false;
-    }
-
-    private void preHandle(Request req) {
-        proxyServer.getStatistics().incRpcRequests();
-        req.detach();
-        req.target().addWatcher(this);
     }
 
     /**
@@ -262,7 +323,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         return sb.toString();
     }
 
-    final void listCachedConfig(Request req, boolean full) {
+    private void listCachedConfig(Request req, boolean full) {
         String[] ret;
         MemoryCache cache = proxyServer.getMemoryCache();
         ret = new String[cache.size()];
@@ -287,6 +348,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         }
         Arrays.sort(ret);
         req.returnValues().add(new StringArray(ret));
+        req.returnRequest();
     }
 
     /**
