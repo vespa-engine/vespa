@@ -24,7 +24,7 @@ public class ByteField extends DocsumField {
         if (value == EMPTY_VALUE) {
             return NanNumber.NaN;
         } else {
-            return Byte.valueOf(value);
+            return value;
         }
     }
 
