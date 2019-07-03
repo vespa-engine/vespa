@@ -5,15 +5,14 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
-import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
+import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
@@ -59,7 +58,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
-                                 JobControl jobControl, Metric metric, Chef chefClient,
+                                 JobControl jobControl, Metric metric,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
                                  ContactRetriever contactRetriever,
@@ -71,7 +70,7 @@ public class ControllerMaintenance extends AbstractComponent {
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
         deploymentIssueReporter = new DeploymentIssueReporter(controller, deploymentIssues, maintenanceInterval, jobControl);
-        metricsReporter = new MetricsReporter(controller, metric, chefClient, jobControl, controller.system());
+        metricsReporter = new MetricsReporter(controller, metric, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, Duration.ofMinutes(1), jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(1), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
