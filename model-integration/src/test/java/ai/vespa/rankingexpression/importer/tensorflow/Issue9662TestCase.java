@@ -20,9 +20,9 @@ public class Issue9662TestCase {
         Assert.assertEquals("Should have no skipped outputs",
                             0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ImportedMlFunction output = signature.outputFunction("y", "y");
+        ImportedMlFunction output = signature.outputFunction("output", "output");
         assertNotNull(output);
-        model.assertEqualResultSum("input", "dnn/outputs/add", 0.00001);
+        model.assertEqualResultSum("input_embedding_user_guid", "dense_out/MatMul", 0.00001);
     }
 
 }

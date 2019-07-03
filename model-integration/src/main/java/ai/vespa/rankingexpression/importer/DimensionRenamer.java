@@ -2,12 +2,17 @@
 package ai.vespa.rankingexpression.importer;
 
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
+import ai.vespa.rankingexpression.importer.operations.MatMul;
+import ai.vespa.rankingexpression.importer.operations.Rename;
 import com.yahoo.collections.ListMap;
 import com.yahoo.lang.MutableInteger;
+import com.yahoo.text.ExpressionFormatter;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +33,22 @@ public class DimensionRenamer {
     private static final Logger log = Logger.getLogger(DimensionRenamer.class.getName());
 
     private final String dimensionPrefix;
+
+    /** The graph we are renaming the dimensions of */
+    private final IntermediateGraph graph;
+
     private final ListMap<String, Integer> variables = new ListMap<>();
     private final ListMap<Arc, Constraint> constraints = new ListMap<>();
 
     /** The solution to this, or null if no solution is found (yet) */
     private Map<String, Integer> renames = null;
 
-    public DimensionRenamer() {
-        this("d");
+    public DimensionRenamer(IntermediateGraph graph) {
+        this(graph, "d");
     }
 
-    public DimensionRenamer(String dimensionPrefix) {
+    public DimensionRenamer(IntermediateGraph graph, String dimensionPrefix) {
+        this.graph = graph;
         this.dimensionPrefix = dimensionPrefix;
     }
 
@@ -84,11 +94,31 @@ public class DimensionRenamer {
      * @return the solution in the form of the renames to perform
      */
     private Map<String, Integer> solve(int maxIterations) {
-        variables.freeze();
+        // variables.freeze();
         Map<String, Integer> renames = new HashMap<>();
 
         // Todo: evaluate possible improved efficiency by using a heuristic such as min-conflicts
         boolean solved = trySolve(variables, constraints, maxIterations, renames);
+        if ( ! solved) {
+            IntermediateOperation operation = graph.operations().get("dense_out/MatMul");
+            if (operation != null && operation instanceof MatMul) {
+                IntermediateOperation arg0 = operation.inputs().get(0);
+                List<IntermediateOperation> inputs = new ArrayList<>(operation.inputs());
+                inputs.set(0, new Rename(arg0.modelName(), "Dot_ExpandDims_1", "renamed_0", arg0));
+                IntermediateOperation newOperation = operation.withInputs(inputs);
+                graph.put("dense_out/MatMul", newOperation);
+
+                for (Arc key : new HashSet<>(constraints.keySet())) {
+                    if (key.operation == operation)
+                        constraints.removeAll(key);
+                }
+                addDimension("renamed_0");
+                newOperation.addDimensionNameConstraints(this);
+
+                renames.clear();
+                solved = trySolve(variables, constraints, maxIterations, renames);
+            }
+        }
         if ( ! solved) {
             renames.clear();
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();

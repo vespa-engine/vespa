@@ -9,7 +9,7 @@ public class DimensionRenamerTest {
 
     @Test
     public void testMnistRenaming() {
-        DimensionRenamer renamer = new DimensionRenamer();
+        DimensionRenamer renamer = new DimensionRenamer(new IntermediateGraph("test"));
 
         renamer.addDimension("first_dimension_of_x");
         renamer.addDimension("second_dimension_of_x");

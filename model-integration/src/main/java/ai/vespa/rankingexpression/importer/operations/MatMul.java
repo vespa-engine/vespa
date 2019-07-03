@@ -81,6 +81,11 @@ public class MatMul extends IntermediateOperation {
     }
 
     @Override
+    public MatMul withInputs(List<IntermediateOperation> inputs) {
+        return new MatMul(modelName(), name(), inputs);
+    }
+
+    @Override
     public String toFullString() {
         return "\t" + lazyGetType() + ":\tMatMul(" + inputs().get(0).toFullString() + ", " + inputs().get(1).toFullString() + ")";
     }

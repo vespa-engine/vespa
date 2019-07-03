@@ -227,7 +227,7 @@ public abstract class ModelImporter implements MlModelImporter {
      * for fast model weight updates.
      */
     private static void logVariableTypes(IntermediateGraph graph) {
-        for (IntermediateOperation operation : graph.operations()) {
+        for (IntermediateOperation operation : graph.operations().values()) {
             if ( ! (operation instanceof Constant)) continue;
             if ( ! operation.type().isPresent()) continue; // will not happen
             log.info("Importing model variable " + operation.name() + " as " + operation.vespaName() +

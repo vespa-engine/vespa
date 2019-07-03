@@ -3,6 +3,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
+import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -57,6 +58,8 @@ public abstract class IntermediateOperation {
 
     protected abstract OrderedTensorType lazyGetType();
     protected abstract TensorFunction lazyGetFunction();
+
+    public String modelName() { return modelName; }
 
     /** Returns the Vespa tensor type of this operation if it exists */
     public Optional<OrderedTensorType> type() {
@@ -189,6 +192,16 @@ public abstract class IntermediateOperation {
                                                 .collect(Collectors.toList()));
     }
 
+    public IntermediateOperation withInputs(List<IntermediateOperation> inputs) {
+        throw new UnsupportedOperationException();
+    }
+
+    public String toFullString() { return toString(); }
+
+    String asString(Optional<OrderedTensorType> type) {
+        return type.map(t -> t.toString()).orElse("(unknown)");
+    }
+
     /**
      * A method signature input and output has the form name:index.
      * This returns the name part without the index.
@@ -215,12 +228,6 @@ public abstract class IntermediateOperation {
         Optional<Value> get(String key);
         Optional<Value> get(String key, OrderedTensorType type);
         Optional<List<Value>> getList(String key);
-    }
-
-    public String toFullString() { return toString(); }
-
-    String asString(Optional<OrderedTensorType> type) {
-        return type.map(t -> t.toString()).orElse("(unknown)");
     }
 
 }
