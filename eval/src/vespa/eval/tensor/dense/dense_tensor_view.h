@@ -22,9 +22,9 @@ public:
         : _typeRef(type_in),
           _cellsRef(cells_in)
     {}
-    DenseTensorView(const eval::ValueType &type_in, CellType cell_type)
+    explicit DenseTensorView(const eval::ValueType &type_in)
         : _typeRef(type_in),
-          _cellsRef(cell_type)
+          _cellsRef()
     {}
 
     const eval::ValueType &fast_type() const { return _typeRef; }

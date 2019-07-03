@@ -33,14 +33,14 @@ template<> struct OutputCellType<float, float> {
 
 struct TypedCells {
     const void *data;
-    const CellType type;
+    CellType type;
     size_t size:56;
 
     explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), type(CellType::DOUBLE), size(cells.size()) {}
     explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), type(CellType::FLOAT), size(cells.size()) {}
 
+    TypedCells() : data(nullptr), type(CellType::DOUBLE), size(0) {}
     TypedCells(const void *dp, CellType ct, size_t sz) : data(dp), type(ct), size(sz) {}
-    TypedCells(CellType ct) : data(nullptr), type(ct), size(0) {}
 
     template <typename T> bool check_type() const { return vespalib::eval::check_cell_type<T>(type); }
     template <typename T> ConstArrayRef<T> typify() const {
@@ -64,7 +64,7 @@ struct TypedCells {
     }
 
     TypedCells & operator= (const TypedCells &other) {
-        assert(type == other.type);
+        type = other.type;
         data = other.data;
         size = other.size;
         return *this;
