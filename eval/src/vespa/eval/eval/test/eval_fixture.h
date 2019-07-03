@@ -18,32 +18,24 @@ class EvalFixture
 public:
     struct Param {
         TensorSpec value; // actual parameter value
-        vespalib::string type;  // pre-defined type (could be abstract)
         bool is_mutable; // input will be mutable (if allow_mutable is true)
-        Param(TensorSpec value_in, const vespalib::string &type_in, bool is_mutable_in)
-            : value(std::move(value_in)), type(type_in), is_mutable(is_mutable_in) {}
+        Param(TensorSpec value_in, bool is_mutable_in)
+            : value(std::move(value_in)), is_mutable(is_mutable_in) {}
         ~Param() {}
     };
 
     struct ParamRepo {
         std::map<vespalib::string,Param> map;
         ParamRepo() : map() {}
-        ParamRepo &add(const vespalib::string &name, TensorSpec value_in, const vespalib::string &type_in, bool is_mutable_in) {
-            value_in.override_type(type_in);
-            map.insert_or_assign(name, Param(std::move(value_in), type_in, is_mutable_in));
+        ParamRepo &add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in) {
+            map.insert_or_assign(name, Param(std::move(value_in), is_mutable_in));
             return *this;
         }
-        ParamRepo &add(const vespalib::string &name, TensorSpec value, const vespalib::string &type) {
-            return add(name, value, type, false);
-        }
-        ParamRepo &add_mutable(const vespalib::string &name, TensorSpec value, const vespalib::string &type) {
-            return add(name, value, type, true);
-        }
         ParamRepo &add(const vespalib::string &name, const TensorSpec &value) {
-            return add(name, value, value.type(), false);
+            return add(name, value, false);
         }
         ParamRepo &add_mutable(const vespalib::string &name, const TensorSpec &value) {
-            return add(name, value, value.type(), true);
+            return add(name, value, true);
         }
         ~ParamRepo() {}
     };

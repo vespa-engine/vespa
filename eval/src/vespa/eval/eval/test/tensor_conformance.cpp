@@ -301,10 +301,13 @@ struct TestContext {
         TEST_DO(verify_create_type("double"));
         TEST_DO(verify_create_type("tensor(x{})"));
         TEST_DO(verify_create_type("tensor(x{},y{})"));
+        TEST_DO(verify_create_type("tensor<float>(x{},y{})"));
         TEST_DO(verify_create_type("tensor(x[5])"));
         TEST_DO(verify_create_type("tensor(x[5],y[10])"));
+        TEST_DO(verify_create_type("tensor<float>(x[5],y[10])"));
         TEST_DO(verify_create_type("tensor(x{},y[10])"));
-        TEST_DO(verify_create_type("tensor(x[5],y{})"));
+        TEST_DO(verify_create_type("tensor(x[5],y{})")); 
+        TEST_DO(verify_create_type("tensor<float>(x[5],y{})"));
     }
 
     //-------------------------------------------------------------------------
@@ -318,11 +321,14 @@ struct TestContext {
             {x(3)},
             {x(3),y(5)},
             {x(3),y(5),z(7)},
+            float_cells({x(3),y(5),z(7)}),
             {x({"a","b","c"})},
             {x({"a","b","c"}),y({"foo","bar"})},
             {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+            float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
             {x(3),y({"foo", "bar"}),z(7)},
-            {x({"a","b","c"}),y(5),z({"i","j","k","l"})}
+            {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
+            float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
         };
         for (const Layout &layout: layouts) {
             TensorSpec input = spec(layout, seq);
@@ -363,11 +369,14 @@ struct TestContext {
             {x(3)},
             {x(3),y(5)},
             {x(3),y(5),z(7)},
+            float_cells({x(3),y(5),z(7)}),
             {x({"a","b","c"})},
             {x({"a","b","c"}),y({"foo","bar"})},
             {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
+            float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
             {x(3),y({"foo", "bar"}),z(7)},
-            {x({"a","b","c"}),y(5),z({"i","j","k","l"})}
+            {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
+            float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
         };
         for (const Layout &layout: layouts) {
             TEST_DO(verify_result(eval.eval(engine, spec(layout, seq)), spec(layout, OpSeq(seq, ref_op))));
@@ -612,20 +621,29 @@ struct TestContext {
 
     void test_apply_op(const Eval &eval, join_fun_t op, const Sequence &seq) {
         std::vector<Layout> layouts = {
-            {},                                    {},
-            {x(5)},                                {x(5)},
-            {x(5)},                                {y(5)},
-            {x(5)},                                {x(5),y(5)},
-            {y(3)},                                {x(2),z(3)},
-            {x(3),y(5)},                           {y(5),z(7)},
-            {x({"a","b","c"})},                    {x({"a","b","c"})},
-            {x({"a","b","c"})},                    {x({"a","b"})},
-            {x({"a","b","c"})},                    {y({"foo","bar","baz"})},
-            {x({"a","b","c"})},                    {x({"a","b","c"}),y({"foo","bar","baz"})},
-            {x({"a","b"}),y({"foo","bar","baz"})}, {x({"a","b","c"}),y({"foo","bar"})},
-            {x({"a","b"}),y({"foo","bar","baz"})}, {y({"foo","bar"}),z({"i","j","k","l"})},
-            {x(3),y({"foo", "bar"})},              {y({"foo", "bar"}),z(7)},
-            {x({"a","b","c"}),y(5)},               {y(5),z({"i","j","k","l"})}
+            {},                                                 {},
+            {x(5)},                                             {x(5)},
+            {x(5)},                                             {y(5)},
+            {x(5)},                                             {x(5),y(5)},
+            {y(3)},                                             {x(2),z(3)},
+            {x(3),y(5)},                                        {y(5),z(7)},
+            float_cells({x(3),y(5)}),                           {y(5),z(7)},
+            {x(3),y(5)},                                        float_cells({y(5),z(7)}),
+            float_cells({x(3),y(5)}),                           float_cells({y(5),z(7)}),
+            {x({"a","b","c"})},                                 {x({"a","b","c"})},
+            {x({"a","b","c"})},                                 {x({"a","b"})},
+            {x({"a","b","c"})},                                 {y({"foo","bar","baz"})},
+            {x({"a","b","c"})},                                 {x({"a","b","c"}),y({"foo","bar","baz"})},
+            {x({"a","b"}),y({"foo","bar","baz"})},              {x({"a","b","c"}),y({"foo","bar"})},
+            {x({"a","b"}),y({"foo","bar","baz"})},              {y({"foo","bar"}),z({"i","j","k","l"})},
+            float_cells({x({"a","b"}),y({"foo","bar","baz"})}), {y({"foo","bar"}),z({"i","j","k","l"})},
+            {x({"a","b"}),y({"foo","bar","baz"})},              float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
+            float_cells({x({"a","b"}),y({"foo","bar","baz"})}), float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
+            {x(3),y({"foo", "bar"})},                           {y({"foo", "bar"}),z(7)},
+            {x({"a","b","c"}),y(5)},                            {y(5),z({"i","j","k","l"})},
+            float_cells({x({"a","b","c"}),y(5)}),               {y(5),z({"i","j","k","l"})},
+            {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
+            float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})})
         };
         ASSERT_TRUE((layouts.size() % 2) == 0);
         for (size_t i = 0; i < layouts.size(); i += 2) {
@@ -681,10 +699,20 @@ struct TestContext {
         TEST_DO(verify_result(safe(eval).eval(engine, lhs, rhs), spec(expect)));
     }
 
+    void test_dot_product(double expect,
+                          const Layout &lhs, const Seq &lhs_seq,
+                          const Layout &rhs, const Seq &rhs_seq)
+    {
+        TEST_DO(test_dot_product(expect, spec(lhs, lhs_seq), spec(rhs, rhs_seq)));
+        TEST_DO(test_dot_product(expect, spec(float_cells(lhs), lhs_seq), spec(rhs, rhs_seq)));
+        TEST_DO(test_dot_product(expect, spec(lhs, lhs_seq), spec(float_cells(rhs), rhs_seq)));
+        TEST_DO(test_dot_product(expect, spec(float_cells(lhs), lhs_seq), spec(float_cells(rhs), rhs_seq)));
+    }
+
     void test_dot_product() {
         TEST_DO(test_dot_product(((2 * 7) + (3 * 11) + (5 * 13)),
-                                 spec(x(3), Seq({ 2, 3, 5 })),
-                                 spec(x(3), Seq({ 7, 11, 13 }))));
+                                 {x(3)}, Seq({ 2, 3, 5 }),
+                                 {x(3)}, Seq({ 7, 11, 13 })));
     }
 
     //-------------------------------------------------------------------------
@@ -714,6 +742,16 @@ struct TestContext {
                             spec({x(2),y(2),z(3)}, Seq({1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 5.0, 5.0, 5.0}))));
         TEST_DO(test_concat(spec(y(2), Seq({1.0, 2.0})), spec(y(2), Seq({4.0, 5.0})), "x",
                             spec({x(2), y(2)}, Seq({1.0, 2.0, 4.0, 5.0}))));
+
+        TEST_DO(test_concat(spec(float_cells({x(1)}), Seq({10.0})), spec(20.0), "x", spec(float_cells({x(2)}), Seq({10.0, 20.0}))));
+        TEST_DO(test_concat(spec(10.0), spec(float_cells({x(1)}), Seq({20.0})), "x", spec(float_cells({x(2)}), Seq({10.0, 20.0}))));
+
+        TEST_DO(test_concat(spec(float_cells({x(3)}), Seq({1.0, 2.0, 3.0})), spec(x(2), Seq({4.0, 5.0})), "x",
+                            spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0}))));
+        TEST_DO(test_concat(spec(x(3), Seq({1.0, 2.0, 3.0})), spec(float_cells({x(2)}), Seq({4.0, 5.0})), "x",
+                            spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0}))));
+        TEST_DO(test_concat(spec(float_cells({x(3)}), Seq({1.0, 2.0, 3.0})), spec(float_cells({x(2)}), Seq({4.0, 5.0})), "x",
+                            spec(float_cells({x(5)}), Seq({1.0, 2.0, 3.0, 4.0, 5.0}))));
     }
 
     //-------------------------------------------------------------------------
@@ -732,6 +770,7 @@ struct TestContext {
     void test_rename() {
         TEST_DO(test_rename("rename(a,x,y)", spec(x(5), N()), {"x"}, {"y"}, spec(y(5), N())));
         TEST_DO(test_rename("rename(a,y,x)", spec({y(5),z(5)}, N()), {"y"}, {"x"}, spec({x(5),z(5)}, N())));
+        TEST_DO(test_rename("rename(a,y,x)", spec(float_cells({y(5),z(5)}), N()), {"y"}, {"x"}, spec(float_cells({x(5),z(5)}), N())));
         TEST_DO(test_rename("rename(a,z,x)", spec({y(5),z(5)}, N()), {"z"}, {"x"}, spec({y(5),x(5)}, N())));
         TEST_DO(test_rename("rename(a,x,z)", spec({x(5),y(5)}, N()), {"x"}, {"z"}, spec({z(5),y(5)}, N())));
         TEST_DO(test_rename("rename(a,y,z)", spec({x(5),y(5)}, N()), {"y"}, {"z"}, spec({x(5),z(5)}, N())));
@@ -746,6 +785,7 @@ struct TestContext {
 
     void test_tensor_lambda() {
         TEST_DO(test_tensor_lambda("tensor(x[10])(x+1)", spec(x(10), N())));
+        TEST_DO(test_tensor_lambda("tensor<float>(x[10])(x+1)", spec(float_cells({x(10)}), N())));
         TEST_DO(test_tensor_lambda("tensor(x[5],y[4])(x*4+(y+1))", spec({x(5),y(4)}, N())));
         TEST_DO(test_tensor_lambda("tensor(x[5],y[4])(x==y)", spec({x(5),y(4)},
                                 Seq({           1.0, 0.0, 0.0, 0.0,
@@ -818,11 +858,14 @@ struct TestContext {
         TEST_DO(verify_encode_decode(spec({x(3)}, N())));
         TEST_DO(verify_encode_decode(spec({x(3),y(5)}, N())));
         TEST_DO(verify_encode_decode(spec({x(3),y(5),z(7)}, N())));
+        TEST_DO(verify_encode_decode(spec(float_cells({x(3),y(5),z(7)}), N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"})}, N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"})}, N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}, N())));
+        TEST_DO(verify_encode_decode(spec(float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}), N())));
         TEST_DO(verify_encode_decode(spec({x(3),y({"foo", "bar"}),z(7)}, N())));
         TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y(5),z({"i","j","k","l"})}, N())));
+        TEST_DO(verify_encode_decode(spec(float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})}), N())));
     }
 
     //-------------------------------------------------------------------------
