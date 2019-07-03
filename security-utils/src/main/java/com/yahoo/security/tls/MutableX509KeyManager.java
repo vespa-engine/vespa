@@ -20,25 +20,34 @@ import java.util.WeakHashMap;
  */
 public class MutableX509KeyManager extends X509ExtendedKeyManager {
 
-    // Not using ThreadLocal as we want the x509 key manager instances to be collected
+    private final Object monitor = new Object();
+    // Not using ThreadLocal as we want the thread local x509 key manager instances to be garbage collected
     // when either the thread dies or the MutableX509KeyManager instance is collected (latter not the case for ThreadLocal).
     private final WeakHashMap<Thread, X509ExtendedKeyManager> threadLocalManager = new WeakHashMap<>();
-    private volatile X509ExtendedKeyManager currentManager;
+    private X509ExtendedKeyManager currentManager;
 
     public MutableX509KeyManager(KeyStore keystore, char[] password) {
-        this.currentManager = KeyManagerUtils.createDefaultX509KeyManager(keystore, password);
+        synchronized (monitor) {
+            this.currentManager = KeyManagerUtils.createDefaultX509KeyManager(keystore, password);
+        }
     }
 
     public MutableX509KeyManager() {
-        this.currentManager = KeyManagerUtils.createDefaultX509KeyManager();
+        synchronized (monitor) {
+            this.currentManager = KeyManagerUtils.createDefaultX509KeyManager();
+        }
     }
 
     public void updateKeystore(KeyStore keystore, char[] password) {
-        this.currentManager = KeyManagerUtils.createDefaultX509KeyManager(keystore, password);
+        synchronized (monitor) {
+            this.currentManager = KeyManagerUtils.createDefaultX509KeyManager(keystore, password);
+        }
     }
 
     public void useDefaultKeystore() {
-        this.currentManager = KeyManagerUtils.createDefaultX509KeyManager();
+        synchronized (monitor) {
+            this.currentManager = KeyManagerUtils.createDefaultX509KeyManager();
+        }
     }
 
     @Override
@@ -78,9 +87,11 @@ public class MutableX509KeyManager extends X509ExtendedKeyManager {
     }
 
     private X509ExtendedKeyManager updateAndGetThreadLocalManager() {
-        X509ExtendedKeyManager currentManager = this.currentManager;
-        threadLocalManager.put(Thread.currentThread(), currentManager);
-        return currentManager;
+        synchronized (monitor) {
+            X509ExtendedKeyManager currentManager = this.currentManager;
+            threadLocalManager.put(Thread.currentThread(), currentManager);
+            return currentManager;
+        }
     }
 
     @Override
@@ -98,11 +109,13 @@ public class MutableX509KeyManager extends X509ExtendedKeyManager {
     }
 
     private X509ExtendedKeyManager getThreadLocalManager() {
-        X509ExtendedKeyManager manager = threadLocalManager.get(Thread.currentThread());
-        if (manager == null) {
-            throw new IllegalStateException("Methods to retrieve valid aliases has not been called previously from this thread");
+        synchronized (monitor) {
+            X509ExtendedKeyManager manager = threadLocalManager.get(Thread.currentThread());
+            if (manager == null) {
+                throw new IllegalStateException("Methods to retrieve valid aliases has not been called previously from this thread");
+            }
+            return manager;
         }
-        return manager;
     }
 
 }
