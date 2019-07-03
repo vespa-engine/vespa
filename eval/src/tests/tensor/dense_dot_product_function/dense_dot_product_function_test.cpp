@@ -102,7 +102,7 @@ EvalFixture::ParamRepo make_params() {
         .add("v04_y3", spec({y(3)}, MyVecSeq(10)))
         .add("v05_x5", spec({x(5)}, MyVecSeq(6.0)))
         .add("v06_x5", spec({x(5)}, MyVecSeq(7.0)))
-        .add("v07_x5f", spec({x(5)}, MyVecSeq(7.0)), "tensor<float>(x[5])")
+        .add("v07_x5f", spec(float_cells({x(5)}), MyVecSeq(7.0)))
         .add("m01_x3y3", spec({x(3),y(3)}, MyVecSeq(1.0)))
         .add("m02_x3y3", spec({x(3),y(3)}, MyVecSeq(2.0)));
 }

@@ -25,7 +25,7 @@ const TensorEngine &prod_engine = DefaultTensorEngine::ref();
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("x5", spec({x(5)}, N()))
-        .add("x5f", spec({x(5)}, N()), "tensor<float>(x[5])")
+        .add("x5f", spec(float_cells({x(5)}), N()))
         .add("x_m", spec({x({"a", "b", "c"})}, N()))
         .add("x5y3", spec({x(5),y(3)}, N()));
 }

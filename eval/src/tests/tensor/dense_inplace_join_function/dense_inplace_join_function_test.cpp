@@ -45,8 +45,8 @@ EvalFixture::ParamRepo make_params() {
         .add_mutable("mut_x5_A", spec({x(5)}, seq))
         .add_mutable("mut_x5_B", spec({x(5)}, seq))
         .add_mutable("mut_x5_C", spec({x(5)}, seq))
-        .add_mutable("mut_x5f_D", spec({x(5)}, seq), "tensor<float>(x[5])")
-        .add_mutable("mut_x5f_E", spec({x(5)}, seq), "tensor<float>(x[5])")
+        .add_mutable("mut_x5f_D", spec(float_cells({x(5)}), seq))
+        .add_mutable("mut_x5f_E", spec(float_cells({x(5)}), seq))
         .add_mutable("mut_x5y3_A", spec({x(5),y(3)}, seq))
         .add_mutable("mut_x5y3_B", spec({x(5),y(3)}, seq))
         .add_mutable("mut_x_sparse", spec({x({"a", "b", "c"})}, seq));
