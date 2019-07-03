@@ -109,7 +109,8 @@ public class ConfigFiledBasedTlsContext implements TlsContext {
                                 .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
-        return new DefaultTlsContext(sslContext, acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers));
+        Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
+        return new DefaultTlsContext(sslContext, ciphers, PeerAuthentication.NEED);
     }
 
     // Wrapped methods from TlsContext

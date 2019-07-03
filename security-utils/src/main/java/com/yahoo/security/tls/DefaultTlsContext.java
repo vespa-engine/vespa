@@ -28,26 +28,31 @@ public class DefaultTlsContext implements TlsContext {
     private final SSLContext sslContext;
     private final String[] validCiphers;
     private final String[] validProtocols;
+    private final PeerAuthentication peerAuthentication;
 
     public DefaultTlsContext(List<X509Certificate> certificates,
                              PrivateKey privateKey,
                              List<X509Certificate> caCertificates,
                              AuthorizedPeers authorizedPeers,
-                             AuthorizationMode mode) {
-        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode));
+                             AuthorizationMode mode,
+                             PeerAuthentication peerAuthentication) {
+        this(createSslContext(certificates, privateKey, caCertificates, authorizedPeers, mode), peerAuthentication);
     }
 
+    public DefaultTlsContext(SSLContext sslContext, PeerAuthentication peerAuthentication) {
+        this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES, peerAuthentication);
+    }
 
     public DefaultTlsContext(SSLContext sslContext) {
-        this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES);
+        this(sslContext, TlsContext.ALLOWED_CIPHER_SUITES, PeerAuthentication.NEED);
     }
 
-    DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers) {
+    DefaultTlsContext(SSLContext sslContext, Set<String> acceptedCiphers, PeerAuthentication peerAuthentication) {
         this.sslContext = sslContext;
+        this.peerAuthentication = peerAuthentication;
         this.validCiphers = getAllowedCiphers(sslContext, acceptedCiphers);
         this.validProtocols = getAllowedProtocols(sslContext);
     }
-
 
     private static String[] getAllowedCiphers(SSLContext sslContext, Set<String> acceptedCiphers) {
         String[] supportedCipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
@@ -106,7 +111,18 @@ public class DefaultTlsContext implements TlsContext {
         SSLParameters newParameters = sslContext.getDefaultSSLParameters();
         newParameters.setCipherSuites(validCiphers);
         newParameters.setProtocols(validProtocols);
-        newParameters.setNeedClientAuth(true);
+        switch (peerAuthentication) {
+            case WANT:
+                newParameters.setWantClientAuth(true);
+                break;
+            case NEED:
+                newParameters.setNeedClientAuth(true);
+                break;
+            case DISABLED:
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown peer authentication: " + peerAuthentication);
+        }
         return newParameters;
     }
 
