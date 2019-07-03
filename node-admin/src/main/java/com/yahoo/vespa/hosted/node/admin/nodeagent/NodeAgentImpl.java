@@ -11,7 +11,6 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
@@ -60,15 +59,15 @@ public class NodeAgentImpl implements NodeAgent {
     private final Optional<CredentialsMaintainer> credentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
-
     private final DoubleFlag containerCpuCap;
+
+    private Thread loopThread;
+    private ContainerState containerState = UNKNOWN;
+    private NodeSpec lastNode;
 
     private int numberOfUnhandledException = 0;
     private long currentRebootGeneration = 0;
     private Optional<Long> currentRestartGeneration = Optional.empty();
-
-    private final Thread loopThread;
-
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
@@ -84,9 +83,6 @@ public class NodeAgentImpl implements NodeAgent {
         UNKNOWN
     }
 
-    private ContainerState containerState = UNKNOWN;
-
-    private NodeSpec lastNode = null;
 
     // Created in NodeAdminImpl
     public NodeAgentImpl(
@@ -107,11 +103,15 @@ public class NodeAgentImpl implements NodeAgent {
         this.credentialsMaintainer = credentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
+        this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource);
+    }
 
-        this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource)
-                .with(FetchVector.Dimension.HOSTNAME, contextSupplier.currentContext().node().hostname());
+    @Override
+    public void start(NodeAgentContext initialContext) {
+        if (loopThread != null)
+            throw new IllegalStateException("Can not re-start a node agent.");
 
-        this.loopThread = new Thread(() -> {
+        loopThread = new Thread(() -> {
             while (!terminated.get()) {
                 try {
                     NodeAgentContext context = contextSupplier.nextContext();
@@ -119,19 +119,15 @@ public class NodeAgentImpl implements NodeAgent {
                 } catch (InterruptedException ignored) { }
             }
         });
-        this.loopThread.setName("tick-" + contextSupplier.currentContext().hostname());
-    }
-
-    @Override
-    public void start() {
+        loopThread.setName("tick-" + initialContext.hostname());
         loopThread.start();
     }
 
     @Override
-    public void stopForRemoval() {
-        if (!terminated.compareAndSet(false, true)) {
-            throw new RuntimeException("Can not re-stop a node agent.");
-        }
+    public void stopForRemoval(NodeAgentContext context) {
+        if (!terminated.compareAndSet(false, true))
+            throw new IllegalStateException("Can not re-stop a node agent.");
+
         contextSupplier.interrupt();
 
         do {
@@ -140,7 +136,7 @@ public class NodeAgentImpl implements NodeAgent {
             } catch (InterruptedException ignored) { }
         } while (loopThread.isAlive());
 
-        contextSupplier.currentContext().log(logger, "Stopped");
+        context.log(logger, "Stopped");
     }
 
     void startServicesIfNeeded(NodeAgentContext context) {
@@ -245,8 +241,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void stopServices() {
-        NodeAgentContext context = contextSupplier.currentContext();
+    private void stopServices(NodeAgentContext context) {
         context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
         try {
@@ -258,13 +253,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void stopForHostSuspension() {
-        NodeAgentContext context = contextSupplier.currentContext();
+    public void stopForHostSuspension(NodeAgentContext context) {
         getContainer(context).ifPresent(container -> removeContainer(context, container, "suspending host", true));
     }
 
-    public void suspend() {
-        NodeAgentContext context = contextSupplier.currentContext();
+    public void suspend(NodeAgentContext context) {
         context.log(logger, "Suspending services on node");
         if (containerState == ABSENT) return;
         try {
@@ -321,9 +314,9 @@ public class NodeAgentImpl implements NodeAgent {
 
             try {
                 if (context.node().state() != NodeState.dirty) {
-                    suspend();
+                    suspend(context);
                 }
-                stopServices();
+                stopServices(context);
             } catch (Exception e) {
                 context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
             }
@@ -355,6 +348,7 @@ public class NodeAgentImpl implements NodeAgent {
                         .map(NodeOwner::asApplicationId)
                         .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                         .orElse(containerCpuCap)
+                        .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
                         .value() * context.node().vcpus();
 
         return ContainerResources.from(cpuCap, context.node().vcpus(), context.node().memoryGb());
@@ -503,14 +497,6 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    @Override
-    public void updateContainerNodeMetrics() {
-        NodeAgentContext context = contextSupplier.currentContext();
-        Optional<ContainerStats> containerStats = containerState != UNKNOWN ?
-                dockerOperations.getContainerStats(context) : Optional.empty();
-        updateContainerNodeMetrics(context, containerStats);
-    }
-
     private Optional<Container> getContainer(NodeAgentContext context) {
         if (containerState == ABSENT) return Optional.empty();
         Optional<Container> container = dockerOperations.getContainer(context);
@@ -569,9 +555,5 @@ public class NodeAgentImpl implements NodeAgent {
                 throw new UnsupportedOperationException("createSymlink not implemented");
             }
         };
-    }
-
-    protected void updateContainerNodeMetrics(NodeAgentContext context, Optional<ContainerStats> containerStats) {
-
     }
 }

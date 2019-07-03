@@ -139,7 +139,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
 
-        nodeAgent.stopForHostSuspension();
+        nodeAgent.stopForHostSuspension(context);
         nodeAgent.doConverge(context);
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context)); // Expect a resume, but no start services
@@ -149,7 +149,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, never()).startServices(eq(context));
         inOrder.verify(dockerOperations, never()).resumeNode(eq(context));
 
-        nodeAgent.stopForHostSuspension();
+        nodeAgent.stopForHostSuspension(context);
         nodeAgent.doConverge(context);
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), any(), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
@@ -688,8 +688,6 @@ public class NodeAgentImplTest {
     }
     
     private NodeAgentContext createContext(NodeSpec nodeSpec) {
-        NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec).build();
-        when(contextSupplier.currentContext()).thenReturn(context);
-        return context;
+        return new NodeAgentContextImpl.Builder(nodeSpec).build();
     }
 }

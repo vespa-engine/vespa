@@ -13,9 +13,6 @@ public interface NodeAgentContextSupplier {
      */
     NodeAgentContext nextContext() throws InterruptedException;
 
-    /** @return the last context returned by {@link #nextContext()} or a default value */
-    NodeAgentContext currentContext();
-
     /** Interrupts the thread(s) currently waiting in {@link #nextContext()} */
     void interrupt();
 }

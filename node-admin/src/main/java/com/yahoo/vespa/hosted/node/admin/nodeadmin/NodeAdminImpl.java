@@ -172,7 +172,7 @@ public class NodeAdminImpl implements NodeAdmin {
     @Override
     public void stop() {
         // Stop all node-agents in parallel, will block until the last NodeAgent is stopped
-        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgent::stopForRemoval);
+        nodeAgentWithSchedulerByHostname.values().parallelStream().forEach(NodeAgentWithScheduler::stopForRemoval);
     }
 
     // Set-difference. Returns minuend minus subtrahend.
@@ -182,7 +182,7 @@ public class NodeAdminImpl implements NodeAdmin {
         return result;
     }
 
-    static class NodeAgentWithScheduler implements NodeAgent, NodeAgentScheduler {
+    static class NodeAgentWithScheduler implements NodeAgentScheduler {
         private final NodeAgent nodeAgent;
         private final NodeAgentScheduler nodeAgentScheduler;
 
@@ -191,14 +191,15 @@ public class NodeAdminImpl implements NodeAdmin {
             this.nodeAgentScheduler = nodeAgentScheduler;
         }
 
-        @Override public void start() { nodeAgent.start(); }
-        @Override public void stopForHostSuspension() { nodeAgent.stopForHostSuspension(); }
-        @Override public void stopForRemoval() { nodeAgent.stopForRemoval(); }
-        @Override public void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(); }
-        @Override public int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
+        void start() { nodeAgent.start(currentContext()); }
+        void stopForHostSuspension() { nodeAgent.stopForHostSuspension(currentContext()); }
+        void stopForRemoval() { nodeAgent.stopForRemoval(currentContext()); }
+        void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(currentContext()); }
+        int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }
         @Override public boolean setFrozen(boolean frozen, Duration timeout) { return nodeAgentScheduler.setFrozen(frozen, timeout); }
+        @Override public NodeAgentContext currentContext() { return nodeAgentScheduler.currentContext(); }
     }
 
     @FunctionalInterface
