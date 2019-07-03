@@ -33,6 +33,7 @@ public class SslContextBuilder {
     private char[] keyStorePassword;
     private TrustManagerFactory trustManagerFactory = TrustManagerUtils::createDefaultX509TrustManager;
     private KeyManagerFactory keyManagerFactory = KeyManagerUtils::createDefaultX509KeyManager;
+    private X509ExtendedKeyManager keyManager;
 
     public SslContextBuilder() {}
 
@@ -110,11 +111,23 @@ public class SslContextBuilder {
         return this;
     }
 
+    /**
+     * Note: Callee is responsible for configuring the key manager.
+     *       Any keystore configured by {@link #withKeyStore(KeyStore, char[])} or the other overloads will be ignored.
+     */
+    public SslContextBuilder withKeyManager(X509ExtendedKeyManager keyManager) {
+        this.keyManager = keyManager;
+        return this;
+    }
+
     public SSLContext build() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             TrustManager[] trustManagers = new TrustManager[] { trustManagerFactory.createTrustManager(trustStoreSupplier.get()) };
-            KeyManager[] keyManagers = new KeyManager[] { keyManagerFactory.createKeyManager(keyStoreSupplier.get(), keyStorePassword) };
+            X509ExtendedKeyManager keyManager = this.keyManager != null
+                    ? this.keyManager
+                    : keyManagerFactory.createKeyManager(keyStoreSupplier.get(), keyStorePassword);
+            KeyManager[] keyManagers = new KeyManager[] {keyManager};
             sslContext.init(keyManagers, trustManagers, null);
             return sslContext;
         } catch (GeneralSecurityException e) {
