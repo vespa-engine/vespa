@@ -92,17 +92,8 @@ public class DimensionRenamer {
         if ( ! solved) {
             renames.clear();
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
-            boolean relaxed = false;
-            for (var entry : constraints.entrySet()) {
-                Arc arc = entry.getKey();
-                for (Constraint constraint : entry.getValue()) {
-                    if ( ! constraint.isSoft())
-                        hardConstraints.put(arc, constraint);
-                    else
-                        relaxed = true;
-                }
-            }
-            if (relaxed)
+            boolean anyRemoved = copyHard(constraints, hardConstraints);
+            if (anyRemoved)
                 solved = trySolve(variables, hardConstraints, maxIterations, renames);
             if ( ! solved) {
                 throw new IllegalArgumentException("Could not find a dimension naming solution " +
@@ -116,6 +107,21 @@ public class DimensionRenamer {
         // Then run this algorithm again.
 
         return renames;
+    }
+
+    /** Removes soft constraints and returns whether something was removed */
+    private boolean copyHard(ListMap<Arc, Constraint> source, ListMap<Arc, Constraint> target) {
+        boolean removed = false;
+        for (var entry : source.entrySet()) {
+            Arc arc = entry.getKey();
+            for (Constraint constraint : entry.getValue()) {
+                if ( ! constraint.isSoft())
+                    target.put(arc, constraint);
+                else
+                    removed = true;
+            }
+        }
+        return removed;
     }
 
     /** Try the solve the constraint problem given in the arguments, and put the result in renames */
