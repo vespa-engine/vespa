@@ -17,6 +17,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.zip.ZipEntry;
@@ -35,6 +38,7 @@ public class ApplicationPackageBuilder {
     private final StringJoiner notifications = new StringJoiner("/>\n  <email ",
                                                                 "<notifications>\n  <email ",
                                                                 "/>\n</notifications>\n").setEmptyValue("");
+    private final StringBuilder endpointsBody = new StringBuilder();
 
     private OptionalInt majorVersion = OptionalInt.empty();
     private String upgradePolicy = null;
@@ -60,6 +64,18 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder globalServiceId(String globalServiceId) {
         this.globalServiceId = globalServiceId;
+        return this;
+    }
+
+    public ApplicationPackageBuilder endpoint(String endpointId, String containerId, String... regions) {
+        endpointsBody.append("  <endpoint");
+        endpointsBody.append(" id='").append(endpointId).append("'");
+        endpointsBody.append(" container-id='").append(containerId).append("'");
+        endpointsBody.append(">\n");
+        for (var region : regions) {
+            endpointsBody.append("    <region>").append(region).append("</region>\n");
+        }
+        endpointsBody.append("  </endpoint>\n");
         return this;
     }
 
@@ -157,7 +173,11 @@ public class ApplicationPackageBuilder {
         xml.append(environmentBody);
         xml.append("  </");
         xml.append(environment.value());
-        xml.append(">\n</deployment>");
+        xml.append(">\n");
+        xml.append("  <endpoints>\n");
+        xml.append(endpointsBody);
+        xml.append("  </endpoints>\n");
+        xml.append("</deployment>");
         return xml.toString().getBytes(StandardCharsets.UTF_8);
     }
     

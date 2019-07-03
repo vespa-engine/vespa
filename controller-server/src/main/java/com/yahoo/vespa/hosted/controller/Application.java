@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -218,12 +219,18 @@ public class Application {
         return rotations;
     }
 
+    /** Returns the default global endpoints for this in given system - for a given endpoint ID */
+    public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
+        if (rotations.isEmpty()) return EndpointList.EMPTY;
+        return EndpointList.create(id, endpointId, system);
+    }
+
     /** Returns the default global endpoints for this in given system */
     public EndpointList endpointsIn(SystemName system) {
-        // TODO: Do we need to change something here?  .defaultGlobalId seems like it is
-        // TODO: making some assumptions on naming.
         if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.defaultGlobal(id, system);
+        final var endpointStream = rotations.stream()
+                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
+        return EndpointList.of(endpointStream);
     }
 
     public Optional<String> pemDeployKey() { return pemDeployKey; }

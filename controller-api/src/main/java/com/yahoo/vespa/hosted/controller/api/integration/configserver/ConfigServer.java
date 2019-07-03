@@ -30,7 +30,7 @@ public interface ConfigServer {
     }
 
     PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                               List<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content);
+                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 

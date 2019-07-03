@@ -217,6 +217,7 @@ public class Endpoint {
         private ZoneId zone;
         private ClusterSpec.Id cluster;
         private RotationName rotation;
+        private EndpointId endpointId;
         private Port port;
         private boolean legacy = false;
         private boolean directRouting = false;
@@ -227,8 +228,8 @@ public class Endpoint {
 
         /** Sets the cluster and zone target of this  */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
-            if (rotation != null) {
-                throw new IllegalArgumentException("Cannot set both cluster and rotation target");
+            if (rotation != null || endpointId != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
             this.zone = zone;
@@ -237,10 +238,19 @@ public class Endpoint {
 
         /** Sets the rotation target of this */
         public EndpointBuilder target(RotationName rotation) {
-            if (cluster != null && zone != null) {
-                throw new IllegalArgumentException("Cannot set both cluster and rotation target");
+            if ((cluster != null && zone != null) || endpointId != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.rotation = rotation;
+            return this;
+        }
+
+        /** Sets the endpoint ID as defines in deployments.xml */
+        public EndpointBuilder named(EndpointId endpointId) {
+            if (rotation != null || cluster != null || zone != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
+            }
+            this.endpointId = endpointId;
             return this;
         }
 
@@ -269,6 +279,8 @@ public class Endpoint {
                 name = cluster.value();
             } else if (rotation != null) {
                 name = rotation.value();
+            } else if (endpointId != null) {
+                name = endpointId.id();
             } else {
                 throw new IllegalArgumentException("Must set either cluster or rotation target");
             }

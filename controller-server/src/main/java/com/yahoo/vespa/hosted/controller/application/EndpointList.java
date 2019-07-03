@@ -67,16 +67,14 @@ public class EndpointList {
     }
 
     /** Returns the default global endpoints in given system. Default endpoints are served by a pre-provisioned routing layer */
-    public static EndpointList defaultGlobal(ApplicationId application, SystemName system) {
-        // Rotation name is always default in the routing layer
-        RotationName rotation = RotationName.from("default");
+    public static EndpointList create(ApplicationId application, EndpointId endpointId, SystemName system) {
         switch (system) {
             case cd:
             case main:
                 return new EndpointList(List.of(
-                        Endpoint.of(application).target(rotation).on(Port.plain(4080)).legacy().in(system),
-                        Endpoint.of(application).target(rotation).on(Port.tls(4443)).legacy().in(system),
-                        Endpoint.of(application).target(rotation).on(Port.tls(4443)).in(system)
+                        Endpoint.of(application).named(endpointId).on(Port.plain(4080)).legacy().in(system),
+                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).legacy().in(system),
+                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).in(system)
                 ));
         }
         return EMPTY;

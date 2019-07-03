@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -161,7 +162,7 @@ public class DeploymentSpecXmlReader {
         final var endpointsElement = XML.getChild(root, endpointsTag);
         if (endpointsElement == null) { return Collections.emptyList(); }
 
-        final var endpoints = new ArrayList<Endpoint>();
+        final var endpoints = new LinkedHashMap<String, Endpoint>();
 
         for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
             final Optional<String> rotationId = stringAttribute("id", endpointElement);
@@ -184,13 +185,13 @@ public class DeploymentSpecXmlReader {
             }
 
             var endpoint = new Endpoint(rotationId, containerId.get(), regions);
-            if (endpoints.contains(endpoint)) {
-                throw new IllegalArgumentException("Duplicate 'endpoint' in 'endpoints' tag");
+            if (endpoints.containsKey(endpoint.endpointId())) {
+                throw new IllegalArgumentException("Duplicate attribute 'id' on 'endpoint': " + endpoint.endpointId());
             }
-            endpoints.add(endpoint);
+            endpoints.put(endpoint.endpointId(), endpoint);
         }
 
-        return endpoints;
+        return List.copyOf(endpoints.values());
     }
 
     /**

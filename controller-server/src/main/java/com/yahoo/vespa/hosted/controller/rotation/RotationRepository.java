@@ -1,18 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.config.application.api.Endpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,6 +62,11 @@ public class RotationRepository {
         return application.rotations().stream().map(allRotations::get).findFirst();
     }
 
+    /** Get rotation for the given rotationId */
+    public Optional<Rotation> getRotation(RotationId rotationId) {
+        return Optional.of(allRotations.get(rotationId));
+    }
+
     /**
      * Returns a rotation for the given application
      *
@@ -73,6 +90,116 @@ public class RotationRepository {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }
         return findAvailableRotation(application, lock);
+    }
+
+    /**
+     * Returns rotation assignments for all endpoints in application.
+     *
+     * If rotations are already assigned, these will be returned.
+     * If rotations are not assigned, a new assignment will be created taking new rotations from the repository.
+     * This method supports both global-service-id as well as the new endpoints tag.
+     *
+     * @param application The application requesting rotations.
+     * @param lock Lock which by acquired by the caller
+     * @return List of rotation assignments - either new or existing.
+     */
+    public List<AssignedRotation> getOrAssignRotations(Application application, RotationLock lock) {
+        if (application.deploymentSpec().globalServiceId().isPresent() && ! application.deploymentSpec().endpoints().isEmpty()) {
+            throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
+        }
+
+        // Support the older case of setting global-service-id
+        if (application.deploymentSpec().globalServiceId().isPresent()) {
+            final var regions = application.deploymentSpec().zones().stream()
+                    .filter(zone -> zone.environment().isProduction())
+                    .flatMap(zone -> zone.region().stream())
+                    .collect(Collectors.toSet());
+
+            final var rotation = getOrAssignRotation(application, lock);
+
+            return List.of(
+                    new AssignedRotation(
+                            new ClusterSpec.Id(application.deploymentSpec().globalServiceId().get()),
+                            EndpointId.default_(),
+                            rotation.id(),
+                            regions
+                    )
+            );
+        }
+
+        final Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(application);
+        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(application, existingAssignments, lock);
+
+        existingAssignments.putAll(updatedAssignments);
+
+        return List.copyOf(existingAssignments.values());
+    }
+
+    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Application application, Map<EndpointId, AssignedRotation> existingAssignments, RotationLock lock) {
+        final var availableRotations = new ArrayList<>(availableRotations(lock).values());
+
+        final var neededRotations = application.deploymentSpec().endpoints().stream()
+                .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
+                .collect(Collectors.toSet());
+
+        if (neededRotations.size() > availableRotations.size()) {
+            throw new IllegalStateException("Hosted Vespa ran out of rotations, unable to assign rotation: need " + neededRotations.size() + ", have " + availableRotations.size());
+        }
+
+        return neededRotations.stream()
+                .map(endpoint -> {
+                        return new AssignedRotation(
+                                new ClusterSpec.Id(endpoint.containerId()),
+                                EndpointId.of(endpoint.endpointId()),
+                                availableRotations.remove(0).id(),
+                                endpoint.regions()
+                        );
+                })
+                .collect(
+                        Collectors.toMap(
+                                AssignedRotation::endpointId,
+                                Function.identity(),
+                                (a, b) -> { throw new IllegalStateException("Duplicate entries:" + a + ", " + b); },
+                                LinkedHashMap::new
+                        )
+                );
+    }
+
+    private Map<EndpointId, AssignedRotation> existingEndpointAssignments(Application application) {
+        //
+        // Get the regions that has been configured for an endpoint.  Empty set if the endpoint
+        // is no longer mentioned in the configuration file.
+        //
+        final Function<EndpointId, Set<RegionName>> configuredRegionsForEndpoint = endpointId -> {
+            return application.deploymentSpec().endpoints().stream()
+                    .filter(endpoint -> endpointId.id().equals(endpoint.endpointId()))
+                    .map(Endpoint::regions)
+                    .findFirst()
+                    .orElse(Set.of());
+        };
+
+        //
+        // Build a new AssignedRotation instance where we update set of regions from the configuration instead
+        // of using the one already mentioned in the assignment.  This allows us to overwrite the set of regions
+        // when
+        final Function<AssignedRotation, AssignedRotation> assignedRotationWithConfiguredRegions = assignedRotation -> {
+            return new AssignedRotation(
+                    assignedRotation.clusterId(),
+                    assignedRotation.endpointId(),
+                    assignedRotation.rotationId(),
+                    configuredRegionsForEndpoint.apply(assignedRotation.endpointId())
+            );
+        };
+
+        return application.assignedRotations().stream()
+                .collect(
+                        Collectors.toMap(
+                                AssignedRotation::endpointId,
+                                assignedRotationWithConfiguredRegions,
+                                (a, b) -> { throw new IllegalStateException("Duplicate entries: " + a + ", " + b); },
+                                LinkedHashMap::new
+                        )
+                );
     }
 
     /**
