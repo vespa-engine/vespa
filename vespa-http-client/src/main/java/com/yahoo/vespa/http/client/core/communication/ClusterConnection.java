@@ -70,16 +70,15 @@ public class ClusterConnection implements AutoCloseable {
                 if (documentQueue == null) {
                     documentQueue = new DocumentQueue(clientQueueSizePerCluster);
                 }
-                IOThread ioThread = new IOThread(
-                        operationProcessor.getIoThreadGroup(),
-                        endpointResultQueue,
-                        gatewayConnection,
-                        clusterId,
-                        feedParams.getMaxChunkSizeBytes(),
-                        maxInFlightPerSession,
-                        feedParams.getLocalQueueTimeOut(),
-                        documentQueue,
-                        feedParams.getMaxSleepTimeMs());
+                IOThread ioThread = new IOThread(operationProcessor.getIoThreadGroup(),
+                                                 endpointResultQueue,
+                                                 gatewayConnection,
+                                                 clusterId,
+                                                 feedParams.getMaxChunkSizeBytes(),
+                                                 maxInFlightPerSession,
+                                                 feedParams.getLocalQueueTimeOut(),
+                                                 documentQueue,
+                                                 feedParams.getMaxSleepTimeMs());
                 ioThreads.add(ioThread);
             }
         }

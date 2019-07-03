@@ -53,7 +53,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final AtomicInteger docsReceivedCounter = new AtomicInteger(0);
     private final AtomicInteger statusReceivedCounter = new AtomicInteger(0);
     private final AtomicInteger pendingDocumentStatusCount = new AtomicInteger(0);
-    private final AtomicInteger successfullHandshakes = new AtomicInteger(0);
+    private final AtomicInteger successfulHandshakes = new AtomicInteger(0);
     private final AtomicInteger lastGatewayProcessTimeMillis = new AtomicInteger(0);
 
     IOThread(ThreadGroup ioThreadGroup,
@@ -131,7 +131,7 @@ class IOThread implements Runnable, AutoCloseable {
                 docsReceivedCounter.get(),
                 statusReceivedCounter.get(),
                 pendingDocumentStatusCount.get(),
-                successfullHandshakes.get(),
+                successfulHandshakes.get(),
                 lastGatewayProcessTimeMillis.get());
     }
 
@@ -175,7 +175,7 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
 
-    List<Document> getNextDocsForFeeding(int maxWaitUnits, TimeUnit timeUnit) {
+    List<Document> getNextDocsForFeeding(long maxWaitUnits, TimeUnit timeUnit) {
         List<Document> docsForSendChunk = new ArrayList<>();
         int chunkSizeBytes = 0;
         try {
@@ -269,14 +269,14 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
-    private ProcessResponse pullAndProcessData(int maxWaitTimeMilliSecs) throws ServerResponseException, IOException {
+    private ProcessResponse pullAndProcessData(long maxWaitTimeMs) throws ServerResponseException, IOException {
         int pendingResultQueueSize = resultQueue.getPendingSize();
         pendingDocumentStatusCount.set(pendingResultQueueSize);
 
-        List<Document> nextDocsForFeeding = (pendingResultQueueSize > maxInFlightRequests)
+        List<Document> nextDocsForFeeding =
+                (pendingResultQueueSize > maxInFlightRequests)
               ? new ArrayList<>()       // The queue is full, will not send more documents.
-              : getNextDocsForFeeding(maxWaitTimeMilliSecs, TimeUnit.MILLISECONDS);
-
+              : getNextDocsForFeeding(maxWaitTimeMs, TimeUnit.MILLISECONDS);
 
         if (nextDocsForFeeding.isEmpty() && pendingResultQueueSize == 0) {
             //we have no unfinished business with the server now.
@@ -285,6 +285,7 @@ class IOThread implements Runnable, AutoCloseable {
         }
         log.finest("Awaiting " + pendingResultQueueSize + " results.");
         ProcessResponse processResponse = feedDocumentAndProcessResults(nextDocsForFeeding);
+
         if (pendingResultQueueSize > maxInFlightRequests && processResponse.processResultsCount == 0) {
             try {
                 // Max outstanding document operations, no more results on server side, wait a bit
@@ -316,7 +317,7 @@ class IOThread implements Runnable, AutoCloseable {
             case CONNECTED:
                 try {
                     client.handshake();
-                    successfullHandshakes.getAndIncrement();
+                    successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
                     log.info("Handshake did not work out " + endpoint + ": " + Exceptions.toMessageString(ser));
@@ -334,7 +335,7 @@ class IOThread implements Runnable, AutoCloseable {
                 return ThreadState.SESSION_SYNCED;
             case SESSION_SYNCED:
                 try {
-                    ProcessResponse processResponse = pullAndProcessData(100);
+                    ProcessResponse processResponse = pullAndProcessData(1);
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {

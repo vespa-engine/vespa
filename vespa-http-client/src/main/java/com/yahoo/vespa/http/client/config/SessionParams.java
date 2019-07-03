@@ -133,6 +133,8 @@ public final class SessionParams {
         }
     }
 
+    // NOTE! See toBuilder at the end of this class if you add fields here
+
     private final List<Cluster> clusters;
     private final FeedParams feedParams;
     private final ConnectionParams connectionParams;
@@ -177,6 +179,17 @@ public final class SessionParams {
 
     public ErrorReporter getErrorReport() {
         return errorReport;
+    }
+
+    public Builder toBuilder() {
+        Builder b = new Builder();
+        clusters.forEach(c -> b.addCluster(c));
+        b.setFeedParams(feedParams);
+        b.setConnectionParams(connectionParams);
+        b.setClientQueueSize(clientQueueSize);
+        b.setErrorReporter(errorReport);
+        b.setThrottlerMinSize(throttlerMinSize);
+        return b;
     }
 
 }
