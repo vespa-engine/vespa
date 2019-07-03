@@ -60,6 +60,18 @@ public class ListMap<K, V> {
         }
     }
 
+    /** Put this map in the state where it has just the given value of the given key */
+    public void replace(K key, V value) {
+        List<V> list = map.get(key);
+        if (list == null) {
+            put(key);
+        }
+        else {
+            list.clear();
+            list.add(value);
+        }
+    }
+
     public void removeAll(K key) {
         map.remove(key);
     }

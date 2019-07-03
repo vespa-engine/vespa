@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * A constraint satisfier to find suitable dimension names to reduce the
+ * A constraint solver which finds suitable dimension names to reduce the
  * amount of necessary renaming during evaluation of an imported model.
  *
  * @author lesters
@@ -29,7 +29,7 @@ public class DimensionRenamer {
 
     private final String dimensionPrefix;
     private final ListMap<String, Integer> variables = new ListMap<>();
-    private final Map<Arc, Constraint> constraints = new HashMap<>();
+    private final ListMap<Arc, Constraint> constraints = new ListMap<>();
 
     /** The solution to this, or null if no solution is found (yet) */
     private Map<String, Integer> renames = null;
@@ -91,14 +91,22 @@ public class DimensionRenamer {
         boolean solved = trySolve(variables, constraints, maxIterations, renames);
         if ( ! solved) {
             renames.clear();
-            Map<Arc, Constraint> hardConstraints = new HashMap<>();
-            constraints.entrySet().stream().filter(e -> !e.getValue().isSoft())
-                       .forEach(e -> hardConstraints.put(e.getKey(), e.getValue()));
-            if (hardConstraints.size() < constraints.size())
+            ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
+            boolean relaxed = false;
+            for (var entry : constraints.entrySet()) {
+                Arc arc = entry.getKey();
+                for (Constraint constraint : entry.getValue()) {
+                    if ( ! constraint.isSoft())
+                        hardConstraints.put(arc, constraint);
+                    else
+                        relaxed = true;
+                }
+            }
+            if (relaxed)
                 solved = trySolve(variables, hardConstraints, maxIterations, renames);
             if ( ! solved) {
                 throw new IllegalArgumentException("Could not find a dimension naming solution " +
-                                                   " given constraints\n" + constraintsToString(hardConstraints));
+                                                   "given constraints\n" + constraintsToString(hardConstraints));
             }
         }
 
@@ -112,7 +120,7 @@ public class DimensionRenamer {
 
     /** Try the solve the constraint problem given in the arguments, and put the result in renames */
     private static boolean trySolve(ListMap<String, Integer> inputVariables,
-                                    Map<Arc, Constraint> constraints,
+                                    ListMap<Arc, Constraint> constraints,
                                     int maxIterations,
                                     Map<String, Integer> renames) {
         var variables = new ListMap<>(inputVariables);
@@ -123,7 +131,7 @@ public class DimensionRenamer {
             if (values.size() > 1) {
                 if ( ! ac3(iterations, variables, constraints)) return false;
                 values.sort(Integer::compare);
-                variables.put(dimension, values.get(0));
+                variables.replace(dimension, values.get(0));
             }
             renames.put(dimension, variables.get(dimension).get(0));
             if (iterations.get() > maxIterations) return false;
@@ -133,10 +141,8 @@ public class DimensionRenamer {
 
     void solve() {
         log.log(Level.FINE, () -> "Rename problem:\n" + constraintsToString(constraints));
-        System.out.println("Rename problem:\n" + constraintsToString(constraints));
         renames = solve(100000);
         log.log(Level.FINE, () -> "Rename solution:\n" + renamesToString(renames));
-        System.out.println("Rename solution:\n" + renamesToString(renames));
     }
 
     private static String renamesToString(Map<String, Integer> renames) {
@@ -156,7 +162,7 @@ public class DimensionRenamer {
 
     private static boolean ac3(MutableInteger iterations,
                                ListMap<String, Integer> variables,
-                               Map<Arc, Constraint> constraints) {
+                               ListMap<Arc, Constraint> constraints) {
         Deque<Arc> workList = new ArrayDeque<>(constraints.keySet());
         while ( ! workList.isEmpty()) {
             Arc arc = workList.pop();
@@ -177,16 +183,15 @@ public class DimensionRenamer {
 
     private static boolean revise(Arc arc,
                                   ListMap<String, Integer> variables,
-                                  Map<Arc, Constraint> constraints) {
+                                  ListMap<Arc, Constraint> constraints) {
         boolean revised = false;
         for (Iterator<Integer> fromIterator = variables.get(arc.from).iterator(); fromIterator.hasNext(); ) {
             Integer from = fromIterator.next();
             boolean satisfied = false;
             for (Iterator<Integer> toIterator = variables.get(arc.to).iterator(); toIterator.hasNext(); ) {
                 Integer to = toIterator.next();
-                if (constraints.get(arc).test(from, to)) {
+                if (constraints.get(arc).stream().allMatch(constraint -> constraint.test(from, to)))
                     satisfied = true;
-                }
             }
             if ( ! satisfied) {
                 fromIterator.remove();
@@ -196,11 +201,20 @@ public class DimensionRenamer {
         return revised;
     }
 
-    private static String constraintsToString(Map<Arc, Constraint> constraints) {
-        return constraints.entrySet().stream()
-                                     .filter(e -> ! e.getValue().isOpposite())
-                                     .map(e -> "  "  + e.getKey().from + " " + e.getValue() + " " + e.getKey().to + " (origin: " + e.getKey().operation + ")")
-                                     .collect(Collectors.joining("\n"));
+    private static String constraintsToString(ListMap<Arc, Constraint> constraints) {
+        StringBuilder b = new StringBuilder();
+        for (var entry : constraints.entrySet()) {
+            Arc arc = entry.getKey();
+            for (Constraint constraint : entry.getValue()) {
+                if (constraint.isOpposite()) continue; // noise
+                b.append("  ");
+                if (constraint.isSoft())
+                    b.append("(soft) ");
+                b.append(arc.from).append(" ").append(constraint).append(" ").append(arc.to);
+                b.append("  (origin: ").append(arc.operation).append(")\n");
+            }
+        }
+        return b.toString();
     }
 
     private static class Arc {

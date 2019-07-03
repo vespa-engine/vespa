@@ -7,8 +7,11 @@ import com.yahoo.tensor.TensorTypeParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -130,15 +133,18 @@ public class OrderedTensorType {
     }
 
     public OrderedTensorType rename(DimensionRenamer renamer) {
-        System.out.println("Renaming " + this);
         List<TensorType.Dimension> renamedDimensions = new ArrayList<>(dimensions.size());
+        Map<String, String> new2Old = new HashMap<>(); // Just to create meaningful error messages
         for (TensorType.Dimension dimension : dimensions) {
             String oldName = dimension.name();
             Optional<String> newName = renamer.dimensionNameOf(oldName);
-            if (!newName.isPresent())
-                return this; // presumably, already renamed
-            if ( ! oldName.equals(newName.get()))
-                System.out.println("  Renaming " + oldName + " to " + newName.get());
+            if ( newName.isEmpty()) return this; // presumably already renamed
+
+            if (new2Old.containsKey(newName.get()))
+                throw new IllegalArgumentException("Can not rename '" + oldName + "' to '" + newName.get() + "' in " + this +
+                                                   " as '" + new2Old.get(newName.get()) + "' should also be renamed to it");
+            new2Old.put(newName.get(), oldName);
+
             TensorType.Dimension.Type dimensionType = dimension.type();
             if (dimensionType == TensorType.Dimension.Type.indexedBound) {
                 renamedDimensions.add(TensorType.Dimension.indexed(newName.get(), dimension.size().get()));

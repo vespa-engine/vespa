@@ -99,6 +99,20 @@ public abstract class IntermediateOperation {
     /** Add dimension name constraints for this operation */
     public void addDimensionNameConstraints(DimensionRenamer renamer) { }
 
+    /** Conveinence method to adds dimensions and constraints of the given tensor type */
+    protected void addConstraintsFrom(OrderedTensorType type, DimensionRenamer renamer) {
+        for (int i = 0; i < type.dimensions().size(); i++) {
+            renamer.addDimension(type.dimensions().get(i).name());
+
+            // Each dimension is distinct:
+            for (int j = i + 1; j < type.dimensions().size(); j++) {
+                renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
+                                      DimensionRenamer.Constraint.notEqual(false),
+                                      this);
+            }
+        }
+    }
+
     /** Performs dimension rename for this operation */
     public void renameDimensions(DimensionRenamer renamer) { type = type.rename(renamer); }
 

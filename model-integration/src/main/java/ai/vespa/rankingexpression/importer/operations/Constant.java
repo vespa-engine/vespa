@@ -48,9 +48,7 @@ public class Constant extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override

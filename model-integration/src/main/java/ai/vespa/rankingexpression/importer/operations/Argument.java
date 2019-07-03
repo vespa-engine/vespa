@@ -39,15 +39,7 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (int i = 0; i < type.dimensions().size(); i++) {
-            renamer.addDimension(type.dimensions().get(i).name());
-
-            // Each dimension is distinct:
-            for (int j = i + 1; j < type.dimensions().size(); j++)
-                renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
-                                      DimensionRenamer.Constraint.notEqual(false),
-                                      this);
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override
