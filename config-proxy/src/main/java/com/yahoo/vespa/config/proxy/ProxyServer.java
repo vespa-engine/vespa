@@ -37,6 +37,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class ProxyServer implements Runnable {
 
     private static final int DEFAULT_RPC_PORT = 19090;
+    private static final int JRT_TRANSPORT_THREADS = 4;
     static final String DEFAULT_PROXY_CONFIG_SOURCES = "tcp/localhost:19070";
 
     final static Logger log = Logger.getLogger(ProxyServer.class.getName());
@@ -44,7 +45,7 @@ public class ProxyServer implements Runnable {
 
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
-    private final Supervisor supervisor = new Supervisor(new Transport());
+    private final Supervisor supervisor = new Supervisor(new Transport(JRT_TRANSPORT_THREADS));
     private final ClientUpdater clientUpdater;
     private ScheduledFuture<?> delayedResponseScheduler;
 
