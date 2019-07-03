@@ -27,28 +27,19 @@ public class ConfigProxyRpcServerTest {
     private static final String hostname = "localhost";
     private static final int port = 12345;
     private static final String address = "tcp/" + hostname + ":" + port;
-    private ProxyServer proxyServer;
-    private ConfigProxyRpcServer rpcServer;
-    private Acceptor acceptor;
-    private Supervisor supervisor;
+    private TestServer server;
     private TestClient client;
 
     @Before
     public void setup() throws ListenFailedException {
-        proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
-        supervisor = new Supervisor(new Transport());
-        Spec spec = new Spec(0);
-        rpcServer = new ConfigProxyRpcServer(proxyServer, supervisor, spec);
-        acceptor = supervisor.listen(spec);
-        client = new TestClient(acceptor.port());
+        server = new TestServer();
+        client = new TestClient(server.listenPort());
     }
 
     @After
     public void teardown() {
         client.close();
-        acceptor.shutdown().join();
-        supervisor.transport().shutdown().join();
-        rpcServer.shutdown();
+        server.close();
     }
 
     @Test
@@ -86,7 +77,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getMemoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfig");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -113,7 +104,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getMemoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfigFull");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -193,7 +184,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("0"));
         assertThat(ret[1], is("success"));
-        assertThat(proxyServer.getMode().name(), is(mode));
+        assertThat(server.proxyServer().getMode().name(), is(mode));
 
         req = new Request("getMode");
         client.invoke(req);
@@ -212,7 +203,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("1"));
         assertThat(ret[1], is("Could not set mode to '" + mode + "'. Legal modes are '" + Mode.modes() + "'"));
-        assertThat(proxyServer.getMode().name(), is(oldMode));
+        assertThat(server.proxyServer().getMode().name(), is(oldMode));
     }
 
     /**
@@ -230,7 +221,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(req.returnValues().get(0).asString(), is("Updated config sources to: " + spec1 + "," + spec2));
 
 
-        proxyServer.setMode(Mode.ModeName.MEMORYCACHE.name());
+        server.proxyServer().setMode(Mode.ModeName.MEMORYCACHE.name());
 
         req = new Request("updateSources");
         req.parameters().add(new StringValue(spec1 + "," + spec2));
@@ -262,6 +253,35 @@ public class ConfigProxyRpcServerTest {
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("success"));
+    }
+
+    private static class TestServer implements AutoCloseable {
+
+        private static final Spec SPEC = new Spec(0);
+
+        private final ProxyServer proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
+        private final Supervisor supervisor = new Supervisor(new Transport());
+        private final ConfigProxyRpcServer rpcServer = new ConfigProxyRpcServer(proxyServer, supervisor, SPEC);
+        private final Acceptor acceptor;
+
+        TestServer() throws ListenFailedException {
+            acceptor = supervisor.listen(SPEC);
+        }
+
+        ProxyServer proxyServer() {
+            return proxyServer;
+        }
+
+        int listenPort() {
+            return acceptor.port();
+        }
+
+        @Override
+        public void close() {
+            acceptor.shutdown().join();
+            supervisor.transport().shutdown().join();
+            rpcServer.shutdown();
+        }
     }
 
     private static class TestClient implements AutoCloseable {
