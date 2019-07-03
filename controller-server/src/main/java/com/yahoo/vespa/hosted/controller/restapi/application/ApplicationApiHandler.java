@@ -267,7 +267,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handleOPTIONS() {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
-        EmptyJsonResponse response = new EmptyJsonResponse();
+        EmptyResponse response = new EmptyResponse();
         response.headers().put("Allow", "GET,PUT,POST,PATCH,DELETE,OPTIONS");
         return response;
     }
@@ -1097,7 +1097,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteApplication(id, credentials);
-        return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
+        return new StringResponse("Deleted application " + id);
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {

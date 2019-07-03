@@ -8,16 +8,13 @@ import java.io.OutputStream;
 /**
  * @author bratseth
  */
-public class EmptyJsonResponse extends HttpResponse {
+public class EmptyResponse extends HttpResponse {
 
-    public EmptyJsonResponse() {
+    public EmptyResponse() {
         super(200);
     }
 
     @Override
     public void render(OutputStream stream) {}
-
-    @Override
-    public String getContentType() { return "application/json"; }
 
 }

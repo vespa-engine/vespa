@@ -8,18 +8,18 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.Uri;
-import com.yahoo.vespa.hosted.controller.restapi.application.EmptyJsonResponse;
-import com.yahoo.restapi.Path;
+import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Optional;
@@ -71,7 +71,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     private HttpResponse handleOPTIONS() {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
-        EmptyJsonResponse response = new EmptyJsonResponse();
+        EmptyResponse response = new EmptyResponse();
         response.headers().put("Allow", "GET,OPTIONS");
         return response;
     }
