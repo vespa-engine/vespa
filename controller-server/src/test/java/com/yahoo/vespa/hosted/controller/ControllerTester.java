@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -29,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -100,7 +98,7 @@ public final class ControllerTester {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new ApplicationStoreMock(), new MockBuildService(),
-             metricsService, new RoutingGeneratorMock(), new MockContactRetriever(), new MockIssueHandler(clock));
+             metricsService, new RoutingGeneratorMock(), new MockContactRetriever());
     }
 
     public ControllerTester(ManualClock clock) {
@@ -125,7 +123,7 @@ public final class ControllerTester {
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              ApplicationStoreMock appStoreMock, MockBuildService buildService,
                              MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
-                             MockContactRetriever contactRetriever, MockIssueHandler issueHandler) {
+                             MockContactRetriever contactRetriever) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -141,7 +139,7 @@ public final class ControllerTester {
         this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
-                                           athenzDb, nameService, artifactRepository, appStoreMock, buildService,
+                                           athenzDb, artifactRepository, appStoreMock, buildService,
                                            metricsService, routingGenerator);
 
         // Make root logger use time from manual clock
@@ -199,7 +197,7 @@ public final class ControllerTester {
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
-                                      nameService, artifactRepository, applicationStore, buildService, metricsService,
+                                      artifactRepository, applicationStore, buildService, metricsService,
                                       routingGenerator);
     }
 
@@ -332,7 +330,7 @@ public final class ControllerTester {
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                ConfigServerMock configServer, ManualClock clock,
                                                GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
-                                               AthenzDbMock athensDb, MemoryNameService nameService,
+                                               AthenzDbMock athensDb,
                                                ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                                                BuildService buildService, MetricsServiceMock metricsService,
                                                RoutingGenerator routingGenerator) {
@@ -343,7 +341,6 @@ public final class ControllerTester {
                                                configServer,
                                                metricsService,
                                                routingGenerator,
-                                               new ChefMock(),
                                                clock,
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                artifactRepository,

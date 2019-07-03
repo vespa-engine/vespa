@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -79,7 +78,6 @@ public class Controller extends AbstractComponent {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
-    private final Chef chef;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
@@ -95,13 +93,13 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Chef chef,
+                      RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
                       MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
-             configServer, metricsService, routingGenerator, chef,
+             configServer, metricsService, routingGenerator,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
              mavenRepository, applicationCertificateProvider);
@@ -110,7 +108,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Chef chef, Clock clock,
+                      RoutingGenerator routingGenerator, Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
@@ -122,7 +120,6 @@ public class Controller extends AbstractComponent {
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
-        this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
@@ -292,10 +289,6 @@ public class Controller extends AbstractComponent {
 
     public SystemName system() {
         return zoneRegistry.system();
-    }
-
-    public Chef chefClient() {
-        return chef;
     }
 
     public CuratorDb curator() {
