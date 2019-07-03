@@ -29,9 +29,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.TenantResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -68,7 +66,6 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -945,12 +942,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
         controller.applications().restart(deploymentId, hostname);
 
-        // TODO: Change to return JSON
-        return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
-                                                                 ApplicationResource.API_PATH, applicationName,
-                                                                 EnvironmentResource.API_PATH, environment,
-                                                                 "region", region,
-                                                                 "instance", instanceName));
+        return new MessageResponse("Requested restart of " + deploymentId);
     }
 
     private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
@@ -1097,21 +1089,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteApplication(id, credentials);
-        return new StringResponse("Deleted application " + id);
+        return new MessageResponse("Deleted application " + id);
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
         // Attempt to deactivate application even if the deployment is not known by the controller
-        controller.applications().deactivate(application.id(), ZoneId.from(environment, region));
+        DeploymentId deploymentId = new DeploymentId(application.id(), ZoneId.from(environment, region));
+        controller.applications().deactivate(deploymentId.applicationId(), deploymentId.zoneId());
 
-        // TODO: Change to return JSON
-        return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,
-                                                        ApplicationResource.API_PATH, applicationName,
-                                                        "instance", instanceName,
-                                                        EnvironmentResource.API_PATH, environment,
-                                                        "region", region));
+        return new MessageResponse("Deactivated " + deploymentId);
     }
 
     private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
