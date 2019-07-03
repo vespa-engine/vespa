@@ -3,14 +3,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.AttributeMapping;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -24,10 +19,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -36,7 +29,6 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends Maintainer {
 
-    public static final String CONVERGENCE_METRIC = "seconds.since.last.chef.convergence";
     public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
     public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
@@ -46,27 +38,16 @@ public class MetricsReporter extends Maintainer {
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
     private final Metric metric;
-    private final Chef chefClient;
     private final Clock clock;
-    private final SystemName system;
 
-    public MetricsReporter(Controller controller, Metric metric, Chef chefClient, JobControl jobControl,
-                           SystemName system) {
-        this(controller, metric, chefClient, Clock.systemUTC(), jobControl, system);
-    }
-
-    public MetricsReporter(Controller controller, Metric metric, Chef chefClient, Clock clock,
-                           JobControl jobControl, SystemName system) {
+    public MetricsReporter(Controller controller, Metric metric, JobControl jobControl) {
         super(controller, Duration.ofMinutes(1), jobControl); // use fixed rate for metrics
         this.metric = metric;
-        this.chefClient = chefClient;
-        this.clock = clock;
-        this.system = system;
+        this.clock = controller.clock();
     }
 
     @Override
     public void maintain() {
-        reportChefMetrics();
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
@@ -76,49 +57,6 @@ public class MetricsReporter extends Maintainer {
         try (RotationLock lock = controller().applications().rotationRepository().lock()) {
             int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
             metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Collections.emptyMap()));
-        }
-    }
-
-    private void reportChefMetrics() {
-        String query = "chef_environment:hosted*";
-        if (system == SystemName.cd) {
-            query += " AND hosted_system:" + system;
-        }
-        PartialNodeResult nodeResult = chefClient.partialSearchNodes(query,
-                List.of(
-                        AttributeMapping.simpleMapping("fqdn"),
-                        AttributeMapping.simpleMapping("ohai_time"),
-                        AttributeMapping.deepMapping("tenant", List.of("hosted", "owner", "tenant")),
-                        AttributeMapping.deepMapping("application", List.of("hosted", "owner", "application")),
-                        AttributeMapping.deepMapping("instance", List.of("hosted", "owner", "instance")),
-                        AttributeMapping.deepMapping("environment", List.of("hosted", "environment")),
-                        AttributeMapping.deepMapping("region", List.of("hosted", "region")),
-                        AttributeMapping.deepMapping("system", List.of("hosted", "system"))
-                ));
-
-        // The above search will return a correct list if the system is CD. However for main, it will
-        // return all nodes, since system==nil for main
-        keepNodesWithSystem(nodeResult, system);
-        
-        Instant instant = clock.instant();
-        for (PartialNode node : nodeResult.rows) {
-            String hostname = node.getFqdn();
-            long secondsSinceConverge = Duration.between(Instant.ofEpochSecond(node.getOhaiTime().longValue()), instant).getSeconds();
-            Map<String, String> dimensions = new HashMap<>();
-            dimensions.put("host", hostname);
-            dimensions.put("system", node.getValue("system").orElse("main"));
-            Optional<String> environment = node.getValue("environment");
-            Optional<String> region = node.getValue("region");
-
-            if (environment.isPresent() && region.isPresent()) {
-                dimensions.put("zone", String.format("%s.%s", environment.get(), region.get()));
-            }
-
-            node.getValue("tenant").ifPresent(tenant -> dimensions.put("tenantName", tenant));
-            Optional<String> application = node.getValue("application");
-            application.ifPresent(app -> dimensions.put("app", String.format("%s.%s", app, node.getValue("instance").orElse("default"))));
-            Metric.Context context = metric.createContext(dimensions);
-            metric.set(CONVERGENCE_METRIC, secondsSinceConverge, context);
         }
     }
 
@@ -209,10 +147,6 @@ public class MetricsReporter extends Maintainer {
                           .flatMap(Collection::stream)
                           .max(Integer::compareTo)
                           .orElse(0);
-    }
-    
-    private static void keepNodesWithSystem(PartialNodeResult nodeResult, SystemName system) {
-        nodeResult.rows.removeIf(node -> !system.value().equals(node.getValue("system").orElse("main")));
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {
