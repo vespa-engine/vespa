@@ -102,7 +102,7 @@ public class ConfigFiledBasedTlsContext implements TlsContext {
                                                              MutableX509TrustManager mutableTrustManager,
                                                              MutableX509KeyManager mutableKeyManager) {
         SSLContext sslContext = new SslContextBuilder()
-                .withKeyManagerFactory((ignoredKeystore, ignoredPassword) -> mutableKeyManager)
+                .withKeyManager(mutableKeyManager)
                 .withTrustManagerFactory(
                         ignoredTruststore -> options.getAuthorizedPeers()
                                 .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
