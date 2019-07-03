@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -41,8 +40,7 @@ import java.util.stream.Collectors;
  * to failed due to some undetected hardware failure will end up being failed again.
  * When that has happened enough they will not be recycled.
  * <p>
- * The Chef recipe running locally on the node may set hardwareFailureDescription to avoid the node
- * being automatically recycled in cases where an error has been positively detected.
+ * Nodes with detected hardware issues will not be recycled.
  *
  * @author bratseth
  * @author mpolden
