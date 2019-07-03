@@ -252,7 +252,6 @@ public class OperationProcessor {
     }
 
     private void sendToClusters(Document document) {
-
         synchronized (monitor) {
             boolean traceThisDoc = traceEveryXOperation > 0 && traceCounter++ % traceEveryXOperation == 0;
             docSendInfoByOperationId.put(document.getOperationId(), new DocumentSendInfo(document, traceThisDoc));

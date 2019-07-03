@@ -8,7 +8,6 @@ import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
-import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.Exceptions;
 import com.yahoo.vespa.http.client.core.operationProcessor.OperationProcessor;
@@ -25,45 +24,35 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterConnection implements AutoCloseable {
 
-    private final OperationProcessor operationProcessor;
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;
-    private final SessionParams.ErrorReporter errorReporter;
     private static JsonFactory jsonFactory = new JsonFactory();
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public ClusterConnection(
-            OperationProcessor operationProcessor,
-            FeedParams feedParams,
-            ConnectionParams connectionParams,
-            SessionParams.ErrorReporter errorReporter,
-            Cluster cluster,
-            int clusterId,
-            int clientQueueSizePerCluster,
-            ScheduledThreadPoolExecutor timeoutExecutor) {
-        this.errorReporter = errorReporter;
-        if (cluster.getEndpoints().isEmpty()) {
+    public ClusterConnection(OperationProcessor operationProcessor,
+                             FeedParams feedParams,
+                             ConnectionParams connectionParams,
+                             Cluster cluster,
+                             int clusterId,
+                             int clientQueueSizePerCluster,
+                             ScheduledThreadPoolExecutor timeoutExecutor) {
+        if (cluster.getEndpoints().isEmpty())
             throw new IllegalArgumentException("Cannot feed to empty cluster.");
-        }
-        this.operationProcessor = operationProcessor;
+
         this.clusterId = clusterId;
-        final int totalNumberOfEndpointsInThisCluster = cluster.getEndpoints().size()
-                * connectionParams.getNumPersistentConnectionsPerEndpoint();
-        if (totalNumberOfEndpointsInThisCluster == 0) {
-            return;
-        }
+        int totalNumberOfEndpointsInThisCluster = cluster.getEndpoints().size() * connectionParams.getNumPersistentConnectionsPerEndpoint();
+        if (totalNumberOfEndpointsInThisCluster == 0) return;
+
         // Lower than 1 does not make any sense.
-        final int maxInFlightPerSession = Math.max(
-                1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
+        int maxInFlightPerSession = Math.max(1, feedParams.getMaxInFlightRequests() / totalNumberOfEndpointsInThisCluster);
+
         DocumentQueue documentQueue = null;
         for (Endpoint endpoint : cluster.getEndpoints()) {
-            final EndpointResultQueue endpointResultQueue = new EndpointResultQueue(
-                    operationProcessor,
-                    endpoint,
-                    clusterId,
-                    timeoutExecutor,
-                    feedParams.getServerTimeout(TimeUnit.MILLISECONDS)
-                            + feedParams.getClientTimeout(TimeUnit.MILLISECONDS));
+            EndpointResultQueue endpointResultQueue = new EndpointResultQueue(operationProcessor,
+                                                                              endpoint,
+                                                                              clusterId,
+                                                                              timeoutExecutor,
+                                                                              feedParams.getServerTimeout(TimeUnit.MILLISECONDS) + feedParams.getClientTimeout(TimeUnit.MILLISECONDS));
             for (int i = 0; i < connectionParams.getNumPersistentConnectionsPerEndpoint(); i++) {
                 GatewayConnection gatewayConnection;
                 if (connectionParams.isDryRun()) {
@@ -74,15 +63,14 @@ public class ClusterConnection implements AutoCloseable {
                             feedParams,
                             cluster.getRoute(),
                             connectionParams,
-                            new ApacheGatewayConnection.HttpClientFactory(
-                                    connectionParams, endpoint.isUseSsl()),
+                            new ApacheGatewayConnection.HttpClientFactory(connectionParams, endpoint.isUseSsl()),
                             operationProcessor.getClientId()
                     );
                 }
                 if (documentQueue == null) {
                     documentQueue = new DocumentQueue(clientQueueSizePerCluster);
                 }
-                final IOThread ioThread = new IOThread(
+                IOThread ioThread = new IOThread(
                         operationProcessor.getIoThreadGroup(),
                         endpointResultQueue,
                         gatewayConnection,
@@ -103,9 +91,9 @@ public class ClusterConnection implements AutoCloseable {
 
     public void post(Document document) throws EndpointIOException {
         String documentIdStr = document.getDocumentId();
-        //the same document ID must always go to the same destination
+        // The same document ID must always go to the same destination
         // In noHandshakeMode this has no effect as the documentQueue is shared between the IOThreads.
-        int hash = documentIdStr.hashCode() & 0x7FFFFFFF;  //strip sign bit
+        int hash = documentIdStr.hashCode() & 0x7FFFFFFF;  // Strip sign bit
         IOThread ioThread = ioThreads.get(hash % ioThreads.size());
         try {
             ioThread.post(document);
@@ -148,7 +136,7 @@ public class ClusterConnection implements AutoCloseable {
     }
 
     public String getStatsAsJSon() throws IOException {
-        final StringWriter stringWriter = new StringWriter();
+        StringWriter stringWriter = new StringWriter();
         JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
         jsonGenerator.writeStartObject();
         jsonGenerator.writeArrayFieldStart("session");
