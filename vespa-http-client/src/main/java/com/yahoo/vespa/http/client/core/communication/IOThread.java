@@ -84,16 +84,19 @@ class IOThread implements Runnable, AutoCloseable {
         return endpoint;
     }
 
-    static class ConnectionStats {
-        final int wrongSessionDetectedCounter;
-        final int wrongVersionDetectedCounter;
-        final int problemStatusCodeFromServerCounter;
-        final int executeProblemsCounter;
-        final int docsReceivedCounter;
-        final int statusReceivedCounter;
-        final int pendingDocumentStatusCount;
-        final int successfullHandshakes;
-        final int lastGatewayProcessTimeMillis;
+    public static class ConnectionStats {
+
+        // NOTE: These fields are accessed by reflection in JSON serialization
+
+        public final int wrongSessionDetectedCounter;
+        public final int wrongVersionDetectedCounter;
+        public final int problemStatusCodeFromServerCounter;
+        public final int executeProblemsCounter;
+        public final int docsReceivedCounter;
+        public final int statusReceivedCounter;
+        public final int pendingDocumentStatusCount;
+        public final int successfullHandshakes;
+        public final int lastGatewayProcessTimeMillis;
 
         ConnectionStats(int wrongSessionDetectedCounter,
                         int wrongVersionDetectedCounter,
