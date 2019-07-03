@@ -739,6 +739,11 @@ public abstract class IndexedTensor implements Tensor {
         @Override
         public Double getValue() { return value; }
 
+        @Override
+        public Cell detach() {
+            return new Cell(getKey(), value);
+        }
+
     }
 
     // TODO: Make dimensionSizes a class
