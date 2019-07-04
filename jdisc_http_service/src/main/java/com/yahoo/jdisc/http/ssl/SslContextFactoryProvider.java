@@ -8,7 +8,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
  *
  * @author bjorncs
  */
-public interface SslContextFactoryProvider {
+public interface SslContextFactoryProvider extends AutoCloseable {
 
     /**
      * This method is called once for each SSL connector.
@@ -17,4 +17,5 @@ public interface SslContextFactoryProvider {
      */
     SslContextFactory getInstance(String containerId, int port);
 
+    @Override default void close() {}
 }

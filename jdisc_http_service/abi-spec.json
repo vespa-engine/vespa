@@ -1124,14 +1124,17 @@
   },
   "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider": {
     "superClass": "java.lang.Object",
-    "interfaces": [],
+    "interfaces": [
+      "java.lang.AutoCloseable"
+    ],
     "attributes": [
       "public",
       "interface",
       "abstract"
     ],
     "methods": [
-      "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)"
+      "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)",
+      "public void close()"
     ],
     "fields": []
   }

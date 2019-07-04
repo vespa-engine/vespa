@@ -4,7 +4,7 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 import com.yahoo.container.core.identity.IdentityConfig;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -14,12 +14,10 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +29,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.yahoo.security.KeyStoreType.JKS;
 import static java.util.Collections.singleton;
 
 /**
@@ -49,14 +46,12 @@ class AthenzCredentialsService {
     private final URI ztsEndpoint;
     private final AthenzService configserverIdentity;
     private final ServiceIdentityProvider nodeIdentityProvider;
-    private final File trustStoreJks;
     private final String hostname;
     private final CsrGenerator csrGenerator;
     private final Clock clock;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
                              ServiceIdentityProvider nodeIdentityProvider,
-                             File trustStoreJks,
                              String hostname,
                              Clock clock) {
         this.tenantIdentity = new AthenzService(identityConfig.domain(), identityConfig.service());
@@ -64,7 +59,6 @@ class AthenzCredentialsService {
         this.ztsEndpoint = URI.create(identityConfig.ztsUrl());
         this.configserverIdentity = new AthenzService(identityConfig.configserverIdentityName());
         this.nodeIdentityProvider = nodeIdentityProvider;
-        this.trustStoreJks = trustStoreJks;
         this.hostname = hostname;
         this.csrGenerator = new CsrGenerator(identityConfig.athenzDnsSuffix(), identityConfig.configserverIdentityName());
         this.clock = clock;
@@ -94,9 +88,8 @@ class AthenzCredentialsService {
                             false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
-            SSLContext identitySslContext = createIdentitySslContext(keyPair.getPrivate(), certificate);
             writeCredentialsToDisk(keyPair.getPrivate(), certificate, document);
-            return new AthenzCredentials(certificate, keyPair, document, identitySslContext);
+            return new AthenzCredentials(certificate, keyPair, document);
         }
     }
 
@@ -117,9 +110,8 @@ class AthenzCredentialsService {
                             false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
-            SSLContext identitySslContext = createIdentitySslContext(newKeyPair.getPrivate(), certificate);
             writeCredentialsToDisk(newKeyPair.getPrivate(), certificate, document);
-            return new AthenzCredentials(certificate, newKeyPair, document, identitySslContext);
+            return new AthenzCredentials(certificate, newKeyPair, document);
         }
     }
 
@@ -134,8 +126,7 @@ class AthenzCredentialsService {
         if (Files.notExists(IDENTITY_DOCUMENT_FILE)) return Optional.empty();
         SignedIdentityDocument signedIdentityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(IDENTITY_DOCUMENT_FILE);
         KeyPair keyPair = new KeyPair(KeyUtils.extractPublicKey(privateKey.get()), privateKey.get());
-        SSLContext sslContext = createIdentitySslContext(privateKey.get(), certificate.get());
-        return Optional.of(new AthenzCredentials(certificate.get(), keyPair, signedIdentityDocument, sslContext));
+        return Optional.of(new AthenzCredentials(certificate.get(), keyPair, signedIdentityDocument));
     }
 
     private boolean isExpired(X509Certificate certificate) {
@@ -148,13 +139,6 @@ class AthenzCredentialsService {
         SiaUtils.writePrivateKeyFile(VESPA_SIA_DIRECTORY, tenantIdentity, privateKey);
         SiaUtils.writeCertificateFile(VESPA_SIA_DIRECTORY, tenantIdentity, certificate);
         EntityBindingsMapper.writeSignedIdentityDocumentToFile(IDENTITY_DOCUMENT_FILE, identityDocument);
-    }
-
-    private SSLContext createIdentitySslContext(PrivateKey privateKey, X509Certificate certificate) {
-        return new SslContextBuilder()
-                .withKeyStore(privateKey, certificate)
-                .withTrustStore(trustStoreJks.toPath(), JKS)
-                .build();
     }
 
     private DefaultIdentityDocumentClient createIdentityDocumentClient() {

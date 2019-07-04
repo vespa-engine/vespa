@@ -20,6 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,20 +31,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A {@link TlsContext} that regularly reloads the credentials referred to from the transport security options file.
+ * A {@link TlsContext} that uses the tls configuration specified in the transport security options file.
+ * The credentials are regularly reloaded to support short-lived certificates.
  *
  * @author bjorncs
  */
-public class ReloadingTlsContext implements TlsContext {
+public class ConfigFileBasedTlsContext implements TlsContext {
 
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
 
-    private static final Logger log = Logger.getLogger(ReloadingTlsContext.class.getName());
+    private static final Logger log = Logger.getLogger(ConfigFileBasedTlsContext.class.getName());
 
     private final TlsContext tlsContext;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new ReloaderThreadFactory());
 
-    public ReloadingTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
+    public ConfigFileBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         MutableX509TrustManager trustManager = new MutableX509TrustManager();
         MutableX509KeyManager keyManager = new MutableX509KeyManager();
@@ -99,13 +102,15 @@ public class ReloadingTlsContext implements TlsContext {
                                                              MutableX509TrustManager mutableTrustManager,
                                                              MutableX509KeyManager mutableKeyManager) {
         SSLContext sslContext = new SslContextBuilder()
-                .withKeyManagerFactory((ignoredKeystore, ignoredPassword) -> mutableKeyManager)
+                .withKeyManager(mutableKeyManager)
                 .withTrustManagerFactory(
                         ignoredTruststore -> options.getAuthorizedPeers()
                                 .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
                                 .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
                 .build();
-        return new DefaultTlsContext(sslContext, options.getAcceptedCiphers());
+        List<String> acceptedCiphers = options.getAcceptedCiphers();
+        Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
+        return new DefaultTlsContext(sslContext, ciphers, PeerAuthentication.NEED);
     }
 
     // Wrapped methods from TlsContext

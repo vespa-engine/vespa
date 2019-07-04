@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author bjorncs
  */
-public class ReloadingTlsContextTest {
+public class ConfigFileBasedTlsContextTest {
 
     @Rule
     public TemporaryFolder tempDirectory = new TemporaryFolder();
@@ -55,12 +55,12 @@ public class ReloadingTlsContextTest {
         Path optionsFile = tempDirectory.newFile().toPath();
         options.toJsonFile(optionsFile);
 
-        try (TlsContext tlsContext = new ReloadingTlsContext(optionsFile, AuthorizationMode.ENFORCE)) {
+        try (TlsContext tlsContext = new ConfigFileBasedTlsContext(optionsFile, AuthorizationMode.ENFORCE)) {
             SSLEngine sslEngine = tlsContext.createSslEngine();
             assertThat(sslEngine).isNotNull();
             String[] enabledCiphers = sslEngine.getEnabledCipherSuites();
             assertThat(enabledCiphers).isNotEmpty();
-            assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
+            assertThat(enabledCiphers).isSubsetOf(TlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
 
             String[] enabledProtocols = sslEngine.getEnabledProtocols();
             assertThat(enabledProtocols).contains("TLSv1.2");
