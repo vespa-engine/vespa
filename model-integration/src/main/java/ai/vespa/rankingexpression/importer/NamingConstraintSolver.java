@@ -6,6 +6,7 @@ import com.yahoo.lang.MutableInteger;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,33 +25,31 @@ class NamingConstraintSolver {
     private int iterations = 0;
     private final int maxIterations;
 
-    /** The solution to this rename problem */
-    private Map<String, Integer> renames;
-
     private NamingConstraintSolver(ListMap<String, Integer> inputVariables,
                                    ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints,
-                                   int maxIterations,
-                                   Map<String, Integer> renames) {
+                                   int maxIterations) {
         this.variables = new ListMap<>(inputVariables);
         initialize(variables);
         this.constraints = constraints;
         this.maxIterations = maxIterations;
-        this.renames = renames;
     }
 
     /** Try the solve the constraint problem given in the arguments, and put the result in renames */
-    private boolean trySolve() {
+    private Map<String, Integer> trySolve() {
+        // TODO: Evaluate possible improved efficiency by using a heuristic such as min-conflicts
+
+        Map<String, Integer> solution = new HashMap<>();
         for (String dimension : variables.keySet()) {
             List<Integer> values = variables.get(dimension);
             if (values.size() > 1) {
-                if ( ! ac3()) return false;
+                if ( ! ac3()) return null;
                 values.sort(Integer::compare);
                 variables.replace(dimension, values.get(0));
             }
-            renames.put(dimension, variables.get(dimension).get(0));
-            if (iterations > maxIterations) return false;
+            solution.put(dimension, variables.get(dimension).get(0));
+            if (iterations > maxIterations) return null;
         }
-        return true;
+        return solution;
     }
 
     private static void initialize(ListMap<String, Integer> variables) {
@@ -101,11 +100,16 @@ class NamingConstraintSolver {
         return revised;
     }
 
-    public static boolean solve(ListMap<String, Integer> inputVariables,
-                                ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints,
-                                int maxIterations,
-                                Map<String, Integer> renames) {
-        return new NamingConstraintSolver(inputVariables, constraints, maxIterations, renames).trySolve();
+    /**
+     * Attempts to solve the given naming problem. The input maps are never modified.
+     *
+     * @return the solution as a map from existing names to name ids represented as integers, or NULL
+     *         if no solution could be found
+     */
+    public static Map<String, Integer> solve(ListMap<String, Integer> inputVariables,
+                                             ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints,
+                                             int maxIterations) {
+        return new NamingConstraintSolver(inputVariables, constraints, maxIterations).trySolve();
     }
 
 }

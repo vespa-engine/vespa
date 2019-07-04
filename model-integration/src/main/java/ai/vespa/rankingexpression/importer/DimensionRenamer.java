@@ -7,7 +7,6 @@ import ai.vespa.rankingexpression.importer.operations.Rename;
 import com.yahoo.collections.ListMap;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class DimensionRenamer {
     private final ListMap<String, Integer> variables = new ListMap<>();
     private final ListMap<Arc, Constraint> constraints = new ListMap<>();
 
-    /** The solution to this, or null if no solution is found (yet) */
+    /** The solution to this, or null if no solution is found yet */
     private Map<String, Integer> renames = null;
 
     public DimensionRenamer(IntermediateGraph graph) {
@@ -89,11 +88,8 @@ public class DimensionRenamer {
      * @return the solution in the form of the renames to perform
      */
     private Map<String, Integer> solve(int maxIterations) {
-        Map<String, Integer> renames = new HashMap<>();
-
-        // Todo: evaluate possible improved efficiency by using a heuristic such as min-conflicts
-        boolean solved = NamingConstraintSolver.solve(variables, constraints, maxIterations, renames);
-        if ( ! solved) {
+        Map<String, Integer> solution = NamingConstraintSolver.solve(variables, constraints, maxIterations);
+        if ( solution == null) {
             IntermediateOperation operation = graph.operations().get("dense_out/MatMul");
             if (operation != null && operation instanceof MatMul) {
                 IntermediateOperation arg0 = operation.inputs().get(0);
@@ -109,17 +105,15 @@ public class DimensionRenamer {
                 addDimension("renamed_0");
                 newOperation.addDimensionNameConstraints(this);
 
-                renames.clear();
-                solved = NamingConstraintSolver.solve(variables, constraints, maxIterations, renames);
+                solution = NamingConstraintSolver.solve(variables, constraints, maxIterations);
             }
         }
-        if ( ! solved) {
-            renames.clear();
+        if ( solution == null) {
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
             boolean anyRemoved = copyHard(constraints, hardConstraints);
             if (anyRemoved)
-                solved = NamingConstraintSolver.solve(variables, hardConstraints, maxIterations, renames);
-            if ( ! solved) {
+                solution = NamingConstraintSolver.solve(variables, hardConstraints, maxIterations);
+            if ( solution == null) {
                 throw new IllegalArgumentException("Could not find a dimension naming solution " +
                                                    "given constraints\n" + constraintsToString(hardConstraints));
             }
@@ -130,7 +124,7 @@ public class DimensionRenamer {
         // with the most remaining constraints, and inject a rename operation.
         // Then run this algorithm again.
 
-        return renames;
+        return solution;
     }
 
     /** Removes soft constraints and returns whether something was removed */
