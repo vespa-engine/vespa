@@ -38,6 +38,8 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.VespaDocumentDeserializerHead;
+import com.yahoo.document.serialization.VespaDocumentSerializerHead;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.tensor.Tensor;
@@ -82,14 +84,15 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
 
-
 /**
- * Testcases for vespa-documentgen-plugin
+ * Tests vespa-documentgen-plugin
  *
  * @author vegardh
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DocumentGenPluginTest {
+
+    // NOTE: Most assertEquals in this use the wrong argument order
 
     private static final int NUM_BOOKS = 10000;
 
@@ -186,7 +189,7 @@ public class DocumentGenPluginTest {
     }
 
     @Test
-    public void testremoveFieldValue() {
+    public void testRemoveFieldValue() {
         Book book = getBook();
         book.setAuthor(null);
         Field a = new Field("author", DataType.STRING);
@@ -229,9 +232,13 @@ public class DocumentGenPluginTest {
     @Test
     public void testStructs() {
         Book book = getBook();
+        assertBook(book);
+    }
+
+    private void assertBook(Book book) {
         assertTrue(Struct.class.isInstance(book.getMystruct()));
-        assertEquals(book.getMystruct().getSs01().getD0(), -238472634.78, 0);
-        assertEquals(book.getMystruct().getI1(), (Integer)999);
+        assertEquals(-238472634.78, book.getMystruct().getSs01().getD0(), 0);
+        assertEquals((Integer)999, book.getMystruct().getI1());
         assertEquals(book.getAuthor(), "Herman Melville");
         book.getMystruct().getSs01().setD0(4d);
         assertEquals(book.getMystruct().getSs01().getD0(), 4.0, 1E-6);
@@ -278,9 +285,7 @@ public class DocumentGenPluginTest {
         assertEquals(twelve, new IntegerFieldValue(12));
     }
 
-    @Test
-    public void testArrayOfStruct() {
-        Book book = getBook();
+    private void verifyArrayOfStruct(Book book) {
         assertEquals(book.getMysinglestructarray().get(0).getS1(), "YEPS");
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)456);
         Struct s1 = (Struct) ((Array)book.getFieldValue("mysinglestructarray")).get(0);
@@ -295,13 +300,28 @@ public class DocumentGenPluginTest {
         assertEquals(ifv2.getInteger(), 456);
         s2.setFieldValue("i1", new IntegerFieldValue(123));
         assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
-        book.getMysinglestructarray().remove(0);
+        Book.Ss1 prev = book.getMysinglestructarray().remove(0);
         assertEquals(book.getMysinglestructarray().get(0).getI1(), (Integer)123);
+        book.getMysinglestructarray().add(0, prev);
+        assertEquals(book.getMysinglestructarray().get(1).getI1(), (Integer)123);
+        s2.setFieldValue("i1", new IntegerFieldValue(456));
+    }
+
+    private static Document copyBySerialization(Document orig) {
+        return roundtripSerialize(orig, typeManagerForBookType());
+    }
+    private Book toBook(Document doc) {
+        return (Book) new ConcreteDocumentFactory().getDocumentCopy(doc.getDataType().getName(), doc, doc.getId());
     }
 
     @Test
-    public void testMaps() {
+    public void testArrayOfStruct() {
         Book book = getBook();
+        verifyArrayOfStruct(book);
+        verifyArrayOfStruct(toBook(copyBySerialization(book)));
+    }
+
+    private void verifyMaps(Book book) {
         assertTrue(book.getField("stringmap").getDataType() instanceof MapDataType);
         MapFieldValue mfv = (MapFieldValue) book.getFieldValue("stringmap");
         assertEquals(mfv.get(new StringFieldValue("Melville")), new StringFieldValue("Moby Dick"));
@@ -311,12 +331,21 @@ public class DocumentGenPluginTest {
         assertEquals(mfv.keySet().size(), 2);
         book.getStringmap().put("Melville", "MD");
         assertEquals(mfv.keySet().size(), 3);
+        book.getStringmap().put("Melville", "Moby Dick");
+        assertEquals(mfv.keySet().size(), 3);
 
         assertEquals(book.getStructmap().get(50).getS1(), "test s1");
         MapFieldValue mfv2 = (MapFieldValue) book.getFieldValue("structmap");
         Struct fifty = (Struct)(mfv2.get(new IntegerFieldValue(50)));
         assertEquals(fifty.getFieldValue("s1").getWrappedValue(), "test s1");
         assertEquals(((Ss1)mfv2.get(new IntegerFieldValue(50))).getS1(), "test s1");
+    }
+
+    @Test
+    public void testMaps() {
+        Book book = getBook();
+        verifyMaps(book);
+        verifyMaps(toBook(copyBySerialization(book)));
     }
 
     @Test
@@ -484,13 +513,13 @@ public class DocumentGenPluginTest {
         }
     }
 
-    private DocumentTypeManager typeManagerFromSDs(String... files) {
+    private static DocumentTypeManager typeManagerFromSDs(String... files) {
         final DocumentTypeManager mgr = new DocumentTypeManager();
         mgr.configure("raw:" + getDocumentConfig(Arrays.asList(files)));
         return mgr;
     }
 
-    private DocumentTypeManager typeManagerForBookType() {
+    private static DocumentTypeManager typeManagerForBookType() {
         return typeManagerFromSDs("etc/complex/common.sd", "etc/complex/parent.sd", "etc/complex/book.sd");
     }
 
@@ -506,7 +535,7 @@ public class DocumentGenPluginTest {
         assertEquals(NUM_BOOKS, manyGenericBooks.size());
     }
 
-    private String getDocumentConfig(List<String> sds) {
+    private static String getDocumentConfig(List<String> sds) {
         return new DocumentmanagerConfig(Deriver.getDocumentManagerConfig(sds)).toString();
     }
 

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -70,8 +72,8 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse root(HttpRequest request) {
-        List<Environment> environments = zoneRegistry.zones().all().ids().stream()
-                                                     .map(ZoneId::environment)
+        List<Environment> environments = zoneRegistry.zones().all().zones().stream()
+                                                     .map(ZoneApi::getEnvironment)
                                                      .distinct()
                                                      .sorted(Comparator.comparing(Environment::value))
                                                      .collect(Collectors.toList());
@@ -90,17 +92,16 @@ public class ZoneApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse environment(HttpRequest request, Environment environment) {
-        List<ZoneId> zones = zoneRegistry.zones().all().in(environment).ids();
         Slime slime = new Slime();
         Cursor root = slime.setArray();
-        zones.forEach(zone -> {
+        zoneRegistry.zones().all().in(environment).zones().forEach(zone -> {
             Cursor object = root.addObject();
-            object.setString("name", zone.region().value());
+            object.setString("name", zone.getRegionName().value());
             object.setString("url", request.getUri()
                                            .resolve("/zone/v2/environment/")
                                            .resolve(environment.value() + "/")
                                            .resolve("region/")
-                                           .resolve(zone.region().value())
+                                           .resolve(zone.getRegionName().value())
                                            .toString());
         });
         return new SlimeJsonResponse(slime);

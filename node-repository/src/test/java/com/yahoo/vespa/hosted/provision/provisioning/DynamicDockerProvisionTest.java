@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -110,7 +109,7 @@ public class DynamicDockerProvisionTest {
                 ClusterSpec.request(ClusterSpec.Type.container,
                         ClusterSpec.Id.from("node-admin"),
                         Version.fromString("6.42"),
-                        false, Collections.emptySet()),
+                        false),
                 Capacity.fromRequiredNodeType(NodeType.host),
                 1);
         tester.activate(applicationId, ImmutableSet.copyOf(list));
@@ -118,7 +117,7 @@ public class DynamicDockerProvisionTest {
 
 
     private static ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Collections.emptySet());
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
     }
 
     @SuppressWarnings("unchecked")

@@ -6,6 +6,7 @@ import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * This represents a query where all terms are required to match in the same element id.
@@ -53,6 +54,16 @@ public class SameElementItem extends NonReducibleCompositeItem {
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
+    }
+
+    @Override
+    public Optional<Item> extractSingleChild() {
+        if (getItemCount() == 1) {
+            WordItem child = (WordItem) getItem(0);
+            child.setIndexName(getFieldName() + "." + child.getIndexName());
+            return Optional.of(child);
+        }
+        return Optional.empty();
     }
     
     @Override

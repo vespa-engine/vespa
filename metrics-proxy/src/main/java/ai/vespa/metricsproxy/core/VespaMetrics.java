@@ -117,7 +117,8 @@ public class VespaMetrics {
                 .statusCode(health.getStatus().ordinal())  // TODO: MetricsPacket should use StatusCode instead of int
                 .statusMessage(health.getMessage())
                 .putDimensions(service.getDimensions())
-                .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName());
+                .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
+                .addConsumers(metricsConsumers.getAllConsumers());
     }
 
     /**

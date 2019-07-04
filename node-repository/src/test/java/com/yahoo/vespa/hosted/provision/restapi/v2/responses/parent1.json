@@ -9,7 +9,6 @@
   "canonicalFlavor": "[vcpu: 2.0, memory: 8.0 Gb, disk 50.0 Gb]",
   "minDiskAvailableGb": 400.0,
   "minMainMemoryAvailableGb": 16.0,
-  "description": "Flavor-name-is-default",
   "minCpuCores": 2.0,
   "fastDisk":true,
   "bandwidth":0.0,

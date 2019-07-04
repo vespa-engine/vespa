@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -48,6 +49,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Zone zone;
     private final ConfigServerDB configServerDB;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
     private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService zkCacheExecutor;
 
@@ -67,7 +69,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB,
-                                           FlagSource flagSource) {
+                                           FlagSource flagSource,
+                                           SecretStore secretStore) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -82,6 +85,7 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zone = zone;
         this.configServerDB = configServerDB;
         this.flagSource = flagSource;
+        this.secretStore = secretStore;
         this.zkWatcherExecutor = new StripedExecutor<>();
         this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
@@ -136,5 +140,10 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     @Override
     public ExecutorService getZkCacheExecutor() {
         return zkCacheExecutor;
+    }
+
+    @Override
+    public SecretStore getSecretStore() {
+        return secretStore;
     }
 }

@@ -12,7 +12,7 @@ namespace search::memoryindex::test {
  */
 class WrapInserter {
 private:
-    OrderedFieldIndexInserter& _inserter;
+    IOrderedFieldIndexInserter& _inserter;
 
 public:
     WrapInserter(FieldIndexCollection& field_indexes, uint32_t field_id)
@@ -20,7 +20,7 @@ public:
     {
     }
 
-    WrapInserter(FieldIndex& field_index)
+    WrapInserter(IFieldIndex& field_index)
             : _inserter(field_index.getInserter())
     {
     }

@@ -15,7 +15,6 @@ import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
@@ -47,13 +46,13 @@ public class DefaultTlsContextTest {
                                 singletonList(new RequiredPeerCredential(RequiredPeerCredential.Field.CN, new HostGlobPattern("dummy"))))));
 
         DefaultTlsContext tlsContext =
-                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, List.of());
+                new DefaultTlsContext(singletonList(certificate), keyPair.getPrivate(), singletonList(certificate), authorizedPeers, AuthorizationMode.ENFORCE, PeerAuthentication.NEED);
 
         SSLEngine sslEngine = tlsContext.createSslEngine();
         assertThat(sslEngine).isNotNull();
         String[] enabledCiphers = sslEngine.getEnabledCipherSuites();
         assertThat(enabledCiphers).isNotEmpty();
-        assertThat(enabledCiphers).isSubsetOf(DefaultTlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
+        assertThat(enabledCiphers).isSubsetOf(TlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
 
         String[] enabledProtocols = sslEngine.getEnabledProtocols();
         assertThat(enabledProtocols).contains("TLSv1.2");

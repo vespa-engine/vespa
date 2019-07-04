@@ -7,12 +7,12 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.vespa.hosted.provision.node.History;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,31 +28,25 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
-
-    private final Clock clock;
     
-    private Instant previousRun;
-    
-    OperatorChangeApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Clock clock, Duration interval) {
+    OperatorChangeApplicationMaintainer(Deployer deployer, NodeRepository nodeRepository, Duration interval) {
         super(deployer, nodeRepository, interval);
-        this.clock = clock;
-        previousRun = clock.instant(); // Changes before this will be caught by the first PeriodicApplicationMaintainer run
     }
 
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Instant windowEnd = clock.instant();
-        Instant windowStart = previousRun;
-        previousRun = windowEnd;
-        return nodeRepository().getNodes(NodeType.tenant).stream()
-                               .filter(node -> hasManualStateChangeSince(windowStart, node))
-                               .flatMap(node -> node.allocation().map(Allocation::owner).stream())
-                               .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
+        Map<ApplicationId, List<Node>> nodesByApplication = nodeRepository().getNodes(NodeType.tenant).stream()
+                .filter(node -> node.allocation().isPresent())
+                .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.toList()));
 
-    private boolean hasManualStateChangeSince(Instant instant, Node node) {
-        return node.history().events().stream()
-                .anyMatch(event -> event.agent() == Agent.operator && event.at().isAfter(instant));
+        return nodesByApplication.entrySet().stream()
+                .filter(entry -> entry.getValue().stream()
+                        .flatMap(node -> node.history().events().stream())
+                        .filter(event -> event.agent() == Agent.operator)
+                        .map(History.Event::at)
+                        .anyMatch(getLastDeployTime(entry.getKey())::isBefore))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**

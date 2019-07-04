@@ -11,7 +11,8 @@
       "public abstract java.util.Map documentTypes()",
       "public abstract java.util.Map structTypes()",
       "public abstract java.util.Map annotationTypes()",
-      "public abstract com.yahoo.document.Document getDocumentCopy(java.lang.String, com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.DocumentId)"
+      "public abstract com.yahoo.document.Document getDocumentCopy(java.lang.String, com.yahoo.document.datatypes.StructuredFieldValue, com.yahoo.document.DocumentId)",
+      "public com.yahoo.document.datatypes.FieldValue optionallyUpgrade(com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue)"
     ],
     "fields": []
   },

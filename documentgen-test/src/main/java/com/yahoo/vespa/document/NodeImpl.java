@@ -7,7 +7,6 @@ import com.yahoo.document.annotation.Annotation;
  * Example of user provided annotation subtype that vespa-documentgen-plugin supports
  *
  * @author vegardh
- *
  */
 public class NodeImpl extends Annotation {
 

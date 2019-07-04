@@ -4,6 +4,5 @@ vespa_add_executable(vespalib_testkit-testhook_test_app TEST
     testkit-testhook_test.cpp
     DEPENDS
     vespalib
-    cppunit
 )
 vespa_add_test(NAME vespalib_testkit-testhook_test_app COMMAND vespalib_testkit-testhook_test_app)

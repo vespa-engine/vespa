@@ -217,7 +217,7 @@
       ]
     }
   ],
-  "compileVersion": "(ignore)",
+  "compileVersion": "6.0.0",
   "globalRotations": [
     "https://application1--tenant1.global.vespa.oath.cloud:4443/"
   ],

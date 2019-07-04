@@ -7,19 +7,60 @@
 namespace search::memoryindex {
 
 /**
+ * Class storing interleaved features for a posting list entry.
+ */
+class InterleavedFeatures {
+protected:
+    uint16_t _num_occs;
+    uint16_t _field_length;
+
+public:
+    InterleavedFeatures()
+        : _num_occs(0),
+          _field_length(1)
+    {
+    }
+    InterleavedFeatures(uint16_t num_occs, uint16_t field_length)
+        : _num_occs(num_occs),
+          _field_length(field_length)
+    {
+    }
+    uint16_t get_num_occs() const { return _num_occs; }
+    uint16_t get_field_length() const { return _field_length; }
+};
+
+/**
+ * Empty class used when posting list entry does not have interleaved features.
+ */
+class NoInterleavedFeatures {
+public:
+    NoInterleavedFeatures() {}
+    NoInterleavedFeatures(uint16_t num_occs, uint16_t field_length) {
+        (void) num_occs;
+        (void) field_length;
+    }
+    uint16_t get_num_occs() const { return 0; }
+    uint16_t get_field_length() const { return 1; }
+};
+
+/**
  * Entry per document in memory index posting list.
  */
-class PostingListEntry {
+template <bool interleaved_features>
+class PostingListEntry : public std::conditional_t<interleaved_features, InterleavedFeatures, NoInterleavedFeatures> {
+    using ParentType = std::conditional_t<interleaved_features, InterleavedFeatures, NoInterleavedFeatures>;
     mutable datastore::EntryRef _features; // reference to compressed features
 
 public:
-    PostingListEntry(datastore::EntryRef features)
-        : _features(features)
+    explicit PostingListEntry(datastore::EntryRef features, uint16_t num_occs, uint16_t field_length)
+        : ParentType(num_occs, field_length),
+          _features(features)
     {
     }
 
     PostingListEntry()
-        : _features()
+        : ParentType(),
+          _features()
     {
     }
 
@@ -32,5 +73,8 @@ public:
      */
     void update_features(datastore::EntryRef features) const { _features = features; }
 };
+
+template class PostingListEntry<false>;
+template class PostingListEntry<true>;
 
 }

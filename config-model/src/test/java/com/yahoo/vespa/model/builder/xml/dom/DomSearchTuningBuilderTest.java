@@ -2,21 +2,17 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.CollectionUtil;
-import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.model.search.Tuning;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,10 +39,10 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         return b.build(root.getDeployState(), root, xml);
     }
 
-    String getProtonCfg(Tuning tuning) {
+    private ProtonConfig getProtonCfg(Tuning tuning) {
         ProtonConfig.Builder pb = new ProtonConfig.Builder();
         tuning.getConfig(pb);
-        return StringUtilities.implode(ConfigInstance.serialize(new ProtonConfig(pb)).toArray(new String[0]), "\n");
+        return new ProtonConfig(pb);
     }
 
     @Test
@@ -85,10 +81,10 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</requestthreads>"));
         assertEquals(123, t.searchNode.threads.numSearchThreads.longValue());
         assertEquals(456, t.searchNode.threads.numSummaryThreads.longValue());
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("numsearcherthreads 123"));
-        assertThat(cfg, containsString("numthreadspersearch 34"));
-        assertThat(cfg, containsString("numsummarythreads 456"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.numsearcherthreads(), 123);
+        assertEquals(cfg.numthreadspersearch(), 34);
+        assertEquals(cfg.numsummarythreads(), 456);
      }
 
     @Test
@@ -112,22 +108,22 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</conservative>",
                 "</native>","</flushstrategy>"));
         assertEquals(900, t.searchNode.strategy.totalMaxMemoryGain.longValue());
-        assertEquals(8.7, t.searchNode.strategy.totalDiskBloatFactor.doubleValue(), DELTA);
+        assertEquals(8.7, t.searchNode.strategy.totalDiskBloatFactor, DELTA);
         assertEquals(600, t.searchNode.strategy.componentMaxMemoryGain.longValue());
-        assertEquals(5.4, t.searchNode.strategy.componentDiskBloatFactor.doubleValue(), DELTA);
-        assertEquals(300, t.searchNode.strategy.componentMaxage.doubleValue(), DELTA);
+        assertEquals(5.4, t.searchNode.strategy.componentDiskBloatFactor, DELTA);
+        assertEquals(300, t.searchNode.strategy.componentMaxage, DELTA);
         assertEquals(1024, t.searchNode.strategy.transactionLogMaxSize.longValue());
-        assertEquals(0.6, t.searchNode.strategy.conservativeMemoryLimitFactor.doubleValue(), DELTA);
-        assertEquals(0.7, t.searchNode.strategy.conservativeDiskLimitFactor.doubleValue(), DELTA);
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("flush.memory.maxmemory 900"));
-        assertThat(cfg, containsString("flush.memory.diskbloatfactor 8.7"));
-        assertThat(cfg, containsString("flush.memory.each.maxmemory 600"));
-        assertThat(cfg, containsString("flush.memory.each.diskbloatfactor 5.4"));
-        assertThat(cfg, containsString("flush.memory.maxage.time 300"));
-        assertThat(cfg, containsString("flush.memory.maxtlssize 1024"));
-        assertThat(cfg, containsString("flush.memory.conservative.memorylimitfactor 0.6"));
-        assertThat(cfg, containsString("flush.memory.conservative.disklimitfactor 0.7"));
+        assertEquals(0.6, t.searchNode.strategy.conservativeMemoryLimitFactor, DELTA);
+        assertEquals(0.7, t.searchNode.strategy.conservativeDiskLimitFactor, DELTA);
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.flush().memory().maxmemory(), 900);
+        assertEquals(cfg.flush().memory().diskbloatfactor(),  8.7, DELTA);
+        assertEquals(cfg.flush().memory().each().maxmemory(), 600);
+        assertEquals(cfg.flush().memory().each().diskbloatfactor(), 5.4, DELTA);
+        assertEquals(cfg.flush().memory().maxage().time(), 300, DELTA);
+        assertEquals(cfg.flush().memory().maxtlssize(), 1024);
+        assertEquals(cfg.flush().memory().conservative().memorylimitfactor(), 0.6, DELTA);
+        assertEquals(cfg.flush().memory().conservative().disklimitfactor(), 0.7, DELTA);
     }
 
     @Test
@@ -157,12 +153,28 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.IoType.MMAP, t.searchNode.index.io.search);
         assertEquals(178, t.searchNode.index.warmup.time, DELTA);
         assertTrue(t.searchNode.index.warmup.unpack);
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("indexing.write.io DIRECTIO"));
-        assertThat(cfg, containsString("indexing.read.io NORMAL"));
-        assertThat(cfg, containsString("index.warmup.time 178"));
-        assertThat(cfg, containsString("index.warmup.unpack true"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.indexing().write().io(), ProtonConfig.Indexing.Write.Io.DIRECTIO);
+        assertEquals(cfg.indexing().read().io(), ProtonConfig.Indexing.Read.Io.NORMAL);
+        assertEquals(cfg.index().warmup().time(), 178, DELTA);
+        assertTrue(cfg.index().warmup().unpack());
     }
+
+    @Test
+    public void requireThatWeCanPopulateIndex() {
+        Tuning t = createTuning(parseXml("<index>", "<io>",
+                "<search>populate</search>",
+                "</io>",
+                "</index>"));
+        assertEquals(Tuning.SearchNode.IoType.POPULATE, t.searchNode.index.io.search);
+
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.indexing().write().io(), ProtonConfig.Indexing.Write.Io.DIRECTIO);
+        assertEquals(cfg.indexing().read().io(), ProtonConfig.Indexing.Read.Io.DIRECTIO);
+        assertEquals(cfg.search().mmap().options().size(), 1);
+        assertEquals(cfg.search().mmap().options().get(0), ProtonConfig.Search.Mmap.Options.POPULATE);
+    }
+
 
     @Test
     public void requireThatWeCanParseRemovedDBTag() {
@@ -172,9 +184,9 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</prune>", "</removed-db>"));
         assertEquals(19388, t.searchNode.removedDB.prune.age, DELTA);
         assertEquals(193, t.searchNode.removedDB.prune.interval, DELTA);
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("pruneremoveddocumentsinterval 193"));
-        assertThat(cfg, containsString("pruneremoveddocumentsage 19388"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.pruneremoveddocumentsinterval(), 193, DELTA);
+        assertEquals(cfg.pruneremoveddocumentsage(), 19388, DELTA);
     }
 
     @Test
@@ -183,8 +195,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<write>directio</write>",
                 "</io>", "</attribute>"));
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.attribute.io.write);
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("attribute.write.io DIRECTIO"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.attribute().write().io(), ProtonConfig.Attribute.Write.Io.DIRECTIO);
     }
 
     @Test
@@ -220,7 +232,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.write);
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.read);
         assertEquals(128, t.searchNode.summary.store.cache.maxSize.longValue());
-        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent.doubleValue(), DELTA);
+        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent, DELTA);
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.NONE,
                 t.searchNode.summary.store.cache.compression.type);
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
@@ -230,18 +242,18 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.LZ4,
                 t.searchNode.summary.store.logStore.chunk.compression.type);
         assertEquals(5, t.searchNode.summary.store.logStore.chunk.compression.level.intValue());
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("summary.write.io DIRECTIO"));
-        assertThat(cfg, containsString("summary.read.io DIRECTIO"));
-        assertThat(cfg, containsString("summary.cache.maxbytes 128"));
-        assertThat(cfg, containsString("summary.cache.initialentries 64"));
-        assertThat(cfg, containsString("summary.cache.compression.type NONE"));
-        assertThat(cfg, containsString("summary.cache.compression.level 3"));
-        assertThat(cfg, containsString("summary.log.maxfilesize 512"));
-        assertThat(cfg, containsString("summary.log.minfilesizefactor 0.3"));
-        assertThat(cfg, containsString("summary.log.chunk.maxbytes 256"));
-        assertThat(cfg, containsString("summary.log.chunk.compression.type LZ4"));
-        assertThat(cfg, containsString("summary.log.chunk.compression.level 5"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.summary().write().io(), ProtonConfig.Summary.Write.Io.DIRECTIO);
+        assertEquals(cfg.summary().read().io(), ProtonConfig.Summary.Read.Io.DIRECTIO);
+        assertEquals(cfg.summary().cache().maxbytes(), 128);
+        assertEquals(cfg.summary().cache().initialentries(), 64);
+        assertEquals(cfg.summary().cache().compression().type(), ProtonConfig.Summary.Cache.Compression.Type.NONE);
+        assertEquals(cfg.summary().cache().compression().level(), 3);
+        assertEquals(cfg.summary().log().maxfilesize(), 512);
+        assertEquals(cfg.summary().log().minfilesizefactor(), 0.3, DELTA);
+        assertEquals(cfg.summary().log().chunk().maxbytes(), 256);
+        assertEquals(cfg.summary().log().chunk().compression().type(), ProtonConfig.Summary.Log.Chunk.Compression.Type.LZ4);
+        assertEquals(cfg.summary().log().chunk().compression().level(), 5);
     }
 
     @Test
@@ -255,10 +267,25 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "</summary>"));
 
         assertNull(t.searchNode.summary.store.cache.maxSize);
-        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent.doubleValue(),DELTA);
+        assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent,DELTA);
 
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("summary.cache.maxbytes -30"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.summary().cache().maxbytes(), -30);
+    }
+
+    @Test
+    public void requireThatWeCanPopulateSummary() {
+        Tuning t = createTuning(parseXml("<summary>",
+                "<io>",
+                "<read>populate</read>",
+                "</io>",
+                "</summary>"));
+
+        assertEquals(Tuning.SearchNode.IoType.POPULATE, t.searchNode.summary.io.read);
+
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(ProtonConfig.Summary.Read.Io.MMAP, cfg.summary().read().io());
+        assertEquals(ProtonConfig.Summary.Read.Mmap.Options.POPULATE, cfg.summary().read().mmap().options().get(0));
     }
 
 
@@ -268,8 +295,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<threads>7</threads>",
                 "</initialize>"));
         assertEquals(7, t.searchNode.initialize.threads.intValue());
-        String cfg = getProtonCfg(t);
-        assertThat(cfg, containsString("initialize.threads 7"));
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.initialize().threads(), 7);
     }
 
     @Test
@@ -277,8 +304,8 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         Tuning t = createTuning(parseXml("<feeding>",
                 "<concurrency>0.7</concurrency>",
                 "</feeding>"));
-        assertEquals(0.7, t.searchNode.feeding.concurrency.doubleValue(), DELTA);
-        assertThat(getProtonCfg(t), containsString("feeding.concurrency 0.35"));
+        assertEquals(0.7, t.searchNode.feeding.concurrency, DELTA);
+        assertEquals(getProtonCfg(t).feeding().concurrency(), 0.35, DELTA);
     }
 
 }

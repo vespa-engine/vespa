@@ -11,17 +11,18 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
@@ -58,9 +59,9 @@ public class Application {
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
-    private final Optional<RotationId> legacyRotation;
-    private final List<RotationId> rotations;
+    private final List<AssignedRotation> rotations;
     private final Map<HostName, RotationStatus> rotationStatus;
+    private final Optional<ApplicationCertificate> applicationCertificate;
 
     /** Creates an empty application */
     public Application(ApplicationId id, Instant now) {
@@ -68,7 +69,7 @@ public class Application {
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0),
-             Optional.empty(), Optional.empty(), Collections.emptyList(), Collections.emptyMap());
+             Optional.empty(), Collections.emptyList(), Collections.emptyMap(), Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
@@ -76,18 +77,19 @@ public class Application {
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                       Optional<RotationId> legacyRotation, List<RotationId> rotations, Map<HostName, RotationStatus> rotationStatus) {
+                       List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, 
+                       Optional<ApplicationCertificate> applicationCertificate) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
              deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-             metrics, pemDeployKey, legacyRotation, rotations, rotationStatus);
+             metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);
     }
 
     Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                 OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                Optional<RotationId> legacyRotation, List<RotationId> rotations, Map<HostName, RotationStatus> rotationStatus) {
+                List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -101,9 +103,9 @@ public class Application {
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.pemDeployKey = pemDeployKey;
-        this.legacyRotation = Objects.requireNonNull(legacyRotation, "legacyRotation cannot be null");
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
+        this.applicationCertificate = Objects.requireNonNull(applicationCertificate, "applicationCertificate cannot be null");
     }
 
     public ApplicationId id() { return id; }
@@ -200,20 +202,35 @@ public class Application {
 
     /** Returns the global rotation id of this, if present */
     public Optional<RotationId> legacyRotation() {
-        return legacyRotation;
+        return rotations.stream()
+                .map(AssignedRotation::rotationId)
+                .findFirst();
     }
 
     /** Returns all rotations for this application */
     public List<RotationId> rotations() {
+        return rotations.stream()
+                .map(AssignedRotation::rotationId)
+                .collect(Collectors.toList());
+    }
+
+    /** Returns all assigned rotations for this application */
+    public List<AssignedRotation> assignedRotations() {
         return rotations;
+    }
+
+    /** Returns the default global endpoints for this in given system - for a given endpoint ID */
+    public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
+        if (rotations.isEmpty()) return EndpointList.EMPTY;
+        return EndpointList.create(id, endpointId, system);
     }
 
     /** Returns the default global endpoints for this in given system */
     public EndpointList endpointsIn(SystemName system) {
-        // TODO: Do we need to change something here?  .defaultGlobalId seems like it is
-        // TODO: making some assumptions on naming.
         if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.defaultGlobal(id, system);
+        final var endpointStream = rotations.stream()
+                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
+        return EndpointList.of(endpointStream);
     }
 
     public Optional<String> pemDeployKey() { return pemDeployKey; }
@@ -233,6 +250,10 @@ public class Application {
                              .map(Map.Entry::getValue)
                              .findFirst()
                              .orElse(RotationStatus.unknown);
+    }
+
+    public Optional<ApplicationCertificate> applicationCertificate() {
+        return applicationCertificate;
     }
 
     @Override

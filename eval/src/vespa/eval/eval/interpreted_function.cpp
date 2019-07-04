@@ -91,9 +91,7 @@ InterpretedFunction::eval(Context &ctx, const LazyParams &params) const
     while (state.program_offset < _program.size()) {
         _program[state.program_offset++].perform(state);
     }
-    if (state.stack.size() != 1) {
-        state.stack.push_back(state.stash.create<ErrorValue>());
-    }
+    assert(state.stack.size() == 1);
     return state.stack.back();
 }
 

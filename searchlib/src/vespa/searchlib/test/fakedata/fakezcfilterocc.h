@@ -57,7 +57,7 @@ public:
 
     size_t bitSize() const override;
     bool hasWordPositions() const override;
-    bool has_cheap_features() const override;
+    bool has_interleaved_features() const override;
     size_t skipBitSize() const override;
     size_t l1SkipBitSize() const override;
     size_t l2SkipBitSize() const override;

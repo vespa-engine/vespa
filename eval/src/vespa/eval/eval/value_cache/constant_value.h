@@ -30,6 +30,15 @@ public:
     const Value &value() const override { return *_value; }
 };
 
+class BadConstantValue : public ConstantValue {
+private:
+    const ValueType _type;
+public:
+    BadConstantValue() : _type(ValueType::error_type()) {}
+    const ValueType &type() const override { return _type; }
+    const Value &value() const override { abort(); }
+};
+
 /**
  * An abstract factory of constant values. The typical use-case for
  * this will be to load constant values from file with a cache on top

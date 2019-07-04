@@ -32,7 +32,7 @@ public class NodeRepoMock implements NodeRepository {
     public List<NodeSpec> getNodes(String baseHostName) {
         synchronized (monitor) {
             return nodeRepositoryNodesByHostname.values().stream()
-                    .filter(node -> baseHostName.equals(node.getParentHostname().orElse(null)))
+                    .filter(node -> baseHostName.equals(node.parentHostname().orElse(null)))
                     .collect(Collectors.toList());
         }
     }
@@ -69,7 +69,7 @@ public class NodeRepoMock implements NodeRepository {
 
     void updateNodeRepositoryNode(NodeSpec nodeSpec) {
         synchronized (monitor) {
-            nodeRepositoryNodesByHostname.put(nodeSpec.getHostname(), nodeSpec);
+            nodeRepositoryNodesByHostname.put(nodeSpec.hostname(), nodeSpec);
         }
     }
 }

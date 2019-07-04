@@ -6,8 +6,8 @@ package com.yahoo.vespa.hosted.testrunner;
  */
 enum TestProfile {
 
-    SYSTEM_TEST("ai.vespa.hosted.cd.FunctionalTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest", true),
-    STAGING_TEST("ai.vespa.hosted.cd.UpgradeTest, com.yahoo.vespa.tenant.systemtest.base.StagingTest", true),
+    SYSTEM_TEST("ai.vespa.hosted.cd.SystemTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest", true),
+    STAGING_TEST("ai.vespa.hosted.cd.StagingTest, com.yahoo.vespa.tenant.systemtest.base.StagingTest", true),
     PRODUCTION_TEST("ai.vespa.hosted.cd.ProductionTest, com.yahoo.vespa.tenant.systemtest.base.ProductionTest", false);
 
     private final String group;

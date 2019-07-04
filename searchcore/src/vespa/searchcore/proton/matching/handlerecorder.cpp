@@ -60,7 +60,7 @@ HandleRecorder::to_string() const
 {
     vespalib::asciistream os;
     os << "normal: [" << handles_to_string(_handles, MatchDataDetails::Normal) << "], ";
-    os << "cheap: [" << handles_to_string(_handles, MatchDataDetails::Cheap) << "]";
+    os << "interleaved: [" << handles_to_string(_handles, MatchDataDetails::Interleaved) << "]";
     return os.str();
 }
 
@@ -107,7 +107,7 @@ HandleRecorder::add(TermFieldHandle handle,
 
 {
     if (requested_details == MatchDataDetails::Normal ||
-        requested_details == MatchDataDetails::Cheap) {
+        requested_details == MatchDataDetails::Interleaved) {
         _handles[handle] = static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));
     } else {
         abort();
@@ -124,7 +124,7 @@ HandleRecorder::tag_match_data(MatchData &match_data)
             tfmd.tagAsNotNeeded();
         } else {
             tfmd.setNeedNormalFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Normal)) != 0);
-            tfmd.setNeedCheapFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Cheap)) != 0);
+            tfmd.setNeedInterleavedFeatures((static_cast<int>(recorded->second) & static_cast<int>(MatchDataDetails::Interleaved)) != 0);
         }
     }
 }

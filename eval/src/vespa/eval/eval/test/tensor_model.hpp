@@ -10,6 +10,7 @@ namespace vespalib {
 namespace eval {
 namespace test {
 
+using CellType = ValueType::CellType;
 using map_fun_t = TensorEngine::map_fun_t;
 using join_fun_t = TensorEngine::join_fun_t;
 
@@ -31,6 +32,14 @@ struct Div10 : Sequence {
     double operator[](size_t i) const override { return (seq[i] / 10.0); }
 };
 
+// Sequence of another sequence divided by 10
+struct Div16 : Sequence {
+    const Sequence &seq;
+    Div16(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (seq[i] / 16.0); }
+};
+
+
 // Sequence of another sequence minus 2
 struct Sub2 : Sequence {
     const Sequence &seq;
@@ -51,6 +60,13 @@ struct Sigmoid : Sequence {
     const Sequence &seq;
     Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
     double operator[](size_t i) const override { return operation::Sigmoid::f(seq[i]); }
+};
+
+// Sequence of applying sigmoid to another sequence, plus rounding to nearest float
+struct SigmoidF : Sequence {
+    const Sequence &seq;
+    SigmoidF(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (float)operation::Sigmoid::f(seq[i]); }
 };
 
 // pre-defined sequence of numbers
@@ -146,7 +162,22 @@ struct Domain {
 Domain::Domain(const Domain &) = default;
 Domain::~Domain() {}
 
-using Layout = std::vector<Domain>;
+struct Layout {
+    CellType cell_type;
+    std::vector<Domain> domains;
+    Layout(std::initializer_list<Domain> domains_in)
+        : cell_type(CellType::DOUBLE), domains(domains_in) {}
+    Layout(CellType cell_type_in, std::vector<Domain> domains_in)
+        : cell_type(cell_type_in), domains(std::move(domains_in)) {}
+    auto begin() const { return domains.begin(); }
+    auto end() const { return domains.end(); }
+    auto size() const { return domains.size(); }
+    auto operator[](size_t idx) const { return domains[idx]; }
+};
+
+Layout float_cells(const Layout &layout) {
+    return Layout(CellType::FLOAT, layout.domains);
+}
 
 Domain x() { return Domain("x", {}); }
 Domain x(size_t size) { return Domain("x", size); }
@@ -162,9 +193,6 @@ Domain z(const std::vector<vespalib::string> &keys) { return Domain("z", keys); 
 
 // Infer the tensor type spanned by the given spaces
 vespalib::string infer_type(const Layout &layout) {
-    if (layout.empty()) {
-        return "double";
-    }
     std::vector<ValueType::Dimension> dimensions;
     for (const auto &domain: layout) {
         if (domain.size == 0) {
@@ -173,7 +201,7 @@ vespalib::string infer_type(const Layout &layout) {
             dimensions.emplace_back(domain.dimension, domain.size); // indexed
         }
     }
-    return ValueType::tensor_type(dimensions).to_spec();
+    return ValueType::tensor_type(dimensions, layout.cell_type).to_spec();
 }
 
 // Wrapper for the things needed to generate a tensor

@@ -16,14 +16,13 @@ public:
 private:
     uint32_t _needUnpack;
 protected:
-    bool getUnpacked()       const { return _needUnpack == 0; }
     void setUnpacked()             { _needUnpack = 0; }
     void clearUnpacked()           { _needUnpack = 1; }
     uint32_t getNeedUnpack() const { return _needUnpack; }
     void incNeedUnpack()           { ++_needUnpack; }
-
 public:
     RankedSearchIteratorBase(const fef::TermFieldMatchDataArray &matchData);
+    bool getUnpacked()       const { return _needUnpack == 0; }
 };
 
 }

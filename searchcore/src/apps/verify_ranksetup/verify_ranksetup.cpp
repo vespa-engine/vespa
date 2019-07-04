@@ -12,7 +12,6 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -34,11 +33,11 @@ using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::RankingConstantsConfig;
 using vespalib::eval::ConstantValue;
-using vespalib::eval::ErrorValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
 using vespalib::eval::SimpleConstantValue;
+using vespalib::eval::BadConstantValue;
 
 class App : public FastOS_Application
 {
@@ -61,13 +60,17 @@ struct DummyConstantValueRepo : IConstantValueRepo {
     DummyConstantValueRepo(const RankingConstantsConfig &cfg_in) : cfg(cfg_in) {}
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &name) const override {
         for (const auto &entry: cfg.constant) {
-            if (entry.name == name) {                
+            if (entry.name == name) {
                 const auto &engine = DefaultTensorEngine::ref();
-                auto tensor = engine.from_spec(TensorSpec(entry.type));
-                return std::make_unique<SimpleConstantValue>(std::move(tensor));
+                try {
+                    auto tensor = engine.from_spec(TensorSpec(entry.type));
+                    return std::make_unique<SimpleConstantValue>(std::move(tensor));
+                } catch (std::exception &) {
+                    return std::make_unique<BadConstantValue>();
+                }
             }
         }
-        return std::make_unique<SimpleConstantValue>(std::make_unique<ErrorValue>());
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
 

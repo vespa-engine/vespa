@@ -56,9 +56,9 @@ search indexschema {
         exact
       }
     }
-    field experimental type string {
+    field bm25_field type string {
       indexing: index
-      index: experimental-posting-list-format
+      index: enable-bm25
     }
 
     # integer fields

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/datastore/entryref.h>
 #include <cstdint>
 
 namespace search::index { class DocIdAndFeatures; }
@@ -28,6 +29,11 @@ public:
      * Add (word, docId) tuple with the given features.
      */
     virtual void add(uint32_t docId, const index::DocIdAndFeatures &features) = 0;
+
+    /**
+     * Returns the reference to the current word (only used by unit tests).
+     */
+    virtual datastore::EntryRef getWordRef() const = 0;
 
     /**
      * Remove (word, docId) tuple.

@@ -28,9 +28,6 @@
       "name": "NodeRebooter"
     },
     {
-      "name": "NodeRetirer"
-    },
-    {
       "name": "OperatorChangeApplicationMaintainer"
     },
     {

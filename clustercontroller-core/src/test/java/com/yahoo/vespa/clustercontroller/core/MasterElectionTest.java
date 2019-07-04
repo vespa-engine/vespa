@@ -39,6 +39,8 @@ public class MasterElectionTest extends FleetControllerTest {
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
 
+    private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
+
     protected void setUpFleetController(int count, boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         if (zooKeeperServer == null) {
             zooKeeperServer = new ZooKeeperTestServer();
@@ -46,7 +48,7 @@ public class MasterElectionTest extends FleetControllerTest {
         slobrok = new Slobrok();
         usingFakeTimer = useFakeTimer;
         this.options = options;
-        this.options.zooKeeperSessionTimeout = 10 * timeoutMS;
+        this.options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         this.options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         this.options.slobrokConnectionSpecs = new String[1];
         this.options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
@@ -62,7 +64,7 @@ public class MasterElectionTest extends FleetControllerTest {
                                                int fleetControllerIndex, int fleetControllerCount) throws Exception
     {
         FleetControllerOptions options = o.clone();
-        options.zooKeeperSessionTimeout = 10 * timeoutMS;
+        options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
         options.slobrokConnectionSpecs = new String[1];
         options.slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port(); // Spec.fromLocalHostName(slobrok.port()).toString();
@@ -121,7 +123,7 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(LogLevel.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
-        setUpFleetController(5, true, options);
+        setUpFleetController(5, false, options);
         waitForMaster(0);
         log.log(LogLevel.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
         fleetControllers.get(0).shutdown();
@@ -225,10 +227,10 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testClusterStateVersionIncreasesAcrossMasterElections");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
-        setUpFleetController(5, true, options);
+        setUpFleetController(5, false, options);
         // Currently need to have content nodes present for the cluster controller to even bother
         // attempting to persisting its cluster state version to ZK.
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
@@ -251,9 +253,8 @@ public class MasterElectionTest extends FleetControllerTest {
         FleetControllerOptions options = defaultOptions("mycluster");
         // "Magic" port value is in range allocated to module for testing.
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
-        options.zooKeeperSessionTimeout = 100;
         options.masterZooKeeperCooldownPeriod = 100;
-        setUpFleetController(2, true, options);
+        setUpFleetController(2, false, options);
         waitForMaster(0);
 
         zooKeeperServer.shutdown(true);
@@ -273,10 +274,9 @@ public class MasterElectionTest extends FleetControllerTest {
     public void testZooKeeperUnavailable() throws Exception {
         startingTest("MasterElectionTest::testZooKeeperUnavailable");
         FleetControllerOptions options = defaultOptions("mycluster");
-        options.zooKeeperSessionTimeout = 100;
         options.masterZooKeeperCooldownPeriod = 100;
         options.zooKeeperServerAddress = "localhost";
-        setUpFleetController(5, true, options);
+        setUpFleetController(5, false, options);
         waitForMaster(0);
 
         log.log(LogLevel.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
@@ -310,7 +310,7 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testMasterZooKeeperCooldown");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
-        setUpFleetController(3, true, options);
+        setUpFleetController(3, false, options);
         waitForMaster(0);
         timer.advanceTime(24 * 3600 * 1000); // A day
         waitForCompleteCycle(1);
@@ -351,7 +351,7 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testGetMaster");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
-        setUpFleetController(3, true, options);
+        setUpFleetController(3, false, options);
         waitForMaster(0);
 
         supervisor = new Supervisor(new Transport());
@@ -431,7 +431,7 @@ public class MasterElectionTest extends FleetControllerTest {
         startingTest("MasterElectionTest::testReconfigure");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 1;
-        setUpFleetController(3, true, options);
+        setUpFleetController(3, false, options);
         waitForMaster(0);
 
         FleetControllerOptions newOptions = options.clone();
@@ -460,8 +460,8 @@ public class MasterElectionTest extends FleetControllerTest {
         options.minRatioOfStorageNodesUp = 0;
         options.minDistributorNodesUp = 0;
         options.minStorageNodesUp = 1;
-        setUpFleetController(3, true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpFleetController(3, false, options);
+        setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
@@ -504,8 +504,8 @@ public class MasterElectionTest extends FleetControllerTest {
         options.clusterHasGlobalDocumentTypes = true;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;
-        setUpFleetController(3, true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpFleetController(3, false, options);
+        setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForMaster(0);
         waitForStableSystem();
@@ -547,8 +547,8 @@ public class MasterElectionTest extends FleetControllerTest {
         options.clusterHasGlobalDocumentTypes = false;
         options.masterZooKeeperCooldownPeriod = 1;
         options.minTimeBeforeFirstSystemStateBroadcast = 100000;
-        setUpFleetController(3, true, options);
-        setUpVdsNodes(true, new DummyVdsNodeOptions());
+        setUpFleetController(3, false, options);
+        setUpVdsNodes(false, new DummyVdsNodeOptions());
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForMaster(0);
         waitForStableSystem();

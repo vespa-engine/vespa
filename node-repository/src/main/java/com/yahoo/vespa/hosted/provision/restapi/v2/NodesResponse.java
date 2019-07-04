@@ -5,8 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
@@ -148,8 +148,6 @@ class NodesResponse extends HttpResponse {
         object.setString("canonicalFlavor", node.flavor().canonicalName());
         object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
         object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
-        if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
-            object.setString("description", node.flavor().getDescription());
         object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());

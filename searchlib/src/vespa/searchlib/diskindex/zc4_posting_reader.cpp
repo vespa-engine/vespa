@@ -50,7 +50,7 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
         
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, _doc_id_k, EC);
         _no_skip.set_doc_id(_no_skip.get_doc_id() + 1 + val64);
-        if (_posting_params._encode_cheap_features) {
+        if (_posting_params._encode_interleaved_features) {
             if (__builtin_expect(oCompr >= d._valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, d._);
                 _readContext.readComprBuffer();
@@ -73,7 +73,7 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
     }
     features.set_doc_id(_no_skip.get_doc_id());
     if (_posting_params._encode_features) {
-        if (_posting_params._encode_cheap_features) {
+        if (_posting_params._encode_interleaved_features) {
             features.set_field_length(_no_skip.get_field_length());
             features.set_num_occs(_no_skip.get_num_occs());
         }

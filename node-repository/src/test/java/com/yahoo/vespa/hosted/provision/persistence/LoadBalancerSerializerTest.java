@@ -12,8 +12,10 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Optional;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -23,30 +25,33 @@ public class LoadBalancerSerializerTest {
 
     @Test
     public void test_serialization() {
-        LoadBalancer loadBalancer = new LoadBalancer(new LoadBalancerId(ApplicationId.from("tenant1",
-                                                                                           "application1",
-                                                                                           "default"),
-                                                                        ClusterSpec.Id.from("qrs")),
-                                                     new LoadBalancerInstance(
-                                                             HostName.from("lb-host"),
-                                                             Optional.of(new DnsZone("zone-id-1")),
-                                                             ImmutableSet.of(4080, 4443),
-                                                             ImmutableSet.of("10.2.3.4/24"),
-                                                             ImmutableSet.of(new Real(HostName.from("real-1"),
-                                                                                      "127.0.0.1",
-                                                                                      4080),
-                                                                             new Real(HostName.from("real-2"),
-                                                                                      "127.0.0.2",
-                                                                                      4080))),
-                                                     false);
+        var now = Instant.now();
+        var loadBalancer = new LoadBalancer(new LoadBalancerId(ApplicationId.from("tenant1",
+                                                                                  "application1",
+                                                                                  "default"),
+                                                               ClusterSpec.Id.from("qrs")),
+                                            new LoadBalancerInstance(
+                                                    HostName.from("lb-host"),
+                                                    Optional.of(new DnsZone("zone-id-1")),
+                                                    ImmutableSet.of(4080, 4443),
+                                                    ImmutableSet.of("10.2.3.4/24"),
+                                                    ImmutableSet.of(new Real(HostName.from("real-1"),
+                                                                             "127.0.0.1",
+                                                                             4080),
+                                                                    new Real(HostName.from("real-2"),
+                                                                             "127.0.0.2",
+                                                                             4080))),
+                                            LoadBalancer.State.active,
+                                            now);
 
-        LoadBalancer serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
+        var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
         assertEquals(loadBalancer.id(), serialized.id());
         assertEquals(loadBalancer.instance().hostname(), serialized.instance().hostname());
         assertEquals(loadBalancer.instance().dnsZone(), serialized.instance().dnsZone());
         assertEquals(loadBalancer.instance().ports(), serialized.instance().ports());
         assertEquals(loadBalancer.instance().networks(), serialized.instance().networks());
-        assertEquals(loadBalancer.inactive(), serialized.inactive());
+        assertEquals(loadBalancer.state(), serialized.state());
+        assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
         assertEquals(loadBalancer.instance().reals(), serialized.instance().reals());
     }
 

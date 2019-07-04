@@ -18,7 +18,7 @@ public class RemoveDocumentReply extends WriteDocumentReply {
     /**
      * Returns whether or not the document was found and removed.
      *
-     * @return True if document was found.
+     * @return true if document was found.
      */
     public boolean wasFound() {
         return found;
@@ -27,7 +27,7 @@ public class RemoveDocumentReply extends WriteDocumentReply {
     /**
      * Set whether or not the document was found and removed.
      *
-     * @param found True if the document was found.
+     * @param found true if the document was found.
      */
     public void setWasFound(boolean found) {
         this.found = found;

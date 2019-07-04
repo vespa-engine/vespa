@@ -9,11 +9,11 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -385,7 +385,7 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "operator" : return Agent.operator;
-            case "NodeRetirer" : return Agent.NodeRetirer;
+            case "NodeRetirer" : return Agent.system; // TODO: Remove after 7.67
             case "NodeFailer" : return Agent.NodeFailer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
@@ -395,7 +395,7 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case operator : return "operator";
-            case NodeRetirer : return "NodeRetirer";
+            case NodeRetirer : return "system"; // TODO: Remove after 7.67
             case NodeFailer : return "NodeFailer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");

@@ -7,9 +7,11 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Rotation;
@@ -126,12 +128,14 @@ public class ModelContextImpl implements ModelContext {
         private final boolean hostedVespa;
         private final Zone zone;
         private final Set<Rotation> rotations;
+        private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
         private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
+        private final Optional<TlsSecrets> tlsSecrets;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -142,9 +146,11 @@ public class ModelContextImpl implements ModelContext {
                           boolean hostedVespa,
                           Zone zone,
                           Set<Rotation> rotations,
+                          Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
-                          FlagSource flagSource) {
+                          FlagSource flagSource,
+                          Optional<TlsSecrets> tlsSecrets) {
             this.applicationId = applicationId;
             this.multitenant = multitenantFromConfig || hostedVespa || Boolean.getBoolean("multitenant");
             this.configServerSpecs = configServerSpecs;
@@ -154,6 +160,7 @@ public class ModelContextImpl implements ModelContext {
             this.hostedVespa = hostedVespa;
             this.zone = zone;
             this.rotations = rotations;
+            this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
@@ -164,6 +171,7 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.tlsSecrets = tlsSecrets;
         }
 
         @Override
@@ -198,6 +206,9 @@ public class ModelContextImpl implements ModelContext {
         public Set<Rotation> rotations() { return rotations; }
 
         @Override
+        public Set<ContainerEndpoint> endpoints() { return endpoints; }
+
+        @Override
         public boolean isBootstrap() { return isBootstrap; }
 
         @Override
@@ -215,6 +226,8 @@ public class ModelContextImpl implements ModelContext {
         @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
+        @Override
+        public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
     }
 
 }

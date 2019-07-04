@@ -40,7 +40,7 @@ abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<R
     public final ListenableFuture<Boolean> render(OutputStream stream, Result response, Execution execution, Request request) {
         Writer writer = null;
         try {
-            writer = createWriter(stream,response);
+            writer = createWriter(stream, response);
             render(writer, response);
         }
         catch (IOException e) {
@@ -50,7 +50,7 @@ abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<R
             if (writer !=null)
                 try { writer.close(); } catch (IOException e2) {};
         }
-        SettableFuture<Boolean> completed=SettableFuture.create();
+        SettableFuture<Boolean> completed = SettableFuture.create();
         completed.set(true);
         return completed;
     }

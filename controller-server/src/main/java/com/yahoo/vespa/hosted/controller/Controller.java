@@ -9,18 +9,18 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
+import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -78,11 +78,12 @@ public class Controller extends AbstractComponent {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
-    private final Chef chef;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
+    private final ApplicationCertificateProvider applicationCertificateProvider;
+    private final MavenRepository mavenRepository;
 
     /**
      * Creates a controller 
@@ -92,24 +93,26 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Chef chef,
+                      RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource) {
+                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
+                      MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
         this(curator, rotationsConfig, gitHub, zoneRegistry,
-             configServer, metricsService, routingGenerator, chef,
+             configServer, metricsService, routingGenerator,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
+             mavenRepository, applicationCertificateProvider);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Chef chef, Clock clock,
+                      RoutingGenerator routingGenerator, Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer, FlagSource flagSource) {
+                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
@@ -117,11 +120,12 @@ public class Controller extends AbstractComponent {
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
-        this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.nameServiceForwarder = new NameServiceForwarder(curator);
+        this.applicationCertificateProvider = Objects.requireNonNull(applicationCertificateProvider);
+        this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
@@ -164,9 +168,9 @@ public class Controller extends AbstractComponent {
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
-    public NameServiceForwarder nameServiceForwarder() {
-        return nameServiceForwarder;
-    }
+    public NameServiceForwarder nameServiceForwarder() { return nameServiceForwarder; }
+
+    public MavenRepository mavenRepository() { return mavenRepository; }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
@@ -287,16 +291,16 @@ public class Controller extends AbstractComponent {
         return zoneRegistry.system();
     }
 
-    public Chef chefClient() {
-        return chef;
-    }
-
     public CuratorDb curator() {
         return curator;
     }
 
     public AuditLogger auditLogger() {
         return auditLogger;
+    }
+
+    public ApplicationCertificateProvider applicationCertificateProvider() {
+        return applicationCertificateProvider;
     }
 
     /** Returns all other roles the given tenant role implies. */

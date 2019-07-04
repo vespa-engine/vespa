@@ -50,8 +50,8 @@ public class SchedulerTest {
             if (actual < target) {
                 return false;
             }
-            //     2 * Scheduler.TICK == 200
-            return ((actual - target) <= 200);
+            //     3 * Scheduler.TICK == 300
+            return ((actual - target) <= 300);
         }
 
         public void run() {

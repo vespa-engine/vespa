@@ -33,12 +33,16 @@ public class RpcConnector extends AbstractComponent {
         Spec spec = new Spec(config.port());
         try {
             acceptor = supervisor.listen(spec);
-            log.log(DEBUG, "Listening on " + spec.host() + ":" + spec.port());
+            log.log(DEBUG, "Listening on " + spec.host() + ":" + acceptor.port());
         } catch (ListenFailedException e) {
             stop();
             log.log(INFO, "Failed listening at " + spec.host() + ":" + spec.port());
             throw new RuntimeException("Could not listen at " + spec, e);
         }
+    }
+
+    public int port() {
+        return acceptor.port();
     }
 
     /**

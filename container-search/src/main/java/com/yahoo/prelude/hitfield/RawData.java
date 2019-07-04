@@ -8,27 +8,27 @@ package com.yahoo.prelude.hitfield;
  */
 public final class RawData {
 
-    private byte[] content;
+    private final byte[] content;
 
     /**
-     * Constructor, takes ownership
+     * Constructor, takes ownership of the given byte array.
+     *
      * @param content some bytes, handover
      */
     public RawData(byte[] content) {
         this.content = content;
     }
 
-    /**
-     * @return internal byte array containing the actual data received
-     **/
+    /** Returns the internal byte array containing the actual data received */
     public byte[] getInternalData() {
         return content;
     }
 
     /**
-     * an ascii string; non-ascii data is escaped with hex notation
-     * NB: not always uniquely reversible
-     **/
+     * An ascii string; non-ascii data is escaped with hex notation.
+     * NB: not always uniquely reversible.
+     */
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
         for (byte b : content) {
@@ -46,7 +46,7 @@ public final class RawData {
             } else {
                 // XXX maybe we should only do this? creates possibly-invalid XML though.
                 buf.append("&");
-                buf.append(Integer.toString(i));
+                buf.append(i);
                 buf.append(";");
             }
         }

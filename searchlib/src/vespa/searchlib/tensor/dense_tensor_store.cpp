@@ -10,7 +10,6 @@
 
 using search::datastore::Handle;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
@@ -41,8 +40,7 @@ DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
 size_t
 DenseTensorStore::TensorSizeCalc::arraySize() const
 {
-    size_t tensorSize = _numBoundCells * _cellSize + 
-                        _numUnboundDims * sizeof(uint32_t);
+    size_t tensorSize = (_numBoundCells * _cellSize) + (_numUnboundDims * sizeof(uint32_t));
     return DenseTensorStore::BufferType::align(tensorSize, DENSE_TENSOR_ALIGNMENT);
 }
 
@@ -185,16 +183,16 @@ void makeConcreteType(MutableDenseTensorView &tensor,
 std::unique_ptr<Tensor>
 DenseTensorStore::getTensor(EntryRef ref) const
 {
-    using CellsRef = DenseTensorView::CellsRef;
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
     auto raw = getRawBuffer(ref);
     size_t numCells = getNumCells(raw);
+    vespalib::tensor::TypedCells cells_ref(raw, _type.cell_type(), numCells);
     if (_tensorSizeCalc._numUnboundDims == 0) {
-        return std::make_unique<DenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
+        return std::make_unique<DenseTensorView>(_type, cells_ref);
     } else {
-        auto result = std::make_unique<MutableDenseTensorView>(_type, CellsRef(static_cast<const double *>(raw), numCells));
+        auto result = std::make_unique<MutableDenseTensorView>(_type, cells_ref);
         makeConcreteType(*result, raw, _tensorSizeCalc._numUnboundDims);
         return result;
     }
@@ -204,14 +202,16 @@ void
 DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
 {
     if (!ref.valid()) {
-        tensor.setCells(DenseTensorView::CellsRef(&_emptyCells[0], _emptyCells.size()));
+        vespalib::tensor::TypedCells cells_ref(&_emptyCells[0], _type.cell_type(), _emptyCells.size());
+        tensor.setCells(cells_ref);
         if (_tensorSizeCalc._numUnboundDims > 0) {
             tensor.setUnboundDimensionsForEmptyTensor();
         }
     } else {
         auto raw = getRawBuffer(ref);
         size_t numCells = getNumCells(raw);
-        tensor.setCells(DenseTensorView::CellsRef(static_cast<const double *>(raw), numCells));
+        vespalib::tensor::TypedCells cells_ref(raw, _type.cell_type(), numCells);
+        tensor.setCells(cells_ref);
         if (_tensorSizeCalc._numUnboundDims > 0) {
             makeConcreteType(tensor, raw, _tensorSizeCalc._numUnboundDims);
         }
@@ -268,11 +268,11 @@ template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
-    size_t numCells = tensor.cellsRef().size();
+    size_t numCells = tensor.cellsRef().size;
     checkMatchingType(_type, tensor.type(), numCells);
     auto raw = allocRawBuffer(numCells);
     setDenseTensorUnboundDimSizes(raw.data, _type, _tensorSizeCalc._numUnboundDims, tensor.type());
-    memcpy(raw.data, &tensor.cellsRef()[0], numCells * _tensorSizeCalc._cellSize);
+    memcpy(raw.data, tensor.cellsRef().data, numCells * _tensorSizeCalc._cellSize);
     return raw.ref;
 }
 

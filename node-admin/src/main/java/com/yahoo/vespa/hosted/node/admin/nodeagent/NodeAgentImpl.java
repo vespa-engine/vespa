@@ -118,7 +118,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.healthChecker = healthChecker;
 
         this.containerCpuCap = Flags.CONTAINER_CPU_CAP.bindTo(flagSource)
-                .with(FetchVector.Dimension.HOSTNAME, contextSupplier.currentContext().node().getHostname());
+                .with(FetchVector.Dimension.HOSTNAME, contextSupplier.currentContext().node().hostname());
 
         this.loopThread = new Thread(() -> {
             while (!terminated.get()) {
@@ -172,20 +172,20 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        if (context.node().getWantedRestartGeneration().isPresent() &&
-                !Objects.equals(context.node().getCurrentRestartGeneration(), currentRestartGeneration)) {
-            currentNodeAttributes.withRestartGeneration(context.node().getCurrentRestartGeneration());
+        if (context.node().wantedRestartGeneration().isPresent() &&
+                !Objects.equals(context.node().currentRestartGeneration(), currentRestartGeneration)) {
+            currentNodeAttributes.withRestartGeneration(context.node().currentRestartGeneration());
             newNodeAttributes.withRestartGeneration(currentRestartGeneration);
         }
 
-        if (!Objects.equals(context.node().getCurrentRebootGeneration(), currentRebootGeneration)) {
-            currentNodeAttributes.withRebootGeneration(context.node().getCurrentRebootGeneration());
+        if (!Objects.equals(context.node().currentRebootGeneration(), currentRebootGeneration)) {
+            currentNodeAttributes.withRebootGeneration(context.node().currentRebootGeneration());
             newNodeAttributes.withRebootGeneration(currentRebootGeneration);
         }
 
-        Optional<DockerImage> actualDockerImage = context.node().getWantedDockerImage().filter(n -> containerState == UNKNOWN);
-        if (!Objects.equals(context.node().getCurrentDockerImage(), actualDockerImage)) {
-            DockerImage currentImage = context.node().getCurrentDockerImage().orElse(DockerImage.EMPTY);
+        Optional<DockerImage> actualDockerImage = context.node().wantedDockerImage().filter(n -> containerState == UNKNOWN);
+        if (!Objects.equals(context.node().currentDockerImage(), actualDockerImage)) {
+            DockerImage currentImage = context.node().currentDockerImage().orElse(DockerImage.EMPTY);
             DockerImage newImage = actualDockerImage.orElse(DockerImage.EMPTY);
 
             currentNodeAttributes.withDockerImage(currentImage);
@@ -228,7 +228,7 @@ public class NodeAgentImpl implements NodeAgent {
             shouldRestartServices(context.node()).ifPresent(restartReason -> {
                 context.log(logger, "Will restart services: " + restartReason);
                 restartServices(context, existingContainer.get());
-                currentRestartGeneration = context.node().getWantedRestartGeneration();
+                currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
 
@@ -236,18 +236,18 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<String> shouldRestartServices(NodeSpec node) {
-        if (!node.getWantedRestartGeneration().isPresent()) return Optional.empty();
+        if (!node.wantedRestartGeneration().isPresent()) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
-        if (currentRestartGeneration.get() < node.getWantedRestartGeneration().get()) {
+        if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + currentRestartGeneration.get() + " -> " + node.getWantedRestartGeneration().get());
+                    + currentRestartGeneration.get() + " -> " + node.wantedRestartGeneration().get());
         }
         return Optional.empty();
     }
 
     private void restartServices(NodeAgentContext context, Container existingContainer) {
-        if (existingContainer.state.isRunning() && context.node().getState() == NodeState.active) {
+        if (existingContainer.state.isRunning() && context.node().state() == NodeState.active) {
             context.log(logger, "Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode(context);
@@ -290,22 +290,22 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private Optional<String> shouldRemoveContainer(NodeAgentContext context, Container existingContainer) {
-        final NodeState nodeState = context.node().getState();
+        final NodeState nodeState = context.node().state();
         if (nodeState == NodeState.dirty || nodeState == NodeState.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (context.node().getWantedDockerImage().isPresent() &&
-                !context.node().getWantedDockerImage().get().equals(existingContainer.image)) {
+        if (context.node().wantedDockerImage().isPresent() &&
+                !context.node().wantedDockerImage().get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                    + existingContainer.image.asString() + " -> " + context.node().getWantedDockerImage().get().asString());
+                    + existingContainer.image.asString() + " -> " + context.node().wantedDockerImage().get().asString());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");
         }
 
-        if (currentRebootGeneration < context.node().getWantedRebootGeneration()) {
+        if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
-                    currentRebootGeneration, context.node().getWantedRebootGeneration()));
+                    currentRebootGeneration, context.node().wantedRebootGeneration()));
         }
 
         // Even though memory can be easily changed with docker update, we need to restart the container
@@ -330,7 +330,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             try {
-                if (context.node().getState() != NodeState.dirty) {
+                if (context.node().state() != NodeState.dirty) {
                     suspend();
                 }
                 stopServices();
@@ -341,7 +341,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         storageMaintainer.handleCoreDumpsForContainer(context, Optional.of(existingContainer));
         dockerOperations.removeContainer(context, existingContainer);
-        currentRebootGeneration = context.node().getWantedRebootGeneration();
+        currentRebootGeneration = context.node().wantedRebootGeneration();
         containerState = ABSENT;
         context.log(logger, "Container successfully removed, new containerState is " + containerState);
     }
@@ -361,13 +361,13 @@ public class NodeAgentImpl implements NodeAgent {
     private ContainerResources getContainerResources(NodeAgentContext context) {
         double cpuCap = noCpuCap(context.zone()) ?
                 0 :
-                context.node().getOwner()
+                context.node().owner()
                         .map(NodeOwner::asApplicationId)
                         .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                         .orElse(containerCpuCap)
-                        .value() * context.node().getMinCpuCores();
+                        .value() * context.node().vcpus();
 
-        return ContainerResources.from(cpuCap, context.node().getMinCpuCores(), context.node().getMinMainMemoryAvailableGb());
+        return ContainerResources.from(cpuCap, context.node().vcpus(), context.node().memoryGb());
     }
 
     private boolean noCpuCap(ZoneApi zone) {
@@ -376,9 +376,9 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private boolean downloadImageIfNeeded(NodeSpec node, Optional<Container> container) {
-        if (node.getWantedDockerImage().equals(container.map(c -> c.image))) return false;
+        if (node.wantedDockerImage().equals(container.map(c -> c.image))) return false;
 
-        return node.getWantedDockerImage().map(dockerOperations::pullImageAsyncIfNeeded).orElse(false);
+        return node.wantedDockerImage().map(dockerOperations::pullImageAsyncIfNeeded).orElse(false);
     }
 
     public void converge(NodeAgentContext context) {
@@ -406,14 +406,14 @@ public class NodeAgentImpl implements NodeAgent {
             logChangesToNodeSpec(context, lastNode, node);
 
             // Current reboot generation uninitialized or incremented from outside to cancel reboot
-            if (currentRebootGeneration < node.getCurrentRebootGeneration())
-                currentRebootGeneration = node.getCurrentRebootGeneration();
+            if (currentRebootGeneration < node.currentRebootGeneration())
+                currentRebootGeneration = node.currentRebootGeneration();
 
             // Either we have changed allocation status (restart gen. only available to allocated nodes), or
             // restart generation has been incremented from outside to cancel restart
-            if (currentRestartGeneration.isPresent() != node.getCurrentRestartGeneration().isPresent() ||
-                    currentRestartGeneration.map(current -> current < node.getCurrentRestartGeneration().get()).orElse(false))
-                currentRestartGeneration = node.getCurrentRestartGeneration();
+            if (currentRestartGeneration.isPresent() != node.currentRestartGeneration().isPresent() ||
+                    currentRestartGeneration.map(current -> current < node.currentRestartGeneration().get()).orElse(false))
+                currentRestartGeneration = node.currentRestartGeneration();
 
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
@@ -424,7 +424,7 @@ public class NodeAgentImpl implements NodeAgent {
             lastNode = node;
         }
 
-        switch (node.getState()) {
+        switch (node.state()) {
             case ready:
             case reserved:
             case parked:
@@ -437,12 +437,12 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
 
                 storageMaintainer.getDiskUsageFor(context)
-                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
+                        .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.diskGb())
                         .filter(diskUtil -> diskUtil >= 0.8)
                         .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context));
 
                 if (downloadImageIfNeeded(node, container)) {
-                    context.log(logger, "Waiting for image to download " + context.node().getWantedDockerImage().get().asString());
+                    context.log(logger, "Waiting for image to download " + context.node().wantedDockerImage().get().asString());
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
@@ -479,20 +479,20 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);
-                context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
+                context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
                 credentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context);
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:
-                throw new ConvergenceException("UNKNOWN STATE " + node.getState().name());
+                throw new ConvergenceException("UNKNOWN STATE " + node.state().name());
         }
     }
 
     private static void logChangesToNodeSpec(NodeAgentContext context, NodeSpec lastNode, NodeSpec node) {
         StringBuilder builder = new StringBuilder();
-        appendIfDifferent(builder, "state", lastNode, node, NodeSpec::getState);
+        appendIfDifferent(builder, "state", lastNode, node, NodeSpec::state);
         if (builder.length() > 0) {
             context.log(logger, LogLevel.INFO, "Changes to node: " + builder.toString());
         }
@@ -525,30 +525,29 @@ public class NodeAgentImpl implements NodeAgent {
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", context.hostname().value())
                 .add("role", SecretAgentCheckConfig.nodeTypeToRole(context.nodeType()))
-                .add("state", node.getState().toString());
-        node.getParentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
-        node.getAllowedToBeDown().ifPresent(allowed ->
+                .add("state", node.state().toString());
+        node.parentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
+        node.allowedToBeDown().ifPresent(allowed ->
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
 
         ContainerStats stats = containerStats.get();
         final String APP = Metrics.APPLICATION_NODE;
         final int totalNumCpuCores = stats.getCpuStats().getOnlineCpus();
-        final long cpuContainerKernelTime = stats.getCpuStats().getUsageInKernelMode();
-        final long cpuContainerTotalTime = stats.getCpuStats().getTotalUsage();
-        final long cpuSystemTotalTime = stats.getCpuStats().getSystemCpuUsage();
         final long memoryTotalBytes = stats.getMemoryStats().getLimit();
         final long memoryTotalBytesUsage = stats.getMemoryStats().getUsage();
         final long memoryTotalBytesCache = stats.getMemoryStats().getCache();
-        final long diskTotalBytes = (long) (node.getMinDiskAvailableGb() * BYTES_IN_GB);
+        final long diskTotalBytes = (long) (node.diskGb() * BYTES_IN_GB);
         final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context);
 
-        lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
+        lastCpuMetric.updateCpuDeltas(stats.getCpuStats());
 
         // Ratio of CPU cores allocated to this container to total number of CPU cores on this host
-        final double allocatedCpuRatio = node.getMinCpuCores() / totalNumCpuCores;
+        final double allocatedCpuRatio = node.vcpus() / totalNumCpuCores;
         double cpuUsageRatioOfAllocated = lastCpuMetric.getCpuUsageRatio() / allocatedCpuRatio;
         double cpuKernelUsageRatioOfAllocated = lastCpuMetric.getCpuKernelUsageRatio() / allocatedCpuRatio;
+        double cpuThrottledTimeRate = lastCpuMetric.getThrottledTimeRate();
+        double cpuThrottledCpuTimeRate = lastCpuMetric.getThrottledCpuTimeRate();
 
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
@@ -564,7 +563,9 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
-                .withMetric("cpu.vcpus", node.getMinCpuCores())
+                .withMetric("cpu.throttled_time.rate", cpuThrottledTimeRate)
+                .withMetric("cpu.throttled_cpu_time.rate", cpuThrottledCpuTimeRate)
+                .withMetric("cpu.vcpus", node.vcpus())
                 .withMetric("disk.limit", diskTotalBytes);
 
         diskTotalBytesUsed.ifPresent(diskUsed -> systemMetricsBuilder.withMetric("disk.used", diskUsed));
@@ -597,7 +598,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             // Push metrics to the metrics proxy in each container.
             // TODO Remove port selection logic when all hosted apps have upgraded to Vespa 7.
-            int port = context.node().getVespaVersion().map(version -> version.getMajor() == 6).orElse(false) ? 19091 : 19095;
+            int port = context.node().currentVespaVersion().map(version -> version.getMajor() == 6).orElse(false) ? 19091 : 19095;
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:" + port,  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
         } catch (JsonProcessingException | DockerExecTimeoutException  e) {
@@ -621,22 +622,39 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     class CpuUsageReporter {
+        private static final double PERIOD_IN_NANOSECONDS = 1_000d * ContainerResources.CPU_PERIOD_US;
         private long containerKernelUsage = 0;
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
+        private long throttledTime = 0;
+        private long throttlingActivePeriods = 0;
+        private long throttledPeriods = 0;
 
         private long deltaContainerKernelUsage;
         private long deltaContainerUsage;
         private long deltaSystemUsage;
+        private long deltaThrottledTime;
+        private long deltaThrottlingActivePeriods;
+        private long deltaThrottledPeriods;
 
-        private void updateCpuDeltas(long totalSystemUsage, long totalContainerUsage, long containerKernelUsage) {
-            deltaSystemUsage = this.totalSystemUsage == 0 ? 0 : (totalSystemUsage - this.totalSystemUsage);
-            deltaContainerUsage = totalContainerUsage - this.totalContainerUsage;
-            deltaContainerKernelUsage = containerKernelUsage - this.containerKernelUsage;
+        private void updateCpuDeltas(ContainerStats.CpuStats cpuStats) {
+            // Do not calculate delta during the first tick - that will result in a metric value that is
+            // average since container start
+            if (totalSystemUsage != 0) {
+                deltaSystemUsage = cpuStats.getSystemCpuUsage() - totalSystemUsage;
+                deltaContainerUsage = cpuStats.getTotalUsage() - totalContainerUsage;
+                deltaContainerKernelUsage = cpuStats.getUsageInKernelMode() - containerKernelUsage;
+                deltaThrottledTime = cpuStats.getThrottledTime() - throttledTime;
+                deltaThrottlingActivePeriods = cpuStats.getThrottlingActivePeriods() - throttlingActivePeriods;
+                deltaThrottledPeriods = cpuStats.getThrottledPeriods() - throttledPeriods;
+            }
 
-            this.totalSystemUsage = totalSystemUsage;
-            this.totalContainerUsage = totalContainerUsage;
-            this.containerKernelUsage = containerKernelUsage;
+            totalSystemUsage = cpuStats.getSystemCpuUsage();
+            totalContainerUsage = cpuStats.getTotalUsage();
+            containerKernelUsage = cpuStats.getUsageInKernelMode();
+            throttledTime = cpuStats.getThrottledTime();
+            throttlingActivePeriods = cpuStats.getThrottlingActivePeriods();
+            throttledPeriods = cpuStats.getThrottledPeriods();
         }
 
         /**
@@ -650,6 +668,16 @@ public class NodeAgentImpl implements NodeAgent {
 
         double getCpuKernelUsageRatio() {
             return deltaSystemUsage == 0 ? Double.NaN : (double) deltaContainerKernelUsage / deltaSystemUsage;
+        }
+
+        double getThrottledTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    (double) deltaThrottledPeriods / deltaThrottlingActivePeriods;
+        }
+
+        double getThrottledCpuTimeRate() {
+            return deltaThrottlingActivePeriods == 0 ? Double.NaN :
+                    deltaThrottledTime / (PERIOD_IN_NANOSECONDS * deltaThrottlingActivePeriods);
         }
     }
 
@@ -666,7 +694,7 @@ public class NodeAgentImpl implements NodeAgent {
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode(NodeAgentContext context) {
-        if (context.node().getState() != NodeState.active) return;
+        if (context.node().state() != NodeState.active) return;
 
         context.log(logger, "Ask Orchestrator for permission to suspend node");
         try {

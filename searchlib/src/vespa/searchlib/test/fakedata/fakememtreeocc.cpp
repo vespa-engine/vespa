@@ -129,10 +129,10 @@ search::queryeval::SearchIterator *
 FakeMemTreeOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
-    return new search::memoryindex::PostingIterator(_tree.begin(_allocator),
+    return memoryindex::make_search_iterator<false>(_tree.begin(_allocator),
                                                     _mgr._featureStore,
                                                     _packedIndex,
-                                                    matchData);
+                                                    matchData).release();
 }
 
 
@@ -267,7 +267,7 @@ FakeMemTreeOccMgr::flush()
             }
         } else {
             if (!itr.valid() || docId < itr.getKey()) {
-                tree.insert(itr, docId, i->getFeatureRef());
+                tree.insert(itr, docId, PostingListEntryType(i->getFeatureRef(), 0, 1));
             }
         }
     }

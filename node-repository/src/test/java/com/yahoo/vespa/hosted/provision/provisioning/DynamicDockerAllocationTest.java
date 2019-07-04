@@ -386,7 +386,6 @@ public class DynamicDockerAllocationTest {
         tester.activate(application, hosts1);
 
         NodeResources resources = new NodeResources(1.5, 8, 50);
-        System.out.println("Redeploying with " + resources);
         List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
         tester.activate(application, hosts2);
 
@@ -444,7 +443,7 @@ public class DynamicDockerAllocationTest {
                 ClusterSpec.request(ClusterSpec.Type.container,
                                     ClusterSpec.Id.from("node-admin"),
                                     Version.fromString("6.42"),
-                                    false, Collections.emptySet()),
+                                    false),
                 Capacity.fromRequiredNodeType(NodeType.host),
                 1);
         tester.activate(applicationId, ImmutableSet.copyOf(list));
@@ -461,6 +460,6 @@ public class DynamicDockerAllocationTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Collections.emptySet());
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
     }
 }

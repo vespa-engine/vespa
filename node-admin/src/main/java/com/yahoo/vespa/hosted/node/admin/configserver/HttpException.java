@@ -2,12 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
-import org.apache.http.NoHttpResponseException;
 
 import javax.ws.rs.core.Response;
-import java.io.EOFException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 
 /**
  * @author hakonhall
@@ -64,22 +60,6 @@ public class HttpException extends ConvergenceException {
 
         // Other errors like server-side errors are assumed to be retryable.
         throw new HttpException(status, message, true);
-    }
-
-    /**
-     * Returns {@link HttpException} if the given Throwable is of a known and well understood error or
-     * a RuntimeException with the given exception as cause otherwise.
-     */
-    public static RuntimeException handleException(String prefix, Throwable t) {
-        for (; t != null; t = t.getCause()) {
-            if (t instanceof SocketException ||
-                t instanceof SocketTimeoutException ||
-                t instanceof NoHttpResponseException ||
-                t instanceof EOFException)
-                return new HttpException(prefix + t.getMessage());
-        }
-
-        return new RuntimeException(prefix, t);
     }
 
     public static class NotFoundException extends HttpException {

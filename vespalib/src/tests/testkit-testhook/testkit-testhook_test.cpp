@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-
-#include <cppunit/extensions/HelperMacros.h>
 #include <stdexcept>
 
 //-----------------------------------------------------------------------------
@@ -150,12 +148,7 @@ IGNORE_TEST("passed tests can also be ignored") {
 
 //-----------------------------------------------------------------------------
 
-TEST("cppunit unwind will result in 1 failed test and 1 failed check") {
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("cppunit happy", 1, 1);
-    CPPUNIT_ASSERT_EQUAL_MESSAGE("cppunit not happy", 1, 2);
-}
-
-TEST("std::excpetion unwind will result in 1 failed test and 1 failed check") {
+TEST("std::exception unwind will result in 1 failed test and 1 failed check") {
     throw std::runtime_error("something failed");
 }
 
@@ -172,7 +165,7 @@ TEST("verify and ignore check failures from previous tests") {
 
 TEST("verify that all appropriate tests have been executed") {
     TEST_FLUSH();
-    EXPECT_EQUAL(25u, TEST_MASTER.getProgress().passCnt);
+    EXPECT_EQUAL(24u, TEST_MASTER.getProgress().passCnt);
 }
 
 //-----------------------------------------------------------------------------

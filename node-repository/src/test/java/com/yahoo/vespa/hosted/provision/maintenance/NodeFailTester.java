@@ -88,8 +88,8 @@ public class NodeFailTester {
         tester.createHostNodes(3);
 
         // Create applications
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Set.of());
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Set.of());
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
         int wantedNodesApp1 = 5;
         int wantedNodesApp2 = 7;
         tester.activate(app1, clusterApp1, wantedNodesApp1);
@@ -118,9 +118,9 @@ public class NodeFailTester {
         }
 
         // Create applications
-        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false, Set.of());
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false, Set.of());
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false, Set.of());
+        ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
         Capacity capacity1 = Capacity.fromCount(3, new NodeResources(1, 1, 1), false, true);
         Capacity capacity2 = Capacity.fromCount(5, new NodeResources(1, 1, 1), false, true);
@@ -152,7 +152,7 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container,
                                                       ClusterSpec.Id.from("test"),
                                                       Version.fromString("6.42"),
-                                                      false, Set.of());
+                                                      false);
         tester.activate(app1, clusterApp1, allNodes);
         assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
 

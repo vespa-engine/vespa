@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_field_index_remover_test_app TEST
     field_index_remover_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_field_index_remover_test_app COMMAND searchlib_field_index_remover_test_app)

@@ -831,7 +831,7 @@ public class RestApiTest {
     @Test
     public void test_load_balancers() throws Exception {
         assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
-        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers.json");
+        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers-single.json");
         assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
     }
 

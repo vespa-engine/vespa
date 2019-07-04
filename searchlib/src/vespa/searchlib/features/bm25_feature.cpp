@@ -47,16 +47,17 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
     : FeatureExecutor(),
       _terms(),
       _avg_field_length(avg_field_length),
-      _k1_param(k1_param),
-      _b_param(b_param)
+      _k1_mul_b(k1_param * b_param),
+      _k1_mul_one_minus_b(k1_param * (1 - b_param))
 {
     for (size_t i = 0; i < env.getNumTerms(); ++i) {
         const ITermData* term = env.getTerm(i);
         for (size_t j = 0; j < term->numFields(); ++j) {
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
-                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Cheap),
-                                    get_inverse_document_frequency(term_field, env, *term));
+                _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
+                                    get_inverse_document_frequency(term_field, env, *term),
+                                    k1_param);
             }
         }
     }
@@ -86,8 +87,8 @@ Bm25Executor::execute(uint32_t doc_id)
             feature_t num_occs = term.tfmd->getNumOccs();
             feature_t norm_field_length = ((feature_t)term.tfmd->getFieldLength()) / _avg_field_length;
 
-            feature_t numerator = term.inverse_doc_freq * num_occs * (_k1_param + 1);
-            feature_t denominator = num_occs + (_k1_param * (1 - _b_param + (_b_param * norm_field_length)));
+            feature_t numerator = num_occs * term.idf_mul_k1_plus_one;
+            feature_t denominator = num_occs + (_k1_mul_one_minus_b + _k1_mul_b * norm_field_length);
 
             score += numerator / denominator;
         }

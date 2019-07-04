@@ -13,20 +13,19 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
-import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.application.EmptyJsonResponse;
+import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +98,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleOPTIONS() {
-        EmptyJsonResponse response = new EmptyJsonResponse();
+        EmptyResponse response = new EmptyResponse();
         response.headers().put("Allow", "GET,PUT,POST,PATCH,DELETE,OPTIONS");
         return response;
     }

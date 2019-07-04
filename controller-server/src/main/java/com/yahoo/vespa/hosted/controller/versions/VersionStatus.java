@@ -6,6 +6,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -129,14 +130,17 @@ public class VersionStatus {
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
+        List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
         for (DeploymentStatistics statistics : deploymentStatistics) {
             if (statistics.version().isEmpty()) continue;
 
             try {
+                boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
                                                           statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
+                                                          isReleased,
                                                           systemApplicationVersions.getList(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
@@ -145,26 +149,24 @@ public class VersionStatus {
                                        statistics.version().toFullString(), e);
             }
         }
+
         Collections.sort(versions);
 
         return new VersionStatus(versions);
     }
 
     private static ListMap<Version, HostName> findSystemApplicationVersions(Controller controller) {
-        List<ZoneId> zones = controller.zoneRegistry().zones()
-                                       .controllerUpgraded()
-                                       .ids();
         ListMap<Version, HostName> versions = new ListMap<>();
-        for (ZoneId zone : zones) {
+        for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
                 List<Node> eligibleForUpgradeApplicationNodes = controller.configServer().nodeRepository()
-                        .list(zone, application.id()).stream()
+                        .list(zone.getId(), application.id()).stream()
                         .filter(SystemUpgrader::eligibleForUpgrade)
                         .collect(Collectors.toList());
                 if (eligibleForUpgradeApplicationNodes.isEmpty())
                     continue;
 
-                boolean configConverged = application.configConvergedIn(zone, controller, Optional.empty());
+                boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
                     log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
                 }
@@ -238,10 +240,11 @@ public class VersionStatus {
         }
         return versionMap.values();
     }
-    
+
     private static VespaVersion createVersion(DeploymentStatistics statistics,
                                               boolean isControllerVersion,
-                                              boolean isSystemVersion, 
+                                              boolean isSystemVersion,
+                                              boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
         GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
@@ -260,6 +263,7 @@ public class VersionStatus {
                                 gitSha.sha, committedAt,
                                 isControllerVersion,
                                 isSystemVersion,
+                                isReleased,
                                 configServerHostnames,
                                 confidence
         );

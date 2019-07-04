@@ -16,7 +16,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -61,6 +60,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
@@ -241,7 +241,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/instance1", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Deactivated tenant/tenant1/application/application1/instance/instance1/environment/test/region/us-east-1");
+                              "{\"message\":\"Deactivated tenant1.application1.instance1 in test.us-east-1\"}");
 
         controllerTester.jobCompletion(JobType.systemTest)
                         .application(id)
@@ -255,7 +255,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-east-3/instance/instance1", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Deactivated tenant/tenant1/application/application1/instance/instance1/environment/staging/region/us-east-3");
+                              "{\"message\":\"Deactivated tenant1.application1.instance1 in staging.us-east-3\"}");
         controllerTester.jobCompletion(JobType.stagingTest)
                         .application(id)
                         .projectId(screwdriverProjectId)
@@ -367,8 +367,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              "");
+                              "{\"message\":\"Deleted application tenant2.application2\"}");
 
+        // Set version 6.1 to broken to change compile version for.
+        controllerTester.upgrader().overrideConfidence(Version.fromString("6.1"), VespaVersion.Confidence.broken);
+        tester.computeVersionStatus();
         setDeploymentMaintainedInfo(controllerTester);
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -477,27 +480,27 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
                                       .userIdentity(USER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}");
 
         // POST a 'restart application' in staging environment command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/instance1/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/staging/region/us-central-1/instance/instance1");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in staging.us-central-1\"}");
 
         // POST a 'restart application' in staging test command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-central-1/instance/instance1/restart", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/test/region/us-central-1/instance/instance1");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in test.us-central-1\"}");
 
         // POST a 'restart application' in staging dev command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-central-1/instance/instance1/restart", POST)
                                       .userIdentity(USER_ID),
-                              "Requested restart of tenant/tenant1/application/application1/environment/dev/region/us-central-1/instance/instance1");
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=host1", POST)
@@ -527,18 +530,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE (deactivate) a deployment - dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID),
-                              "Deactivated tenant/tenant1/application/application1/instance/instance1/environment/dev/region/us-west-1");
+                              "{\"message\":\"Deactivated tenant1.application1.instance1 in dev.us-west-1\"}");
 
         // DELETE (deactivate) a deployment - prod
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Deactivated tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1");
+                              "{\"message\":\"Deactivated tenant1.application1.instance1 in prod.us-central-1\"}");
 
 
         // DELETE (deactivate) a deployment is idempotent
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "Deactivated tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1");
+                              "{\"message\":\"Deactivated tenant1.application1.instance1 in prod.us-central-1\"}");
 
         // POST an application package to start a deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1", POST)
@@ -658,7 +661,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              "");
+                              "{\"message\":\"Deleted application tenant1.application1.instance1\"}");
         // DELETE a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
@@ -987,7 +990,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              "");
+                              "{\"message\":\"Deleted application tenant1.application1.instance1\"}");
         // DELETE application again - should produce 404
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .oktaAccessToken(OKTA_AT)
@@ -1086,7 +1089,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT),
-                              "",
+                              "{\"message\":\"Deleted application tenant1.application1\"}",
                               200);
 
         // Updating a tenant for an Athens domain the user is not admin for is disallowed
@@ -1525,7 +1528,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
         tester.assertResponse(request(testPath, DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                "Deactivated " + testPath.replaceFirst("/application/v4/", ""));
+                "{\"message\":\"Deactivated " + application + " in test.us-east-1\"}");
         controllerTester.jobCompletion(JobType.systemTest)
                         .application(application)
                         .projectId(projectId)
@@ -1540,7 +1543,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("deploy-result.json"));
         tester.assertResponse(request(stagingPath, DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                "Deactivated " + stagingPath.replaceFirst("/application/v4/", ""));
+                "{\"message\":\"Deactivated " + application + " in staging.us-east-3\"}");
         controllerTester.jobCompletion(JobType.stagingTest)
                         .application(application)
                         .projectId(projectId)

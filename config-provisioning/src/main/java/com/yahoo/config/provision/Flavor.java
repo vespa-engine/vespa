@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A host or node flavor.
@@ -26,10 +23,8 @@ public class Flavor {
     private final boolean isStock;
     private final Type type;
     private final double bandwidth;
-    private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
-    private int idealHeadroom; // Note: Not used after Vespa 6.282
 
     /** The hardware resources of this flavor */
     private NodeResources resources;
@@ -46,10 +41,8 @@ public class Flavor {
                                            flavorConfig.minDiskAvailableGb(),
                                            flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         this.bandwidth = flavorConfig.bandwidth();
-        this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
         this.replacesFlavors = new ArrayList<>();
-        this.idealHeadroom = flavorConfig.idealHeadroom();
     }
 
     /** Creates a *node* flavor from a node resources spec */
@@ -64,10 +57,8 @@ public class Flavor {
         this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
         this.bandwidth = 1;
-        this.description = "";
         this.retired = false;
-        this.replacesFlavors = Collections.emptyList();
-        this.idealHeadroom = 0;
+        this.replacesFlavors = List.of();
         this.resources = resources;
     }
 
@@ -102,8 +93,6 @@ public class Flavor {
 
     public double getMinCpuCores() { return resources.vcpu(); }
 
-    public String getDescription() { return description; }
-
     /** Returns whether the flavor is retired */
     public boolean isRetired() {
         return retired;
@@ -113,11 +102,6 @@ public class Flavor {
     
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
-
-    /** The free capacity we would like to preserve for this flavor */
-    public int getIdealHeadroom() {
-        return idealHeadroom;
-    }
 
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.
@@ -164,22 +148,9 @@ public class Flavor {
         return false;
     }
 
-    /**
-     * Returns whether this flavor has at least the given resources, i.e if all resources of this are at least
-     * as large as the given resources.
-     */
-    public boolean hasAtLeast(NodeResources resources) {
-        return this.resources.satisfies(resources);
-    }
-
     /** Irreversibly freezes the content of this */
     public void freeze() {
-        replacesFlavors = ImmutableList.copyOf(replacesFlavors);
-    }
-    
-    /** Returns whether this flavor has at least as much of each hardware resource as the given flavor */
-    public boolean isLargerThan(Flavor other) {
-        return hasAtLeast(other.resources);
+        replacesFlavors = List.copyOf(replacesFlavors);
     }
 
     @Override

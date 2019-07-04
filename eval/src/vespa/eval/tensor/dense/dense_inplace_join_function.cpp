@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -18,7 +17,7 @@ using namespace eval::tensor_function;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+TypedCells getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
     return denseTensor.cellsRef();
 }
@@ -26,8 +25,8 @@ CellsRef getCellsRef(const eval::Value &value) {
 template <bool write_left>
 void my_inplace_join_op(eval::InterpretedFunction::State &state, uint64_t param) {
     join_fun_t function = (join_fun_t)param;
-    CellsRef lhs_cells = getCellsRef(state.peek(1));
-    CellsRef rhs_cells = getCellsRef(state.peek(0));
+    ConstArrayRef<double> lhs_cells = getCellsRef(state.peek(1)).typify<double>();
+    ConstArrayRef<double> rhs_cells = getCellsRef(state.peek(0)).typify<double>();
     auto dst_cells = unconstify(write_left ? lhs_cells : rhs_cells);
     for (size_t i = 0; i < dst_cells.size(); ++i) {
         dst_cells[i] = function(lhs_cells[i], rhs_cells[i]);

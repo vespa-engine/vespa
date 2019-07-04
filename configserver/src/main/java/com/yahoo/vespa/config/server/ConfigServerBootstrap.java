@@ -7,11 +7,13 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -241,10 +243,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         }
 
         for (Map.Entry<ApplicationId, Future<?>> f : futures.entrySet()) {
+            ApplicationId app = f.getKey();
             try {
                 f.getValue().get();
+            } catch (TransientException e) {
+                log.log(LogLevel.INFO, "Redeploying " + app +
+                        " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
             } catch (ExecutionException e) {
-                ApplicationId app = f.getKey();
                 log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
                 failedDeployments.add(app);
             }

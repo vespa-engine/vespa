@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -60,10 +61,10 @@ public class VersionStatusTest {
         Version version0 = Version.fromString("6.1");
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
-        for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                                    node.owner(), version1, node.wantedVersion()));
+        for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+                Node upgradedNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), version1, node.wantedVersion());
+                tester.configServer().nodeRepository().putByHostname(zone.getId(), upgradedNode);
                 break;
             }
         }
@@ -105,10 +106,10 @@ public class VersionStatusTest {
 
         // Downgrade one config server in each zone
         Version ancientVersion = Version.fromString("5.1");
-        for (ZoneId zone : tester.controller().zoneRegistry().zones().all().ids()) {
-            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
-                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                                    node.owner(), ancientVersion, node.wantedVersion()));
+        for (ZoneApi zone : tester.controller().zoneRegistry().zones().all().zones()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
+                Node downgradedNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), ancientVersion, node.wantedVersion());
+                tester.configServer().nodeRepository().putByHostname(zone.getId(), downgradedNode);
                 break;
             }
         }
@@ -254,7 +255,7 @@ public class VersionStatusTest {
         assertTrue("Status for version without applications is removed",
                    tester.controller().versionStatus().versions().stream()
                            .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
-        
+
         // Another default application upgrades, raising confidence to high
         tester.completeUpgrade(default8, version2, "default");
         tester.completeUpgrade(default9, version2, "default");
@@ -294,6 +295,11 @@ public class VersionStatusTest {
         assertEquals("6.2", versions.get(0).versionNumber().toString());
         assertEquals("6.4", versions.get(1).versionNumber().toString());
         assertEquals("6.5", versions.get(2).versionNumber().toString());
+
+        // Check release status is correct (static data in MockMavenRepository).
+        assertTrue(versions.get(0).isReleased());
+        assertFalse(versions.get(1).isReleased());
+        assertFalse(versions.get(2).isReleased());
     }
 
     @Test

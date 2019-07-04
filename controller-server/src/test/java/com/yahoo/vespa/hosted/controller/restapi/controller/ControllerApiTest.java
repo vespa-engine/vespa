@@ -80,7 +80,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testUpgraderApi() {
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
-                              "{\"upgradesPerMinute\":0.125,\"confidenceOverrides\":[]}",
+                              "{\"upgradesPerMinute\":100.0,\"confidenceOverrides\":[]}",
                               200);
 
         // Set invalid configuration

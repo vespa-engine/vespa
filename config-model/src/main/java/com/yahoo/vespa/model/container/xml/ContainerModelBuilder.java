@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -72,6 +73,7 @@ import org.w3c.dom.Node;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -212,13 +214,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                         context.getDeployState().getProperties().athenzDnsSuffix(),
                                         context.getDeployState().zone(),
                                         deploymentSpec);
-                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deploymentSpec);
+                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), context.getDeployState().getEndpoints(), deploymentSpec);
                 });
     }
 
-    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, DeploymentSpec spec) {
+    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
         cluster.getContainers().forEach(container -> {
-            setRotations(container, rotations, spec.globalServiceId(), cluster.getName());
+            setRotations(container, rotations, endpoints, spec.globalServiceId(), cluster.getName());
             container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
     }
@@ -229,13 +231,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                              declaredZone.active());
     }
 
-    private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
+    private void setRotations(Container container,
+                              Set<Rotation> rotations,
+                              Set<ContainerEndpoint> endpoints,
+                              Optional<String> globalServiceId,
+                              String containerClusterName) {
+        final Set<String> rotationsProperty = new HashSet<>();
 
+        // Add the legacy rotations to the list of available rotations.  Using the same test
+        // as was used before to mirror the old business logic for global-service-id.
         if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
             if (containerClusterName.equals(globalServiceId.get())) {
-                container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
+                rotations.stream().map(Rotation::getId).forEach(rotationsProperty::add);
             }
         }
+
+        // For ContainerEndpoints this is more straight-forward, just add all that are present
+        endpoints.stream()
+                .filter(endpoint -> endpoint.clusterId().equals(containerClusterName))
+                .flatMap(endpoint -> endpoint.names().stream())
+                .forEach(rotationsProperty::add);
+
+        // Build the comma delimited list of endpoints this container should be known as.
+        // Confusingly called 'rotations' for legacy reasons.
+        container.setProp("rotations", String.join(",", rotationsProperty));
     }
 
     private void addRoutingAliases(ApplicationContainerCluster cluster, Element spec, Environment environment) {
@@ -412,7 +431,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ApplicationContainerCluster cluster) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa(), cluster.getTlsSecrets());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -478,7 +497,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa(), cluster.getTlsSecrets());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService(context.getDeployLogger());
@@ -667,7 +686,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa(), cluster.getTlsSecrets());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);

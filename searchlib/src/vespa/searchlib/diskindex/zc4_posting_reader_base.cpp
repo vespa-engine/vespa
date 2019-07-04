@@ -51,11 +51,11 @@ Zc4PostingReaderBase::NoSkip::NoSkip()
 Zc4PostingReaderBase::NoSkip::~NoSkip() = default;
 
 void
-Zc4PostingReaderBase::NoSkip::read(bool decode_cheap_features)
+Zc4PostingReaderBase::NoSkip::read(bool decode_interleaved_features)
 {
     assert(_zc_buf._valI < _zc_buf._valE);
     _doc_id += (_zc_buf.decode()+ 1);
-    if (decode_cheap_features) {
+    if (decode_interleaved_features) {
         _field_length = _zc_buf.decode() + 1;
         _num_occs = _zc_buf.decode() + 1;
     }
@@ -219,7 +219,7 @@ Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base &decode_contex
         }
         _l1_skip.next_skip_entry();
     }
-    _no_skip.read(_posting_params._encode_cheap_features);
+    _no_skip.read(_posting_params._encode_interleaved_features);
     if (_residue == 1) {
         _no_skip.check_end(_last_doc_id);
         _l1_skip.check_end(_last_doc_id);

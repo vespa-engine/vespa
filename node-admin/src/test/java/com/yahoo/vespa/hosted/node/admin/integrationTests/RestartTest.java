@@ -30,7 +30,7 @@ public class RestartTest {
                     .hostname(hostname)
                     .state(NodeState.active)
                     .wantedDockerImage(dockerImage)
-                    .nodeType(NodeType.tenant)
+                    .type(NodeType.tenant)
                     .flavor("docker")
                     .wantedRestartGeneration(1)
                     .currentRestartGeneration(1)

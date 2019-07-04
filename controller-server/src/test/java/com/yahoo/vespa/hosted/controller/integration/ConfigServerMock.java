@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -44,6 +45,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author mortent
@@ -225,7 +227,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                                      List<ContainerEndpoint> containerEndpoints, byte[] content) {
+                                      Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -237,7 +239,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        this.rotationNames.put(deployment, Set.copyOf(rotationNames));
+        this.rotationNames.put(
+                deployment,
+                Stream.concat(
+                        containerEndpoints.stream().flatMap(e -> e.names().stream()),
+                        rotationNames.stream()
+                ).collect(Collectors.toSet())
+        );
 
         return () -> {
             Application application = applications.get(deployment.applicationId());

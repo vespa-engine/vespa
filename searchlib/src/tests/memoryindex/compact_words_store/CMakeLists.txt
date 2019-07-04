@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_compact_words_store_test_app TEST
     compact_words_store_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_compact_words_store_test_app COMMAND searchlib_compact_words_store_test_app)

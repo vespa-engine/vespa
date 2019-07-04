@@ -7,15 +7,18 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -24,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -43,6 +47,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.config.provision.SystemName.main;
@@ -116,9 +121,9 @@ public class ApplicationSerializerTest {
                                                OptionalInt.of(7),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               Optional.of(new RotationId("my-rotation")),
-                                               List.of(new RotationId("my-rotation")),
-                                               rotationStatus);
+                                               List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
+                                               rotationStatus,
+                                               Optional.of(new ApplicationCertificate("vespa.certificate")));
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -155,6 +160,8 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.rotations(), serialized.rotations());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
+
+        assertEquals(original.applicationCertificate(), serialized.applicationCertificate());
 
         // Test cluster utilization
         assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());
@@ -253,6 +260,11 @@ public class ApplicationSerializerTest {
         final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         final var slime = SlimeUtils.jsonToSlime(applicationJson);
 
+        final var regions = Set.of(
+                RegionName.from("us-east-3"),
+                RegionName.from("us-west-1")
+        );
+
         // Add the necessary fields to the Slime representation of the application
         final var cursor = slime.get();
         cursor.setString("rotation", "single-rotation");
@@ -261,20 +273,38 @@ public class ApplicationSerializerTest {
         rotations.addString("multiple-rotation-1");
         rotations.addString("multiple-rotation-2");
 
+        final var assignedRotations = cursor.setArray("assignedRotations");
+        final var assignedRotation = assignedRotations.addObject();
+        assignedRotation.setString("clusterId", "foobar");
+        assignedRotation.setString("endpointId", "nice-endpoint");
+        assignedRotation.setString("rotationId", "assigned-rotation");
+
         // Parse and test the output from parsing contains both legacy rotation and multiple rotations
         final var application = applicationSerializer.fromSlime(slime);
 
+        // Since only one AssignedEndpoint can be "default", we make sure that we are ignoring the
+        // multiple-rotation entries as the globalServiceId will override them
         assertEquals(
                 List.of(
-                    new RotationId("multiple-rotation-1"),
-                    new RotationId("multiple-rotation-2"),
-                    new RotationId("single-rotation")
+                        new RotationId("single-rotation"),
+                        new RotationId("assigned-rotation")
                 ),
                 application.rotations()
         );
 
         assertEquals(
                 Optional.of(new RotationId("single-rotation")), application.legacyRotation()
+        );
+
+        // The same goes here for AssignedRotations with "default" EndpointId as in the .rotations() test above.
+        // Note that we are only using Set.of() on "assigned-rotation" because in this test we do not have access
+        // to a deployment.xml that describes the zones a rotation should map to.
+        assertEquals(
+                List.of(
+                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("single-rotation"), regions),
+                        new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"), Set.of())
+                ),
+                application.assignedRotations()
         );
     }
 

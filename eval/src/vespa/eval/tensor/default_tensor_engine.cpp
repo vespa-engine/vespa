@@ -7,7 +7,7 @@
 #include "sparse/sparse_tensor_address_builder.h"
 #include "sparse/direct_sparse_tensor_builder.h"
 #include "dense/dense_tensor.h"
-#include "dense/direct_dense_tensor_builder.h"
+#include "dense/typed_dense_tensor_builder.h"
 #include "dense/dense_dot_product_function.h"
 #include "dense/dense_xw_product_function.h"
 #include "dense/dense_fast_rename_optimizer.h"
@@ -33,7 +33,6 @@ namespace vespalib::tensor {
 using eval::Aggr;
 using eval::Aggregator;
 using eval::DoubleValue;
-using eval::ErrorValue;
 using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
@@ -82,9 +81,6 @@ const Value &to_default(const Value &value, Stash &stash) {
 }
 
 const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
-    if (!tensor) {
-        return ErrorValue::instance;
-    }
     if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
@@ -92,9 +88,6 @@ const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
 }
 
 Value::UP to_value(std::unique_ptr<Tensor> tensor) {
-    if (!tensor) {
-        return std::make_unique<ErrorValue>();
-    }
     if (tensor->type().is_tensor()) {
         return tensor;
     }
@@ -166,17 +159,12 @@ DefaultTensorEngine::to_spec(const Value &value) const
     }
 }
 
-Value::UP
-DefaultTensorEngine::from_spec(const TensorSpec &spec) const
-{
-    ValueType type = ValueType::from_spec(spec.type());
-    if (type.is_error()) {
-        return std::make_unique<ErrorValue>();
-    } else if (type.is_double()) {
-        double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
-        return std::make_unique<DoubleValue>(value);
-    } else if (type.is_dense()) {
-        DirectDenseTensorBuilder builder(type);
+struct CallDenseTensorBuilder {
+    template <typename CT>
+    static Value::UP
+    call(const ValueType &type, const TensorSpec &spec)
+    {
+        TypedDenseTensorBuilder<CT> builder(type);
         for (const auto &cell: spec.cells()) {
             const auto &address = cell.first;
             size_t cell_idx = calculate_cell_index(type, address);
@@ -186,6 +174,20 @@ DefaultTensorEngine::from_spec(const TensorSpec &spec) const
             builder.insertCell(cell_idx, cell.second);
         }
         return builder.build();
+    }
+};
+
+Value::UP
+DefaultTensorEngine::from_spec(const TensorSpec &spec) const
+{
+    ValueType type = ValueType::from_spec(spec.type());
+    if (type.is_error()) {
+        bad_spec(spec);
+    } else if (type.is_double()) {
+        double value = spec.cells().empty() ? 0.0 : spec.cells().begin()->second.value;
+        return std::make_unique<DoubleValue>(value);
+    } else if (type.is_dense()) {
+        return dispatch_0<CallDenseTensorBuilder>(type.cell_type(), type, spec);
     } else if (type.is_sparse()) {
         DirectSparseTensorBuilder builder(type);
         SparseTensorAddressBuilder address_builder;
@@ -230,7 +232,7 @@ DefaultTensorEngine::encode(const Value &value, nbostream &output) const
     if (auto tensor = value.as_tensor()) {
         TypedBinaryFormat::serialize(output, static_cast<const tensor::Tensor &>(*tensor));
     } else {
-        TypedBinaryFormat::serialize(output, DenseTensor(ValueType::double_type(), {value.as_double()}));
+        TypedBinaryFormat::serialize(output, DenseTensor<double>(ValueType::double_type(), {value.as_double()}));
     }
 }
 
@@ -273,9 +275,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
 const Value &
 DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
 {
-    if (a.is_double()) {
-        return stash.create<DoubleValue>(function(a.as_double()));
-    } else if (auto tensor = a.as_tensor()) {
+    if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
         if (!tensor::Tensor::supported({my_a.type()})) {
@@ -284,17 +284,32 @@ DefaultTensorEngine::map(const Value &a, map_fun_t function, Stash &stash) const
         CellFunctionFunAdapter cell_function(function);
         return to_value(my_a.apply(cell_function), stash);
     } else {
-        return ErrorValue::instance;
+        return stash.create<DoubleValue>(function(a.as_double()));
     }
 }
 
 const Value &
 DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
 {
-    if (a.is_double()) {
-        if (b.is_double()) {
-            return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
-        } else if (auto tensor_b = b.as_tensor()) {
+    if (auto tensor_a = a.as_tensor()) {
+        assert(&tensor_a->engine() == this);
+        const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
+        if (auto tensor_b = b.as_tensor()) {
+            assert(&tensor_b->engine() == this);
+            const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
+            if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
+                return fallback_join(a, b, function, stash);
+            }
+            return to_value(my_a.join(function, my_b), stash);
+        } else {
+            if (!tensor::Tensor::supported({my_a.type()})) {
+                return fallback_join(a, b, function, stash);
+            }
+            CellFunctionBindRightAdapter cell_function(function, b.as_double());
+            return to_value(my_a.apply(cell_function), stash);
+        }
+    } else {
+        if (auto tensor_b = b.as_tensor()) {
             assert(&tensor_b->engine() == this);
             const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
             if (!tensor::Tensor::supported({my_b.type()})) {
@@ -303,44 +318,15 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
             CellFunctionBindLeftAdapter cell_function(function, a.as_double());
             return to_value(my_b.apply(cell_function), stash);
         } else {
-            return ErrorValue::instance;
+            return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
         }
-    } else if (auto tensor_a = a.as_tensor()) {
-        assert(&tensor_a->engine() == this);
-        const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
-        if (b.is_double()) {
-            if (!tensor::Tensor::supported({my_a.type()})) {
-                return fallback_join(a, b, function, stash);
-            }
-            CellFunctionBindRightAdapter cell_function(function, b.as_double());
-            return to_value(my_a.apply(cell_function), stash);
-        } else if (auto tensor_b = b.as_tensor()) {
-            assert(&tensor_b->engine() == this);
-            const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
-            if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
-                return fallback_join(a, b, function, stash);
-            }
-            return to_value(my_a.join(function, my_b), stash);
-        } else {
-            return ErrorValue::instance;
-        }
-    } else {
-        return ErrorValue::instance;
     }
 }
 
 const Value &
 DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
-    if (a.is_double()) {
-        if (dimensions.empty()) {
-            Aggregator &aggregator = Aggregator::create(aggr, stash);
-            aggregator.first(a.as_double());
-            return stash.create<DoubleValue>(aggregator.result());
-        } else {
-            return ErrorValue::instance;
-        }
-    } else if (auto tensor = a.as_tensor()) {
+    if (auto tensor = a.as_tensor()) {
         assert(&tensor->engine() == this);
         const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor);
         if (!tensor::Tensor::supported({my_a.type()})) {
@@ -360,7 +346,9 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
             return fallback_reduce(a, aggr, dimensions, stash);
         }
     } else {
-        return ErrorValue::instance;
+        Aggregator &aggregator = Aggregator::create(aggr, stash);
+        aggregator.first(a.as_double());
+        return stash.create<DoubleValue>(aggregator.result());
     }
 }
 
@@ -378,12 +366,18 @@ size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     }
 }
 
+struct CallAppendVector {
+    template <typename CT>
+    static void call(const ConstArrayRef<CT> &arr, double *&pos) {
+        for (CT cell : arr) { *pos++ = cell; }
+    }
+};
+
 void append_vector(double *&pos, const Value &value) {
     if (auto tensor = value.as_tensor()) {
         const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
-        for (double cell: view->cellsRef()) {
-            *pos++ = cell;
-        }
+        TypedCells cellsRef = view->cellsRef();
+        dispatch_1<CallAppendVector>(cellsRef, pos);
     } else {
         *pos++ = value.as_double();
     }
@@ -396,7 +390,7 @@ const Value &concat_vectors(const Value &a, const Value &b, const vespalib::stri
     append_vector(pos, b);
     assert(pos == cells.end());
     const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}));
-    return stash.create<DenseTensorView>(type, cells);
+    return stash.create<DenseTensorView>(type, TypedCells(cells));
 }
 
 const Value &

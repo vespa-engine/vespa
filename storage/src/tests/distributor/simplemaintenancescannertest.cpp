@@ -6,28 +6,18 @@
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::distributor {
 
 using document::BucketId;
 using document::test::makeBucketSpace;
-typedef MaintenancePriority Priority;
+using Priority = MaintenancePriority;
+using namespace ::testing;
 
-class SimpleMaintenanceScannerTest : public CppUnit::TestFixture {
-    CPPUNIT_TEST_SUITE(SimpleMaintenanceScannerTest);
-    CPPUNIT_TEST(testPrioritizeSingleBucket);
-    CPPUNIT_TEST(testPrioritizeSingleBucketAltBucketSpace);
-    CPPUNIT_TEST(testPrioritizeMultipleBuckets);
-    CPPUNIT_TEST(testPendingMaintenanceOperationStatistics);
-    CPPUNIT_TEST(perNodeMaintenanceStatsAreTracked);
-    CPPUNIT_TEST(testReset);
-    CPPUNIT_TEST_SUITE_END();
-
+struct SimpleMaintenanceScannerTest : Test {
     using PendingStats = SimpleMaintenanceScanner::PendingMaintenanceStats;
-
-    std::string dumpPriorityDbToString(const BucketPriorityDatabase&) const;
 
     std::unique_ptr<MockMaintenancePriorityGenerator> _priorityGenerator;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
@@ -36,38 +26,26 @@ class SimpleMaintenanceScannerTest : public CppUnit::TestFixture {
 
     void addBucketToDb(document::BucketSpace bucketSpace, int bucketNum);
     void addBucketToDb(int bucketNum);
-
     bool scanEntireDatabase(int expected);
+    std::string stringifyGlobalPendingStats(const PendingStats& stats) const;
 
-    std::string stringifyGlobalPendingStats(const PendingStats&) const;
-
-public:
-    void testPrioritizeSingleBucket();
-    void testPrioritizeSingleBucketAltBucketSpace();
-    void testPrioritizeMultipleBuckets();
-    void testPendingMaintenanceOperationStatistics();
-    void perNodeMaintenanceStatsAreTracked();
-    void testReset();
-
-    void setUp() override;
+    void SetUp() override;
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(SimpleMaintenanceScannerTest);
-
 void
-SimpleMaintenanceScannerTest::setUp()
+SimpleMaintenanceScannerTest::SetUp()
 {
-    _priorityGenerator.reset(new MockMaintenancePriorityGenerator());
+    _priorityGenerator = std::make_unique<MockMaintenancePriorityGenerator>();
     _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>();
-    _priorityDb.reset(new SimpleBucketPriorityDatabase());
-    _scanner.reset(new SimpleMaintenanceScanner(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo));
+    _priorityDb = std::make_unique<SimpleBucketPriorityDatabase>();
+    _scanner = std::make_unique<SimpleMaintenanceScanner>(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo);
 }
 
 void
 SimpleMaintenanceScannerTest::addBucketToDb(document::BucketSpace bucketSpace, int bucketNum)
 {
     BucketDatabase::Entry entry(BucketId(16, bucketNum), BucketInfo());
-    auto &bucketDb(_bucketSpaceRepo->get(bucketSpace).getBucketDatabase());
+    auto& bucketDb(_bucketSpaceRepo->get(bucketSpace).getBucketDatabase());
     bucketDb.update(entry);
 }
 
@@ -86,24 +64,20 @@ SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(
     return ss.str();
 }
 
-void
-SimpleMaintenanceScannerTest::testPrioritizeSingleBucket()
-{
+TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket) {
     addBucketToDb(1);
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
     auto scanResult = _scanner->scanNext();
-    CPPUNIT_ASSERT(!scanResult.isDone());
-    CPPUNIT_ASSERT_EQUAL(makeBucketSpace().getId(), scanResult.getBucketSpace().getId());
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    ASSERT_FALSE(scanResult.isDone());
+    EXPECT_EQ(makeBucketSpace().getId(), scanResult.getBucketSpace().getId());
+    EXPECT_EQ(expected, _priorityDb->toString());
 
-    CPPUNIT_ASSERT(_scanner->scanNext().isDone());
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    ASSERT_TRUE(_scanner->scanNext().isDone());
+    EXPECT_EQ(expected, _priorityDb->toString());
 }
 
-void
-SimpleMaintenanceScannerTest::testPrioritizeSingleBucketAltBucketSpace()
-{
+TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket_alt_bucket_space) {
     document::BucketSpace bucketSpace(4);
     _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>());
     _scanner->reset();
@@ -111,31 +85,31 @@ SimpleMaintenanceScannerTest::testPrioritizeSingleBucketAltBucketSpace()
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
     auto scanResult = _scanner->scanNext();
-    CPPUNIT_ASSERT(!scanResult.isDone());
-    CPPUNIT_ASSERT_EQUAL(bucketSpace.getId(), scanResult.getBucketSpace().getId());
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    ASSERT_FALSE(scanResult.isDone());
+    EXPECT_EQ(bucketSpace.getId(), scanResult.getBucketSpace().getId());
+    EXPECT_EQ(expected, _priorityDb->toString());
 
-    CPPUNIT_ASSERT(_scanner->scanNext().isDone());
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    ASSERT_TRUE(_scanner->scanNext().isDone());
+    EXPECT_EQ(expected, _priorityDb->toString());
 }
 
 namespace {
-    std::string sortLines(const std::string& source) {
-        vespalib::StringTokenizer st(source,"\n","");
-        std::vector<std::string> lines;
-        std::copy(st.begin(), st.end(), std::back_inserter(lines));
-        std::sort(lines.begin(), lines.end());
-        std::ostringstream ost;
-        for (auto& line : lines) {
-            ost << line << "\n";
-        }
-        return ost.str();
+
+std::string sortLines(const std::string& source) {
+    vespalib::StringTokenizer st(source,"\n","");
+    std::vector<std::string> lines;
+    std::copy(st.begin(), st.end(), std::back_inserter(lines));
+    std::sort(lines.begin(), lines.end());
+    std::ostringstream ost;
+    for (auto& line : lines) {
+        ost << line << "\n";
     }
+    return ost.str();
 }
 
-void
-SimpleMaintenanceScannerTest::testPrioritizeMultipleBuckets()
-{
+}
+
+TEST_F(SimpleMaintenanceScannerTest, prioritize_multiple_buckets) {
     addBucketToDb(1);
     addBucketToDb(2);
     addBucketToDb(3);
@@ -143,9 +117,9 @@ SimpleMaintenanceScannerTest::testPrioritizeMultipleBuckets()
                          "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
                          "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
 
-    CPPUNIT_ASSERT(scanEntireDatabase(3));
-    CPPUNIT_ASSERT_EQUAL(sortLines(expected),
-                         sortLines(_priorityDb->toString()));
+    ASSERT_TRUE(scanEntireDatabase(3));
+    EXPECT_EQ(sortLines(expected),
+              sortLines(_priorityDb->toString()));
 }
 
 bool
@@ -159,33 +133,29 @@ SimpleMaintenanceScannerTest::scanEntireDatabase(int expected)
     return _scanner->scanNext().isDone();
 }
 
-void
-SimpleMaintenanceScannerTest::testReset()
-{
+TEST_F(SimpleMaintenanceScannerTest, reset) {
     addBucketToDb(1);
     addBucketToDb(3);
 
-    CPPUNIT_ASSERT(scanEntireDatabase(2));
+    ASSERT_TRUE(scanEntireDatabase(2));
     std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
                          "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    EXPECT_EQ(expected, _priorityDb->toString());
 
     addBucketToDb(2);
-    CPPUNIT_ASSERT(scanEntireDatabase(0));
-    CPPUNIT_ASSERT_EQUAL(expected, _priorityDb->toString());
+    ASSERT_TRUE(scanEntireDatabase(0));
+    EXPECT_EQ(expected, _priorityDb->toString());
 
     _scanner->reset();
-    CPPUNIT_ASSERT(scanEntireDatabase(3));
+    ASSERT_TRUE(scanEntireDatabase(3));
 
     expected = "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
                "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
                "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n";
-    CPPUNIT_ASSERT_EQUAL(sortLines(expected), sortLines(_priorityDb->toString()));
+    EXPECT_EQ(sortLines(expected), sortLines(_priorityDb->toString()));
 }
 
-void
-SimpleMaintenanceScannerTest::testPendingMaintenanceOperationStatistics()
-{
+TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
     addBucketToDb(1);
     addBucketToDb(3);
 
@@ -194,10 +164,10 @@ SimpleMaintenanceScannerTest::testPendingMaintenanceOperationStatistics()
                               "set bucket state: 0, garbage collection: 0");
     {
         auto stats(_scanner->getPendingMaintenanceStats());
-        CPPUNIT_ASSERT_EQUAL(expectedEmpty, stringifyGlobalPendingStats(stats));
+        EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 
-    CPPUNIT_ASSERT(scanEntireDatabase(2));
+    ASSERT_TRUE(scanEntireDatabase(2));
 
     // All mock operations generated have the merge type.
     {
@@ -205,39 +175,37 @@ SimpleMaintenanceScannerTest::testPendingMaintenanceOperationStatistics()
         std::string expected("delete bucket: 0, merge bucket: 2, "
                              "split bucket: 0, join bucket: 0, "
                              "set bucket state: 0, garbage collection: 0");
-        CPPUNIT_ASSERT_EQUAL(expected, stringifyGlobalPendingStats(stats));
+        EXPECT_EQ(expected, stringifyGlobalPendingStats(stats));
     }
 
     _scanner->reset();
     {
         auto stats(_scanner->getPendingMaintenanceStats());
-        CPPUNIT_ASSERT_EQUAL(expectedEmpty, stringifyGlobalPendingStats(stats));
+        EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 }
 
-void
-SimpleMaintenanceScannerTest::perNodeMaintenanceStatsAreTracked()
-{
+TEST_F(SimpleMaintenanceScannerTest, per_node_maintenance_stats_are_tracked) {
     addBucketToDb(1);
     addBucketToDb(3);
     {
         auto stats(_scanner->getPendingMaintenanceStats());
         NodeMaintenanceStats emptyStats;
-        CPPUNIT_ASSERT_EQUAL(emptyStats, stats.perNodeStats.forNode(0, makeBucketSpace()));
+        EXPECT_EQ(emptyStats, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
-    CPPUNIT_ASSERT(scanEntireDatabase(2));
+    ASSERT_TRUE(scanEntireDatabase(2));
     // Mock is currently hardwired to increment movingOut for node 1 and
     // copyingIn for node 2 per bucket iterated (we've got 2).
     auto stats(_scanner->getPendingMaintenanceStats());
     {
         NodeMaintenanceStats wantedNode1Stats;
         wantedNode1Stats.movingOut = 2;
-        CPPUNIT_ASSERT_EQUAL(wantedNode1Stats, stats.perNodeStats.forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wantedNode1Stats, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wantedNode2Stats;
         wantedNode2Stats.copyingIn = 2;
-        CPPUNIT_ASSERT_EQUAL(wantedNode2Stats, stats.perNodeStats.forNode(2, makeBucketSpace()));
+        EXPECT_EQ(wantedNode2Stats, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
 }
 

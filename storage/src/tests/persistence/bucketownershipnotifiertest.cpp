@@ -2,7 +2,7 @@
 
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
-#include <tests/distributor/messagesenderstub.h>
+#include <tests/common/message_sender_stub.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

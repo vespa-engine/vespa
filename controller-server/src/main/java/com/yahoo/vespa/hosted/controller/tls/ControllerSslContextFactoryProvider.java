@@ -2,15 +2,17 @@
 package com.yahoo.vespa.hosted.controller.tls;
 
 import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.TlsContextBasedProvider;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.tls.DefaultTlsContext;
+import com.yahoo.security.tls.PeerAuthentication;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.hosted.controller.tls.config.TlsConfig;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -28,11 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author bjorncs
  */
 @SuppressWarnings("unused") // Injected
-public class ControllerSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
+public class ControllerSslContextFactoryProvider extends TlsContextBasedProvider {
 
     private final KeyStore truststore;
     private final KeyStore keystore;
-    private final Map<Integer, SslContextFactory> sslContextFactories = new ConcurrentHashMap<>();
+    private final Map<Integer, TlsContext> tlsContextMap = new ConcurrentHashMap<>();
 
     @Inject
     public ControllerSslContextFactoryProvider(SecretStore secretStore, TlsConfig config) {
@@ -50,24 +52,17 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
     }
 
     @Override
-    public SslContextFactory getInstance(String containerId, int port) {
-        return sslContextFactories.computeIfAbsent(port, this::createSslContextFactory);
+    protected TlsContext getTlsContext(String containerId, int port) {
+        return tlsContextMap.computeIfAbsent(port, this::createTlsContext);
     }
 
-    /** Create a SslContextFactory backed by an in-memory key and trust store */
-    private SslContextFactory createSslContextFactory(int port) {
-        // TODO Use DefaultTlsContext to configure SslContextFactory (ensure that cipher/protocol configuration is same across all TLS endpoints).
-
-        SslContextFactory factory = new SslContextFactory();
-        if (port != 443) {
-            factory.setWantClientAuth(true);
-        }
-        factory.setTrustStore(truststore);
-        factory.setKeyStore(keystore);
-        factory.setKeyStorePassword("");
-        factory.setExcludeProtocols("TLSv1.3"); // TLSv1.3 is broken is multiple OpenJDK 11 versions
-        factory.setEndpointIdentificationAlgorithm(null); // disable https hostname verification of clients (must be disabled when using Athenz x509 certificates)
-        return factory;
+    private TlsContext createTlsContext(int port) {
+        return new DefaultTlsContext(
+                new SslContextBuilder()
+                        .withKeyStore(keystore, new char[0])
+                        .withTrustStore(truststore)
+                        .build(),
+                port != 443 ? PeerAuthentication.WANT : PeerAuthentication.DISABLED);
     }
 
     /** Get private key from secret store **/

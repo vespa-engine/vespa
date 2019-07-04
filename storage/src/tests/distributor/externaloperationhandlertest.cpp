@@ -9,42 +9,16 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using document::DocumentId;
+using namespace ::testing;
 
 namespace storage::distributor {
 
-class ExternalOperationHandlerTest : public CppUnit::TestFixture,
-                                     public DistributorTestUtil
-{
+struct ExternalOperationHandlerTest : Test, DistributorTestUtil {
     document::TestDocMan _testDocMan;
-
-    CPPUNIT_TEST_SUITE(ExternalOperationHandlerTest);
-    CPPUNIT_TEST(testBucketSplitMask);
-    CPPUNIT_TEST(mutating_operation_wdr_bounced_on_wrong_current_distribution);
-    CPPUNIT_TEST(mutating_operation_busy_bounced_on_wrong_pending_distribution);
-    CPPUNIT_TEST(mutating_operation_busy_bounced_if_no_cluster_state_received_yet);
-    CPPUNIT_TEST(read_only_operation_wdr_bounced_on_wrong_current_distribution);
-    CPPUNIT_TEST(read_only_operation_busy_bounced_if_no_cluster_state_received_yet);
-    CPPUNIT_TEST(reject_put_if_not_past_safe_time_point);
-    CPPUNIT_TEST(reject_remove_if_not_past_safe_time_point);
-    CPPUNIT_TEST(reject_update_if_not_past_safe_time_point);
-    CPPUNIT_TEST(get_not_rejected_by_unsafe_time_point);
-    CPPUNIT_TEST(mutation_not_rejected_when_safe_point_reached);
-    CPPUNIT_TEST(reject_put_with_concurrent_mutation_to_same_id);
-    CPPUNIT_TEST(do_not_reject_put_operations_to_different_ids);
-    CPPUNIT_TEST(reject_remove_with_concurrent_mutation_to_same_id);
-    CPPUNIT_TEST(do_not_reject_remove_operations_to_different_ids);
-    CPPUNIT_TEST(reject_update_with_concurrent_mutation_to_same_id);
-    CPPUNIT_TEST(do_not_reject_update_operations_to_different_ids);
-    CPPUNIT_TEST(operation_destruction_allows_new_mutations_for_id);
-    CPPUNIT_TEST(concurrent_get_and_mutation_do_not_conflict);
-    CPPUNIT_TEST(sequencing_works_across_mutation_types);
-    CPPUNIT_TEST(sequencing_can_be_explicitly_config_disabled);
-    CPPUNIT_TEST(gets_are_started_with_mutable_db_outside_transition_period);
-    CPPUNIT_TEST(gets_are_started_with_read_only_db_during_transition_period);
-    CPPUNIT_TEST(gets_are_busy_bounced_during_transition_period_if_stale_reads_disabled);
-    CPPUNIT_TEST_SUITE_END();
 
     document::BucketId findNonOwnedUserBucketInState(vespalib::stringref state);
     document::BucketId findOwned1stNotOwned2ndInStates(
@@ -63,7 +37,8 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
 
     void verify_busy_bounced_due_to_no_active_state(std::shared_ptr<api::StorageCommand> cmd);
 
-    Operation::SP start_operation_verify_not_rejected(std::shared_ptr<api::StorageCommand> cmd);
+    void start_operation_verify_not_rejected(std::shared_ptr<api::StorageCommand> cmd,
+                                             Operation::SP& out_generated);
     void start_operation_verify_rejected(std::shared_ptr<api::StorageCommand> cmd);
 
     int64_t safe_time_not_reached_metric_count(
@@ -93,32 +68,6 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
     // Returns an arbitrary bucket not owned in the pending state
     document::BucketId set_up_pending_cluster_state_transition(bool read_only_enabled);
 
-protected:
-    void testBucketSplitMask();
-    void mutating_operation_wdr_bounced_on_wrong_current_distribution();
-    void mutating_operation_busy_bounced_on_wrong_pending_distribution();
-    void mutating_operation_busy_bounced_if_no_cluster_state_received_yet();
-    void read_only_operation_wdr_bounced_on_wrong_current_distribution();
-    void read_only_operation_busy_bounced_if_no_cluster_state_received_yet();
-    void reject_put_if_not_past_safe_time_point();
-    void reject_remove_if_not_past_safe_time_point();
-    void reject_update_if_not_past_safe_time_point();
-    void get_not_rejected_by_unsafe_time_point();
-    void mutation_not_rejected_when_safe_point_reached();
-    void reject_put_with_concurrent_mutation_to_same_id();
-    void do_not_reject_put_operations_to_different_ids();
-    void reject_remove_with_concurrent_mutation_to_same_id();
-    void do_not_reject_remove_operations_to_different_ids();
-    void reject_update_with_concurrent_mutation_to_same_id();
-    void do_not_reject_update_operations_to_different_ids();
-    void operation_destruction_allows_new_mutations_for_id();
-    void concurrent_get_and_mutation_do_not_conflict();
-    void sequencing_works_across_mutation_types();
-    void sequencing_can_be_explicitly_config_disabled();
-    void gets_are_started_with_mutable_db_outside_transition_period();
-    void gets_are_started_with_read_only_db_during_transition_period();
-    void gets_are_busy_bounced_during_transition_period_if_stale_reads_disabled();
-
     void assert_rejection_due_to_unsafe_time(
             std::shared_ptr<api::StorageCommand> cmd);
 
@@ -130,37 +79,30 @@ protected:
             std::shared_ptr<api::StorageCommand> cmd1,
             std::shared_ptr<api::StorageCommand> cmd2);
 
-public:
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(ExternalOperationHandlerTest);
-
-using document::DocumentId;
-
-void
-ExternalOperationHandlerTest::testBucketSplitMask()
-{
+TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
     {
         createLinks();
         getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "16");
 
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0xffff),
+        EXPECT_EQ(document::BucketId(16, 0xffff),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0xffff))
                 ).stripUnused());
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0),
+        EXPECT_EQ(document::BucketId(16, 0),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0x10000))
                 ).stripUnused());
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0xffff),
+        EXPECT_EQ(document::BucketId(16, 0xffff),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0xffff))
                 ).stripUnused());
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(16, 0x100),
+        EXPECT_EQ(document::BucketId(16, 0x100),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0x100))
                 ).stripUnused());
@@ -169,11 +111,11 @@ ExternalOperationHandlerTest::testBucketSplitMask()
     {
         getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "20");
         createLinks();
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(20, 0x11111),
+        EXPECT_EQ(document::BucketId(20, 0x11111),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0x111111))
                 ).stripUnused());
-        CPPUNIT_ASSERT_EQUAL(document::BucketId(20, 0x22222),
+        EXPECT_EQ(document::BucketId(20, 0x22222),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
                     vespalib::make_string("userdoc:ns:%d::", 0x222222))
                 ).stripUnused());
@@ -256,9 +198,7 @@ std::shared_ptr<api::RemoveCommand> ExternalOperationHandlerTest::makeRemoveComm
     return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), DocumentId(id), api::Timestamp(0));
 }
 
-void
-ExternalOperationHandlerTest::mutating_operation_wdr_bounced_on_wrong_current_distribution()
-{
+TEST_F(ExternalOperationHandlerTest, mutating_operation_wdr_bounced_on_wrong_current_distribution) {
     createLinks();
     std::string state("version:1 distributor:2 storage:2");
     setupDistributor(1, 2, state);
@@ -267,18 +207,15 @@ ExternalOperationHandlerTest::mutating_operation_wdr_bounced_on_wrong_current_di
     auto cmd = makeUpdateCommandForUser(bucket.withoutCountBits());
 
     Operation::SP genOp;
-    CPPUNIT_ASSERT(getExternalOperationHandler().handleMessage(cmd, genOp));
-    CPPUNIT_ASSERT(!genOp.get());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(WRONG_DISTRIBUTION, "
-                        "version:1 distributor:2 storage:2)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_TRUE(getExternalOperationHandler().handleMessage(cmd, genOp));
+    ASSERT_FALSE(genOp.get());
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ("ReturnCode(WRONG_DISTRIBUTION, "
+              "version:1 distributor:2 storage:2)",
+              _sender.reply(0)->getResult().toString());
 }
 
-void
-ExternalOperationHandlerTest::read_only_operation_wdr_bounced_on_wrong_current_distribution()
-{
+TEST_F(ExternalOperationHandlerTest, read_only_operation_wdr_bounced_on_wrong_current_distribution) {
     createLinks();
     std::string state("version:1 distributor:2 storage:2");
     setupDistributor(1, 2, state);
@@ -287,18 +224,15 @@ ExternalOperationHandlerTest::read_only_operation_wdr_bounced_on_wrong_current_d
     auto cmd = makeGetCommandForUser(bucket.withoutCountBits());
 
     Operation::SP genOp;
-    CPPUNIT_ASSERT(getExternalOperationHandler().handleMessage(cmd, genOp));
-    CPPUNIT_ASSERT(!genOp.get());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(WRONG_DISTRIBUTION, "
-                        "version:1 distributor:2 storage:2)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_TRUE(getExternalOperationHandler().handleMessage(cmd, genOp));
+    ASSERT_FALSE(genOp.get());
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ("ReturnCode(WRONG_DISTRIBUTION, "
+              "version:1 distributor:2 storage:2)",
+              _sender.reply(0)->getResult().toString());
 }
 
-void
-ExternalOperationHandlerTest::mutating_operation_busy_bounced_on_wrong_pending_distribution()
-{
+TEST_F(ExternalOperationHandlerTest, mutating_operation_busy_bounced_on_wrong_pending_distribution) {
     createLinks();
     std::string current("version:10 distributor:2 storage:2");
     std::string pending("version:11 distributor:3 storage:3");
@@ -313,12 +247,11 @@ ExternalOperationHandlerTest::mutating_operation_busy_bounced_on_wrong_pending_d
     auto cmd = makeUpdateCommandForUser(b.withoutCountBits());
 
     Operation::SP genOp;
-    CPPUNIT_ASSERT(getExternalOperationHandler().handleMessage(cmd, genOp));
-    CPPUNIT_ASSERT(!genOp.get());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(BUSY, Currently pending cluster state transition from version 10 to 11)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_TRUE(getExternalOperationHandler().handleMessage(cmd, genOp));
+    ASSERT_FALSE(genOp.get());
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ("ReturnCode(BUSY, Currently pending cluster state transition from version 10 to 11)",
+              _sender.reply(0)->getResult().toString());
 }
 
 void
@@ -329,25 +262,20 @@ ExternalOperationHandlerTest::verify_busy_bounced_due_to_no_active_state(std::sh
     setupDistributor(1, 2, state);
 
     Operation::SP genOp;
-    CPPUNIT_ASSERT(getExternalOperationHandler().handleMessage(cmd, genOp));
-    CPPUNIT_ASSERT(!genOp.get());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(BUSY, No cluster state activated yet)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_TRUE(getExternalOperationHandler().handleMessage(cmd, genOp));
+    ASSERT_FALSE(genOp.get());
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ("ReturnCode(BUSY, No cluster state activated yet)",
+              _sender.reply(0)->getResult().toString());
 }
 
 // TODO NOT_READY is a more appropriate return code for this case, but must ensure it's
 // handled gracefully and silently through the stack. BUSY is a safe bet until then.
-void
-ExternalOperationHandlerTest::mutating_operation_busy_bounced_if_no_cluster_state_received_yet()
-{
+TEST_F(ExternalOperationHandlerTest, mutating_operation_busy_bounced_if_no_cluster_state_received_yet) {
     verify_busy_bounced_due_to_no_active_state(makeUpdateCommandForUser(12345));
 }
 
-void
-ExternalOperationHandlerTest::read_only_operation_busy_bounced_if_no_cluster_state_received_yet()
-{
+TEST_F(ExternalOperationHandlerTest, read_only_operation_busy_bounced_if_no_cluster_state_received_yet) {
     verify_busy_bounced_due_to_no_active_state(makeGetCommandForUser(12345));
 }
 
@@ -364,34 +292,30 @@ void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
 
     Operation::SP generated;
     getExternalOperationHandler().handleMessage(cmd, generated);
-    CPPUNIT_ASSERT(generated.get() == nullptr);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(STALE_TIMESTAMP, "
-                        "Operation received at time 9, which is before "
-                        "bucket ownership transfer safe time of 10)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_EQ(generated.get(), nullptr);
+    ASSERT_EQ(1, _sender.replies().size());
+    EXPECT_EQ("ReturnCode(STALE_TIMESTAMP, "
+              "Operation received at time 9, which is before "
+              "bucket ownership transfer safe time of 10)",
+              _sender.reply(0)->getResult().toString());
 }
 
-void ExternalOperationHandlerTest::reject_put_if_not_past_safe_time_point() {
+TEST_F(ExternalOperationHandlerTest, reject_put_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makePutCommand("foo", "id:foo:testdoctype1::bar"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
-            getDistributor().getMetrics().puts));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().puts));
 }
 
-void ExternalOperationHandlerTest::reject_remove_if_not_past_safe_time_point() {
+TEST_F(ExternalOperationHandlerTest, reject_remove_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makeRemoveCommand("id:foo:testdoctype1::bar"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
-            getDistributor().getMetrics().removes));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().removes));
 }
 
-void ExternalOperationHandlerTest::reject_update_if_not_past_safe_time_point() {
+TEST_F(ExternalOperationHandlerTest, reject_update_if_not_past_safe_time_point) {
     assert_rejection_due_to_unsafe_time(makeUpdateCommand());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
-            getDistributor().getMetrics().updates));
+    EXPECT_EQ(1, safe_time_not_reached_metric_count(getDistributor().getMetrics().updates));
 }
 
-void ExternalOperationHandlerTest::get_not_rejected_by_unsafe_time_point() {
+TEST_F(ExternalOperationHandlerTest, get_not_rejected_by_unsafe_time_point) {
     createLinks();
     setupDistributor(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(9);
@@ -400,13 +324,12 @@ void ExternalOperationHandlerTest::get_not_rejected_by_unsafe_time_point() {
     Operation::SP generated;
     getExternalOperationHandler().handleMessage(
             makeGetCommandForUser(0), generated);
-    CPPUNIT_ASSERT(generated.get() != nullptr);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), safe_time_not_reached_metric_count(
-            getDistributor().getMetrics().gets));
+    ASSERT_NE(generated.get(), nullptr);
+    ASSERT_EQ(0, _sender.replies().size());
+    EXPECT_EQ(0, safe_time_not_reached_metric_count(getDistributor().getMetrics().gets));
 }
 
-void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached() {
+TEST_F(ExternalOperationHandlerTest, mutation_not_rejected_when_safe_point_reached) {
     createLinks();
     setupDistributor(1, 2, "version:1 distributor:1 storage:1");
     getClock().setAbsoluteTimeInSeconds(10);
@@ -418,10 +341,9 @@ void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached
             std::make_shared<api::RemoveCommand>(
                 makeDocumentBucket(document::BucketId(0)), id, api::Timestamp(0)),
             generated);
-    CPPUNIT_ASSERT(generated.get() != nullptr);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), safe_time_not_reached_metric_count(
-            getDistributor().getMetrics().removes));
+    ASSERT_NE(generated.get(), nullptr);
+    ASSERT_EQ(0, _sender.replies().size());
+    EXPECT_EQ(0, safe_time_not_reached_metric_count(getDistributor().getMetrics().removes));
 }
 
 void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
@@ -429,22 +351,24 @@ void ExternalOperationHandlerTest::set_up_distributor_for_sequencing_test() {
     setupDistributor(1, 2, "version:1 distributor:1 storage:1");
 }
 
-Operation::SP ExternalOperationHandlerTest::start_operation_verify_not_rejected(
-        std::shared_ptr<api::StorageCommand> cmd) {
+void ExternalOperationHandlerTest::start_operation_verify_not_rejected(
+        std::shared_ptr<api::StorageCommand> cmd,
+        Operation::SP& out_generated)
+{
     Operation::SP generated;
-    _sender.replies.clear();
+    _sender.replies().clear();
     getExternalOperationHandler().handleMessage(cmd, generated);
-    CPPUNIT_ASSERT(generated.get() != nullptr);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
-    return generated;
+    ASSERT_NE(generated.get(), nullptr);
+    ASSERT_EQ(0, _sender.replies().size());
+    out_generated = std::move(generated);
 }
 void ExternalOperationHandlerTest::start_operation_verify_rejected(
         std::shared_ptr<api::StorageCommand> cmd) {
     Operation::SP generated;
-    _sender.replies.clear();
+    _sender.replies().clear();
     getExternalOperationHandler().handleMessage(cmd, generated);
-    CPPUNIT_ASSERT(generated.get() == nullptr);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
+    ASSERT_EQ(generated.get(), nullptr);
+    ASSERT_EQ(1, _sender.replies().size());
 }
 
 void ExternalOperationHandlerTest::assert_second_command_rejected_due_to_concurrent_mutation(
@@ -454,15 +378,15 @@ void ExternalOperationHandlerTest::assert_second_command_rejected_due_to_concurr
     set_up_distributor_for_sequencing_test();
 
     // Must hold ref to started operation, or sequencing handle will be released.
-    Operation::SP generated1 = start_operation_verify_not_rejected(std::move(cmd1));
-    start_operation_verify_rejected(std::move(cmd2));
+    Operation::SP generated1;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd1), generated1));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd2)));
 
     // TODO reconsider BUSY return code. Need something transient and non-noisy
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(vespalib::make_string(
+    EXPECT_EQ(vespalib::make_string(
                     "ReturnCode(BUSY, A mutating operation for document "
-                    "'%s' is already in progress)", expected_id_in_message.c_str())),
-            _sender.replies[0]->getResult().toString());
+                    "'%s' is already in progress)", expected_id_in_message.c_str()),
+              _sender.reply(0)->getResult().toString());
 }
 
 void ExternalOperationHandlerTest::assert_second_command_not_rejected_due_to_concurrent_mutation(
@@ -470,89 +394,97 @@ void ExternalOperationHandlerTest::assert_second_command_not_rejected_due_to_con
         std::shared_ptr<api::StorageCommand> cmd2) {
     set_up_distributor_for_sequencing_test();
 
-    Operation::SP generated1 = start_operation_verify_not_rejected(std::move(cmd1));
-    start_operation_verify_not_rejected(std::move(cmd2));
+    Operation::SP generated1;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd1), generated1));
+    Operation::SP generated2;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd2), generated2));
 }
 
-void ExternalOperationHandlerTest::reject_put_with_concurrent_mutation_to_same_id() {
-    assert_second_command_rejected_due_to_concurrent_mutation(
+TEST_F(ExternalOperationHandlerTest, reject_put_with_concurrent_mutation_to_same_id) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", _dummy_id),
-            makePutCommand("testdoctype1", _dummy_id), _dummy_id);
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
+            makePutCommand("testdoctype1", _dummy_id), _dummy_id));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
 }
 
-void ExternalOperationHandlerTest::do_not_reject_put_operations_to_different_ids() {
-    assert_second_command_not_rejected_due_to_concurrent_mutation(
+TEST_F(ExternalOperationHandlerTest, do_not_reject_put_operations_to_different_ids) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makePutCommand("testdoctype1", "id:foo:testdoctype1::baz"),
-            makePutCommand("testdoctype1", "id:foo:testdoctype1::foo"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
+            makePutCommand("testdoctype1", "id:foo:testdoctype1::foo")));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().puts));
 }
 
-void ExternalOperationHandlerTest::reject_remove_with_concurrent_mutation_to_same_id() {
-    assert_second_command_rejected_due_to_concurrent_mutation(
-            makeRemoveCommand(_dummy_id), makeRemoveCommand(_dummy_id), _dummy_id);
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
+TEST_F(ExternalOperationHandlerTest, reject_remove_with_concurrent_mutation_to_same_id) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
+            makeRemoveCommand(_dummy_id), makeRemoveCommand(_dummy_id), _dummy_id));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
 }
 
-void ExternalOperationHandlerTest::do_not_reject_remove_operations_to_different_ids() {
-    assert_second_command_not_rejected_due_to_concurrent_mutation(
+TEST_F(ExternalOperationHandlerTest, do_not_reject_remove_operations_to_different_ids) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeRemoveCommand("id:foo:testdoctype1::baz"),
-            makeRemoveCommand("id:foo:testdoctype1::foo"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
+            makeRemoveCommand("id:foo:testdoctype1::foo")));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().removes));
 }
 
-void ExternalOperationHandlerTest::reject_update_with_concurrent_mutation_to_same_id() {
-    assert_second_command_rejected_due_to_concurrent_mutation(
+TEST_F(ExternalOperationHandlerTest, reject_update_with_concurrent_mutation_to_same_id) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", _dummy_id),
-            makeUpdateCommand("testdoctype1", _dummy_id), _dummy_id);
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
+            makeUpdateCommand("testdoctype1", _dummy_id), _dummy_id));
+    EXPECT_EQ(1, concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
 }
 
-void ExternalOperationHandlerTest::do_not_reject_update_operations_to_different_ids() {
-    assert_second_command_not_rejected_due_to_concurrent_mutation(
+TEST_F(ExternalOperationHandlerTest, do_not_reject_update_operations_to_different_ids) {
+    ASSERT_NO_FATAL_FAILURE(assert_second_command_not_rejected_due_to_concurrent_mutation(
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::baz"),
-            makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"));
-    CPPUNIT_ASSERT_EQUAL(int64_t(0), concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
+            makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo")));
+    EXPECT_EQ(0, concurrent_mutatations_metric_count(getDistributor().getMetrics().updates));
 }
 
-void ExternalOperationHandlerTest::operation_destruction_allows_new_mutations_for_id() {
+TEST_F(ExternalOperationHandlerTest, operation_destruction_allows_new_mutations_for_id) {
     set_up_distributor_for_sequencing_test();
 
-    Operation::SP generated = start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id));
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated));
 
     generated.reset(); // Implicitly release sequencing handle
 
-    start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated));
 }
 
-void ExternalOperationHandlerTest::concurrent_get_and_mutation_do_not_conflict() {
+TEST_F(ExternalOperationHandlerTest, concurrent_get_and_mutation_do_not_conflict) {
     set_up_distributor_for_sequencing_test();
 
-    Operation::SP generated1 = start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id));
+    Operation::SP generated1;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated1));
 
-    start_operation_verify_not_rejected(makeGetCommand(_dummy_id));
+    Operation::SP generated2;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeGetCommand(_dummy_id), generated2));
 }
 
-void ExternalOperationHandlerTest::sequencing_works_across_mutation_types() {
+TEST_F(ExternalOperationHandlerTest, sequencing_works_across_mutation_types) {
     set_up_distributor_for_sequencing_test();
 
-    Operation::SP generated = start_operation_verify_not_rejected(makePutCommand("testdoctype1", _dummy_id));
-    start_operation_verify_rejected(makeRemoveCommand(_dummy_id));
-    start_operation_verify_rejected(makeUpdateCommand("testdoctype1", _dummy_id));
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makePutCommand("testdoctype1", _dummy_id), generated));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(makeRemoveCommand(_dummy_id)));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(makeUpdateCommand("testdoctype1", _dummy_id)));
 }
 
-void ExternalOperationHandlerTest::sequencing_can_be_explicitly_config_disabled() {
+TEST_F(ExternalOperationHandlerTest, sequencing_can_be_explicitly_config_disabled) {
     set_up_distributor_for_sequencing_test();
 
     // Should be able to modify config after links have been created, i.e. this is a live config.
     getConfig().setSequenceMutatingOperations(false);
 
-    Operation::SP generated = start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id));
+    Operation::SP generated1;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated1));
     // Sequencing is disabled, so concurrent op is not rejected.
-    start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id));
+    Operation::SP generated2;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(makeRemoveCommand(_dummy_id), generated2));
 }
 
-void ExternalOperationHandlerTest::gets_are_started_with_mutable_db_outside_transition_period() {
+TEST_F(ExternalOperationHandlerTest, gets_are_started_with_mutable_db_outside_transition_period) {
     createLinks();
     std::string current = "version:1 distributor:1 storage:3";
     setupDistributor(1, 3, current);
@@ -560,10 +492,12 @@ void ExternalOperationHandlerTest::gets_are_started_with_mutable_db_outside_tran
 
     document::BucketId b(16, 1234); // Only 1 distributor (us), so doesn't matter
 
-    auto op = start_operation_verify_not_rejected(makeGetCommandForUser(b.withoutCountBits()));
+    Operation::SP op;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(
+            makeGetCommandForUser(b.withoutCountBits()), op));
     auto& get_op = dynamic_cast<GetOperation&>(*op);
     const auto* expected_space = &getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space());
-    CPPUNIT_ASSERT_EQUAL(expected_space, &get_op.bucketSpace());
+    EXPECT_EQ(expected_space, &get_op.bucketSpace());
 }
 
 document::BucketId ExternalOperationHandlerTest::set_up_pending_cluster_state_transition(bool read_only_enabled) {
@@ -579,22 +513,24 @@ document::BucketId ExternalOperationHandlerTest::set_up_pending_cluster_state_tr
     return findOwned1stNotOwned2ndInStates(current, pending);
 }
 
-void ExternalOperationHandlerTest::gets_are_started_with_read_only_db_during_transition_period() {
+TEST_F(ExternalOperationHandlerTest, gets_are_started_with_read_only_db_during_transition_period) {
     auto non_owned_bucket = set_up_pending_cluster_state_transition(true);
 
-    auto op = start_operation_verify_not_rejected(makeGetCommandForUser(non_owned_bucket.withoutCountBits()));
+    Operation::SP op;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(
+            makeGetCommandForUser(non_owned_bucket.withoutCountBits()), op));
     auto& get_op = dynamic_cast<GetOperation&>(*op);
     const auto* expected_space = &getReadOnlyBucketSpaceRepo().get(document::FixedBucketSpaces::default_space());
-    CPPUNIT_ASSERT_EQUAL(expected_space, &get_op.bucketSpace());
+    EXPECT_EQ(expected_space, &get_op.bucketSpace());
 }
 
-void ExternalOperationHandlerTest::gets_are_busy_bounced_during_transition_period_if_stale_reads_disabled() {
+TEST_F(ExternalOperationHandlerTest, gets_are_busy_bounced_during_transition_period_if_stale_reads_disabled) {
     auto non_owned_bucket = set_up_pending_cluster_state_transition(false);
 
-    start_operation_verify_rejected(makeGetCommandForUser(non_owned_bucket.withoutCountBits()));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(BUSY, Currently pending cluster state transition from version 123 to 321)"),
-            _sender.replies[0]->getResult().toString());
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(
+            makeGetCommandForUser(non_owned_bucket.withoutCountBits())));
+    EXPECT_EQ("ReturnCode(BUSY, Currently pending cluster state transition from version 123 to 321)",
+              _sender.reply(0)->getResult().toString());
 
 }
 

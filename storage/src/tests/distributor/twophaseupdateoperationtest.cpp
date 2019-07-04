@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/helper/configgetter.h>
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/testdocrepo.h>
@@ -14,13 +13,12 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
+
+namespace storage::distributor {
 
 using document::test::makeDocumentBucket;
-
-namespace storage {
-namespace distributor {
-
-using std::shared_ptr;
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
 using namespace document;
@@ -28,87 +26,22 @@ using namespace storage;
 using namespace storage::distributor;
 using namespace storage::api;
 using namespace storage::lib;
+using namespace ::testing;
 
-using namespace std::literals::string_literals;
-
-class TwoPhaseUpdateOperationTest : public CppUnit::TestFixture,
-                                    public DistributorTestUtil
-{
-    CPPUNIT_TEST_SUITE(TwoPhaseUpdateOperationTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testNonExisting);
-    CPPUNIT_TEST(testUpdateFailed);
-    CPPUNIT_TEST(testFastPathInconsistentTimestamps);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsNotFound);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsUpdateError);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsGetError);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsPutError);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsPutNotStarted);
-    CPPUNIT_TEST(testFastPathInconsistentTimestampsInconsistentSplit);
-    CPPUNIT_TEST(testFastPathPropagatesMessageSettingsToUpdate);
-    CPPUNIT_TEST(testNofM);
-    CPPUNIT_TEST(testSafePathUpdatesNewestReceivedDocument);
-    CPPUNIT_TEST(testCreateIfNonExistentCreatesDocumentIfAllEmptyGets);
-    CPPUNIT_TEST(testUpdateFailsIfSafePathHasFailedPut);
-    CPPUNIT_TEST(testUpdateFailsIfSafePathGetsFail);
-    CPPUNIT_TEST(testUpdateFailsIfApplyThrowsException);
-    CPPUNIT_TEST(testNonExistingWithAutoCreate);
-    CPPUNIT_TEST(testSafePathFailsUpdateWhenMismatchingTimestampConstraint);
-    CPPUNIT_TEST(testSafePathUpdatePropagatesMessageSettingsToGetsAndPuts);
-    CPPUNIT_TEST(testSafePathPropagatesMbusTracesFromReplies);
-    CPPUNIT_TEST(testUpdateFailsIfOwnershipChangesBetweenGetAndPut);
-    CPPUNIT_TEST(testSafePathConditionMismatchFailsWithTasError);
-    CPPUNIT_TEST(testSafePathConditionMatchSendsPutsWithUpdatedDoc);
-    CPPUNIT_TEST(testSafePathConditionParseFailureFailsWithIllegalParamsError);
-    CPPUNIT_TEST(testSafePathConditonUnknownDocTypeFailsWithIllegalParamsError);
-    CPPUNIT_TEST(safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error);
-    CPPUNIT_TEST(safe_path_condition_with_missing_doc_and_auto_create_sends_puts);
-    CPPUNIT_TEST(testFastPathCloseEdgeSendsCorrectReply);
-    CPPUNIT_TEST(testSafePathCloseEdgeSendsCorrectReply);
-    CPPUNIT_TEST_SUITE_END();
-
+struct TwoPhaseUpdateOperationTest : Test, DistributorTestUtil {
     document::TestDocRepo _testRepo;
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType* _doc_type;
 
-protected:
-    void testSimple();
-    void testNonExisting();
-    void testUpdateFailed();
-    void testFastPathInconsistentTimestamps();
-    void testFastPathInconsistentTimestampsNotFound();
-    void testFastPathInconsistentTimestampsUpdateError();
-    void testFastPathInconsistentTimestampsGetError();
-    void testFastPathInconsistentTimestampsPutError();
-    void testFastPathInconsistentTimestampsPutNotStarted();
-    void testFastPathInconsistentTimestampsInconsistentSplit();
-    void testFastPathPropagatesMessageSettingsToUpdate();
-    void testNofM();
-    void testSafePathUpdatesNewestReceivedDocument();
-    void testCreateIfNonExistentCreatesDocumentIfAllEmptyGets();
-    void testUpdateFailsIfSafePathHasFailedPut();
-    void testUpdateFailsIfSafePathGetsFail();
-    void testUpdateFailsIfApplyThrowsException();
-    void testNonExistingWithAutoCreate();
-    void testSafePathFailsUpdateWhenMismatchingTimestampConstraint();
-    void testSafePathUpdatePropagatesMessageSettingsToGetsAndPuts();
-    void testSafePathPropagatesMbusTracesFromReplies();
-    void testUpdateFailsIfOwnershipChangesBetweenGetAndPut();
-    void testSafePathConditionMismatchFailsWithTasError();
-    void testSafePathConditionMatchSendsPutsWithUpdatedDoc();
-    void testSafePathConditionParseFailureFailsWithIllegalParamsError();
-    void testSafePathConditonUnknownDocTypeFailsWithIllegalParamsError();
-    void safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error();
-    void safe_path_condition_with_missing_doc_and_auto_create_sends_puts();
-    void testFastPathCloseEdgeSendsCorrectReply();
-    void testSafePathCloseEdgeSendsCorrectReply();
+    TwoPhaseUpdateOperationTest();
+    ~TwoPhaseUpdateOperationTest();
 
     void checkMessageSettingsPropagatedTo(
         const api::StorageCommand::SP& msg) const;
 
-    std::string getUpdatedValueFromLastPut(MessageSenderStub&);
-public:
-    void setUp() override {
+    std::string getUpdatedValueFromLastPut(DistributorMessageSenderStub&);
+
+    void SetUp() override {
         _repo = _testRepo.getTypeRepoSp();
         _doc_type = _repo->getDocumentType("testdoctype1");
         createLinks();
@@ -116,32 +49,32 @@ public:
         getClock().setAbsoluteTimeInSeconds(200);
     }
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
     void replyToMessage(Operation& callback,
-                        MessageSenderStub& sender,
+                        DistributorMessageSenderStub& sender,
                         uint32_t index,
                         uint64_t oldTimestamp,
                         api::ReturnCode::Result result = api::ReturnCode::OK);
 
     void replyToPut(
             Operation& callback,
-            MessageSenderStub& sender,
+            DistributorMessageSenderStub& sender,
             uint32_t index,
             api::ReturnCode::Result result = api::ReturnCode::OK,
             const std::string& traceMsg = "");
 
     void replyToCreateBucket(
             Operation& callback,
-            MessageSenderStub& sender,
+            DistributorMessageSenderStub& sender,
             uint32_t index,
             api::ReturnCode::Result result = api::ReturnCode::OK);
 
     void replyToGet(
             Operation& callback,
-            MessageSenderStub& sender,
+            DistributorMessageSenderStub& sender,
             uint32_t index,
             uint64_t oldTimestamp,
             bool haveDocument = true,
@@ -191,21 +124,22 @@ public:
                const UpdateOptions& options = UpdateOptions());
 
     void assertAbortedUpdateReplyWithContextPresent(
-            const MessageSenderStub& closeSender) const;
+            const DistributorMessageSenderStub& closeSender) const;
 
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TwoPhaseUpdateOperationTest);
+TwoPhaseUpdateOperationTest::TwoPhaseUpdateOperationTest() = default;
+TwoPhaseUpdateOperationTest::~TwoPhaseUpdateOperationTest() = default;
 
 void
 TwoPhaseUpdateOperationTest::replyToMessage(
         Operation& callback,
-        MessageSenderStub& sender,
+        DistributorMessageSenderStub& sender,
         uint32_t index,
         uint64_t oldTimestamp,
         api::ReturnCode::Result result)
 {
-    std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
+    std::shared_ptr<api::StorageMessage> msg2 = sender.command(index);
     auto& updatec = dynamic_cast<UpdateCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(updatec.makeReply());
     static_cast<api::UpdateReply*>(reply.get())->setOldTimestamp(oldTimestamp);
@@ -218,12 +152,12 @@ TwoPhaseUpdateOperationTest::replyToMessage(
 void
 TwoPhaseUpdateOperationTest::replyToPut(
         Operation& callback,
-        MessageSenderStub& sender,
+        DistributorMessageSenderStub& sender,
         uint32_t index,
         api::ReturnCode::Result result,
         const std::string& traceMsg)
 {
-    std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
+    std::shared_ptr<api::StorageMessage> msg2 = sender.command(index);
     auto& putc = dynamic_cast<PutCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(putc.makeReply());
     reply->setResult(api::ReturnCode(result, ""));
@@ -237,11 +171,11 @@ TwoPhaseUpdateOperationTest::replyToPut(
 void
 TwoPhaseUpdateOperationTest::replyToCreateBucket(
         Operation& callback,
-        MessageSenderStub& sender,
+        DistributorMessageSenderStub& sender,
         uint32_t index,
         api::ReturnCode::Result result)
 {
-    std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
+    std::shared_ptr<api::StorageMessage> msg2 = sender.command(index);
     auto& putc = dynamic_cast<CreateBucketCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(putc.makeReply());
     reply->setResult(api::ReturnCode(result, ""));
@@ -252,14 +186,14 @@ TwoPhaseUpdateOperationTest::replyToCreateBucket(
 void
 TwoPhaseUpdateOperationTest::replyToGet(
         Operation& callback,
-        MessageSenderStub& sender,
+        DistributorMessageSenderStub& sender,
         uint32_t index,
         uint64_t oldTimestamp,
         bool haveDocument,
         api::ReturnCode::Result result,
         const std::string& traceMsg)
 {
-    auto& get = static_cast<const api::GetCommand&>(*sender.commands.at(index));
+    auto& get = static_cast<const api::GetCommand&>(*sender.command(index));
     std::shared_ptr<api::StorageReply> reply;
 
     if (haveDocument) {
@@ -340,294 +274,239 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
             handler, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
 }
 
-
-void
-TwoPhaseUpdateOperationTest::testSimple()
-{
+TEST_F(TwoPhaseUpdateOperationTest, simple) {
     setupDistributor(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0"), sender.getCommands(true));
+    ASSERT_EQ("Update => 0", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testNonExisting()
-{
+TEST_F(TwoPhaseUpdateOperationTest, non_existing) {
     setupDistributor(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate(""));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 0) ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testUpdateFailed()
-{
+TEST_F(TwoPhaseUpdateOperationTest, update_failed) {
     setupDistributor(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90, api::ReturnCode::INTERNAL_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 0) "
-                        "ReturnCode(INTERNAL_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(INTERNAL_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestamps()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 1"),
-            sender.getLastCommand(true));
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+              sender.getLastCommand(true));
 
     replyToGet(*cb, sender, 2, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0",
+              sender.getCommands(true));
 
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
 
     replyToPut(*cb, sender, 3);
     replyToPut(*cb, sender, 4);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
-                        "(best node 1)) ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
+              "(best node 1)) ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsNotFound()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_not_found) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 1"),
-            sender.getLastCommand(true));
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+              sender.getLastCommand(true));
+    ASSERT_TRUE(sender.replies().empty());
 
     replyToGet(*cb, sender, 2, 110, false);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
-                        "(best node 1)) ReturnCode(INTERNAL_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
+              "(best node 1)) ReturnCode(INTERNAL_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsUpdateError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_update_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToMessage(*cb, sender, 1, 110, api::ReturnCode::IO_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 90) "
-                        "ReturnCode(IO_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 90) "
+              "ReturnCode(IO_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsGetError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_get_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 1"),
-            sender.getLastCommand(true));
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+              sender.getLastCommand(true));
 
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 2, 110, false, api::ReturnCode::IO_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
-                        "(best node 1)) ReturnCode(IO_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
+              "(best node 1)) ReturnCode(IO_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsPutError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 1"),
-            sender.getLastCommand(true));
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+              sender.getLastCommand(true));
 
     replyToGet(*cb, sender, 2, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0",
+              sender.getCommands(true));
 
     replyToPut(*cb, sender, 3, api::ReturnCode::IO_FAILURE);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
-                        "(best node 1)) ReturnCode(IO_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
+              "(best node 1)) ReturnCode(IO_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsPutNotStarted()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_not_started) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 1"),
-            sender.getLastCommand(true));
-    checkMessageSettingsPropagatedTo(sender.commands.back());
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+              sender.getLastCommand(true));
+    checkMessageSettingsPropagatedTo(sender.commands().back());
 
     enableDistributorClusterState("storage:0 distributor:1");
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 2, 110);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
-                        "(best node 1)) ReturnCode(NOT_CONNECTED, "
-                        "Can't store document: No storage nodes available)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
+              "(best node 1)) ReturnCode(NOT_CONNECTED, "
+              "Can't store document: No storage nodes available)",
+              sender.getLastReply(true));
 }
 
-
-void
-TwoPhaseUpdateOperationTest::testFastPathInconsistentTimestampsInconsistentSplit()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_inconsistent_split) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3",
                        UpdateOptions().makeInconsistentSplit(true)));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
     std::string wanted("Get(BucketId(0x4000000000008b13), doc:test:test) => 0,"
                        "Get(BucketId(0x4400000000008b13), doc:test:test) => 0");
 
     std::string text = sender.getCommands(true, true);
-    CPPUNIT_ASSERT_EQUAL(wanted, text);
+    ASSERT_EQ(wanted, text);
 
     replyToGet(*cb, sender, 0, 90);
     replyToGet(*cb, sender, 1, 120);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "Put(BucketId(0x4400000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 1,"
-                    "Put(BucketId(0x4400000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 0"),
-            sender.getCommands(true, true, 2));
+    ASSERT_EQ("Put(BucketId(0x4400000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 1,"
+              "Put(BucketId(0x4400000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 0",
+              sender.getCommands(true, true, 2));
 
     replyToPut(*cb, sender, 2);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 3);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                        "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 120) "
-                        "ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 120) "
+              "ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
 void
@@ -635,355 +514,301 @@ TwoPhaseUpdateOperationTest::checkMessageSettingsPropagatedTo(
         const api::StorageCommand::SP& msg) const
 {
     // Settings set in sendUpdate().
-    CPPUNIT_ASSERT_EQUAL(uint32_t(6), msg->getTrace().getLevel());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(6789), msg->getTimeout());
-    CPPUNIT_ASSERT_EQUAL(uint8_t(99), msg->getPriority());
+    EXPECT_EQ(6, msg->getTrace().getLevel());
+    EXPECT_EQ(6789, msg->getTimeout());
+    EXPECT_EQ(99, msg->getPriority());
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathPropagatesMessageSettingsToUpdate()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_propagates_message_settings_to_update) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Update => 0"), sender.getCommands(true));
+    ASSERT_EQ("Update => 0", sender.getCommands(true));
 
-    StorageCommand::SP msg(sender.commands.back());
+    StorageCommand::SP msg(sender.commands().back());
     checkMessageSettingsPropagatedTo(msg);
 }
 
-void
-TwoPhaseUpdateOperationTest::testNofM()
-{
+TEST_F(TwoPhaseUpdateOperationTest, n_of_m) {
     setupDistributor(2, 2, "storage:2 distributor:1", 1);
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("Update => 0,Update => 1"),
-            sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
 
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToMessage(*cb, sender, 0, 90);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)",
+              sender.getLastReply(true));
 
     replyToMessage(*cb, sender, 1, 123);
 }
 
 std::string
 TwoPhaseUpdateOperationTest::getUpdatedValueFromLastPut(
-        MessageSenderStub& sender)
+        DistributorMessageSenderStub& sender)
 {
-    Document::SP doc(dynamic_cast<api::PutCommand&>(*sender.commands.back())
+    Document::SP doc(dynamic_cast<api::PutCommand&>(*sender.commands().back())
                      .getDocument());
     FieldValue::UP value(doc->getValue("headerval"));
     return value->toString();
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathUpdatesNewestReceivedDocument()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) {
     setupDistributor(3, 3, "storage:3 distributor:1");
     // 0,1 in sync. 2 out of sync.
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-        std::string("Get(BucketId(0x4000000000008b13), doc:test:test) => 0,"
-                    "Get(BucketId(0x4000000000008b13), doc:test:test) => 2"),
-        sender.getCommands(true, true));
+    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 0,"
+              "Get(BucketId(0x4000000000008b13), doc:test:test) => 2",
+              sender.getCommands(true, true));
     replyToGet(*cb, sender, 0, 50);
     replyToGet(*cb, sender, 1, 70);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 1,"
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 0,"
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 2"),
-            sender.getCommands(true, true, 2));
+    ASSERT_EQ("Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 1,"
+              "Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 0,"
+              "Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 2",
+              sender.getCommands(true, true, 2));
     // Make sure Put contains an updated document (+10 arith. update on field
     // whose value equals gotten timestamp). In this case we want 70 -> 80.
-    CPPUNIT_ASSERT_EQUAL(std::string("80"), getUpdatedValueFromLastPut(sender));
+    ASSERT_EQ("80", getUpdatedValueFromLastPut(sender));
 
     replyToPut(*cb, sender, 2);
     replyToPut(*cb, sender, 3);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 70) "
-                        "ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 70) "
+              "ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testCreateIfNonExistentCreatesDocumentIfAllEmptyGets()
-{
+TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_all_empty_gets) {
     setupDistributor(3, 3, "storage:3 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4",
                        UpdateOptions().createIfNonExistent(true)));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 2"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 2", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 0, false);
     replyToGet(*cb, sender, 1, 0, false);
     // Since create-if-non-existent is set, distributor should create doc from
     // scratch.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 1,"
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 0,"
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 2"),
-            sender.getCommands(true, true, 2));
+    ASSERT_EQ("Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 1,"
+              "Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 0,"
+              "Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 2",
+              sender.getCommands(true, true, 2));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("10"), getUpdatedValueFromLastPut(sender));
+    ASSERT_EQ("10", getUpdatedValueFromLastPut(sender));
 
     replyToPut(*cb, sender, 2);
     replyToPut(*cb, sender, 3);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 200000000) "
-                        "ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 200000000) "
+              "ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testUpdateFailsIfSafePathHasFailedPut()
-{
+TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_has_failed_put) {
     setupDistributor(3, 3, "storage:3 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4",
                        UpdateOptions().createIfNonExistent(true)));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 2"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 2", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 0, false);
     replyToGet(*cb, sender, 1, 0, false);
     // Since create-if-non-existent is set, distributor should create doc from
     // scratch.
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 1,Put => 0,Put => 2"),
-                         sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
 
     replyToPut(*cb, sender, 2);
     replyToPut(*cb, sender, 3);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4, api::ReturnCode::IO_FAILURE);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 200000000) "
-                        "ReturnCode(IO_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 200000000) "
+              "ReturnCode(IO_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testUpdateFailsIfSafePathGetsFail()
-{
+TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_gets_fail) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4",
                        UpdateOptions().createIfNonExistent(true)));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 1"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 0, false, api::ReturnCode::IO_FAILURE);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 0, false, api::ReturnCode::IO_FAILURE);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 0) "
-                        "ReturnCode(IO_FAILURE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(IO_FAILURE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testUpdateFailsIfApplyThrowsException()
-{
+TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_apply_throws_exception) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     // Create update for wrong doctype which will fail the update.
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().withError()));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 1"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 50);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 70);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 70) "
-                        "ReturnCode(INTERNAL_FAILURE, Can not apply a "
-                        "\"testdoctype2\" document update to a "
-                        "\"testdoctype1\" document.)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 70) "
+              "ReturnCode(INTERNAL_FAILURE, Can not apply a "
+              "\"testdoctype2\" document update to a "
+              "\"testdoctype1\" document.)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testNonExistingWithAutoCreate()
-{
+TEST_F(TwoPhaseUpdateOperationTest, non_existing_with_auto_create) {
     setupDistributor(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("", UpdateOptions().createIfNonExistent(true)));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string(
-                    "CreateBucketCommand(BucketId(0x4000000000008b13), active) "
-                    "Reasons to start:  => 0,"
-                    "Put(BucketId(0x4000000000008b13), doc:test:test, "
-                    "timestamp 200000000, size 52) => 0"),
-            sender.getCommands(true, true));
+    ASSERT_EQ("CreateBucketCommand(BucketId(0x4000000000008b13), active) "
+              "Reasons to start:  => 0,"
+              "Put(BucketId(0x4000000000008b13), doc:test:test, "
+              "timestamp 200000000, size 52) => 0",
+              sender.getCommands(true, true));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("10"), getUpdatedValueFromLastPut(sender));
+    ASSERT_EQ("10", getUpdatedValueFromLastPut(sender));
 
     replyToCreateBucket(*cb, sender, 0);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 1);
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 200000000) "
-                        "ReturnCode(NONE)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 200000000) "
+              "ReturnCode(NONE)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathFailsUpdateWhenMismatchingTimestampConstraint()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_fails_update_when_mismatching_timestamp_constraint) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4",
                        UpdateOptions().timestampToUpdate(1234)));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 1"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 100);
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 110);
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 0) "
-                        "ReturnCode(NONE, No document with requested "
-                        "timestamp found)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(NONE, No document with requested "
+                         "timestamp found)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathUpdatePropagatesMessageSettingsToGetsAndPuts()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings_to_gets_and_puts) {
     setupDistributor(3, 3, "storage:3 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 2"),
-                         sender.getCommands(true));
-    checkMessageSettingsPropagatedTo(sender.commands.at(0));
-    checkMessageSettingsPropagatedTo(sender.commands.at(1));
+    ASSERT_EQ("Get => 0,Get => 2", sender.getCommands(true));
+    checkMessageSettingsPropagatedTo(sender.command(0));
+    checkMessageSettingsPropagatedTo(sender.command(1));
     replyToGet(*cb, sender, 0, 50);
     replyToGet(*cb, sender, 1, 70);
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 1,Put => 0,Put => 2"),
-                         sender.getCommands(true, false, 2));
-    checkMessageSettingsPropagatedTo(sender.commands.at(2));
-    checkMessageSettingsPropagatedTo(sender.commands.at(3));
-    checkMessageSettingsPropagatedTo(sender.commands.at(4));
+    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
+    checkMessageSettingsPropagatedTo(sender.command(2));
+    checkMessageSettingsPropagatedTo(sender.command(3));
+    checkMessageSettingsPropagatedTo(sender.command(4));
     replyToPut(*cb, sender, 2);
     replyToPut(*cb, sender, 3);
     replyToPut(*cb, sender, 4);
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathPropagatesMbusTracesFromReplies()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_propagates_mbus_traces_from_replies) {
     setupDistributor(3, 3, "storage:3 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 2"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 2", sender.getCommands(true));
     replyToGet(*cb, sender, 0, 50, true,
                api::ReturnCode::OK, "hello earthlings");
     replyToGet(*cb, sender, 1, 70);
-    CPPUNIT_ASSERT_EQUAL(std::string("Put => 1,Put => 0,Put => 2"),
-                         sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
     replyToPut(*cb, sender, 2, api::ReturnCode::OK, "fooo");
     replyToPut(*cb, sender, 3, api::ReturnCode::OK, "baaa");
-    CPPUNIT_ASSERT(sender.replies.empty());
+    ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
     
-    CPPUNIT_ASSERT_EQUAL(std::string("Update Reply"),
-                         sender.getLastReply(false));
+    ASSERT_EQ("Update Reply", sender.getLastReply(false));
 
-    std::string trace(sender.replies.back()->getTrace().toString());
-    //std::cout << "\n\n" << trace << "\n\n";
-    CPPUNIT_ASSERT(trace.find("hello earthlings") != std::string::npos);
-    CPPUNIT_ASSERT(trace.find("fooo") != std::string::npos);
-    CPPUNIT_ASSERT(trace.find("baaa") != std::string::npos);
+    std::string trace(sender.replies().back()->getTrace().toString());
+    ASSERT_THAT(trace, HasSubstr("hello earthlings"));
+    ASSERT_THAT(trace, HasSubstr("fooo"));
+    ASSERT_THAT(trace, HasSubstr("baaa"));
 }
 
-void
-TwoPhaseUpdateOperationTest::testUpdateFailsIfOwnershipChangesBetweenGetAndPut()
-{
+TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_ownership_changes_between_get_and_put) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     // Update towards inconsistent bucket invokes safe path.
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 1"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
 
     // Alter cluster state so that distributor is now down (technically the
     // entire cluster is down in this state, but this should not matter). In
@@ -998,194 +823,170 @@ TwoPhaseUpdateOperationTest::testUpdateFailsIfOwnershipChangesBetweenGetAndPut()
     // BUCKET_NOT_FOUND is a transient error code which should cause the client
     // to re-send the operation, presumably to the correct distributor the next
     // time.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("UpdateReply(doc:test:test, "
-                                     "BucketId(0x0000000000000000), "
-                        "timestamp 0, timestamp of updated doc: 70) "
-                        "ReturnCode(BUCKET_NOT_FOUND, Distributor lost "
-                        "ownership of bucket between executing the read "
-                        "and write phases of a two-phase update operation)"),
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 70) "
+              "ReturnCode(BUCKET_NOT_FOUND, Distributor lost "
+                         "ownership of bucket between executing the read "
+                         "and write phases of a two-phase update operation)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathConditionMismatchFailsWithTasError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_mismatch_fails_with_tas_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(
                             "testdoctype1.headerval==120")));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     // Newest doc has headerval==110, not 120.
     replyToGet(*cb, sender, 0, 100);
     replyToGet(*cb, sender, 1, 110);
-    CPPUNIT_ASSERT_EQUAL(
-            "UpdateReply(doc:test:test, "
-                         "BucketId(0x0000000000000000), "
-                         "timestamp 0, timestamp of updated doc: 0) "
-                         "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
-                                    "Condition did not match document)"s,
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+              "BucketId(0x0000000000000000), "
+              "timestamp 0, timestamp of updated doc: 0) "
+              "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
+                         "Condition did not match document)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathConditionMatchSendsPutsWithUpdatedDoc()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_match_sends_puts_with_updated_doc) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(
                             "testdoctype1.headerval==110")));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     replyToGet(*cb, sender, 0, 100);
     replyToGet(*cb, sender, 1, 110);
-    CPPUNIT_ASSERT_EQUAL("Put => 1,Put => 0"s,
-                         sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 0", sender.getCommands(true, false, 2));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathConditionParseFailureFailsWithIllegalParamsError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with_illegal_params_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(
                             "testdoctype1.san==fran...cisco")));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     replyToGet(*cb, sender, 0, 100);
     replyToGet(*cb, sender, 1, 110);
     // NOTE: condition is currently not attempted parsed until Gets have been
     // replied to. This may change in the future.
     // XXX reliance on parser/exception error message is very fragile.
-    CPPUNIT_ASSERT_EQUAL(
-            "UpdateReply(doc:test:test, "
-                         "BucketId(0x0000000000000000), "
-                         "timestamp 0, timestamp of updated doc: 0) "
-                         "ReturnCode(ILLEGAL_PARAMETERS, "
-                                     "Failed to parse test and set condition: "
-                                     "syntax error, unexpected . at column 24 when "
-                                     "parsing selection 'testdoctype1.san==fran...cisco')"s,
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+                          "BucketId(0x0000000000000000), "
+                          "timestamp 0, timestamp of updated doc: 0) "
+                          "ReturnCode(ILLEGAL_PARAMETERS, "
+                                      "Failed to parse test and set condition: "
+                                      "syntax error, unexpected . at column 24 when "
+                                      "parsing selection 'testdoctype1.san==fran...cisco')",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathConditonUnknownDocTypeFailsWithIllegalParamsError()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_with_illegal_params_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(
                             "langbein.headerval=1234")));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     replyToGet(*cb, sender, 0, 100);
     replyToGet(*cb, sender, 1, 110);
     // NOTE: condition is currently not attempted parsed until Gets have been
     // replied to. This may change in the future.
-    CPPUNIT_ASSERT_EQUAL(
-            "UpdateReply(doc:test:test, "
-                         "BucketId(0x0000000000000000), "
-                         "timestamp 0, timestamp of updated doc: 0) "
-                         "ReturnCode(ILLEGAL_PARAMETERS, "
-                                    "Failed to parse test and set condition: "
-                                    "Document type 'langbein' not found at column 1 "
-                                    "when parsing selection 'langbein.headerval=1234')"s,
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+                          "BucketId(0x0000000000000000), "
+                          "timestamp 0, timestamp of updated doc: 0) "
+                          "ReturnCode(ILLEGAL_PARAMETERS, "
+                                     "Failed to parse test and set condition: "
+                                     "Document type 'langbein' not found at column 1 "
+                                     "when parsing selection 'langbein.headerval=1234')",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_auto_create_fails_with_tas_error) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions().condition(
                             "testdoctype1.headerval==120")));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     // Both Gets return nothing at all, nothing at all.
     replyToGet(*cb, sender, 0, 100, false);
     replyToGet(*cb, sender, 1, 110, false);
-    CPPUNIT_ASSERT_EQUAL(
-            "UpdateReply(doc:test:test, "
-                         "BucketId(0x0000000000000000), "
-                         "timestamp 0, timestamp of updated doc: 0) "
-                         "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
-                                    "Document did not exist)"s,
-            sender.getLastReply(true));
+    EXPECT_EQ("UpdateReply(doc:test:test, "
+                          "BucketId(0x0000000000000000), "
+                          "timestamp 0, timestamp of updated doc: 0) "
+                          "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
+                                     "Document did not exist)",
+              sender.getLastReply(true));
 }
 
-void
-TwoPhaseUpdateOperationTest::safe_path_condition_with_missing_doc_and_auto_create_sends_puts()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_auto_create_sends_puts) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4", UpdateOptions()
                     .condition("testdoctype1.headerval==120")
                     .createIfNonExistent(true)));
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
     replyToGet(*cb, sender, 0, 100, false);
     replyToGet(*cb, sender, 1, 110, false);
-    CPPUNIT_ASSERT_EQUAL("Put => 1,Put => 0"s, sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 0", sender.getCommands(true, false, 2));
 }
 
 void
 TwoPhaseUpdateOperationTest::assertAbortedUpdateReplyWithContextPresent(
-        const MessageSenderStub& closeSender) const
+        const DistributorMessageSenderStub& closeSender) const
 {
-    CPPUNIT_ASSERT_EQUAL(size_t(1), closeSender.replies.size());
-    StorageReply::SP reply(closeSender.replies.back());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::UPDATE_REPLY, reply->getType());
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
-                         reply->getResult().getResult());
+    ASSERT_EQ(1, closeSender.replies().size());
+    StorageReply::SP reply(closeSender.replies().back());
+    ASSERT_EQ(api::MessageType::UPDATE_REPLY, reply->getType());
+    ASSERT_EQ(api::ReturnCode::ABORTED, reply->getResult().getResult());
     auto context = reply->getTransportContext(); // Transfers ownership
-    CPPUNIT_ASSERT(context.get());
+    ASSERT_TRUE(context.get());
 }
 
-void
-TwoPhaseUpdateOperationTest::testFastPathCloseEdgeSendsCorrectReply()
-{
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_close_edge_sends_correct_reply) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     // Only 1 replica; consistent with itself by definition.
     std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3"));
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL("Update => 0"s, sender.getCommands(true));
+    ASSERT_EQ("Update => 0", sender.getCommands(true));
     // Close the operation. This should generate a single reply that is
     // bound to the original command. We can identify rogue replies by these
     // not having a transport context, as these are unique_ptrs that are
     // moved to the reply upon the first reply construction. Any subsequent or
     // erroneous replies will not have this context attached to themselves.
-    MessageSenderStub closeSender;
+    DistributorMessageSenderStub closeSender;
     cb->onClose(closeSender);
 
     assertAbortedUpdateReplyWithContextPresent(closeSender);
 }
 
-void
-TwoPhaseUpdateOperationTest::testSafePathCloseEdgeSendsCorrectReply()
-{
+TEST_F(TwoPhaseUpdateOperationTest, safe_path_close_edge_sends_correct_reply) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     std::shared_ptr<TwoPhaseUpdateOperation> cb(
             sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Get => 0,Get => 1"),
-                         sender.getCommands(true));
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
     // Closing the operation should now only return an ABORTED reply for
     // the UpdateCommand, _not_ from the nested, pending Get operation (which
     // will implicitly generate an ABORTED reply for the synthesized Get
     // command passed to it).
-    MessageSenderStub closeSender;
+    DistributorMessageSenderStub closeSender;
     cb->onClose(closeSender);
 
     assertAbortedUpdateReplyWithContextPresent(closeSender);
@@ -1198,5 +999,4 @@ TwoPhaseUpdateOperationTest::testSafePathCloseEdgeSendsCorrectReply()
 // XXX: test case where update reply has been sent but callback still
 // has pending messages (e.g. n-of-m case).
 
-} // distributor
-} // storage
+} // storage::distributor

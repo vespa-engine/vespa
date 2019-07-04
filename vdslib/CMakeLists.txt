@@ -18,7 +18,6 @@ vespa_define_module(
 
     TEST_DEPENDS
     vdstestlib
-    cppunit
 
     TESTS
     src/tests

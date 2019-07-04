@@ -2,10 +2,7 @@
 package com.yahoo.jdisc.http;
 
 import org.eclipse.jetty.server.CookieCutter;
-import org.eclipse.jetty.server.Response;
 
-import java.net.HttpCookie;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +11,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A RFC 6265 compliant cookie.
@@ -154,7 +153,7 @@ public class Cookie {
     public static String toCookieHeader(Iterable<? extends Cookie> cookies) {
         return StreamSupport.stream(cookies.spliterator(), false)
                 .map(cookie -> {
-                    HttpCookie httpCookie = new HttpCookie(cookie.getName(), cookie.getValue());
+                    java.net.HttpCookie httpCookie = new java.net.HttpCookie(cookie.getName(), cookie.getValue());
                     httpCookie.setDomain(cookie.getDomain());
                     httpCookie.setHttpOnly(cookie.isHttpOnly());
                     httpCookie.setMaxAge(cookie.getMaxAge(TimeUnit.SECONDS));
@@ -181,23 +180,22 @@ public class Cookie {
                     cookie.setHttpOnly(servletCookie.isHttpOnly());
                     return cookie;
                 })
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     public static List<String> toSetCookieHeaders(Iterable<? extends Cookie> cookies) {
-        // Ugly, bot Jetty does not provide a dedicated cookie parser (will be included in Jetty 10)
-        Response response = new Response(null, null);
-        for (Cookie cookie : cookies) {
-            response.addSetRFC6265Cookie(
-                    cookie.getName(),
-                    cookie.getValue(),
-                    cookie.getDomain(),
-                    cookie.getPath(),
-                    cookie.getMaxAge(TimeUnit.SECONDS),
-                    cookie.isSecure(),
-                    cookie.isHttpOnly());
-        }
-        return new ArrayList<>(response.getHeaders("Set-Cookie"));
+        return StreamSupport.stream(cookies.spliterator(), false)
+                .map(cookie ->
+                             new org.eclipse.jetty.http.HttpCookie(
+                                     cookie.getName(),
+                                     cookie.getValue(),
+                                     cookie.getDomain(),
+                                     cookie.getPath(),
+                                     cookie.getMaxAge(TimeUnit.SECONDS),
+                                     cookie.isSecure(),
+                                     cookie.isHttpOnly()
+                             ).getRFC6265SetCookie())
+                .collect(toList());
     }
 
     @Deprecated // TODO Vespa 8 Remove
@@ -206,7 +204,7 @@ public class Cookie {
     }
 
     public static Cookie fromSetCookieHeader(String headerVal) {
-        return HttpCookie.parse(headerVal).stream()
+        return java.net.HttpCookie.parse(headerVal).stream()
                 .map(httpCookie -> {
                     Cookie cookie = new Cookie();
                     cookie.setName(httpCookie.getName());

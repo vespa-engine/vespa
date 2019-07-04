@@ -32,15 +32,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * This is a facade to a Document, with multiple purposes: <ul> <li>Getters and setters for field data takes possibly
- * into account a schema map of field names. <li>We support mapping into struct fields of arbitrary depth using
- * from→mystruct.mystruct.myfield </ul> We also enforce the @Accesses annotation(s) of the doc proc which uses this.
+ * This is a facade to a Document, with two purposes:
+ * <ul>
+ *     <li>Getters and setters for field data may take into account a schema map of field names.
+ *     <li>Mapping into struct fields of arbitrary depth using from→mystruct.mystruct.myfield
+ * </ul>
+ *
+ * This also enforces the @Accesses annotation(s) of the doc proc which uses this.
  *
  * @author Vegard Havdal
  */
 public class ProxyDocument extends Document implements DocumentOperationWrapper {
 
-    private static final long serialVersionUID = 1L;
     private final Map<String, String> fieldMap;
     private final Set<String> fieldsAllowed = new HashSet<>();
     private final String docProcName;
@@ -72,7 +75,7 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
      * directly, but may refer to a field in a struct contained in it,
      * in which case the returned Field is only useful for obtaining
      * the field type; it can't be used for get() and set().
-     **/
+     */
     @Override
     public Field getField(String fieldName) {
         if (fieldMap != null && fieldMap.containsKey(fieldName)) {

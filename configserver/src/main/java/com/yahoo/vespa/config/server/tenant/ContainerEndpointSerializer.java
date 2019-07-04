@@ -1,11 +1,11 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ public class ContainerEndpointSerializer {
             names.add(containerName);
         });
 
-        return new ContainerEndpoint(new ClusterId(clusterId), names);
+        return new ContainerEndpoint(clusterId, names);
     }
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {

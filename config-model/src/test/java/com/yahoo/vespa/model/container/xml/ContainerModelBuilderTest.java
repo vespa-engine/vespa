@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
@@ -45,8 +47,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.hamcrest.CoreMatchers.is;
@@ -608,6 +613,48 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"));
         assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"));
+    }
+
+    @Test
+    public void endpoints_are_added_to_containers() throws IOException, SAXException {
+        final var servicesXml = joinLines("",
+                "<container id='comics-search' version='1.0'>",
+                "  <nodes>",
+                "    <node hostalias='host1' />",
+                "  </nodes>",
+                "</container>"
+        );
+
+        final var deploymentXml = joinLines("",
+                "<deployment version='1.0'>",
+                "  <prod />",
+                "</deployment>"
+        );
+
+        final var applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(servicesXml)
+                .withDeploymentSpec(deploymentXml)
+                .build();
+
+        final var deployState = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
+                .endpoints(Set.of(new ContainerEndpoint("comics-search", List.of("nalle", "balle"))))
+                .properties(new TestProperties().setHostedVespa(true))
+                .build();
+
+        final var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+        final var containers = model.getContainerClusters().values().stream()
+                .flatMap(cluster -> cluster.getContainers().stream())
+                .collect(Collectors.toList());
+
+        assertFalse("Missing container objects based on configuration", containers.isEmpty());
+
+        containers.forEach(container -> {
+            final var rotations = container.getServicePropertyString("rotations").split(",");
+            final var rotationsSet = Set.of(rotations);
+            assertEquals(Set.of("balle", "nalle"), rotationsSet);
+        });
     }
 
     @Test

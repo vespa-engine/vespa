@@ -1,38 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.test.ManualClock;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
-import com.yahoo.vespa.hosted.controller.integration.MetricsMock.MapContext;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
@@ -40,39 +25,13 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author mortent
  */
 public class MetricsReporterTest {
 
-    private static final Path testData = Paths.get("src/test/resources/");
-
-    private MetricsMock metrics;
-
-    @Before
-    public void before() {
-        metrics = new MetricsMock();
-    }
-
-    @Test
-    public void test_chef_metrics() {
-        Clock clock = new ManualClock(Instant.ofEpochSecond(1475497913));
-        ControllerTester tester = new ControllerTester();
-        MetricsReporter metricsReporter = createReporter(clock, tester.controller(), metrics, SystemName.cd);
-        metricsReporter.maintain();
-        assertEquals(2, metrics.getMetrics().size());
-
-        Map<MapContext, Map<String, Number>> hostMetrics = getMetricsByHost("fake-node.test");
-        assertEquals(1, hostMetrics.size());
-        Map.Entry<MapContext, Map<String, Number>> metricEntry = hostMetrics.entrySet().iterator().next();
-        MapContext metricContext = metricEntry.getKey();
-        assertDimension(metricContext, "tenantName", "ciintegrationtests");
-        assertDimension(metricContext, "app", "restart.default");
-        assertDimension(metricContext, "zone", "prod.cd-us-east-1");
-        assertEquals(727, metricEntry.getValue().get(MetricsReporter.CONVERGENCE_METRIC).longValue());
-    }
+    private final MetricsMock metrics = new MetricsMock();
 
     @Test
     public void test_deployment_fail_ratio() {
@@ -81,7 +40,7 @@ public class MetricsReporterTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.main);
+        MetricsReporter metricsReporter = createReporter(tester.controller());
 
         metricsReporter.maintain();
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
@@ -108,14 +67,6 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_chef_metrics_omit_zone_when_unknown() {
-        ControllerTester tester = new ControllerTester();
-        String hostname = "fake-node2.test";
-        MapContext metricContext = getMetricContextByHost(tester.controller(), hostname);
-        assertNull(metricContext.getDimensions().get("zone"));
-    }
-
-    @Test
     public void test_deployment_average_duration() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -123,7 +74,7 @@ public class MetricsReporterTest {
                 .region("us-west-1")
                 .build();
 
-        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        MetricsReporter reporter = createReporter(tester.controller());
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.deployCompletely(app, applicationPackage);
@@ -165,7 +116,7 @@ public class MetricsReporterTest {
                 .region("us-west-1")
                 .build();
 
-        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        MetricsReporter reporter = createReporter(tester.controller());
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
 
         // Initial deployment without failures
@@ -216,7 +167,7 @@ public class MetricsReporterTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        MetricsReporter reporter = createReporter(tester.controller());
         Application application = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")), 3);
         tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-east-3")), 4);
@@ -231,7 +182,7 @@ public class MetricsReporterTest {
         ApplicationVersion version = tester.deployNewSubmission();
         assertEquals(1000, version.buildTime().get().toEpochMilli());
 
-        MetricsReporter reporter = createReporter(tester.tester().controller(), metrics, SystemName.main);
+        MetricsReporter reporter = createReporter(tester.tester().controller());
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
                      getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, tester.app()));
@@ -246,7 +197,7 @@ public class MetricsReporterTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        MetricsReporter reporter = createReporter(tester.controller());
         Application application = tester.createApplication("app1", "tenant1", 1, 11L);
         reporter.maintain();
         assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
@@ -279,43 +230,8 @@ public class MetricsReporterTest {
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + application.id()));
     }
 
-    private MetricsReporter createReporter(Controller controller, MetricsMock metricsMock, SystemName system) {
-        return createReporter(controller.clock(), controller, metricsMock, system);
-    }
-
-    private MetricsReporter createReporter(Clock clock, Controller controller, MetricsMock metricsMock,
-                                           SystemName system) {
-        ChefMock chef = new ChefMock();
-        PartialNodeResult result;
-        try {
-            result = new ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                    .readValue(testData.resolve("chef_output.json").toFile(), PartialNodeResult.class);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        chef.addPartialResult(result.rows);
-        return new MetricsReporter(controller, metricsMock, chef, clock, new JobControl(new MockCuratorDb()), system);
-    }
-
-    private Map<MapContext, Map<String, Number>> getMetricsByHost(String hostname) {
-        return metrics.getMetrics((dimensions) -> hostname.equals(dimensions.get("host")));
-    }
-    
-    private MapContext getMetricContextByHost(Controller controller, String hostname) {
-        MetricsReporter metricsReporter = createReporter(controller, metrics, SystemName.main);
-        metricsReporter.maintain();
-
-        assertFalse(metrics.getMetrics().isEmpty());
-
-        Map<MapContext, Map<String, Number>> metrics = getMetricsByHost(hostname);
-        assertEquals(1, metrics.size());
-        Map.Entry<MapContext, Map<String, Number>> metricEntry = metrics.entrySet().iterator().next();
-        return metricEntry.getKey();
-    }
-
-    private static void assertDimension(MapContext metricContext, String dimensionName, String expectedValue) {
-        assertEquals(expectedValue, metricContext.getDimensions().get(dimensionName));
+    private MetricsReporter createReporter(Controller controller) {
+        return new MetricsReporter(controller, metrics, new JobControl(new MockCuratorDb()));
     }
 
     private static String appDimension(Application application) {

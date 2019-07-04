@@ -43,7 +43,7 @@ protected:
     uint64_t _featureOffset;        // Bit offset of next feature
     uint64_t _writePos; // Bit position for start of current word
     bool _dynamicK;     // Caclulate EG compression parameters ?
-    bool _encode_cheap_features;
+    bool _encode_interleaved_features;
     ZcBuf _zcDocIds;    // Document id deltas
     ZcBuf _l1Skip;      // L1 skip info
     ZcBuf _l2Skip;      // L2 skip info
@@ -72,9 +72,9 @@ public:
     uint32_t get_docid_limit() const { return _docIdLimit; }
     uint64_t get_num_words() const { return _numWords; }
     bool get_dynamic_k() const { return _dynamicK; }
-    bool get_encode_cheap_features() const { return _encode_cheap_features; }
+    bool get_encode_interleaved_features() const { return _encode_interleaved_features; }
     void set_dynamic_k(bool dynamicK) { _dynamicK = dynamicK; }
-    void set_encode_cheap_features(bool encode_cheap_features) { _encode_cheap_features = encode_cheap_features; }
+    void set_encode_interleaved_features(bool encode_interleaved_features) { _encode_interleaved_features = encode_interleaved_features; }
     void set_posting_list_params(const index::PostingListParams &params);
 };
 

@@ -31,6 +31,8 @@ import java.util.logging.Logger;
  */
 public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implements AutoCloseable {
 
+    public static final String CERTIFICATE_ALIAS = "default";
+
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
 
     private static final Logger log = Logger.getLogger(AutoReloadingX509KeyManager.class.getName());
@@ -61,7 +63,7 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
         try {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
-                            "default",
+                            CERTIFICATE_ALIAS,
                             KeyUtils.fromPemEncodedPrivateKey(Files.readString(privateKey)),
                             X509CertificateUtils.certificateListFromPem(Files.readString(certificateChain)))
                     .build();

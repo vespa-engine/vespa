@@ -33,7 +33,7 @@ public class JsonFormatTestCase {
 
     @Test
     public void testDenseTensor() {
-        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y{})"));
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[2])"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
         builder.cell().label("x", 0).label("y", 1).value(3.0);
         builder.cell().label("x", 1).label("y", 0).value(5.0);
@@ -49,6 +49,21 @@ public class JsonFormatTestCase {
                      new String(json, StandardCharsets.UTF_8));
         Tensor decoded = JsonFormat.decode(tensor.type(), json);
         assertEquals(tensor, decoded);
+    }
+
+    @Test
+    public void testDenseTensorInDenseForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+        String denseJson = "{\"values\":[2.0, 3.0, 4.0, 5.0, 6.0, 7.0]}";
+        Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
     }
 
     @Test

@@ -70,7 +70,6 @@ BuildRequires: java-11-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
-BuildRequires: vespa-cppunit-devel >= 1.12.1-6
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0

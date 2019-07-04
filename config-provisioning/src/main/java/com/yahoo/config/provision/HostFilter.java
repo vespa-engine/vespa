@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.text.StringUtilities;
 
 import java.util.Collection;
@@ -78,10 +77,10 @@ public class HostFilter {
                                   Collection<String> flavors,
                                   Collection<ClusterSpec.Type> clusterTypes,
                                   Collection<ClusterSpec.Id> clusterIds) {
-        return new HostFilter(ImmutableSet.copyOf(hostNames),
-                              ImmutableSet.copyOf(flavors),
-                              ImmutableSet.copyOf(clusterTypes),
-                              ImmutableSet.copyOf(clusterIds));
+        return new HostFilter(Set.copyOf(hostNames),
+                              Set.copyOf(flavors),
+                              Set.copyOf(clusterTypes),
+                              Set.copyOf(clusterIds));
     }
 
     /** Returns a host filter from three comma and-or space separated string lists. The strings may be null or empty. */

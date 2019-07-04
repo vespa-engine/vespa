@@ -3,11 +3,10 @@ package com.yahoo.application.container.jersey;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.application.container.JDiscTest;
+import com.yahoo.application.container.ContainerTest;
 import com.yahoo.application.container.jersey.resources.TestResource;
 import com.yahoo.application.container.jersey.resources.nestedpackage1.NestedTestResource1;
 import com.yahoo.application.container.jersey.resources.nestedpackage2.NestedTestResource2;
-import com.yahoo.container.Container;
 import com.yahoo.container.test.jars.jersey.resources.TestResourceBase;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping;
@@ -144,7 +143,7 @@ public class JerseyTest {
                         "</jdisc>" + //
                         "</services>", //
                 Networking.enable)) {
-            final int port = JDiscTest.getListenPort();
+            final int port = ContainerTest.getListenPort();
             f.accept(path -> {
                 String p = path.startsWith("/") ? path.substring(1) : path;
                 CloseableHttpClient client = HttpClientBuilder.create().build();

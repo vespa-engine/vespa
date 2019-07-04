@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +18,7 @@ public class HostSpec implements Comparable<HostSpec> {
     private final String hostname;
 
     /** Aliases of this host */
-    private final ImmutableList<String> aliases;
+    private final List<String> aliases;
 
     /** The current membership role of this host in the cluster it belongs to */
     private final Optional<ClusterMembership> membership;
@@ -67,7 +65,7 @@ public class HostSpec implements Comparable<HostSpec> {
         Objects.requireNonNull(version, "Version cannot be null but can be empty");
         Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
         this.hostname = hostname;
-        this.aliases = ImmutableList.copyOf(aliases);
+        this.aliases = List.copyOf(aliases);
         this.flavor = flavor;
         this.membership = membership;
         this.version = version;

@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/stllike/hash_fun.h>
+#include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
 #include <vector>
@@ -63,7 +64,7 @@ TEST("require that hashtable can store pairs of <key, unique_ptr to value>") {
 }
 
 template<typename K> using set_hashtable =
-    hashtable<K, K, vespalib::hash<K>, std::equal_to<K>, std::_Identity<K>>;
+    hashtable<K, K, vespalib::hash<K>, std::equal_to<K>, Identity>;
 
 TEST("require that hashtable<int> can be copied") {
     set_hashtable<int> table(100);

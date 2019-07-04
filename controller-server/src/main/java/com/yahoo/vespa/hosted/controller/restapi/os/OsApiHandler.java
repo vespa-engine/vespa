@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * This implements the /os/v1 API which provides operators with information about, and scheduling of OS upgrades for
@@ -123,7 +125,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         ZoneList zones = controller.zoneRegistry().zones().controllerUpgraded();
         if (path.get("region") != null) zones = zones.in(RegionName.from(path.get("region")));
         if (path.get("environment") != null) zones = zones.in(Environment.from(path.get("environment")));
-        return zones.ids();
+        return zones.zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
     }
 
     private Slime setOsVersion(HttpRequest request) {

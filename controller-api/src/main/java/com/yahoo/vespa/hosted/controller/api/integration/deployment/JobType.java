@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.provision.SystemName.Public;
 import static com.yahoo.config.provision.SystemName.PublicCd;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
@@ -88,7 +89,8 @@ public enum JobType {
                             Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
 
     devAwsUsEast1c         ("dev-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
+                            Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
+                                   PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
 
     perfUsEast3            ("perf-us-east-3",
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -29,13 +28,14 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -64,11 +64,11 @@ public class NodeAgentImplTest {
     private final String hostName = "host1.test.yahoo.com";
     private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
             .hostname(hostName)
-            .nodeType(NodeType.tenant)
+            .type(NodeType.tenant)
             .flavor("docker")
-            .minCpuCores(MIN_CPU_CORES)
-            .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
-            .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB);
+            .vcpus(MIN_CPU_CORES)
+            .memoryGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+            .diskGb(MIN_DISK_AVAILABLE_GB);
 
     private final NodeAgentContextSupplier contextSupplier = mock(NodeAgentContextSupplier.class);
     private final DockerImage dockerImage = DockerImage.fromString("dockerImage");
@@ -90,7 +90,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -119,7 +119,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -140,7 +140,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -214,7 +214,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -241,7 +241,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion);
+                .currentVespaVersion(vespaVersion);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -250,9 +250,9 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.doConverge(firstContext);
-        NodeAgentContext secondContext = createContext(specBuilder.minDiskAvailableGb(200).build());
+        NodeAgentContext secondContext = createContext(specBuilder.diskGb(200).build());
         nodeAgent.doConverge(secondContext);
-        NodeAgentContext thirdContext = createContext(specBuilder.minCpuCores(4).build());
+        NodeAgentContext thirdContext = createContext(specBuilder.vcpus(4).build());
         nodeAgent.doConverge(thirdContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
@@ -288,7 +288,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion);
+                .currentVespaVersion(vespaVersion);
 
         NodeAgentContext firstContext = createContext(specBuilder.build());
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -297,7 +297,7 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.doConverge(firstContext);
-        NodeAgentContext secondContext = createContext(specBuilder.minMainMemoryAvailableGb(20).build());
+        NodeAgentContext secondContext = createContext(specBuilder.memoryGb(20).build());
         nodeAgent.doConverge(secondContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 2, 20);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
@@ -325,7 +325,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .wantedRestartGeneration(wantedRestartGeneration)
                 .currentRestartGeneration(currentRestartGeneration)
                 .build();
@@ -357,7 +357,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .wantedRebootGeneration(wantedRebootGeneration)
                 .currentRebootGeneration(currentRebootGeneration)
                 .build();
@@ -400,7 +400,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.failed)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -446,7 +446,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .state(NodeState.inactive)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -548,7 +548,7 @@ public class NodeAgentImplTest {
                 .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -570,7 +570,7 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .build();
 
         NodeAgentContext context = createContext(node);
@@ -640,8 +640,7 @@ public class NodeAgentImplTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetRelevantMetrics() throws Exception {
-        ClassLoader classLoader = getClass().getClassLoader();
-        String json = IOUtils.readAll(classLoader.getResourceAsStream("docker.stats.json"), StandardCharsets.UTF_8);
+        String json = Files.readString(Paths.get("src/test/resources/docker.stats.json"));
         ContainerStats stats2 = ContainerStats.fromJson(json);
         ContainerStats stats1 = ContainerStats.fromJson(json.replace("\"cpu_stats\"", "\"cpu_stats2\"").replace("\"precpu_stats\"", "\"cpu_stats\""));
 
@@ -651,10 +650,10 @@ public class NodeAgentImplTest {
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(NodeState.active)
-                .vespaVersion(vespaVersion)
+                .currentVespaVersion(vespaVersion)
                 .owner(owner)
                 .membership(membership)
-                .minMainMemoryAvailableGb(2)
+                .memoryGb(2)
                 .allowedToBeDown(true)
                 .parentHostname("parent.host.name.yahoo.com")
                 .build();
@@ -667,15 +666,14 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(eq(context)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
-        
-        nodeAgent.updateContainerNodeMetrics(); // Update metrics once to init and lastCpuMetric
 
-        Path pathToExpectedMetrics = Paths.get(classLoader.getResource("expected.container.system.metrics.txt").getPath());
-        String expectedMetrics = new String(Files.readAllBytes(pathToExpectedMetrics))
-                .replaceAll("\\s", "")
-                .replaceAll("\\n", "");
+        List<String> expectedMetrics = Stream.of(0, 1)
+                .map(i -> Paths.get("src/test/resources/expected.container.system.metrics." + i + ".txt"))
+                .map(path -> uncheck(() -> Files.readString(path)))
+                .map(content -> content.replaceAll("\\s", "").replaceAll("\\n", ""))
+                .collect(Collectors.toList());
+        int[] counter = {0};
 
-        String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19095",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
             NodeAgentContext calledContainerName = (NodeAgentContext) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];
@@ -687,10 +685,14 @@ public class NodeAgentImplTest {
 
             assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);
-            assertArrayEquals(expectedCommand, calledCommand);
+            String[] expectedCommand = {"vespa-rpc-invoke", "-t", "2", "tcp/localhost:19095",
+                    "setExtraMetrics", expectedMetrics.get(counter[0])};
+            assertArrayEquals("Ivocation #" + counter[0], expectedCommand, calledCommand);
+            counter[0]++;
             return null;
         }).when(dockerOperations).executeCommandInContainerAsRoot(any(), any(), any());
 
+        nodeAgent.updateContainerNodeMetrics();
         nodeAgent.updateContainerNodeMetrics();
     }
 
@@ -713,7 +715,7 @@ public class NodeAgentImplTest {
     @Test
     public void testRunningConfigServer() {
         final NodeSpec node = nodeBuilder
-                .nodeType(NodeType.config)
+                .type(NodeType.config)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
                 .wantedVespaVersion(vespaVersion)

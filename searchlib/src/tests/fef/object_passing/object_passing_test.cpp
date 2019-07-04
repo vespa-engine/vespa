@@ -84,9 +84,7 @@ struct Fixture {
     double eval(const vespalib::string &feature) {
         BlueprintResolver::SP resolver(new BlueprintResolver(factory, indexEnv));
         resolver->addSeed(feature);
-        if (!resolver->compile()) {
-            return vespalib::eval::error_value;        
-        }
+        ASSERT_TRUE(resolver->compile());
         MatchDataLayout mdl;
         MatchData::UP md = mdl.createMatchData();
         QueryEnvironment queryEnv(&indexEnv);

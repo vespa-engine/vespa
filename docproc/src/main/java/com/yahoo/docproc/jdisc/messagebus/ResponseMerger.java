@@ -9,7 +9,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.TraceNode;
-import com.yahoo.messagebus.jdisc.MbusClient;
 import com.yahoo.messagebus.jdisc.MbusResponse;
 import com.yahoo.messagebus.jdisc.StatusCodes;
 
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 class ResponseMerger implements ResponseHandler {
 

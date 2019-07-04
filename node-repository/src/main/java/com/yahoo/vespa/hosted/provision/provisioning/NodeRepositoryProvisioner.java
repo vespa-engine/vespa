@@ -62,14 +62,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
+        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.preparer = new Preparer(nodeRepository,
                 zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
-                provisionServiceProvider.getHostProvisioner(),
-                provisionServiceProvider.getHostResourcesCalculator(),
-                Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource));
-        this.activator = new Activator(nodeRepository);
-        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService ->
-                new LoadBalancerProvisioner(nodeRepository, lbService));
+                                     provisionServiceProvider.getHostProvisioner(),
+                                     provisionServiceProvider.getHostResourcesCalculator(),
+                                     Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource),
+                                     loadBalancerProvisioner);
+        this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
     /**
@@ -112,14 +112,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         validate(hosts);
         activator.activate(application, hosts, transaction);
-        transaction.onCommitted(() -> {
-            try {
-                loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
-                                        application.toShortString(), e);
-            }
-        });
     }
 
     @Override

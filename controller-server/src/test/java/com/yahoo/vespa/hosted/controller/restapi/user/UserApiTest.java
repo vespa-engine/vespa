@@ -137,7 +137,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // DELETE an application is available to application admins.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", DELETE)
                              .roles(Set.of(Role.applicationAdmin(id.tenant(), id.application()))),
-                              "");
+                              "{\"message\":\"Deleted application my-tenant.my-app\"}");
 
         // DELETE a tenant role is available to tenant admins.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)

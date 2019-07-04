@@ -15,6 +15,7 @@ namespace search::index { class FieldLengthInfo; }
 
 namespace search::diskindex {
 
+class FieldLengthScanner;
 class FieldReader;
 class FieldWriter;
 class DictionaryWordReader;
@@ -49,6 +50,7 @@ private:
 
     bool mergeFields(vespalib::ThreadExecutor & executor);
     bool mergeField(uint32_t id);
+    std::shared_ptr<FieldLengthScanner> allocate_field_length_scanner(const SchemaUtil::IndexIterator &index);
     bool openInputFieldReaders(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list,
                                std::vector<std::unique_ptr<FieldReader> > & readers);
     bool openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter & writer, const index::FieldLengthInfo &field_length_info);

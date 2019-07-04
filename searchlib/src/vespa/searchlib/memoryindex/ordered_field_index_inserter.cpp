@@ -25,9 +25,12 @@ namespace {
 
 const vespalib::string emptyWord = "";
 
+uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
+
 }
 
-OrderedFieldIndexInserter::OrderedFieldIndexInserter(FieldIndex &fieldIndex)
+template <bool interleaved_features>
+OrderedFieldIndexInserter<interleaved_features>::OrderedFieldIndexInserter(FieldIndexType& fieldIndex)
     : _word(),
       _prevDocId(noDocId),
       _prevAdd(false),
@@ -39,10 +42,12 @@ OrderedFieldIndexInserter::OrderedFieldIndexInserter(FieldIndex &fieldIndex)
 {
 }
 
-OrderedFieldIndexInserter::~OrderedFieldIndexInserter() = default;
+template <bool interleaved_features>
+OrderedFieldIndexInserter<interleaved_features>::~OrderedFieldIndexInserter() = default;
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::flushWord()
+OrderedFieldIndexInserter<interleaved_features>::flushWord()
 {
     if (_removes.empty() && _adds.empty()) {
         return;
@@ -64,21 +69,24 @@ OrderedFieldIndexInserter::flushWord()
     _adds.clear();
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::flush()
+OrderedFieldIndexInserter<interleaved_features>::flush()
 {
     flushWord();
     _listener.flush();
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::commit()
+OrderedFieldIndexInserter<interleaved_features>::commit()
 {
     _fieldIndex.commit();
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::setNextWord(const vespalib::stringref word)
+OrderedFieldIndexInserter<interleaved_features>::setNextWord(const vespalib::stringref word)
 {
     // TODO: Adjust here if zero length words should be legal.
     assert(_word < word);
@@ -103,22 +111,26 @@ OrderedFieldIndexInserter::setNextWord(const vespalib::stringref word)
     assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::add(uint32_t docId,
-                               const index::DocIdAndFeatures &features)
+OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
+                                                     const index::DocIdAndFeatures &features)
 {
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||
            (_prevDocId == docId && !_prevAdd));
     datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
-    _adds.push_back(PostingListKeyDataType(docId, featureRef));
+    _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
+                                                                       cap_u16(features.num_occs()),
+                                                                       cap_u16(features.field_length()))));
     _listener.insert(_dItr.getKey()._wordRef, docId);
     _prevDocId = docId;
     _prevAdd = true;
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::remove(uint32_t docId)
+OrderedFieldIndexInserter<interleaved_features>::remove(uint32_t docId)
 {
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId);
@@ -127,8 +139,9 @@ OrderedFieldIndexInserter::remove(uint32_t docId)
     _prevAdd = false;
 }
 
+template <bool interleaved_features>
 void
-OrderedFieldIndexInserter::rewind()
+OrderedFieldIndexInserter<interleaved_features>::rewind()
 {
     assert(_removes.empty() && _adds.empty());
     _word = "";
@@ -137,10 +150,14 @@ OrderedFieldIndexInserter::rewind()
     _dItr.begin();
 }
 
+template <bool interleaved_features>
 datastore::EntryRef
-OrderedFieldIndexInserter::getWordRef() const
+OrderedFieldIndexInserter<interleaved_features>::getWordRef() const
 {
     return _dItr.getKey()._wordRef;
 }
+
+template class OrderedFieldIndexInserter<false>;
+template class OrderedFieldIndexInserter<true>;
 
 }

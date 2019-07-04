@@ -10,7 +10,6 @@ namespace vespalib { class nbostream; }
 
 namespace vespalib::tensor {
 
-class DenseTensor;
 class DenseTensorView;
 
 /**
@@ -22,7 +21,7 @@ public:
     using CellType = eval::ValueType::CellType;
 
     static void serialize(nbostream &stream, const DenseTensorView &tensor);
-    static std::unique_ptr<DenseTensor> deserialize(nbostream &stream, CellType cell_type);
+    static std::unique_ptr<DenseTensorView> deserialize(nbostream &stream, CellType cell_type);
 
     // This is a temporary method untill we get full support for typed tensors
     template <typename T>

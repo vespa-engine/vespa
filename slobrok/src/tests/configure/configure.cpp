@@ -80,7 +80,7 @@ struct SpecList
 bool
 compare(MirrorAPI &api, const char *pattern, SpecList expect)
 {
-    for (int i = 0; i < 250; ++i) {
+    for (int i = 0; i < 600; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
             return true;

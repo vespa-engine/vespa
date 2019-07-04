@@ -56,11 +56,17 @@ throttling.idleTimeout              double   default=-1.0
 # Whether to enable SSL for this connector.
 ssl.enabled                         bool     default=false
 
-# File with private key in PEM format
+# File with private key in PEM format. Specify either this or privateKey, but not both
 ssl.privateKeyFile                  string   default=""
 
-# File with certificate in PEM format
+# Private key in PEM format. Specify either this or privateKeyFile, but not both
+ssl.privateKey                      string   default=""
+
+# File with certificate in PEM format. Specify either this or certificate, but not both
 ssl.certificateFile                 string   default=""
+
+# Certificate in PEM format. Specify either this or certificateFile, but not both
+ssl.certificate                     string   default=""
 
 # with trusted CA certificates in PEM format. Used to verify clients
 ssl.caCertificateFile               string default=""

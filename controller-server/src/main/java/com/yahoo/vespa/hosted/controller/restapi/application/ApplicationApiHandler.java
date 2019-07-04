@@ -7,15 +7,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -31,9 +29,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
-import com.yahoo.vespa.hosted.controller.api.application.v4.ApplicationResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.TenantResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -50,7 +46,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
@@ -71,7 +66,6 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -97,6 +91,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,6 +99,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.joining;
 
@@ -218,7 +214,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), "default", request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/promote")) return promoteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
@@ -236,11 +231,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote")) return promoteApplicationDeployment(path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -271,7 +264,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handleOPTIONS() {
         // We implement this to avoid redirect loops on OPTIONS requests from browsers, but do not really bother
         // spelling out the methods supported at each path, which we should
-        EmptyJsonResponse response = new EmptyJsonResponse();
+        EmptyResponse response = new EmptyResponse();
         response.headers().put("Allow", "GET,PUT,POST,PATCH,DELETE,OPTIONS");
         return response;
     }
@@ -515,7 +508,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         });
 
         // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", controller.applications().oldestInstalledPlatform(application.id()).toFullString());
+        object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
@@ -691,6 +684,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
         return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
+    }
+
+    /**
+     * Returns a non-broken, released version at least as old as the oldest platform the given application is on.
+     *
+     * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
+     * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
+     */
+    private Version compileVersion(ApplicationId id) {
+        Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
+        return controller.versionStatus().versions().stream()
+                         .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
+                         .filter(VespaVersion::isReleased)
+                         .map(VespaVersion::versionNumber)
+                         .filter(version -> ! version.isAfter(oldestPlatform))
+                         .max(Comparator.naturalOrder())
+                         .orElseGet(() -> controller.mavenRepository().metadata().versions().stream()
+                                                    .filter(version -> ! version.isAfter(oldestPlatform))
+                                                    .filter(version -> ! controller.versionStatus().versions().stream()
+                                                                                   .map(VespaVersion::versionNumber)
+                                                                                   .collect(Collectors.toSet()).contains(version))
+                                                    .max(Comparator.naturalOrder())
+                                                    .orElseThrow(() -> new IllegalStateException("No available releases of " +
+                                                                                                 controller.mavenRepository().artifactId())));
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
@@ -925,12 +942,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<Hostname> hostname = Optional.ofNullable(request.getProperty("hostname")).map(Hostname::new);
         controller.applications().restart(deploymentId, hostname);
 
-        // TODO: Change to return JSON
-        return new StringResponse("Requested restart of " + path(TenantResource.API_PATH, tenantName,
-                                                                 ApplicationResource.API_PATH, applicationName,
-                                                                 EnvironmentResource.API_PATH, environment,
-                                                                 "region", region,
-                                                                 "instance", instanceName));
+        return new MessageResponse("Requested restart of " + deploymentId);
     }
 
     private HttpResponse jobDeploy(ApplicationId id, JobType type, HttpRequest request) {
@@ -1077,53 +1089,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
         controller.applications().deleteApplication(id, credentials);
-        return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
+        return new MessageResponse("Deleted application " + id);
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
         // Attempt to deactivate application even if the deployment is not known by the controller
-        controller.applications().deactivate(application.id(), ZoneId.from(environment, region));
+        DeploymentId deploymentId = new DeploymentId(application.id(), ZoneId.from(environment, region));
+        controller.applications().deactivate(deploymentId.applicationId(), deploymentId.zoneId());
 
-        // TODO: Change to return JSON
-        return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,
-                                                        ApplicationResource.API_PATH, applicationName,
-                                                        "instance", instanceName,
-                                                        EnvironmentResource.API_PATH, environment,
-                                                        "region", region));
-    }
-
-    /**
-     * Promote application Chef environments. To be used by component jobs only
-     */
-    private HttpResponse promoteApplication(String tenantName, String applicationName, HttpRequest request) {
-        try{
-            ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
-            String sourceEnvironment = chefEnvironment.systemChefEnvironment();
-            String targetEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
-            controller.chefClient().copyChefEnvironment(sourceEnvironment, targetEnvironment);
-            return new MessageResponse(String.format("Successfully copied environment %s to %s", sourceEnvironment, targetEnvironment));
-        } catch (Exception e) {
-            log.log(LogLevel.ERROR, String.format("Error during Chef copy environment. (%s.%s)", tenantName, applicationName), e);
-            return ErrorResponse.internalServerError("Unable to promote Chef environments for application");
-        }
-    }
-
-    /**
-     * Promote application Chef environments for jobs that deploy applications
-     */
-    private HttpResponse promoteApplicationDeployment(String tenantName, String applicationName, String environmentName, String regionName, String instanceName, HttpRequest request) {
-        try {
-            ApplicationChefEnvironment chefEnvironment = new ApplicationChefEnvironment(controller.system());
-            String sourceEnvironment = chefEnvironment.applicationSourceEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName));
-            String targetEnvironment = chefEnvironment.applicationTargetEnvironment(TenantName.from(tenantName), ApplicationName.from(applicationName), Environment.from(environmentName), RegionName.from(regionName));
-            controller.chefClient().copyChefEnvironment(sourceEnvironment, targetEnvironment);
-            return new MessageResponse(String.format("Successfully copied environment %s to %s", sourceEnvironment, targetEnvironment));
-        } catch (Exception e) {
-            log.log(LogLevel.ERROR, String.format("Error during Chef copy environment. (%s.%s %s.%s)", tenantName, applicationName, environmentName, regionName), e);
-            return ErrorResponse.internalServerError("Unable to promote Chef environments for application");
-        }
+        return new MessageResponse("Deactivated " + deploymentId);
     }
 
     private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {

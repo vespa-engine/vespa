@@ -82,11 +82,6 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public List<ZoneId> ids() {
-        return List.copyOf(zones.stream().map(ZoneApi::getId).collect(Collectors.toList()));
-    }
-
-    @Override
     public ZoneList ofCloud(CloudName cloud) {
         return filter(zone -> zone.getCloudName().equals(cloud));
     }

@@ -1,47 +1,33 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
-class JoinOperationTest : public CppUnit::TestFixture, public DistributorTestUtil
-{
-    CPPUNIT_TEST_SUITE(JoinOperationTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(sendSparseJoinsToNodesWithoutBothSourceBuckets);
-    CPPUNIT_TEST_SUITE_END();
-
+struct JoinOperationTest : Test, DistributorTestUtil {
     void checkSourceBucketsAndSendReply(
             JoinOperation& op,
             size_t msgIndex,
             const std::vector<document::BucketId>& wantedIds);
 
-protected:
-    void testSimple();
-    void sendSparseJoinsToNodesWithoutBothSourceBuckets();
-
-public:
-    void setUp() override {
+    void SetUp() override {
         createLinks();
     };
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(JoinOperationTest);
-
-void
-JoinOperationTest::testSimple()
-{
+TEST_F(JoinOperationTest, simple) {
     getConfig().setJoinCount(100);
     getConfig().setJoinSize(1000);
 
@@ -61,14 +47,13 @@ JoinOperationTest::testSimple()
 
     checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}});
 
-    CPPUNIT_ASSERT(!getBucket(document::BucketId(33, 0x100000001)).valid());
-    CPPUNIT_ASSERT(!getBucket(document::BucketId(33, 1)).valid());
+    EXPECT_FALSE(getBucket(document::BucketId(33, 0x100000001)).valid());
+    EXPECT_FALSE(getBucket(document::BucketId(33, 1)).valid());
 
     BucketDatabase::Entry entry = getBucket(document::BucketId(32, 0));
-    CPPUNIT_ASSERT(entry.valid());
-    CPPUNIT_ASSERT_EQUAL((uint16_t)0, entry->getNodeRef(0).getNode());
-    CPPUNIT_ASSERT_EQUAL(api::BucketInfo(666, 90, 500),
-                         entry->getNodeRef(0).getBucketInfo());
+    ASSERT_TRUE(entry.valid());
+    EXPECT_EQ(0, entry->getNodeRef(0).getNode());
+    EXPECT_EQ(api::BucketInfo(666, 90, 500), entry->getNodeRef(0).getBucketInfo());
 }
 
 void
@@ -77,18 +62,16 @@ JoinOperationTest::checkSourceBucketsAndSendReply(
         size_t msgIndex,
         const std::vector<document::BucketId>& wantedIds)
 {
-    CPPUNIT_ASSERT(_sender.commands.size() > msgIndex);
+    ASSERT_GT(_sender.commands().size(), msgIndex);
 
-    std::shared_ptr<api::StorageCommand> msg(_sender.commands[msgIndex]);
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::JOINBUCKETS, msg->getType());
+    std::shared_ptr<api::StorageCommand> msg(_sender.command(msgIndex));
+    ASSERT_EQ(api::MessageType::JOINBUCKETS, msg->getType());
 
-    api::JoinBucketsCommand& joinCmd(
-            dynamic_cast<api::JoinBucketsCommand&>(*msg));
-    CPPUNIT_ASSERT_EQUAL(wantedIds, joinCmd.getSourceBuckets());
+    auto& joinCmd = dynamic_cast<api::JoinBucketsCommand&>(*msg);
+    EXPECT_THAT(joinCmd.getSourceBuckets(), ContainerEq(wantedIds));
 
     std::shared_ptr<api::StorageReply> reply(joinCmd.makeReply());
-    api::JoinBucketsReply& sreply(
-            dynamic_cast<api::JoinBucketsReply&>(*reply));
+    auto& sreply = dynamic_cast<api::JoinBucketsReply&>(*reply);
     sreply.setBucketInfo(api::BucketInfo(666, 90, 500));
 
     op.receive(_sender, reply);
@@ -99,9 +82,7 @@ JoinOperationTest::checkSourceBucketsAndSendReply(
  * bucket id used as both source buckets) for those nodes having only one of
  * the buckets.
  */
-void
-JoinOperationTest::sendSparseJoinsToNodesWithoutBothSourceBuckets()
-{
+TEST_F(JoinOperationTest, send_sparse_joins_to_nodes_without_both_source_buckets) {
     getConfig().setJoinCount(100);
     getConfig().setJoinSize(1000);
 
@@ -119,10 +100,8 @@ JoinOperationTest::sendSparseJoinsToNodesWithoutBothSourceBuckets()
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender, framework::MilliSecTime(0));
 
-    checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}});
-    checkSourceBucketsAndSendReply(op, 1, {{33, 1}, {33, 1}});
-}
-
+    ASSERT_NO_FATAL_FAILURE(checkSourceBucketsAndSendReply(op, 0, {{33, 1}, {33, 0x100000001}}));
+    ASSERT_NO_FATAL_FAILURE(checkSourceBucketsAndSendReply(op, 1, {{33, 1}, {33, 1}}));
 }
 
 }

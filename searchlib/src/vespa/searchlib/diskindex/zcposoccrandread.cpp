@@ -26,7 +26,7 @@ namespace {
 
 vespalib::string myId4("Zc.4");
 vespalib::string myId5("Zc.5");
-vespalib::string cheap_features("cheap_features");
+vespalib::string interleaved_features("interleaved_features");
 
 }
 
@@ -214,8 +214,8 @@ ZcPosOccRandRead::readHeader(const vespalib::string &identifier)
     _posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
     _posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
     _posting_params._min_skip_docs = header.getTag("minSkipDocs").asInteger();
-    if (header.hasTag(cheap_features) && (header.getTag(cheap_features).asInteger() != 0)) {
-        _posting_params._encode_cheap_features = true;
+    if (header.hasTag(interleaved_features) && (header.getTag(interleaved_features).asInteger() != 0)) {
+        _posting_params._encode_interleaved_features = true;
     }
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");

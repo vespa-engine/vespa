@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 
 
 /**
@@ -377,6 +378,15 @@ public abstract class CompositeItem extends Item {
             terms += item.getTermCount();
         }
         return terms;
+    }
+
+    /**
+     * Will return its single child if itself can safely be omitted.
+     *
+     * @return a valid Item or empty Optional if it can not be done
+     */
+    public Optional<Item> extractSingleChild() {
+        return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
     }
 
 }

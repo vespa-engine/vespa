@@ -12,18 +12,18 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * <p>A stack of the processors to call next in this processing. To push which
+ * A stack of the processors to call next in this processing. To push which
  * processor to call next, call addNext, to get and remove the next processor,
- * call pop.</p>
+ * call pop.
  *
- * <p>This is not thread safe.</p>
+ * This is not thread safe.
  *
  * @author bratseth
  */
 public class CallStack {
 
     /** The name of this stack, or null if it is not named */
-    private String name = null;
+    private String name;
 
     /** The Call objects of this stack */
     private final List<Call> elements = new java.util.LinkedList<>();
@@ -51,7 +51,7 @@ public class CallStack {
     }
 
     /** Creates an empty stack with a name */
-    public CallStack(final String name, Statistics manager, Metric metric) {
+    public CallStack(String name, Statistics manager, Metric metric) {
         this.name = name;
         this.statistics = manager;
         this.metric = metric;
@@ -61,10 +61,10 @@ public class CallStack {
      * Creates a stack from another stack (starting at the next of the given
      * callstack) This does a deep copy of the stack.
      */
-    public CallStack(final CallStack stackToCopy) {
+    public CallStack(CallStack stackToCopy) {
         name = stackToCopy.name;
-        for (final Iterator<Call> i = stackToCopy.iterator(); i.hasNext();) {
-            final Call callToCopy = i.next();
+        for (Iterator<Call> i = stackToCopy.iterator(); i.hasNext();) {
+            Call callToCopy = i.next();
             elements.add((Call) callToCopy.clone());
         }
         this.statistics = stackToCopy.statistics;
@@ -78,7 +78,7 @@ public class CallStack {
      * @param name the name of the stack
      * @param docprocs the document processors to call
      */
-    public CallStack(final String name, Collection<DocumentProcessor> docprocs, Statistics manager, Metric metric) {
+    public CallStack(String name, Collection<DocumentProcessor> docprocs, Statistics manager, Metric metric) {
         this(name, manager, metric);
         for (DocumentProcessor docproc : docprocs) {
             addLast(docproc);
@@ -91,7 +91,7 @@ public class CallStack {
     }
 
     /** Sets the name of this stack */
-    public void setName(final String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -100,7 +100,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addNext(final Call call) {
+    public CallStack addNext(Call call) {
         elements.add(0, call);
         return this;
     }
@@ -110,7 +110,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addNext(final DocumentProcessor processor) {
+    public CallStack addNext(DocumentProcessor processor) {
         return addNext(new Call(processor, name, statistics, metric));
     }
 
@@ -119,7 +119,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addNext(final CallStack callStack) {
+    public CallStack addNext(CallStack callStack) {
         elements.addAll(0, callStack.elements);
         return this;
     }
@@ -129,7 +129,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addLast(final Call call) {
+    public CallStack addLast(Call call) {
         elements.add(call);
         return this;
     }
@@ -139,7 +139,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addLast(final DocumentProcessor processor) {
+    public CallStack addLast(DocumentProcessor processor) {
         return addLast(new Call(processor, name, statistics, metric));
     }
 
@@ -148,7 +148,7 @@ public class CallStack {
      *
      * @return this for convenience
      */
-    public CallStack addLast(final CallStack callStack) {
+    public CallStack addLast(CallStack callStack) {
         elements.addAll(callStack.elements);
         return this;
     }
@@ -164,8 +164,8 @@ public class CallStack {
      * @param call the call to add
      * @return this for convenience
      */
-    public CallStack addBefore(final Call before, final Call call) {
-        final int insertPosition = elements.indexOf(before);
+    public CallStack addBefore(Call before, Call call) {
+        int insertPosition = elements.indexOf(before);
         if (insertPosition < 0) {
             addLast(call);
         } else {
@@ -185,7 +185,7 @@ public class CallStack {
      * @param processor the processor to add
      * @return this for convenience
      */
-    public CallStack addBefore(final Call before, DocumentProcessor processor) {
+    public CallStack addBefore(Call before, DocumentProcessor processor) {
         return addBefore(before, new Call(processor, name, statistics, metric));
     }
 
@@ -193,16 +193,13 @@ public class CallStack {
      * Adds multiple elements just before the first occurence of some element on
      * the stack. This can not be called during an iteration.
      *
-     * @param before
-     *            the call to add this before. If this call is not present (the
-     *            same object instance), the new processor is added as the last
-     *            element
-     * @param callStack
-     *            the calls to add
+     * @param before the call to add this before. If this call is not present (the
+     *               same object instance), the new processor is added as the last element
+     * @param callStack the calls to add
      * @return this for convenience
      */
-    public CallStack addBefore(final Call before, final CallStack callStack) {
-        final int insertPosition = elements.indexOf(before);
+    public CallStack addBefore(Call before, CallStack callStack) {
+        int insertPosition = elements.indexOf(before);
         if (insertPosition < 0) {
             addLast(callStack);
         } else {
@@ -223,8 +220,8 @@ public class CallStack {
      *            the call to add
      * @return this for convenience
      */
-    public CallStack addAfter(final Call after, final Call call) {
-        final int insertPosition = elements.indexOf(after);
+    public CallStack addAfter(Call after, Call call) {
+        int insertPosition = elements.indexOf(after);
         if (insertPosition < 0) {
             addLast(call);
         } else {
@@ -237,15 +234,12 @@ public class CallStack {
      * Adds an element just after the first occurence of some other element on
      * the stack. This can not be called during an iteration.
      *
-     * @param after
-     *            the call to add this after. If this call is not present, (the
-     *            same object instance), the new processor is added as the last
-     *            element
-     * @param processor
-     *            the processor to add
+     * @param after the call to add this after. If this call is not present, (the
+     *              same object instance), the new processor is added as the last element
+     * @param processor the processor to add
      * @return this for convenience
      */
-    public CallStack addAfter(final Call after, final DocumentProcessor processor) {
+    public CallStack addAfter(Call after, DocumentProcessor processor) {
         return addAfter(after, new Call(processor, name, statistics, metric));
     }
 
@@ -253,16 +247,13 @@ public class CallStack {
      * Adds multiple elements just after another given element on the stack.
      * This can not be called during an iteration.
      *
-     * @param after
-     *            the call to add this before. If this call is not present, (the
-     *            same object instance), the new processor is added as the last
-     *            element
-     * @param callStack
-     *            the calls to add
+     * @param after the call to add this before. If this call is not present, (the
+     *              same object instance), the new processor is added as the last element
+     * @param callStack the calls to add
      * @return this for convenience
      */
-    public CallStack addAfter(final Call after, final CallStack callStack) {
-        final int insertPosition = elements.indexOf(after);
+    public CallStack addAfter(Call after, CallStack callStack) {
+        int insertPosition = elements.indexOf(after);
         if (insertPosition < 0) {
             addLast(callStack);
         } else {
@@ -278,9 +269,9 @@ public class CallStack {
      *            the call to remove
      * @return this for convenience
      */
-    public CallStack remove(final Call call) {
-        for (final ListIterator<Call> i = iterator(); i.hasNext();) {
-            final Call current = i.next();
+    public CallStack remove(Call call) {
+        for (ListIterator<Call> i = iterator(); i.hasNext();) {
+            Call current = i.next();
             if (current == call) {
                 i.remove();
             }
@@ -295,9 +286,9 @@ public class CallStack {
      *            the call to check
      * @return true if the call is present, false otherwise
      */
-    public boolean contains(final Call call) {
-        for (final ListIterator<Call> i = iterator(); i.hasNext();) {
-            final Call current = i.next();
+    public boolean contains(Call call) {
+        for (ListIterator<Call> i = iterator(); i.hasNext();) {
+            Call current = i.next();
             if (current == call) {
                 return true;
             }
@@ -306,12 +297,11 @@ public class CallStack {
     }
 
     /**
-     * Returns the next call to this processor id, or null if no such calls are
-     * left
+     * Returns the next call to this processor id, or null if no such calls are left
      */
-    public Call findCall(final ComponentId processorId) {
-        for (final Iterator<Call> i = iterator(); i.hasNext();) {
-            final Call call = i.next();
+    public Call findCall(ComponentId processorId) {
+        for (Iterator<Call> i = iterator(); i.hasNext();) {
+            Call call = i.next();
             if (call.getDocumentProcessorId().equals(processorId)) {
                 return call;
             }
@@ -323,7 +313,7 @@ public class CallStack {
      * Returns the next call to this processor, or null if no such calls are
      * left
      */
-    public Call findCall(final DocumentProcessor processor) {
+    public Call findCall(DocumentProcessor processor) {
         return findCall(processor.getId());
     }
 
@@ -365,15 +355,14 @@ public class CallStack {
         return elements.listIterator();
     }
 
-    /** Returns the number of remainnig elements in this stack */
+    /** Returns the number of remaining elements in this stack */
     public int size() {
         return elements.size();
     }
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("callstack");
+        StringBuilder b = new StringBuilder("callstack");
         if (name != null) {
             b.append(" ");
             b.append(name);

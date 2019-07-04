@@ -63,7 +63,11 @@ public interface Tensor {
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
 
-    /** Returns the cell of this in some undefined order */
+    /**
+     * Returns the cell of this in some undefined order.
+     * A cell instances is only valid until next() is called.
+     * Call detach() on the cell to obtain a long-lived instance.
+     */
     Iterator<Cell> cellIterator();
 
     /** Returns the values of this in some undefined order */
@@ -250,6 +254,44 @@ public interface Tensor {
     default Tensor sum(String dimension) { return sum(Collections.singletonList(dimension)); }
     default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
+    // ----------------- non-math query methods (that is, computations not returning a tensor)
+
+    /** Returns the cell(s) of this tensor having the highest value */
+    default List<Cell> largest() {
+        List<Cell> cells = new ArrayList<>(1);
+        double maxValue = Double.MIN_VALUE;
+        for (Iterator<Cell> i = cellIterator(); i.hasNext(); ) {
+            Cell cell = i.next();
+            if (cell.getValue() > maxValue) {
+                cells.clear();
+                cells.add(cell.detach());
+                maxValue = cell.getDoubleValue();
+            }
+            else if (cell.getValue() == maxValue) {
+                cells.add(cell.detach());
+            }
+        }
+        return cells;
+    }
+
+    /** Returns the cell(s) of this tensor having the lowest value */
+    default List<Cell> smallest() {
+        List<Cell> cells = new ArrayList<>(1);
+        double minValue = Double.MAX_VALUE;
+        for (Iterator<Cell> i = cellIterator(); i.hasNext(); ) {
+            Cell cell = i.next();
+            if (cell.getValue() < minValue) {
+                cells.clear();
+                cells.add(cell.detach());
+                minValue = cell.getDoubleValue();
+            }
+            else if (cell.getValue() == minValue) {
+                cells.add(cell.detach());
+            }
+        }
+        return cells;
+    }
+
     // ----------------- serialization
 
     /**
@@ -397,10 +439,10 @@ public interface Tensor {
         public Double getValue() { return value.doubleValue(); }
 
         /** Returns the value as a float */
-        public float getFloatValue() { return value.floatValue(); }
+        public float getFloatValue() { return getValue().floatValue(); }
 
         /** Returns the value as a double */
-        public double getDoubleValue() { return value.doubleValue(); }
+        public double getDoubleValue() { return getValue(); }
 
         @Override
         public Double setValue(Double value) {
@@ -421,6 +463,13 @@ public interface Tensor {
         public int hashCode() {
             return getKey().hashCode() ^ getValue().hashCode(); // by Map.Entry spec
         }
+
+        public String toString(TensorType type) { return address.toString(type) + ":" + value; }
+
+        /**
+         * Return a copy of this tensor cell which is valid beyond the lifetime of any iterator state which supplied it.
+         */
+        public Cell detach() { return this; }
 
     }
 

@@ -33,12 +33,18 @@ public class TestableTensorFlowModel {
     private ImportedModel model;
 
     // Sizes of the input vector
-    private final int d0Size = 1;
-    private final int d1Size = 784;
+    private int d0Size = 1;
+    private int d1Size = 784;
 
     public TestableTensorFlowModel(String modelName, String modelDir) {
         tensorFlowModel = SavedModelBundle.load(modelDir, "serve");
         model = new TensorFlowImporter().importModel(modelName, modelDir, tensorFlowModel);
+    }
+
+    public TestableTensorFlowModel(String modelName, String modelDir, int d0Size, int d1Size) {
+        this(modelName, modelDir);
+        this.d0Size = d0Size;
+        this.d1Size = d1Size;
     }
 
     public ImportedModel get() { return model; }

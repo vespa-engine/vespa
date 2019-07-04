@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -14,12 +15,14 @@ public class LoadBalancer {
 
     private final LoadBalancerId id;
     private final LoadBalancerInstance instance;
-    private final boolean inactive;
+    private final State state;
+    private final Instant changedAt;
 
-    public LoadBalancer(LoadBalancerId id, LoadBalancerInstance instance, boolean inactive) {
+    public LoadBalancer(LoadBalancerId id, LoadBalancerInstance instance, State state, Instant changedAt) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.instance = Objects.requireNonNull(instance, "instance must be non-null");
-        this.inactive = inactive;
+        this.state = Objects.requireNonNull(state, "state must be non-null");
+        this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
     }
 
     /** An identifier for this load balancer. The ID is unique inside the zone */
@@ -32,17 +35,48 @@ public class LoadBalancer {
         return instance;
     }
 
-    /**
-     * Returns whether this load balancer is inactive. Inactive load balancers are eventually removed by
-     * {@link LoadBalancerExpirer}. Inactive load balancers may be reactivated if a deleted cluster is redeployed.
-     */
-    public boolean inactive() {
-        return inactive;
+    /** The current state of this */
+    public State state() {
+        return state;
     }
 
-    /** Return a copy of this that is set inactive */
-    public LoadBalancer deactivate() {
-        return new LoadBalancer(id, instance, true);
+    /** Returns when this was last changed */
+    public Instant changedAt() {
+        return changedAt;
+    }
+
+    /** Returns a copy of this with state set to given state */
+    public LoadBalancer with(State state, Instant changedAt) {
+        if (changedAt.isBefore(this.changedAt)) {
+            throw new IllegalArgumentException("Invalid changeAt: '" + changedAt + "' is before existing value '" +
+                                               this.changedAt + "'");
+        }
+        if (this.state != State.reserved && state == State.reserved) {
+            throw new IllegalArgumentException("Invalid state transition: " + this.state + " -> " + state);
+        }
+        return new LoadBalancer(id, instance, state, changedAt);
+    }
+
+    /** Returns a copy of this with instance set to given instance */
+    public LoadBalancer with(LoadBalancerInstance instance) {
+        return new LoadBalancer(id, instance, state, changedAt);
+    }
+
+    public enum State {
+
+        /** This load balancer has been provisioned and reserved for an application */
+        reserved,
+
+        /**
+         * The load balancer has been deactivated and is ready to be removed. Inactive load balancers are eventually
+         * removed by {@link LoadBalancerExpirer}. Inactive load balancers may be reactivated if a deleted cluster is
+         * redeployed.
+         */
+        inactive,
+
+        /** The load balancer is in active use by an application */
+        active,
+
     }
 
 }

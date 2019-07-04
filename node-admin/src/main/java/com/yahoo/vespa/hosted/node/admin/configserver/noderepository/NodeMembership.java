@@ -19,19 +19,19 @@ public class NodeMembership {
         this.retired = retired;
     }
 
-    public String getClusterType() {
+    public String clusterType() {
         return clusterType;
     }
 
-    public String getClusterId() {
+    public String clusterId() {
         return clusterId;
     }
 
-    public String getGroup() {
+    public String group() {
         return group;
     }
 
-    public int getIndex() {
+    public int index() {
         return index;
     }
 

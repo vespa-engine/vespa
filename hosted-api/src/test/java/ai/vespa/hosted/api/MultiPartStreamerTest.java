@@ -1,9 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.net.URI;
@@ -12,16 +11,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MultiPartStreamerTest {
-
-    @Rule
-    public TemporaryFolder tmp = new TemporaryFolder();
+class MultiPartStreamerTest {
 
     @Test
-    public void test() throws IOException {
-        Path file = tmp.newFile().toPath();
+    void test(@TempDir Path tmp) throws IOException {
+        Path file = tmp.resolve("file");
         Files.write(file, new byte[]{0x48, 0x69});
         MultiPartStreamer streamer = new MultiPartStreamer("My boundary");
 

@@ -3,18 +3,20 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A filterable load balancer list.
+ * A filterable load balancer list. This is immutable.
  *
  * @author mpolden
  */
-public class LoadBalancerList {
+public class LoadBalancerList implements Iterable<LoadBalancer> {
 
     private final List<LoadBalancer> loadBalancers;
 
@@ -27,9 +29,14 @@ public class LoadBalancerList {
         return of(loadBalancers.stream().filter(lb -> lb.id().application().equals(application)));
     }
 
-    /** Returns the subset of load balancers that are inactive */
-    public LoadBalancerList inactive() {
-        return of(loadBalancers.stream().filter(LoadBalancer::inactive));
+    /** Returns the subset of load balancers that are in given state */
+    public LoadBalancerList in(LoadBalancer.State state) {
+        return of(loadBalancers.stream().filter(lb -> lb.state() == state));
+    }
+
+    /** Returns the subset of load balancers that last changed before given instant */
+    public LoadBalancerList changedBefore(Instant instant) {
+        return of(loadBalancers.stream().filter(lb -> lb.changedAt().isBefore(instant)));
     }
 
     public List<LoadBalancer> asList() {
@@ -38,6 +45,11 @@ public class LoadBalancerList {
 
     private static LoadBalancerList of(Stream<LoadBalancer> stream) {
         return new LoadBalancerList(stream.collect(Collectors.toUnmodifiableList()));
+    }
+
+    @Override
+    public Iterator<LoadBalancer> iterator() {
+        return loadBalancers.iterator();
     }
 
 }

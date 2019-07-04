@@ -12,8 +12,11 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.tls.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -22,13 +25,14 @@ import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
-import java.io.File;
+import javax.net.ssl.X509ExtendedKeyManager;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
@@ -41,6 +45,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Logger;
+
+import static com.yahoo.security.KeyStoreType.JKS;
+import static com.yahoo.security.KeyStoreType.PKCS12;
 
 /**
  * A {@link AthenzIdentityProvider} / {@link ServiceIdentityProvider} component that provides the tenant identity.
@@ -59,10 +66,14 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(24);
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
+    // TODO Make path to trust store config
+    private static final Path DEFAULT_TRUST_STORE = Paths.get(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.pem"));
+
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
     private volatile AthenzCredentials credentials;
     private final Metric metric;
+    private final Path trustStore;
     private final AthenzCredentialsService athenzCredentialsService;
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
@@ -70,6 +81,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final String dnsSuffix;
     private final URI ztsEndpoint;
 
+    private final MutableX509KeyManager identityKeyManager = new MutableX509KeyManager();
+    private final SSLContext identitySslContext;
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
     private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
@@ -79,9 +92,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
         this(config,
              metric,
+             DEFAULT_TRUST_STORE,
              new AthenzCredentialsService(config,
-                                          createNodeIdentityProvider(config),
-                                          getDefaultTrustStoreLocation(),
+                                          createNodeIdentityProvider(config, DEFAULT_TRUST_STORE),
                                           Defaults.getDefaults().vespaHostname(),
                                           Clock.systemUTC()),
              new ScheduledThreadPoolExecutor(1),
@@ -92,10 +105,12 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     AthenzIdentityProviderImpl(IdentityConfig config,
                                Metric metric,
+                               Path trustStore,
                                AthenzCredentialsService athenzCredentialsService,
                                ScheduledExecutorService scheduler,
                                Clock clock) {
         this.metric = metric;
+        this.trustStore = trustStore;
         this.athenzCredentialsService = athenzCredentialsService;
         this.scheduler = scheduler;
         this.clock = clock;
@@ -106,6 +121,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         this.csrGenerator = new CsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
+        this.identitySslContext = createIdentitySslContext(identityKeyManager, trustStore);
         registerInstance();
     }
 
@@ -121,11 +137,18 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
                 });
     }
 
+    private static SSLContext createIdentitySslContext(X509ExtendedKeyManager keyManager, Path trustStore) {
+        return new SslContextBuilder()
+                .withKeyManager(keyManager)
+                .withTrustStore(trustStore, JKS)
+                .build();
+    }
+
     private void registerInstance() {
         try {
-            credentials = athenzCredentialsService.registerInstance();
-            scheduler.scheduleAtFixedRate(this::refreshCertificate, UPDATE_PERIOD.toMinutes(), UPDATE_PERIOD.toMinutes(), TimeUnit.MINUTES);
-            scheduler.scheduleAtFixedRate(this::reportMetrics, 0, 5, TimeUnit.MINUTES);
+            updateIdentityCredentials(this.athenzCredentialsService.registerInstance());
+            this.scheduler.scheduleAtFixedRate(this::refreshCertificate, UPDATE_PERIOD.toMinutes(), UPDATE_PERIOD.toMinutes(), TimeUnit.MINUTES);
+            this.scheduler.scheduleAtFixedRate(this::reportMetrics, 0, 5, TimeUnit.MINUTES);
         } catch (Throwable t) {
             throw new AthenzIdentityProviderException("Could not retrieve Athenz credentials", t);
         }
@@ -148,7 +171,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override
     public SSLContext getIdentitySslContext() {
-        return credentials.getIdentitySslContext();
+        return identitySslContext;
     }
 
     @Override
@@ -189,13 +212,22 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return Collections.singletonList(credentials.getCertificate());
     }
 
+    private void updateIdentityCredentials(AthenzCredentials credentials) {
+        this.credentials = credentials;
+        this.identityKeyManager.updateKeystore(
+                KeyStoreBuilder.withType(PKCS12)
+                        .withKeyEntry("default", credentials.getKeyPair().getPrivate(), credentials.getCertificate())
+                        .build(),
+                new char[0]);
+    }
+
     private SSLContext createRoleSslContext(AthenzRole role) {
         Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             return new SslContextBuilder()
                     .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
-                    .withTrustStore(getDefaultTrustStoreLocation().toPath(), KeyStoreType.JKS)
+                    .withTrustStore(trustStore, KeyStoreType.JKS)
                     .build();
         }
     }
@@ -226,13 +258,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         }
     }
 
-    private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config) {
+    private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config, Path trustStore) {
         return new SiaIdentityProvider(
-                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, getDefaultTrustStoreLocation());
-    }
-
-    private static File getDefaultTrustStoreLocation() {
-        return new File(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"));
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, trustStore.toFile());
     }
 
     private boolean isExpired(AthenzCredentials credentials) {
@@ -245,9 +273,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     void refreshCertificate() {
         try {
-            credentials = isExpired(credentials)
-                    ? athenzCredentialsService.registerInstance()
-                    : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), credentials.getIdentitySslContext());
+            updateIdentityCredentials(isExpired(credentials)
+                                      ? athenzCredentialsService.registerInstance()
+                                      : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), identitySslContext));
         } catch (Throwable t) {
             log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
         }

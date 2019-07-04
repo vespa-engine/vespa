@@ -4,7 +4,13 @@ package com.yahoo.prelude.query.textualrepresentation;
 import com.yahoo.prelude.query.Item;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
@@ -21,6 +27,7 @@ public class TextualQueryRepresentation {
 
     /** Creates the textual representation for a single Item. */
     private class ItemDiscloser implements Discloser {
+
         private final Item item;
 
         final Map<String, Object> properties = new TreeMap<>();
@@ -57,7 +64,7 @@ public class TextualQueryRepresentation {
             StringBuilder builder = new StringBuilder();
             builder.append(name);
 
-            if (!properties.isEmpty() || itemReferences.get(item) != null) {
+            if ( ! properties.isEmpty() || itemReferences.get(item) != null) {
                 builder.append('[');
                 addPropertiesString(builder);
                 builder.append(']');

@@ -7,14 +7,6 @@
 namespace search::fef::test {
 
 using vespalib::eval::ValueType;
-using vespalib::eval::ErrorValue;
-
-namespace {
-
-IndexEnvironment::Constant notFoundError(ValueType::error_type(),
-                                         std::make_unique<ErrorValue>());
-
-}
 
 IndexEnvironment::IndexEnvironment() = default;
 
@@ -46,7 +38,7 @@ IndexEnvironment::getConstantValue(const vespalib::string &name) const
     if (it != _constants.end()) {
         return std::make_unique<ConstantRef>(it->second);
     } else {
-        return std::make_unique<ConstantRef>(notFoundError);
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 }
 

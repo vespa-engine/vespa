@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -16,9 +16,9 @@ import java.time.ZoneOffset;
 import static ai.vespa.hosted.api.Signatures.sha256Digest;
 import static ai.vespa.hosted.api.Signatures.sha256Digester;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests that messages can be signed and verified, and that the keys used for this can be parsed.
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author jonmv
  */
-public class SignaturesTest {
+class SignaturesTest {
 
     private static final String ecPemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
                                                  "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
@@ -58,7 +58,7 @@ public class SignaturesTest {
                                            "∠( ᐛ 」∠)＿").getBytes(UTF_8);
 
     @Test
-    public void testHashing() throws Exception {
+    void testHashing() throws Exception {
         byte[] hash1 = MessageDigest.getInstance("SHA-256").digest(message);
         byte[] hash2 = sha256Digest(() -> new ByteArrayInputStream(message));
         DigestInputStream digester = sha256Digester(new ByteArrayInputStream(message));
@@ -70,7 +70,7 @@ public class SignaturesTest {
     }
 
     @Test
-    public void testSigning() {
+    void testSigning() {
         Clock clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC);
         RequestSigner signer = new RequestSigner(ecPemPrivateKey, "myKey", clock);
 
