@@ -149,7 +149,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                 if (filesOwnedByApplication.contains(requestedFile)) {
                     return; // allowed to access
                 }
-                throw new AuthorizationException("Peer is not allowed to access file " + requestedFile.value());
+                throw new AuthorizationException(String.format("Peer is not allowed to access file %s. Peer is owned by %s", requestedFile.value(), peerOwner.toShortString()));
             default:
                 throw new AuthorizationException(String.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
         }
