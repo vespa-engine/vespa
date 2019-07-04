@@ -355,7 +355,7 @@ struct TestContext {
     void test_tensor_reduce() {
         TEST_DO(test_reduce_op(Aggr::AVG, N()));
         TEST_DO(test_reduce_op(Aggr::COUNT, N()));
-        TEST_DO(test_reduce_op(Aggr::PROD, Sigmoid(N())));
+        TEST_DO(test_reduce_op(Aggr::PROD, SigmoidF(N())));
         TEST_DO(test_reduce_op(Aggr::SUM, N()));
         TEST_DO(test_reduce_op(Aggr::MAX, N()));
         TEST_DO(test_reduce_op(Aggr::MIN, N()));
@@ -390,30 +390,30 @@ struct TestContext {
     }
 
     void test_tensor_map() {
-        TEST_DO(test_map_op("-a", operation::Neg::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("-a", operation::Neg::f, Sub2(Div16(N()))));
         TEST_DO(test_map_op("!a", operation::Not::f, Mask2Seq(SkipNth(3))));
-        TEST_DO(test_map_op("cos(a)", operation::Cos::f, Div10(N())));
-        TEST_DO(test_map_op("sin(a)", operation::Sin::f, Div10(N())));
-        TEST_DO(test_map_op("tan(a)", operation::Tan::f, Div10(N())));
-        TEST_DO(test_map_op("cosh(a)", operation::Cosh::f, Div10(N())));
-        TEST_DO(test_map_op("sinh(a)", operation::Sinh::f, Div10(N())));
-        TEST_DO(test_map_op("tanh(a)", operation::Tanh::f, Div10(N())));
-        TEST_DO(test_map_op("acos(a)", operation::Acos::f, Sigmoid(Div10(N()))));
-        TEST_DO(test_map_op("asin(a)", operation::Asin::f, Sigmoid(Div10(N()))));
-        TEST_DO(test_map_op("atan(a)", operation::Atan::f, Div10(N())));
-        TEST_DO(test_map_op("exp(a)", operation::Exp::f, Div10(N())));
-        TEST_DO(test_map_op("log10(a)", operation::Log10::f, Div10(N())));
-        TEST_DO(test_map_op("log(a)", operation::Log::f, Div10(N())));
-        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt::f, Div10(N())));
-        TEST_DO(test_map_op("ceil(a)", operation::Ceil::f, Div10(N())));
-        TEST_DO(test_map_op("fabs(a)", operation::Fabs::f, Div10(N())));
-        TEST_DO(test_map_op("floor(a)", operation::Floor::f, Div10(N())));
+        TEST_DO(test_map_op("cos(a)", operation::Cos::f, Div16(N())));
+        TEST_DO(test_map_op("sin(a)", operation::Sin::f, Div16(N())));
+        TEST_DO(test_map_op("tan(a)", operation::Tan::f, Div16(N())));
+        TEST_DO(test_map_op("cosh(a)", operation::Cosh::f, Div16(N())));
+        TEST_DO(test_map_op("sinh(a)", operation::Sinh::f, Div16(N())));
+        TEST_DO(test_map_op("tanh(a)", operation::Tanh::f, Div16(N())));
+        TEST_DO(test_map_op("acos(a)", operation::Acos::f, SigmoidF(Div16(N()))));
+        TEST_DO(test_map_op("asin(a)", operation::Asin::f, SigmoidF(Div16(N()))));
+        TEST_DO(test_map_op("atan(a)", operation::Atan::f, Div16(N())));
+        TEST_DO(test_map_op("exp(a)", operation::Exp::f, Div16(N())));
+        TEST_DO(test_map_op("log10(a)", operation::Log10::f, Div16(N())));
+        TEST_DO(test_map_op("log(a)", operation::Log::f, Div16(N())));
+        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt::f, Div16(N())));
+        TEST_DO(test_map_op("ceil(a)", operation::Ceil::f, Div16(N())));
+        TEST_DO(test_map_op("fabs(a)", operation::Fabs::f, Div16(N())));
+        TEST_DO(test_map_op("floor(a)", operation::Floor::f, Div16(N())));
         TEST_DO(test_map_op("isNan(a)", operation::IsNan::f, Mask2Seq(SkipNth(3), 1.0, my_nan)));
-        TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div10(N()))));
-        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div10(N()))));
-        TEST_DO(test_map_op("elu(a)", operation::Elu::f, Sub2(Div10(N()))));
+        TEST_DO(test_map_op("relu(a)", operation::Relu::f, Sub2(Div16(N()))));
+        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid::f, Sub2(Div16(N()))));
+        TEST_DO(test_map_op("elu(a)", operation::Elu::f, Sub2(Div16(N()))));
         TEST_DO(test_map_op("a in [1,5,7,13,42]", MyIn::f, N()));
-        TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div10(N())));
+        TEST_DO(test_map_op("(a+1)*2", MyOp::f, Div16(N())));
     }
 
     //-------------------------------------------------------------------------
@@ -666,27 +666,27 @@ struct TestContext {
     }
 
     void test_tensor_apply() {
-        TEST_DO(test_apply_op("a+b", operation::Add::f, Div10(N())));
-        TEST_DO(test_apply_op("a-b", operation::Sub::f, Div10(N())));
-        TEST_DO(test_apply_op("a*b", operation::Mul::f, Div10(N())));
-        TEST_DO(test_apply_op("a/b", operation::Div::f, Div10(N())));
-        TEST_DO(test_apply_op("a%b", operation::Mod::f, Div10(N())));
-        TEST_DO(test_apply_op("a^b", operation::Pow::f, Div10(N())));
-        TEST_DO(test_apply_op("pow(a,b)", operation::Pow::f, Div10(N())));
-        TEST_DO(test_apply_op("a==b", operation::Equal::f, Div10(N())));
-        TEST_DO(test_apply_op("a!=b", operation::NotEqual::f, Div10(N())));
-        TEST_DO(test_apply_op("a~=b", operation::Approx::f, Div10(N())));
-        TEST_DO(test_apply_op("a<b", operation::Less::f, Div10(N())));
-        TEST_DO(test_apply_op("a<=b", operation::LessEqual::f, Div10(N())));
-        TEST_DO(test_apply_op("a>b", operation::Greater::f, Div10(N())));
-        TEST_DO(test_apply_op("a>=b", operation::GreaterEqual::f, Div10(N())));
+        TEST_DO(test_apply_op("a+b", operation::Add::f, Div16(N())));
+        TEST_DO(test_apply_op("a-b", operation::Sub::f, Div16(N())));
+        TEST_DO(test_apply_op("a*b", operation::Mul::f, Div16(N())));
+        TEST_DO(test_apply_op("a/b", operation::Div::f, Div16(N())));
+        TEST_DO(test_apply_op("a%b", operation::Mod::f, Div16(N())));
+        TEST_DO(test_apply_op("a^b", operation::Pow::f, Div16(N())));
+        TEST_DO(test_apply_op("pow(a,b)", operation::Pow::f, Div16(N())));
+        TEST_DO(test_apply_op("a==b", operation::Equal::f, Div16(N())));
+        TEST_DO(test_apply_op("a!=b", operation::NotEqual::f, Div16(N())));
+        TEST_DO(test_apply_op("a~=b", operation::Approx::f, Div16(N())));
+        TEST_DO(test_apply_op("a<b", operation::Less::f, Div16(N())));
+        TEST_DO(test_apply_op("a<=b", operation::LessEqual::f, Div16(N())));
+        TEST_DO(test_apply_op("a>b", operation::Greater::f, Div16(N())));
+        TEST_DO(test_apply_op("a>=b", operation::GreaterEqual::f, Div16(N())));
         TEST_DO(test_apply_op("a&&b", operation::And::f, Mask2Seq(SkipNth(3))));
         TEST_DO(test_apply_op("a||b", operation::Or::f, Mask2Seq(SkipNth(3))));
-        TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2::f, Div10(N())));
-        TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp::f, Div10(N())));
-        TEST_DO(test_apply_op("fmod(a,b)", operation::Mod::f, Div10(N())));
-        TEST_DO(test_apply_op("min(a,b)", operation::Min::f, Div10(N())));
-        TEST_DO(test_apply_op("max(a,b)", operation::Max::f, Div10(N())));
+        TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2::f, Div16(N())));
+        TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp::f, Div16(N())));
+        TEST_DO(test_apply_op("fmod(a,b)", operation::Mod::f, Div16(N())));
+        TEST_DO(test_apply_op("min(a,b)", operation::Min::f, Div16(N())));
+        TEST_DO(test_apply_op("max(a,b)", operation::Max::f, Div16(N())));
     }
 
     //-------------------------------------------------------------------------

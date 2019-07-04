@@ -32,6 +32,14 @@ struct Div10 : Sequence {
     double operator[](size_t i) const override { return (seq[i] / 10.0); }
 };
 
+// Sequence of another sequence divided by 10
+struct Div16 : Sequence {
+    const Sequence &seq;
+    Div16(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (seq[i] / 16.0); }
+};
+
+
 // Sequence of another sequence minus 2
 struct Sub2 : Sequence {
     const Sequence &seq;
@@ -52,6 +60,13 @@ struct Sigmoid : Sequence {
     const Sequence &seq;
     Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
     double operator[](size_t i) const override { return operation::Sigmoid::f(seq[i]); }
+};
+
+// Sequence of applying sigmoid to another sequence, plus rounding to nearest float
+struct SigmoidF : Sequence {
+    const Sequence &seq;
+    SigmoidF(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (float)operation::Sigmoid::f(seq[i]); }
 };
 
 // pre-defined sequence of numbers
