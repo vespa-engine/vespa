@@ -19,6 +19,9 @@
       "name": "MetricsReporter"
     },
     {
+      "name": "NodeAlerter"
+    },
+    {
       "name": "NodeFailer"
     },
     {

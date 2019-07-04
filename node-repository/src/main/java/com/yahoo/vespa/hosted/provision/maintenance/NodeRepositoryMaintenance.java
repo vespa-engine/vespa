@@ -53,6 +53,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<HostProvisionMaintainer> hostProvisionMaintainer;
     private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
+    private final NodeAlerter nodeAlerter;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
@@ -96,6 +97,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
                 NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
         nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, policy);
+
+        nodeAlerter = new NodeAlerter(nodeRepository, metric, durationFromEnv("alert_interval").orElse(defaults.nodeAlerterInterval));
     }
 
     @Override
@@ -110,6 +113,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
         nodeRetirer.deconstruct();
+        nodeAlerter.deconstruct();
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
@@ -154,6 +158,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration provisionedExpiry;
         private final Duration rebootInterval;
         private final Duration nodeRetirerInterval;
+        private final Duration nodeAlerterInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
@@ -173,6 +178,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             provisionedExpiry = Duration.ofHours(4);
             rebootInterval = Duration.ofDays(30);
             nodeRetirerInterval = Duration.ofMinutes(30);
+            nodeAlerterInterval = Duration.ofHours(1);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
