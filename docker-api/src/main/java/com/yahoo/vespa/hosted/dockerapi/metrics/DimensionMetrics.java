@@ -1,22 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
  * @author freva
  */
 public class DimensionMetrics {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Map<String, Object> routing = Map.of("yamas", Map.of("namespaces", List.of("Vespa")));
 
     private final String application;
     private final Dimensions dimensions;
@@ -28,17 +21,6 @@ public class DimensionMetrics {
         this.metrics = metrics.entrySet().stream()
                 .filter(DimensionMetrics::metricIsFinite)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    public String toSecretAgentReport() throws JsonProcessingException {
-        Map<String, Object> report = new TreeMap<>();
-        report.put("application", application);
-        report.put("dimensions", new TreeMap<>(dimensions.asMap()));
-        report.put("metrics", new TreeMap<>(metrics));
-        report.put("routing", routing);
-        report.put("timestamp", System.currentTimeMillis() / 1000);
-
-        return objectMapper.writeValueAsString(report);
     }
 
     public String getApplication() {

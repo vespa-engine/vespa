@@ -30,7 +30,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -658,8 +657,6 @@ public class NodeAgentImplTest {
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
         mockGetContainer(dockerImage, isRunning);
-
-        doNothing().when(storageMaintainer).writeMetricsConfig(any());
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, dockerOperations,
                 storageMaintainer, flagSource, Optional.of(credentialsMaintainer), Optional.of(aclMaintainer),
