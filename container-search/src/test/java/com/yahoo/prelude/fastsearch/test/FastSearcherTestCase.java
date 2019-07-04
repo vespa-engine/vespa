@@ -134,7 +134,7 @@ public class FastSearcherTestCase {
                 documentdbConfigWithOneDb);
 
         { // No direct.summaries
-            String query = "?query=sddocname:a&summary=simple";
+            String query = "?query=sddocname:a&summary=simple&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
@@ -142,7 +142,7 @@ public class FastSearcherTestCase {
         }
 
         { // direct.summaries due to query cache
-            String query = "?query=sddocname:a&ranking.queryCache&timeout=5000ms";
+            String query = "?query=sddocname:a&ranking.queryCache&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
@@ -151,7 +151,7 @@ public class FastSearcherTestCase {
         }
 
         { // direct.summaries due to no summary features
-            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler&timeout=5000ms";
+            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
