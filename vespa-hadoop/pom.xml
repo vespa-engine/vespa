@@ -164,14 +164,6 @@
                                     <pattern>com.ctc.wstx</pattern>
                                     <shadedPattern>shaded.vespa</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>edu.umd.cs</pattern>
-                                    <shadedPattern>shaded.vespa</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>net.jcip.annotations</pattern>
-                                    <shadedPattern>shaded.vespa</shadedPattern>
-                                </relocation>
                             </relocations>
 
                         </configuration>
