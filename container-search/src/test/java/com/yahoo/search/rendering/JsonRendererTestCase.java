@@ -150,7 +150,7 @@ public class JsonRendererTestCase {
                 + "                        \"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]},"
                 + "                        \"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}"
                 + "                    },"
-                + "                    \"data\": \"...\""
+                + "                    \"data\": \"Data \\\\xc3\\\\xa6 \\\\xc3\\\\xa5\""
                 + "                },"
                 + "                \"id\": \"datatypestuff\","
                 + "                \"relevance\": 1.0"
@@ -178,7 +178,7 @@ public class JsonRendererTestCase {
         h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
         h.setField("object", new Thingie());
         h.setField("summaryfeatures", createSummaryFeatures());
-        h.setField("data", new RawData("Unknown artist from the moon".getBytes(StandardCharsets.US_ASCII)));
+        h.setField("data", new RawData("Data æ å".getBytes(StandardCharsets.UTF_8)));
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
