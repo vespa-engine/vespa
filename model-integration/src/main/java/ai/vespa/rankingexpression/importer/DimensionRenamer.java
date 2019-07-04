@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * amount of necessary renaming during evaluation of an imported model.
  *
  * @author lesters
+ * @author bratseth
  */
 public class DimensionRenamer {
 
@@ -31,7 +33,10 @@ public class DimensionRenamer {
     /** The graph we are renaming the dimensions of */
     private final IntermediateGraph graph;
 
-    private final ListMap<String, Integer> variables = new ListMap<>();
+    /** The set of dimensions to find a solution for */
+    private final Set<String> dimensions = new HashSet<>();
+
+    /** The constraints on the dimension name assignment */
     private final ListMap<Arc, Constraint> constraints = new ListMap<>();
 
     /** The solution to this, or null if no solution is found yet */
@@ -46,16 +51,10 @@ public class DimensionRenamer {
         this.dimensionPrefix = dimensionPrefix;
     }
 
-    /**
-     * Add a dimension name variable.
-     */
-    public void addDimension(String name) {
-        variables.put(name);
-    }
+    /** Add a dimension to the set of dimensions to be renamed */
+    public void addDimension(String name) { dimensions.add(name); }
 
-    /**
-     * Add a constraint between dimension names.
-     */
+    /** Add a constraint between dimension names */
     public void addConstraint(String from, String to, Constraint constraint, IntermediateOperation operation) {
         Arc arc = new Arc(from, to, operation);
         constraints.put(arc, constraint);
@@ -63,12 +62,12 @@ public class DimensionRenamer {
     }
 
     /**
-     * Retrieve resulting name of dimension after solving for constraints.
+     * Retrieve resulting name of a dimension after solving for constraints, or empty if no
+     * solution is found yet, or this dimension was not added before finding a solution.
      */
     public Optional<String> dimensionNameOf(String name) {
-        if ( ! renames.containsKey(name)) {
+        if ( renames == null || ! renames.containsKey(name))
             return Optional.empty();
-        }
         return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
     }
 
@@ -88,7 +87,7 @@ public class DimensionRenamer {
      * @return the solution in the form of the renames to perform
      */
     private Map<String, Integer> solve(int maxIterations) {
-        Map<String, Integer> solution = NamingConstraintSolver.solve(variables, constraints, maxIterations);
+        Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
         if ( solution == null) {
             IntermediateOperation operation = graph.operations().get("dense_out/MatMul");
             if (operation != null && operation instanceof MatMul) {
@@ -105,14 +104,14 @@ public class DimensionRenamer {
                 addDimension("renamed_0");
                 newOperation.addDimensionNameConstraints(this);
 
-                solution = NamingConstraintSolver.solve(variables, constraints, maxIterations);
+                solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
             }
         }
         if ( solution == null) {
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
             boolean anyRemoved = copyHard(constraints, hardConstraints);
             if (anyRemoved)
-                solution = NamingConstraintSolver.solve(variables, hardConstraints, maxIterations);
+                solution = NamingConstraintSolver.solve(dimensions, hardConstraints, maxIterations);
             if ( solution == null) {
                 throw new IllegalArgumentException("Could not find a dimension naming solution " +
                                                    "given constraints\n" + constraintsToString(hardConstraints));

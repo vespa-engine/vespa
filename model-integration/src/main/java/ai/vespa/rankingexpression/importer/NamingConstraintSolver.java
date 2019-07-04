@@ -2,7 +2,6 @@
 package ai.vespa.rankingexpression.importer;
 
 import com.yahoo.collections.ListMap;
-import com.yahoo.lang.MutableInteger;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -10,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Solves a dimension naming constraint problem.
@@ -19,19 +19,28 @@ import java.util.Map;
  */
 class NamingConstraintSolver {
 
-    private final ListMap<String, Integer> variables;
+    private final ListMap<String, Integer> possibleAssignments;
     private final ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints;
 
     private int iterations = 0;
     private final int maxIterations;
 
-    private NamingConstraintSolver(ListMap<String, Integer> inputVariables,
+    private NamingConstraintSolver(Set<String> dimensions,
                                    ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints,
                                    int maxIterations) {
-        this.variables = new ListMap<>(inputVariables);
-        initialize(variables);
+        this.possibleAssignments = allPossibilities(dimensions);
         this.constraints = constraints;
         this.maxIterations = maxIterations;
+    }
+
+    /** Returns a list containing a list of all assignment possibilities for each of the given dimensions */
+    private static ListMap<String, Integer> allPossibilities(Set<String> dimensions) {
+        ListMap<String, Integer> all = new ListMap<>();
+        for (String dimension : dimensions) {
+            for (int i = 0; i < dimensions.size(); ++i)
+                all.put(dimension, i);
+        }
+        return all;
     }
 
     /** Try the solve the constraint problem given in the arguments, and put the result in renames */
@@ -39,26 +48,17 @@ class NamingConstraintSolver {
         // TODO: Evaluate possible improved efficiency by using a heuristic such as min-conflicts
 
         Map<String, Integer> solution = new HashMap<>();
-        for (String dimension : variables.keySet()) {
-            List<Integer> values = variables.get(dimension);
+        for (String dimension : possibleAssignments.keySet()) {
+            List<Integer> values = possibleAssignments.get(dimension);
             if (values.size() > 1) {
                 if ( ! ac3()) return null;
                 values.sort(Integer::compare);
-                variables.replace(dimension, values.get(0));
+                possibleAssignments.replace(dimension, values.get(0));
             }
-            solution.put(dimension, variables.get(dimension).get(0));
+            solution.put(dimension, possibleAssignments.get(dimension).get(0));
             if (iterations > maxIterations) return null;
         }
         return solution;
-    }
-
-    private static void initialize(ListMap<String, Integer> variables) {
-        for (Map.Entry<String, List<Integer>> variable : variables.entrySet()) {
-            List<Integer> values = variable.getValue();
-            for (int i = 0; i < variables.size(); ++i) {
-                values.add(i);  // invariant: values are in increasing order
-            }
-        }
     }
 
     private boolean ac3() {
@@ -66,28 +66,24 @@ class NamingConstraintSolver {
         while ( ! workList.isEmpty()) {
             DimensionRenamer.Arc arc = workList.pop();
             iterations++;
-            if (revise(arc, variables, constraints)) {
-                if (variables.get(arc.from).size() == 0) {
-                    return false;  // no solution found
-                }
+            if (revise(arc)) {
+                if (possibleAssignments.get(arc.from).isEmpty()) return false;
+
                 for (DimensionRenamer.Arc constraint : constraints.keySet()) {
-                    if (arc.from.equals(constraint.to) && !arc.to.equals(constraint.from)) {
+                    if (arc.from.equals(constraint.to) && !arc.to.equals(constraint.from))
                         workList.add(constraint);
-                    }
                 }
             }
         }
         return true;
     }
 
-    private static boolean revise(DimensionRenamer.Arc arc,
-                                  ListMap<String, Integer> variables,
-                                  ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints) {
+    private boolean revise(DimensionRenamer.Arc arc) {
         boolean revised = false;
-        for (Iterator<Integer> fromIterator = variables.get(arc.from).iterator(); fromIterator.hasNext(); ) {
+        for (Iterator<Integer> fromIterator = possibleAssignments.get(arc.from).iterator(); fromIterator.hasNext(); ) {
             Integer from = fromIterator.next();
             boolean satisfied = false;
-            for (Iterator<Integer> toIterator = variables.get(arc.to).iterator(); toIterator.hasNext(); ) {
+            for (Iterator<Integer> toIterator = possibleAssignments.get(arc.to).iterator(); toIterator.hasNext(); ) {
                 Integer to = toIterator.next();
                 if (constraints.get(arc).stream().allMatch(constraint -> constraint.test(from, to)))
                     satisfied = true;
@@ -106,10 +102,10 @@ class NamingConstraintSolver {
      * @return the solution as a map from existing names to name ids represented as integers, or NULL
      *         if no solution could be found
      */
-    public static Map<String, Integer> solve(ListMap<String, Integer> inputVariables,
+    public static Map<String, Integer> solve(Set<String> dimensions,
                                              ListMap<DimensionRenamer.Arc, DimensionRenamer.Constraint> constraints,
                                              int maxIterations) {
-        return new NamingConstraintSolver(inputVariables, constraints, maxIterations).trySolve();
+        return new NamingConstraintSolver(dimensions, constraints, maxIterations).trySolve();
     }
 
 }
