@@ -68,17 +68,14 @@ public class DimensionRenamer {
     }
 
     private Map<String, Integer> solve(int maxIterations) {
-        Map<String, Integer> solution = solveWithOrWithoutSoftConstraints(maxIterations);
         int renamesTried = 0;
-        while (solution == null && renamesTried++ < dimensions.size()) {
-            boolean inserted = insertRenameOperation();
-            if ( ! inserted ) break;
-            solution = solveWithOrWithoutSoftConstraints(maxIterations);
+        while (renamesTried++ <= dimensions.size()) {
+            Map<String, Integer> solution = solveWithOrWithoutSoftConstraints(maxIterations);
+            if (solution != null) return solution;
+            if ( ! insertRenameOperation()) return null;
         }
-        if ( solution == null)
-            throw new IllegalArgumentException("Could not find a dimension naming solution " +
-                                               "given constraints\n" + constraintsToString(constraints));
-        return solution;
+        throw new IllegalArgumentException("Could not find a dimension naming solution " +
+                                           "given constraints\n" + constraintsToString(constraints));
     }
 
     private boolean insertRenameOperation() {
