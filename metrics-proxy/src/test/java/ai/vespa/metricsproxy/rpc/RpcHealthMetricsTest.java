@@ -36,14 +36,9 @@ public class RpcHealthMetricsTest {
     private static final String WANTED_RPC_RESPONSE =
             getFileContents("rpc-json-output-check.json").trim();
 
-    // see factory/doc/port-ranges.txt
-    private static final int httpPort = 18635;
-    private static final int rpcPort = 18636;
-
     @Test
     public void expected_response_is_returned() {
-        try (IntegrationTester tester = new IntegrationTester(httpPort, rpcPort)) {
-
+        try (IntegrationTester tester = new IntegrationTester()) {
             MockHttpServer mockHttpServer = tester.httpServer();
             mockHttpServer.setResponse(HEALTH_OK_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
@@ -61,22 +56,22 @@ public class RpcHealthMetricsTest {
             assertThat("Status should be failed" + h.getMessage(), h.isOk(), is(false));
             assertThat(h.getMessage(), is("SOMETHING FAILED"));
 
-            String jsonRPCMessage = getHealthMetrics(qrserver.getMonitoringName());
+            String jsonRPCMessage = getHealthMetrics(tester, qrserver.getMonitoringName());
             assertThat(jsonRPCMessage, is(WANTED_RPC_RESPONSE));
         }
     }
 
     @Test
     public void non_existent_service_name_returns_an_error_message() {
-        try (IntegrationTester tester = new IntegrationTester(httpPort, rpcPort)) {
-            String jsonRPCMessage = getHealthMetrics("non-existing service");
+        try (IntegrationTester tester = new IntegrationTester()) {
+            String jsonRPCMessage = getHealthMetrics(tester, "non-existing service");
             assertThat(jsonRPCMessage, is("105: No service with name 'non-existing service'"));
         }
     }
 
-    private String getHealthMetrics(String service) {
+    private String getHealthMetrics(IntegrationTester tester, String service) {
         Supervisor supervisor = new Supervisor(new Transport());
-        Target target = supervisor.connect(new Spec("localhost", rpcPort));
+        Target target = supervisor.connect(new Spec("localhost", tester.rpcPort()));
         Request req = new Request("getHealthMetricsForYamas");
         req.parameters().add(new StringValue(service));
         String returnValue;
@@ -93,5 +88,4 @@ public class RpcHealthMetricsTest {
 
         return returnValue;
     }
-
 }

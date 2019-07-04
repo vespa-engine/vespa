@@ -22,8 +22,7 @@ import static org.junit.Assert.assertThat;
  */
 public class ContainerServiceTest {
 
-    private MockHttpServer service;
-    private int csPort;
+    private MockHttpServer httpServer;
 
     @BeforeClass
     public static void init() {
@@ -32,10 +31,9 @@ public class ContainerServiceTest {
 
     @Before
     public void setupHTTPServer() {
-        csPort = 18637; // see factory/doc/port-ranges.txt
         try {
             String response = getFileContents("metrics-container-state-multi-chain.json");
-            service = new MockHttpServer(csPort, response, METRICS_PATH);
+            httpServer = new MockHttpServer(response, METRICS_PATH);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -44,7 +42,7 @@ public class ContainerServiceTest {
     @Test
     public void testMultipleQueryDimensions() throws JSONException {
         int count = 0;
-        VespaService service = VespaService.create("service1", "id", csPort);
+        VespaService service = VespaService.create("service1", "id", httpServer.port());
         for (Metric m : service.getMetrics().getMetrics()) {
             if (m.getName().equals("queries.rate")) {
                 count++;
@@ -63,6 +61,6 @@ public class ContainerServiceTest {
 
     @After
     public void shutdown() {
-        this.service.close();
+        this.httpServer.close();
     }
 }
