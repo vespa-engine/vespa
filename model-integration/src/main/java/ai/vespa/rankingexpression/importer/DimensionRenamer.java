@@ -68,10 +68,10 @@ public class DimensionRenamer {
     }
 
     private Map<String, Integer> solve(int maxIterations) {
-        Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
+        Map<String, Integer> solution = solveWithOrWithoutSoftConstraints(maxIterations);
         if ( solution == null) {
             IntermediateOperation operation = graph.operations().get("dense_out/MatMul");
-            if (operation != null && operation instanceof MatMul) {
+            if (operation instanceof MatMul) {
                 IntermediateOperation arg0 = operation.inputs().get(0);
                 List<IntermediateOperation> inputs = new ArrayList<>(operation.inputs());
                 inputs.set(0, new Rename(arg0.modelName(), "Dot_ExpandDims_1", "renamed_0", arg0));
@@ -85,25 +85,24 @@ public class DimensionRenamer {
                 addDimension("renamed_0");
                 newOperation.addDimensionNameConstraints(this);
 
-                solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
+                solution = solveWithOrWithoutSoftConstraints(maxIterations);
             }
         }
+        if ( solution == null) {
+            throw new IllegalArgumentException("Could not find a dimension naming solution " +
+                                               "given constraints\n" + constraintsToString(constraints));
+        }
+        return solution;
+    }
+
+    private Map<String, Integer> solveWithOrWithoutSoftConstraints(int maxIterations) {
+        Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
         if ( solution == null) {
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
             boolean anyRemoved = copyHard(constraints, hardConstraints);
             if (anyRemoved)
                 solution = NamingConstraintSolver.solve(dimensions, hardConstraints, maxIterations);
-            if ( solution == null) {
-                throw new IllegalArgumentException("Could not find a dimension naming solution " +
-                                                   "given constraints\n" + constraintsToString(hardConstraints));
-            }
         }
-
-        // Todo: handle failure more gracefully:
-        // If a solution can't be found, look at the operation node in the arc
-        // with the most remaining constraints, and inject a rename operation.
-        // Then run this algorithm again.
-
         return solution;
     }
 
