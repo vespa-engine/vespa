@@ -776,7 +776,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else {
                 renderInspectorDirect(data);
             }
-
         }
 
         private void renderInspectorDirect(Inspector data) throws IOException {

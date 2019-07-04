@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
+import java.util.stream.Collectors;
 
 import static com.yahoo.tensor.TensorType.Dimension.Type;
 import static org.junit.Assert.assertEquals;
@@ -246,6 +247,48 @@ public class TensorTestCase {
                 Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:2,{x:0,y:1}:3}"),
                 Tensor.from("tensor(x{})", "{}"),
                 Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:2,{x:0,y:1}:3}"));
+    }
+
+    @Test
+    public void testLargest() {
+        assertLargest("{d1:l1,d2:l2}:6.0",
+                     "tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}");
+        assertLargest("{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0",
+                      "tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0,{d1:l1,d2:l2}:6.0}");
+        assertLargest("{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0",
+                      "tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0,{d1:l1,d2:l3}:5.0,{d1:l1,d2:l2}:6.0}");
+        assertLargest("{x:1,y:1}:4.0",
+                      "tensor(x[2],y[2]):[[1,2],[3,4]");
+        assertLargest("{x:0,y:0}:4.0, {x:1,y:1}:4.0",
+                      "tensor(x[2],y[2]):[[4,2],[3,4]");
+    }
+
+    @Test
+    public void testSmallest() {
+        assertSmallest("{d1:l1,d2:l1}:5.0",
+                       "tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}");
+        assertSmallest("{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0",
+                       "tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0,{d1:l1,d2:l2}:6.0}");
+        assertSmallest("{d1:l1,d2:l1}:5.0, {d1:l1,d2:l2}:5.0",
+                       "tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l3}:6.0,{d1:l1,d2:l2}:5.0}");
+        assertSmallest("{x:0,y:0}:1.0",
+                       "tensor(x[2],y[2]):[[1,2],[3,4]");
+        assertSmallest("{x:0,y:1}:2.0",
+                       "tensor(x[2],y[2]):[[4,2],[3,4]");
+    }
+
+    private void assertLargest(String expectedCells, String tensorString) {
+        Tensor tensor = Tensor.from(tensorString);
+        assertEquals(expectedCells, asString(tensor.largest(), tensor.type()));
+    }
+
+    private void assertSmallest(String expectedCells, String tensorString) {
+        Tensor tensor = Tensor.from(tensorString);
+        assertEquals(expectedCells, asString(tensor.smallest(), tensor.type()));
+    }
+
+    private String asString(List<Tensor.Cell> cells, TensorType type) {
+        return cells.stream().map(cell -> cell.toString(type)).collect(Collectors.joining(", "));
     }
 
     private void assertTensorModify(DoubleBinaryOperator op, Tensor init, Tensor update, Tensor expected) {

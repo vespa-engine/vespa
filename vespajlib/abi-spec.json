@@ -1099,6 +1099,8 @@
       "public java.lang.Double setValue(java.lang.Double)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public java.lang.String toString(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.Tensor$Cell detach()",
       "public bridge synthetic java.lang.Object setValue(java.lang.Object)",
       "public bridge synthetic java.lang.Object getValue()",
       "public bridge synthetic java.lang.Object getKey()"
@@ -1180,6 +1182,8 @@
       "public com.yahoo.tensor.Tensor sum()",
       "public com.yahoo.tensor.Tensor sum(java.lang.String)",
       "public com.yahoo.tensor.Tensor sum(java.util.List)",
+      "public java.util.List largest()",
+      "public java.util.List smallest()",
       "public abstract java.lang.String toString()",
       "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor)",
       "public static java.lang.String contentToString(com.yahoo.tensor.Tensor)",

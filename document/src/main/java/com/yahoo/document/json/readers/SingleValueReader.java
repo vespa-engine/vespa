@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SingleValueReader {
+
     public static final String UPDATE_ASSIGN = "assign";
     public static final String UPDATE_INCREMENT = "increment";
     public static final String UPDATE_DECREMENT = "decrement";

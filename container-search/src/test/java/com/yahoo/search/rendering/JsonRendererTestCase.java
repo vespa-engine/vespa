@@ -24,6 +24,7 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -65,6 +66,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,7 +149,8 @@ public class JsonRendererTestCase {
                 + "                        \"scalar2\":2.5,"
                 + "                        \"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]},"
                 + "                        \"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}"
-                + "                    }"
+                + "                    },"
+                + "                    \"data\": \"Data \\\\xc3\\\\xa6 \\\\xc3\\\\xa5\""
                 + "                },"
                 + "                \"id\": \"datatypestuff\","
                 + "                \"relevance\": 1.0"
@@ -175,6 +178,7 @@ public class JsonRendererTestCase {
         h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
         h.setField("object", new Thingie());
         h.setField("summaryfeatures", createSummaryFeatures());
+        h.setField("data", new RawData("Data æ å".getBytes(StandardCharsets.UTF_8)));
         r.hits().add(h);
         r.setTotalHitCount(1L);
         String summary = render(r);
