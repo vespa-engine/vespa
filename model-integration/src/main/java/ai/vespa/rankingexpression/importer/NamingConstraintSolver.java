@@ -43,7 +43,22 @@ class NamingConstraintSolver {
         return all;
     }
 
-    /** Try the solve the constraint problem given in the arguments, and put the result in renames */
+    /**
+     * Try the solve the constraint problem given in the arguments, and put the result in renames.
+     *
+     * This is done by performing iterative arc consistency until we have found a solution.
+     * After an initial iteration, the dimensions will have multiple
+     * valid values. Find a single valid assignment by iteratively locking one
+     * dimension after another, and running the arc consistency algorithm
+     * multiple times.
+     *
+     * This requires having constraints that result in an absolute ordering:
+     * equal, lessThan and greaterThan do that, but not necessarily notEqual
+     * If that is needed, the algorithm needs to be adapted with a backtracking
+     * (tree) search
+     *
+     * @return the solution in the form of the renames to perform
+     */
     private Map<String, Integer> trySolve() {
         // TODO: Evaluate possible improved efficiency by using a heuristic such as min-conflicts
 
@@ -55,7 +70,7 @@ class NamingConstraintSolver {
                 values.sort(Integer::compare);
                 possibleAssignments.replace(dimension, values.get(0));
             }
-            solution.put(dimension, possibleAssignments.get(dimension).get(0));
+            solution.put(dimension, possibleAssignments.get(dimension).get(0)); // Pick the first available solution
             if (iterations > maxIterations) return null;
         }
         return solution;

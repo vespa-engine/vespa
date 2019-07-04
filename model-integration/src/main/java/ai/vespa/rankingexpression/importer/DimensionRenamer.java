@@ -61,31 +61,12 @@ public class DimensionRenamer {
         constraints.put(arc.opposite(), constraint.opposite());  // make constraint graph symmetric
     }
 
-    /**
-     * Retrieve resulting name of a dimension after solving for constraints, or empty if no
-     * solution is found yet, or this dimension was not added before finding a solution.
-     */
-    public Optional<String> dimensionNameOf(String name) {
-        if ( renames == null || ! renames.containsKey(name))
-            return Optional.empty();
-        return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
+    void solve() {
+        log.log(Level.FINE, () -> "Rename problem:\n" + constraintsToString(constraints));
+        renames = solve(100000);
+        log.log(Level.FINE, () -> "Rename solution:\n" + renamesToString(renames));
     }
 
-    /**
-     * Perform iterative arc consistency until we have found a solution. After
-     * an initial iteration, the variables (dimensions) will have multiple
-     * valid values. Find a single valid assignment by iteratively locking one
-     * dimension after another, and running the arc consistency algorithm
-     * multiple times.
-     *
-     * This requires having constraints that result in an absolute ordering:
-     * equal, lessThan and greaterThan do that, but adding notEqual does
-     * not typically result in a guaranteed ordering. If that is needed, the
-     * algorithm below needs to be adapted with a backtracking (tree) search
-     * to find solutions.
-     *
-     * @return the solution in the form of the renames to perform
-     */
     private Map<String, Integer> solve(int maxIterations) {
         Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
         if ( solution == null) {
@@ -141,10 +122,14 @@ public class DimensionRenamer {
         return removed;
     }
 
-    void solve() {
-        log.log(Level.FINE, () -> "Rename problem:\n" + constraintsToString(constraints));
-        renames = solve(100000);
-        log.log(Level.FINE, () -> "Rename solution:\n" + renamesToString(renames));
+    /**
+     * Retrieve resulting name of a dimension after solving for constraints, or empty if no
+     * solution is found yet, or this dimension was not added before finding a solution.
+     */
+    public Optional<String> dimensionNameOf(String name) {
+        if ( renames == null || ! renames.containsKey(name))
+            return Optional.empty();
+        return Optional.of(String.format("%s%d", dimensionPrefix, renames.get(name)));
     }
 
     private static String renamesToString(Map<String, Integer> renames) {
