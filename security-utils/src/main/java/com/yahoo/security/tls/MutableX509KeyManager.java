@@ -50,6 +50,12 @@ public class MutableX509KeyManager extends X509ExtendedKeyManager {
         }
     }
 
+    public X509ExtendedKeyManager currentManager() {
+        synchronized (monitor) {
+            return currentManager;
+        }
+    }
+
     @Override
     public String[] getServerAliases(String keyType, Principal[] issuers) {
         return updateAndGetThreadLocalManager()
@@ -117,5 +123,4 @@ public class MutableX509KeyManager extends X509ExtendedKeyManager {
             return manager;
         }
     }
-
 }

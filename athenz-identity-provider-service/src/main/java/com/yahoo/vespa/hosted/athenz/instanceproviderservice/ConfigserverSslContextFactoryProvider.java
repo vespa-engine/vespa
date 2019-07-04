@@ -86,7 +86,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
     }
 
     Instant getCertificateNotAfter() {
-        return keyManager.getCertificateChain(CERTIFICATE_ALIAS)[0].getNotAfter().toInstant();
+        return keyManager.currentManager().getCertificateChain(CERTIFICATE_ALIAS)[0].getNotAfter().toInstant();
     }
 
     @Override
