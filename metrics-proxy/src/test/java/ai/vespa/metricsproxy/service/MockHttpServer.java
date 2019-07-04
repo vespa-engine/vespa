@@ -23,6 +23,7 @@ public class MockHttpServer {
     /**
      * Mock http server that will return response as body
      *
+     * @param response the response to return along with 200 OK
      * @param path     the file path that the server will accept requests for. E.g /state/v1/metrics
      */
     public MockHttpServer(String response, String path) throws IOException {
