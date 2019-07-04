@@ -4,7 +4,7 @@
 
 namespace vespalib::tensor {
 
-DenseTensorCellsIterator::DenseTensorCellsIterator(const eval::ValueType &type_in, CellsRef cells)
+DenseTensorCellsIterator::DenseTensorCellsIterator(const eval::ValueType &type_in, TypedCells cells)
     : _type(type_in),
       _cells(cells),
       _cellIdx(0),

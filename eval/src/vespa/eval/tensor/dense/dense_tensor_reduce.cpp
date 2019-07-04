@@ -4,10 +4,8 @@
 
 namespace vespalib::tensor::dense {
 
-namespace {
-
 size_t
-calcCellsSize(const eval::ValueType &type)
+DimensionReducer::calcCellsSize(const eval::ValueType &type)
 {
     size_t cellsSize = 1;
     for (const auto &dim : type.dimensions()) {
@@ -16,11 +14,9 @@ calcCellsSize(const eval::ValueType &type)
     return cellsSize;
 }
 
-}
 DimensionReducer::DimensionReducer(const eval::ValueType &oldType,
                  const string &dimensionToRemove)
         : _type(oldType.reduce({ dimensionToRemove })),
-          _cellsResult(calcCellsSize(_type)),
           _innerDimSize(1),
           _sumDimSize(1),
           _outerDimSize(1)

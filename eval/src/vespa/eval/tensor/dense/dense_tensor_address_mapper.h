@@ -21,7 +21,7 @@ public:
     static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t BAD_ADDRESS = std::numeric_limits<uint32_t>::max();
     static uint32_t mapLabelToNumber(stringref label);
-    static uint32_t mapAddressToIndex(const TensorAddress &address, const eval::ValueType type);
+    static uint32_t mapAddressToIndex(const TensorAddress &address, const eval::ValueType &type);
 };
 
 }

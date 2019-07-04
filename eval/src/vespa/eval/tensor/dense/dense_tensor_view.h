@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "typed_cells.h"
 #include "dense_tensor_cells_iterator.h"
 #include <vespa/eval/tensor/tensor.h>
 
@@ -14,12 +15,10 @@ namespace vespalib::tensor {
 class DenseTensorView : public Tensor
 {
 public:
-    using Cells = std::vector<double>;
-    using CellsRef = ConstArrayRef<double>;
     using CellsIterator = DenseTensorCellsIterator;
     using Address = std::vector<eval::ValueType::Dimension::size_type>;
 
-    DenseTensorView(const eval::ValueType &type_in, CellsRef cells_in)
+    DenseTensorView(const eval::ValueType &type_in, TypedCells cells_in)
         : _typeRef(type_in),
           _cellsRef(cells_in)
     {}
@@ -29,7 +28,7 @@ public:
     {}
 
     const eval::ValueType &fast_type() const { return _typeRef; }
-    const CellsRef &cellsRef() const { return _cellsRef; }
+    const TypedCells &cellsRef() const { return _cellsRef; }
     bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }
 
@@ -46,14 +45,14 @@ public:
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
 protected:
-    void initCellsRef(CellsRef cells_in) {
+    void initCellsRef(TypedCells cells_in) {
         _cellsRef = cells_in;
     }
 private:
     Tensor::UP reduce_all(join_fun_t op, const std::vector<vespalib::string> &dimensions) const;
 
     const eval::ValueType &_typeRef;
-    CellsRef               _cellsRef;
+    TypedCells             _cellsRef;
 };
 
 }

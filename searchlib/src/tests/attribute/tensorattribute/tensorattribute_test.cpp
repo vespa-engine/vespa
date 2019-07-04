@@ -44,7 +44,7 @@ vespalib::string denseSpec("tensor(x[2],y[3])");
 Tensor::UP createTensor(const TensorSpec &spec) {
     auto value = DefaultTensorEngine::ref().from_spec(spec);
     if (value->is_double()) {
-        return Tensor::UP(new DenseTensor(ValueType::double_type(), {value->as_double()}));
+        return Tensor::UP(new DenseTensor<double>(ValueType::double_type(), {value->as_double()}));
     }
     Tensor *tensor = dynamic_cast<Tensor*>(value.get());
     ASSERT_TRUE(tensor != nullptr);
