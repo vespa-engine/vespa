@@ -44,13 +44,9 @@ public class RpcMetricsTest {
     private static final String METRICS_RESPONSE_CCL =
             getFileContents("metrics-storage-simple.json").trim();
 
-    // see factory/doc/port-ranges.txt
-    private static final int httpPort = 18633;
-    private static final int rpcPort = 18634;
-
     @Test
     public void testGetMetrics() throws Exception {
-        try (IntegrationTester tester = new IntegrationTester(httpPort, rpcPort)) {
+        try (IntegrationTester tester = new IntegrationTester()) {
             tester.httpServer().setResponse(METRICS_RESPONSE_CCL);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
@@ -68,7 +64,7 @@ public class RpcMetricsTest {
 
             // Setup RPC client
             Supervisor supervisor = new Supervisor(new Transport());
-            Target target = supervisor.connect(new Spec("localhost", rpcPort));
+            Target target = supervisor.connect(new Spec("localhost", tester.rpcPort()));
 
             verifyMetricsFromRpcRequest(qrserver, target);
 
@@ -137,7 +133,7 @@ public class RpcMetricsTest {
 
     @Test
     public void testGetAllMetricNames() {
-        try (IntegrationTester tester = new IntegrationTester(httpPort, rpcPort)) {
+        try (IntegrationTester tester = new IntegrationTester()) {
 
             tester.httpServer().setResponse(METRICS_RESPONSE_CCL);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
@@ -154,7 +150,7 @@ public class RpcMetricsTest {
 
             // Setup RPC
             Supervisor supervisor = new Supervisor(new Transport());
-            Target target = supervisor.connect(new Spec("localhost", rpcPort));
+            Target target = supervisor.connect(new Spec("localhost", tester.rpcPort()));
 
             String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), VESPA_CONSUMER_ID, target);
             assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));

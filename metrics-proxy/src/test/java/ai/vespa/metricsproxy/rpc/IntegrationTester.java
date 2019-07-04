@@ -44,8 +44,6 @@ public class IntegrationTester implements  AutoCloseable {
     static final String SERVICE_1_CONFIG_ID = "container/qrserver.0";
     static final String SERVICE_2_CONFIG_ID = "storage/cluster.storage/storage/0";
 
-    private final int httpPort;
-    private final int rpcPort;
     private final RpcConnector connector;
     private final MockHttpServer mockHttpServer;
     private final VespaServices vespaServices;
@@ -54,16 +52,11 @@ public class IntegrationTester implements  AutoCloseable {
         HttpMetricFetcher.CONNECTION_TIMEOUT = 60000; // 60 secs in unit tests
     }
 
-    IntegrationTester(int httpPort, int rpcPort) {
-        if (httpPort == 0 || rpcPort == 0) {
-            throw new IllegalArgumentException("http port and rpc port must be defined");
-        }
-        this.httpPort = httpPort;
-        this.rpcPort = rpcPort;
+    IntegrationTester() {
         try {
-            mockHttpServer = new MockHttpServer(httpPort, null, STATE_PATH);
+            mockHttpServer = new MockHttpServer(null, STATE_PATH);
         } catch (IOException e) {
-            throw new RuntimeException("Unable to start web server on port:" + httpPort);
+            throw new RuntimeException("Unable to start web server");
         }
 
         vespaServices = new VespaServices(servicesConfig(), monitoringConfig(), null);
@@ -74,7 +67,8 @@ public class IntegrationTester implements  AutoCloseable {
         NodeDimensions nodeDimensions = new NodeDimensions(nodeDimensionsConfig());
 
         connector = new RpcConnector(rpcConnectorConfig());
-        RpcServer server = new RpcServer(connector, vespaServices, new MetricsManager(vespaServices, vespaMetrics, externalMetrics,                                                                                     appDimensions, nodeDimensions));
+        RpcServer server = new RpcServer(connector, vespaServices,
+                new MetricsManager(vespaServices, vespaMetrics, externalMetrics, appDimensions, nodeDimensions));
     }
 
     MockHttpServer httpServer() {
@@ -91,7 +85,7 @@ public class IntegrationTester implements  AutoCloseable {
 
     private RpcConnectorConfig rpcConnectorConfig() {
         return new RpcConnectorConfig.Builder()
-                .port(rpcPort)
+                .port(0)
                 .build();
     }
 
@@ -113,8 +107,8 @@ public class IntegrationTester implements  AutoCloseable {
 
     private VespaServicesConfig servicesConfig() {
         return new VespaServicesConfig.Builder()
-                .service(createService(toServiceId("qrserver"), SERVICE_1_CONFIG_ID, httpPort))
-                .service(createService(toServiceId("storagenode"), SERVICE_2_CONFIG_ID, httpPort))
+                .service(createService(toServiceId("qrserver"), SERVICE_1_CONFIG_ID, httpPort()))
+                .service(createService(toServiceId("storagenode"), SERVICE_2_CONFIG_ID, httpPort()))
                 .build();
     }
 
@@ -138,6 +132,14 @@ public class IntegrationTester implements  AutoCloseable {
 
     private NodeDimensionsConfig nodeDimensionsConfig() {
         return new NodeDimensionsConfig.Builder().build();
+    }
+
+    public int rpcPort() {
+        return connector.port();
+    }
+
+    public int httpPort() {
+        return mockHttpServer.port();
     }
 
 }

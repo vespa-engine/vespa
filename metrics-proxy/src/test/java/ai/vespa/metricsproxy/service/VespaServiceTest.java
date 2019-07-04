@@ -18,8 +18,7 @@ import static org.junit.Assert.assertThat;
  * @author Unknown
  */
 public class VespaServiceTest {
-    private MockHttpServer service;
-    private int csPort;
+    private MockHttpServer httpServer;
     private static final String response;
 
     static {
@@ -29,9 +28,8 @@ public class VespaServiceTest {
 
     @Before
     public void setupHTTPServer() {
-        csPort = 18632; // see factory/doc/port-ranges.txt
         try {
-            service = new MockHttpServer(csPort, response, METRICS_PATH);
+            httpServer = new MockHttpServer(response, METRICS_PATH);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,7 +54,7 @@ public class VespaServiceTest {
     @Test
     // TODO: Make it possible to test this without running a HTTP server to create the response
     public void testMetricsFetching() {
-        VespaService service = VespaService.create("service1", "id", csPort);
+        VespaService service = VespaService.create("service1", "id", httpServer.port());
         Metrics metrics = service.getMetrics();
         assertThat(metrics.getMetric("queries.count").getValue().intValue(), is(28));
 
@@ -70,7 +68,7 @@ public class VespaServiceTest {
 
     @After
     public void shutdown() {
-        this.service.close();
+        this.httpServer.close();
     }
 
 }
