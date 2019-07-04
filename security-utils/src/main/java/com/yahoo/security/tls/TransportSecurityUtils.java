@@ -66,7 +66,7 @@ public class TransportSecurityUtils {
 
     public static Optional<TlsContext> createTlsContext() {
         return getConfigFile()
-                .map(configFile -> new ConfigFiledBasedTlsContext(configFile, getInsecureAuthorizationMode()));
+                .map(configFile -> new ConfigFileBasedTlsContext(configFile, getInsecureAuthorizationMode()));
     }
 
     private static Optional<String> getEnvironmentVariable(Map<String, String> environmentVariables, String variableName) {

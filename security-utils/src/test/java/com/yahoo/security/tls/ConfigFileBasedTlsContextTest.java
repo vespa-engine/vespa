@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author bjorncs
  */
-public class ConfigFiledBasedTlsContextTest {
+public class ConfigFileBasedTlsContextTest {
 
     @Rule
     public TemporaryFolder tempDirectory = new TemporaryFolder();
@@ -55,7 +55,7 @@ public class ConfigFiledBasedTlsContextTest {
         Path optionsFile = tempDirectory.newFile().toPath();
         options.toJsonFile(optionsFile);
 
-        try (TlsContext tlsContext = new ConfigFiledBasedTlsContext(optionsFile, AuthorizationMode.ENFORCE)) {
+        try (TlsContext tlsContext = new ConfigFileBasedTlsContext(optionsFile, AuthorizationMode.ENFORCE)) {
             SSLEngine sslEngine = tlsContext.createSslEngine();
             assertThat(sslEngine).isNotNull();
             String[] enabledCiphers = sslEngine.getEnabledCipherSuites();

@@ -36,16 +36,16 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-public class ConfigFiledBasedTlsContext implements TlsContext {
+public class ConfigFileBasedTlsContext implements TlsContext {
 
     private static final Duration UPDATE_PERIOD = Duration.ofHours(1);
 
-    private static final Logger log = Logger.getLogger(ConfigFiledBasedTlsContext.class.getName());
+    private static final Logger log = Logger.getLogger(ConfigFileBasedTlsContext.class.getName());
 
     private final TlsContext tlsContext;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new ReloaderThreadFactory());
 
-    public ConfigFiledBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
+    public ConfigFileBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         MutableX509TrustManager trustManager = new MutableX509TrustManager();
         MutableX509KeyManager keyManager = new MutableX509KeyManager();
