@@ -15,6 +15,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -295,7 +297,7 @@ public class ConfigProxyRpcServerTest {
         }
 
         void invoke(Request request) {
-            target.invokeSync(request, 0/*no timeout*/);
+            target.invokeSync(request, Duration.ofMinutes(10).getSeconds());
         }
 
         @Override
