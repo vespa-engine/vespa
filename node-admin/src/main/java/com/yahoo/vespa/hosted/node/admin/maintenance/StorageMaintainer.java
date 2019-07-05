@@ -3,17 +3,14 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
-import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,11 +19,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +29,6 @@ import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
-import static com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig.nodeTypeToRole;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -47,7 +40,6 @@ public class StorageMaintainer {
             .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
 
     private final Terminal terminal;
-    private final DockerOperations dockerOperations;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
 
@@ -57,132 +49,10 @@ public class StorageMaintainer {
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    public StorageMaintainer(Terminal terminal, DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
+    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.terminal = terminal;
-        this.dockerOperations = dockerOperations;
         this.coredumpHandler = coredumpHandler;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
-    }
-
-    public void writeMetricsConfig(NodeAgentContext context) {
-        List<SecretAgentCheckConfig> configs = new ArrayList<>();
-        Map<String, Object> tags = generateTags(context);
-
-        // host-life
-        Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
-        configs.add(new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath).withTags(tags));
-
-        // coredumps (except for the done coredumps which is handled by the host)
-        Path coredumpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
-        configs.add(new SecretAgentCheckConfig("system-coredumps-processing", 300, coredumpCheckPath,
-                "--application", "system-coredumps-processing",
-                "--lastmin", "129600",
-                "--crit", "1",
-                "--coredir", context.pathInNodeUnderVespaHome("var/crash/processing").toString())
-                .withTags(tags));
-
-        // athenz certificate check
-        Path athenzCertExpiryCheckPath = context.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
-        configs.add(new SecretAgentCheckConfig("athenz-certificate-expiry", 60, athenzCertExpiryCheckPath,
-                "--threshold", "20")
-                .withRunAsUser("root")
-                .withTags(tags));
-
-        if (context.nodeType() != NodeType.config) {
-            // vespa-health
-            Path vespaHealthCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
-            configs.add(new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all")
-                    .withRunAsUser(context.vespaUser())
-                    .withTags(tags));
-
-            // vespa
-            Path vespaCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
-            SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
-            vespaSchedule.withRunAsUser(context.vespaUser());
-            if (isConfigserverLike(context.nodeType())) {
-                Map<String, Object> tagsWithoutNameSpace = new LinkedHashMap<>(tags);
-                tagsWithoutNameSpace.remove("namespace");
-                vespaSchedule.withTags(tagsWithoutNameSpace);
-            }
-            configs.add(vespaSchedule);
-        }
-
-        if (context.nodeType() == NodeType.config || context.nodeType() == NodeType.controller) {
-
-            // configserver/controller
-            Path configServerNewCheckPath = Paths.get("/usr/bin/curl");
-            configs.add(new SecretAgentCheckConfig(nodeTypeToRole(context.nodeType()), 60, configServerNewCheckPath,
-                                                   "-s", "localhost:19071/yamas-metrics")
-                                .withTags(tags));
-
-            //zkbackupage
-            Path zkbackupCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
-            configs.add(new SecretAgentCheckConfig("zkbackupage", 300, zkbackupCheckPath,
-                    "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
-                    "-m", "150",
-                    "-a", "config-zkbackupage")
-                    .withTags(tags));
-
-	    String appName = nodeTypeToRole(context.nodeType()) + "-logd";
-            Path logdCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/convert-state-metrics-2-yamas.py");
-            configs.add(new SecretAgentCheckConfig(appName, 60, logdCheckPath,
-                    appName, "http://localhost:19089/state/v1/metrics")
-                    .withTags(tags));
-        }
-
-        if (context.nodeType() == NodeType.proxy) {
-            //routing-configage
-            Path routingAgeCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
-            configs.add(new SecretAgentCheckConfig("routing-configage", 60, routingAgeCheckPath,
-                    "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf.tmp").toString(),
-                    "-m", "1",
-                    "-a", "routing-configage",
-                    "--ignore_file_not_found")
-                    .withTags(tags));
-
-            //ssl-check
-            Path sslCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
-            configs.add(new SecretAgentCheckConfig("ssl-status", 300, sslCheckPath,
-                    "-e", "localhost",
-                    "-p", "4443",
-                    "-t", "30")
-                    .withTags(tags));
-        }
-
-        // Write config and restart yamas-agent
-        Path yamasAgentFolder = context.pathOnHostFromPathInNode("/etc/yamas-agent");
-        configs.forEach(s -> uncheck(() -> s.writeTo(yamasAgentFolder)));
-        dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
-    }
-
-    private Map<String, Object> generateTags(NodeAgentContext context) {
-        Map<String, String> tags = new LinkedHashMap<>();
-        tags.put("namespace", "Vespa");
-        tags.put("role", nodeTypeToRole(context.node().type()));
-        tags.put("zone", context.zone().getId().value());
-        context.node().currentVespaVersion().ifPresent(version -> tags.put("vespaVersion", version.toFullString()));
-
-        if (! isConfigserverLike(context.nodeType())) {
-            tags.put("state", context.node().state().toString());
-            context.node().parentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
-            context.node().owner().ifPresent(owner -> {
-                tags.put("tenantName", owner.tenant());
-                tags.put("app", owner.application() + "." + owner.instance());
-                tags.put("applicationName", owner.application());
-                tags.put("instanceName", owner.instance());
-                tags.put("applicationId", owner.tenant() + "." + owner.application() + "." + owner.instance());
-            });
-            context.node().membership().ifPresent(membership -> {
-                tags.put("clustertype", membership.clusterType());
-                tags.put("clusterid", membership.clusterId());
-            });
-        }
-
-        return Collections.unmodifiableMap(tags);
-    }
-
-    private boolean isConfigserverLike(NodeType nodeType) {
-        return nodeType == NodeType.config || nodeType == NodeType.controller;
     }
 
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {

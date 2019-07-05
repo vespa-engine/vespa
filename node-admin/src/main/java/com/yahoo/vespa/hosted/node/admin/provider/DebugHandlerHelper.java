@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
  */
 @ThreadSafe
 public class DebugHandlerHelper implements NodeAdminDebugHandler {
-    private Object monitor = new Object();
     private final ConcurrentMap<String, Supplier<Object>> suppliers = new ConcurrentHashMap<>();
 
     public void addThreadSafeSupplier(String name, Supplier<Object> threadSafeSupplier) {

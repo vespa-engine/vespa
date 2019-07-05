@@ -2,21 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.component.Version;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
@@ -35,162 +23,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author dybis
  */
 @RunWith(Enclosed.class)
 public class StorageMaintainerTest {
-    private static final DockerOperations docker = mock(DockerOperations.class);
-
-    public static class SecretAgentCheckTests {
-        private final StorageMaintainer storageMaintainer = new StorageMaintainer(null, docker, null, null);
-
-        @Test
-        public void tenant() {
-            Path path = executeAs(NodeType.tenant);
-
-            assertChecks(path, "athenz-certificate-expiry", "host-life",
-                    "system-coredumps-processing", "vespa", "vespa-health");
-
-            // All dimensions for vespa metrics should be set by metricsproxy
-            assertCheckEnds(path.resolve("vespa.yaml"),
-                    "  args:\n" +
-                    "    - all\n");
-
-            // For non vespa metrics, we need to set all the dimensions ourselves
-            assertCheckEnds(path.resolve("host-life.yaml"),
-                    "tags:\n" +
-                    "    namespace: Vespa\n" +
-                    "    role: tenants\n" +
-                    "    zone: prod.us-north-1\n" +
-                    "    vespaVersion: 6.305.12\n" +
-                    "    state: active\n" +
-                    "    parentHostname: host123.test.domain.tld\n" +
-                    "    tenantName: tenant\n" +
-                    "    app: application.instance\n" +
-                    "    applicationName: application\n" +
-                    "    instanceName: instance\n" +
-                    "    applicationId: tenant.application.instance\n" +
-                    "    clustertype: clusterType\n" +
-                    "    clusterid: clusterId\n");
-        }
-
-        @Test
-        public void proxy() {
-            Path path = executeAs(NodeType.proxy);
-
-            assertChecks(path, "athenz-certificate-expiry", "host-life", "routing-configage",
-                    "ssl-status", "system-coredumps-processing", "vespa", "vespa-health");
-
-            // All dimensions for vespa metrics should be set by the source
-            assertCheckEnds(path.resolve("vespa.yaml"),
-                    "  args:\n" +
-                    "    - all\n");
-
-            // For non vespa metrics, we need to set all the dimensions ourselves
-            assertCheckEnds(path.resolve("host-life.yaml"),
-                    "tags:\n" +
-                    "    namespace: Vespa\n" +
-                    "    role: routing\n" +
-                    "    zone: prod.us-north-1\n" +
-                    "    vespaVersion: 6.305.12\n" +
-                    "    state: active\n" +
-                    "    parentHostname: host123.test.domain.tld\n" +
-                    "    tenantName: tenant\n" +
-                    "    app: application.instance\n" +
-                    "    applicationName: application\n" +
-                    "    instanceName: instance\n" +
-                    "    applicationId: tenant.application.instance\n" +
-                    "    clustertype: clusterType\n" +
-                    "    clusterid: clusterId\n");
-        }
-
-        @Test
-        public void configserver() {
-            Path path = executeAs(NodeType.config);
-
-            assertChecks(path, "athenz-certificate-expiry", "configserver", "configserver-logd", "host-life",
-                         "system-coredumps-processing", "zkbackupage");
-
-            assertCheckEnds(path.resolve("configserver.yaml"),
-                    "  tags:\n" +
-                    "    namespace: Vespa\n" +
-                    "    role: configserver\n" +
-                    "    zone: prod.us-north-1\n" +
-                    "    vespaVersion: 6.305.12\n");
-        }
-
-        @Test
-        public void controller() {
-            Path path = executeAs(NodeType.controller);
-
-            assertChecks(path, "athenz-certificate-expiry", "controller", "controller-logd", "host-life",
-                         "system-coredumps-processing", "vespa", "vespa-health", "zkbackupage");
-
-
-            // Do not set namespace for vespa metrics. WHY?
-            assertCheckEnds(path.resolve("vespa.yaml"),
-                    "  tags:\n" +
-                    "    role: controller\n" +
-                    "    zone: prod.us-north-1\n" +
-                    "    vespaVersion: 6.305.12\n");
-
-            assertCheckEnds(path.resolve("controller.yaml"),
-                    "  tags:\n" +
-                    "    namespace: Vespa\n" +
-                    "    role: controller\n" +
-                    "    zone: prod.us-north-1\n" +
-                    "    vespaVersion: 6.305.12\n");
-        }
-
-        private Path executeAs(NodeType nodeType) {
-            ZoneApi zone = mock(ZoneApi.class);
-            when(zone.getId()).thenReturn(ZoneId.from(Environment.prod, RegionName.from("us-north-1")));
-
-            NodeSpec nodeSpec = new NodeSpec.Builder()
-                    .hostname("host123-5.test.domain.tld")
-                    .type(nodeType)
-                    .state(NodeState.active)
-                    .parentHostname("host123.test.domain.tld")
-                    .owner(new NodeOwner("tenant", "application", "instance"))
-                    .membership(new NodeMembership("clusterType", "clusterId", null, 0, false))
-                    .currentVespaVersion(Version.fromString("6.305.12"))
-                    .flavor("d-2-8-50")
-                    .canonicalFlavor("d-2-8-50")
-                    .build();
-            NodeAgentContext context = new NodeAgentContextImpl.Builder(nodeSpec)
-                    .fileSystem(TestFileSystem.create())
-                    .zone(zone)
-                    .build();
-            Path path = context.pathOnHostFromPathInNode("/etc/yamas-agent");
-            uncheck(() -> Files.createDirectories(path));
-            storageMaintainer.writeMetricsConfig(context);
-            return path;
-        }
-
-        private void assertCheckEnds(Path checkPath, String contentsEnd) {
-            String contents = new UnixPath(checkPath).readUtf8File();
-            assertTrue(contents, contents.endsWith(contentsEnd));
-        }
-
-        private void assertChecks(Path checksPath, String... checkNames) {
-            List<String> expectedChecks = Stream.of(checkNames).sorted().collect(Collectors.toList());
-            List<String> actualChecks = FileFinder.files(checksPath).stream()
-                    .map(FileFinder.FileAttributes::filename)
-                    .map(filename -> filename.replaceAll("\\.yaml$", ""))
-                    .sorted()
-                    .collect(Collectors.toList());
-            assertEquals(expectedChecks, actualChecks);
-        }
-    }
 
     public static class DiskUsageTests {
 
@@ -198,7 +39,7 @@ public class StorageMaintainerTest {
 
         @Test
         public void testDiskUsed() throws IOException {
-            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, docker, null, null);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null);
             FileSystem fileSystem = TestFileSystem.create();
             NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld").fileSystem(fileSystem).build();
             Files.createDirectories(context.pathOnHostFromPathInNode("/"));
@@ -212,7 +53,7 @@ public class StorageMaintainerTest {
 
         @Test
         public void testNonExistingDiskUsed() {
-            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, docker, null, null);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, null, null);
             long usedBytes = storageMaintainer.getDiskUsedInBytes(null, Paths.get("/fake/path"));
             assertEquals(0L, usedBytes);
         }
@@ -244,7 +85,7 @@ public class StorageMaintainerTest {
 
 
             // Archive container-1
-            StorageMaintainer storageMaintainer = new StorageMaintainer(null, docker, null, pathToArchiveDir);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(null, null, pathToArchiveDir);
             storageMaintainer.archiveNodeStorage(context1);
 
             // container-1 should be gone from container-storage
