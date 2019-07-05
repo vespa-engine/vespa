@@ -11,6 +11,7 @@ import com.yahoo.container.BundlesConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Servlet;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.utils.FileSender;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -60,6 +62,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
+        addTestrunnerComponentsIfTester(deployState);
     }
 
     @Override
@@ -84,6 +87,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         for (Component<?, ?> component : getAllComponents()) {
             FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
         }
+    }
+
+    private void addTestrunnerComponentsIfTester(DeployState deployState) {
+        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester())
+            addPlatformBundle(Paths.get(Defaults.getDefaults().underVespaHome("lib/jars/vespa-testrunner-components-jar-with-dependencies.jar")));
     }
 
     public void setModelEvaluation(ContainerModelEvaluation modelEvaluation) {
