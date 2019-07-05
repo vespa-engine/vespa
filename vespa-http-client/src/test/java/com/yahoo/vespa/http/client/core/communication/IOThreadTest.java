@@ -162,7 +162,7 @@ public class IOThreadTest {
 
     @Test
     public void requireThatEndpointConnectExceptionsArePropagated()
-        throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
+            throws IOException, ServerResponseException, InterruptedException, TimeoutException, ExecutionException {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         String errorMessage = "generic error message";
         IOException cause = new IOException(errorMessage);
