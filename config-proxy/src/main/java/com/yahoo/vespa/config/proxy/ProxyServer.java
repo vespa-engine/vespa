@@ -9,12 +9,10 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
-import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownload;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
@@ -61,6 +59,7 @@ public class ProxyServer implements Runnable {
     private static final double timingValuesRatio = 0.8;
     private final static TimingValues defaultTimingValues;
     private final boolean delayedResponseHandling;
+    private final FileDistributionAndUrlDownload fileDistributionAndUrlDownload;
 
     private volatile Mode mode = new Mode(DEFAULT);
 
@@ -88,8 +87,7 @@ public class ProxyServer implements Runnable {
         this.rpcServer = createRpcServer(spec);
         clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
         this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
-        new FileDistributionRpcServer(supervisor, new FileDownloader(new JRTConnectionPool(source)));
-        new UrlDownloadRpcServer(supervisor);
+        this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
@@ -267,6 +265,7 @@ public class ProxyServer implements Runnable {
         if (statistics != null) {
             statistics.stop();
         }
+        fileDistributionAndUrlDownload.close();
     }
 
     MemoryCache getMemoryCache() {
