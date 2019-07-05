@@ -73,53 +73,23 @@ public class DimensionRenamer {
         Map<String, Integer> solution = solveWithOrWithoutSoftConstraints(maxIterations);
         if (solution != null) return solution;
 
-        for (RenameTarget renameTarget : prioritizedRenameTargets()) {
-            System.out.println("Trying rename " + renameTarget);
-            insertRenameOperation(renameTarget);
+        for (RenameTarget target : prioritizedRenameTargets()) {
+            System.out.println("Trying rename " + target);
+            target.insertRename(this);
             solution = solveWithOrWithoutSoftConstraints(maxIterations);
             if (solution != null) return solution;
-            rollbackRenameOperation(renameTarget);
+            target.uninsertRename(this);
         }
         throw new IllegalArgumentException("Could not find a dimension naming solution " +
                                            "given constraints\n" + constraintsToString(constraints));
     }
 
-    /** Inserts a rename operation if possible. Returns whether an operation was inserted. */
-    private boolean insertRenameOperation(RenameTarget target) {
-        Rename rename = new Rename(target.operation.modelName(),
-                                   "Dot_ExpandDims_1", "renamed_0",
-                                   target.input());
-
-        List<IntermediateOperation> newInputs = new ArrayList<>(target.operation.inputs());
-        newInputs.set(target.inputNumber, rename);
-        IntermediateOperation newOperation = target.operation.withInputs(newInputs);
-        if (target.rootKey == null)
-            throw new IllegalStateException("Renaming non-roots is not implemented");
-        graph.put(target.rootKey, newOperation);
-
-        removeConstraintsOf(target.operation);
-        rename.addDimensionNameConstraints(this);
-        newOperation.addDimensionNameConstraints(this);
-        return true;
-    }
-
-    /** Undo what insertRenameOperation has done: Set back the original operation and remove+add constraints */
-    private void rollbackRenameOperation(RenameTarget target) {
-        IntermediateOperation newOperation = graph.operations().get(target.rootKey);
-        Rename rename = (Rename)newOperation.inputs().get(target.inputNumber);
-        graph.put(target.rootKey, target.operation);
-
-        removeConstraintsOf(rename);
-        removeConstraintsOf(newOperation);
-        target.operation.addDimensionNameConstraints(this);
-    }
-
-    private void removeConstraintsOf(IntermediateOperation operation) {
-        for (Arc key : new HashSet<>(constraints.keySet())) {
-            if (key.operation == operation)
-                constraints.removeAll(key);
-        }
-    }
+    // TODO:
+    // Implement toFullString everywhere
+    // Review constraints and skip a==a constraints on creation
+    // Skip arguments with empty type?
+    // Support non-root ops?
+    // Implement tree search?
 
     private Map<String, Integer> solveWithOrWithoutSoftConstraints(int maxIterations) {
         Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
@@ -335,11 +305,14 @@ public class DimensionRenamer {
     /**
      * An operation and an input number which we may want to insert a rename operation at.
      * That is, we may want to change op(..., input, ...) to op(..., rename(input), ...).
+     *
+     * This class is (and must remain) immutable.
      */
     private static class RenameTarget {
 
         final IntermediateOperation operation;
         final int inputNumber;
+        final IntermediateGraph graph;
 
         /**
          * Returns the key of this operation in the root operations of the graph,
@@ -351,6 +324,7 @@ public class DimensionRenamer {
             this.operation = operation;
             this.inputNumber = inputNumber;
             this.rootKey = findRootKey(operation, graph);
+            this.graph = graph;
         }
 
         public IntermediateOperation input() {
@@ -363,6 +337,41 @@ public class DimensionRenamer {
                     return entry.getKey();
             }
             return null;
+        }
+
+        /** Inserts a rename operation if possible. Returns whether an operation was inserted. */
+        private boolean insertRename(DimensionRenamer renamer) {
+            Rename rename = new Rename(operation.modelName(), "Dot_ExpandDims_1", "renamed_0", input());
+
+            List<IntermediateOperation> newInputs = new ArrayList<>(operation.inputs());
+            newInputs.set(inputNumber, rename);
+            IntermediateOperation newOperation = operation.withInputs(newInputs);
+            if (rootKey == null)
+                throw new IllegalStateException("Renaming non-roots is not implemented");
+            graph.put(rootKey, newOperation);
+
+            removeConstraintsOf(operation, renamer);
+            rename.addDimensionNameConstraints(renamer);
+            newOperation.addDimensionNameConstraints(renamer);
+            return true;
+        }
+
+        /** Undo what insertRenameOperation has done: Set back the original operation and remove+add constraints */
+        private void uninsertRename(DimensionRenamer renamer) {
+            IntermediateOperation newOperation = graph.operations().get(rootKey);
+            Rename rename = (Rename)newOperation.inputs().get(inputNumber);
+            graph.put(rootKey, operation);
+
+            removeConstraintsOf(rename, renamer);
+            removeConstraintsOf(newOperation, renamer);
+            operation.addDimensionNameConstraints(renamer);
+        }
+
+        private void removeConstraintsOf(IntermediateOperation operation, DimensionRenamer renamer) {
+            for (Arc key : new HashSet<>(renamer.constraints.keySet())) {
+                if (key.operation == operation)
+                    renamer.constraints.removeAll(key);
+            }
         }
 
         @Override
