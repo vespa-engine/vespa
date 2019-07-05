@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -58,6 +57,8 @@ public class DimensionRenamer {
 
     /** Add a constraint between dimension names */
     public void addConstraint(String from, String to, Constraint constraint, IntermediateOperation operation) {
+        if (constraint instanceof EqualConstraint && from.equals(to)) return;
+
         Arc arc = new Arc(from, to, operation);
         constraints.put(arc, constraint);
         constraints.put(arc.opposite(), constraint.opposite());  // make constraint graph symmetric
@@ -83,12 +84,6 @@ public class DimensionRenamer {
         throw new IllegalArgumentException("Could not find a dimension naming solution " +
                                            "given constraints\n" + constraintsToString(constraints));
     }
-
-    // TODO:
-    // Review constraints and skip a==a constraints on creation
-    // Skip arguments with empty type?
-    // Support non-root ops?
-    // Implement tree search?
 
     private Map<String, Integer> solveWithOrWithoutSoftConstraints(int maxIterations) {
         Map<String, Integer> solution = NamingConstraintSolver.solve(dimensions, constraints, maxIterations);
@@ -132,9 +127,13 @@ public class DimensionRenamer {
         List<RenameTarget> targets = new ArrayList<>();
         for (IntermediateOperation operation : prioritizedOperations) {
             for (int i = 0; i < operation.inputs().size(); i++) {
-                RenameTarget target = new RenameTarget(operation, i, graph);
-                if (target.rootKey != null) // Inserting renames under non-roots is not implemented
-                    targets.add(new RenameTarget(operation, i, graph));
+                Optional<OrderedTensorType> inputType = operation.inputs().get(i).type();
+                if (inputType.isEmpty()) continue;
+                for (String dimensionName : inputType.get().dimensionNames()) {
+                    RenameTarget target = new RenameTarget(operation, i, dimensionName, graph);
+                    if (target.rootKey != null) // TODO: Inserting renames under non-roots is not implemented
+                        targets.add(target);
+                }
             }
         }
         return targets;
@@ -311,6 +310,7 @@ public class DimensionRenamer {
 
         final IntermediateOperation operation;
         final int inputNumber;
+        final String dimensionName;
         final IntermediateGraph graph;
 
         /**
@@ -319,9 +319,10 @@ public class DimensionRenamer {
          */
         final String rootKey;
 
-        public RenameTarget(IntermediateOperation operation, int inputNumber, IntermediateGraph graph) {
+        public RenameTarget(IntermediateOperation operation, int inputNumber, String dimensionName, IntermediateGraph graph) {
             this.operation = operation;
             this.inputNumber = inputNumber;
+            this.dimensionName = dimensionName;
             this.rootKey = findRootKey(operation, graph);
             this.graph = graph;
         }
@@ -340,7 +341,10 @@ public class DimensionRenamer {
 
         /** Inserts a rename operation if possible. Returns whether an operation was inserted. */
         private boolean insertRename(DimensionRenamer renamer) {
-            Rename rename = new Rename(operation.modelName(), "Dot_ExpandDims_1", "renamed_0", input());
+            Rename rename = new Rename(operation.modelName(),
+                                       dimensionName,
+                                       renamer.dimensionPrefix + renamer.dimensions.size(),
+                                       input());
 
             List<IntermediateOperation> newInputs = new ArrayList<>(operation.inputs());
             newInputs.set(inputNumber, rename);
