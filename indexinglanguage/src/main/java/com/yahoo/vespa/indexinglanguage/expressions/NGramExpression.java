@@ -48,6 +48,10 @@ public final class NGramExpression extends Expression {
     @Override
     protected void doExecute(ExecutionContext ctx) {
         StringFieldValue input = (StringFieldValue)ctx.getValue();
+        if (input.getSpanTree(SpanTrees.LINGUISTICS) != null) {
+            // This expression is already executed for this input instance
+            return;
+        }
         SpanList spanList = input.setSpanTree(new SpanTree(SpanTrees.LINGUISTICS)).spanList();
         int lastPosition = 0;
         for (Iterator<GramSplitter.Gram> it = linguistics.getGramSplitter().split(input.getString(), gramSize); it.hasNext();) {
