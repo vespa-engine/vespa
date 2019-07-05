@@ -35,6 +35,11 @@ public class Map extends IntermediateOperation {
     }
 
     @Override
+    public Map withInputs(List<IntermediateOperation> inputs) {
+        return new Map(modelName(), name(), inputs, operator);
+    }
+
+    @Override
     public String toString() {
         return "Map(" + asString(inputs().get(0).type()) + ", " + operator + ")";
     }

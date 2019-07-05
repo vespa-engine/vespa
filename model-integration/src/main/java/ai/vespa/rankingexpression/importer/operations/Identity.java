@@ -32,4 +32,9 @@ public class Identity extends IntermediateOperation {
         return inputs.get(0).function().orElse(null);
     }
 
+    @Override
+    public Identity withInputs(List<IntermediateOperation> inputs) {
+        return new Identity(modelName(), name(), inputs);
+    }
+
 }

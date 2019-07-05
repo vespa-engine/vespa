@@ -86,6 +86,11 @@ public class Const extends IntermediateOperation {
     }
 
     @Override
+    public Const withInputs(List<IntermediateOperation> inputs) {
+        return new Const(modelName(), name(), inputs, attributeMap, type);
+    }
+
+    @Override
     public String toString() {
         return "\t" + lazyGetType() + ":\tConst(" + type + ")";
     }

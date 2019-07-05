@@ -192,9 +192,7 @@ public abstract class IntermediateOperation {
                                                 .collect(Collectors.toList()));
     }
 
-    public IntermediateOperation withInputs(List<IntermediateOperation> inputs) {
-        throw new UnsupportedOperationException();
-    }
+    public abstract IntermediateOperation withInputs(List<IntermediateOperation> inputs);
 
     public String toFullString() { return toString(); }
 

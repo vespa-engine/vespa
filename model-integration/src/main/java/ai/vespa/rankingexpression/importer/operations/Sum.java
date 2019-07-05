@@ -108,6 +108,11 @@ public class Sum extends IntermediateOperation {
     }
 
     @Override
+    public Sum withInputs(List<IntermediateOperation> inputs) {
+        return new Sum(modelName(), name(), inputs, attributeMap);
+    }
+
+    @Override
     public String toString() {
         return "Sum(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + reduceDimensions + ")";
     }

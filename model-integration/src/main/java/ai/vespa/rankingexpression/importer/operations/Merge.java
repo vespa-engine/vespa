@@ -32,4 +32,9 @@ public class Merge extends IntermediateOperation {
         return null;
     }
 
+    @Override
+    public Merge withInputs(List<IntermediateOperation> inputs) {
+        return new Merge(modelName(), name(), inputs);
+    }
+
 }

@@ -85,4 +85,9 @@ public class Select extends IntermediateOperation {
         renamer.addConstraint(aDim1, bDim1, DimensionRenamer.Constraint.equal(false), this);
     }
 
+    @Override
+    public Select withInputs(List<IntermediateOperation> inputs) {
+        return new Select(modelName(), name(), inputs);
+    }
+
 }

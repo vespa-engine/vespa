@@ -102,6 +102,11 @@ public class ExpandDims extends IntermediateOperation {
     }
 
     @Override
+    public ExpandDims withInputs(List<IntermediateOperation> inputs) {
+        return new ExpandDims(modelName(), name(), inputs);
+    }
+
+    @Override
     public String toString() {
         return "ExpandDims(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + expandDimensions + ")";
     }

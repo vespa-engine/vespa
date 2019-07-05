@@ -74,6 +74,11 @@ public class Reshape extends IntermediateOperation {
         }
     }
 
+    @Override
+    public Reshape withInputs(List<IntermediateOperation> inputs) {
+        return new Reshape(modelName(), name(), inputs);
+    }
+
     public static TensorFunction reshape(TensorFunction inputFunction, TensorType inputType, TensorType outputType) {
         if ( ! OrderedTensorType.tensorSize(inputType).equals(OrderedTensorType.tensorSize(outputType)))
             throw new IllegalArgumentException("New and old shape of tensor must have the same size when reshaping");

@@ -37,6 +37,11 @@ public class Shape extends IntermediateOperation {
         return true;
     }
 
+    @Override
+    public Shape withInputs(List<IntermediateOperation> inputs) {
+        return new Shape(modelName(), name(), inputs);
+    }
+
     private void createConstantValue() {
         if (!allInputTypesPresent(1)) {
             return;

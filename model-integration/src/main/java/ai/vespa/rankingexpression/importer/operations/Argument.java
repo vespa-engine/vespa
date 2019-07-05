@@ -53,6 +53,13 @@ public class Argument extends IntermediateOperation {
     }
 
     @Override
+    public Argument withInputs(List<IntermediateOperation> inputs) {
+        if ( ! inputs.isEmpty())
+            throw new IllegalArgumentException("Argument cannot take inputs");
+        return new Argument(modelName(), name(), type);
+    }
+
+    @Override
     public String toString() {
         return "\t" + lazyGetType() + ":\tArgument(" + standardNamingType + ")";
     }

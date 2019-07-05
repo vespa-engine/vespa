@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class Constant extends IntermediateOperation {
@@ -54,6 +55,13 @@ public class Constant extends IntermediateOperation {
     @Override
     public boolean isConstant() {
         return true;
+    }
+
+    @Override
+    public Constant withInputs(List<IntermediateOperation> inputs) {
+        if ( ! inputs.isEmpty())
+            throw new IllegalArgumentException("Constant cannot take inputs");
+        return new Constant(modelName(), name(), type);
     }
 
 }

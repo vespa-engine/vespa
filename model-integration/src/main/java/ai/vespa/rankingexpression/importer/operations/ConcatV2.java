@@ -99,4 +99,9 @@ public class ConcatV2 extends IntermediateOperation {
         concatDimensionName = renamer.dimensionNameOf(concatDimensionName).orElse(concatDimensionName);
    }
 
+    @Override
+    public ConcatV2 withInputs(List<IntermediateOperation> inputs) {
+        return new ConcatV2(modelName(), name(), inputs);
+    }
+
 }

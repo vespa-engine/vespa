@@ -42,6 +42,11 @@ public class Switch extends IntermediateOperation {
         return predicate == port ? inputs().get(0).function().get() : null;
     }
 
+    @Override
+    public Switch withInputs(List<IntermediateOperation> inputs) {
+        return new Switch(modelName(), name(), inputs, port);
+    }
+
 }
 
 

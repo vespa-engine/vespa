@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.operations;
 
+import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -46,4 +47,18 @@ public class Rename extends IntermediateOperation {
         return new com.yahoo.tensor.functions.Rename(inputs.get(0).function().orElse(null), from, to);
     }
 
+    @Override
+    public void addDimensionNameConstraints(DimensionRenamer renamer) {
+        renamer.addDimension(to);
+    }
+
+    @Override
+    public Rename withInputs(List<IntermediateOperation> inputs) {
+        if (inputs.size() != 1)
+            throw new IllegalArgumentException("Rename require 1 input, not " + inputs.size());
+        return new Rename(modelName(), from, to, inputs.get(0));
+    }
+
 }
+
+

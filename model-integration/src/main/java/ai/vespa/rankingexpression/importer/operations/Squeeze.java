@@ -70,6 +70,11 @@ public class Squeeze extends IntermediateOperation {
         squeezeDimensions = renamedDimensions;
     }
 
+    @Override
+    public Squeeze withInputs(List<IntermediateOperation> inputs) {
+        return new Squeeze(modelName(), name(), inputs, attributeMap);
+    }
+
     private OrderedTensorType reducedType(OrderedTensorType inputType) {
         OrderedTensorType.Builder builder = new OrderedTensorType.Builder(resultValueType());
         for (TensorType.Dimension dimension: inputType.type().dimensions()) {

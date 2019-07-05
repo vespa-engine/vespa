@@ -37,4 +37,9 @@ public class Softmax extends IntermediateOperation {
         return new com.yahoo.tensor.functions.Softmax(inputFunction, dimension);
     }
 
+    @Override
+    public Softmax withInputs(List<IntermediateOperation> inputs) {
+        return new Softmax(modelName(), name(), inputs);
+    }
+
 }
