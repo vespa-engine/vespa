@@ -352,6 +352,15 @@ public class DatabaseHandler {
         doNextZooKeeperTask(context);
     }
 
+    // TODO should we expand this to cover _any_ pending ZK write?
+    public boolean hasPendingClusterStateMetaDataStore() {
+        synchronized (databaseMonitor) {
+            return ((zooKeeperAddress != null) &&
+                    ((pendingStore.clusterStateBundle != null) ||
+                     (pendingStore.lastSystemStateVersion != null)));
+        }
+    }
+
     public ClusterStateBundle getLatestClusterStateBundle() throws InterruptedException {
         log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Retrieving latest cluster state bundle from ZooKeeper", nodeIndex));
         synchronized (databaseMonitor) {
