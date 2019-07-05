@@ -15,6 +15,7 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.DownService;
 import ai.vespa.metricsproxy.service.DummyService;
 import ai.vespa.metricsproxy.service.VespaService;
@@ -38,6 +39,7 @@ import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -159,6 +161,21 @@ public class MetricsManagerTest {
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertThat(packets.size(), is(2));
+    }
+
+    @Test
+    public void application_from_extra_metrics_packets_is_used_as_service_in_result_packets() {
+        final ServiceId serviceId = toServiceId("custom-service");
+        metricsManager.setExtraMetrics(ImmutableList.of(
+                new MetricsPacket.Builder(serviceId)
+                        .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
+
+        List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
+        MetricsPacket extraPacket = null;
+        for (MetricsPacket packet : packets) {
+            if (packet.service.equals(serviceId)) extraPacket = packet;
+        }
+        assertNotNull(extraPacket);
     }
 
     @Test

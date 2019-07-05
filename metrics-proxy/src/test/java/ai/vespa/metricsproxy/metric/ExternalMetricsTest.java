@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
@@ -38,15 +39,17 @@ public class ExternalMetricsTest {
     }
 
     @Test
-    public void service_id_is_set_to_vespa_node_id() {
+    public void service_id_from_extra_packets_is_not_replaced() {
+        final ServiceId SERVICE_ID = toServiceId("do-not-replace");
+
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
         ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers);
         externalMetrics.setExtraMetrics(ImmutableList.of(
-                new MetricsPacket.Builder(toServiceId("replace_with_vespa_node_id"))));
+                new MetricsPacket.Builder(SERVICE_ID)));
 
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();
         assertEquals(1, packets.size());
-        assertEquals(VESPA_NODE_SERVICE_ID, packets.get(0).build().service);
+        assertEquals(SERVICE_ID, packets.get(0).build().service);
     }
 
     @Test

@@ -17,7 +17,9 @@ import com.yahoo.jrt.Transport;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
@@ -34,6 +36,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author jobergum
@@ -41,13 +45,60 @@ import static org.junit.Assert.assertThat;
  */
 public class RpcMetricsTest {
 
-    private static final String METRICS_RESPONSE_CCL =
-            getFileContents("metrics-storage-simple.json").trim();
+    private static final String METRICS_RESPONSE = getFileContents("metrics-storage-simple.json").trim();
+    private static final String EXTRA_APP = "extra";
+
+    private static class RpcClient implements AutoCloseable {
+        private final Supervisor supervisor;
+        private final Target target;
+
+        RpcClient(int port) {
+            supervisor = new Supervisor(new Transport());
+            target = supervisor.connect(new Spec("localhost", port));
+        }
+
+        @Override
+        public void close() {
+            target.close();
+            supervisor.transport().shutdown().join();
+        }
+    }
+
+    @Test
+    public void extra_metrics_are_added_to_output() throws Exception {
+        String extraMetricsPayload = "{\"timestamp\":1557754772,\"application\":\"" + EXTRA_APP +
+                "\",\"metrics\":{\"foo.count\":3},\"dimensions\":{\"role\":\"extra-role\"}}";
+
+        try (IntegrationTester tester = new IntegrationTester()) {
+            try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
+                Request req = new Request("setExtraMetrics");
+                req.parameters().add(new StringValue(extraMetricsPayload));
+                invoke(req, rpcClient, false);
+                String allServicesResponse = getMetricsForYamas(ALL_SERVICES, rpcClient).trim();
+
+                // Verify that application is used as serviceId, and that metric exists.
+                JSONObject extraMetrics = findExtraMetricsObject(allServicesResponse);
+                assertThat(extraMetrics.getJSONObject("metrics").getInt("foo.count"), is(3));
+                assertThat(extraMetrics.getJSONObject("dimensions").getString("role"), is("extra-role"));
+            }
+        }
+    }
+
+    private JSONObject findExtraMetricsObject(String jsonResponse) throws JSONException {
+        JSONArray metrics = new JSONObject(jsonResponse).getJSONArray("metrics");
+        for (int i = 0; i <  metrics.length(); i++) {
+            JSONObject jsonObject = metrics.getJSONObject(i);
+            assertTrue(jsonObject.has("application"));
+            if (jsonObject.getString("application").equals(EXTRA_APP)) return jsonObject;
+        }
+        fail("Metrics from setExtraMetrics was missing.");
+        throw new RuntimeException();
+    }
 
     @Test
     public void testGetMetrics() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
-            tester.httpServer().setResponse(METRICS_RESPONSE_CCL);
+            tester.httpServer().setResponse(METRICS_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
             assertThat("#Services should be 1 for config id " + SERVICE_1_CONFIG_ID, services.size(), is(1));
@@ -62,34 +113,29 @@ public class RpcMetricsTest {
             Metric m2 = metrics.getMetric("bar.count");
             assertNotNull("Did not find expected metric with name 'bar.count'", m2);
 
-            // Setup RPC client
-            Supervisor supervisor = new Supervisor(new Transport());
-            Target target = supervisor.connect(new Spec("localhost", tester.rpcPort()));
+            try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
+                verifyMetricsFromRpcRequest(qrserver, rpcClient);
 
-            verifyMetricsFromRpcRequest(qrserver, target);
+                services = tester.vespaServices().getInstancesById(SERVICE_2_CONFIG_ID);
+                assertThat("#Services should be 1 for config id " + SERVICE_2_CONFIG_ID, services.size(), is(1));
 
-            services = tester.vespaServices().getInstancesById(SERVICE_2_CONFIG_ID);
-            assertThat("#Services should be 1 for config id " + SERVICE_2_CONFIG_ID, services.size(), is(1));
+                VespaService storageService = services.get(0);
+                verfiyMetricsFromServiceObject(storageService);
 
-            VespaService storageService = services.get(0);
-            verfiyMetricsFromServiceObject(storageService);
+                String metricsById = getMetricsById(storageService.getConfigId(), rpcClient);
+                assertThat(metricsById, is("'storage.cluster.storage.storage.0'.foo_count=1 "));
 
-            String metricsById = getMetricsById(storageService.getConfigId(), target);
-            assertThat(metricsById, is("'storage.cluster.storage.storage.0'.foo_count=1 "));
+                String jsonResponse = getMetricsForYamas("non-existing", rpcClient).trim();
+                assertThat(jsonResponse, is("105: No service with name 'non-existing'"));
 
-            String jsonResponse = getMetricsForYamas("non-existing", target).trim();
-            assertThat(jsonResponse, is("105: No service with name 'non-existing'"));
+                verifyMetricsFromRpcRequestForAllServices(rpcClient);
 
-            verifyMetricsFromRpcRequestForAllServices(target);
-
-            // Shutdown RPC
-            target.close();
-            supervisor.transport().shutdown().join();
+            }
         }
     }
 
-    private static void verifyMetricsFromRpcRequest(VespaService service, Target target) throws JSONException {
-        String jsonResponse = getMetricsForYamas(service.getMonitoringName(), target).trim();
+    private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws JSONException {
+        String jsonResponse = getMetricsForYamas(service.getMonitoringName(), client).trim();
         JSONArray metrics = new JSONObject(jsonResponse).getJSONArray("metrics");
         assertThat("Expected 3 metric messages", metrics.length(), is(3));
         for (int i = 0; i < metrics.length() - 1; i++) { // The last "metric message" contains only status code/message
@@ -124,18 +170,18 @@ public class RpcMetricsTest {
         assertThat("Metric foo did not contain correct dimension for key = bar", foo.getDimensions().get(toDimensionId("bar")), is("foo"));
     }
 
-    private void verifyMetricsFromRpcRequestForAllServices(Target target) throws JSONException {
+    private void verifyMetricsFromRpcRequestForAllServices(RpcClient client) throws JSONException {
         // Verify that metrics for all services can be retrieved in one request.
-        String allServicesResponse = getMetricsForYamas(ALL_SERVICES, target).trim();
+        String allServicesResponse = getMetricsForYamas(ALL_SERVICES, client).trim();
         JSONArray allServicesMetrics = new JSONObject(allServicesResponse).getJSONArray("metrics");
         assertThat(allServicesMetrics.length(), is(5));
     }
 
     @Test
-    public void testGetAllMetricNames() {
+    public void testGetAllMetricNames() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
 
-            tester.httpServer().setResponse(METRICS_RESPONSE_CCL);
+            tester.httpServer().setResponse(METRICS_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
             assertThat(services.size(), is(1));
@@ -144,51 +190,47 @@ public class RpcMetricsTest {
             Metric m = metrics.getMetric("foo.count");
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
 
-
             Metric m2 = metrics.getMetric("bar.count");
             assertNotNull("Did not find expected metric with name 'bar'", m2);
 
-            // Setup RPC
-            Supervisor supervisor = new Supervisor(new Transport());
-            Target target = supervisor.connect(new Spec("localhost", tester.rpcPort()));
-
-            String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), VESPA_CONSUMER_ID, target);
-            assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));
-
-            // Shutdown RPC
-            target.close();
-            supervisor.transport().shutdown().join();
+            try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
+                String response = getAllMetricNamesForService(services.get(0).getMonitoringName(), VESPA_CONSUMER_ID, rpcClient);
+                assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));
+            }
         }
     }
 
-    private static String getMetricsForYamas(String service, Target target) {
+    private static String getMetricsForYamas(String service, RpcClient client) {
         Request req = new Request("getMetricsForYamas");
         req.parameters().add(new StringValue(service));
-        return invoke(req, target);
+        return invoke(req, client, true);
     }
 
-    private String getMetricsById(String service, Target target) {
+    private String getMetricsById(String service, RpcClient client) {
         Request req = new Request("getMetricsById");
         req.parameters().add(new StringValue(service));
-        return invoke(req, target);
+        return invoke(req, client, true);
     }
 
-    private String getAllMetricNamesForService(String service, ConsumerId consumer, Target target) {
+    private String getAllMetricNamesForService(String service, ConsumerId consumer, RpcClient client) {
         Request req = new Request("getAllMetricNamesForService");
         req.parameters().add(new StringValue(service));
         req.parameters().add(new StringValue(consumer.id));
-        return invoke(req, target);
+        return invoke(req, client, true);
     }
 
-    private static String invoke(Request req, Target target) {
+    private static String invoke(Request req, RpcClient client, boolean expectReturnValue) {
         String returnValue;
-        target.invokeSync(req, 20.0);
+        client.target.invokeSync(req, 20.0);
         if (req.checkReturnTypes("s")) {
             returnValue = req.returnValues().get(0).asString();
-        } else {
+        } else if (expectReturnValue) {
             System.out.println(req.methodName() + " from rpcserver - Invocation failed "
                                        + req.errorCode() + ": " + req.errorMessage());
             returnValue = req.errorCode() + ": " + req.errorMessage();
+        }
+        else {
+            return "";
         }
         return returnValue;
     }
