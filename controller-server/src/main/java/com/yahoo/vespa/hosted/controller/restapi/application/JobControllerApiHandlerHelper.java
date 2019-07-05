@@ -6,26 +6,26 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -94,14 +94,14 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();
 
+        Cursor lastVersionsObject = responseObject.setObject("lastVersions");
         if (application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
-            Cursor lastVersionsObject = responseObject.setObject("lastVersions");
             lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
             lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
         }
 
+        Cursor deployingObject = responseObject.setObject("deploying");
         if ( ! change.isEmpty()) {
-            Cursor deployingObject = responseObject.setObject("deploying");
             change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
             change.application().ifPresent(version -> applicationVersionToSlime(deployingObject.setObject("application"), version));
         }
