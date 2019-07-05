@@ -1,28 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("reference_attribute_test");
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/util/traits.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/document/base/documentid.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/traits.h>
 
-using vespalib::MemoryUsage;
-using vespalib::ArrayRef;
+#include <vespa/log/log.h>
+LOG_SETUP("reference_attribute_test");
+
+using document::DocumentId;
+using document::GlobalId;
 using generation_t = vespalib::GenerationHandler::generation_t;
+using search::AttributeGuard;
+using search::AttributeVector;
+using search::attribute::BasicType;
+using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
-using search::attribute::Config;
-using search::attribute::BasicType;
-using search::AttributeVector;
-using search::AttributeGuard;
-using document::GlobalId;
-using document::DocumentId;
+using vespalib::ArrayRef;
+using vespalib::MemoryUsage;
 
 namespace {
 
@@ -36,8 +37,7 @@ vespalib::string doc3("id:test:music::3");
 
 }
 
-struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory
-{
+struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory {
     MyGidToLidMapperFactory() {
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
@@ -55,8 +55,7 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
     }
 };
 
-class LidCollector
-{
+class LidCollector {
     std::vector<uint32_t> &_lids;
 public:
     LidCollector(std::vector<uint32_t> &lids)
@@ -66,11 +65,10 @@ public:
     void operator()(uint32_t lid) { _lids.push_back(lid); }
 };
 
-struct Fixture
-{
+struct ReferenceAttributeTest : public ::testing::Test {
     std::shared_ptr<ReferenceAttribute> _attr;
 
-    Fixture()
+    ReferenceAttributeTest()
         : _attr()
     {
         resetAttr();
@@ -122,36 +120,34 @@ struct Fixture
 
     void commit() { attr().commit(); }
 
-    void assertNoRef(uint32_t doc)
-    {
+    void assertNoRef(uint32_t doc) {
         EXPECT_TRUE(get(doc) == nullptr);
     }
 
     void assertRef(vespalib::stringref str, uint32_t doc) {
         const GlobalId *gid = get(doc);
-        EXPECT_TRUE(gid != nullptr);
-        EXPECT_EQUAL(toGid(str), *gid);
+        ASSERT_TRUE(gid != nullptr);
+        EXPECT_EQ(toGid(str), *gid);
     }
 
     void assertTargetLid(uint32_t doc, uint32_t expTargetLid) {
         auto ref = getRef(doc);
-        EXPECT_TRUE(ref != nullptr);
-        EXPECT_EQUAL(expTargetLid, ref->lid());
-        EXPECT_EQUAL(expTargetLid, _attr->getTargetLid(doc));
+        ASSERT_TRUE(ref != nullptr);
+        EXPECT_EQ(expTargetLid, ref->lid());
+        EXPECT_EQ(expTargetLid, _attr->getTargetLid(doc));
     }
 
     void assertNoTargetLid(uint32_t doc) {
         auto ref = getRef(doc);
         EXPECT_TRUE(ref == nullptr);
-        EXPECT_EQUAL(0u, _attr->getTargetLid(doc));
+        EXPECT_EQ(0u, _attr->getTargetLid(doc));
     }
 
-    void assertLids(uint32_t targetLid, std::vector<uint32_t> expLids)
-    {
+    void assertLids(uint32_t targetLid, std::vector<uint32_t> expLids) {
         std::vector<uint32_t> lids;
         LidCollector collector(lids);
         _attr->foreach_lid(targetLid, collector);
-        EXPECT_EQUAL(expLids, lids);
+        EXPECT_EQ(expLids, lids);
     }
 
     void save() {
@@ -176,9 +172,8 @@ struct Fixture
             }
             oldStatus = newStatus;
         }
-        EXPECT_GREATER(iterLimit, iter);
-        LOG(info,
-            "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
+        EXPECT_GT(iterLimit, iter);
+        LOG(info, "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
             iter, oldStatus.getUsed(), newStatus.getUsed());
     }
 
@@ -197,137 +192,138 @@ struct Fixture
     }
 };
 
-TEST_F("require that we can instantiate reference attribute", Fixture)
+TEST_F(ReferenceAttributeTest, reference_attribute_can_be_instantiated)
 {
-    f.ensureDocIdLimit(5);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.commit();
+    ensureDocIdLimit(5);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    commit();
 
-    TEST_DO(f.assertNoRef(3));
-    TEST_DO(f.assertRef(doc1, 1));
-    TEST_DO(f.assertRef(doc2, 2));
+    assertNoRef(3);
+    assertRef(doc1, 1);
+    assertRef(doc2, 2);
 }
 
-TEST_F("require that we can set new reference for a document", Fixture)
+TEST_F(ReferenceAttributeTest, new_reference_for_a_document_can_be_set)
 {
-    f.ensureDocIdLimit(5);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.set(3, toGid(doc2));
-    f.commit();
-    TEST_DO(f.assertNoRef(4));
-    TEST_DO(f.assertRef(doc1, 1));
-    TEST_DO(f.assertRef(doc2, 2));
-    TEST_DO(f.assertRef(doc2, 3));
-    f.set(2, toGid(doc1));
-    f.commit();
-    TEST_DO(f.assertNoRef(4));
-    TEST_DO(f.assertRef(doc1, 1));
-    TEST_DO(f.assertRef(doc1, 2));
-    TEST_DO(f.assertRef(doc2, 3));
+    ensureDocIdLimit(5);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    set(3, toGid(doc2));
+    commit();
+    assertNoRef(4);
+    assertRef(doc1, 1);
+    assertRef(doc2, 2);
+    assertRef(doc2, 3);
+    set(2, toGid(doc1));
+    commit();
+    assertNoRef(4);
+    assertRef(doc1, 1);
+    assertRef(doc1, 2);
+    assertRef(doc2, 3);
 }
 
-TEST_F("require that we can clear reference for a document", Fixture)
+TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
 {
-    f.ensureDocIdLimit(5);
-    f.set(2, toGid(doc2));
-    f.commit();
-    TEST_DO(f.assertRef(doc2, 2));
-    f.clear(2);
-    f.commit();
-    TEST_DO(f.assertNoRef(2));
-    f.clear(2);
-    f.commit();
-    TEST_DO(f.assertNoRef(2));
+    ensureDocIdLimit(5);
+    set(2, toGid(doc2));
+    commit();
+    assertRef(doc2, 2);
+    clear(2);
+    commit();
+    assertNoRef(2);
+    clear(2);
+    commit();
+    assertNoRef(2);
 }
 
-TEST_F("require that read guard protects reference", Fixture)
+TEST_F(ReferenceAttributeTest, read_guard_protects_references)
 {
-    f.ensureDocIdLimit(5);
-    f.set(2, toGid(doc2));
-    f.commit();
-    const GlobalId *gid = f.get(2);
-    EXPECT_TRUE(gid != nullptr);
-    EXPECT_EQUAL(toGid(doc2), *gid);
+    ensureDocIdLimit(5);
+    set(2, toGid(doc2));
+    commit();
+    const GlobalId *gid = get(2);
+    ASSERT_TRUE(gid != nullptr);
+    EXPECT_EQ(toGid(doc2), *gid);
     {
-        AttributeGuard guard(f._attr);
-        f.clear(2);
-        f.commit();
-        EXPECT_EQUAL(toGid(doc2), *gid);
+        AttributeGuard guard(_attr);
+        clear(2);
+        commit();
+        EXPECT_EQ(toGid(doc2), *gid);
     }
-    f.commit();
-    EXPECT_NOT_EQUAL(toGid(doc2), *gid);
+    commit();
+    EXPECT_NE(toGid(doc2), *gid);
 }
 
-TEST_F("require that we can compact attribute", Fixture)
+TEST_F(ReferenceAttributeTest, attribute_can_be_compacted)
 {
-    f.ensureDocIdLimit(5);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.commit();
-    TEST_DO(f.triggerCompaction(100000));
-    TEST_DO(f.assertNoRef(3));
-    TEST_DO(f.assertRef(doc1, 1));
-    TEST_DO(f.assertRef(doc2, 2));
+    ensureDocIdLimit(5);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    commit();
+    triggerCompaction(100000);
+    assertNoRef(3);
+    assertRef(doc1, 1);
+    assertRef(doc2, 2);
 }
 
-TEST_F("require that we can save and load attribute", Fixture)
+TEST_F(ReferenceAttributeTest, attribute_can_be_saved_and_loaded)
 {
-    f.ensureDocIdLimit(5);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.set(4, toGid(doc1));
-    f.commit();
-    f.save();
-    f.load();
-    EXPECT_EQUAL(5u, f.attr().getNumDocs());
-    TEST_DO(f.assertNoRef(3));
-    TEST_DO(f.assertRef(doc1, 1));
-    TEST_DO(f.assertRef(doc2, 2));
-    TEST_DO(f.assertRef(doc1, 4));
+    ensureDocIdLimit(5);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    set(4, toGid(doc1));
+    commit();
+    save();
+    load();
+    EXPECT_EQ(5u, attr().getNumDocs());
+    assertNoRef(3);
+    assertRef(doc1, 1);
+    assertRef(doc2, 2);
+    assertRef(doc1, 4);
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
-TEST_F("require that update() uses gid-mapper to set target lid", Fixture)
+TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid)
 {
-    f.ensureDocIdLimit(6);
+    ensureDocIdLimit(6);
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    f.setGidToLidMapperFactory(factory);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.set(4, toGid(doc1));
-    f.set(5, toGid(doc3));
-    f.commit();
-    TEST_DO(f.assertTargetLid(1, 10));
-    TEST_DO(f.assertTargetLid(2, 17));
-    TEST_DO(f.assertNoTargetLid(3));
-    TEST_DO(f.assertTargetLid(4, 10));
-    TEST_DO(f.assertTargetLid(5, 0));
+    setGidToLidMapperFactory(factory);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    set(4, toGid(doc1));
+    set(5, toGid(doc3));
+    commit();
+    assertTargetLid(1, 10);
+    assertTargetLid(2, 17);
+    assertNoTargetLid(3);
+    assertTargetLid(4, 10);
+    assertTargetLid(5, 0);
 }
 
-TEST_F("require that notifyReferencedPut() updates lid-2-lid mapping", Fixture)
+TEST_F(ReferenceAttributeTest, notifyReferencedPut_updates_lid_2_lid_mapping)
 {
-    f.ensureDocIdLimit(4);
-    f.set(1, toGid(doc1));
-    f.set(2, toGid(doc2));
-    f.set(3, toGid(doc1));
-    f.commit();
-    TEST_DO(f.assertTargetLid(1, 0));
-    TEST_DO(f.assertTargetLid(2, 0));
-    TEST_DO(f.assertTargetLid(3, 0));
-    f.notifyReferencedPut(toGid(doc1), 10);
-    f.notifyReferencedPut(toGid(doc2), 20);
-    f.notifyReferencedPut(toGid(doc3), 30);
-    TEST_DO(f.assertTargetLid(1, 10));
-    TEST_DO(f.assertTargetLid(2, 20));
-    TEST_DO(f.assertTargetLid(3, 10));
+    ensureDocIdLimit(4);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    set(3, toGid(doc1));
+    commit();
+    assertTargetLid(1, 0);
+    assertTargetLid(2, 0);
+    assertTargetLid(3, 0);
+    notifyReferencedPut(toGid(doc1), 10);
+    notifyReferencedPut(toGid(doc2), 20);
+    notifyReferencedPut(toGid(doc3), 30);
+    assertTargetLid(1, 10);
+    assertTargetLid(2, 20);
+    assertTargetLid(3, 10);
 }
 
 namespace {
 
-void preparePopulateTargetLids(Fixture &f)
+void
+preparePopulateTargetLids(ReferenceAttributeTest &f)
 {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
@@ -335,91 +331,92 @@ void preparePopulateTargetLids(Fixture &f)
     f.set(3, toGid(doc1));
     f.set(4, toGid(doc3));
     f.commit();
-    TEST_DO(f.assertTargetLid(1, 0));
-    TEST_DO(f.assertTargetLid(2, 0));
-    TEST_DO(f.assertTargetLid(3, 0));
-    TEST_DO(f.assertTargetLid(4, 0));
-    TEST_DO(f.assertNoTargetLid(5));
+    f.assertTargetLid(1, 0);
+    f.assertTargetLid(2, 0);
+    f.assertTargetLid(3, 0);
+    f.assertTargetLid(4, 0);
+    f.assertNoTargetLid(5);
 }
 
-void checkPopulateTargetLids(Fixture &f)
+void
+checkPopulateTargetLids(ReferenceAttributeTest &f)
 {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
     f.setGidToLidMapperFactory(factory);
-    TEST_DO(f.assertTargetLid(1, 10));
-    TEST_DO(f.assertTargetLid(2, 17));
-    TEST_DO(f.assertTargetLid(3, 10));
-    TEST_DO(f.assertTargetLid(4, 0));
-    TEST_DO(f.assertNoTargetLid(5));
-    TEST_DO(f.assertLids(0, { }));
-    TEST_DO(f.assertLids(10, { 1, 3}));
-    TEST_DO(f.assertLids(17, { 2 }));
-    TEST_DO(f.assertLids(18, { }));
+    f.assertTargetLid(1, 10);
+    f.assertTargetLid(2, 17);
+    f.assertTargetLid(3, 10);
+    f.assertTargetLid(4, 0);
+    f.assertNoTargetLid(5);
+    f.assertLids(0, { });
+    f.assertLids(10, { 1, 3});
+    f.assertLids(17, { 2 });
+    f.assertLids(18, { });
 }
 
 }
 
-TEST_F("require that populateTargetLids() uses gid-mapper to update lid-2-lid mapping", Fixture)
+TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping)
 {
-    TEST_DO(preparePopulateTargetLids(f));
-    TEST_DO(checkPopulateTargetLids(f));
+    preparePopulateTargetLids(*this);
+    checkPopulateTargetLids(*this);
 }
 
-TEST_F("require that populateTargetLids() uses gid-mapper to update lid-2-lid mapping after load", Fixture)
+TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping_after_load)
 {
-    TEST_DO(preparePopulateTargetLids(f));
-    f.save();
-    f.load();
-    TEST_DO(checkPopulateTargetLids(f));
+    preparePopulateTargetLids(*this);
+    save();
+    load();
+    checkPopulateTargetLids(*this);
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
 }
 
-TEST_F("Require that notifyReferencedPut and notifyReferencedRemove changes reverse mapping", Fixture)
+TEST_F(ReferenceAttributeTest, notifyReferencedPut_and_notifyReferencedRemove_changes_reverse_mapping)
 {
-    TEST_DO(preparePopulateTargetLids(f));
-    TEST_DO(f.assertLids(10, { }));
-    TEST_DO(f.assertLids(11, { }));
-    f.notifyReferencedPut(toGid(doc1), 10);
-    TEST_DO(f.assertLids(10, { 1, 3}));
-    TEST_DO(f.assertLids(11, { }));
-    f.notifyReferencedPut(toGid(doc1), 11);
-    TEST_DO(f.assertLids(10, { }));
-    TEST_DO(f.assertLids(11, { 1, 3}));
-    f.notifyReferencedRemove(toGid(doc1));
-    TEST_DO(f.assertLids(10, { }));
-    TEST_DO(f.assertLids(11, { }));
+    preparePopulateTargetLids(*this);
+    assertLids(10, { });
+    assertLids(11, { });
+    notifyReferencedPut(toGid(doc1), 10);
+    assertLids(10, { 1, 3});
+    assertLids(11, { });
+    notifyReferencedPut(toGid(doc1), 11);
+    assertLids(10, { });
+    assertLids(11, { 1, 3});
+    notifyReferencedRemove(toGid(doc1));
+    assertLids(10, { });
+    assertLids(11, { });
 }
 
-TEST_F("Require that we track unique gids", Fixture)
+TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
 {
-    EXPECT_EQUAL(0u, f.getUniqueGids());
-    f.notifyReferencedPut(toGid(doc1), 10);
-    EXPECT_EQUAL(1u, f.getUniqueGids());
-    f.ensureDocIdLimit(3);
-    f.set(1, toGid(doc1));
-    f.commit();
-    EXPECT_EQUAL(1u, f.getUniqueGids());
-    TEST_DO(f.assertTargetLid(1, 10));
-    TEST_DO(f.assertLids(10, { 1 }));
-    f.set(2, toGid(doc2));
-    f.commit();
-    EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertTargetLid(2, 0));
-    f.notifyReferencedPut(toGid(doc2), 17);
-    EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertTargetLid(2, 17));
-    TEST_DO(f.assertLids(17, { 2 }));
-    f.clear(1);
-    f.notifyReferencedRemove(toGid(doc2));
-    EXPECT_EQUAL(2u, f.getUniqueGids());
-    TEST_DO(f.assertNoTargetLid(1));
-    TEST_DO(f.assertTargetLid(2, 0));
-    TEST_DO(f.assertLids(10, { }));
-    TEST_DO(f.assertLids(17, { }));
-    f.clear(2);
-    f.notifyReferencedRemove(toGid(doc1));
-    EXPECT_EQUAL(0u, f.getUniqueGids());
+    EXPECT_EQ(0u, getUniqueGids());
+    notifyReferencedPut(toGid(doc1), 10);
+    EXPECT_EQ(1u, getUniqueGids());
+    ensureDocIdLimit(3);
+    set(1, toGid(doc1));
+    commit();
+    EXPECT_EQ(1u, getUniqueGids());
+    assertTargetLid(1, 10);
+    assertLids(10, { 1 });
+    set(2, toGid(doc2));
+    commit();
+    EXPECT_EQ(2u, getUniqueGids());
+    assertTargetLid(2, 0);
+    notifyReferencedPut(toGid(doc2), 17);
+    EXPECT_EQ(2u, getUniqueGids());
+    assertTargetLid(2, 17);
+    assertLids(17, { 2 });
+    clear(1);
+    notifyReferencedRemove(toGid(doc2));
+    EXPECT_EQ(2u, getUniqueGids());
+    assertNoTargetLid(1);
+    assertTargetLid(2, 0);
+    assertLids(10, { });
+    assertLids(17, { });
+    clear(2);
+    notifyReferencedRemove(toGid(doc1));
+    EXPECT_EQ(0u, getUniqueGids());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
