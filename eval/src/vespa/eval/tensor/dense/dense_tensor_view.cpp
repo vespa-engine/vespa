@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dense_tensor_view.h"
-#include "dense_tensor_apply.hpp"
+#include "dense_generic_join.hpp"
 #include "dense_tensor_reduce.hpp"
 #include "dense_tensor_modify.h"
 #include <vespa/vespalib/util/stringfmt.h>
@@ -302,12 +302,12 @@ DenseTensorView::join(join_fun_t function, const Tensor &arg) const
         return joinDenseTensors(*this, arg, "join", function);
     }
     if (function == eval::operation::Mul::f) {
-        return dense::apply(*this, arg, [](double a, double b) { return (a * b); });
+        return dense::generic_join(*this, arg, [](double a, double b) { return (a * b); });
     }
     if (function == eval::operation::Add::f) {
-        return dense::apply(*this, arg, [](double a, double b) { return (a + b); });
+        return dense::generic_join(*this, arg, [](double a, double b) { return (a + b); });
     }
-    return dense::apply(*this, arg, function);
+    return dense::generic_join(*this, arg, function);
 }
 
 Tensor::UP
