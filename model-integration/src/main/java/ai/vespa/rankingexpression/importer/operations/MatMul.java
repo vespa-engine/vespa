@@ -86,13 +86,6 @@ public class MatMul extends IntermediateOperation {
     }
 
     @Override
-    public String toFullString() {
-        return "\t" + lazyGetType() + ":\tMatMul(" + inputs().get(0).toFullString() + ", " + inputs().get(1).toFullString() + ")";
-    }
-
-    @Override
-    public String toString() {
-        return "MatMul(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ")";
-    }
+    public String operationName() { return "MatMul"; }
 
 }

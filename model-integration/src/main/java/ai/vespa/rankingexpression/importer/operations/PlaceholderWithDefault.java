@@ -50,4 +50,7 @@ public class PlaceholderWithDefault extends IntermediateOperation {
         return new PlaceholderWithDefault(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "PlaceholdeWithDefault"; }
+
 }

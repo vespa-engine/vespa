@@ -90,4 +90,7 @@ public class Select extends IntermediateOperation {
         return new Select(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "Select"; }
+
 }

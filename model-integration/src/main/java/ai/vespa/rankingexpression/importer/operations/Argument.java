@@ -60,7 +60,13 @@ public class Argument extends IntermediateOperation {
     }
 
     @Override
-    public String toString() {
+    public String operationName() { return "Argument"; }
+
+    @Override
+    public String toString() { return "Argument(" + standardNamingType + ")"; }
+
+    @Override
+    public String toFullString() {
         return "\t" + lazyGetType() + ":\tArgument(" + standardNamingType + ")";
     }
 

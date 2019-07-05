@@ -107,14 +107,6 @@ public class ExpandDims extends IntermediateOperation {
     }
 
     @Override
-    public String toString() {
-        return "ExpandDims(" + asString(inputs().get(0).type()) + ", " + asString(inputs().get(1).type()) + ", " + expandDimensions + ")";
-    }
-
-    @Override
-    public String toFullString() {
-        return "\t" + lazyGetType() + ":\tExpandDims(" + inputs().get(0).toFullString() + ", " +
-               inputs().get(1).toFullString() + ", " + expandDimensions + ")";
-    }
+    public String operationName() { return "ExpandDims"; }
 
 }

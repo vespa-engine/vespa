@@ -194,8 +194,6 @@ public abstract class IntermediateOperation {
 
     public abstract IntermediateOperation withInputs(List<IntermediateOperation> inputs);
 
-    public String toFullString() { return toString(); }
-
     String asString(Optional<OrderedTensorType> type) {
         return type.map(t -> t.toString()).orElse("(unknown)");
     }
@@ -226,6 +224,21 @@ public abstract class IntermediateOperation {
         Optional<Value> get(String key);
         Optional<Value> get(String key, OrderedTensorType type);
         Optional<List<Value>> getList(String key);
+    }
+
+    public abstract String operationName();
+
+    @Override
+    public String toString() {
+        return operationName() +
+               inputs().stream().map(input -> asString(input.type())).collect(Collectors.joining(", ")) +
+               ")";
+    }
+
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\t" + operationName() +
+               inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
+               ")";
     }
 
 }

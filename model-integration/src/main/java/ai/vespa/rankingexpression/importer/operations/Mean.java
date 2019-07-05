@@ -113,4 +113,7 @@ public class Mean extends IntermediateOperation {
         return builder.build();
     }
 
+    @Override
+    public String operationName() { return "Mean"; }
+
 }

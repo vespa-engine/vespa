@@ -64,4 +64,17 @@ public class Constant extends IntermediateOperation {
         return new Constant(modelName(), name(), type);
     }
 
+    @Override
+    public String operationName() { return "Constant"; }
+
+    @Override
+    public String toString() {
+        return "Constant(" + type + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\tConstant(" + type + ")";
+    }
+
 }

@@ -124,4 +124,7 @@ public class Reshape extends IntermediateOperation {
         return new ArithmeticNode(children, operators);
     }
 
+    @Override
+    public String operationName() { return "Reshape"; }
+
 }

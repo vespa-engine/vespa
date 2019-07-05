@@ -85,7 +85,6 @@ public class DimensionRenamer {
     }
 
     // TODO:
-    // Implement toFullString everywhere
     // Review constraints and skip a==a constraints on creation
     // Skip arguments with empty type?
     // Support non-root ops?

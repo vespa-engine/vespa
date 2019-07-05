@@ -42,4 +42,7 @@ public class Softmax extends IntermediateOperation {
         return new Softmax(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "SoftMax"; }
+
 }

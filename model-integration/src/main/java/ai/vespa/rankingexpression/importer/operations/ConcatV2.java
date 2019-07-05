@@ -9,6 +9,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ConcatV2 extends IntermediateOperation {
 
@@ -103,5 +104,8 @@ public class ConcatV2 extends IntermediateOperation {
     public ConcatV2 withInputs(List<IntermediateOperation> inputs) {
         return new ConcatV2(modelName(), name(), inputs);
     }
+
+    @Override
+    public String operationName() { return "ConcatV2"; }
 
 }

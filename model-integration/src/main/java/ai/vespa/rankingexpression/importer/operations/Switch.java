@@ -47,6 +47,9 @@ public class Switch extends IntermediateOperation {
         return new Switch(modelName(), name(), inputs, port);
     }
 
+    @Override
+    public String operationName() { return "Switch"; }
+
 }
 
 

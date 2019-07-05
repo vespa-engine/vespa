@@ -59,6 +59,9 @@ public class Rename extends IntermediateOperation {
         return new Rename(modelName(), from, to, inputs.get(0));
     }
 
+    @Override
+    public String operationName() { return "Rename"; }
+
 }
 
 

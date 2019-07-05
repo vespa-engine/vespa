@@ -55,4 +55,7 @@ public class Shape extends IntermediateOperation {
         this.setConstantValue(new TensorValue(builder.build()));
     }
 
+    @Override
+    public String operationName() { return "Shape"; }
+
 }

@@ -37,4 +37,7 @@ public class Merge extends IntermediateOperation {
         return new Merge(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "Merge"; }
+
 }

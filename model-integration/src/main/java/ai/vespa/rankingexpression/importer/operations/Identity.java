@@ -37,4 +37,7 @@ public class Identity extends IntermediateOperation {
         return new Identity(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "Identity"; }
+
 }

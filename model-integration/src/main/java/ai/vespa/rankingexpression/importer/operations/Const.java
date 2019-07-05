@@ -91,7 +91,15 @@ public class Const extends IntermediateOperation {
     }
 
     @Override
+    public String operationName() { return "Const"; }
+
+    @Override
     public String toString() {
+        return "Const(" + type + ")";
+    }
+
+    @Override
+    public String toFullString() {
         return "\t" + lazyGetType() + ":\tConst(" + type + ")";
     }
 

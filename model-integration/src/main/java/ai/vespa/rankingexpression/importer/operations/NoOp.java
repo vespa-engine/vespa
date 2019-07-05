@@ -28,4 +28,7 @@ public class NoOp extends IntermediateOperation {
         return new NoOp(modelName(), name(), inputs);
     }
 
+    @Override
+    public String operationName() { return "NoOp"; }
+
 }

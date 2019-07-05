@@ -85,4 +85,7 @@ public class Squeeze extends IntermediateOperation {
         return builder.build();
     }
 
+    @Override
+    public String operationName() { return "Squeeze"; }
+
 }
