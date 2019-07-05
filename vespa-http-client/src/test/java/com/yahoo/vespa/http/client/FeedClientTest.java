@@ -55,7 +55,6 @@ public class FeedClientTest {
         feedClient.stream(DOCID, "blob");
         while (resultsReceived.get() == 0) {Thread.sleep(3); }
         String stats = feedClient.getStatsAsJson();
-        System.out.println("Stats: "+ stats);
         assertTrue(stats.contains("\"dryRun\":true"));
         feedClient.close();
     }
