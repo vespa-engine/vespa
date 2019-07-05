@@ -111,7 +111,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
                         .orElseGet(() -> updateKeystore(configserverIdentity, generateKeystorePassword(), keyProvider, ztsClient, zoneConfig));
         keyManager.updateKeystore(keyStore, new char[0]);
         SSLContext sslContext = new SslContextBuilder()
-                .withTrustStore(trustStoreFile)
+                .withTrustStore(trustStoreFile, KeyStoreType.JKS)
                 .withKeyManager(keyManager)
                 .build();
         return new DefaultTlsContext(sslContext, PeerAuthentication.WANT);
