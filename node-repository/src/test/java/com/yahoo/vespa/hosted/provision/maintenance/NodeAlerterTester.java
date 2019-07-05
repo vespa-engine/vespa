@@ -44,7 +44,7 @@ public class NodeAlerterTester {
     }
 
     NodeAlerter makeNodeAlerter() {
-        return new NodeAlerter(nodeRepository, null, Duration.ofDays(1));
+        return new NodeAlerter(nodeRepository, new MetricsReporterTest.TestMetric(), Duration.ofDays(1));
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
@@ -273,15 +273,6 @@ public class NodeAlerterTester {
         List<Node> nodes = new ArrayList<>();
         for (var nmod : nmods) {
             if (nmod.type != NodeType.host && nmod.type != NodeType.tenant) continue;
-            if (nmod.type == NodeType.tenant && nmod.environment == Flavor.Type.BARE_METAL) continue;
-            NodeModel parent = nmods.stream()
-                    .filter(n -> n.hostname.equals(nmod.parentHostname.orElse("")))
-                    .findAny().orElse(null);
-            if ((nmod.state == Node.State.failed || nmod.state == Node.State.parked)
-                || (parent != null &&
-                    (parent.state == Node.State.failed || parent.state == Node.State.parked))) {
-                continue;
-            }
 
             nodes.add(createNodeFromModel(nmod));
         }
@@ -291,8 +282,9 @@ public class NodeAlerterTester {
 
     void cleanRepository() {
         nodeRepository.getNodes(NodeType.host).forEach(n -> nodeRepository.removeRecursively(n, true));
+        nodeRepository.getNodes().forEach(n -> nodeRepository.removeRecursively(n, true));
         if (nodeRepository.getNodes().size() != 0) {
-            throw new IllegalStateException("Removing all nodes didn't remove all nodes! [" + nodeRepository.getNodes().size() + "]");
+            throw new IllegalStateException("Cleaning repository didn't remove all nodes! [" + nodeRepository.getNodes().size() + "]");
         }
     }
 }
