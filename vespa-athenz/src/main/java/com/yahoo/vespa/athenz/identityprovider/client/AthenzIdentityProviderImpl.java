@@ -67,7 +67,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
     // TODO Make path to trust store config
-    private static final Path DEFAULT_TRUST_STORE = Paths.get(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.pem"));
+    private static final Path DEFAULT_TRUST_STORE = Paths.get(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"));
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
