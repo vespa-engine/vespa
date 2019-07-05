@@ -51,15 +51,17 @@ public class Main {
 
             Map<OutputVariable, String> outputVariables = new TreeMap<>();
             Optional<TransportSecurityOptions> options = TransportSecurityUtils.getOptions(envVars);
-            MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
-            if (options.isPresent() && mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
+            if (options.isPresent()) {
                 outputVariables.put(OutputVariable.TLS_ENABLED, "1");
                 options.get().getCaCertificatesFile()
                         .ifPresent(caCertFile -> outputVariables.put(OutputVariable.CA_CERTIFICATE, caCertFile.toString()));
-                options.get().getCertificatesFile()
-                        .ifPresent(certificateFile -> outputVariables.put(OutputVariable.CERTIFICATE, certificateFile.toString()));
-                options.get().getPrivateKeyFile()
-                        .ifPresent(privateKeyFile -> outputVariables.put(OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
+                MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode(envVars);
+                if (mixedMode != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
+                    options.get().getCertificatesFile()
+                            .ifPresent(certificateFile -> outputVariables.put(OutputVariable.CERTIFICATE, certificateFile.toString()));
+                    options.get().getPrivateKeyFile()
+                            .ifPresent(privateKeyFile -> outputVariables.put(OutputVariable.PRIVATE_KEY, privateKeyFile.toString()));
+                }
             }
             shell.writeOutputVariables(stdOut, outputVariables);
             EnumSet<OutputVariable> unusedVariables = outputVariables.isEmpty()
