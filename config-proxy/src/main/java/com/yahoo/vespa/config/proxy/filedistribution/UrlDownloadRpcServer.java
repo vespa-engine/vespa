@@ -1,5 +1,5 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.proxy;
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.jrt.Method;
@@ -26,6 +26,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.UrlDownloader.DOES_NOT_EXIST;
@@ -37,7 +38,7 @@ import static com.yahoo.vespa.config.UrlDownloader.INTERNAL_ERROR;
  *
  * @author lesters
  */
-public class UrlDownloadRpcServer {
+class UrlDownloadRpcServer {
     private final static Logger log = Logger.getLogger(UrlDownloadRpcServer.class.getName());
 
     private static final String CONTENTS_FILE_NAME = "contents";
@@ -45,7 +46,7 @@ public class UrlDownloadRpcServer {
 
     private final File downloadBaseDir;
     private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                                                     new DaemonThreadFactory("Rpc download executor"));
+                                                                                     new DaemonThreadFactory("Rpc URL download executor"));
 
     UrlDownloadRpcServer(Supervisor supervisor) {
         supervisor.addMethod(new Method("url.waitFor", "s", "s", this::download)
@@ -53,6 +54,15 @@ public class UrlDownloadRpcServer {
                                     .paramDesc(0, "url", "url")
                                     .returnDesc(0, "path", "path to file"));
         downloadBaseDir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
+    }
+
+    void close() {
+        rpcDownloadExecutor.shutdownNow();
+        try {
+            rpcDownloadExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void download(Request req) {

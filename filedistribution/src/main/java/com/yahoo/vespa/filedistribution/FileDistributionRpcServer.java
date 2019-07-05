@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,15 @@ public class FileDistributionRpcServer {
         this.supervisor = supervisor;
         this.downloader = downloader;
         declareFileDistributionMethods();
+    }
+
+    public void close() {
+        rpcDownloadExecutor.shutdownNow();
+        try {
+            rpcDownloadExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void declareFileDistributionMethods() {
