@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.http.ssl.impl.TlsContextBasedProvider;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyStoreBuilder;
@@ -64,8 +63,7 @@ public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvid
     @Inject
     public ConfigserverSslContextFactoryProvider(ServiceIdentityProvider bootstrapIdentity,
                                                  KeyProvider keyProvider,
-                                                 AthenzProviderServiceConfig config,
-                                                 Zone zone) {
+                                                 AthenzProviderServiceConfig config) {
         this.athenzProviderServiceConfig = config;
         this.ztsClient = new DefaultZtsClient(URI.create(athenzProviderServiceConfig.ztsUrl()), bootstrapIdentity);
         this.keyProvider = keyProvider;
