@@ -45,4 +45,12 @@ public class PlaceholderWithDefault extends IntermediateOperation {
         return true;  // not true if we add to function
     }
 
+    @Override
+    public PlaceholderWithDefault withInputs(List<IntermediateOperation> inputs) {
+        return new PlaceholderWithDefault(modelName(), name(), inputs);
+    }
+
+    @Override
+    public String operationName() { return "PlaceholdeWithDefault"; }
+
 }

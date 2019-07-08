@@ -95,7 +95,7 @@ public class Join extends IntermediateOperation {
         for (int i = 0; i < b.rank(); ++i) {
             String bDim = b.dimensions().get(i).name();
             String aDim = a.dimensions().get(i + sizeDifference).name();
-            renamer.addConstraint(aDim, bDim, DimensionRenamer::equals, this);
+            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(false), this);
         }
     }
 
@@ -110,5 +110,13 @@ public class Join extends IntermediateOperation {
         OrderedTensorType b = inputs.get(1).type().get();
         return a.rank() < b.rank() ? inputs.get(0) : inputs.get(1);
     }
+
+    @Override
+    public Join withInputs(List<IntermediateOperation> inputs) {
+        return new Join(modelName(), name(), inputs, operator);
+    }
+
+    @Override
+    public String operationName() { return "Join"; }
 
 }

@@ -30,7 +30,7 @@ public class ExpandDims extends IntermediateOperation {
         if ( ! allInputTypesPresent(2)) return null;
 
         IntermediateOperation axisOperation = inputs().get(1);
-        if (!axisOperation.getConstantValue().isPresent()) {
+        if ( ! axisOperation.getConstantValue().isPresent()) {
             throw new IllegalArgumentException("ExpandDims in " + name + ": Axis must be a constant.");
         }
         Tensor axis = axisOperation.getConstantValue().get().asTensor();
@@ -47,16 +47,21 @@ public class ExpandDims extends IntermediateOperation {
         expandDimensions = new ArrayList<>();
         int dimensionIndex = 0;
         for (TensorType.Dimension dimension : inputType.dimensions()) {
-            if (dimensionIndex == dimensionToInsert) {
-                String name = String.format("%s_%d", vespaName(), dimensionIndex);
-                expandDimensions.add(name);
-                typeBuilder.add(TensorType.Dimension.indexed(name, 1L));
-            }
+            if (dimensionIndex == dimensionToInsert)
+                addDimension(dimensionIndex, typeBuilder);
             typeBuilder.add(dimension);
             dimensionIndex++;
         }
-
+        if (dimensionToInsert == inputType.dimensions().size()) { // Insert last dimension
+            addDimension(dimensionIndex, typeBuilder);
+        }
         return typeBuilder.build();
+    }
+
+    private void addDimension(int dimensionIndex, OrderedTensorType.Builder typeBuilder) {
+        String name = String.format("%s_%d", vespaName(), dimensionIndex);
+        expandDimensions.add(name);
+        typeBuilder.add(TensorType.Dimension.indexed(name, 1L));
     }
 
     @Override
@@ -88,12 +93,20 @@ public class ExpandDims extends IntermediateOperation {
         List<String> renamedDimensions = new ArrayList<>(expandDimensions.size());
         for (String name : expandDimensions) {
             Optional<String> newName = renamer.dimensionNameOf(name);
-            if (!newName.isPresent()) {
+            if ( ! newName.isPresent()) {
                 return;  // presumably, already renamed
             }
             renamedDimensions.add(newName.get());
         }
         expandDimensions = renamedDimensions;
     }
+
+    @Override
+    public ExpandDims withInputs(List<IntermediateOperation> inputs) {
+        return new ExpandDims(modelName(), name(), inputs);
+    }
+
+    @Override
+    public String operationName() { return "ExpandDims"; }
 
 }

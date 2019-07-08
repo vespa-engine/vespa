@@ -29,7 +29,7 @@ public class Argument extends IntermediateOperation {
     @Override
     protected TensorFunction lazyGetFunction() {
         TensorFunction output = new VariableTensor(vespaName(), standardNamingType.type());
-        if (!standardNamingType.equals(type)) {
+        if ( ! standardNamingType.equals(type)) {
             List<String> renameFrom = standardNamingType.dimensionNames();
             List<String> renameTo = type.dimensionNames();
             output = new Rename(output, renameFrom, renameTo);
@@ -39,9 +39,7 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override
@@ -52,6 +50,24 @@ public class Argument extends IntermediateOperation {
     @Override
     public boolean isConstant() {
         return false;
+    }
+
+    @Override
+    public Argument withInputs(List<IntermediateOperation> inputs) {
+        if ( ! inputs.isEmpty())
+            throw new IllegalArgumentException("Argument cannot take inputs");
+        return new Argument(modelName(), name(), type);
+    }
+
+    @Override
+    public String operationName() { return "Argument"; }
+
+    @Override
+    public String toString() { return "Argument(" + standardNamingType + ")"; }
+
+    @Override
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\tArgument(" + standardNamingType + ")";
     }
 
 }

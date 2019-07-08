@@ -2576,6 +2576,20 @@
     ],
     "fields": []
   },
+  "com.yahoo.text.ExpressionFormatter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String format(java.lang.String)",
+      "public static java.lang.String on(java.lang.String)",
+      "public static com.yahoo.text.ExpressionFormatter withLineLength(int)",
+      "public static com.yahoo.text.ExpressionFormatter inTwoColumnMode(int, int)"
+    ],
+    "fields": []
+  },
   "com.yahoo.text.ForwardWriter": {
     "superClass": "com.yahoo.text.GenericWriter",
     "interfaces": [],
