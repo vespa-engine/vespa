@@ -4,10 +4,7 @@ package com.yahoo.vespa.config.proxy.filedistribution;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.JRTConnectionPool;
-import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
 import com.yahoo.vespa.filedistribution.FileDownloader;
-
-import java.util.stream.Stream;
 
 /**
  * Keeps track of file distribution and url download rpc servers.

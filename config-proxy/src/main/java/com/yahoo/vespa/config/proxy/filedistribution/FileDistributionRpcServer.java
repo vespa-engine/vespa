@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.filedistribution;
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.config.proxy.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
@@ -11,6 +11,8 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
 import java.io.File;
 import java.util.Arrays;
