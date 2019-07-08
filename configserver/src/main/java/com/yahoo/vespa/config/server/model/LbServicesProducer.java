@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -93,37 +94,50 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {
-        LbServicesConfig.Tenants.Applications.Hosts.Builder hb = new LbServicesConfig.Tenants.Applications.Hosts.Builder();
-        hb.hostname(hostInfo.getHostname());
-        hostInfo.getServices().stream()
-                 .forEach(serviceInfo -> {
-                     hb.services(serviceInfo.getServiceName(), getServiceConfig(serviceInfo));
-                 });
-        return hb;
+        var hostsBuilder = new LbServicesConfig.Tenants.Applications.Hosts.Builder()
+                .hostname(hostInfo.getHostname());
+
+        hostInfo.getServices().forEach(serviceInfo -> {
+            hostsBuilder.services(serviceInfo.getServiceName(), getServiceConfig(serviceInfo));
+        });
+
+        return hostsBuilder;
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Services.Builder getServiceConfig(ServiceInfo serviceInfo) {
-        List<String> endpointAliases = Stream.of(serviceInfo.getProperty("endpointaliases").orElse("").split(",")).
-                filter(prop -> !"".equals(prop)).collect(Collectors.toList());
-        endpointAliases.addAll(Stream.of(serviceInfo.getProperty("rotations").orElse("").split(",")).filter(prop -> !"".equals(prop)).collect(Collectors.toList()));
-        Collections.sort(endpointAliases);
+        var endpointAliases = serviceInfo.getProperty("endpointaliases").stream()
+                .flatMap(value -> Arrays.stream(value.split(",")));
 
-        LbServicesConfig.Tenants.Applications.Hosts.Services.Builder sb = new LbServicesConfig.Tenants.Applications.Hosts.Services.Builder()
+        var rotations = serviceInfo.getProperty("rotations").stream()
+                .flatMap(value -> Arrays.stream(value.split(",")));
+
+        var aliasesAndRotations = Stream.concat(endpointAliases, rotations)
+                .filter(value -> ! value.isEmpty())
+                .sorted()
+                .collect(Collectors.toList());
+
+        var serviceAliases = serviceInfo.getProperty("servicealiases").stream()
+                .flatMap(value -> Arrays.stream(value.split(",")))
+                .filter(value -> ! value.isEmpty())
+                .sorted()
+                .collect(Collectors.toList());
+
+        var servicesBuilder = new LbServicesConfig.Tenants.Applications.Hosts.Services.Builder()
                 .type(serviceInfo.getServiceType())
                 .clustertype(serviceInfo.getProperty("clustertype").orElse(""))
                 .clustername(serviceInfo.getProperty("clustername").orElse(""))
                 .configId(serviceInfo.getConfigId())
-                .servicealiases(Stream.of(serviceInfo.getProperty("servicealiases").orElse("").split(",")).
-                                filter(prop -> !"".equals(prop)).sorted((a, b) -> a.compareTo(b)).collect(Collectors.toList()))
-                .endpointaliases(endpointAliases)
+                .servicealiases(serviceAliases)
+                .endpointaliases(aliasesAndRotations)
                 .index(Integer.parseInt(serviceInfo.getProperty("index").orElse("999999")));
-        serviceInfo.getPorts().stream()
-                .forEach(portInfo -> {
-                    LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder pb = new LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder()
-                        .number(portInfo.getPort())
-                        .tags(Joiner.on(" ").join(portInfo.getTags()));
-                    sb.ports(pb);
-                });
-        return sb;
+
+        serviceInfo.getPorts().forEach(portInfo -> {
+            var portsBuilder = new LbServicesConfig.Tenants.Applications.Hosts.Services.Ports.Builder()
+                    .number(portInfo.getPort())
+                    .tags(Joiner.on(" ").join(portInfo.getTags()));
+            servicesBuilder.ports(portsBuilder);
+        });
+
+        return servicesBuilder;
     }
 }

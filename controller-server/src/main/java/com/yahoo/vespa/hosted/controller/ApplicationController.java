@@ -98,6 +98,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -522,6 +523,26 @@ public class ApplicationController {
         );
 
         return List.of(assignment);
+    }
+
+    private List<ContainerEndpoint> createContainerEndpoints(Application application, RegionName region) {
+        Function<AssignedRotation, ContainerEndpoint> createContainerEndpoint = (AssignedRotation rotation) -> {
+            var dnsNames = application.endpointsIn(controller.system(), rotation.endpointId())
+                    .legacy(false)
+                    .asList()
+                    .stream()
+                    .map(Endpoint::dnsName);
+
+            var rotationNames = application.rotations().stream().map(RotationId::asString);
+            var allNames = Stream.concat(dnsNames, rotationNames).collect(Collectors.toList());
+
+            return new ContainerEndpoint(rotation.clusterId().value(), allNames);
+        };
+
+        return application.assignedRotations().stream()
+                .filter(assignedRotation -> assignedRotation.regions().contains(region))
+                .map(createContainerEndpoint)
+                .collect(Collectors.toList());
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
