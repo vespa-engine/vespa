@@ -1,9 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/queryeval/fake_result.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -18,10 +23,15 @@ using document::GlobalId;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using search::AttributeGuard;
 using search::AttributeVector;
+using search::QueryTermSimple;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
+using search::attribute::SearchContextParams;
+using search::fef::TermFieldMatchData;
+using search::queryeval::FakeResult;
+using search::queryeval::SearchIterator;
 using vespalib::ArrayRef;
 using vespalib::MemoryUsage;
 
@@ -73,6 +83,8 @@ struct ReferenceAttributeTest : public ::testing::Test {
     {
         resetAttr();
     }
+
+    ~ReferenceAttributeTest() {}
 
     AttributeVector &attr() {
         return *_attr;
@@ -417,6 +429,50 @@ TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
     clear(2);
     notifyReferencedRemove(toGid(doc1));
     EXPECT_EQ(0u, getUniqueGids());
+}
+
+struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {
+
+    constexpr static uint32_t doc_id_limit = 6;
+
+    ReferenceAttributeSearchTest()
+        : ReferenceAttributeTest()
+    {
+        ensureDocIdLimit(doc_id_limit);
+        set(1, toGid(doc1));
+        set(3, toGid(doc2));
+        set(4, toGid(doc1));
+        commit();
+    }
+
+    FakeResult perform_search(SearchIterator& itr) {
+        FakeResult result;
+        itr.initFullRange();
+        for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
+            if (itr.seek(doc_id)) {
+                result.doc(doc_id);
+            }
+        }
+        return result;
+    }
+
+    void expect_search_result(const std::string& term, const FakeResult& expected) {
+        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD),
+                                    SearchContextParams());
+        TermFieldMatchData tfmd;
+        auto itr = ctx->createIterator(&tfmd, false);
+        FakeResult actual = perform_search(*itr);
+        EXPECT_EQ(expected, actual);
+    }
+
+};
+
+TEST_F(ReferenceAttributeSearchTest, can_be_searched_by_document_id)
+{
+    expect_search_result(doc1, FakeResult().doc(1).doc(4));
+    expect_search_result(doc2, FakeResult().doc(3));
+    expect_search_result(doc3, FakeResult());
+    expect_search_result("invalid document id", FakeResult());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

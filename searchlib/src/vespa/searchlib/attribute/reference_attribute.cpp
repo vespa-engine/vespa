@@ -1,20 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "reference_attribute.h"
-#include "reference_attribute_saver.h"
 #include "attributesaver.h"
 #include "readerbase.h"
-#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include "reference_attribute.h"
+#include "reference_attribute_saver.h"
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/base/idstringexception.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include <vespa/vespalib/datastore/unique_store_builder.h>
+#include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/unique_store.hpp>
-#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/datastore/unique_store_builder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.reference_attribute");
 
 namespace search::attribute {
+
+using document::DocumentId;
+using document::GlobalId;
+using document::IdParseException;
 
 namespace {
 
@@ -265,7 +272,7 @@ ReferenceAttribute::update(DocId doc, const GlobalId &gid)
 }
 
 const Reference *
-ReferenceAttribute::getReference(DocId doc)
+ReferenceAttribute::getReference(DocId doc) const
 {
     assert(doc < _indices.size());
     EntryRef ref = _indices[doc];
@@ -409,6 +416,56 @@ ReferenceAttribute::onShrinkLidSpace()
     _indices.shrink(committedDocIdLimit);
     _referenceMappings.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
+}
+
+namespace {
+
+class ReferenceSearchContext : public AttributeVector::SearchContext {
+private:
+    const ReferenceAttribute& _ref_attr;
+    GlobalId _term;
+
+public:
+    ReferenceSearchContext(const ReferenceAttribute& ref_attr, const GlobalId& term)
+        : AttributeVector::SearchContext(ref_attr),
+          _ref_attr(ref_attr),
+          _term(term)
+    {
+    }
+    bool valid() const override {
+        return _term != GlobalId();
+    }
+    int32_t onFind(DocId docId, int32_t elementId, int32_t& weight) const override {
+        if (elementId != 0) {
+            return -1;
+        }
+        auto* ref = _ref_attr.getReference(docId);
+        if (ref == nullptr) {
+            return -1;
+        }
+        weight = 1;
+        return (_term == ref->gid()) ? 0 : -1;
+    }
+    int32_t onFind(DocId docId, int32_t elementId) const override {
+        int32_t weight;
+        return onFind(docId, elementId, weight);
+    }
+};
+
+}
+
+AttributeVector::SearchContext::UP
+ReferenceAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const
+{
+    (void) params;
+    GlobalId gid;
+    try {
+        DocumentId docId(term->getTerm());
+        gid = docId.getGlobalId();
+    } catch (const IdParseException&) {
+        // The query term is not valid, which will result in an empty search iterator.
+    }
+    return std::make_unique<ReferenceSearchContext>(*this, gid);
 }
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
