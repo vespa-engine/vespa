@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  *
  * @author hmusum
  */
-public class FileDistributionRpcServer {
+class FileDistributionRpcServer {
 
     private final static Logger log = Logger.getLogger(FileDistributionRpcServer.class.getName());
 
@@ -38,13 +38,13 @@ public class FileDistributionRpcServer {
     private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),
                                                                                      new DaemonThreadFactory("Rpc executor"));
 
-    public FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
+    FileDistributionRpcServer(Supervisor supervisor, FileDownloader downloader) {
         this.supervisor = supervisor;
         this.downloader = downloader;
         declareFileDistributionMethods();
     }
 
-    public void close() {
+    void close() {
         rpcDownloadExecutor.shutdownNow();
         try {
             rpcDownloadExecutor.awaitTermination(10, TimeUnit.SECONDS);
@@ -80,8 +80,6 @@ public class FileDistributionRpcServer {
     private static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
 
     private static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
-    private static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
-    private static final int fileReferenceInternalError = fileReferenceRemoved + 1;
 
     private void getFile(Request req) {
         req.detach();
@@ -118,19 +116,16 @@ public class FileDistributionRpcServer {
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
         log.log(LogLevel.DEBUG, () -> "getFile() called for file reference '" + fileReference.value() + "'");
-        Optional<File> pathToFile = downloader.getFile(fileReference);
-        try {
-            if (pathToFile.isPresent()) {
-                req.returnValues().add(new StringValue(pathToFile.get().getAbsolutePath()));
-                log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' available at " + pathToFile.get());
-            } else {
-                log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
-                req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
-            }
-        } catch (Throwable e) {
-            log.log(LogLevel.WARNING, "File reference '" + fileReference.value() + "' got exception: " + e.getMessage());
-            req.setError(fileReferenceInternalError, "File reference '" + fileReference.value() + "' removed");
+        Optional<File> file = downloader.getFile(fileReference);
+        if (file.isPresent()) {
+            new RequestTracker().trackRequest(file.get().getParentFile());
+            req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
+            log.log(LogLevel.DEBUG, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
+        } else {
+            log.log(LogLevel.INFO, "File reference '" + fileReference.value() + "' not found, returning error");
+            req.setError(fileReferenceDoesNotExists, "File reference '" + fileReference.value() + "' not found");
         }
+
         req.returnRequest();
     }
 
