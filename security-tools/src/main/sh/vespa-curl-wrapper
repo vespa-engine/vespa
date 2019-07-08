@@ -6,26 +6,23 @@
 
 set -e
 
-. $(vespa-security-env)
+eval $(vespa-security-env)
 
-CURL_PARAMETERS=$1
-CONFIGSERVER_URI_WITHOUT_SCHEME=$2
+CURL_PARAMETERS=("$@")
 
 if [ -n "${VESPA_TLS_ENABLED}" ]
 then
-  CONFIGSERVER_URI="https://${CONFIGSERVER_URI_WITHOUT_SCHEME}"
-else
-  CONFIGSERVER_URI="http://${CONFIGSERVER_URI_WITHOUT_SCHEME}"
+  CURL_PARAMETERS=("${CURL_PARAMETERS[@]/http:/https:}")
 fi
 
 if [ -n "${VESPA_TLS_CA_CERT}" ]
 then
-  CURL_PARAMETERS="--cacert \"${VESPA_TLS_CA_CERT}\" ${CURL_PARAMETERS}"
+  CURL_PARAMETERS=("--cacert" "${VESPA_TLS_CA_CERT}" "${CURL_PARAMETERS[@]}")
 fi
 
 if [[ -n "${VESPA_TLS_CERT}" && -n "${VESPA_TLS_PRIVATE_KEY}" ]]
 then
-  CURL_PARAMETERS="--cert \"${VESPA_TLS_CERT}\" --key \"${VESPA_TLS_PRIVATE_KEY}\" ${CURL_PARAMETERS}"
+  CURL_PARAMETERS=("--cert" "${VESPA_TLS_CERT}" "--key" "${VESPA_TLS_PRIVATE_KEY}" "${CURL_PARAMETERS[@]}")
 fi
 
-curl ${CURL_PARAMETERS} "${CONFIGSERVER_URI}"
+curl "${CURL_PARAMETERS[@]}"
