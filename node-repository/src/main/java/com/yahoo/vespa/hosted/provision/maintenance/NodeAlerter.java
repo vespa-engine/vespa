@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
@@ -46,26 +45,18 @@ public class NodeAlerter extends Maintainer {
 
     @Override
     protected void maintain() {
+        metric.set("overcommittedHosts", countOvercommittedHosts(), null);
+
         Optional<HostFailurePath> failurePath = worstCaseHostLossLeadingToFailure();
         if (failurePath.isPresent()) {
             int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
-            metric.set("hostedVespa.spareHostCapacity", worstCaseHostLoss - 1, null);
-            metric.set("hostedVespa.overcommittedHosts", countOvercommittedHosts(), null);
+            metric.set("spareHostCapacity", worstCaseHostLoss - 1, null);
         }
     }
 
-    /**
-     * Contains the list of hosts that, upon being removed, caused an unrecoverable state,
-     * as well as the specific host and tenant which caused it.
-     */
-    public static class HostFailurePath {
-        List<Node> hostsCausingFailure;
-        HostRemovalFailure failureReason;
-    }
-
-    public Optional<HostFailurePath> worstCaseHostLossLeadingToFailure() {
-        List<Node> hosts = filterHosts(nodeRepository.getNodes(NodeType.host));
-        List<Node> tenants = filterTenants(nodeRepository.getNodes(NodeType.tenant), hosts);
+    protected Optional<HostFailurePath> worstCaseHostLossLeadingToFailure() {
+        List<Node> hosts = getHosts();
+        List<Node> tenants = getTenants(hosts);
         Map<String, Node> nodeMap = constructHostnameToNodeMap(hosts);
         Map<Node, List<Node>> nodeChildren = constructNodeChildrenMap(tenants, hosts, nodeMap);
         Map<Node, AllocationResources> availableResources = constructAvailableResourcesMap(hosts, nodeChildren);
@@ -74,19 +65,24 @@ public class NodeAlerter extends Maintainer {
         return greedyHeuristicFindFailurePath(timesNodeCanBeRemoved, hosts, nodeChildren, availableResources);
     }
 
-    private List<Node> filterTenants(List<Node> tenants, List<Node> hosts) {
-        var parentNames = hosts.stream().map(Node::hostname).collect(Collectors.toSet());
-        return tenants.stream()
-                .filter((t -> t.flavor().getType() != Flavor.Type.BARE_METAL
-                                && t.state() != Node.State.failed
-                                && t.state() != Node.State.parked))
-                .filter(t -> parentNames.contains(t.parentHostname().orElse("")))
-                .collect(Collectors.toList());
+    // We only care about nodes in one of these states.
+    private Node.State[] relevantNodeStates = {
+            Node.State.active,
+            Node.State.inactive,
+            Node.State.dirty,
+            Node.State.provisioned,
+            Node.State.ready,
+            Node.State.reserved
+    };
+
+    private List<Node> getHosts() {
+        return nodeRepository.getNodes(NodeType.host, relevantNodeStates);
     }
 
-    private List<Node> filterHosts(List<Node> hosts) {
-        return hosts.stream()
-                .filter(h -> h.state() != Node.State.failed && h.state() != Node.State.parked)
+    private List<Node> getTenants(List<Node> hosts) {
+        var parentNames = hosts.stream().map(Node::hostname).collect(Collectors.toSet());
+        return nodeRepository.getNodes(NodeType.tenant, relevantNodeStates).stream()
+                .filter(t -> parentNames.contains(t.parentHostname().orElse("")))
                 .collect(Collectors.toList());
     }
 
@@ -112,9 +108,9 @@ public class NodeAlerter extends Maintainer {
         throw new IllegalStateException("No path to failure found. This should be impossible!");
     }
 
-    int countOvercommittedHosts() {
-        List<Node> hosts = filterHosts(nodeRepository.getNodes(NodeType.host));
-        List<Node> tenants = filterTenants(nodeRepository.getNodes(NodeType.tenant), hosts);
+    protected int countOvercommittedHosts() {
+        List<Node> hosts = getHosts();
+        List<Node> tenants = getTenants(hosts);
         var nodeMap = constructHostnameToNodeMap(hosts);
         var nodeChildren = constructNodeChildrenMap(tenants, hosts, nodeMap);
         var availableResources = constructAvailableResourcesMap(hosts, nodeChildren);
@@ -132,13 +128,11 @@ public class NodeAlerter extends Maintainer {
     }
 
     private Map<Node, List<Node>> constructNodeChildrenMap(List<Node> tenants, List<Node> hosts, Map<String, Node> hostnameToNode) {
-        Map<Optional<Node>, List<Node>> possibleNodeChildren = tenants.stream()
+        Map<Node, List<Node>> nodeChildren = tenants.stream()
                 .filter(n -> n.parentHostname().isPresent())
+                .filter(n -> hostnameToNode.containsKey(n.parentHostname().get()))
                 .collect(Collectors.groupingBy(
-                        n -> Optional.ofNullable(hostnameToNode.get(n.parentHostname().orElseThrow()))));
-        possibleNodeChildren.remove(Optional.<Node>empty());
-        Map<Node, List<Node>> nodeChildren = possibleNodeChildren.entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey().orElseThrow(), Map.Entry::getValue));
+                        n -> hostnameToNode.get(n.parentHostname().orElseThrow())));
 
         for (var host : hosts) nodeChildren.putIfAbsent(host, List.of());
 
@@ -172,6 +166,8 @@ public class NodeAlerter extends Maintainer {
                 _x -> Integer.MAX_VALUE
         ));
         for (Node host : hosts) {
+            List<Node> children = nodeChildren.get(host);
+            if (children.size() == 0) continue;
             Map<Node, AllocationResources> resourceMap = new HashMap<>(availableResources);
             Map<Node, List<Allocation>> containedAllocations = collateAllocations(nodeChildren);
 
@@ -210,34 +206,6 @@ public class NodeAlerter extends Maintainer {
     }
 
     /**
-     * Data class used for detailing why removing the given tenant from the given host was unsuccessful.
-     * A failure might not be caused by failing to allocate a specific tenant, in which case the fields
-     * will be empty.
-     */
-    public static class HostRemovalFailure {
-        Optional<Node> host;
-        Optional<Node> tenant;
-        AllocationFailureReasonList failureReasons;
-        public static HostRemovalFailure none() {
-            return new HostRemovalFailure(
-                    Optional.empty(),
-                    Optional.empty(),
-                    new AllocationFailureReasonList(List.of()));
-        }
-        public static HostRemovalFailure create(Node host, Node tenant, AllocationFailureReasonList failureReasons) {
-            return new HostRemovalFailure(
-                    Optional.of(host),
-                    Optional.of(tenant),
-                    failureReasons);
-        }
-        private HostRemovalFailure(Optional<Node> host, Optional<Node> tenant, AllocationFailureReasonList failureReasons) {
-            this.host = host;
-            this.tenant = tenant;
-            this.failureReasons = failureReasons;
-        }
-    }
-
-    /**
      * Tests whether it's possible to remove the provided hosts.
      * Does not mutate any input variable.
      * @return Empty optional if removal is possible, information on what caused the failure otherwise
@@ -259,9 +227,9 @@ public class NodeAlerter extends Maintainer {
                     validAllocationTargets, resourceMap, containedAllocations);
 
             if (unallocatedNode.isPresent()) {
-                return Optional.of(HostRemovalFailure.create(host, unallocatedNode.get(),
-                        collateAllocationFailures(unallocatedNode.get(), validAllocationTargets,
-                                resourceMap, containedAllocations)));
+                AllocationFailureReasonList failures = collateAllocationFailures(unallocatedNode.get(),
+                        validAllocationTargets, resourceMap, containedAllocations);
+                return Optional.of(HostRemovalFailure.create(host, unallocatedNode.get(), failures));
             }
         }
         return Optional.empty();
@@ -303,6 +271,79 @@ public class NodeAlerter extends Maintainer {
         return false;
     }
 
+    private boolean violatesParentHostPolicy(Node node, Node host, Map<Node, List<Allocation>> containedAllocations) {
+        if (node.allocation().isEmpty()) return false;
+        Allocation nodeAllocation = node.allocation().get();
+        for (var allocation : containedAllocations.get(host)) {
+            if (allocation.membership().cluster().equalsIgnoringGroupAndVespaVersion(nodeAllocation.membership().cluster())
+                    && allocation.owner().equals(nodeAllocation.owner())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private AllocationFailureReasonList collateAllocationFailures(Node node, List<Node> hosts,
+                                                          Map<Node, AllocationResources> availableResources,
+                                                          Map<Node, List<Allocation>> containedAllocations) {
+        List<AllocationFailureReason> allocationFailureReasons = new ArrayList<>();
+        for (var host : hosts) {
+            AllocationFailureReason reason = new AllocationFailureReason(host);
+            var availableHostResources = availableResources.get(host);
+            reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
+
+            NodeResources l = availableHostResources.nodeResources;
+            NodeResources r = node.flavor().resources();
+            if (l.vcpu()      < r.vcpu())                   { reason.insufficientVcpu = true;         }
+            if (l.memoryGb()  < r.memoryGb())               { reason.insufficientMemoryGb = true;     }
+            if (l.diskGb()    < r.diskGb())                 { reason.insufficientDiskGb = true;       }
+            if (r.diskSpeed() != NodeResources.DiskSpeed.any && r.diskSpeed() != l.diskSpeed())
+                                                            { reason.incompatibleDiskSpeed = true;    }
+            if (availableHostResources.availableIPs < 1)    { reason.insufficientAvailableIPs = true; }
+
+            allocationFailureReasons.add(reason);
+        }
+
+        return new AllocationFailureReasonList(allocationFailureReasons);
+    }
+
+    /**
+     * Contains the list of hosts that, upon being removed, caused an unrecoverable state,
+     * as well as the specific host and tenant which caused it.
+     */
+    public static class HostFailurePath {
+        List<Node> hostsCausingFailure;
+        HostRemovalFailure failureReason;
+    }
+
+    /**
+     * Data class used for detailing why removing the given tenant from the given host was unsuccessful.
+     * A failure might not be caused by failing to allocate a specific tenant, in which case the fields
+     * will be empty.
+     */
+    public static class HostRemovalFailure {
+        Optional<Node> host;
+        Optional<Node> tenant;
+        AllocationFailureReasonList failureReasons;
+        public static HostRemovalFailure none() {
+            return new HostRemovalFailure(
+                    Optional.empty(),
+                    Optional.empty(),
+                    new AllocationFailureReasonList(List.of()));
+        }
+        public static HostRemovalFailure create(Node host, Node tenant, AllocationFailureReasonList failureReasons) {
+            return new HostRemovalFailure(
+                    Optional.of(host),
+                    Optional.of(tenant),
+                    failureReasons);
+        }
+        private HostRemovalFailure(Optional<Node> host, Optional<Node> tenant, AllocationFailureReasonList failureReasons) {
+            this.host = host;
+            this.tenant = tenant;
+            this.failureReasons = failureReasons;
+        }
+    }
+
     /**
      * Used to describe the resources required for a tenant, and available to a host.
      */
@@ -327,18 +368,6 @@ public class NodeAlerter extends Maintainer {
         public AllocationResources subtract(AllocationResources other) {
             return new AllocationResources(this.nodeResources.subtract(other.nodeResources), this.availableIPs - other.availableIPs);
         }
-    }
-
-    private boolean violatesParentHostPolicy(Node node, Node host, Map<Node, List<Allocation>> containedAllocations) {
-        if (node.allocation().isEmpty()) return false;
-        Allocation nodeAllocation = node.allocation().get();
-        for (var allocation : containedAllocations.get(host)) {
-            if (allocation.membership().cluster().equalsIgnoringGroupAndVespaVersion(nodeAllocation.membership().cluster())
-                    && allocation.owner().equals(nodeAllocation.owner())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -399,7 +428,7 @@ public class NodeAlerter extends Maintainer {
 
         public AllocationFailureReasonList singularReasonFailures() {
             return new AllocationFailureReasonList(allocationFailureReasons.stream()
-                .filter(reason -> reason.numberOfReasons() == 1).collect(Collectors.toList()));
+                    .filter(reason -> reason.numberOfReasons() == 1).collect(Collectors.toList()));
         }
         public AllocationFailureReasonList multipleReasonFailures() {
             return new AllocationFailureReasonList(allocationFailureReasons.stream()
@@ -411,32 +440,8 @@ public class NodeAlerter extends Maintainer {
         @Override
         public String toString() {
             return String.format("CPU (%3d), Memory (%3d), Disk size (%3d), Disk speed (%3d), IP (%3d), Parent-Host Policy (%3d)",
-                insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(),
-                incompatibleDiskSpeed(), insufficientAvailableIps(), violatesParentHostPolicy());
+                    insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(),
+                    incompatibleDiskSpeed(), insufficientAvailableIps(), violatesParentHostPolicy());
         }
-    }
-
-    private AllocationFailureReasonList collateAllocationFailures(Node node, List<Node> hosts,
-                                                          Map<Node, AllocationResources> availableResources,
-                                                          Map<Node, List<Allocation>> containedAllocations) {
-        List<AllocationFailureReason> allocationFailureReasons = new ArrayList<>();
-        for (var host : hosts) {
-            AllocationFailureReason reason = new AllocationFailureReason(host);
-            var availableHostResources = availableResources.get(host);
-            reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
-
-            NodeResources l = availableHostResources.nodeResources;
-            NodeResources r = node.flavor().resources();
-            if (l.vcpu()      < r.vcpu())                   { reason.insufficientVcpu = true;         }
-            if (l.memoryGb()  < r.memoryGb())               { reason.insufficientMemoryGb = true;     }
-            if (l.diskGb()    < r.diskGb())                 { reason.insufficientDiskGb = true;       }
-            if (r.diskSpeed() != NodeResources.DiskSpeed.any && r.diskSpeed() != l.diskSpeed())
-                                                            { reason.incompatibleDiskSpeed = true;    }
-            if (availableHostResources.availableIPs < 1)    { reason.insufficientAvailableIPs = true; }
-
-            allocationFailureReasons.add(reason);
-        }
-
-        return new AllocationFailureReasonList(allocationFailureReasons);
     }
 }
