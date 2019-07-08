@@ -4,7 +4,7 @@
 
 package com.yahoo.vespa.model.admin.monitoring;
 
-import ai.vespa.metricsproxy.http.GenericMetricsHandler;
+import ai.vespa.metricsproxy.http.ValuesFetcher;
 import com.google.common.collect.ImmutableList;
 
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicMetrics.defaultPublicMetricSet;
@@ -17,7 +17,7 @@ import static java.util.Collections.emptyList;
  */
 public class DefaultPublicConsumer {
 
-    public static final String DEFAULT_PUBLIC_CONSUMER_ID = GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID.id;
+    public static final String DEFAULT_PUBLIC_CONSUMER_ID = ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID.id;
 
     private static final MetricSet publicConsumerMetrics = new MetricSet("public-consumer-metrics",
                                                                          emptyList(),

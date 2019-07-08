@@ -26,6 +26,8 @@ import ai.vespa.metricsproxy.service.VespaServices;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,9 +38,10 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
-import static ai.vespa.metricsproxy.http.GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.http.MetricsHandler.V1_PATH;
+import static ai.vespa.metricsproxy.http.MetricsHandler.VALUES_PATH;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
-import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
 import static ai.vespa.metricsproxy.service.DummyService.METRIC_1;
@@ -46,13 +49,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
  */
 @SuppressWarnings("UnstableApiUsage")
-public class GenericMetricsHandlerTest {
+public class MetricsHandlerTest {
 
     private static final List<VespaService> testServices = ImmutableList.of(
             new DummyService(0, ""),
@@ -66,7 +70,9 @@ public class GenericMetricsHandlerTest {
 
     private static final String CPU_METRIC = "cpu";
 
-    private static final String URI = "http://localhost/metrics/v1/values";
+    private static final String URI_BASE = "http://localhost";
+    private static final String V1_URI = URI_BASE + V1_PATH;
+    private static final String VALUES_URI = URI_BASE + VALUES_PATH;
 
 
     private static RequestHandlerTestDriver testDriver;
@@ -78,12 +84,12 @@ public class GenericMetricsHandlerTest {
                 new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                         .timestamp(Instant.now().getEpochSecond())
                         .putMetrics(ImmutableList.of(new Metric(CPU_METRIC, 12.345)))));
-        GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices, getMetricsConsumers());
+        MetricsHandler handler = new MetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices, getMetricsConsumers());
         testDriver = new RequestHandlerTestDriver(handler);
     }
 
     private GenericJsonModel getResponseAsJsonModel(String consumer) {
-        String response = testDriver.sendRequest(URI + "?consumer=" + consumer).readAll();
+        String response = testDriver.sendRequest(VALUES_URI + "?consumer=" + consumer).readAll();
         try {
             return createObjectMapper().readValue(response, GenericJsonModel.class);
         } catch (IOException e) {
@@ -92,10 +98,23 @@ public class GenericMetricsHandlerTest {
         }
     }
 
+    @Test
+    public void v1_response_contains_values_uri() throws Exception {
+        String response = testDriver.sendRequest(V1_URI).readAll();
+        JSONObject root = new JSONObject(response);
+        assertTrue(root.has("resources"));
+
+        JSONArray resources = root.getJSONArray("resources");
+        assertEquals(1, resources.length());
+
+        JSONObject valuesUrl = resources.getJSONObject(0);
+        assertEquals(VALUES_URI, valuesUrl.getString("url"));
+    }
+
     @Ignore
     @Test
-    public void visually_inspect_response() throws Exception{
-        String response = testDriver.sendRequest(URI+ "?consumer=default").readAll();
+    public void visually_inspect_values_response() throws Exception{
+        String response = testDriver.sendRequest(VALUES_URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericJsonModel.class);
         System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
@@ -103,15 +122,15 @@ public class GenericMetricsHandlerTest {
 
     @Test
     public void no_explicit_consumer_gives_the_default_consumer() {
-        String responseDefaultConsumer = testDriver.sendRequest(URI + "?consumer=default").readAll();
-        String responseNoConsumer = testDriver.sendRequest(URI).readAll();
+        String responseDefaultConsumer = testDriver.sendRequest(VALUES_URI + "?consumer=default").readAll();
+        String responseNoConsumer = testDriver.sendRequest(VALUES_URI).readAll();
         assertEqualsExceptTimestamps(responseDefaultConsumer, responseNoConsumer);
     }
 
     @Test
     public void unknown_consumer_gives_the_default_consumer() {
-        String response = testDriver.sendRequest(URI).readAll();
-        String responseUnknownConsumer = testDriver.sendRequest(URI + "?consumer=not_defined").readAll();
+        String response = testDriver.sendRequest(VALUES_URI).readAll();
+        String responseUnknownConsumer = testDriver.sendRequest(VALUES_URI + "?consumer=not_defined").readAll();
         assertEqualsExceptTimestamps(response, responseUnknownConsumer);
     }
 
