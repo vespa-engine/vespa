@@ -49,7 +49,7 @@ public class TestableTensorFlowModel {
 
     public ImportedModel get() { return model; }
 
-    /** Compare that summing the tensors produce the same result to within some tolerance delta */
+    /** Compare that computing the expressions produce the same result to within some tolerance delta */
     public void assertEqualResultSum(String inputName, String operationName, double delta) {
         Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
         Context context = contextFrom(model);

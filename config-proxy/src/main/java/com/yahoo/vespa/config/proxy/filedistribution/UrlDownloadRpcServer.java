@@ -42,7 +42,7 @@ class UrlDownloadRpcServer {
     private final static Logger log = Logger.getLogger(UrlDownloadRpcServer.class.getName());
 
     private static final String CONTENTS_FILE_NAME = "contents";
-    private static final String LAST_MODFIED_FILE_NAME = "lastmodified";
+    private static final String LAST_MODIFIED_FILE_NAME = "lastmodified";
 
     private final File downloadBaseDir;
     private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -110,16 +110,17 @@ class UrlDownloadRpcServer {
 
                 if (contentsPath.exists() && contentsPath.length() > 0) {
                     writeLastModifiedTimestamp(downloadDir, connection.getLastModified());
+                    new RequestTracker().trackRequest(downloadDir);
                     req.returnValues().add(new StringValue(contentsPath.getAbsolutePath()));
                     log.log(LogLevel.DEBUG, () -> "URL '" + url + "' available at " + contentsPath);
+                    log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds",
+                                                         url, (System.currentTimeMillis() -start) / 1000.0));
                 } else {
                     log.log(LogLevel.ERROR, "Downloaded URL '" + url + "' not found, returning error");
                     req.setError(DOES_NOT_EXIST, "Downloaded '" + url + "' not found");
                 }
             }
         }
-        long end = System.currentTimeMillis();
-        log.log(LogLevel.INFO, String.format("Download of URL '%s' done in %.3f seconds", url,  (end-start) / 1000.0));
     }
 
     private static String urlToDirName(String uri) {
@@ -137,7 +138,7 @@ class UrlDownloadRpcServer {
     }
 
     private static long readLastModifiedTimestamp(File downloadDir) throws IOException {
-        File lastModified = new File(downloadDir, LAST_MODFIED_FILE_NAME);
+        File lastModified = new File(downloadDir, LAST_MODIFIED_FILE_NAME);
         if (lastModified.exists() && lastModified.length() > 0) {
             try (BufferedReader br = new BufferedReader(new FileReader(lastModified))) {
                 String timestamp = br.readLine();
@@ -148,7 +149,7 @@ class UrlDownloadRpcServer {
     }
 
     private static void writeLastModifiedTimestamp(File downloadDir, long timestamp) throws IOException {
-        File lastModified = new File(downloadDir, LAST_MODFIED_FILE_NAME);
+        File lastModified = new File(downloadDir, LAST_MODIFIED_FILE_NAME);
         try (BufferedWriter lastModifiedWriter = new BufferedWriter(new FileWriter(lastModified.getAbsolutePath()))) {
             lastModifiedWriter.write(Long.toString(timestamp));
         }

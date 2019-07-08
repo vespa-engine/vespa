@@ -91,6 +91,11 @@ public class Mean extends IntermediateOperation {
         reduceDimensions = renamedDimensions;
     }
 
+    @Override
+    public Mean withInputs(List<IntermediateOperation> inputs) {
+        return new Mean(modelName(), name(), inputs, attributeMap);
+    }
+
     private boolean shouldKeepDimensions() {
         Optional<Value> keepDims = attributeMap.get("keep_dims");
         return keepDims.isPresent() && keepDims.get().asBoolean();
@@ -107,5 +112,8 @@ public class Mean extends IntermediateOperation {
         }
         return builder.build();
     }
+
+    @Override
+    public String operationName() { return "Mean"; }
 
 }

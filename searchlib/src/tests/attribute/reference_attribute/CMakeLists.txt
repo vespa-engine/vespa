@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_reference_attribute_test_app TEST
     reference_attribute_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_reference_attribute_test_app COMMAND searchlib_reference_attribute_test_app)

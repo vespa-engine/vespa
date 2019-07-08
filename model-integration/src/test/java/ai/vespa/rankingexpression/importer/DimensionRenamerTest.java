@@ -9,7 +9,7 @@ public class DimensionRenamerTest {
 
     @Test
     public void testMnistRenaming() {
-        DimensionRenamer renamer = new DimensionRenamer();
+        DimensionRenamer renamer = new DimensionRenamer(new IntermediateGraph("test"));
 
         renamer.addDimension("first_dimension_of_x");
         renamer.addDimension("second_dimension_of_x");
@@ -18,17 +18,17 @@ public class DimensionRenamerTest {
         renamer.addDimension("first_dimension_of_b");
 
         // which dimension to join on matmul
-        renamer.addConstraint("second_dimension_of_x", "first_dimension_of_w", DimensionRenamer::equals, null);
+        renamer.addConstraint("second_dimension_of_x", "first_dimension_of_w", DimensionRenamer.Constraint.equal(false), null);
 
         // other dimensions in matmul can't be equal
-        renamer.addConstraint("first_dimension_of_x", "second_dimension_of_w", DimensionRenamer::lesserThan, null);
+        renamer.addConstraint("first_dimension_of_x", "second_dimension_of_w", DimensionRenamer.Constraint.lessThan(false), null);
 
         // for efficiency, put dimension to join on innermost
-        renamer.addConstraint("first_dimension_of_x", "second_dimension_of_x", DimensionRenamer::lesserThan, null);
-        renamer.addConstraint("first_dimension_of_w", "second_dimension_of_w", DimensionRenamer::greaterThan, null);
+        renamer.addConstraint("first_dimension_of_x", "second_dimension_of_x", DimensionRenamer.Constraint.lessThan(true), null);
+        renamer.addConstraint("first_dimension_of_w", "second_dimension_of_w", DimensionRenamer.Constraint.greaterThan(true), null);
 
         // bias
-        renamer.addConstraint("second_dimension_of_w", "first_dimension_of_b", DimensionRenamer::equals, null);
+        renamer.addConstraint("second_dimension_of_w", "first_dimension_of_b", DimensionRenamer.Constraint.equal(false), null);
 
         renamer.solve();
 

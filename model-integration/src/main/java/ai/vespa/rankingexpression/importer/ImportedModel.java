@@ -262,9 +262,12 @@ public class ImportedModel implements ImportedMlModel {
 
         /** Returns the expression this output references as an imported function */
         public ImportedMlFunction outputFunction(String outputName, String functionName) {
+            RankingExpression outputExpression = owner().expressions().get(outputs.get(outputName));
+            if (outputExpression == null)
+                throw new IllegalArgumentException("Missing output '" + outputName + "' in " + this);
             return new ImportedMlFunction(functionName,
                                           new ArrayList<>(inputs.values()),
-                                          owner().expressions().get(outputs.get(outputName)).getRoot().toString(),
+                                          outputExpression.getRoot().toString(),
                                           asStrings(inputMap()),
                                           Optional.empty());
         }

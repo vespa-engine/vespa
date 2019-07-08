@@ -23,6 +23,12 @@ public class ListMap<K, V> {
         this(HashMap.class);
     }
 
+    /** Copy constructor. This will not be frozen even if the argument map is */
+    public ListMap(ListMap<K, V> original) {
+        map = new HashMap<>();
+        original.map.forEach((k, v) -> this.map.put(k, new ArrayList<>(v)));
+    }
+
     @SuppressWarnings("unchecked")
     public ListMap(@SuppressWarnings("rawtypes") Class<? extends Map> implementation) {
         try {
@@ -43,6 +49,27 @@ public class ListMap<K, V> {
             map.put(key, list);
         }
         list.add(value);
+    }
+
+    /** Put a key without adding a new value, such that there is an empty list of values if no values are already added */
+    public void put(K key) {
+        List<V> list = map.get(key);
+        if (list == null) {
+            list = new ArrayList<>();
+            map.put(key, list);
+        }
+    }
+
+    /** Put this map in the state where it has just the given value of the given key */
+    public void replace(K key, V value) {
+        List<V> list = map.get(key);
+        if (list == null) {
+            put(key);
+        }
+        else {
+            list.clear();
+            list.add(value);
+        }
     }
 
     public void removeAll(K key) {
@@ -73,13 +100,13 @@ public class ListMap<K, V> {
 
     /**
      * Returns the List containing the elements with this key, or an empty list
-     * if there are no elements for this key. The list returned is unmodifiable.
+     * if there are no elements for this key.
+     * The returned list can be modified to add and remove values if the value exists.
      */
     public List<V> get(K key) {
         List<V> list = map.get(key);
-        if (list == null)
-            return ImmutableList.of();;
-        return ImmutableList.copyOf(list);
+        if (list == null) return ImmutableList.of();;
+        return list;
     }
 
     /** The same as get */

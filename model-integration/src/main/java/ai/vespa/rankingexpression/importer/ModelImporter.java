@@ -11,12 +11,14 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.text.ExpressionFormatter;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,6 +52,8 @@ public abstract class ModelImporter implements MlModelImporter {
      */
     protected static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
         ImportedModel model = new ImportedModel(graph.name(), modelSource);
+        log.log(Level.FINER, () -> "Intermediate graph created from '" + modelSource + "':\n" +
+                                   ExpressionFormatter.inTwoColumnMode(70, 50).format(graph.toFullString()));
 
         graph.optimize();
 
@@ -223,7 +227,7 @@ public abstract class ModelImporter implements MlModelImporter {
      * for fast model weight updates.
      */
     private static void logVariableTypes(IntermediateGraph graph) {
-        for (IntermediateOperation operation : graph.operations()) {
+        for (IntermediateOperation operation : graph.operations().values()) {
             if ( ! (operation instanceof Constant)) continue;
             if ( ! operation.type().isPresent()) continue; // will not happen
             log.info("Importing model variable " + operation.name() + " as " + operation.vespaName() +

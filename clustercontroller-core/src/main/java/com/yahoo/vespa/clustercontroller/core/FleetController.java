@@ -661,6 +661,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     private boolean broadcastClusterStateToEligibleNodes() {
+        // If there's a pending DB store we have not yet been able to store the
+        // current state bundle to ZK and must therefore _not_ allow it to be published.
+        if (database.hasPendingClusterStateMetaDataStore()) {
+            log.log(LogLevel.DEBUG, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
+            return false;
+        }
         boolean sentAny = false;
         // Give nodes a fair chance to respond first time to state gathering requests, so we don't
         // disturb system when we take over. Allow anyways if we have states from all nodes.

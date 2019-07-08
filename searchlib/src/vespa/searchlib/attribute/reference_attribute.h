@@ -3,8 +3,8 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
-#include "reference_mappings.h"
 #include "reference.h"
+#include "reference_mappings.h"
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
@@ -71,7 +71,7 @@ public:
     bool addDoc(DocId &doc) override;
     uint32_t clearDoc(DocId doc) override;
     void update(DocId doc, const GlobalId &gid);
-    const Reference *getReference(DocId doc);
+    const Reference *getReference(DocId doc) const;
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
     std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
     TargetLids getTargetLids() const { return _referenceMappings.getTargetLids(); }
@@ -91,6 +91,8 @@ public:
     foreach_lid(uint32_t targetLid, FunctionType &&func) const {
         _referenceMappings.foreach_lid(targetLid, std::forward<FunctionType>(func));
     }
+
+    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
 };
 
 }
