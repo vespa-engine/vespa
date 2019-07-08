@@ -77,6 +77,22 @@ public class NGramTestCase {
         assertFalse(i.hasNext());
     }
 
+    @Test
+    public void requireThatExecuteCanBeCalledMultipleTimes() {
+        ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
+        context.setValue(new StringFieldValue("some random text string"));
+        NGramExpression expression = new NGramExpression(new SimpleLinguistics(), 3);
+
+        expression.execute(context);
+        SpanTree firstTree = ((StringFieldValue)context.getValue()).getSpanTree(SpanTrees.LINGUISTICS);
+        assertNotNull(firstTree);
+
+        expression.execute(context);
+        SpanTree secondTree = ((StringFieldValue)context.getValue()).getSpanTree(SpanTrees.LINGUISTICS);
+        // The span tree instance should be the same.
+        assertEquals(firstTree, secondTree);
+    }
+
     private void assertSpan(int from, int length, boolean gram, Iterator<SpanNode> i, SpanTree tree) {
         assertSpan(from, length, gram, i, tree, null);
     }
