@@ -35,11 +35,12 @@ import static java.util.stream.Collectors.toCollection;
 public class ExternalMetrics {
     private static final Logger log = Logger.getLogger(ExternalMetrics.class.getName());
 
+    // NOTE: node service id must be kept in sync with the same constant _value_ used in docker-api:Metrics.java
+    public static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
+
     public static final DimensionId ROLE_DIMENSION = toDimensionId("role");
     public static final DimensionId STATE_DIMENSION = toDimensionId("state");
     public static final DimensionId ORCHESTRATOR_STATE_DIMENSION = toDimensionId("orchestratorState");
-
-    public static final ServiceId VESPA_NODE_SERVICE_ID = toServiceId("vespa.node");
 
     private volatile List<MetricsPacket.Builder> metrics = new ArrayList<>();
     private final MetricsConsumers consumers;
@@ -58,7 +59,6 @@ public class ExternalMetrics {
         log.log(DEBUG, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
         externalPackets.forEach(packet -> {
             packet.addConsumers(consumers.getAllConsumers())
-                    .service(VESPA_NODE_SERVICE_ID)
                     .retainMetrics(metricsToRetain())
                     .applyOutputNames(outputNamesById());
         });

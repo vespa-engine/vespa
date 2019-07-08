@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 
 import static ai.vespa.metricsproxy.core.VespaMetrics.INSTANCE_DIMENSION_ID;
 import static ai.vespa.metricsproxy.http.GenericMetricsHandler.DEFAULT_PUBLIC_CONSUMER_ID;
+import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.StatusCode.DOWN;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
@@ -74,7 +75,7 @@ public class GenericMetricsHandlerTest {
     public static void setup() {
         MetricsManager metricsManager = TestUtil.createMetricsManager(vespaServices, getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
         metricsManager.setExtraMetrics(ImmutableList.of(
-                new MetricsPacket.Builder(toServiceId("foo"))
+                new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                         .timestamp(Instant.now().getEpochSecond())
                         .putMetrics(ImmutableList.of(new Metric(CPU_METRIC, 12.345)))));
         GenericMetricsHandler handler = new GenericMetricsHandler(Executors.newSingleThreadExecutor(), metricsManager, vespaServices, getMetricsConsumers());
