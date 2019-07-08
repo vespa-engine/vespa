@@ -326,7 +326,8 @@
       "public java.lang.String containerId()",
       "public java.util.Set regions()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public com.yahoo.config.application.api.Endpoint withRegions(java.util.Set)"
     ],
     "fields": []
   },
