@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -516,11 +517,41 @@ public class DeploymentSpecTest {
         assertEquals(List.of("fooooooooooo"), endpointIds("<endpoint id='fooooooooooo' container-id='qrs'/>"));
     }
 
+    @Test
+    public void endpointDefaultRegions() {
+        var spec = DeploymentSpec.fromXml("" +
+                "<deployment>" +
+                "  <prod>" +
+                "    <region active=\"true\">us-east</region>" +
+                "    <region active=\"true\">us-west</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint id=\"foo\" container-id=\"bar\">" +
+                "      <region>us-east</region>" +
+                "    </endpoint>" +
+                "    <endpoint id=\"nalle\" container-id=\"frosk\" />" +
+                "    <endpoint container-id=\"quux\" />" +
+                "  </endpoints>" +
+                "</deployment>");
+
+        assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
+        assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
+        assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
+    }
+
     private static void assertInvalid(String endpointTag) {
         try {
             endpointIds(endpointTag);
             fail("Expected exception for input '" + endpointTag + "'");
         } catch (IllegalArgumentException ignored) {}
+    }
+
+    private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {
+        return spec.endpoints().stream()
+                .filter(endpoint -> endpoint.endpointId().equals(endpointId))
+                .flatMap(endpoint -> endpoint.regions().stream())
+                .map(RegionName::value)
+                .collect(Collectors.toSet());
     }
 
     private static List<String> endpointIds(String endpointTag) {

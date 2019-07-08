@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -358,6 +359,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
+                .endpoint("all", "qrs")
                 .region("us-west-1")
                 .region("us-central-1")
                 .build();
@@ -370,24 +372,31 @@ public class ControllerTest {
                     Set.of(
                             "rotation-id-01",
                             "rotation-id-02",
+                            "rotation-id-03",
                             "app1--tenant1.global.vespa.oath.cloud",
-                            "foobar--app1--tenant1.global.vespa.oath.cloud"
+                            "foobar--app1--tenant1.global.vespa.oath.cloud",
+                            "all--app1--tenant1.global.vespa.oath.cloud"
                     ),
                     tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
 
-        assertEquals(2, tester.controllerTester().nameService().records().size());
+        assertEquals(3, tester.controllerTester().nameService().records().size());
 
         var record1 = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record1.isPresent());
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record1.get().name().asString());
-        assertEquals("rotation-fqdn-02.", record1.get().data().asString());
+        assertEquals("rotation-fqdn-03.", record1.get().data().asString());
 
         var record2 = tester.controllerTester().findCname("foobar--app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record2.isPresent());
         assertEquals("foobar--app1--tenant1.global.vespa.oath.cloud", record2.get().name().asString());
         assertEquals("rotation-fqdn-01.", record2.get().data().asString());
+
+        var record3 = tester.controllerTester().findCname("all--app1--tenant1.global.vespa.oath.cloud");
+        assertTrue(record3.isPresent());
+        assertEquals("all--app1--tenant1.global.vespa.oath.cloud", record3.get().name().asString());
+        assertEquals("rotation-fqdn-02.", record3.get().data().asString());
     }
 
     @Test

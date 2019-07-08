@@ -74,10 +74,35 @@ public class DeploymentSpec {
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
-        this.endpoints = List.copyOf(Objects.requireNonNull(endpoints, "Missing endpoints parameter"));
+        this.endpoints = ImmutableList.copyOf(validateEndpoints(endpoints, this.steps));
         validateZones(this.steps);
         validateAthenz();
         validateEndpoints(this.steps, globalServiceId, this.endpoints);
+    }
+
+    /** Validates the endpoints and makes sure default values are respected */
+    private List<Endpoint> validateEndpoints(List<Endpoint> endpoints, List<Step> steps) {
+        Objects.requireNonNull(endpoints, "Missing endpoints parameter");
+
+        var productionRegions = steps.stream()
+                .filter(step -> step.deploysTo(Environment.prod))
+                .flatMap(step -> step.zones().stream())
+                .flatMap(zone -> zone.region().stream())
+                .map(RegionName::value)
+                .collect(Collectors.toSet());
+
+        var rebuiltEndpointsList = new ArrayList<Endpoint>();
+
+        for (var endpoint : endpoints) {
+            if (endpoint.regions().isEmpty()) {
+                var rebuiltEndpoint = endpoint.withRegions(productionRegions);
+                rebuiltEndpointsList.add(rebuiltEndpoint);
+            } else {
+                rebuiltEndpointsList.add(endpoint);
+            }
+        }
+
+        return ImmutableList.copyOf(rebuiltEndpointsList);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
