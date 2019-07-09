@@ -5,11 +5,15 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +57,36 @@ public class NodeRepositoryMock implements NodeRepository {
                              .filter(Objects::nonNull)
                              .findFirst()
                              .orElseThrow(() -> new NoSuchElementException("No node with the hostname " + hostName + " is known."));
+    }
+
+    @Override
+    public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void deleteNode(ZoneId zone, String hostname) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setState(ZoneId zone, NodeState nodeState, String nodename) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodeRepositoryNode getNode(ZoneId zone, String hostname) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodeList listNodes(ZoneId zone) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public NodeList listNodes(ZoneId zone, ApplicationId application) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

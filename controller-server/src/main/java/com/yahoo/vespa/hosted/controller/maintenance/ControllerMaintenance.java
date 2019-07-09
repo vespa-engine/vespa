@@ -5,8 +5,8 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
@@ -60,7 +60,7 @@ public class ControllerMaintenance extends AbstractComponent {
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
-                                 NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
+                                 NameService nameService, NodeRepository nodeRepository,
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
                                  ResourceSnapshotConsumer resourceSnapshotConsumer,
@@ -75,7 +75,7 @@ public class ControllerMaintenance extends AbstractComponent {
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(1), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
         readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
-        clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl, nodeRepositoryClient);
+        clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl, nodeRepository);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
@@ -84,8 +84,8 @@ public class ControllerMaintenance extends AbstractComponent {
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
-        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepositoryClient, Clock.systemUTC(), selfHostedCostConfig);
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepositoryClient, Clock.systemUTC(), metric, resourceSnapshotConsumer);
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepository, Clock.systemUTC(), selfHostedCostConfig);
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepository, Clock.systemUTC(), metric, resourceSnapshotConsumer);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
     }

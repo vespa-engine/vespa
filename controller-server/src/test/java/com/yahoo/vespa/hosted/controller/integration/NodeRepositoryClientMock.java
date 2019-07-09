@@ -1,14 +1,16 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.MaintenanceJobList;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.List;
 /**
  * @author bjorncs
  */
-public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
+public class NodeRepositoryClientMock implements NodeRepository {
 
     @Override
     public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
@@ -34,14 +36,14 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
     }
 
     @Override
-    public NodeList listNodes(ZoneId zone, boolean recursive) {
+    public NodeList listNodes(ZoneId zone) {
         NodeRepositoryNode nodeA = createNodeA();
         NodeRepositoryNode nodeB = createNodeB();
         return new NodeList(List.of(nodeA, nodeB));
     }
 
     @Override
-    public NodeList listNodes(ZoneId zone, String tenant, String applicationId, String instance) {
+    public NodeList listNodes(ZoneId zone, ApplicationId application) {
         NodeRepositoryNode nodeA = createNodeA();
         NodeRepositoryNode nodeB = createNodeB();
         return new NodeList(List.of(nodeA, nodeB));
@@ -90,57 +92,27 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
     }
 
     @Override
-    public String resetFailureInformation(ZoneId zone, String nodename) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String restart(ZoneId zone, String nodename) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String reboot(ZoneId zone, String nodename) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String cancelReboot(ZoneId zone, String nodename) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String wantTo(ZoneId zone, String nodename, WantTo... actions) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String cancelRestart(ZoneId zone, String nodename) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String setHardwareFailureDescription(ZoneId zone, String nodename, String hardwareFailureDescription) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void setState(ZoneId zone, NodeState nodeState, String nodename) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String enableMaintenanceJob(ZoneId zone, String jobName) {
+    public void upgrade(ZoneId zone, NodeType type, Version version) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public String disableMaintenanceJob(ZoneId zone, String jobName) {
+    public void upgradeOs(ZoneId zone, NodeType type, Version version) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public MaintenanceJobList listMaintenanceJobs(ZoneId zone) {
+    public void requestFirmwareCheck(ZoneId zone) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void cancelFirmwareCheck(ZoneId zone) {
         throw new UnsupportedOperationException();
     }
 

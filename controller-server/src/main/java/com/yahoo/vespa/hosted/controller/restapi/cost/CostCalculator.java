@@ -2,11 +2,10 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
@@ -26,7 +25,7 @@ public class CostCalculator {
 
     private static final double SELF_HOSTED_DISCOUNT = .5;
 
-    public static String resourceShareByPropertyToCsv(NodeRepositoryClientInterface nodeRepository,
+    public static String resourceShareByPropertyToCsv(NodeRepository nodeRepository,
                                                       Controller controller,
                                                       Clock clock,
                                                       SelfHostedCostConfig selfHostedCostConfig,
@@ -36,7 +35,7 @@ public class CostCalculator {
 
         List<NodeRepositoryNode> nodes = controller.zoneRegistry().zones()
                 .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
-                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId(), true).nodes().stream()))
+                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId()).nodes().stream()))
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .collect(Collectors.toList());
 
