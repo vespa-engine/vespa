@@ -71,7 +71,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
-    private static final String METRICS_HANDLER_BINDING = "/metrics/v1/*";
+    private static final String METRICS_HANDLER_BINDING = "/metrics/v1";
 
     static final class AppDimensionNames {
         static final String ZONE = "zone";
