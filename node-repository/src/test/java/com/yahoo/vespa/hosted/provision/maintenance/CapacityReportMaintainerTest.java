@@ -14,14 +14,14 @@ import static org.junit.Assert.*;
 /**
  * @author mgimle
  */
-public class NodeAlerterTest {
-    private NodeAlerterTester tester;
-    private NodeAlerter alerter;
+public class CapacityReportMaintainerTest {
+    private CapacityReportMaintainerTester tester;
+    private CapacityReportMaintainer capacityReporter;
 
     @Before
     public void setup() {
-        tester = new NodeAlerterTester();
-        alerter = tester.makeNodeAlerter();
+        tester = new CapacityReportMaintainerTester();
+        capacityReporter = tester.makeCapacityReportMaintainer();
     }
 
     @Test
@@ -30,7 +30,7 @@ public class NodeAlerterTest {
 
         tester.cleanRepository();
         tester.restoreNodeRepositoryFromJsonFile(Paths.get(path));
-        var failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         if (failurePath.isPresent()) {
             assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
         } else fail();
@@ -41,7 +41,7 @@ public class NodeAlerterTest {
         tester.createNodes(7, 4,
                10, new NodeResources(-1, 10, 100), 10,
                 0, new NodeResources(1, 10, 100), 10);
-        int overcommittedHosts = alerter.countOvercommittedHosts();
+        int overcommittedHosts = capacityReporter.countOvercommittedHosts();
         assertEquals(tester.nodeRepository.getNodes(NodeType.host).size(), overcommittedHosts);
     }
 
@@ -50,14 +50,14 @@ public class NodeAlerterTest {
         tester.createNodes(1, 1,
                 0, new NodeResources(1, 10, 100), 10,
                 0, new NodeResources(1, 10, 100), 10);
-        var failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertFalse("Computing worst case host loss with no hosts should return an empty optional.", failurePath.isPresent());
 
         // Odd edge case that should never be able to occur in prod
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1000, 10000), 100,
                 1, new NodeResources(10, 1000, 10000), 100);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         assertTrue("Computing worst case host loss if all hosts have to be removed should result in an non-empty failureReason with empty nodes.",
                 failurePath.get().failureReason.tenant.isEmpty() && failurePath.get().failureReason.host.isEmpty());
@@ -66,7 +66,7 @@ public class NodeAlerterTest {
         tester.createNodes(3, 30,
                 10, new NodeResources(0, 0, 10000), 1000,
                 0, new NodeResources(0, 0, 0), 0);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -81,7 +81,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1000, 10000), 1,
                 10, new NodeResources(10, 1000, 10000), 1);
-        var failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -96,7 +96,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(1, 100, 1000), 100,
                 10, new NodeResources(0, 100, 1000), 100);
-        var failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -107,7 +107,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1, 1000), 100,
                 10, new NodeResources(10, 0, 1000), 100);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -118,7 +118,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 100, 10), 100,
                 10, new NodeResources(10, 100, 0), 100);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -130,7 +130,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 10, List.of(new NodeResources(1, 10, 100)),
                 10, new NodeResources(0, 0, 0), 100,
                 10, new NodeResources(10, 1000, 10000, NodeResources.DiskSpeed.slow), 100);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -146,7 +146,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 1,
                 10, new NodeResources(1, 100, 1000), 100,
                 10, new NodeResources(10, 1000, 10000), 100);
-        var failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -157,7 +157,7 @@ public class NodeAlerterTest {
         tester.createNodes(1, 2,
                 10, new NodeResources(10, 100, 1000), 1,
                 0, new NodeResources(0, 0, 0), 0);
-        failurePath = alerter.worstCaseHostLossLeadingToFailure();
+        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;

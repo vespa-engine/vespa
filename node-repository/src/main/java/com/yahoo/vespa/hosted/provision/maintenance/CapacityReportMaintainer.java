@@ -20,8 +20,7 @@ import java.util.*;
 import java.util.function.Function;
 
 /**
- * Performs analysis on the node repository to produce metrics that can be used for alerts if the repository is in an
- * undesirable state.
+ * Performs analysis on the node repository to produce metrics that pertain to the capacity of the node repository.
  * These metrics include:
  * Spare host capacity, or how many hosts the repository can stand to lose without ending up in a situation where it's
  * unable to find a new home for orphaned tenants.
@@ -29,15 +28,15 @@ import java.util.function.Function;
  *
  * @author mgimle
  */
-public class NodeAlerter extends Maintainer {
+public class CapacityReportMaintainer extends Maintainer {
 
     private final Metric metric;
     private final NodeRepository nodeRepository;
-    private static final Logger log = Logger.getLogger(NodeAlerter.class.getName());
+    private static final Logger log = Logger.getLogger(CapacityReportMaintainer.class.getName());
 
-    NodeAlerter(NodeRepository nodeRepository,
-                Metric metric,
-                Duration interval) {
+    CapacityReportMaintainer(NodeRepository nodeRepository,
+                             Metric metric,
+                             Duration interval) {
         super(nodeRepository, interval);
         this.nodeRepository = nodeRepository;
         this.metric = Objects.requireNonNull(metric);

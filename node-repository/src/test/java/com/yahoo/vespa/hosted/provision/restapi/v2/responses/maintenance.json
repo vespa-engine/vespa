@@ -1,6 +1,9 @@
 {
   "jobs": [
     {
+      "name": "CapacityReportMaintainer"
+    },
+    {
       "name": "DirtyExpirer"
     },
     {
@@ -17,9 +20,6 @@
     },
     {
       "name": "MetricsReporter"
-    },
-    {
-      "name": "NodeAlerter"
     },
     {
       "name": "NodeFailer"

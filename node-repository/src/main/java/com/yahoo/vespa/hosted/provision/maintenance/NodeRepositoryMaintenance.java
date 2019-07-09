@@ -46,7 +46,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<HostProvisionMaintainer> hostProvisionMaintainer;
     private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
-    private final NodeAlerter nodeAlerter;
+    private final CapacityReportMaintainer capacityReportMaintainer;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
@@ -82,7 +82,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), hostProvisioner, flagSource));
-        nodeAlerter = new NodeAlerter(nodeRepository, metric, durationFromEnv("alert_interval").orElse(defaults.nodeAlerterInterval));
+        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("alert_interval").orElse(defaults.nodeAlerterInterval));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -99,7 +99,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
-        nodeAlerter.deconstruct();
+        capacityReportMaintainer.deconstruct();
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();

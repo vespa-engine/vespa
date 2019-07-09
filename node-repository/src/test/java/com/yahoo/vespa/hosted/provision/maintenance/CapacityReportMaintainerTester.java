@@ -29,22 +29,22 @@ import java.util.stream.IntStream;
 /**
  * @author mgimle
  */
-public class NodeAlerterTester {
+public class CapacityReportMaintainerTester {
     public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
 
     // Components with state
     public final ManualClock clock = new ManualClock();
     public final NodeRepository nodeRepository;
 
-    NodeAlerterTester() {
+    CapacityReportMaintainerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
         nodeRepository = new NodeRepository(f, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
     }
 
-    NodeAlerter makeNodeAlerter() {
-        return new NodeAlerter(nodeRepository, new MetricsReporterTest.TestMetric(), Duration.ofDays(1));
+    CapacityReportMaintainer makeCapacityReportMaintainer() {
+        return new CapacityReportMaintainer(nodeRepository, new MetricsReporterTest.TestMetric(), Duration.ofDays(1));
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
