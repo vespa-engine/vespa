@@ -75,4 +75,7 @@ public class Endpoint {
         return Objects.hash(endpointId, containerId, regions);
     }
 
+    public Endpoint withRegions(Set<String> regions) {
+        return new Endpoint(endpointId, containerId, regions);
+    }
 }
