@@ -85,19 +85,19 @@ class TypeConverter {
 
     private static TensorType.Value toValueType(DataType dataType) {
         switch (dataType) {
-            case DT_FLOAT: return TensorType.Value.FLOAT;
+            case DT_FLOAT: return TensorType.Value.DOUBLE;
             case DT_DOUBLE: return TensorType.Value.DOUBLE;
             // Imperfect conversion, for now:
-            case DT_BOOL: return TensorType.Value.FLOAT;
-            case DT_BFLOAT16: return TensorType.Value.FLOAT;
-            case DT_HALF: return TensorType.Value.FLOAT;
-            case DT_INT8: return TensorType.Value.FLOAT;
-            case DT_INT16: return TensorType.Value.FLOAT;
-            case DT_INT32: return TensorType.Value.FLOAT;
+            case DT_BOOL: return TensorType.Value.DOUBLE;
+            case DT_BFLOAT16: return TensorType.Value.DOUBLE;
+            case DT_HALF: return TensorType.Value.DOUBLE;
+            case DT_INT8: return TensorType.Value.DOUBLE;
+            case DT_INT16: return TensorType.Value.DOUBLE;
+            case DT_INT32: return TensorType.Value.DOUBLE;
             case DT_INT64: return TensorType.Value.DOUBLE;
-            case DT_UINT8: return TensorType.Value.FLOAT;
-            case DT_UINT16: return TensorType.Value.FLOAT;
-            case DT_UINT32: return TensorType.Value.FLOAT;
+            case DT_UINT8: return TensorType.Value.DOUBLE;
+            case DT_UINT16: return TensorType.Value.DOUBLE;
+            case DT_UINT32: return TensorType.Value.DOUBLE;
             case DT_UINT64: return TensorType.Value.DOUBLE;
             default: throw new IllegalArgumentException("A TensorFlow tensor with data type " + dataType +
                                                         " cannot be converted to a Vespa tensor type");
@@ -106,12 +106,12 @@ class TypeConverter {
 
     private static TensorType.Value toValueType(org.tensorflow.DataType dataType) {
         switch (dataType) {
-            case FLOAT: return TensorType.Value.FLOAT;
+            case FLOAT: return TensorType.Value.DOUBLE;
             case DOUBLE: return TensorType.Value.DOUBLE;
             // Imperfect conversion, for now:
-            case BOOL: return TensorType.Value.FLOAT;
-            case INT32: return TensorType.Value.FLOAT;
-            case UINT8: return TensorType.Value.FLOAT;
+            case BOOL: return TensorType.Value.DOUBLE;
+            case INT32: return TensorType.Value.DOUBLE;
+            case UINT8: return TensorType.Value.DOUBLE;
             case INT64: return TensorType.Value.DOUBLE;
             default: throw new IllegalArgumentException("A TensorFlow tensor with data type " + dataType +
                                                         " cannot be converted to a Vespa tensor type");
