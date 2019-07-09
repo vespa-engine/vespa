@@ -70,4 +70,4 @@ findhost
 
 # END environment bootstrap section
 
-$VESPA_HOME/bin/zkctl ls $@
+$VESPA_HOME/bin/vespa-zkctl get $@
