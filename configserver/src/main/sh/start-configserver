@@ -135,7 +135,7 @@ vespa-run-as-vespa-user ${VESPA_HOME}/libexec/vespa/start-logd
 
 appdir="${VESPA_HOME}/conf/configserver-app"
 pidfile="${VESPA_HOME}/var/run/configserver.pid"
-cfpfile="${VESPA_HOME}/var/jdisc_core/configserver.properties"
+cfpfile="${VESPA_HOME}/var/jdisc_container/configserver.properties"
 bundlecachedir="${VESPA_HOME}/var/vespa/bundlecache/configserver"
 
 export JAVAVM_LD_PRELOAD=
