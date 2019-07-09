@@ -1,6 +1,9 @@
 {
   "jobs": [
     {
+      "name": "CapacityReportMaintainer"
+    },
+    {
       "name": "DirtyExpirer"
     },
     {
