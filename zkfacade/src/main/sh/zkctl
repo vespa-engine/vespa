@@ -70,4 +70,5 @@ findhost
 
 # END environment bootstrap section
 
-$VESPA_HOME/bin/vespa-zkctl ls $@
+# Get rid of the interactive zkcli prompt by running it in a subshell
+(echo "$@" | $VESPA_HOME/bin/zkcli)
