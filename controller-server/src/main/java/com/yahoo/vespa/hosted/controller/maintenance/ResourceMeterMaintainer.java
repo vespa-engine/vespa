@@ -89,17 +89,10 @@ public class ResourceMeterMaintainer extends Maintainer {
     }
 
     private Map<ApplicationId, ResourceAllocation> getResourceAllocationByApplication(List<NodeRepositoryNode> nodes) {
-        Map<ApplicationId, List<NodeRepositoryNode>> applicationNodes = new HashMap<>();
-
-        nodes.stream().forEach(node -> applicationNodes.computeIfAbsent(applicationIdFromNodeOwner(node.getOwner()), n -> new ArrayList<>()).add(node));
-
-        return applicationNodes.entrySet().stream()
-                .collect(
-                        Collectors.toMap(
-                                entry -> entry.getKey(),
-                                entry -> ResourceAllocation.from(entry.getValue())
-                        )
-                );
+        return nodes.stream()
+                .collect(Collectors.groupingBy(
+                        node -> applicationIdFromNodeOwner(node.getOwner()),
+                        Collectors.collectingAndThen(Collectors.toList(), ResourceAllocation::from)));
     }
 
     private ApplicationId applicationIdFromNodeOwner(NodeOwner owner) {
