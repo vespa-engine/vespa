@@ -70,7 +70,15 @@ findhost
 
 # END environment bootstrap section
 
-sudo -u ${VESPA_USER} java \
+sudo="sudo -u ${VESPA_USER}"
+while [ $# -gt 0 ]; do
+    case $1 in
+        -nosudo)         shift; sudo="" ;;
+        *)               echo "Unrecognized option '$1'" >&2; exit 1;;
+    esac
+done
+
+$sudo java \
 	-cp $VESPA_HOME/lib/jars/zkctl-jar-with-dependencies.jar \
 	-Dlog4j.configuration=file:$VESPA_HOME/etc/log4j-vespa.properties \
 	org.apache.zookeeper.ZooKeeperMain "$@"
