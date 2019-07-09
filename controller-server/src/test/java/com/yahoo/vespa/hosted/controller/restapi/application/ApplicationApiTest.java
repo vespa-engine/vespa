@@ -860,7 +860,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void  testMeteringResponses() {
-        // TODO - why does this request (for a tenant and application that does not exist) go through?
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
