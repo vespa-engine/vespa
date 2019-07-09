@@ -856,7 +856,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("application-without-change-multiple-deployments.json"));
     }
-    
+
+
+    @Test
+    public void  testMeteringResponses() {
+        // TODO - why does this request (for a tenant and application that does not exist) go through?
+        tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT),
+                              new File("application1-metering.json"));
+    }
+
     @Test
     public void testErrorResponses() throws Exception {
         tester.computeVersionStatus();

@@ -76,7 +76,8 @@ enum PathGroup {
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}"),
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/metering"),
 
     /** Path used to restart development nodes. */
     developmentRestart(Matcher.tenant,
