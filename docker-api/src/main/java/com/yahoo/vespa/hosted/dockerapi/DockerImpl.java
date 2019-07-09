@@ -7,7 +7,6 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.command.UpdateContainerCmd;
-import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.HostConfig;
@@ -16,7 +15,6 @@ import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
-import com.github.dockerjava.core.async.ResultCallbackTemplate;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
@@ -29,6 +27,8 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.util.Arrays;
@@ -38,10 +38,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
@@ -55,18 +56,32 @@ public class DockerImpl implements Docker {
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
+    private final Function<ContainerName, Statistics> statsGetter;
     private final Counter numberOfDockerApiFails;
 
     @Inject
     public DockerImpl(Metrics metrics) {
-        this(createDockerClient(), metrics);
+        MyJerseyDockerCmdExecFactory dockerFactory = (MyJerseyDockerCmdExecFactory) new MyJerseyDockerCmdExecFactory()
+                .withMaxPerRouteConnections(10)
+                .withMaxTotalConnections(100)
+                .withConnectTimeout((int) Duration.ofSeconds(100).toMillis())
+                .withReadTimeout((int) Duration.ofMinutes(30).toMillis());
+
+        DockerClientConfig dockerClientConfig = new DefaultDockerClientConfig.Builder()
+                .withDockerHost("unix:///var/run/docker.sock")
+                .build();
+
+        dockerClient = DockerClientImpl.getInstance(dockerClientConfig).withDockerCmdExecFactory(dockerFactory);
+        dockerImageGC = new DockerImageGarbageCollector(this);
+        statsGetter = dockerFactory::getStats;
+        numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
     }
 
-    DockerImpl(DockerClient dockerClient, Metrics metrics) {
+    DockerImpl(DockerClient dockerClient, Function<ContainerName, Statistics> statsGetter, Metrics metrics) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
-
-        numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
+        this.statsGetter = statsGetter;
+        this.numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
     }
 
     @Override
@@ -177,13 +192,10 @@ public class DockerImpl implements Docker {
     @Override
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         try {
-            DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-            statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
-
-            return statsCallback.stats.map(ContainerStats::new);
+            return Optional.of(new ContainerStats(statsGetter.apply(containerName)));
         } catch (NotFoundException ignored) {
             return Optional.empty();
-        } catch (RuntimeException | InterruptedException e) {
+        } catch (RuntimeException e) {
             numberOfDockerApiFails.increment();
             throw new DockerException("Failed to get stats for container '" + containerName.asString() + "'", e);
         }
@@ -356,46 +368,19 @@ public class DockerImpl implements Docker {
                 removeScheduledPoll(dockerImage);
             } else {
                 numberOfDockerApiFails.increment();
-                throw new DockerClientException("Could not download image: " + dockerImage);
+                logger.log(LogLevel.ERROR, "Failed to download image: " + dockerImage);
             }
         }
     }
 
-    // docker-java currently (3.0.8) does not support getting docker stats with stream=false, therefore we need
-    // to subscribe to the stream and complete as soon we get the first result.
-    private class DockerStatsCallback extends ResultCallbackTemplate<DockerStatsCallback, Statistics> {
-        private Optional<Statistics> stats = Optional.empty();
-        private final CountDownLatch completed = new CountDownLatch(1);
+    // docker-java currently (3.1.2) does not support getting docker stats with stream=false, therefore we need
+    // this hack
+    private static class MyJerseyDockerCmdExecFactory extends JerseyDockerCmdExecFactory {
+        Statistics getStats(ContainerName containerName) {
+            WebTarget webResource = getBaseResource().path("/containers/{id}/stats")
+                    .resolveTemplate("id", containerName.asString()).queryParam("stream", "false");
 
-        @Override
-        public void onNext(Statistics stats) {
-            if (stats != null) {
-                this.stats = Optional.of(stats);
-                completed.countDown();
-                onComplete();
-            }
+            return webResource.request().accept(MediaType.APPLICATION_JSON).get(Statistics.class);
         }
-
-        @Override
-        public boolean awaitCompletion(long timeout, TimeUnit timeUnit) throws InterruptedException {
-            // For some reason it takes as long to execute onComplete as the awaitCompletion timeout is, therefore
-            // we have own awaitCompletion that completes as soon as we get the first result.
-            return completed.await(timeout, timeUnit);
-        }
-    }
-
-    private static DockerClient createDockerClient() {
-        JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
-                .withMaxPerRouteConnections(10)
-                .withMaxTotalConnections(100)
-                .withConnectTimeout((int) Duration.ofSeconds(100).toMillis())
-                .withReadTimeout((int) Duration.ofMinutes(30).toMillis());
-
-        DockerClientConfig dockerClientConfig = new DefaultDockerClientConfig.Builder()
-                .withDockerHost("unix:///var/run/docker.sock")
-                .build();
-
-        return DockerClientImpl.getInstance(dockerClientConfig)
-                .withDockerCmdExecFactory(dockerFactory);
     }
 }

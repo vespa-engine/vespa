@@ -37,7 +37,7 @@ public class DockerImplTest {
 
     private final DockerClient dockerClient = mock(DockerClient.class);
     private final Metrics metrics = new Metrics();
-    private final DockerImpl docker = new DockerImpl(dockerClient, metrics);
+    private final DockerImpl docker = new DockerImpl(dockerClient, c -> null, metrics);
 
     @Test
     public void testExecuteCompletes() {
