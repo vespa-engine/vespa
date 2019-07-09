@@ -168,7 +168,11 @@ public class TensorType {
 
     @Override
     public String toString() {
-        return "tensor(" + dimensions.stream().map(Dimension::toString).collect(Collectors.joining(",")) + ")";
+        if ((rank() == 0) || (valueType == Value.DOUBLE)) { 
+            return "tensor(" + dimensions.stream().map(Dimension::toString).collect(Collectors.joining(",")) + ")";
+        } else {
+            return "tensor<" + valueType + ">(" + dimensions.stream().map(Dimension::toString).collect(Collectors.joining(",")) + ")";
+        }
     }
 
     @Override
@@ -177,6 +181,7 @@ public class TensorType {
         if (o == null || getClass() != o.getClass()) return false;
 
         TensorType other = (TensorType)o;
+        if ( (this.rank() == 0) && (other.rank() == 0)) return true;
         if ( this.valueType != other.valueType) return false;
         if ( ! this.dimensions.equals(other.dimensions)) return false;
         return true;
