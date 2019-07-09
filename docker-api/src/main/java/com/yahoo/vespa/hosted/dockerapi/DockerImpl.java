@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
@@ -380,7 +381,15 @@ public class DockerImpl implements Docker {
             WebTarget webResource = getBaseResource().path("/containers/{id}/stats")
                     .resolveTemplate("id", containerName.asString()).queryParam("stream", "false");
 
-            return webResource.request().accept(MediaType.APPLICATION_JSON).get(Statistics.class);
+            try {
+                return webResource.request().accept(MediaType.APPLICATION_JSON).get(Statistics.class);
+            } catch (ProcessingException e) {
+                if (e.getCause() instanceof com.github.dockerjava.api.exception.DockerException) {
+                    throw (com.github.dockerjava.api.exception.DockerException) e.getCause();
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 }
