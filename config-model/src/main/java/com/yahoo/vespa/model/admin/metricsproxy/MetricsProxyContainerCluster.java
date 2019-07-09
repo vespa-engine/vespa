@@ -9,7 +9,7 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
-import ai.vespa.metricsproxy.http.GenericMetricsHandler;
+import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -49,8 +49,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.ZONE;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.getDefaultPublicConsumer;
-import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
+import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.JarSuffix.JAR_WITH_DEPS;
 import static com.yahoo.vespa.model.container.xml.BundleMapper.absoluteBundlePath;
 
@@ -71,7 +71,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
-    private static final String METRICS_HANDLER_BINDING = "/metrics/v1/values";
+    private static final String METRICS_HANDLER_BINDING = "/metrics/v1/*";
 
     static final class AppDimensionNames {
         static final String ZONE = "zone";
@@ -113,7 +113,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     private void addGenericMetricsHandler() {
         Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
-                new ComponentModel(GenericMetricsHandler.class.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
+                new ComponentModel(MetricsHandler.class.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
         metricsHandler.addServerBindings("http://*" + METRICS_HANDLER_BINDING,
                                          "http://*" + METRICS_HANDLER_BINDING + "/*");
         addComponent(metricsHandler);
