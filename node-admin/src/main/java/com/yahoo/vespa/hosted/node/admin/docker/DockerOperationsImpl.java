@@ -269,50 +269,41 @@ public class DockerOperationsImpl implements DockerOperations {
 
         // Paths unique to each container
         List<Path> paths = new ArrayList<>(List.of(
-                Paths.get("/etc/vespa/flags"),
-                Paths.get("/etc/yamas-agent"),
-                Paths.get("/opt/splunkforwarder/var/log"),
-                Paths.get("/var/log"),
-                Paths.get("/var/spool/postfix/maildrop"),
-                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
-                context.pathInNodeUnderVespaHome("logs/jdisc_core"),
-                context.pathInNodeUnderVespaHome("logs/langdetect"),
-                context.pathInNodeUnderVespaHome("logs/nginx"),
+                Paths.get("/etc/vespa/flags"), // local file db, to use flags before connection to cfg is established
+                Paths.get("/etc/yamas-agent"), // metrics check configuration
+                Paths.get("/opt/splunkforwarder/var/log"),  // VESPA-14917, thin pool leakage
+                Paths.get("/var/log"),                      // VESPA-14917, thin pool leakage
+                Paths.get("/var/spool/postfix/maildrop"),   // VESPA-14917, thin pool leakage
+                context.pathInNodeUnderVespaHome("logs/daemontools_y"), // TODO: related to ykeykey?
                 context.pathInNodeUnderVespaHome("logs/vespa"),
                 context.pathInNodeUnderVespaHome("logs/yca"),
-                context.pathInNodeUnderVespaHome("logs/yck"),
-                context.pathInNodeUnderVespaHome("logs/yell"),
-                context.pathInNodeUnderVespaHome("logs/ykeykey"),
-                context.pathInNodeUnderVespaHome("logs/ykeykeyd"),
-                context.pathInNodeUnderVespaHome("logs/yms_agent"),
+                context.pathInNodeUnderVespaHome("logs/ykeykeyd"), // TODO: should only be needed for proxy?
                 context.pathInNodeUnderVespaHome("logs/ysar"),
-                context.pathInNodeUnderVespaHome("logs/ystatus"),
-                context.pathInNodeUnderVespaHome("logs/zpu"),
                 context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/cache"),
-                context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/crash"), // core dumps
                 context.pathInNodeUnderVespaHome("var/container-data"),
-                context.pathInNodeUnderVespaHome("var/db/jdisc"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
-                context.pathInNodeUnderVespaHome("var/jdisc_container"),
-                context.pathInNodeUnderVespaHome("var/jdisc_core"),
-                context.pathInNodeUnderVespaHome("var/maven"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when vespa-routing is no more
-                context.pathInNodeUnderVespaHome("var/run"),
-                context.pathInNodeUnderVespaHome("var/service"),
-                context.pathInNodeUnderVespaHome("var/share"),
-                context.pathInNodeUnderVespaHome("var/spool"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
+                context.pathInNodeUnderVespaHome("var/run"), // TODO: Remove? Only contains .pid files
+                context.pathInNodeUnderVespaHome("var/service"), // TODO: Remove? Contains 1 link to unmounted directory
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
-                context.pathInNodeUnderVespaHome("var/ycore++"),
-                context.pathInNodeUnderVespaHome("var/yinst/tmp"),
-                context.pathInNodeUnderVespaHome("var/zookeeper")
+                context.pathInNodeUnderVespaHome("var/yinst/tmp"), // TODO: Remove? Used during start up, then cleared
+                context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
         ));
 
-        if (context.nodeType() == NodeType.proxy)
+        if (context.nodeType() == NodeType.proxy) {
+            paths.add(context.pathInNodeUnderVespaHome("logs/nginx"));
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
-        if (context.nodeType() == NodeType.tenant)
+        } else if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
+
+        if (isInfrastructureHost(context.nodeType())) {
+            // configserver/src/main/sh/start-configserver, standalone-container/src/main/sh/standalone-container.sh
+            paths.add(context.pathInNodeUnderVespaHome("var/jdisc_core"));
+        } else {
+            paths.add(context.pathInNodeUnderVespaHome("var/jdisc_container")); // container-disc/src/main/sh/vespa-start-container-daemon.sh
+        }
 
         paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
 
