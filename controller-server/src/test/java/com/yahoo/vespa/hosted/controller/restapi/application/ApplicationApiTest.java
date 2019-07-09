@@ -857,7 +857,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("application-without-change-multiple-deployments.json"));
     }
 
-
     @Test
     public void  testMeteringResponses() {
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)

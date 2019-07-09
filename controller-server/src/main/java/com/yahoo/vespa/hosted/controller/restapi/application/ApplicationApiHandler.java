@@ -773,7 +773,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    HttpResponse metering(String tenant, String application, HttpRequest request) {
+    private HttpResponse metering(String tenant, String application, HttpRequest request) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
