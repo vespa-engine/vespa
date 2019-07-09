@@ -462,6 +462,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
             return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
+        } catch (NotFoundException e) {
+            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
