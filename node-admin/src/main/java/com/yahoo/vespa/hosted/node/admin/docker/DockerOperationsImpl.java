@@ -285,11 +285,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
                 context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
-                context.pathInNodeUnderVespaHome("var/run"), // TODO: Remove? Only contains .pid files
-                context.pathInNodeUnderVespaHome("var/service"), // TODO: Remove? Contains 1 link to unmounted directory
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
-                context.pathInNodeUnderVespaHome("var/yinst/tmp"), // TODO: Remove? Used during start up, then cleared
                 context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
         ));
 
