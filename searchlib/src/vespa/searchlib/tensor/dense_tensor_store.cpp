@@ -13,6 +13,7 @@ using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
+using CellType = vespalib::eval::ValueType::CellType;
 
 namespace search::tensor {
 
@@ -21,12 +22,20 @@ namespace {
 constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 constexpr size_t DENSE_TENSOR_ALIGNMENT = 32;
 
+size_t size_of(CellType type) {
+    switch (type) {
+    case CellType::DOUBLE: return sizeof(double);
+    case CellType::FLOAT: return sizeof(float);
+    }
+    abort();
+}
+
 }
 
 DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
     : _numBoundCells(1u),
       _numUnboundDims(0u),
-      _cellSize(sizeof(double))
+      _cellSize(size_of(type.cell_type()))
 {
     for (const auto & dim : type.dimensions()) {
         if (dim.is_bound()) {
@@ -237,6 +246,7 @@ checkMatchingType(const ValueType &lhs, const ValueType &rhs, size_t numCells)
         checkNumCells *= rhsItr->size;
         ++rhsItr;
     }
+    assert(lhs.cell_type() == rhs.cell_type());
     assert(numCells == checkNumCells);
     assert(rhsItr == rhsItrEnd);
 }

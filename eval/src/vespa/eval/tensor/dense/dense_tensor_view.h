@@ -46,6 +46,7 @@ public:
     void accept(TensorVisitor &visitor) const override;
 protected:
     void initCellsRef(TypedCells cells_in) {
+        assert(_typeRef.cell_type() == cells_in.type);
         _cellsRef = cells_in;
     }
 private:
