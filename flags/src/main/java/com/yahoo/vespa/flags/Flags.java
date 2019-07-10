@@ -10,7 +10,6 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * Definitions of feature flags.
@@ -162,7 +161,7 @@ public class Flags {
             "disable-chef", false,
             "Stops and disables chef-client",
             "Takes effect on next host-admin tick",
-            ZONE_ID, HOSTNAME);
+            HOSTNAME, NODE_TYPE);
 
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
