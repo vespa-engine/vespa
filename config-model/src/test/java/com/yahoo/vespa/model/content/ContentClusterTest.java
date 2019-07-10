@@ -232,12 +232,12 @@ public class ContentClusterTest extends ContentBaseTest {
                         "  <admin version='2.0'>" +
                         "    <adminserver hostalias='node1'/>" +
                         "  </admin>"  +
-                        "   <jdisc id='default' version='1.0'>" +
+                        "   <container id='default' version='1.0'>" +
                         "     <search/>" +
                         "     <nodes>" +
                         "       <node hostalias='node1'/>" +
                         "     </nodes>" +
-                        "   </jdisc>" +
+                        "   </container>" +
                         "   <content id='storage' version='1.0'>" +
                         "     <redundancy>2</redundancy>" +
                         "     <group>" +

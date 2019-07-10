@@ -44,13 +44,13 @@ public class SearchChainsTest2 {
     @Test
     public void fail_upon_two_user_declared_chains_with_same_name() {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                 ContainerModelBuilderTest.nodesXml,
                 "  <search>",
                 "    <chain id='same' />",
                 "    <chain id='same' />",
                 "  </search>",
-                "</jdisc>");
+                "</container>");
         try {
             ContainerModelBuilderTest.createModel(root, clusterElem);
             fail("Expected exception when declaring chains with duplicate id.");
@@ -63,12 +63,12 @@ public class SearchChainsTest2 {
     @Test
     public void fail_upon_user_declared_chain_with_same_id_as_builtin_chain() {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                 ContainerModelBuilderTest.nodesXml,
                 "  <search>",
                 "    <chain id='vespa' />",
                 "  </search>",
-                "</jdisc>");
+                "</container>");
         try {
             ContainerModelBuilderTest.createModel(root, clusterElem);
             fail("Expected exception when taking the id from a builtin chain.");

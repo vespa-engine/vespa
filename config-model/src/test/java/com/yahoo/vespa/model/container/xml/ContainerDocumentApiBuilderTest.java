@@ -37,13 +37,13 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     @Test
     public void custom_bindings_are_allowed() {
         Element elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                 "  <document-api>",
                 "    <binding>http://*/document-api/</binding>",
                 "    <binding>missing-trailing-slash</binding>",
                 "  </document-api>",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
         createModel(root, elem);
 
         verifyCustomBindings("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi");
@@ -63,10 +63,10 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     @Test
     public void requireThatHandlersAreSetup() {
         Element elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                 "  <document-api />",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
         createModel(root, elem);
 
         Map<String, Handler<?>> handlerMap = getHandlers("cluster1");

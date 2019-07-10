@@ -21,11 +21,11 @@ public class ImplicitIndexingClusterTest {
     @Test
     public void existing_jdisc_is_used_as_indexing_cluster_when_multitenant() {
         final String servicesXml = "<services version=\"1.0\">\n" + //
-                "  <jdisc version=\"1.0\" id=\"jdisc\">\n" + //
+                "  <container version=\"1.0\" id=\"jdisc\">\n" + //
                 "    <search />\n" + //
                 "    <nodes count=\"1\" />\n" + //
                 ACCESS_CONTROL_XML + //
-                "  </jdisc>\n" + //
+                "  </container>\n" + //
                 "  <content id=\"music\" version=\"1.0\">\n" + //
                 "    <redundancy>1</redundancy>\n" + //
                 "    <documents>\n" + //

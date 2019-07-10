@@ -83,20 +83,22 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * @author Tony Vaagenes
  * @author gjoranv
  */
 public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
-    /**
-     * Default path to vip status file for container in Hosted Vespa.
-     */
+    // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
-    /**
-     * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
-     */
+
+    //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
+
+    private static final String TAG_NAME = "container";
+    private static final String DEPRECATED_TAG_NAME = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
@@ -109,7 +111,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected DeployLogger log;
 
     public static final List<ConfigModelId> configModelIds =  
-            ImmutableList.of(ConfigModelId.fromName("container"), ConfigModelId.fromName("jdisc"));
+            ImmutableList.of(ConfigModelId.fromName(TAG_NAME), ConfigModelId.fromName(DEPRECATED_TAG_NAME));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -130,10 +132,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
+        log = modelContext.getDeployLogger();
         app = modelContext.getApplicationPackage();
-        checkVersion(spec);
 
-        this.log = modelContext.getDeployLogger();
+        checkVersion(spec);
+        checkTagName(spec, log);
+
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
@@ -423,6 +427,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    private void checkTagName(Element spec, DeployLogger logger) {
+        if (spec.getTagName().equals(DEPRECATED_TAG_NAME)) {
+            logger.log(WARNING, "'" + DEPRECATED_TAG_NAME + "' is deprecated as tag name. Use '" + TAG_NAME + "' instead.");
+        }
+    }
+
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
             addStandaloneNode(cluster);
@@ -462,7 +472,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
+                deployLogger.log(WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
                 cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }

@@ -148,11 +148,11 @@ public class ConfigserverClusterTest {
 
     private static <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, TestOptions testOptions) {
         AbstractConfigProducerRoot root = new MockRoot();
-        String services = "<jdisc id='standalone' version='1.0'>"
+        String services = "<container id='standalone' version='1.0'>"
                 + "  <http>"
                 + "    <server port='1337' id='configserver' />"
                 + "  </http>"
-                + "</jdisc>";
+                + "</container>";
         new ConfigServerContainerModelBuilder(testOptions)
                 .build(new DeployState.Builder().build(), null, null, root, XML.getDocument(services).getDocumentElement());
         root.freezeModelTopology();

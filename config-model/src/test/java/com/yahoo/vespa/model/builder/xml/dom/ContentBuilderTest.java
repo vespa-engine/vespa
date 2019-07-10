@@ -723,13 +723,13 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "      <node hostalias='mockhost' distribution-key='0' />\n" +
                 "    </group>\n" +
                 "  </content>\n" +
-                "  <jdisc version='1.0' id='qrc'>" +
+                "  <container version='1.0' id='qrc'>" +
                 "      <search/>" +
                 "      <nodes>" +
                 "        <node hostalias='mockhost' />" +
                 "      </nodes>" +
-                "  </jdisc>" +
-                "  <jdisc version='1.0' id='qrc2'>" +
+                "  </container>" +
+                "  <container version='1.0' id='qrc2'>" +
                 "      <http>" +
                 "      <server id ='server1' port='5000' />" +
                 "      </http>" +
@@ -738,7 +738,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "        <node hostalias='mockhost' />" +
                 "        <node hostalias='mockhost2' />" +
                 "      </nodes>" +
-                "  </jdisc>"
+                "  </container>"
 
         );
         List<Dispatch> tlds = content.getSearch().getIndexed().getTLDs();
@@ -919,12 +919,12 @@ public class ContentBuilderTest extends DomBuilderTest {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='mockhost'/>" +
                 "  </admin>" +
-                "  <jdisc version='1.0' id='qrc'>" +
+                "  <container version='1.0' id='qrc'>" +
                 "      <search/>" +
                 "      <nodes>" +
                 "        <node hostalias='mockhost' />" +
                 "      </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='clu'>" +
                 "    <documents>" +
                 "      <document type='music' mode='index'>" +

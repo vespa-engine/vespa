@@ -73,19 +73,19 @@ public class ModelProvisioningTest {
                         "<services>\n" +
                         "\n" +
                         "<admin version='3.0'><nodes count='1' /></admin>\n" +
-                        "<jdisc id='mydisc' version='1.0'>" +
+                        "<container id='mydisc' version='1.0'>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
                         "  <nodes count=\"3\"/>" +
-                        "</jdisc>" +
-                        "<jdisc id='mydisc2' version='1.0'>" +
+                        "</container>" +
+                        "<container id='mydisc2' version='1.0'>" +
                         "  <document-processing/>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
                         "  <nodes count='2' allocated-memory='45%' jvm-gc-options='-XX:+UseParNewGC' jvm-options='-verbosegc' preload='lib/blablamalloc.so'/>" +
-                        "</jdisc>" +
+                        "</container>" +
                         "</services>";
         String hosts ="<hosts>"
                 + " <host name='myhost0'>"
@@ -1232,19 +1232,19 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testJDiscOnly() {
+    public void testContainerOnly() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<jdisc version='1.0'>" +
+                        "<container version='1.0'>" +
                         "  <search/>" +
                         "  <nodes count='3'/>" +
-                        "</jdisc>";
+                        "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
-        assertEquals(3, model.getContainerClusters().get("jdisc").getContainers().size());
+        assertEquals(3, model.getContainerClusters().get("container").getContainers().size());
         assertNotNull(model.getAdmin().getLogserver());
         assertEquals(3, model.getAdmin().getSlobroks().size());
     }
@@ -1253,42 +1253,42 @@ public class ModelProvisioningTest {
     public void testJvmArgs() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<jdisc version='1.0'>" +
+                        "<container version='1.0'>" +
                         "  <search/>" +
                         "  <nodes jvmargs='xyz' count='3'/>" +
-                        "</jdisc>";
+                        "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
-        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+        assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
     @Test
     public void testJvmOptions() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<jdisc version='1.0'>" +
+                        "<container version='1.0'>" +
                         "  <search/>" +
                         "  <nodes jvm-options='xyz' count='3'/>" +
-                        "</jdisc>";
+                        "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
-        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+        assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
     @Test
     public void testJvmOptionsOverridesJvmArgs() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<jdisc version='1.0'>" +
+                        "<container version='1.0'>" +
                         "  <search/>" +
                         "  <nodes jvm-options='xyz' jvmargs='abc' count='3'/>" +
-                        "</jdisc>";
+                        "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
@@ -1309,14 +1309,14 @@ public class ModelProvisioningTest {
                         "<admin version='2.0'>" +
                         "  <adminserver hostalias='node1'/>\n"+
                         "</admin>\n" +
-                        "<jdisc id='mydisc' version='1.0'>" +
+                        "<container id='mydisc' version='1.0'>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
                         "  <nodes>" +
                         "    <node hostalias='node1'/>" +
                         "  </nodes>" +
-                        "</jdisc>" +
+                        "</container>" +
                         "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
@@ -1329,11 +1329,11 @@ public class ModelProvisioningTest {
     public void testThatStandaloneSyntaxWorksOnHostedVespa() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
-                "<jdisc id='foo' version='1.0'>" +
+                "<container id='foo' version='1.0'>" +
                 "  <http>" +
                 "    <server id='server1' port='" + getDefaults().vespaWebServicePort() + "' />" +
                 "  </http>" +
-                "</jdisc>";
+                "</container>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
@@ -1346,10 +1346,10 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
-                "  <jdisc id='foo' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
                 "    <search/>" +
                 "    <document-api/>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='bar'>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
@@ -1370,10 +1370,10 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
-                "  <jdisc id='foo' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
                 "    <search/>" +
                 "    <document-api/>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
@@ -1388,10 +1388,10 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
-                "  <jdisc id='foo' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
                 "    <search/>" +
                 "    <document-api/>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='bar'>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
@@ -1413,11 +1413,11 @@ public class ModelProvisioningTest {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
-                "  <jdisc id='foo' version='1.0'>" +
+                "  <container id='foo' version='1.0'>" +
                 "    <search/>" +
                 "    <document-api/>" +
                 "    <nodes><node hostalias='foo'/></nodes>"+
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='bar'>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
@@ -1444,12 +1444,12 @@ public class ModelProvisioningTest {
         "  <admin version='2.0'>" +
         "    <adminserver hostalias='node1'/>" +
         "  </admin>"  +
-        "   <jdisc id='default' version='1.0'>" +
+        "   <container id='default' version='1.0'>" +
         "     <search/>" +
         "     <nodes>" +
         "       <node hostalias='node1'/>" +
         "     </nodes>" +
-        "   </jdisc>" +
+        "   </container>" +
         "   <content id='storage' version='1.0'>" +
         "     <redundancy>2</redundancy>" +
         "     <group>" +
@@ -1593,12 +1593,12 @@ public class ModelProvisioningTest {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node1'/>" +
                 "  </admin>"  +
-                "   <jdisc id='default' version='1.0'>" +
+                "   <container id='default' version='1.0'>" +
                 "     <search/>" +
                 "     <nodes>" +
                 "       <node hostalias='node1'/>" +
                 "     </nodes>" +
-                "   </jdisc>" +
+                "   </container>" +
                 "   <content id='storage' version='1.0'>" +
                 "     <redundancy>2</redundancy>" +
                 "     <group>" +
@@ -1655,14 +1655,14 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
                         "  <admin version='4.0'/>" +
-                        "  <jdisc version='1.0' id='jdisc0'>" +
+                        "  <container version='1.0' id='jdisc0'>" +
                         "     <search/>" +
                         "     <nodes count='2'/>" +
-                        "  </jdisc>" +
-                        "  <jdisc version='1.0' id='jdisc1'>" +
+                        "  </container>" +
+                        "  <container version='1.0' id='jdisc1'>" +
                         "     <search/>" +
                         "     <nodes count='2'/>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "  <content version='1.0' id='content0'>" +
                         "     <redundancy>2</redundancy>" +
                         "     <documents>" +

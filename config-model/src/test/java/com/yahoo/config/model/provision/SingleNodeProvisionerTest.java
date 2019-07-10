@@ -61,10 +61,10 @@ public class SingleNodeProvisionerTest {
                            + "  <admin version='3.0'>"
                            + "    <nodes count='1' />"
                            + "  </admin>"
-                           + "  <jdisc version='1.0'>"
+                           + "  <container version='1.0'>"
                            + "    <search />"
                            + "    <nodes count='1' />"
-                           + "  </jdisc>"
+                           + "  </container>"
                            + "</services>";
         ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(app);

@@ -68,7 +68,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
 
     private Element servicesXml() {
         return parse(
-                "<jdisc id='banan' version='1.0'>",
+                "<container id='banan' version='1.0'>",
                 "  <nodes>",
                 "    <node hostalias='mockhost' baseport='1500' />",
                 "  </nodes>",
@@ -78,7 +78,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 "      <documentprocessor id='docproc2'/>",
                 "    </chain>",
                 "  </document-processing>",
-                "</jdisc>");
+                "</container>");
     }
 
     // TODO: re-enable assertions when the appropriate attributes are handled by the builder

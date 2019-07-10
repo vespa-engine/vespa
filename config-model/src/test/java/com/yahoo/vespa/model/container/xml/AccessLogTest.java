@@ -25,16 +25,16 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
     @Test
     public void default_access_log_is_only_added_when_search_is_present() throws Exception {
         Element cluster1Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                 "<search />",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
         Element cluster2Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster2' version='1.0'>",
+                "<container id='cluster2' version='1.0'>",
                 "  <nodes>",
                 "    <node hostalias='mockhost' baseport='1234' />",
                 "  </nodes>",
-                "</jdisc>" );
+                "</container>" );
 
         createModel(root, cluster1Elem, cluster2Elem);
 
@@ -49,10 +49,10 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         final String jdiscClusterId = "jdisc-cluster";
 
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id=" + quote(jdiscClusterId) + " version='1.0'>" +
+                "<container id=" + quote(jdiscClusterId) + " version='1.0'>" +
                         "  <search />" +
                         "  <accesslog type='disabled' />" +
-                        "</jdisc>" );
+                        "</container>" );
 
         createModel(root, clusterElem);
         assertNull(getVespaAccessLog(jdiscClusterId));
@@ -71,13 +71,13 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_log_can_be_configured() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <accesslog type='vespa' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
                 "  <accesslog type='json' ",
                 "             fileNamePattern='pattern' rotationInterval='interval' />",
                 nodesXml,
-                "</jdisc>" );
+                "</container>" );
 
         createModel(root, clusterElem);
         assertNotNull(getJsonAccessLog("default"));

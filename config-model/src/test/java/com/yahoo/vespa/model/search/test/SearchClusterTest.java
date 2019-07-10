@@ -81,7 +81,7 @@ public class SearchClusterTest {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0' />" +
                 "  </admin>\n" +
-                "  <jdisc version='1.0' id='j1'>\n" +
+                "  <container version='1.0' id='j1'>\n" +
                 "    <search>" +
                 "      <chain id='s1Chain'>" +
                 "        <searcher id='S1ClusterSearcher'/>" +
@@ -91,9 +91,9 @@ public class SearchClusterTest {
                 "    <nodes>" +
                 "      <node hostalias=\"node0\" />" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
 
-                "  <jdisc version='1.0' id='j2'>" +
+                "  <container version='1.0' id='j2'>" +
                 "    <search>" +
                 "      <chain id='s2Chain'>" +
                 "        <searcher id='S2ClusterSearcher'/>" +
@@ -103,7 +103,7 @@ public class SearchClusterTest {
                 "    <nodes>" +
                 "      <node hostalias=\"node2\" />" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
 
                 "  <content id='xbulk' version=\"1.0\">" +
                 "     <redundancy>2</redundancy>" +

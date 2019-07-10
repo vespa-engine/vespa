@@ -18,9 +18,9 @@
     </metrics>
   </admin>
 
-  <jdisc id="container" version="1.0">
+  <container id="container" version="1.0">
     <nodes count="5" flavor="medium"/>
-  </jdisc>
+  </container>
 
   <content id="search" version="1.0">
     <redundancy>2</redundancy>

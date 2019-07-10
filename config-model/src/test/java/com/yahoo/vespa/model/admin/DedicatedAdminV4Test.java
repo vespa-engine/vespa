@@ -115,18 +115,18 @@ public class DedicatedAdminV4Test {
                     "  <admin version='4.0'>" +
                     "    <nodes count='1' dedicated='true' />" +
                     "  </admin>" +
-                    "  <jdisc id='a' version='1.0'>" +
+                    "  <container id='a' version='1.0'>" +
                     "    <search />" +
                     "    <nodes count='2' dedicated='true' />" +
-                    "  </jdisc>" +
-                    "  <jdisc id='b' version='1.0'>" +
+                    "  </container>" +
+                    "  <container id='b' version='1.0'>" +
                     "    <search />" +
                     "    <nodes count='1' dedicated='true' />" +
-                    "  </jdisc>" +
-                    "  <jdisc id='c' version='1.0'>" +
+                    "  </container>" +
+                    "  <container id='c' version='1.0'>" +
                     "    <search />" +
                     "    <nodes count='1' dedicated='true' />" +
-                    "  </jdisc>" +
+                    "  </container>" +
                     "</services>";
 
         VespaModel model = createModel(hosts, servicesWith3JdiscClusters);

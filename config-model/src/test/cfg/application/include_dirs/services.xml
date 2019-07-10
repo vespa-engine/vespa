@@ -7,7 +7,7 @@
     <logserver hostalias="node1" />
   </admin>
 
-  <jdisc id="default" version="1.0">
+  <container id="default" version="1.0">
   <!--  <component id="test.Exampledocproc"/> -->
     <components>
       <include dir="jdisc_dir"/>
@@ -21,6 +21,6 @@
     <nodes>
       <node hostalias="node1" />
     </nodes>
-  </jdisc>
+  </container>
 
 </services>

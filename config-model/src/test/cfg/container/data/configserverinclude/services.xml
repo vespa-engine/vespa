@@ -2,9 +2,9 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
-  <jdisc id='configserver' version="1.0">
+  <container id='configserver' version="1.0">
     <http>
       <server id="configserver" port="1234" />
     </http>
-  </jdisc>
+  </container>
 </services>

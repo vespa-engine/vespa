@@ -56,12 +56,12 @@ public class IndexedTest extends ContentBaseTest {
                 "      </tokens>" +
                 "    </tokenlist>" +
                 "  </config>" +
-                "  <jdisc version='1.0'>" +
+                "  <container version='1.0'>" +
                 "    <search/>" +
                 "    <nodes>" +
                 "      <node hostalias='node0'/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='test'>" +
                 "     <redundancy>1</redundancy>" +
                 "     <engine>" +
@@ -85,12 +85,12 @@ public class IndexedTest extends ContentBaseTest {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0'/>" +
                 "  </admin>" +
-                "  <jdisc version='1.0'>" +
+                "  <container version='1.0'>" +
                 "    <search/>" +
                 "    <nodes>" +
                 "      <node hostalias='node0'/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "  <content version='1.0' id='test'>" +
                 "     <redundancy>1</redundancy>\n" +
                 "     <engine>" +
@@ -153,15 +153,16 @@ public class IndexedTest extends ContentBaseTest {
         DocumentProtocol protocol = (DocumentProtocol) routing.getProtocols().get(0);
         RoutingTableSpec spec = protocol.getRoutingTableSpec();
         assertEquals(2, spec.getNumHops());
-        assertEquals("indexing", spec.getHop(0).getName());
-        assertEquals("jdisc/chain.indexing", spec.getHop(1).getName());
+
+        assertEquals("container/chain.indexing", spec.getHop(0).getName());
+        assertEquals("indexing", spec.getHop(1).getName());
 
         assertRoute(spec.getRoute(0), "default", "indexing");
         assertRoute(spec.getRoute(1), "default-get", "[Content:cluster=test]");
         assertRoute(spec.getRoute(2), "storage/cluster.test", "route:test");
         assertRoute(spec.getRoute(3), "test", "[MessageType:test]");
         assertRoute(spec.getRoute(4), "test-direct", "[Content:cluster=test]");
-        assertRoute(spec.getRoute(5), "test-index", "jdisc/chain.indexing", "[Content:cluster=test]");
+        assertRoute(spec.getRoute(5), "test-index", "container/chain.indexing", "[Content:cluster=test]");
     }
 
     @Test
@@ -268,7 +269,7 @@ public class IndexedTest extends ContentBaseTest {
     @Test
     public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
         VespaModel model = getIndexedVespaModel();
-        ApplicationContainerCluster cluster = model.getContainerClusters().get("jdisc");
-        assertEquals("jdisc/container.0", cluster.getContainers().get(0).getConfigId());
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
+        assertEquals("container/container.0", cluster.getContainers().get(0).getConfigId());
     }
 }
