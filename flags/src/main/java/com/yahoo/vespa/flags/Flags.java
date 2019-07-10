@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 
 /**
  * Definitions of feature flags.
@@ -156,6 +157,13 @@ public class Flags {
             "Allow applications to use new endpoints syntax in deployment.xml",
             "Takes effect on deployment through controller",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag DISABLE_CHEF = defineFeatureFlag(
+            "disable-chef", false,
+            "Stops and disables chef-client",
+            "Takes effect on next host-admin tick",
+            ZONE_ID, HOSTNAME);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
