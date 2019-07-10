@@ -122,7 +122,7 @@ StartCommand() {
 
     # stuff for the process:
     local appdir="$VESPA_HOME/conf/$service-app"
-    local cfpfile="$VESPA_HOME/var/jdisc_core/$service.properties"
+    local cfpfile="$VESPA_HOME/var/jdisc_container/$service.properties"
     local bundlecachedir="$VESPA_HOME/var/vespa/bundlecache/$service"
 
     cd "$VESPA_HOME" || Fail "Cannot cd to $VESPA_HOME"

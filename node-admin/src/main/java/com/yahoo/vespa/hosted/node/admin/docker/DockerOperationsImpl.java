@@ -283,12 +283,10 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/crash"), // core dumps
                 context.pathInNodeUnderVespaHome("var/container-data"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
+                context.pathInNodeUnderVespaHome("var/jdisc_container"),
                 context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
-                context.pathInNodeUnderVespaHome("var/run"), // TODO: Remove? Only contains .pid files
-                context.pathInNodeUnderVespaHome("var/service"), // TODO: Remove? Contains 1 link to unmounted directory
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
-                context.pathInNodeUnderVespaHome("var/yinst/tmp"), // TODO: Remove? Used during start up, then cleared
                 context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
         ));
 
@@ -297,13 +295,6 @@ public class DockerOperationsImpl implements DockerOperations {
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
         } else if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
-
-        if (isInfrastructureHost(context.nodeType())) {
-            // configserver/src/main/sh/start-configserver, standalone-container/src/main/sh/standalone-container.sh
-            paths.add(context.pathInNodeUnderVespaHome("var/jdisc_core"));
-        } else {
-            paths.add(context.pathInNodeUnderVespaHome("var/jdisc_container")); // container-disc/src/main/sh/vespa-start-container-daemon.sh
-        }
 
         paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
 
