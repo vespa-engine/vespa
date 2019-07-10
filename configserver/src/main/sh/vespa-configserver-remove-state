@@ -80,6 +80,9 @@ usage() {
         echo "The following options are recognized:"
         echo ""
 
+        echo "-h|-help)              print this help text"
+        echo "-nosudo                do not use sudo when running command"
+        echo "-sudo                  use sudo when running command"
         echo "-force                 do not ask for confirmation before removal"
     ) >&2
 }
@@ -101,7 +104,7 @@ while [ $# -gt 0 ]; do
         -h|-help)        usage; exit 0;;
         -nosudo)         shift; sudo="" ;;
         -sudo)           shift; sudo="sudo" ;;
-	-force)          shift; ask=false ;;
+        -force)          shift; ask=false ;;
         *)               echo "Unrecognized option '$1'" >&2; usage; exit 1;;
     esac
 done
