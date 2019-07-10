@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -48,8 +49,12 @@ class CachedFilesMaintainer implements Runnable {
 
     @Override
     public void run() {
-        deleteUnusedFiles(fileReferencesDownloadDir);
-        deleteUnusedFiles(urlDownloadDir);
+        try {
+            deleteUnusedFiles(fileReferencesDownloadDir);
+            deleteUnusedFiles(urlDownloadDir);
+        } catch (Throwable t) {
+            log.log(Level.WARNING, "Deleting unused files failed. ", t);
+        }
     }
 
     private void deleteUnusedFiles(File directory) {
