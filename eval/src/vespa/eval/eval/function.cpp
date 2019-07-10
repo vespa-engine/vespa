@@ -30,18 +30,6 @@ bool has_duplicates(const std::vector<vespalib::string> &list) {
     return false;
 }
 
-bool check_tensor_lambda_type(const ValueType &type) {
-    if (!type.is_tensor() || type.dimensions().empty()) {
-        return false;
-    }
-    for (const auto &dim: type.dimensions()) {
-        if (!dim.is_indexed() || !dim.is_bound()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 //-----------------------------------------------------------------------------
 
 class Params {
@@ -566,7 +554,7 @@ void parse_tensor_lambda(ParseContext &ctx) {
     ctx.eat(')');
     type_spec.push_back(')');
     ValueType type = ValueType::from_spec(type_spec);
-    if (!check_tensor_lambda_type(type)) {
+    if (!type.is_dense()) {
         ctx.fail("invalid tensor type");
         return;
     }

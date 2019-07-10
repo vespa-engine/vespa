@@ -6,31 +6,10 @@ using vespalib::eval::ValueType;
 
 namespace vespalib::tensor {
 
-MutableDenseTensorView::MutableValueType::MutableValueType(ValueType type_in)
-    : _type(type_in)
-{
-    std::vector<ValueType::Dimension> &dimensions =
-            const_cast<std::vector<ValueType::Dimension> &>(_type.dimensions());
-    for (auto &dim : dimensions) {
-        if (!dim.is_bound()) {
-            _unboundDimSizes.emplace_back(&dim.size);
-        }
-    }
-}
-
-MutableDenseTensorView::MutableValueType::~MutableValueType() = default;
-
 MutableDenseTensorView::MutableDenseTensorView(ValueType type_in)
-    : DenseTensorView(_concreteType._type),
-      _concreteType(type_in)
-{
-}
-
-MutableDenseTensorView::MutableDenseTensorView(ValueType type_in, TypedCells cells_in)
-    : DenseTensorView(_concreteType._type, cells_in),
-      _concreteType(type_in)
+    : DenseTensorView(_type),
+      _type(type_in)
 {
 }
 
 }
-

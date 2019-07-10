@@ -30,32 +30,30 @@ size_t size_of(CellType type) {
     abort();
 }
 
+size_t my_align(size_t size, size_t alignment) {
+    size += alignment - 1;
+    return (size - (size % alignment));
+}
+
 }
 
 DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
-    : _numBoundCells(1u),
-      _numUnboundDims(0u),
+    : _numCells(1u),
       _cellSize(size_of(type.cell_type()))
 {
-    for (const auto & dim : type.dimensions()) {
-        if (dim.is_bound()) {
-            _numBoundCells *= dim.size;
-        } else {
-            ++_numUnboundDims;
-        }
+    for (const auto &dim: type.dimensions()) {
+        _numCells *= dim.size;
     }
 }
 
 size_t
-DenseTensorStore::TensorSizeCalc::arraySize() const
+DenseTensorStore::TensorSizeCalc::alignedSize() const
 {
-    size_t tensorSize = (_numBoundCells * _cellSize) + (_numUnboundDims * sizeof(uint32_t));
-    return DenseTensorStore::BufferType::align(tensorSize, DENSE_TENSOR_ALIGNMENT);
+    return my_align(bufSize(), DENSE_TENSOR_ALIGNMENT);
 }
 
 DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc)
-    : datastore::BufferType<char>(tensorSizeCalc.arraySize(), MIN_BUFFER_ARRAYS, RefType::offsetSize()),
-      _unboundDimSizesSize(tensorSizeCalc._numUnboundDims * sizeof(uint32_t))
+    : datastore::BufferType<char>(tensorSizeCalc.alignedSize(), MIN_BUFFER_ARRAYS, RefType::offsetSize())
 {}
 
 DenseTensorStore::BufferType::~BufferType() = default;
@@ -64,15 +62,7 @@ void
 DenseTensorStore::BufferType::cleanHold(void *buffer, size_t offset,
                                         size_t numElems, CleanContext)
 {
-    // Clear both tensor dimension size information and cells.
-    memset(static_cast<char *>(buffer) + offset - _unboundDimSizesSize, 0, numElems);
-}
-
-size_t
-DenseTensorStore::BufferType::getReservedElements(uint32_t bufferId) const
-{
-    return datastore::BufferType<char>::getReservedElements(bufferId) +
-        align(_unboundDimSizesSize);
+    memset(static_cast<char *>(buffer) + offset, 0, numElems);
 }
 
 DenseTensorStore::DenseTensorStore(const ValueType &type)
@@ -81,15 +71,12 @@ DenseTensorStore::DenseTensorStore(const ValueType &type)
       _tensorSizeCalc(type),
       _bufferType(_tensorSizeCalc),
       _type(type),
-      _emptyCells()
+      _emptySpace()
 {
-    _emptyCells.resize(_tensorSizeCalc._numBoundCells, 0.0);
+    _emptySpace.resize(getBufSize(), 0);
     _store.addType(&_bufferType);
     _store.initActiveBuffers();
-    if (_tensorSizeCalc._numUnboundDims == 0) {
-        // In this case each tensor use the same amount of memory and we can re-use previously allocated raw buffers by using free lists.
-        _store.enableFreeLists();
-    }
+    _store.enableFreeLists();
 }
 
 DenseTensorStore::~DenseTensorStore()
@@ -103,50 +90,23 @@ DenseTensorStore::getRawBuffer(RefType ref) const
     return _store.getEntryArray<char>(ref, _bufferType.getArraySize());
 }
 
-
-size_t
-DenseTensorStore::getNumCells(const void *buffer) const
-{
-    const uint32_t *unboundDimSizeEnd = static_cast<const uint32_t *>(buffer);
-    const uint32_t *unboundDimSizeStart = unboundDimSizeEnd - _tensorSizeCalc._numUnboundDims;
-    size_t numCells = _tensorSizeCalc._numBoundCells;
-    for (auto unboundDimSize = unboundDimSizeStart; unboundDimSize != unboundDimSizeEnd; ++unboundDimSize) {
-        numCells *= *unboundDimSize;
-    }
-    return numCells;
-}
-
 namespace {
 
-void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize, uint32_t unboundDimSizesSize) {
-    size_t padSize = alignedBufSize - unboundDimSizesSize - bufSize;
+void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize) {
+    size_t padSize = alignedBufSize - bufSize;
     memset(buffer + bufSize, 0, padSize);
 }
 
 }
 
 Handle<char>
-DenseTensorStore::allocRawBuffer(size_t numCells)
+DenseTensorStore::allocRawBuffer()
 {
-    size_t bufSize = numCells * _tensorSizeCalc._cellSize;
-    size_t alignedBufSize = alignedSize(numCells);
+    size_t bufSize = getBufSize();
+    size_t alignedBufSize = _tensorSizeCalc.alignedSize();
     auto result = _concreteStore.freeListRawAllocator<char>(_typeId).alloc(alignedBufSize);
-    clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize, unboundDimSizesSize());
+    clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize);
     return result;
-}
-
-Handle<char>
-DenseTensorStore::allocRawBuffer(size_t numCells,
-                                 const std::vector<uint32_t> &unboundDimSizes)
-{
-    assert(unboundDimSizes.size() == _tensorSizeCalc._numUnboundDims);
-    auto ret = allocRawBuffer(numCells);
-    if (_tensorSizeCalc._numUnboundDims > 0) {
-        memcpy(ret.data - unboundDimSizesSize(),
-               &unboundDimSizes[0], unboundDimSizesSize());
-    }
-    assert(numCells == getNumCells(ret.data));
-    return ret;
 }
 
 void
@@ -155,9 +115,7 @@ DenseTensorStore::holdTensor(EntryRef ref)
     if (!ref.valid()) {
         return;
     }
-    const void *buffer = getRawBuffer(ref);
-    size_t numCells = getNumCells(buffer);
-    _concreteStore.holdElem(ref, alignedSize(numCells));
+    _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
 }
 
 TensorStore::EntryRef
@@ -167,26 +125,10 @@ DenseTensorStore::move(EntryRef ref)
         return RefType();
     }
     auto oldraw = getRawBuffer(ref);
-    size_t numCells = getNumCells(oldraw);
-    auto newraw = allocRawBuffer(numCells);
-    memcpy(newraw.data - unboundDimSizesSize(),
-           static_cast<const char *>(oldraw) - unboundDimSizesSize(),
-           numCells * _tensorSizeCalc._cellSize + unboundDimSizesSize());
-    _concreteStore.holdElem(ref, alignedSize(numCells));
+    auto newraw = allocRawBuffer();
+    memcpy(newraw.data, static_cast<const char *>(oldraw), getBufSize());
+    _concreteStore.holdElem(ref, _tensorSizeCalc.alignedSize());
     return newraw.ref;
-}
-
-namespace {
-
-void makeConcreteType(MutableDenseTensorView &tensor,
-                      const void *buffer,
-                      uint32_t numUnboundDims)
-{
-    const uint32_t *unboundDimSizeEnd = static_cast<const uint32_t *>(buffer);
-    const uint32_t *unboundDimSizeBegin = unboundDimSizeEnd - numUnboundDims;
-    tensor.setUnboundDimensions(unboundDimSizeBegin, unboundDimSizeEnd);
-}
-
 }
 
 std::unique_ptr<Tensor>
@@ -195,83 +137,20 @@ DenseTensorStore::getTensor(EntryRef ref) const
     if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
-    auto raw = getRawBuffer(ref);
-    size_t numCells = getNumCells(raw);
-    vespalib::tensor::TypedCells cells_ref(raw, _type.cell_type(), numCells);
-    if (_tensorSizeCalc._numUnboundDims == 0) {
-        return std::make_unique<DenseTensorView>(_type, cells_ref);
-    } else {
-        auto result = std::make_unique<MutableDenseTensorView>(_type, cells_ref);
-        makeConcreteType(*result, raw, _tensorSizeCalc._numUnboundDims);
-        return result;
-    }
+    vespalib::tensor::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
+    return std::make_unique<DenseTensorView>(_type, cells_ref);
 }
 
 void
 DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
 {
     if (!ref.valid()) {
-        vespalib::tensor::TypedCells cells_ref(&_emptyCells[0], _type.cell_type(), _emptyCells.size());
+        vespalib::tensor::TypedCells cells_ref(&_emptySpace[0], _type.cell_type(), getNumCells());
         tensor.setCells(cells_ref);
-        if (_tensorSizeCalc._numUnboundDims > 0) {
-            tensor.setUnboundDimensionsForEmptyTensor();
-        }
     } else {
-        auto raw = getRawBuffer(ref);
-        size_t numCells = getNumCells(raw);
-        vespalib::tensor::TypedCells cells_ref(raw, _type.cell_type(), numCells);
+        vespalib::tensor::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
         tensor.setCells(cells_ref);
-        if (_tensorSizeCalc._numUnboundDims > 0) {
-            makeConcreteType(tensor, raw, _tensorSizeCalc._numUnboundDims);
-        }
     }
-}
-
-namespace {
-
-void
-checkMatchingType(const ValueType &lhs, const ValueType &rhs, size_t numCells)
-{
-    (void) numCells;
-    size_t checkNumCells = 1u;
-    auto rhsItr = rhs.dimensions().cbegin();
-    auto rhsItrEnd = rhs.dimensions().cend();
-    (void) rhsItrEnd;
-    for (const auto &dim : lhs.dimensions()) {
-        (void) dim;
-        assert(rhsItr != rhsItrEnd);
-        assert(dim.name == rhsItr->name);
-        assert(rhsItr->is_bound());
-        assert(!dim.is_bound() || dim.size == rhsItr->size);
-        checkNumCells *= rhsItr->size;
-        ++rhsItr;
-    }
-    assert(lhs.cell_type() == rhs.cell_type());
-    assert(numCells == checkNumCells);
-    assert(rhsItr == rhsItrEnd);
-}
-
-void
-setDenseTensorUnboundDimSizes(void *buffer, const ValueType &lhs, uint32_t numUnboundDims, const ValueType &rhs)
-{
-    uint32_t *unboundDimSizeEnd = static_cast<uint32_t *>(buffer);
-    uint32_t *unboundDimSize = unboundDimSizeEnd - numUnboundDims;
-    auto rhsItr = rhs.dimensions().cbegin();
-    auto rhsItrEnd = rhs.dimensions().cend();
-    (void) rhsItrEnd;
-    for (const auto &dim : lhs.dimensions()) {
-        assert (rhsItr != rhsItrEnd);
-        if (!dim.is_bound()) {
-            assert(unboundDimSize != unboundDimSizeEnd);
-            *unboundDimSize = rhsItr->size;
-            ++unboundDimSize;
-        }
-        ++rhsItr;
-    }
-    assert (rhsItr == rhsItrEnd);
-    assert(unboundDimSize == unboundDimSizeEnd);
-}
-
 }
 
 template <class TensorType>
@@ -279,10 +158,10 @@ TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
     size_t numCells = tensor.cellsRef().size;
-    checkMatchingType(_type, tensor.type(), numCells);
-    auto raw = allocRawBuffer(numCells);
-    setDenseTensorUnboundDimSizes(raw.data, _type, _tensorSizeCalc._numUnboundDims, tensor.type());
-    memcpy(raw.data, tensor.cellsRef().data, numCells * _tensorSizeCalc._cellSize);
+    assert(numCells == getNumCells());
+    assert(tensor.type() == _type);
+    auto raw = allocRawBuffer();
+    memcpy(raw.data, tensor.cellsRef().data, getBufSize());
     return raw.ref;
 }
 

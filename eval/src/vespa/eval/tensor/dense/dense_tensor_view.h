@@ -21,11 +21,9 @@ public:
     DenseTensorView(const eval::ValueType &type_in, TypedCells cells_in)
         : _typeRef(type_in),
           _cellsRef(cells_in)
-    {}
-    explicit DenseTensorView(const eval::ValueType &type_in)
-        : _typeRef(type_in),
-          _cellsRef()
-    {}
+    {
+        assert(_typeRef.cell_type() == cells_in.type);
+    }
 
     const eval::ValueType &fast_type() const { return _typeRef; }
     const TypedCells &cellsRef() const { return _cellsRef; }
@@ -45,6 +43,11 @@ public:
     eval::TensorSpec toSpec() const override;
     void accept(TensorVisitor &visitor) const override;
 protected:
+    explicit DenseTensorView(const eval::ValueType &type_in)
+        : _typeRef(type_in),
+          _cellsRef()
+    {}
+
     void initCellsRef(TypedCells cells_in) {
         assert(_typeRef.cell_type() == cells_in.type);
         _cellsRef = cells_in;

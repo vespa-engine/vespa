@@ -32,7 +32,6 @@ public:
         bool operator!=(const Dimension &rhs) const { return !(*this == rhs); }
         bool is_mapped() const { return (size == npos); }
         bool is_indexed() const { return (size != npos); }
-        bool is_bound() const { return ((size != npos) && (size != 0)); }
     };
 
 private:
