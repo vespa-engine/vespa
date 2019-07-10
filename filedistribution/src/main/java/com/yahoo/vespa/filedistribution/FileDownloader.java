@@ -27,17 +27,14 @@ import java.util.logging.Logger;
 public class FileDownloader {
 
     private final static Logger log = Logger.getLogger(FileDownloader.class.getName());
+    public static File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
     private final File downloadDirectory;
     private final Duration timeout;
     private final FileReferenceDownloader fileReferenceDownloader;
 
     public FileDownloader(ConnectionPool connectionPool) {
-        this(connectionPool,
-             new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-             new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution")),
-             Duration.ofMinutes(15),
-             Duration.ofSeconds(10));
+        this(connectionPool, defaultDownloadDirectory , defaultDownloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
     }
 
     FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {

@@ -44,7 +44,7 @@ class UrlDownloadRpcServer {
     private static final String CONTENTS_FILE_NAME = "contents";
     private static final String LAST_MODIFIED_FILE_NAME = "lastmodified";
 
-    private final File downloadBaseDir;
+    static final File downloadDir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
     private final ExecutorService rpcDownloadExecutor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                                                      new DaemonThreadFactory("Rpc URL download executor"));
 
@@ -53,7 +53,6 @@ class UrlDownloadRpcServer {
                                     .methodDesc("get path to url download")
                                     .paramDesc(0, "url", "url")
                                     .returnDesc(0, "path", "path to file"));
-        downloadBaseDir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/download"));
     }
 
     void close() {
@@ -72,7 +71,7 @@ class UrlDownloadRpcServer {
 
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
-        File downloadDir = new File(this.downloadBaseDir, urlToDirName(url));
+        File downloadDir = new File(UrlDownloadRpcServer.downloadDir, urlToDirName(url));
 
         try {
             URL website = new URL(url);
