@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.collections.ArraySet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -89,7 +88,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -130,7 +128,6 @@ public class ApplicationController {
     private final RoutingGenerator routingGenerator;
     private final RoutingPolicies routingPolicies;
     private final Clock clock;
-    private final BooleanFlag redirectLegacyDnsFlag;
     private final BooleanFlag useMultipleEndpoints;
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
@@ -148,7 +145,6 @@ public class ApplicationController {
         this.routingGenerator = routingGenerator;
         this.routingPolicies = new RoutingPolicies(controller);
         this.clock = clock;
-        this.redirectLegacyDnsFlag = Flags.REDIRECT_LEGACY_DNS_NAMES.bindTo(controller.flagSource());
         this.useMultipleEndpoints = Flags.MULTIPLE_GLOBAL_ENDPOINTS.bindTo(controller.flagSource());
 
         this.artifactRepository = artifactRepository;
@@ -485,20 +481,13 @@ public class ApplicationController {
                 application = application.with(createDefaultGlobalIdRotation(application.get(), rotation));
                 store(application); // store assigned rotation even if deployment fails
 
-                boolean redirectLegacyDns = redirectLegacyDnsFlag.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm())
-                        .value();
-
                 EndpointList globalEndpoints = application.get()
                         .endpointsIn(controller.system())
                         .scope(Endpoint.Scope.global);
 
                 globalEndpoints.main().ifPresent(mainEndpoint -> {
                     registerCname(mainEndpoint.dnsName(), rotation.name());
-                    if (redirectLegacyDns) {
-                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), mainEndpoint.dnsName()));
-                    } else {
-                        globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
-                    }
+                    globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
                 });
             }
         }
