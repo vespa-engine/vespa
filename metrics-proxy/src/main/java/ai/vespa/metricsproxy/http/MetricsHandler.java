@@ -19,12 +19,14 @@ import org.json.JSONObject;
 
 import java.net.URI;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Http handler for the metrics/v1 rest api.
@@ -63,9 +65,8 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
         try {
             return new JsonResponse(OK, v1Content(requestUri));
         } catch (JSONException e) {
-            log.warning("Bad JSON construction in " + V1_PATH +  " response: " + e.getMessage());
-            return new ErrorResponse(INTERNAL_SERVER_ERROR,
-                                     "An error occurred, please try path '" + VALUES_PATH + "'");
+            log.log(WARNING, "Bad JSON construction in " + V1_PATH +  " response", e);
+            return new ErrorResponse(INTERNAL_SERVER_ERROR, "An error occurred, please try path '" + VALUES_PATH + "'");
         }
     }
 

@@ -18,13 +18,15 @@ import static java.util.logging.Level.WARNING;
 class ErrorResponse extends JsonResponse {
     private static Logger log = Logger.getLogger(ErrorResponse.class.getName());
 
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
     ErrorResponse(int code, String message) {
         super(code, asErrorJson(message));
     }
 
     static String asErrorJson(String message) {
         try {
-            return new ObjectMapper().writeValueAsString(Map.of("error", message));
+            return objectMapper.writeValueAsString(Map.of("error", message));
         } catch (JsonProcessingException e) {
             log.log(WARNING, "Could not encode error message to json:", e);
             return "Could not encode error message to json, check the log for details.";
