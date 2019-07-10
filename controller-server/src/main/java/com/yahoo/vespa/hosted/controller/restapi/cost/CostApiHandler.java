@@ -6,7 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
@@ -19,10 +19,10 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 public class CostApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final NodeRepositoryClientInterface nodeRepository;
+    private final NodeRepository nodeRepository;
     private final SelfHostedCostConfig selfHostedCostConfig;
 
-    public CostApiHandler(Context ctx, Controller controller, NodeRepositoryClientInterface nodeRepository, SelfHostedCostConfig selfHostedCostConfig) {
+    public CostApiHandler(Context ctx, Controller controller, NodeRepository nodeRepository, SelfHostedCostConfig selfHostedCostConfig) {
         super(ctx);
         this.controller = controller;
         this.nodeRepository = nodeRepository;

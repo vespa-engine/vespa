@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostCalculator;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
@@ -27,7 +27,7 @@ public class CostReportMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(CostReportMaintainer.class.getName());
 
     private final CostReportConsumer consumer;
-    private final NodeRepositoryClientInterface nodeRepository;
+    private final NodeRepository nodeRepository;
     private final Clock clock;
     private final SelfHostedCostConfig selfHostedCostConfig;
 
@@ -36,7 +36,7 @@ public class CostReportMaintainer extends Maintainer {
     public CostReportMaintainer(Controller controller, Duration interval,
                                 CostReportConsumer consumer,
                                 JobControl jobControl,
-                                NodeRepositoryClientInterface nodeRepository,
+                                NodeRepository nodeRepository,
                                 Clock clock,
                                 SelfHostedCostConfig selfHostedCostConfig) {
         super(controller, interval, jobControl, "CostReportMaintainer", EnumSet.of(SystemName.main));

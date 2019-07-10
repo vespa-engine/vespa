@@ -1,28 +1,27 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Creates a ResourceSnapshot per application, which is then passed on to a ResourceSnapshotConsumer
@@ -34,7 +33,7 @@ public class ResourceMeterMaintainer extends Maintainer {
 
     private final Clock clock;
     private final Metric metric;
-    private final NodeRepositoryClientInterface nodeRepository;
+    private final NodeRepository nodeRepository;
     private final ResourceSnapshotConsumer resourceSnapshotConsumer;
 
     private static final String metering_last_reported = "metering_last_reported";
@@ -44,7 +43,7 @@ public class ResourceMeterMaintainer extends Maintainer {
     public ResourceMeterMaintainer(Controller controller,
                                    Duration interval,
                                    JobControl jobControl,
-                                   NodeRepositoryClientInterface nodeRepository,
+                                   NodeRepository nodeRepository,
                                    Clock clock,
                                    Metric metric,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
@@ -83,24 +82,17 @@ public class ResourceMeterMaintainer extends Maintainer {
         return controller().zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
-                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId(), true).nodes().stream()))
+                .flatMap(zone -> nodeRepository.listNodes(zone.getId()).nodes().stream())
                 .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
                 .filter(node -> node.getState() == NodeState.active)
                 .collect(Collectors.toList());
     }
 
     private Map<ApplicationId, ResourceAllocation> getResourceAllocationByApplication(List<NodeRepositoryNode> nodes) {
-        Map<ApplicationId, List<NodeRepositoryNode>> applicationNodes = new HashMap<>();
-
-        nodes.stream().forEach(node -> applicationNodes.computeIfAbsent(applicationIdFromNodeOwner(node.getOwner()), n -> new ArrayList<>()).add(node));
-
-        return applicationNodes.entrySet().stream()
-                .collect(
-                        Collectors.toMap(
-                                entry -> entry.getKey(),
-                                entry -> ResourceAllocation.from(entry.getValue())
-                        )
-                );
+        return nodes.stream()
+                .collect(Collectors.groupingBy(
+                        node -> applicationIdFromNodeOwner(node.getOwner()),
+                        Collectors.collectingAndThen(Collectors.toList(), ResourceAllocation::from)));
     }
 
     private ApplicationId applicationIdFromNodeOwner(NodeOwner owner) {
