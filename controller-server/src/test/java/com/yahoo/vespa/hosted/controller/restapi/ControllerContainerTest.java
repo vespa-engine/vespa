@@ -43,7 +43,7 @@ public class ControllerContainerTest {
     public void stopContainer() { container.close(); }
 
     private String controllerServicesXml() {
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>10</maxthreads>\n" +
                "  </config> \n" +
@@ -113,7 +113,7 @@ public class ControllerContainerTest {
                "    <binding>http://*/zone/v2/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
-               "</jdisc>";
+               "</container>";
     }
 
     protected SystemName system() {

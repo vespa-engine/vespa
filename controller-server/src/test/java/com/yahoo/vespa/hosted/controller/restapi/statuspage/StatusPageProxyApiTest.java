@@ -76,7 +76,7 @@ public class StatusPageProxyApiTest {
 
     private String servicesXml() {
         String statusPageApiUrl = "http://127.0.0.1:" + wireMock.port();
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                "  <config name='vespa.hosted.controller.statuspage.config.statuspage'>\n" +
                "    <apiUrl>" + statusPageApiUrl + "</apiUrl>\n" +
                "  </config>\n" +
@@ -87,7 +87,7 @@ public class StatusPageProxyApiTest {
                "  <http>\n" +
                "    <server id='default' port='8080'/>\n" +
                "  </http>\n" +
-               "</jdisc>";
+               "</container>";
     }
 
 }
