@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
  */
 public class DelayedResponseHandlerTest {
 
-    private final MockConfigSource source = new MockConfigSource(new MockClientUpdater());
+    private final MockConfigSource source = new MockConfigSource();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -28,8 +28,7 @@ public class DelayedResponseHandlerTest {
     @Test
     public void basic() {
         ConfigTester tester = new ConfigTester();
-        ConfigProxyStatistics statistics = new ConfigProxyStatistics();
-        DelayedResponses delayedResponses = new DelayedResponses(statistics);
+        DelayedResponses delayedResponses = new DelayedResponses();
         final MockRpcServer mockRpcServer = new MockRpcServer();
         final MemoryCache memoryCache = new MemoryCache();
         memoryCache.update(ConfigTester.fooConfig);

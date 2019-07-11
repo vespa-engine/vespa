@@ -15,12 +15,12 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author hmusum
  */
-public class ClientUpdaterTest {
+public class RpcConfigSourceClientTest {
 
     private MockRpcServer rpcServer;
     private ConfigProxyStatistics statistics;
     private DelayedResponses delayedResponses;
-    private ClientUpdater clientUpdater;
+    private RpcConfigSourceClient rpcConfigSourceClient;
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -30,8 +30,10 @@ public class ClientUpdaterTest {
     public void setup() {
         rpcServer = new MockRpcServer();
         statistics = new ConfigProxyStatistics();
-        delayedResponses = new DelayedResponses(statistics);
-        clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
+        delayedResponses = new DelayedResponses();
+        rpcConfigSourceClient =
+                new RpcConfigSourceClient(rpcServer, new MockConfigSource(), statistics,
+                                          new MemoryCache(), ProxyServer.defaultTimingValues(), delayedResponses);
     }
 
     @Test
@@ -103,7 +105,7 @@ public class ClientUpdaterTest {
     }
 
     private void configUpdatedSendResponse(RawConfig config) {
-        clientUpdater.updateSubscribers(config);
+        rpcConfigSourceClient.updateSubscribers(config);
     }
 
     private RawConfig createConfigWithNextConfigGeneration(RawConfig config) {

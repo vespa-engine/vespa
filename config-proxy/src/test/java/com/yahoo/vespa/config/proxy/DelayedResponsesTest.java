@@ -8,14 +8,13 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.9
  */
 public class DelayedResponsesTest {
 
     @Test
     public void basic() throws InterruptedException {
         ConfigTester tester = new ConfigTester();
-        DelayedResponses responses = new DelayedResponses(new ConfigProxyStatistics());
+        DelayedResponses responses = new DelayedResponses();
         DelayedResponse delayedResponse = new DelayedResponse(tester.createRequest("foo", "id", "bar", 10));
         responses.add(delayedResponse);
 
