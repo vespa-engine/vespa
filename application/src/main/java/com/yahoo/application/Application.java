@@ -524,7 +524,7 @@ public final class Application implements AutoCloseable {
 
             // generate services.xml based on this builder
             private void build(PrintWriter xml, String id, int port) throws Exception {
-                xml.println("<jdisc version=\"1.0\" id=\"" + id + "\">");
+                xml.println("<container version=\"1.0\" id=\"" + id + "\">");
 
                 if (port > 0) {
                     xml.println("<http>");
@@ -584,7 +584,7 @@ public final class Application implements AutoCloseable {
                     xml.println("</search>");
                 }
 
-                xml.println("</jdisc>");
+                xml.println("</container>");
             }
 
             private void generateComponent(PrintWriter xml, ComponentItem<?> componentItem, String elementName) throws Exception {

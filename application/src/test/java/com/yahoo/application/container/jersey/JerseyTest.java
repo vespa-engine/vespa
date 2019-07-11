@@ -131,7 +131,7 @@ public class JerseyTest {
 
         try (JDisc jdisc = JDisc.fromServicesXml(
                 "<services>" + //
-                        "<jdisc version=\"1.0\" id=\"default\" jetty=\"true\">" + //
+                        "<container version=\"1.0\" id=\"default\" jetty=\"true\">" + //
                         "<rest-api path=\"rest-api\" jersey2=\"true\">" + //
                         "<components bundle=\"" + bundleSymbolicName + "\">" + //
                         packageElements + //
@@ -140,7 +140,7 @@ public class JerseyTest {
                         "<http>" + //
                         "<server id=\"mainServer\" port=\"0\" />" + //
                         "</http>" + //
-                        "</jdisc>" + //
+                        "</container>" + //
                         "</services>", //
                 Networking.enable)) {
             final int port = ContainerTest.getListenPort();

@@ -50,7 +50,7 @@ public class ApplicationTest {
 
     @Test
     public void minimal_application_can_be_constructed() {
-        try (Application application = Application.fromServicesXml("<jdisc version=\"1.0\"/>", Networking.disable)) {
+        try (Application application = Application.fromServicesXml("<container version=\"1.0\"/>", Networking.disable)) {
                 Application unused = application;
         }
     }
@@ -373,9 +373,9 @@ public class ApplicationTest {
     }
 
     private static String servicesXmlWithServer(int port) {
-        return "<jdisc version='1.0'>" +
+        return "<container version='1.0'>" +
                 "  <http> <server port='" + port +"' id='foo'/> </http>" +
-                "</jdisc>";
+                "</container>";
     }
 
     @Test
@@ -386,13 +386,13 @@ public class ApplicationTest {
     }
 
     private static String servicesXmlWithAccessControl() {
-        return "<jdisc version='1.0'>" +
+        return "<container version='1.0'>" +
                 "  <http> <server port='" + 0 +"' id='foo'/> " +
                 "    <filtering>" +
                 "      <access-control domain='foo' />" +
                 "    </filtering>" +
                 "  </http>" +
-                "</jdisc>";
+                "</container>";
     }
 
 }
