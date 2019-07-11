@@ -151,13 +151,6 @@ public class Flags {
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DISABLE_CHEF = defineFeatureFlag(
-            "disable-chef", false,
-            "Stops and disables chef-client",
-            "Takes effect on next host-admin tick",
-            HOSTNAME, NODE_TYPE);
-
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
