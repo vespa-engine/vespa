@@ -36,18 +36,18 @@ public class ContainerTest {
 
     @Test
     public void jdisc_can_be_used_as_top_level_element() {
-        try (JDisc container = fromServicesXml("<jdisc version=\"1.0\">" + //
+        try (JDisc container = fromServicesXml("<container version=\"1.0\">" + //
                 "<search />" + //
-                "</jdisc>", Networking.disable)) {
+                "</container>", Networking.disable)) {
             assertNotNull(container.search());
         }
     }
 
     @Test
     public void jdisc_id_can_be_set() {
-        try (JDisc container = fromServicesXml("<jdisc version=\"1.0\" id=\"my-service-id\">" + //
+        try (JDisc container = fromServicesXml("<container version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
-                "</jdisc>", Networking.disable)) {
+                "</container>", Networking.disable)) {
             assertNotNull(container.search());
         }
     }
@@ -55,9 +55,9 @@ public class ContainerTest {
     @Test
     public void jdisc_can_be_embedded_in_services_tag() {
         try (JDisc container = fromServicesXml("<services>" + //
-                "<jdisc version=\"1.0\" id=\"my-service-id\">" + //
+                "<container version=\"1.0\" id=\"my-service-id\">" + //
                 "<search />" + //
-                "</jdisc>" + //
+                "</container>" + //
                 "</services>", Networking.disable)) {
             assertNotNull(container.search());
         }
@@ -67,13 +67,13 @@ public class ContainerTest {
     @SuppressWarnings("try") // container is unused inside the try block
     public void multiple_jdisc_elements_gives_exception() {
         try (JDisc container = fromServicesXml("<services>" + //
-                "<jdisc version=\"1.0\" id=\"id1\" />" + //
-                "<jdisc version=\"1.0\" />" + //
-                "<container version=\"1.0\"/>" + //
+                "<container version=\"1.0\" id=\"id1\" />" + //
+                "<container version=\"1.0\" />" + //
+                "<jdisc version=\"1.0\"/>" + //
                 "</services>", Networking.disable)) {
             fail("expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("container id='', jdisc id='id1', jdisc id=''"));
+            assertThat(e.getMessage(), containsString("container id='id1', container id='', jdisc id=''"));
         }
     }
 
@@ -108,7 +108,7 @@ public class ContainerTest {
     public void document_types_can_be_accessed() throws Exception {
         try (Application application = new ApplicationBuilder().documentType("example", EXAMPLE_DOCUMENT)
                 .servicesXml(CONTAINER_WITH_DOCUMENT_PROCESSING).build()) {
-            JDisc container = application.getJDisc("jdisc");
+            JDisc container = application.getJDisc("container");
             DocumentProcessing processing = container.documentProcessing();
             assertThat(processing.getDocumentTypes().keySet(), hasItem("example"));
         }
@@ -121,7 +121,7 @@ public class ContainerTest {
                 "  annotation exampleAnnotation {}\n" + //
                 "}\n").//
                 servicesXml(CONTAINER_WITH_DOCUMENT_PROCESSING).build()) {
-            JDisc container = application.getJDisc("jdisc");
+            JDisc container = application.getJDisc("container");
             DocumentProcessing processing = container.documentProcessing();
             assertThat(processing.getAnnotationTypes().keySet(), hasItem("exampleAnnotation"));
         }
@@ -142,10 +142,10 @@ public class ContainerTest {
     }
 
     public static final String CONTAINER_WITH_DOCUMENT_PROCESSING = //
-            "<jdisc version=\"1.0\">" + //
+            "<container version=\"1.0\">" + //
                     "<http />" + //
                     "<document-processing />" + //
-                    "</jdisc>";
+                    "</container>";
 
     public static final String EXAMPLE_DOCUMENT = //
             "document example {\n" + //
@@ -159,12 +159,12 @@ public class ContainerTest {
     protected JDisc jdiscWithHttp() {
         final String handlerId = TestHandler.class.getName();
         final String xml = //
-                "<jdisc version=\"1.0\">" + //
+                "<container version=\"1.0\">" + //
                         "<handler id=" + handlerId + " />" + //
                         "<http>\n" + //
                         "<server id=\"main\" port=\"9999\" />\n" + //
                         "</http>\n" + //
-                        "</jdisc>";
+                        "</container>";
         return JDisc.fromServicesXml(xml, Networking.disable);
     }
 

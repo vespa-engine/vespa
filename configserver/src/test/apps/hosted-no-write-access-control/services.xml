@@ -6,13 +6,13 @@
     <nodes count='1'/>
   </admin>
 
-  <jdisc version="1.0">
+  <container version="1.0">
     <http>
       <server id="foo" port="4080" />
     </http>
     <search/>
     <nodes count='1'/>
-  </jdisc>
+  </container>
 
   <content id="music" version="1.0">
     <redundancy>1</redundancy>

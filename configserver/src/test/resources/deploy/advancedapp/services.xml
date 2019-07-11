@@ -10,12 +10,12 @@
         </slobroks>
     </admin>
 
-    <jdisc version="1.0">
+    <container version="1.0">
         <search />
         <nodes>
             <node hostalias="node1" baseport='8000'/>
         </nodes>
-    </jdisc>
+    </container>
 
     <content version="1.0">
         <redundancy>1</redundancy>

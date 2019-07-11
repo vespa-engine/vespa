@@ -357,12 +357,12 @@ public class TenantRequestHandlerTest {
 
         configNames = server.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
         System.out.println(configNames);
-        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "jdisc", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document")));
-        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "jdisc", "document.config")));
-        assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "jdisc", "container.jdisc.config")));
-        assertTrue(configNames.contains(new ConfigKey<>("specific", "jdisc", "project")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "container", "container.jdisc.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("specific", "container", "project")));
     }
 
     @Test

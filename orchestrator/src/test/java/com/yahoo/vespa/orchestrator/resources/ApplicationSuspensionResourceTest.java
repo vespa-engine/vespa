@@ -154,7 +154,7 @@ public class ApplicationSuspensionResourceTest {
         } while (port == 0);
 
         return "<services>\n" +
-                "    <jdisc version=\"1.0\" jetty=\"true\">\n" +
+                "    <container version=\"1.0\" jetty=\"true\">\n" +
                 "        <config name=\"container.handler.threadpool\">\n" +
                 "            <maxthreads>10</maxthreads>\n" +
                 "        </config>\n" +
@@ -171,7 +171,7 @@ public class ApplicationSuspensionResourceTest {
                 "        <http>\n" +
                 "            <server id=\"foo\" port=\"" + port + "\"/>\n" +
                 "        </http>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>\n";
     }
 

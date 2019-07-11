@@ -71,14 +71,14 @@ public class GUIHandlerTest {
     }
 
     private String servicesXml() {
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                 "  <handler id='com.yahoo.search.query.gui.GUIHandler'>\n" +
                 "    <binding>http://*/querybuilder/*</binding>\n" +
                 "  </handler>\n" +
                 "  <http>\n" +
                 "    <server id='default' port='8080'/>\n" +
                 "  </http>\n" +
-                "</jdisc>";
+                "</container>";
     }
 
 }

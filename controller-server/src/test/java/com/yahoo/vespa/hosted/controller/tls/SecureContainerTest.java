@@ -59,7 +59,7 @@ public class SecureContainerTest {
     }
 
     private String servicesXml(Path trustStore) {
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>10</maxthreads>\n" +
                "  </config> \n" +
@@ -74,7 +74,7 @@ public class SecureContainerTest {
                "      <ssl-provider class='com.yahoo.vespa.hosted.controller.tls.ControllerSslContextFactoryProvider' bundle='controller-server'/>\n" +
                "    </server>\n" +
                "  </http>\n" +
-               "</jdisc>";
+               "</container>";
     }
 
     private Path writeKeyStore()  {

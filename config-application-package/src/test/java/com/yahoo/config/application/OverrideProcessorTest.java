@@ -64,7 +64,7 @@ public class OverrideProcessorTest {
                 "      <node distribution-key=\"2\" hostalias=\"node2\"/>" +
                 "    </nodes>" +
                 "  </content>" +
-                "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                "  <container id=\"stateless\" version=\"1.0\">" +
                 "    <search/>" +
                 "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                 "    <component id=\"bar\" class=\"TestBar\" bundle=\"foobundle\" deploy:environment=\"staging\" />" +
@@ -73,7 +73,7 @@ public class OverrideProcessorTest {
                 "    <nodes>" +
                 "      <node hostalias=\"node0\"/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "</services>";
 
 
@@ -94,13 +94,13 @@ public class OverrideProcessorTest {
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                 "    </nodes>" +
                 "  </content>" +
-                "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                "  <container id=\"stateless\" version=\"1.0\">" +
                 "    <search/>" +
                 "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                 "    <nodes>" +
                 "      <node hostalias=\"node0\"/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "</services>";
         assertOverride(Environment.test, RegionName.defaultName(), expected);
     }
@@ -124,7 +124,7 @@ public class OverrideProcessorTest {
                 "      <node distribution-key=\"2\" hostalias=\"node2\"/>" +
                 "    </nodes>" +
                 "  </content>" +
-                "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                "  <container id=\"stateless\" version=\"1.0\">" +
                 "    <search/>" +
                 "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                 "    <component id=\"bar\" class=\"ProdBar\" bundle=\"foobundle\" />" +
@@ -132,7 +132,7 @@ public class OverrideProcessorTest {
                 "    <nodes>" +
                 "      <node hostalias=\"node0\"/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "</services>";
         assertOverride(Environment.from("prod"), RegionName.from("us-west"), expected);
     }
@@ -157,7 +157,7 @@ public class OverrideProcessorTest {
                         "      <node distribution-key=\"1\" hostalias=\"node1\"/>" +
                         "    </nodes>" +
                         "  </content>" +
-                        "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                        "  <container id=\"stateless\" version=\"1.0\">" +
                         "    <search/>" +
                         "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                         "    <component id=\"bar\" class=\"ProdBar\" bundle=\"foobundle\" />" +
@@ -165,7 +165,7 @@ public class OverrideProcessorTest {
                         "    <nodes>" +
                         "      <node hostalias=\"node0\"/>" +
                         "    </nodes>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "</services>";
         assertOverride(Environment.valueOf("prod"), RegionName.from("unknown"), expected);
     }
@@ -190,7 +190,7 @@ public class OverrideProcessorTest {
                         "      <node distribution-key=\"1\" hostalias=\"node1\"/>" +
                         "    </nodes>" +
                         "  </content>" +
-                        "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                        "  <container id=\"stateless\" version=\"1.0\">" +
                         "    <search/>" +
                         "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                         "    <component id=\"bar\" class=\"ProdBar\" bundle=\"foobundle\" />" +
@@ -198,7 +198,7 @@ public class OverrideProcessorTest {
                         "    <nodes>" +
                         "      <node hostalias=\"node0\"/>" +
                         "    </nodes>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "</services>";
         assertOverride(Environment.from("prod"), RegionName.defaultName(), expected);
     }
@@ -221,13 +221,13 @@ public class OverrideProcessorTest {
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                         "    </nodes>" +
                         "  </content>" +
-                        "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                        "  <container id=\"stateless\" version=\"1.0\">" +
                         "    <search/>" +
                         "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                         "    <nodes>" +
                         "      <node hostalias=\"node0\"/>" +
                         "    </nodes>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "</services>";
         assertOverride(Environment.from("dev"), RegionName.defaultName(), expected);
     }
@@ -249,13 +249,13 @@ public class OverrideProcessorTest {
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                 "    </nodes>" +
                 "  </content>" +
-                "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                "  <container id=\"stateless\" version=\"1.0\">" +
                 "    <search/>" +
                 "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                 "    <nodes>" +
                 "      <node hostalias=\"node0\"/>" +
                 "    </nodes>" +
-                "  </jdisc>" +
+                "  </container>" +
                 "</services>";
 
         assertOverride(Environment.from("dev"), RegionName.from("us-east-1"), expected);
@@ -279,13 +279,13 @@ public class OverrideProcessorTest {
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                         "    </nodes>" +
                         "  </content>" +
-                        "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                        "  <container id=\"stateless\" version=\"1.0\">" +
                         "    <search/>" +
                         "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                         "    <nodes>" +
                         "      <node hostalias=\"node0\"/>" +
                         "    </nodes>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "</services>";
         assertOverride(Environment.from("test"), RegionName.from("us-west"), expected);
     }
@@ -310,14 +310,14 @@ public class OverrideProcessorTest {
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
                         "    </nodes>" +
                         "  </content>" +
-                        "  <jdisc id=\"stateless\" version=\"1.0\">" +
+                        "  <container id=\"stateless\" version=\"1.0\">" +
                         "    <search/>" +
                         "    <component id=\"foo\" class=\"MyFoo\" bundle=\"foobundle\" />" +
                         "    <component id=\"bar\" class=\"TestBar\" bundle=\"foobundle\" />" +
                         "    <nodes>" +
                         "      <node hostalias=\"node0\"/>" +
                         "    </nodes>" +
-                        "  </jdisc>" +
+                        "  </container>" +
                         "</services>";
         assertOverride(Environment.from("staging"), RegionName.from("us-west"), expected);
     }

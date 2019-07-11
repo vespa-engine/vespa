@@ -6,7 +6,7 @@
     <nodes count='1'/>
   </admin>
 
-  <jdisc version="1.0">
+  <container version="1.0">
     <http>
       <filtering>
         <access-control domain="foo" write="true" />
@@ -15,7 +15,7 @@
     </http>
     <search/>
     <nodes type='host'/>
-  </jdisc>
+  </container>
 
 
 </services>

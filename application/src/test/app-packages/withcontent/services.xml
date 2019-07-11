@@ -2,7 +2,7 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services>
 
-  <jdisc version="1.0">
+  <container version="1.0">
 
     <search>
       <chain id="default" inherits="vespa"/>
@@ -23,7 +23,7 @@
       </document-processing>
       -->
 
-  </jdisc>
+  </container>
 
   <content version="1.0" id="foo">
     <redundancy>2</redundancy>

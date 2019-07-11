@@ -9,7 +9,7 @@
         </slobroks>
     </admin>
 
-    <jdisc version="1.0">
+    <container version="1.0">
         <document-processing compressdocuments="true">
             <chain id="ContainerWrapperTest">
                 <documentprocessor id="com.yahoo.vespa.config.AppleDocProc"/>
@@ -24,6 +24,6 @@
             <node hostalias="node1" />
         </nodes>
 
-    </jdisc>
+    </container>
 
 </services>
