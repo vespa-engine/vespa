@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -70,6 +71,17 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+
+    @Test
+    public void deprecated_jdisc_tag_is_allowed() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                nodesXml,
+                "</jdisc>" );
+        createModel(root, clusterElem);
+        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
+        assertNotNull(container);
+    }
 
     @Test
     public void default_port_is_4080() {
