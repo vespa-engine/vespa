@@ -57,14 +57,14 @@ public class StandaloneContainerTest {
 
     @Test
     public void no_default_ports_are_enabled_when_using_http() throws Exception {
-        String xml = "<jdisc version=\"1.0\">" + //
+        String xml = "<container version=\"1.0\">" + //
                 "<http>" + //
                 "<server port=\"4000\" id=\"server1\" />" + //
                 "</http>" + //
-                "</jdisc>";
+                "</container>";
 
         StandaloneContainer.withContainerModel(xml, root -> {
-            AbstractService container = (AbstractService) root.getConfigProducer("jdisc/standalone").get();
+            AbstractService container = (AbstractService) root.getConfigProducer("container/standalone").get();
             System.out.println("portCnt: " + container.getPortCount());
             System.out.println("numPorts: " + container.getNumPortsAllocated());
             assertEquals(1, container.getNumPortsAllocated());

@@ -31,9 +31,9 @@ public class StandaloneContainerActivatorTest {
     private static String getJdiscXml(String contents) throws ParserConfigurationException, IOException, SAXException {
         return "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<services>\n" +
-                "  <jdisc version=\"1.0\" jetty=\"true\">\n" +
+                "  <container version=\"1.0\" jetty=\"true\">\n" +
                 contents +
-                "  </jdisc>\n" +
+                "  </container>\n" +
                 "</services>";
     }
 
