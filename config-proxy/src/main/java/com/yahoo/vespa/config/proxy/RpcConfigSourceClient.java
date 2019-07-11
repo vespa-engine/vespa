@@ -14,7 +14,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -29,25 +33,28 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private final static Logger log = Logger.getLogger(RpcConfigSourceClient.class.getName());
     private final Supervisor supervisor = new Supervisor(new Transport());
 
+    private final RpcServer rpcServer;
     private final ConfigSourceSet configSourceSet;
     private final HashMap<ConfigCacheKey, Subscriber> activeSubscribers = new HashMap<>();
     private final Object activeSubscribersLock = new Object();
     private final MemoryCache memoryCache;
-    private final ClientUpdater clientUpdater;
+    private final ConfigProxyStatistics statistics;
     private final DelayedResponses delayedResponses;
     private final TimingValues timingValues;
 
-    private ExecutorService exec;
-    private Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
+    private final ExecutorService exec;
+    private final Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
 
 
-    RpcConfigSourceClient(ConfigSourceSet configSourceSet,
-                          ClientUpdater clientUpdater,
+    RpcConfigSourceClient(RpcServer rpcServer,
+                          ConfigSourceSet configSourceSet,
+                          ConfigProxyStatistics statistics,
                           MemoryCache memoryCache,
                           TimingValues timingValues,
                           DelayedResponses delayedResponses) {
+        this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
-        this.clientUpdater = clientUpdater;
+        this.statistics = statistics;
         this.memoryCache = memoryCache;
         this.delayedResponses = delayedResponses;
         this.timingValues = timingValues;
@@ -115,6 +122,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         // happens at the same time
         DelayedResponse delayedResponse = new DelayedResponse(request);
         delayedResponses.add(delayedResponse);
+        statistics.delayedResponses(delayedResponses.size());
 
         final ConfigCacheKey configCacheKey = new ConfigCacheKey(input.getKey(), input.getDefMd5());
         RawConfig cachedConfig = memoryCache.get(configCacheKey);
@@ -131,6 +139,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     // unless another thread already did it
                     ret = cachedConfig;
                 }
+                statistics.decDelayedResponses();
             }
             if (!cachedConfig.isError() && cachedConfig.getGeneration() > 0) {
                 needToGetConfig = false;
@@ -148,7 +157,7 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                 log.log(LogLevel.DEBUG, () -> "Already a subscriber running for: " + configCacheKey);
             } else {
                 log.log(LogLevel.DEBUG, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, clientUpdater, configSourceSet,
+                UpstreamConfigSubscriber subscriber = new UpstreamConfigSubscriber(input, this, configSourceSet,
                                                                                    timingValues, requesterPool, memoryCache);
                 try {
                     subscriber.subscribe();
@@ -202,4 +211,43 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         }
         return ret;
     }
+
+    /**
+     * This method will be called when a response with changed config is received from upstream
+     * (content or generation has changed) or the server timeout has elapsed.
+     *
+     * @param config new config
+     */
+    public void updateSubscribers(RawConfig config) {
+        log.log(LogLevel.DEBUG, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
+        if (config.isError()) { statistics.incErrorCount(); }
+        DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
+        log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
+        if (responseDelayQueue.size() == 0) {
+            log.log(LogLevel.DEBUG, () -> "There exists no matching element on delayed response queue for " + config.getKey());
+            return;
+        } else {
+            log.log(LogLevel.DEBUG, () -> "Delayed response queue has " + responseDelayQueue.size() + " elements");
+        }
+        boolean found = false;
+        for (DelayedResponse response : responseDelayQueue.toArray(new DelayedResponse[0])) {
+            JRTServerConfigRequest request = response.getRequest();
+            if (request.getConfigKey().equals(config.getKey())
+                    // Generation 0 is special, used when returning empty sentinel config
+                    && (config.getGeneration() >= request.getRequestGeneration() || config.getGeneration() == 0)) {
+                if (delayedResponses.remove(response)) {
+                    found = true;
+                    log.log(LogLevel.DEBUG, () -> "Call returnOkResponse for " + config.getKey() + "," + config.getGeneration());
+                    rpcServer.returnOkResponse(request, config);
+                } else {
+                    log.log(LogLevel.INFO, "Could not remove " + config.getKey() + " from delayedResponses queue, already removed");
+                }
+            }
+        }
+        if (!found) {
+            log.log(LogLevel.DEBUG, () -> "Found no recipient for " + config.getKey() + " in delayed response queue");
+        }
+        log.log(LogLevel.DEBUG, () -> "Finished updating config for " + config.getKey() + "," + config.getGeneration());
+    }
+
 }

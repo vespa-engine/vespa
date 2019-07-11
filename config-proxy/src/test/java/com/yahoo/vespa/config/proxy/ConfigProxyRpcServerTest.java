@@ -46,7 +46,7 @@ public class ConfigProxyRpcServerTest {
 
     @Test
     public void basic() {
-        ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource(new MockClientUpdater()));
+        ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource());
         Spec spec = new Spec("localhost", 12345);
         ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, new Supervisor(new Transport()), spec);
         assertThat(server.getSpec(), is(spec));

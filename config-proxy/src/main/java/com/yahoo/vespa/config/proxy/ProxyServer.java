@@ -44,7 +44,6 @@ public class ProxyServer implements Runnable {
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
     private final Supervisor supervisor = new Supervisor(new Transport(JRT_TRANSPORT_THREADS));
-    private final ClientUpdater clientUpdater;
     private ScheduledFuture<?> delayedResponseScheduler;
 
     private final ConfigProxyRpcServer rpcServer;
@@ -85,8 +84,7 @@ public class ProxyServer implements Runnable {
         this.delayedResponseHandling = delayedResponseHandling;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
-        this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
+        this.configClient = createClient(rpcServer, statistics, delayedResponses, source, timingValues, memoryCache, configClient);
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
@@ -99,7 +97,7 @@ public class ProxyServer implements Runnable {
                                         MemoryCache memoryCache,
                                         ConfigProxyStatistics statistics) {
         final boolean delayedResponseHandling = false;
-        return new ProxyServer(null, new DelayedResponses(statistics),
+        return new ProxyServer(null, new DelayedResponses(),
                                source, statistics, defaultTimingValues(), delayedResponseHandling,
                                memoryCache, configSourceClient);
     }
@@ -157,11 +155,12 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    private ConfigSourceClient createClient(ClientUpdater clientUpdater, DelayedResponses delayedResponses,
+    private ConfigSourceClient createClient(RpcServer rpcServer, ConfigProxyStatistics statistics,
+                                            DelayedResponses delayedResponses,
                                             ConfigSourceSet source, TimingValues timingValues,
                                             MemoryCache memoryCache, ConfigSourceClient client) {
         return (client == null)
-                ? new RpcConfigSourceClient(source, clientUpdater, memoryCache, timingValues, delayedResponses)
+                ? new RpcConfigSourceClient(rpcServer, source, statistics, memoryCache, timingValues, delayedResponses)
                 : client;
     }
 
@@ -170,7 +169,7 @@ public class ProxyServer implements Runnable {
     }
 
     private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient(configSource, clientUpdater, memoryCache, timingValues, delayedResponses);
+        return new RpcConfigSourceClient(rpcServer, configSource, statistics, memoryCache, timingValues, delayedResponses);
     }
 
     private void setupSignalHandler() {
@@ -210,7 +209,7 @@ public class ProxyServer implements Runnable {
         t.start();
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        DelayedResponses delayedResponses = new DelayedResponses(statistics);
+        DelayedResponses delayedResponses = new DelayedResponses();
         ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources, statistics,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
         // catch termination and interrupt signal

@@ -51,4 +51,9 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     public List<String> getSourceConnections() {
         return Collections.singletonList("N/A");
     }
+
+    @Override
+    public void updateSubscribers(RawConfig config) {
+
+    }
 }

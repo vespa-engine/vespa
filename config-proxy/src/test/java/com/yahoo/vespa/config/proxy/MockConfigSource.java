@@ -5,7 +5,6 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
@@ -15,20 +14,12 @@ import java.util.Set;
  * source.
  *
  * @author hmusum
- * @since 5.1.10
  */
 class MockConfigSource extends ConfigSourceSet {
     private final HashMap<ConfigKey<?>, RawConfig> backing = new HashMap<>();
-    private final ClientUpdater clientUpdater;
 
-    MockConfigSource(ClientUpdater clientUpdater) {
-        this.clientUpdater = clientUpdater;
-    }
-
-    MockConfigSource put(ConfigKey<?> key, RawConfig config) {
+    void put(ConfigKey<?> key, RawConfig config) {
         backing.put(key, config);
-        clientUpdater.updateSubscribers(config);
-        return this;
     }
 
     RawConfig getConfig(ConfigKey<?> key) {

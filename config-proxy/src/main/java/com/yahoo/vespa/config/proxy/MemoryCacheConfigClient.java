@@ -43,12 +43,10 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     }
 
     @Override
-    public void cancel() {
-    }
+    public void cancel() {}
 
     @Override
-    public void shutdownSourceConnections() {
-    }
+    public void shutdownSourceConnections() {}
 
     @Override
     public String getActiveSourceConnection() {
@@ -59,5 +57,8 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     public List<String> getSourceConnections() {
         return Collections.singletonList("N/A");
     }
+
+    @Override
+    public void updateSubscribers(RawConfig config) {}
 
 }
