@@ -28,7 +28,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A proxy server that handles RPC config requests. The proxy can run in two modes:
  * 'default' and 'memorycache', where the last one will not get config from an upstream
- * config source, but will serve config only from memory cache.
+ * config source, but will serve config from memory cache only.
  *
  * @author hmusum
  */
@@ -72,11 +72,11 @@ public class ProxyServer implements Runnable {
         defaultTimingValues = tv;
     }
 
-    private ProxyServer(Spec spec, DelayedResponses delayedResponses, ConfigSourceSet source,
+    private ProxyServer(Spec spec, ConfigSourceSet source,
                         ConfigProxyStatistics statistics, TimingValues timingValues,
                         boolean delayedResponseHandling, MemoryCache memoryCache,
                         ConfigSourceClient configClient) {
-        this.delayedResponses = delayedResponses;
+        this.delayedResponses = new DelayedResponses();
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
         this.statistics = statistics;
@@ -97,8 +97,7 @@ public class ProxyServer implements Runnable {
                                         MemoryCache memoryCache,
                                         ConfigProxyStatistics statistics) {
         final boolean delayedResponseHandling = false;
-        return new ProxyServer(null, new DelayedResponses(),
-                               source, statistics, defaultTimingValues(), delayedResponseHandling,
+        return new ProxyServer(null, source, statistics, defaultTimingValues(), delayedResponseHandling,
                                memoryCache, configSourceClient);
     }
 
@@ -209,8 +208,7 @@ public class ProxyServer implements Runnable {
         t.start();
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        DelayedResponses delayedResponses = new DelayedResponses();
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources, statistics,
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, statistics,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
@@ -261,9 +259,7 @@ public class ProxyServer implements Runnable {
         if (rpcServer != null) rpcServer.shutdown();
         if (delayedResponseScheduler != null) delayedResponseScheduler.cancel(true);
         flush();
-        if (statistics != null) {
-            statistics.stop();
-        }
+        if (statistics != null) statistics.stop();
         fileDistributionAndUrlDownload.close();
     }
 
