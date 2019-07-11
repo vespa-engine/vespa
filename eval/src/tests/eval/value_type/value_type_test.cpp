@@ -80,7 +80,7 @@ TEST("require that 'tensor<float>()' is normalized to 'double'") {
     EXPECT_EQUAL(t.dimensions().size(), 0u);
 }
 
-TEST("require that use of unbound dimensions result in error types") {
+TEST("require that use of zero-size dimensions result in error types") {
     EXPECT_TRUE(ValueType::tensor_type({{"x", 0}}).is_error());
 }
 
@@ -276,13 +276,10 @@ TEST("require that dimension predicates work as expected") {
     ValueType::Dimension z("z", 0);
     EXPECT_TRUE(x.is_mapped());
     EXPECT_TRUE(!x.is_indexed());
-    EXPECT_TRUE(!x.is_bound());
     EXPECT_TRUE(!y.is_mapped());
     EXPECT_TRUE(y.is_indexed());
-    EXPECT_TRUE(y.is_bound());
     EXPECT_TRUE(!z.is_mapped());
     EXPECT_TRUE(z.is_indexed());
-    EXPECT_TRUE(!z.is_bound());
 }
 
 TEST("require that removing dimensions from non-tensor types gives error type") {

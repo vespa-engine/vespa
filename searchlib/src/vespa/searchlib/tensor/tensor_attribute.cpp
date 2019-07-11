@@ -30,21 +30,6 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 // minimum dead bytes in tensor attribute before consider compaction
 constexpr size_t DEAD_SLACK = 0x10000u;
 
-
-ValueType
-createEmptyTensorType(const ValueType &type)
-{
-    std::vector<ValueType::Dimension> list;
-    for (const auto &dim : type.dimensions()) {
-        if (dim.is_indexed() && !dim.is_bound()) {
-            list.emplace_back(dim.name, 1);
-        } else {
-            list.emplace_back(dim);
-        }
-    }
-    return ValueType::tensor_type(std::move(list));
-}
-
 struct CallMakeEmptyTensor {
     template <typename CT>
     static Tensor::UP call(const ValueType &type) {
@@ -81,7 +66,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
-      _emptyTensor(createEmptyTensor(createEmptyTensorType(cfg.tensorType()))),
+      _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0)
 {
 }
