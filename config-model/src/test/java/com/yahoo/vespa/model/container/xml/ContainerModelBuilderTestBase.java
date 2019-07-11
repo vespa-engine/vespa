@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
@@ -15,7 +17,10 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import org.junit.Before;
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * Utility functions for testing the ContainerModelBuilder. Note that XML validation will
@@ -25,10 +30,20 @@ import java.util.Collections;
  */
 public abstract class ContainerModelBuilderTestBase {
 
+    static class TestLogger implements DeployLogger {
+        List<Pair<Level, String>> msgs = new ArrayList<>();
+
+        @Override
+        public void log(Level level, String message) {
+            msgs.add(new Pair<>(level, message));
+        }
+    }
+
     public static final String nodesXml =
             "  <nodes>" +
             "    <node hostalias='mockhost' />" +
             "  </nodes>";
+
     protected MockRoot root;
 
     public static void createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
