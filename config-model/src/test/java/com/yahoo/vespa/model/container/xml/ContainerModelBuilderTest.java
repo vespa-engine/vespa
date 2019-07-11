@@ -1,10 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -15,7 +13,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -34,7 +31,6 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
@@ -44,7 +40,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,133 +57,36 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
+ * Tests for "core functionality" of the container model, e.g. ports, or the 'components' and 'bundles' configs.
+ *
+ * Before adding a new test to this class, check if the test fits into one of the other existing subclasses
+ * of {@link ContainerModelBuilderTestBase}. If not, consider creating a new subclass.
+ *
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void verify_jvm_tag_with_attributes() throws IOException, SAXException {
-        String servicesXml =
-                "<container version='1.0'>" +
-                "  <search/>" +
-                "  <nodes>" +
-                "    <jvm options='-XX:SoftRefLRUPolicyMSPerMB=2500' gc-options='-XX:+UseParNewGC' allocated-memory='45%'/>" +
-                "    <node hostalias='mockhost'/>" +
-                "  </nodes>" +
-                "</container>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .properties(new TestProperties().setHostedVespa(true))
-                .build());
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrStartBuilder, "container/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals("-XX:+UseParNewGC", qrStartConfig.jvm().gcopts());
-        assertEquals(45, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-        assertEquals("-XX:SoftRefLRUPolicyMSPerMB=2500", model.getContainerClusters().values().iterator().next().getContainers().get(0).getJvmOptions());
-    }
-    @Test
-    public void detect_conflicting_jvmgcoptions_in_jvmargs() {
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("abc -XX:+UseParNewGC xyz"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:CMSInitiatingOccupancyFraction=19"));
-    }
-
-    @Test
-    public void honours_jvm_gc_options() {
+    public void deprecated_jdisc_tag_is_allowed() {
         Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <search/>",
-                "  <nodes jvm-gc-options='-XX:+UseG1GC'>",
-                "    <node hostalias='mockhost'/>",
-                "  </nodes>",
-                "</container>" );
-        createModel(root, clusterElem);
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        root.getConfig(qrStartBuilder, "container/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals("-XX:+UseG1GC", qrStartConfig.jvm().gcopts());
-    }
+                "<jdisc version='1.0'>",
+                nodesXml,
+                "</jdisc>" );
+        TestLogger logger = new TestLogger();
+        createModel(root, logger, clusterElem);
+        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
+        assertNotNull(container);
 
-    private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.G1GC);
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
-
-    }
-    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(boolean isHosted, String jvmOptionsName, String expectedGC) throws IOException, SAXException {
-        String servicesXml =
-                "<container version='1.0'>" +
-                        "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
-                        "    <node hostalias='mockhost'/>" +
-                        "  </nodes>" +
-                        "</container>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new TestProperties().setHostedVespa(isHosted))
-                .build());
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrStartBuilder, "container/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(expectedGC, qrStartConfig.jvm().gcopts());
-    }
-
-    @Test
-    public void ignores_jvmgcoptions_on_conflicting_jvmargs() throws IOException, SAXException {
-        verifyIgnoreJvmGCOptions(false);
-        verifyIgnoreJvmGCOptions(true);
-    }
-
-    private void verifyJvmGCOptions(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
-        String servicesXml =
-                "<container version='1.0'>" +
-                        "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
-                        "    <node hostalias='mockhost'/>" +
-                        "  </nodes>" +
-                        "</container>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .zone(zone)
-                .properties(new TestProperties().setHostedVespa(isHosted))
-                .build());
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrStartBuilder, "container/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(expected, qrStartConfig.jvm().gcopts());
-    }
-
-    private void verifyJvmGCOptions(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
-        verifyJvmGCOptions(isHosted, null, zone, expected);
-        verifyJvmGCOptions(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
-        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyJvmGCOptions(isHosted, null, DEV, ContainerCluster.G1GC);
-        verifyJvmGCOptions(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
-    }
-
-    @Test
-    public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
-        verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.G1GC);
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals("'jdisc' is deprecated as tag name. Use 'container' instead.", logger.msgs.get(0).getSecond());
     }
 
     @Test
@@ -233,7 +131,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</services>";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
+        final TestLogger logger = new TestLogger();
         new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
@@ -241,14 +139,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .build());
         assertFalse(logger.msgs.isEmpty());
         assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
-    }
-
-    private static class MyLogger implements DeployLogger {
-        List<Pair<Level, String>> msgs = new ArrayList<>();
-        @Override
-        public void log(Level level, String message) {
-            msgs.add(new Pair<>(level, message));
-        }
     }
 
     @Test
@@ -755,7 +645,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void honours_environment_vars() {
+    public void environment_vars_are_honoured() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <nodes>",

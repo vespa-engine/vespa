@@ -83,6 +83,10 @@ public class DeployState implements ConfigDefinitionStore {
         return new Builder().build();
     }
 
+    public static DeployState createTestState(DeployLogger testLogger) {
+        return new Builder().deployLogger(testLogger).build();
+    }
+
     public static DeployState createTestState(ApplicationPackage applicationPackage) {
         return new Builder().applicationPackage(applicationPackage).build();
     }
