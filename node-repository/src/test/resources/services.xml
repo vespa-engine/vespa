@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
-	<jdisc version="1.0" id="default">
+	<container version="1.0" id="default">
 		<nodes>
 			<node hostalias="myhostalias1"/>
 			<node hostalias="myhostalias2"/>
 		</nodes>
-	</jdisc>
+	</container>
     <content version="1.0"> <!-- id="default" -->
 		<nodes>
             <node hostalias="myhostalias3" distribution-key="99"/> <!-- arbitrary distribution keys -->
