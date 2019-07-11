@@ -1,9 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.configserver.flags.db;
+package com.yahoo.vespa.flags.persistence;
 
 import com.google.inject.Inject;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
@@ -20,14 +19,15 @@ import java.util.stream.Collectors;
 /**
  * @author hakonhall
  */
-public class FlagsDbImpl implements FlagsDb {
+public class FlagsDb {
+
     private static final Path ROOT_PATH = Path.fromString("/flags/v1");
 
     private final Curator curator;
     private final Curator.DirectoryCache cache;
 
     @Inject
-    public FlagsDbImpl(Curator curator) {
+    public FlagsDb(Curator curator) {
         this.curator = curator;
         curator.create(ROOT_PATH);
         ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -35,28 +35,28 @@ public class FlagsDbImpl implements FlagsDb {
         cache.start();
     }
 
-    @Override
+    /** Get the String value of the flag. */
     public Optional<FlagData> getValue(FlagId flagId) {
         return Optional.ofNullable(cache.getCurrentData(getZkPathFor(flagId)))
-                .map(ChildData::getData)
-                .map(FlagData::deserializeUtf8Json);
+                       .map(ChildData::getData)
+                       .map(FlagData::deserializeUtf8Json);
     }
 
-    @Override
+    /** Set the String value of the flag. */
     public void setValue(FlagId flagId, FlagData data) {
         curator.set(getZkPathFor(flagId), data.serializeToUtf8Json());
     }
 
-    @Override
+    /** Get all flags that have been set. */
     public Map<FlagId, FlagData> getAllFlags() {
         List<ChildData> dataList = cache.getCurrentData();
         return dataList.stream()
-                .map(ChildData::getData)
-                .map(FlagData::deserializeUtf8Json)
-                .collect(Collectors.toMap(FlagData::id, Function.identity()));
+                       .map(ChildData::getData)
+                       .map(FlagData::deserializeUtf8Json)
+                       .collect(Collectors.toMap(FlagData::id, Function.identity()));
     }
 
-    @Override
+    /** Remove the flag value if it exists. */
     public void removeValue(FlagId flagId) {
         curator.delete(getZkPathFor(flagId));
     }
@@ -64,4 +64,5 @@ public class FlagsDbImpl implements FlagsDb {
     private static Path getZkPathFor(FlagId flagId) {
         return ROOT_PATH.append(flagId.toString());
     }
+
 }
