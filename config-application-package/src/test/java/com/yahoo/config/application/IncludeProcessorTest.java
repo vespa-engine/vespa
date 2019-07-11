@@ -55,7 +55,7 @@ public class IncludeProcessorTest {
                 "    <node distribution-key=\"2\" hostalias=\"node2\"/>\n" +
                 "    </nodes>" +
                 "</content>\n" +
-                "<jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "<container id=\"stateless\" version=\"1.0\">\n" +
                 "    <search deploy:environment=\"prod\">\n" +
                 "      <chain id=\"common\">\n" +
                 "        <searcher id=\"MySearcher1\" />\n" +
@@ -70,7 +70,7 @@ public class IncludeProcessorTest {
                 "    <nodes>\n" +
                 "        <node baseport=\"${qrs.port}\" hostalias=\"node0\"/>\n" +
                 "    </nodes>\n" +
-                "</jdisc></services>";
+                "</container></services>";
 
         Document doc = new IncludeProcessor(app).process(docBuilder.parse(Xml.getServices(app)));
         // System.out.println(Xml.documentAsString(doc));
