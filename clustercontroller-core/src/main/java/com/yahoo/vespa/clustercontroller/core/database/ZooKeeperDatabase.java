@@ -35,6 +35,10 @@ public class ZooKeeperDatabase extends Database {
     private final int nodeIndex;
     private final MasterDataGatherer masterDataGatherer;
     private boolean reportErrors = true;
+    // Expected ZK znode versions. Note: these are _not_ -1 as that would match anything.
+    // We expect the caller to invoke the load methods prior to calling any store methods.
+    private int lastKnownStateBundleZNodeVersion = -2;
+    private int lastKnownStateVersionZNodeVersion = -2;
 
     public void stopErrorReporting() {
         reportErrors = false;
@@ -196,10 +200,14 @@ public class ZooKeeperDatabase extends Database {
         byte data[] = Integer.toString(version).getBytes(utf8);
         try{
             log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
-            session.setData(zooKeeperRoot + "latestversion", data, -1);
+            var stat = session.setData(zooKeeperRoot + "latestversion", data, lastKnownStateVersionZNodeVersion);
+            lastKnownStateVersionZNodeVersion = stat.getVersion();
             return true;
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+        } catch (KeeperException.BadVersionException e) {
+            throw new CasWriteFailed(String.format("version mismatch in cluster state version znode (expected %d): %s",
+                    lastKnownStateVersionZNodeVersion, e.getMessage()), e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store latest system state version used " + version);
             return false;
@@ -209,10 +217,13 @@ public class ZooKeeperDatabase extends Database {
     public Integer retrieveLatestSystemStateVersion() throws InterruptedException {
         Stat stat = new Stat();
         try{
-            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Fetching latest cluster state at '" + zooKeeperRoot + "latestversion'");
+            log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Fetching latest cluster state at '%slatestversion'",
+                    nodeIndex, zooKeeperRoot));
             byte[] data = session.getData(zooKeeperRoot + "latestversion", false, stat);
+            lastKnownStateVersionZNodeVersion = stat.getVersion();
             final Integer versionNumber = Integer.valueOf(new String(data, utf8));
-            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper", nodeIndex, versionNumber));
+            log.log(LogLevel.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper " +
+                    "(znode version %d)", nodeIndex, versionNumber, stat.getVersion()));
             return versionNumber;
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
@@ -336,12 +347,16 @@ public class ZooKeeperDatabase extends Database {
         EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
         byte[] encodedBundle = envelopedBundleCodec.encodeWithEnvelope(stateBundle);
         try{
-            log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Storing published state bundle %s at '%spublished_state_bundle'",
-                    nodeIndex, stateBundle, zooKeeperRoot));
-            // TODO CAS on expected zknode version
-            session.setData(zooKeeperRoot + "published_state_bundle", encodedBundle, -1);
+            log.log(LogLevel.DEBUG, () -> String.format("Fleetcontroller %d: Storing published state bundle %s at " +
+                            "'%spublished_state_bundle' with expected znode version %d",
+                    nodeIndex, stateBundle, zooKeeperRoot, lastKnownStateBundleZNodeVersion));
+            var stat = session.setData(zooKeeperRoot + "published_state_bundle", encodedBundle, lastKnownStateBundleZNodeVersion);
+            lastKnownStateBundleZNodeVersion = stat.getVersion();
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
+        } catch (KeeperException.BadVersionException e) {
+            throw new CasWriteFailed(String.format("version mismatch in cluster state bundle znode (expected %d): %s",
+                    lastKnownStateBundleZNodeVersion, e.getMessage()), e);
         } catch (Exception e) {
             maybeLogExceptionWarning(e, "Failed to store last published cluster state bundle in ZooKeeper");
             return false;
@@ -354,6 +369,7 @@ public class ZooKeeperDatabase extends Database {
         Stat stat = new Stat();
         try {
             byte[] data = session.getData(zooKeeperRoot + "published_state_bundle", false, stat);
+            lastKnownStateBundleZNodeVersion = stat.getVersion();
             if (data != null && data.length != 0) {
                 EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
                 return envelopedBundleCodec.decodeWithEnvelope(data);
