@@ -128,12 +128,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REDIRECT_LEGACY_DNS_NAMES = defineFeatureFlag(
-            "redirect-legacy-dns", false,
-            "Redirect legacy DNS names to the main DNS name",
-            "Takes effect on deployment through controller",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED = defineFeatureFlag(
             "config-server-fail-if-active-session-cannot-be-loaded", false,
             "Whether to fail or just log if loading an active session fails at startup of config server",
