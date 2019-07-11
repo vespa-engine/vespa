@@ -93,4 +93,22 @@ auto dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
     abort();
 }
 
+template <typename T, typename... Args>
+auto select_1(CellType a_type) {
+    switch(a_type) {
+    case CellType::DOUBLE: return T::template get_fun<double, Args...>();
+    case CellType::FLOAT:  return T::template get_fun<float, Args...>();
+    }
+    abort();
+}
+
+template <typename T>
+auto select_2(CellType a_type, CellType b_type) {
+    switch(b_type) {
+    case CellType::DOUBLE: return select_1<T, double>(a_type);
+    case CellType::FLOAT:  return select_1<T, float>(a_type);
+    }
+    abort();
+}
+
 } // namespace
