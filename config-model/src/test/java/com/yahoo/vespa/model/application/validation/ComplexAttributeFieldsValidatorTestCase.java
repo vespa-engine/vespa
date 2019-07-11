@@ -49,6 +49,36 @@ public class ComplexAttributeFieldsValidatorTestCase {
     }
 
     @Test
+    public void throws_when_attribute_is_set_on_a_field_with_struct_sub_type() throws IOException, SAXException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("For field 'struct_array.f2': Setting attribute on a field that has struct or map sub-type(s) is not supported");
+        createModelAndValidate(joinLines(createSearchDefintionWithInvalidStructFieldAttribute("array<s1>")));
+    }
+
+    @Test
+    public void throws_when_attribute_is_set_on_a_field_with_map_sub_type() throws IOException, SAXException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("For field 'struct_array.f2': Setting attribute on a field that has struct or map sub-type(s) is not supported");
+        createModelAndValidate(joinLines(createSearchDefintionWithInvalidStructFieldAttribute("map<string, int>")));
+    }
+
+    private String createSearchDefintionWithInvalidStructFieldAttribute(String invalidFieldType) {
+        return joinLines("search test {",
+                "  document test {",
+                "    struct s1 {",
+                "      field f1 type int {}",
+                "    }",
+                "    struct s2 {",
+                "      field f2 type " + invalidFieldType + " {}",
+                "    }",
+                "    field struct_array type array<s2> {",
+                "      struct-field f2 { indexing: attribute }",
+                "    }",
+                "  }",
+                "}");
+    }
+
+    @Test
     public void validation_passes_when_only_supported_struct_field_attributes_are_used() throws IOException, SAXException {
         createModelAndValidate(joinLines("search test {",
                 "  document test {",
