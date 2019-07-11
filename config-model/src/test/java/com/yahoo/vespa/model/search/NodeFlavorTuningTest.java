@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 
@@ -19,6 +18,8 @@ import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
  * @author geirst
  */
 public class NodeFlavorTuningTest {
+
+    private static double delta = 0.00001;
 
     @Test
     public void require_that_hwinfo_disk_size_is_set() {
@@ -63,15 +64,15 @@ public class NodeFlavorTuningTest {
     @Test
     public void require_that_fast_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(true);
-        assertEquals(200, cfg.hwinfo().disk().writespeed(), 0.001);
-        assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), 0.001);
+        assertEquals(200, cfg.hwinfo().disk().writespeed(), delta);
+        assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), delta);
     }
 
     @Test
     public void require_that_slow_disk_is_reflected_in_proton_config() {
         ProtonConfig cfg = configFromDiskSetting(false);
-        assertEquals(40, cfg.hwinfo().disk().writespeed(), 0.001);
-        assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), 0.001);
+        assertEquals(40, cfg.hwinfo().disk().writespeed(), delta);
+        assertEquals(100, cfg.hwinfo().disk().slowwritespeedlimit(), delta);
     }
 
     @Test
@@ -131,6 +132,14 @@ public class NodeFlavorTuningTest {
         assertSharedDisk(false, false);
     }
 
+    @Test
+    public void require_that_write_filter_memory_limit_is_scaled() {
+        assertWriteFilter(0.7, 8);
+        assertWriteFilter(0.75, 16);
+        assertWriteFilter(0.775, 32);
+        assertWriteFilter(0.7875, 64);
+    }
+
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
         assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
     }
@@ -154,6 +163,10 @@ public class NodeFlavorTuningTest {
 
     private static void assertSharedDisk(boolean sharedDisk, boolean docker) {
         assertEquals(sharedDisk, configFromEnvironmentType(docker).hwinfo().disk().shared());
+    }
+
+    private static void assertWriteFilter(double expMemoryLimit, int memoryGb) {
+        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb).writefilter().memorylimit(), delta);
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
