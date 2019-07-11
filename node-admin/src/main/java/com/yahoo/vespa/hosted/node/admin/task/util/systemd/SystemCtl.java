@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.Objects;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +15,6 @@ import java.util.regex.Pattern;
  * @author hakonhall
  */
 public class SystemCtl {
-    private static final Logger logger = Logger.getLogger(SystemCtl.class.getName());
 
     // Valid systemd property names from looking at a couple of services.
     private static final Pattern PROPERTY_NAME_PATTERN = Pattern.compile("^[a-zA-Z]+$");
@@ -24,8 +22,6 @@ public class SystemCtl {
     // Last line of `systemctl list-unit-files <unit>` prints '0 unit files listed.'
     private static final Pattern UNIT_FILES_LISTED_PATTERN = Pattern.compile("([0-9]+) unit files listed\\.");
 
-    // Patterns matching properties output by the 'systemctl show' command.
-    private static final Pattern UNIT_FILE_STATE_PROPERTY_PATTERN = createPropertyPattern("UnitFileState");
     private static final Pattern ACTIVE_STATE_PROPERTY_PATTERN = createPropertyPattern("ActiveState");
 
     private final Terminal terminal;
@@ -86,8 +82,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            String unitFileState = getSystemCtlProperty(context, UNIT_FILE_STATE_PROPERTY_PATTERN);
-            return Objects.equals(unitFileState, "enabled");
+            return isUnitEnabled(context);
         }
     }
 
@@ -97,8 +92,7 @@ public class SystemCtl {
         }
 
         protected boolean isAlreadyConverged(TaskContext context) {
-            String unitFileState = getSystemCtlProperty(context, UNIT_FILE_STATE_PROPERTY_PATTERN);
-            return Objects.equals(unitFileState, "disabled");
+            return !isUnitEnabled(context);
         }
     }
 
@@ -135,6 +129,7 @@ public class SystemCtl {
     }
 
     public abstract class SystemCtlCommand {
+
         private final String command;
         private final String unit;
 
@@ -157,12 +152,21 @@ public class SystemCtl {
             return true;
         }
 
+        /** Returns true if unit is enabled */
+        boolean isUnitEnabled(TaskContext context) {
+            return terminal.newCommandLine(context)
+                           .add("systemctl", "--quiet", "is-enabled", unit)
+                           .ignoreExitCode()
+                           .executeSilently()
+                           .map(CommandResult::getExitCode) == 0;
+        }
+
         /**
          * @param propertyPattern Pattern to match the output of systemctl show command with
          *                        exactly 1 group. The matchng group must exist.
          * @return The matched group from the 'systemctl show' output.
          */
-        protected String getSystemCtlProperty(TaskContext context, Pattern propertyPattern) {
+        String getSystemCtlProperty(TaskContext context, Pattern propertyPattern) {
             return terminal.newCommandLine(context)
                     .add("systemctl", "show", unit)
                     .executeSilently()
@@ -186,4 +190,5 @@ public class SystemCtl {
 
         return matcher.group(1);
     }
+
 }
