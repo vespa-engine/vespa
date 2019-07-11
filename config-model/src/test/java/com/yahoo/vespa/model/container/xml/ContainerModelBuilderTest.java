@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -78,9 +79,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "<jdisc version='1.0'>",
                 nodesXml,
                 "</jdisc>" );
-        createModel(root, clusterElem);
+        TestLogger logger = new TestLogger();
+        createModel(root, logger, clusterElem);
         AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
         assertNotNull(container);
+
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals("'jdisc' is deprecated as tag name. Use 'container' instead.", logger.msgs.get(0).getSecond());
     }
 
     @Test

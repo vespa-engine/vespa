@@ -60,6 +60,10 @@ public abstract class ContainerModelBuilderTestBase {
         createModel(root, DeployState.createTestState(), null, containerElems);
     }
 
+    public static void createModel(MockRoot root, DeployLogger testLogger, Element... containerElems) {
+        createModel(root, DeployState.createTestState(testLogger), null, containerElems);
+    }
+
     private static void generateDefaultSearchChains(ContainerCluster cluster) {
         ContainerSearch search = cluster.getSearch();
         if (search != null)
