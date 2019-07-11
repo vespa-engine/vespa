@@ -2,7 +2,7 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
-    <jdisc version="1.0">
+    <container version="1.0">
         <document-processing compressdocuments="true">
             <chain id="ContainerWrapperTest">
                 <documentprocessor id="com.yahoo.vespa.config.AppleDocProc"/>
@@ -17,6 +17,6 @@
             <node hostalias="node1" />
         </nodes>
 
-    </jdisc>
+    </container>
 
 </services>

@@ -221,7 +221,7 @@ public class LbServicesProducerTest {
     private ApplicationPackage createApplicationPackage(String host1, String host2) {
         String hosts = "<hosts><host name='" + host1 + "'><alias>node1</alias></host><host name='" + host2 + "'><alias>node2</alias></host></hosts>";
         String services = "<services><admin version='2.0'><adminserver hostalias='node1' /><logserver hostalias='node1' /><slobroks><slobrok hostalias='node1' /><slobrok hostalias='node2' /></slobroks></admin>"
-                + "<jdisc id='mydisc' version='1.0'>" +
+                + "<container id='mydisc' version='1.0'>" +
                 "  <aliases>" +
                 "      <endpoint-alias>foo2.bar2.com</endpoint-alias>" +
                 "      <service-alias>service1</service-alias>" +
@@ -231,7 +231,7 @@ public class LbServicesProducerTest {
                 "    <node hostalias='node1' />" +
                 "  </nodes>" +
                 "  <search/>" +
-                "</jdisc>" +
+                "</container>" +
                 "</services>";
 
         String deploymentInfo;
