@@ -1,12 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.flags;
+package com.yahoo.vespa.configserver.flags.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
@@ -54,6 +53,6 @@ public class FlagDataListResponse extends HttpResponse {
 
     @Override
     public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
+        return "application/json";
     }
 }
