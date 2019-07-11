@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -567,22 +566,6 @@ public class ApplicationSerializer {
         });
 
         return List.copyOf(assignedRotations.values());
-    }
-
-    private List<RotationId> rotationListFromSlime(Inspector field) {
-        final var rotations = new ArrayList<RotationId>();
-
-        field.traverse((ArrayTraverser) (idx, inspector) -> {
-            final var rotation = new RotationId(inspector.asString());
-            rotations.add(rotation);
-        });
-
-        return rotations;
-    }
-
-    // TODO: Remove after June 2019 once the 'rotation' field is gone from storage
-    private Optional<RotationId> legacyRotationFromSlime(Inspector field) {
-        return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 
     private OptionalLong optionalLong(Inspector field) {
