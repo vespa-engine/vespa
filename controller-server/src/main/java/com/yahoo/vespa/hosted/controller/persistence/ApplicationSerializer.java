@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -555,27 +554,6 @@ public class ApplicationSerializer {
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, Inspector root) {
         final var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
 
-        // Add the legacy rotation field to the set - this needs to be first
-        // TODO: Remove when we retire the rotations field
-        final var legacyRotation = legacyRotationFromSlime(root.field(deprecatedRotationField));
-        if (legacyRotation.isPresent() && deploymentSpec.globalServiceId().isPresent()) {
-            final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
-            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
-            assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), legacyRotation.get(), regions));
-        }
-
-        // Now add the same entries from "stupid" list of rotations
-        // TODO: Remove when we retire the rotations field
-        final var rotations = rotationListFromSlime(root.field(rotationsField));
-        for (var rotation : rotations) {
-            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
-            if (deploymentSpec.globalServiceId().isPresent()) {
-                final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
-                assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), rotation, regions));
-            }
-        }
-
-        // Last - add the actual entries we want.  Do _not_ remove this during clean-up
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
             final var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             final var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
@@ -588,22 +566,6 @@ public class ApplicationSerializer {
         });
 
         return List.copyOf(assignedRotations.values());
-    }
-
-    private List<RotationId> rotationListFromSlime(Inspector field) {
-        final var rotations = new ArrayList<RotationId>();
-
-        field.traverse((ArrayTraverser) (idx, inspector) -> {
-            final var rotation = new RotationId(inspector.asString());
-            rotations.add(rotation);
-        });
-
-        return rotations;
-    }
-
-    // TODO: Remove after June 2019 once the 'rotation' field is gone from storage
-    private Optional<RotationId> legacyRotationFromSlime(Inspector field) {
-        return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 
     private OptionalLong optionalLong(Inspector field) {

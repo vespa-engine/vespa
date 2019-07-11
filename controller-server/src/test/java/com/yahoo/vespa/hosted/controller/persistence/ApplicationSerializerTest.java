@@ -253,9 +253,8 @@ public class ApplicationSerializerTest {
         // ok if no error
     }
 
-    /** TODO: Test can be removed after June 2019 - once legacy field for single rotation is retired */
     @Test
-    public void testParsingLegacyRotationElement() throws IOException {
+    public void testParsingAssignedRotations() throws IOException {
         // Use the 'complete-application.json' as a baseline
         final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         final var slime = SlimeUtils.jsonToSlime(applicationJson);
@@ -267,12 +266,6 @@ public class ApplicationSerializerTest {
 
         // Add the necessary fields to the Slime representation of the application
         final var cursor = slime.get();
-        cursor.setString("rotation", "single-rotation");
-
-        final var rotations = cursor.setArray("endpoints");
-        rotations.addString("multiple-rotation-1");
-        rotations.addString("multiple-rotation-2");
-
         final var assignedRotations = cursor.setArray("assignedRotations");
         final var assignedRotation = assignedRotations.addObject();
         assignedRotation.setString("clusterId", "foobar");
@@ -282,51 +275,23 @@ public class ApplicationSerializerTest {
         // Parse and test the output from parsing contains both legacy rotation and multiple rotations
         final var application = applicationSerializer.fromSlime(slime);
 
-        // Since only one AssignedEndpoint can be "default", we make sure that we are ignoring the
-        // multiple-rotation entries as the globalServiceId will override them
         assertEquals(
                 List.of(
-                        new RotationId("single-rotation"),
                         new RotationId("assigned-rotation")
                 ),
                 application.rotations()
         );
 
         assertEquals(
-                Optional.of(new RotationId("single-rotation")), application.legacyRotation()
+                Optional.of(new RotationId("assigned-rotation")), application.legacyRotation()
         );
 
-        // The same goes here for AssignedRotations with "default" EndpointId as in the .rotations() test above.
-        // Note that we are only using Set.of() on "assigned-rotation" because in this test we do not have access
-        // to a deployment.xml that describes the zones a rotation should map to.
         assertEquals(
                 List.of(
-                        new AssignedRotation(new ClusterSpec.Id("foo"), EndpointId.of("default"), new RotationId("single-rotation"), regions),
                         new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"), Set.of())
                 ),
                 application.assignedRotations()
         );
     }
 
-    @Test
-    public void testParsingOnlyLegacyRotationElement() throws IOException {
-        // Use the 'complete-application.json' as a baseline
-        final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
-        final var slime = SlimeUtils.jsonToSlime(applicationJson);
-
-        // Add the necessary fields to the Slime representation of the application
-        final var cursor = slime.get();
-
-        cursor.setString("rotation", "single-rotation");
-
-        // Parse and test the output from parsing contains both legacy rotation and multiple rotations
-        final var application = applicationSerializer.fromSlime(slime);
-
-        assertEquals(
-                List.of(
-                        new RotationId("single-rotation")
-                ),
-                application.rotations()
-        );
-    }
 }
