@@ -24,12 +24,12 @@ public class TldTest {
                                 "  <admin version='2.0'>" +
                                 "    <adminserver hostalias='mockhost' />" +
                                 "  </admin>" +
-                                "  <jdisc version='1.0' id='default'>" +
+                                "  <container version='1.0' id='default'>" +
                                 "    <search />" +
                                 "    <nodes>" +
                                 "      <node hostalias='mockhost'/>" +
                                 "    </nodes>" +
-                                "  </jdisc>" +
+                                "  </container>" +
                                 "  <content version='1.0' id='foo'>" +
                                 "    <redundancy>1</redundancy>" +
                                 "    <documents>" +
@@ -73,19 +73,19 @@ public class TldTest {
                     "  <admin version='2.0'>" +
                     "    <adminserver hostalias='gateway' />" +
                     "  </admin>" +
-                    "  <jdisc version='1.0' id='default'>" +
+                    "  <container version='1.0' id='default'>" +
                     "    <search />" +
                     "    <nodes>" +
                     "      <node hostalias='search1'/>" +
                     "      <node hostalias='search2'/>" +
                     "    </nodes>" +
-                    "  </jdisc>" +
-                    "  <jdisc version='1.0' id='gw'>" +
+                    "  </container>" +
+                    "  <container version='1.0' id='gw'>" +
                     "    <document-api/>" +
                     "    <nodes>" +
                     "      <node hostalias='gateway'/>" +
                     "    </nodes>" +
-                    "  </jdisc>" +
+                    "  </container>" +
                     "  <content version='1.0' id='foo'>" +
                     "    <redundancy>2</redundancy>" +
                     "    <documents>" +

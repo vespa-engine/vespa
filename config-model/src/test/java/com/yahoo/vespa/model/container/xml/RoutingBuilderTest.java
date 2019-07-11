@@ -29,7 +29,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void setsRotationActiveAccordingToDeploymentSpec() throws IOException, SAXException {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'><search /></jdisc>");
+                "<container id='default' version='1.0'><search /></container>");
 
         String deploymentSpec = "<deployment>\n" +
                                 "  <prod>    \n" +

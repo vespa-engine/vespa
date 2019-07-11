@@ -6,15 +6,15 @@
     <nodes count="3" flavor="small"/>
   </admin>
 
-  <jdisc id="container1" version="1.0">
+  <container id="container1" version="1.0">
     <nodes count="5" required="true">
       <resources vcpu="1.2" memory="10Gb" disk="0.3 TB"/>
     </nodes>
-  </jdisc>
+  </container>
 
-  <jdisc id="container1" version="1.0">
+  <container id="container1" version="1.0">
     <nodes of="search" required="true"/>
-  </jdisc>
+  </container>
   
   <container id="container2" version="1.0">
     <nodes of="search"/>

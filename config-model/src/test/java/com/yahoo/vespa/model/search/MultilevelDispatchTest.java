@@ -224,10 +224,10 @@ public class MultilevelDispatchTest {
                                                                                       "  </nodes>" +
                                                                                       "  <search><coverage><minimum>0.95</minimum></coverage></search>" +
                                                                                       "</content>" +
-                                                                                      "<jdisc id='foo' version='1.0'>" +
+                                                                                      "<container id='foo' version='1.0'>" +
                                                                                       "  <search />" +
                                                                                       "  <nodes><node hostalias='mockroot' /></nodes>" +
-                                                                                      "</jdisc>" +
+                                                                                      "</container>" +
                                                                                       "</services>")
                                                                 .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
                                                                 .build());

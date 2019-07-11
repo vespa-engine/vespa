@@ -290,7 +290,7 @@ public class VespaModelTestCase {
     @Test
     public void testMinimalApp() throws IOException, SAXException {
         VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
-                                                  .withServices("<services version='1.0'><jdisc version='1.0'><search /></jdisc></services>")
+                                                  .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
                                                   .build());
         assertThat(model.getHostSystem().getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));

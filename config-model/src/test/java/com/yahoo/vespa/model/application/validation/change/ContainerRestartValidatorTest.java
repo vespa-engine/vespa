@@ -54,27 +54,27 @@ public class ContainerRestartValidatorTest {
                 null,
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services version='1.0'>\n" +
-                "    <jdisc id='cluster1' version='1.0'>\n" +
+                "    <container id='cluster1' version='1.0'>\n" +
                 "       <http>\n" +
                 "           <server id='server1' port='" + Defaults.getDefaults().vespaWebServicePort() + "'/>\n" +
                 "       </http>\n" +
                 "       <config name='container.qr'>\n" +
                 "           <restartOnDeploy>" + restartOnDeploy + "</restartOnDeploy>\n" +
                 "       </config>\n" +
-                "   </jdisc>\n" +
-                "   <jdisc id='cluster2' version='1.0'>\n" +
+                "   </container>\n" +
+                "   <container id='cluster2' version='1.0'>\n" +
                 "       <http>\n" +
                 "           <server id='server2' port='4090'/>\n" +
                 "       </http>\n" +
                 "       <config name='container.qr'>\n" +
                 "           <restartOnDeploy>" + restartOnDeploy + "</restartOnDeploy>\n" +
                 "       </config>\n" +
-                "   </jdisc>\n" +
-                "   <jdisc id='cluster3' version='1.0'>\n" +
+                "   </container>\n" +
+                "   <container id='cluster3' version='1.0'>\n" +
                 "       <http>\n" +
                 "           <server id='server3' port='4100'/>\n" +
                 "       </http>\n" +
-                "   </jdisc>\n" +
+                "   </container>\n" +
                 "</services>"
         ).create();
     }

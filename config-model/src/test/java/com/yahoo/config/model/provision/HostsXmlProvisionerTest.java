@@ -127,7 +127,7 @@ public class HostsXmlProvisionerTest {
 
     @Test
     public void require_singlenode_HostAlias_is_used_if_hosts_xml() {
-        String servicesXml = "<jdisc id='default' version='1.0' />";
+        String servicesXml = "<container id='default' version='1.0' />";
         HostsXmlProvisioner hostProvisioner = createProvisioner(oneHost);
         HostSpec hostSpec = hostProvisioner.allocateHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
         assertThat(hostSpec.hostname(), is("test1.yahoo.com"));

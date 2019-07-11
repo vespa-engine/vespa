@@ -96,9 +96,9 @@ public class VespaModelFactoryTest {
                         "    <admin version='2.0'>\n" +
                         "        <adminserver hostalias='proxy1' />\n" +
                         "    </admin>" +
-                        "    <jdisc id='" + routingClusterName + "' version='1.0'>\n" +
+                        "    <container id='" + routingClusterName + "' version='1.0'>\n" +
                         "        <nodes type='proxy'/>\n" +
-                        "    </jdisc>\n" +
+                        "    </container>\n" +
                         "</services>";
 
         HostProvisioner provisionerToOverride = new HostProvisioner() {

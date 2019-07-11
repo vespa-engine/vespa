@@ -35,7 +35,7 @@ public class StandaloneDocprocContainerTest extends DomBuilderTest {
 
     private Element servicesXml() {
         return parse("" +
-                "<jdisc version=\"1.0\">\n" +
+                "<container version=\"1.0\">\n" +
                 "    <document-processing>\n" +
                 "        <chain id=\"foo\">\n" +
                 "            <documentprocessor id=\"MyDocproc\"/>\n" +
@@ -44,7 +44,7 @@ public class StandaloneDocprocContainerTest extends DomBuilderTest {
                 "    <nodes>\n" +
                 "        <node hostalias=\"node01\"/>\n" +
                 "    </nodes>\n" +
-                "</jdisc>\n");
+                "</container>\n");
     }
 
     @Test

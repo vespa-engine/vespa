@@ -182,12 +182,12 @@ public class ConfigValueChangeValidatorTest {
                         "    <admin version='2.0'>\n" +
                         "      <adminserver hostalias='node1'/>\n" +
                         "    </admin>\n" +
-                        "    <jdisc id='default' version='1.0'>\n" +
+                        "    <container id='default' version='1.0'>\n" +
                         "       <search/>\n" +
                         "       <nodes>\n" +
                         "           <node hostalias='node1'/>\n" +
                         "       </nodes>\n" +
-                        "   </jdisc>\n" +
+                        "   </container>\n" +
                         "   <content id='basicsearch' version='1.0'>\n" +
                         "       <redundancy>1</redundancy>\n" +
                         createDocumentsSegment(docTypes) + "\n" +

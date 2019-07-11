@@ -83,7 +83,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     @Test
     public void bindings_are_added_to_config_for_all_http_servers_with_jetty() throws Exception {
         final Element xml = parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <request-chain id='my-request-chain'>",
@@ -93,17 +93,17 @@ public class FilterBindingsTest extends DomBuilderTest {
                 "    <server id='server1' port='8000' />",
                 "    <server id='server2' port='9000' />",
                 "  </http>",
-                "</jdisc>");
+                "</container>");
         buildContainerCluster(xml);
 
         {
-            final ServerConfig config = root.getConfig(ServerConfig.class, "jdisc/http/jdisc-jetty/server1");
+            final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server1");
             assertThat(config.filter().size(), is(1));
             assertThat(config.filter(0).id(), is("my-request-chain"));
             assertThat(config.filter(0).binding(), is(MY_CHAIN_BINDING));
         }
         {
-            final ServerConfig config = root.getConfig(ServerConfig.class, "jdisc/http/jdisc-jetty/server2");
+            final ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server2");
             assertThat(config.filter().size(), is(1));
             assertThat(config.filter(0).id(), is("my-request-chain"));
             assertThat(config.filter(0).binding(), is(MY_CHAIN_BINDING));
