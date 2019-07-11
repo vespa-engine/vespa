@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<jdisc version="1.0" jetty="true">
+<container version="1.0" jetty="true">
 
     <handler id="com.yahoo.document.restapi.resource.RestApiWithTestDocumentHandler" bundle="integration-test">
         <binding>http://*/document/v1/*</binding>
@@ -14,4 +14,4 @@
         <!-- This indicates that we want JDisc to allocate a port for us -->
         <server id="mainServer" port="0" />
     </http>
-</jdisc>
+</container>
