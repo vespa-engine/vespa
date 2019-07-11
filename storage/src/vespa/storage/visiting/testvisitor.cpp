@@ -21,7 +21,7 @@ TestVisitor::TestVisitor(StorageComponent& c,
         ost << "\n  " << it->first << " = " << it->second.c_str();
     }
     _params = ost.str();
-    LOG(info, "Created TestVisitor: %s", _params.c_str());
+    LOG(debug, "Created TestVisitor: %s", _params.c_str());
 }
 
 void
@@ -33,7 +33,7 @@ TestVisitor::startingVisitor(const std::vector<document::BucketId>& buckets)
     for (uint32_t i=0, n=buckets.size(); i<n; ++i) {
         ost << "  " << buckets[i] << "\n";
     }
-    LOG(info, "%s", ost.str().c_str());
+    LOG(debug, "%s", ost.str().c_str());
     report(ost.str());
 }
 
@@ -44,7 +44,7 @@ TestVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
 {
     std::ostringstream ost;
     ost << "Handling block of " << entries.size() << " documents.\n";
-    LOG(info, "%s", ost.str().c_str());
+    LOG(debug, "%s", ost.str().c_str());
     report(ost.str());
 }
 
@@ -52,19 +52,19 @@ void TestVisitor::completedBucket(const document::BucketId& bucket, HitCounter&)
 {
     std::ostringstream ost;
     ost << "completedBucket(" << bucket.getId() << ")\n";
-    LOG(info, "%s", ost.str().c_str());
+    LOG(debug, "%s", ost.str().c_str());
     report(ost.str());
 }
 
 void TestVisitor::completedVisiting(HitCounter&)
 {
-    LOG(info, "completedVisiting()");
+    LOG(debug, "completedVisiting()");
     report("completedVisiting()\n");
 }
 
 void TestVisitor::abortedVisiting()
 {
-    LOG(info, "abortedVisiting()");
+    LOG(debug, "abortedVisiting()");
     report("abortedVisiting()\n");
 }
 

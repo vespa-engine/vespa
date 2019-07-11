@@ -3,8 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -37,18 +35,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag CONFIG_SERVER_BOOTSTRAP_IN_SEPARATE_THREAD = defineFeatureFlag(
-            "config-server-bootstrap-in-separate-thread", false,
-            "Whether to run config server/controller bootstrap in a separate thread.",
-            "Takes effect only at bootstrap of config server/controller",
-            HOSTNAME);
-
-    public static final UnboundBooleanFlag MONITOR_TENANT_HOST_HEALTH = defineFeatureFlag(
-            "monitor-tenant-hosts-health", false,
-            "Whether service monitor will monitor /state/v1/health of the host admins on the tenant hosts.",
-            "Flag is read when config server starts",
-            HOSTNAME);
-
     public static final UnboundIntFlag DROP_CACHES = defineIntFlag("drop-caches", 3,
             "The int value to write into /proc/sys/vm/drop_caches for each tick. " +
             "1 is page cache, 2 is dentries inodes, 3 is both page cache and dentries inodes, etc.",
@@ -66,13 +52,13 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", Collections.emptyList(),
+            "disabled-host-admin-tasks", List.of(),
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
-            "use-dedicated-node-for-logserver", false,
+            "use-dedicated-node-for-logserver", true,
             "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
             APPLICATION_ID);
 
@@ -119,6 +105,11 @@ public class Flags {
             "Takes effect on next deployment",
             APPLICATION_ID);
 
+    public static final UnboundListFlag<String> DISABLED_DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
+            "disabled-dynamic-provisioning-flavors", List.of(),
+            "List of disabled Vespa flavor names that cannot be used for dynamic provisioning",
+            "Takes effect on next provisioning");
+
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
             "Regularly issue a small write to disk and fail the host if it is not successful",
@@ -131,29 +122,41 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_LB_STATUS_FILE = defineFeatureFlag(
-            "use-lb-status-file", false,
-            "Serve status.html from the new path",
-            "Takes effect on restart of Docker container",
-            APPLICATION_ID, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_NEW_LOGROTATE_CONFIGURATION = defineFeatureFlag(
-            "use-new-logrotate-configuration", false,
-            "Set up logrotate configuration without using any proprietary software",
-            "Takes effect on restart of Docker container",
-            APPLICATION_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
             "use-https-load-balancer-upstream", false,
             "Use https between load balancer and upstream containers",
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REDIRECT_LEGACY_DNS_NAMES = defineFeatureFlag(
-            "redirect-legacy-dns", false,
-            "Redirect legacy DNS names to the main DNS name",
+    public static final UnboundBooleanFlag CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED = defineFeatureFlag(
+            "config-server-fail-if-active-session-cannot-be-loaded", false,
+            "Whether to fail or just log if loading an active session fails at startup of config server",
+            "Takes effect only at bootstrap of config server/controller",
+            HOSTNAME);
+
+    public static final UnboundStringFlag CONFIGSERVER_RPC_AUTHORIZER = defineStringFlag(
+            "configserver-rpc-authorizer", "log-only",
+            "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
+            "Takes effect on restart of configserver");
+
+    public static final UnboundBooleanFlag PROVISION_APPLICATION_CERTIFICATE = defineFeatureFlag(
+            "provision-application-certificate", false,
+            "Privision certificate from CA and include reference in deployment",
             "Takes effect on deployment through controller",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag MULTIPLE_GLOBAL_ENDPOINTS = defineFeatureFlag(
+            "multiple-global-endpoints", false,
+            "Allow applications to use new endpoints syntax in deployment.xml",
+            "Takes effect on deployment through controller",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag DISABLE_CHEF = defineFeatureFlag(
+            "disable-chef", false,
+            "Stops and disables chef-client",
+            "Takes effect on next host-admin tick",
+            HOSTNAME, NODE_TYPE);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
@@ -237,7 +240,7 @@ public class Flags {
     }
 
     public static List<FlagDefinition> getAllFlags() {
-        return new ArrayList<>(flags.values());
+        return List.copyOf(flags.values());
     }
 
     public static Optional<FlagDefinition> getFlag(FlagId flagId) {

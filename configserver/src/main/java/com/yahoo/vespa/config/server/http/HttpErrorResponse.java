@@ -48,7 +48,8 @@ public class HttpErrorResponse extends HttpResponse {
         OUT_OF_CAPACITY,
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
-        PARENT_HOST_NOT_READY
+        PARENT_HOST_NOT_READY,
+        CERTIFICATE_NOT_READY
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -93,6 +94,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse parentHostNotReady(String msg) {
         return new HttpErrorResponse(CONFLICT, errorCodes.PARENT_HOST_NOT_READY.name(), msg);
+    }
+
+    public static HttpErrorResponse certificateNotReady(String msg) {
+        return new HttpErrorResponse(CONFLICT, errorCodes.CERTIFICATE_NOT_READY.name(), msg);
     }
 
     @Override

@@ -24,6 +24,7 @@ import static com.yahoo.log.LogLevel.DEBUG;
  * @author ollivir
  */
 public final class ConfigRetriever {
+
     private static final Logger log = Logger.getLogger(ConfigRetriever.class.getName());
 
     private final Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys;
@@ -33,7 +34,7 @@ public final class ConfigRetriever {
     private final Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe;
 
     public ConfigRetriever(Set<ConfigKey<? extends ConfigInstance>> bootstrapKeys,
-            Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe) {
+                           Function<Set<ConfigKey<? extends ConfigInstance>>, Subscriber> subscribe) {
         this.bootstrapKeys = bootstrapKeys;
         this.componentSubscriberKeys = new HashSet<>();
         this.subscribe = subscribe;

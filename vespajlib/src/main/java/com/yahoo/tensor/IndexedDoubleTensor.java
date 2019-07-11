@@ -43,8 +43,12 @@ class IndexedDoubleTensor extends IndexedTensor {
         private double[] values;
 
         BoundDoubleBuilder(TensorType type, DimensionSizes sizes) {
+            this(type, sizes, new double[(int)sizes.totalSize()]);
+        }
+
+        BoundDoubleBuilder(TensorType type, DimensionSizes sizes, double[] values) {
             super(type, sizes);
-            values = new double[(int)sizes.totalSize()];
+            this.values = values;
         }
 
         @Override
@@ -70,7 +74,7 @@ class IndexedDoubleTensor extends IndexedTensor {
 
         @Override
         public Builder cell(TensorAddress address, double value) {
-            values[(int)toValueIndex(address, sizes())] = value;
+            values[(int)toValueIndex(address, sizes(), type)] = value;
             return this;
         }
 
@@ -104,7 +108,13 @@ class IndexedDoubleTensor extends IndexedTensor {
 
         @Override
         public void cellByDirectIndex(long index, double value) {
-            values[(int)index] = value;
+            try {
+                values[(int) index] = value;
+            }
+            catch (IndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("Can not set the cell at position " + index + " in a tensor " +
+                                                   "of type " + type + ": Index is too large");
+            }
         }
 
     }

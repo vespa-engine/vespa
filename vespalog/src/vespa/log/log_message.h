@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include <string_view>
+#include <string>
 
 namespace ns_log {
 

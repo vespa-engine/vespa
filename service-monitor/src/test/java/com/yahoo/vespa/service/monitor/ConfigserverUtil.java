@@ -15,14 +15,12 @@ import java.util.stream.Stream;
 public class ConfigserverUtil {
     /** Create a ConfigserverConfig with the given settings. */
     public static ConfigserverConfig create(
-            boolean nodeAdminInContainer,
             boolean multitenant,
             String configServerHostname1,
             String configServerHostname2,
             String configServerHostname3) {
         return new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
-                        .nodeAdminInContainer(nodeAdminInContainer)
                         .multitenant(multitenant)
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname1).port(1))
                         .zookeeperserver(new ConfigserverConfig.Zookeeperserver.Builder().hostname(configServerHostname2).port(2))
@@ -30,7 +28,7 @@ public class ConfigserverUtil {
     }
 
     public static ConfigserverConfig createExampleConfigserverConfig() {
-        return create(false, true, "cfg1", "cfg2", "cfg3");
+        return create(true, "cfg1", "cfg2", "cfg3");
     }
 
     public static ApplicationInfo makeConfigServerApplicationInfo(

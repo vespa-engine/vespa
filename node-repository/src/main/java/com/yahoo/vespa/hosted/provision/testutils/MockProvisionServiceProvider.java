@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.provision.testutils;
 import com.google.inject.Inject;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
+import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 
 import java.util.Optional;
@@ -16,6 +18,7 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
 
     private final Optional<LoadBalancerService> loadBalancerService;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
 
     @Inject
     public MockProvisionServiceProvider() {
@@ -23,8 +26,14 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
     }
 
     public MockProvisionServiceProvider(LoadBalancerService loadBalancerService, HostProvisioner hostProvisioner) {
+        this(loadBalancerService, hostProvisioner, new EmptyProvisionServiceProvider.NoopHostResourcesCalculator());
+    }
+
+    public MockProvisionServiceProvider(LoadBalancerService loadBalancerService, HostProvisioner hostProvisioner,
+                                        HostResourcesCalculator hostResourcesCalculator) {
         this.loadBalancerService = Optional.ofNullable(loadBalancerService);
         this.hostProvisioner = Optional.ofNullable(hostProvisioner);
+        this.hostResourcesCalculator = hostResourcesCalculator;
     }
 
     @Override
@@ -35,5 +44,10 @@ public class MockProvisionServiceProvider implements ProvisionServiceProvider {
     @Override
     public Optional<HostProvisioner> getHostProvisioner() {
         return hostProvisioner;
+    }
+
+    @Override
+    public HostResourcesCalculator getHostResourcesCalculator() {
+        return hostResourcesCalculator;
     }
 }

@@ -116,7 +116,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void access_control_filter_chain_has_correct_handler_bindings() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 "  <search/>",
                 "  <document-api/>",
                 "  <handler id='custom.Handler'>",
@@ -127,7 +127,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "      <access-control domain='foo' />",
                 "    </filtering>",
                 "  </http>",
-                "</jdisc>");
+                "</container>");
 
         Http http = getHttp(clusterElem);
 
@@ -149,13 +149,13 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String notExcludedBinding = "http://*/custom-handler/*";
         final String excludedBinding = "http://*/excluded/*";
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
                 "  <handler id='custom.Handler'>",
                 "    <binding>" + notExcludedBinding + "</binding>",
                 "    <binding>" + excludedBinding + "</binding>",
                 "  </handler>",
-                "</jdisc>");
+                "</container>");
 
         Http http = getHttp(clusterElem);
         assertFalse("Excluded binding was not removed.",
@@ -171,7 +171,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String restApiPath = "api/v0";
         final Set<String> requiredBindings = ImmutableSet.of(servletPath, restApiPath);
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 "  <servlet id='foo' class='bar' bundle='baz'>",
                 "    <path>" + servletPath + "</path>",
                 "  </servlet>",
@@ -181,7 +181,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "      <access-control domain='foo' />",
                 "    </filtering>",
                 "  </http>",
-                "</jdisc>");
+                "</container>");
 
         Http http = getHttp(clusterElem);
 
@@ -199,12 +199,12 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String notExcludedBinding = "http://*:8081/" + servletPath;
         final String excludedBinding = "http://*:8080/" + servletPath;
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
                 "  <servlet id='foo' class='bar' bundle='baz'>",
                 "    <path>" + servletPath + "</path>",
                 "  </servlet>",
-                "</jdisc>");
+                "</container>");
 
         Http http = getHttp(clusterElem);
         assertFalse("Excluded binding was not removed.",
@@ -220,10 +220,10 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         final String notExcludedBinding = "http://*:8081/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;
         final String excludedBinding = "http://*:8080/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 httpWithExcludedBinding(excludedBinding),
                 "  <rest-api jersey2='true' path='" + restApiPath + "' />",
-                "</jdisc>");
+                "</container>");
 
         Http http = getHttp(clusterElem);
         assertFalse("Excluded binding was not removed.",
@@ -246,9 +246,9 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
     }
 
-    private Http getHttp(Element clusterElem) throws SAXException, IOException {
+    private Http getHttp(Element clusterElem) {
         createModel(root, clusterElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("jdisc");
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("container");
         Http http = cluster.getHttp();
         assertNotNull(http);
         return http;

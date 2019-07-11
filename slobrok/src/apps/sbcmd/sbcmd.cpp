@@ -12,14 +12,14 @@ LOG_SETUP("vespa-slobrok-cmd");
 class Slobrok_CMD : public FastOS_Application
 {
 private:
-    std::unique_ptr<FRT_Supervisor> _supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Target     *_target;
 
     Slobrok_CMD(const Slobrok_CMD &);
     Slobrok_CMD &operator=(const Slobrok_CMD &);
 
 public:
-    Slobrok_CMD() : _supervisor(), _target(nullptr) {}
+    Slobrok_CMD() : _server(), _target(nullptr) {}
     virtual ~Slobrok_CMD();
     int usage();
     void initRPC(const char *spec);
@@ -29,7 +29,7 @@ public:
 
 Slobrok_CMD::~Slobrok_CMD()
 {
-    LOG_ASSERT(! _supervisor);
+    LOG_ASSERT(! _server);
     LOG_ASSERT(_target == nullptr);
 }
 
@@ -56,9 +56,8 @@ Slobrok_CMD::usage()
 void
 Slobrok_CMD::initRPC(const char *spec)
 {
-    _supervisor = std::make_unique<FRT_Supervisor>();
-    _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
@@ -69,9 +68,8 @@ Slobrok_CMD::finiRPC()
         _target->SubRef();
         _target = nullptr;
     }
-    if (_supervisor) {
-        _supervisor->ShutDown(true);
-        _supervisor.reset();
+    if (_server) {
+        _server.reset();
     }
 }
 
@@ -95,7 +93,7 @@ Slobrok_CMD::Main()
     bool threeTables = false;
     bool twoTables = false;
 
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName(_argv[2]);
     if (strcmp(_argv[2], "slobrok.admin.listAllRpcServers") == 0) {

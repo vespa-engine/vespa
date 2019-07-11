@@ -3,16 +3,15 @@
 #include "document_inverter.h"
 #include "field_index_collection.h"
 #include "memory_index.h"
-#include "posting_iterator.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.memory_index");
@@ -20,17 +19,17 @@ LOG_SETUP(".searchlib.memoryindex.memory_index");
 using document::ArrayFieldValue;
 using document::WeightedSetFieldValue;
 using vespalib::LockGuard;
-using vespalib::GenerationHandler;
 
 namespace search {
 
-using fef::TermFieldMatchDataArray;
+using index::FieldLengthInfo;
+using index::IFieldLengthInspector;
 using index::IndexBuilder;
 using index::Schema;
 using index::SchemaUtil;
-using query::NumberTerm;
 using query::LocationTerm;
 using query::Node;
+using query::NumberTerm;
 using query::PredicateQuery;
 using query::PrefixTerm;
 using query::RangeTerm;
@@ -38,31 +37,28 @@ using query::RegExpTerm;
 using query::StringTerm;
 using query::SubstringTerm;
 using query::SuffixTerm;
-using queryeval::SearchIterator;
-using queryeval::Searchable;
-using queryeval::CreateBlueprintVisitorHelper;
 using queryeval::Blueprint;
-using queryeval::BooleanMatchIteratorWrapper;
+using queryeval::CreateBlueprintVisitorHelper;
 using queryeval::EmptyBlueprint;
-using queryeval::FieldSpecBase;
-using queryeval::FieldSpecBaseList;
 using queryeval::FieldSpec;
 using queryeval::IRequestContext;
+using queryeval::Searchable;
 
 }
 
 namespace search::memoryindex {
 
-MemoryIndex::MemoryIndex(const Schema &schema,
-                         ISequencedTaskExecutor &invertThreads,
-                         ISequencedTaskExecutor &pushThreads)
+MemoryIndex::MemoryIndex(const Schema& schema,
+                         const IFieldLengthInspector& inspector,
+                         ISequencedTaskExecutor& invertThreads,
+                         ISequencedTaskExecutor& pushThreads)
     : _schema(schema),
       _invertThreads(invertThreads),
       _pushThreads(pushThreads),
-      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
-      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads)),
+      _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema, inspector)),
+      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
+      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
       _inverter(_inverter0.get()),
-      _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema)),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
@@ -114,7 +110,7 @@ MemoryIndex::commit(const std::shared_ptr<IDestructorCallback> &onWriteDone)
 {
     _invertThreads.sync(); // drain inverting into this inverter
     _pushThreads.sync(); // drain use of other inverter
-    _inverter->pushDocuments(*_fieldIndexes, onWriteDone);
+    _inverter->pushDocuments(onWriteDone);
     flipInverter();
 }
 
@@ -137,47 +133,6 @@ MemoryIndex::dump(IndexBuilder &indexBuilder)
 }
 
 namespace {
-
-class MemTermBlueprint : public queryeval::SimpleLeafBlueprint {
-private:
-    GenerationHandler::Guard               _genGuard;
-    FieldIndex::PostingList::ConstIterator _pitr;
-    const FeatureStore                    &_featureStore;
-    const uint32_t                         _fieldId;
-    const bool                             _useBitVector;
-
-public:
-    MemTermBlueprint(GenerationHandler::Guard &&genGuard,
-                     FieldIndex::PostingList::ConstIterator pitr,
-                     const FeatureStore &featureStore,
-                     const FieldSpecBase &field,
-                     uint32_t fieldId,
-                     bool useBitVector)
-        : SimpleLeafBlueprint(field),
-          _genGuard(),
-          _pitr(pitr),
-          _featureStore(featureStore),
-          _fieldId(fieldId),
-          _useBitVector(useBitVector)
-    {
-        _genGuard = std::move(genGuard);
-        HitEstimate estimate(_pitr.size(), !_pitr.valid());
-        setEstimate(estimate);
-    }
-
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
-        auto search = std::make_unique<PostingIterator>(_pitr, _featureStore, _fieldId, tfmda);
-        if (_useBitVector) {
-            LOG(debug, "Return BooleanMatchIteratorWrapper: fieldId(%u), docCount(%zu)",
-                _fieldId, _pitr.size());
-            return std::make_unique<BooleanMatchIteratorWrapper>(std::move(search), tfmda);
-        }
-        LOG(debug, "Return PostingIterator: fieldId(%u), docCount(%zu)",
-            _fieldId, _pitr.size());
-        return search;
-    }
-
-};
 
 /**
  * Determines the correct Blueprint to use.
@@ -204,13 +159,8 @@ public:
         const vespalib::string termStr = queryeval::termAsString(n);
         LOG(debug, "searching for '%s' in '%s'",
             termStr.c_str(), _field.getName().c_str());
-        FieldIndex *fieldIndex = _fieldIndexes.getFieldIndex(_fieldId);
-        GenerationHandler::Guard genGuard = fieldIndex->takeGenerationGuard();
-        FieldIndex::PostingList::ConstIterator pitr = fieldIndex->findFrozen(termStr);
-        bool useBitVector = _field.isFilter();
-        setResult(std::make_unique<MemTermBlueprint>(std::move(genGuard), pitr,
-                                                     fieldIndex->getFeatureStore(),
-                                                     _field, _fieldId, useBitVector));
+        IFieldIndex* fieldIndex = _fieldIndexes.getFieldIndex(_fieldId);
+        setResult(fieldIndex->make_term_blueprint(termStr, _field, _fieldId));
     }
 
     void visit(LocationTerm &n)  override { visitTerm(n); }
@@ -244,10 +194,10 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     return visitor.getResult();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.merge(_fieldIndexes->getMemoryUsage());
     return usage;
 }
@@ -288,6 +238,16 @@ MemoryIndex::getPrunedSchema() const
 {
     LockGuard lock(_lock);
     return _prunedSchema;
+}
+
+FieldLengthInfo
+MemoryIndex::get_field_length_info(const vespalib::string& field_name) const
+{
+    uint32_t field_id = _schema.getIndexFieldId(field_name);
+    if (field_id != Schema::UNKNOWN_FIELD_ID) {
+        return _fieldIndexes->get_calculator(field_id).get_info();
+    }
+    return FieldLengthInfo();
 }
 
 }

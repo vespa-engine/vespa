@@ -32,7 +32,9 @@ import static com.yahoo.container.servlet.jersey.util.ResourceConfigUtil.registe
  * @author Tony Vaagenes
  * @author ollivir
  */
+@SuppressWarnings("unused") // Injected
 public class JerseyServletProvider implements Provider<ServletHolder> {
+
     private final ServletHolder jerseyServletHolder;
 
     public JerseyServletProvider(RestApiContext restApiContext) {
@@ -40,7 +42,7 @@ public class JerseyServletProvider implements Provider<ServletHolder> {
     }
 
     private ResourceConfig resourceConfig(RestApiContext restApiContext) {
-        final ResourceConfig resourceConfig = ResourceConfig
+        ResourceConfig resourceConfig = ResourceConfig
                 .forApplication(new JerseyApplication(resourcesAndProviders(restApiContext.getBundles())));
 
         registerComponent(resourceConfig, componentInjectorBinder(restApiContext));
@@ -51,7 +53,7 @@ public class JerseyServletProvider implements Provider<ServletHolder> {
     }
 
     private static Collection<Class<?>> resourcesAndProviders(Collection<BundleInfo> bundles) {
-        final List<Class<?>> ret = new ArrayList<>();
+        List<Class<?>> ret = new ArrayList<>();
 
         for (BundleInfo bundle : bundles) {
             for (String classEntry : bundle.getClassEntries()) {
@@ -115,4 +117,5 @@ public class JerseyServletProvider implements Provider<ServletHolder> {
     @Override
     public void deconstruct() {
     }
+
 }

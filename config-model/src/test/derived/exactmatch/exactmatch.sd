@@ -3,6 +3,11 @@ search exactmatch {
 
   document exactmatch {
 
+    struct elem {
+      field name type string {}
+      field weight type int {}
+    }
+
     field tag type string {
       indexing: summary | index
       match: exact
@@ -16,6 +21,32 @@ search exactmatch {
       }
     }
 
+    field string_map type map<string, string> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+        match {
+          exact
+          exact-terminator: "*!!!*"
+        }
+      }
+    }
+
+    field elem_map type map<string, elem> {
+      indexing: summary
+      struct-field value.name {
+        indexing: attribute
+        match: exact
+      }
+    }
+
+    field elem_array type array<elem> {
+      indexing: summary
+      struct-field name {
+        indexing: attribute
+        match: exact
+      }
+    }
   }
 
 }

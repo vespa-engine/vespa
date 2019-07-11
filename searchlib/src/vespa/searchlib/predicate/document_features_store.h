@@ -3,8 +3,8 @@
 #pragma once
 
 #include "predicate_tree_annotator.h"
-#include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <unordered_set>
@@ -76,7 +76,7 @@ public:
     void insert(const PredicateTreeAnnotations &annotations, uint32_t docId);
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
-    search::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
     void serialize(vespalib::DataBuffer &buffer) const;
 };

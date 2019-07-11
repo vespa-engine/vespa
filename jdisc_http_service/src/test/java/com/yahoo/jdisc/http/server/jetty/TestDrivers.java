@@ -16,14 +16,12 @@ import com.yahoo.jdisc.http.guiceModules.ServletModule;
 import com.yahoo.jdisc.http.server.FilterBindings;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class TestDrivers {
-
-    private static final String PRIVATE_KEY_FILE = "src/test/resources/pem/test.key";
-    private static final String CERTIFICATE_FILE = "src/test/resources/pem/test.crt";
 
     public static TestDriver newConfiguredInstance(final RequestHandler requestHandler,
                                                    final ServerConfig.Builder serverConfig,
@@ -48,6 +46,8 @@ public class TestDrivers {
     }
 
     public static TestDriver newInstanceWithSsl(final RequestHandler requestHandler,
+                                                Path certificateFile,
+                                                Path privateKeyFile,
                                                 final Module... guiceModules) throws IOException {
         return TestDriver.newInstance(
                 JettyHttpServer.class,
@@ -57,9 +57,9 @@ public class TestDrivers {
                         new ConnectorConfig.Builder()
                                 .ssl(new ConnectorConfig.Ssl.Builder()
                                              .enabled(true)
-                                             .privateKeyFile(PRIVATE_KEY_FILE)
-                                             .certificateFile(CERTIFICATE_FILE)
-                                             .caCertificateFile(CERTIFICATE_FILE)),
+                                             .privateKeyFile(privateKeyFile.toString())
+                                             .certificateFile(certificateFile.toString())
+                                             .caCertificateFile(certificateFile.toString())),
                         Modules.combine(guiceModules)));
     }
 

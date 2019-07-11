@@ -13,7 +13,7 @@
   </parent>
   <artifactId>container-di</artifactId>
   <version>7-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
@@ -83,6 +83,11 @@
   </dependencies>
   <build>
       <plugins>
+        <plugin>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>bundle-plugin</artifactId>
+          <extensions>true</extensions>
+        </plugin>
         <plugin>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config-class-plugin</artifactId>

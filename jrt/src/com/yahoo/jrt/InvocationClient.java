@@ -21,7 +21,7 @@ class InvocationClient implements ReplyHandler, Runnable {
         req.clientHandler(this);
 
         this.replyKey = conn.allocateKey();
-        this.timeoutTask = conn.transport().createTask(this);
+        this.timeoutTask = conn.transportThread().createTask(this);
     }
 
     public void invoke() {

@@ -236,15 +236,16 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         propertyAliases = ImmutableMap.copyOf(propertyAliasesBuilder);
     }
     private static void addAliases(QueryProfileType arguments, Map<String, CompoundName> aliases) {
-        String prefix = getPrefix(arguments);
+        CompoundName prefix = getPrefix(arguments);
         for (FieldDescription field : arguments.fields().values()) {
             for (String alias : field.getAliases())
-                aliases.put(alias, new CompoundName(prefix+field.getName()));
+                aliases.put(alias, prefix.append(field.getName()));
         }
     }
-    private static String getPrefix(QueryProfileType type) {
-        if (type.getId().getName().equals("native")) return ""; // The arguments of this directly
-        return type.getId().getName() + ".";
+
+    private static CompoundName getPrefix(QueryProfileType type) {
+        if (type.getId().getName().equals("native")) return CompoundName.empty; // The arguments of this directly
+        return type.getComponentIdAsCompoundName();
     }
 
     public static void addNativeQueryProfileTypesTo(QueryProfileTypeRegistry registry) {
@@ -391,21 +392,22 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * dependent objects for the appropriate subset of the given property values
      */
     private void setFieldsFrom(Properties properties, Map<String, String> context) {
-        setFrom("", properties, Query.getArgumentType(), context);
+        setFrom(CompoundName.empty, properties, Query.getArgumentType(), context);
     }
 
     /**
      * For each field in the given query profile type, take the corresponding value from originalProperties
      * (if any) set it to properties(), recursively.
      */
-    private void setFrom(String prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
-        prefix = prefix + getPrefix(arguments);
+    private void setFrom(CompoundName prefix, Properties originalProperties, QueryProfileType arguments, Map<String, String> context) {
+        prefix = prefix.append(getPrefix(arguments));
         for (FieldDescription field : arguments.fields().values()) {
-            String fullName = prefix + field.getName();
+
             if (field.getType() == FieldType.genericQueryProfileType) { // Generic map
+                CompoundName fullName = prefix.append(field.getName());
                 for (Map.Entry<String, Object> entry : originalProperties.listProperties(fullName, context).entrySet()) {
                     try {
-                        properties().set(fullName + "." + entry.getKey(), entry.getValue(), context);
+                        properties().set(fullName.append(entry.getKey()), entry.getValue(), context);
                     } catch (IllegalArgumentException e) {
                         throw new QueryException("Invalid request parameter", e);
                     }
@@ -415,6 +417,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 setFrom(prefix, originalProperties, ((QueryProfileFieldType)field.getType()).getQueryProfileType(), context);
             }
             else {
+                CompoundName fullName = prefix.append(field.getName());
                 Object value = originalProperties.get(fullName, context);
                 if (value != null) {
                     try {
@@ -856,23 +859,29 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             commaSeparated(yql, sources);
         }
         yql.append(" where ");
-        yql.append(VespaSerializer.serialize(this));
+        String insert = serializeSortingAndLimits(includeHitsAndOffset);
+        yql.append(VespaSerializer.serialize(this, insert));
+        yql.append(';');
+        return yql.toString();
+    }
+
+    private String serializeSortingAndLimits(boolean includeHitsAndOffset) {
+        StringBuilder insert = new StringBuilder();
         if (getRanking().getSorting() != null && getRanking().getSorting().fieldOrders().size() > 0) {
-            serializeSorting(yql);
+            serializeSorting(insert);
         }
         if (includeHitsAndOffset) {
             if (getOffset() != 0) {
-                yql.append(" limit ").append(getHits() + getOffset())
-                   .append(" offset ").append(getOffset());
+                insert.append(" limit ").append(getHits() + getOffset())
+                    .append(" offset ").append(getOffset());
             } else if (getHits() != 10) {
-                yql.append(" limit ").append(getHits());
+                insert.append(" limit ").append(getHits());
             }
         }
         if (getTimeout() != defaultTimeout) {
-            yql.append(" timeout ").append(getTimeout());
+            insert.append(" timeout ").append(getTimeout());
         }
-        yql.append(';');
-        return yql.toString();
+        return insert.toString();
     }
 
     private void serializeSorting(StringBuilder yql) {

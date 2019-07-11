@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -37,7 +36,7 @@ public class Yum {
             .map(formatter -> "%{" + formatter + "}")
             .collect(Collectors.joining("\\n"));
     private static final Function<YumPackageName.Builder, List<Function<String, YumPackageName.Builder>>>
-            PACKAGE_NAME_BUILDERS_GENERATOR = builder -> Arrays.asList(
+            PACKAGE_NAME_BUILDERS_GENERATOR = builder -> List.of(
                 builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
 
 
@@ -183,7 +182,7 @@ public class Yum {
         return new GenericYumCommand(
                 terminal,
                 yumCommand,
-                Arrays.asList(packages),
+                List.of(packages),
                 noopPattern);
     }
 
@@ -209,9 +208,8 @@ public class Yum {
             }
         }
 
-        @SuppressWarnings("unchecked")
         public GenericYumCommand enableRepos(String... repos) {
-            enabledRepo.addAll(Arrays.asList(repos));
+            enabledRepo.addAll(List.of(repos));
             return this;
         }
 

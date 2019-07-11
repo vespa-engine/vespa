@@ -2,83 +2,70 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vdslib/container/searchresult.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace vdslib {
 
-struct SearchResultTest : public CppUnit::TestFixture {
-
-    void testSimple();
-    void testSimpleSortData();
-
-    CPPUNIT_TEST_SUITE(SearchResultTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testSimpleSortData);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(SearchResultTest);
-
-void SearchResultTest::testSimple()
+TEST(SearchResultTest, test_simple)
 {
     SearchResult a;
-    CPPUNIT_ASSERT(a.getHitCount() == 0);
+    EXPECT_EQ(0, a.getHitCount());
     a.addHit(7, "doc1", 6);
-    CPPUNIT_ASSERT(a.getHitCount() == 1);
+    ASSERT_EQ(1, a.getHitCount());
     a.addHit(8, "doc2", 7);
-    CPPUNIT_ASSERT(a.getHitCount() == 2);
+    ASSERT_EQ(2, a.getHitCount());
     const char *docId;
     SearchResult::RankType r;
-    CPPUNIT_ASSERT_EQUAL(a.getHit(0, docId, r), 7ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(r == 6);
-    CPPUNIT_ASSERT_EQUAL(a.getHit(1, docId, r), 8ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc2") == 0);
-    CPPUNIT_ASSERT(r == 7);
+    EXPECT_EQ(7, a.getHit(0, docId, r));
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_EQ(6, r);
+    EXPECT_EQ(8, a.getHit(1, docId, r));
+    EXPECT_EQ("doc2", std::string(docId));
+    EXPECT_EQ(7, r);
     a.sort();
-    CPPUNIT_ASSERT_EQUAL(a.getHit(0, docId, r), 8ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc2") == 0);
-    CPPUNIT_ASSERT(r == 7);
-    CPPUNIT_ASSERT_EQUAL(a.getHit(1, docId, r), 7ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(r == 6);
+    EXPECT_EQ(8, a.getHit(0, docId, r));
+    EXPECT_EQ("doc2", std::string(docId));
+    EXPECT_EQ(7, r);
+    EXPECT_EQ(7, a.getHit(1, docId, r));
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_EQ(6, r);
 }
 
-void SearchResultTest::testSimpleSortData()
+TEST(SearchResultTest, test_simple_sort_data)
 {
     SearchResult a;
-    CPPUNIT_ASSERT(a.getHitCount() == 0);
+    EXPECT_EQ(0, a.getHitCount());
     a.addHit(7, "doc1", 6, "abce", 4);
-    CPPUNIT_ASSERT(a.getHitCount() == 1);
+    ASSERT_EQ(1, a.getHitCount());
     a.addHit(8, "doc2", 7, "abcde", 5);
-    CPPUNIT_ASSERT(a.getHitCount() == 2);
+    ASSERT_EQ(2, a.getHitCount());
     const char *docId;
     SearchResult::RankType r;
-    CPPUNIT_ASSERT_EQUAL(a.getHit(0, docId, r), 7ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(r == 6);
+    EXPECT_EQ(7, a.getHit(0, docId, r));
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_EQ(6, r);
     const void *buf;
     size_t sz;
     a.getSortBlob(0, buf, sz);
-    CPPUNIT_ASSERT(sz == 4);
-    CPPUNIT_ASSERT(memcmp("abce", buf, sz) == 0);
-    CPPUNIT_ASSERT_EQUAL(a.getHit(1, docId, r), 8ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc2") == 0);
-    CPPUNIT_ASSERT(r == 7);
+    EXPECT_EQ(4, sz);
+    EXPECT_TRUE(memcmp("abce", buf, sz) == 0);
+    EXPECT_EQ(8, a.getHit(1, docId, r));
+    EXPECT_EQ("doc2", std::string(docId));
+    EXPECT_EQ(7, r);
     a.getSortBlob(1, buf, sz);
-    CPPUNIT_ASSERT(sz == 5);
-    CPPUNIT_ASSERT(memcmp("abcde", buf, sz) == 0);
+    EXPECT_EQ(5, sz);
+    EXPECT_TRUE(memcmp("abcde", buf, sz) == 0);
     a.sort();
-    CPPUNIT_ASSERT_EQUAL(a.getHit(0, docId, r), 8ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc2") == 0);
-    CPPUNIT_ASSERT(r == 7);
+    EXPECT_EQ(8, a.getHit(0, docId, r));
+    EXPECT_EQ("doc2", std::string(docId));
+    EXPECT_EQ(7, r);
     a.getSortBlob(0, buf, sz);
-    CPPUNIT_ASSERT(sz == 5);
-    CPPUNIT_ASSERT_EQUAL(a.getHit(1, docId, r), 7ul);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(r == 6);
+    EXPECT_EQ(5, sz);
+    EXPECT_EQ(7, a.getHit(1, docId, r));
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_EQ(6, r);
     a.getSortBlob(1, buf, sz);
-    CPPUNIT_ASSERT(sz == 4);
+    EXPECT_EQ(4, sz);
 }
 
 }

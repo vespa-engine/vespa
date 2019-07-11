@@ -1,13 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.IOException;
@@ -25,13 +27,11 @@ import java.util.Set;
 public interface ConfigServer {
 
     interface PreparedApplication {
-        // TODO: Remove the two methods below
-        void activate();
-        List<Log> messages();
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
+    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
+                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 
@@ -75,9 +75,17 @@ public interface ConfigServer {
     NodeRepository nodeRepository();
 
     /** Get service convergence status for given deployment */
-    Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment);
+    default Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
+        return serviceConvergence(deployment, Optional.empty());
+    }
+
+    /** Get service convergence status for given deployment, using the nodes in the model at the given Vespa version. */
+    Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version);
 
     /** Get all load balancers in given zone */
     List<LoadBalancer> getLoadBalancers(ZoneId zone);
+
+    /** Get all load balancers for application in given zone */
+    List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone);
 
 }

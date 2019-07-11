@@ -67,8 +67,8 @@ public class Container {
 
     private void deconstructObsoleteComponents(ComponentGraph oldGraph, ComponentGraph newGraph) {
         IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
-        oldGraph.allComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
-        newGraph.allComponentsAndProviders().forEach(oldComponents::remove);
+        oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
+        newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
         oldComponents.keySet().forEach(componentDeconstructor::deconstruct);
     }
 
@@ -190,12 +190,10 @@ public class Container {
     }
 
     private ComponentGraph createComponentsGraph(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs,
-            long generation, Injector fallbackInjector) {
-
+                                                 long generation, Injector fallbackInjector) {
         previousConfigGeneration = generation;
 
         ComponentGraph graph = new ComponentGraph(generation);
-
         ComponentsConfig componentsConfig = getConfig(componentsConfigKey, configsIncludingBootstrapConfigs);
         if (componentsConfig == null) {
             throw new ConfigurationRuntimeException("The set of all configs does not include a valid 'components' config. Config set: "
@@ -226,7 +224,7 @@ public class Container {
     }
 
     private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(Node::newOrCachedInstance);
+        graph.nodes().forEach(Node::constructInstance);
     }
 
     public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {
@@ -246,11 +244,11 @@ public class Container {
     }
 
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        graph.allComponentsAndProviders().forEach(deconstructor::deconstruct);
+        graph.allConstructedComponentsAndProviders().forEach(deconstructor::deconstruct);
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
-            Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
+                                                         Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
         ConfigInstance inst = configs.get(key);
 
         if (inst == null || key.getConfigClass() == null) {

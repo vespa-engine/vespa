@@ -6,26 +6,26 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -95,11 +95,13 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
 
         Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
-        lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        if (application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
+            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
+            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        }
 
+        Cursor deployingObject = responseObject.setObject("deploying");
         if ( ! change.isEmpty()) {
-            Cursor deployingObject = responseObject.setObject("deploying");
             change.platform().ifPresent(version -> deployingObject.setString("platform", version.toString()));
             change.application().ifPresent(version -> applicationVersionToSlime(deployingObject.setObject("application"), version));
         }
@@ -132,6 +134,17 @@ class JobControllerApiHandlerHelper {
                            running,
                            baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
         });
+
+        Cursor devJobsObject = responseObject.setObject("devJobs");
+        for (JobType type : JobType.allIn(controller.system()))
+            if (   type.environment() != null
+                && type.environment().isManuallyDeployed()
+                && application.deployments().containsKey(type.zone(controller.system())))
+                controller.jobController().last(application.id(), type)
+                          .ifPresent(last -> runToSlime(devJobsObject.setObject(type.jobName()).setArray("runs").addObject(),
+                                                        last,
+                                                        baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize()));
+
         return new SlimeJsonResponse(slime);
     }
 
@@ -327,9 +340,10 @@ class JobControllerApiHandlerHelper {
 
     /** Returns the status of the task represented by the given step, if it has started. */
     private static Optional<String> taskStatus(Step step, Run run) {
-        return   run.readySteps().contains(step) ? Optional.of("running")
-               : run.steps().get(step) != unfinished ? Optional.of(run.steps().get(step).name())
-               : Optional.empty();
+        return run.readySteps().contains(step) ? Optional.of("running")
+                                               : Optional.ofNullable(run.steps().get(step))
+                                                         .filter(status -> status != unfinished)
+                                                         .map(Step.Status::name);
     }
 
     /** Returns a response with the runs for the given job type. */
@@ -351,6 +365,9 @@ class JobControllerApiHandlerHelper {
 
     private static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
         versionObject.setString("hash", version.id());
+        if (version.isUnknown())
+            return;
+
         versionObject.setLong("build", version.buildNumber().getAsLong());
         Cursor sourceObject = versionObject.setObject("source");
         sourceObject.setString("gitRepository", version.source().get().repository());
@@ -399,10 +416,10 @@ class JobControllerApiHandlerHelper {
      *
      * @return Response with the new application version
      */
-    static HttpResponse submitResponse(JobController jobController, String tenant, String application,
+    static HttpResponse submitResponse(JobController jobController, String tenant, String application, String instance,
                                        SourceRevision sourceRevision, String authorEmail, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
-        ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, "default"),
+        ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, instance),
                                                           sourceRevision,
                                                           authorEmail,
                                                           projectId,
@@ -427,8 +444,8 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Unregisters the application from the internal deployment pipeline. */
-    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName, String instanceName) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         jobs.unregister(id);
         Slime slime = new Slime();
         slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");

@@ -20,7 +20,7 @@ public:
     SameElementBlueprint();
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
-    ~SameElementBlueprint() = default;
+    ~SameElementBlueprint();
 
     // no match data
     bool isWhiteList() const override { return true; }

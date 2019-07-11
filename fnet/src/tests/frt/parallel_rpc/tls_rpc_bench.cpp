@@ -21,18 +21,19 @@ CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespal
 TT_Tag req_tag("request");
 
 struct Fixture : FRT_Invokable {
-    FRT_Supervisor orb;
-    Fixture(CryptoEngine::SP crypto) : orb(std::move(crypto)) {
-        ASSERT_TRUE(orb.Listen(0));
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & orb;
+    Fixture(CryptoEngine::SP crypto)
+        : server(std::move(crypto)),
+          orb(server.supervisor())
+    {
+         ASSERT_TRUE(orb.Listen(0));
         init_rpc();
-        ASSERT_TRUE(orb.Start());
     }
     FRT_Target *connect() {
         return orb.GetTarget(orb.GetListenPort());
     }
-    ~Fixture() {
-        orb.ShutDown(true);
-    }
+    ~Fixture() = default;
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
         rb.DefineMethod("inc", "l", "l", FRT_METHOD(Fixture::rpc_inc), this);

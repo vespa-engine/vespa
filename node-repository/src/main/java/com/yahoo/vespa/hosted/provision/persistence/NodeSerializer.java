@@ -9,11 +9,11 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -44,12 +44,12 @@ import java.util.function.UnaryOperator;
  */
 public class NodeSerializer {
 
-    // WARNING: Since there are multiple config servers in a cluster and they upgrade one by one
-    //          (and rewrite all nodes on startup),
-    //          changes to the serialized format must be made such that what is serialized on version N+1
-    //          can be read by version N:
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup), changes to the serialized format must be made
+    //          such that what is serialized on version N+1 can be read by version N:
     //          - ADDING FIELDS: Always ok
     //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+    //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     /** The configured node flavors */
     private final NodeFlavors flavors;
@@ -85,6 +85,7 @@ public class NodeSerializer {
     private static final String vcpuKey = "vcpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
+    private static final String diskSpeedKey = "diskSpeed";
 
     // Allocation fields
     private static final String tenantIdKey = "tenantId";
@@ -124,8 +125,8 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        toSlime(node.ipAddresses(), object.setArray(ipAddressesKey), IP::requireAddresses);
-        toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey), IP::requireAddressPool);
+        toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey), IP.Config::require);
+        toSlime(node.ipConfig().pool().asSet(), object.setArray(ipAddressPoolKey), IP.Pool::require);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         toSlime(node.flavor(), object);
@@ -158,6 +159,7 @@ public class NodeSerializer {
             resourcesObject.setDouble(vcpuKey, resources.vcpu());
             resourcesObject.setDouble(memoryKey, resources.memoryGb());
             resourcesObject.setDouble(diskKey, resources.diskGb());
+            resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         }
     }
 
@@ -186,7 +188,7 @@ public class NodeSerializer {
 
     private void toSlime(Set<String> ipAddresses, Cursor array, UnaryOperator<Set<String>> validator) {
         // Validating IP address format expensive, so we do it at serialization time instead of Node construction time
-        validator.apply(ipAddresses).stream().sorted(IP.naturalOrder).forEach(array::addString);
+        validator.apply(ipAddresses).stream().sorted(IP.NATURAL_ORDER).forEach(array::addString);
     }
 
     // ---------------- Deserialization --------------------------------------------------
@@ -197,8 +199,8 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(idKey).asString(),
-                        ipAddressesFromSlime(object, ipAddressesKey),
-                        ipAddressesFromSlime(object, ipAddressPoolKey),
+                        new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
+                                      ipAddressesFromSlime(object, ipAddressPoolKey)),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -232,7 +234,8 @@ public class NodeSerializer {
             Inspector resources = object.field(resourcesKey);
             return new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                 resources.field(memoryKey).asDouble(),
-                                                resources.field(diskKey).asDouble()));
+                                                resources.field(diskKey).asDouble(),
+                                                diskSpeedFromSlime(resources.field(diskSpeedKey))));
         }
     }
 
@@ -382,7 +385,7 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "operator" : return Agent.operator;
-            case "NodeRetirer" : return Agent.NodeRetirer;
+            case "NodeRetirer" : return Agent.system; // TODO: Remove after 7.67
             case "NodeFailer" : return Agent.NodeFailer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
@@ -392,7 +395,7 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case operator : return "operator";
-            case NodeRetirer : return "NodeRetirer";
+            case NodeRetirer : return "system"; // TODO: Remove after 7.67
             case NodeFailer : return "NodeFailer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
@@ -426,4 +429,23 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
     }
 
+    private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
+        if ( ! diskSpeed.valid()) return NodeResources.DiskSpeed.fast; // TODO: Remove this line after June 2019
+        switch (diskSpeed.asString()) {
+            case "fast" : return NodeResources.DiskSpeed.fast;
+            case "slow" : return NodeResources.DiskSpeed.slow;
+            case "any" : return NodeResources.DiskSpeed.any;
+            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed.asString() + "'");
+        }
+    }
+
+    private static String diskSpeedToString(NodeResources.DiskSpeed diskSpeed) {
+        switch (diskSpeed) {
+            case fast : return "fast";
+            case slow : return "slow";
+            case any : return "any";
+            default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed + "'");
+        }
+
+    }
 }

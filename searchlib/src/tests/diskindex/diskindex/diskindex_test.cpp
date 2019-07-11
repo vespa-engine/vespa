@@ -57,6 +57,7 @@ private:
 
     void requireThatLookupIsWorking(bool fieldEmpty, bool docEmpty, bool wordEmpty);
     void requireThatWeCanReadPostingList();
+    void require_that_we_can_get_field_length_info();
     void requireThatWeCanReadBitVector();
     void requireThatBlueprintIsCreated();
     void requireThatBlueprintCanCreateSearchIterators();
@@ -76,13 +77,22 @@ public:
         return SearchIterator::UP(_fp->createIterator(_tfmda));
     }
 private:
-    mutable TermFieldMatchDataArray _tfmda;
+    TermFieldMatchData _tfmd;
+    TermFieldMatchDataArray _tfmda;
     FakePosting::SP _fp;
 };
 
 Verifier::Verifier(FakePosting::SP fp)
-    : _fp(std::move(fp))
-{ }
+    : _tfmd(),
+      _tfmda(),
+      _fp(std::move(fp))
+{
+    if (_fp) {
+        _tfmd.setNeedNormalFeatures(_fp->enable_unpack_normal_features());
+        _tfmd.setNeedInterleavedFeatures(_fp->enable_unpack_interleaved_features());
+    }
+    _tfmda.add(&_tfmd);
+}
 
 Verifier::~Verifier() = default;
 
@@ -184,6 +194,20 @@ Test::requireThatWeCanReadPostingList()
 }
 
 void
+Test::require_that_we_can_get_field_length_info()
+{
+    auto info = _index->get_field_length_info("f1");
+    EXPECT_EQUAL(3.5, info.get_average_field_length());
+    EXPECT_EQUAL(21u, info.get_num_samples());
+    info = _index->get_field_length_info("f2");
+    EXPECT_EQUAL(4.0, info.get_average_field_length());
+    EXPECT_EQUAL(23u, info.get_num_samples());
+    info = _index->get_field_length_info("f3");
+    EXPECT_EQUAL(0.0, info.get_average_field_length());
+    EXPECT_EQUAL(0u, info.get_num_samples());
+}
+
+void
 Test::requireThatWeCanReadBitVector()
 {
     { // word 'w1'
@@ -275,7 +299,7 @@ Test::requireThatBlueprintCanCreateSearchIterators()
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
         b->fetchPostings(true);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
-        ASSERT_TRUE(dynamic_cast<Zc4RareWordPosOccIterator<true> *>(s.get()) != NULL);
+        ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
     }
 }
 
@@ -314,6 +338,7 @@ Test::Main()
     TEST_DO(openIndex("index/1", false, false, false, false, false));
     TEST_DO(requireThatLookupIsWorking(false, false, false));
     TEST_DO(requireThatWeCanReadPostingList());
+    TEST_DO(require_that_we_can_get_field_length_info());
     TEST_DO(requireThatWeCanReadBitVector());
     TEST_DO(requireThatBlueprintIsCreated());
     TEST_DO(requireThatBlueprintCanCreateSearchIterators());
@@ -321,6 +346,7 @@ Test::Main()
     TEST_DO(openIndex("index/2", true, false, false, false, false));
     TEST_DO(requireThatLookupIsWorking(false, false, false));
     TEST_DO(requireThatWeCanReadPostingList());
+    TEST_DO(require_that_we_can_get_field_length_info());
     TEST_DO(requireThatWeCanReadBitVector());
     TEST_DO(requireThatBlueprintIsCreated());
     TEST_DO(requireThatBlueprintCanCreateSearchIterators());
@@ -328,6 +354,7 @@ Test::Main()
     TEST_DO(openIndex("index/3", false, true, false, false, false));
     TEST_DO(requireThatLookupIsWorking(false, false, false));
     TEST_DO(requireThatWeCanReadPostingList());
+    TEST_DO(require_that_we_can_get_field_length_info());
     TEST_DO(requireThatWeCanReadBitVector());
     TEST_DO(requireThatBlueprintIsCreated());
     TEST_DO(requireThatBlueprintCanCreateSearchIterators());
@@ -335,6 +362,7 @@ Test::Main()
     TEST_DO(openIndex("index/4", true, true, false, false, false));
     TEST_DO(requireThatLookupIsWorking(false, false, false));
     TEST_DO(requireThatWeCanReadPostingList());
+    TEST_DO(require_that_we_can_get_field_length_info());
     TEST_DO(requireThatWeCanReadBitVector());
     TEST_DO(requireThatBlueprintIsCreated());
     TEST_DO(requireThatBlueprintCanCreateSearchIterators());

@@ -3,7 +3,9 @@ vespa_add_library(vdslib_teststate
     SOURCES
     cluster_state_bundle_test.cpp
     clusterstatetest.cpp
+    grouptest.cpp
     nodestatetest.cpp
     DEPENDS
     vdslib
+    gtest
 )

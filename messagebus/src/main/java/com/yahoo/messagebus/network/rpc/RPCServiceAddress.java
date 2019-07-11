@@ -23,15 +23,16 @@ public class RPCServiceAddress implements ServiceAddress {
      * @param serviceName    The full service name of the address.
      * @param connectionSpec The connection specification.
      */
-    public RPCServiceAddress(String serviceName, String connectionSpec) {
+    public RPCServiceAddress(String serviceName, Spec connectionSpec) {
         this.serviceName = serviceName;
         int pos = serviceName.lastIndexOf('/');
-        if (pos > 0 && pos < serviceName.length() - 1) {
-            sessionName = serviceName.substring(pos + 1);
-        } else {
-            sessionName = null;
-        }
-        this.connectionSpec = new Spec(connectionSpec);
+        sessionName =  (pos > 0 && pos < serviceName.length() - 1)
+                ? serviceName.substring(pos + 1)
+                : null;
+        this.connectionSpec = connectionSpec;
+    }
+    public RPCServiceAddress(String serviceName, String connectionSpec) {
+        this(serviceName, new Spec(connectionSpec));
     }
 
     @Override
@@ -97,7 +98,7 @@ public class RPCServiceAddress implements ServiceAddress {
     }
 
     /**
-     * Sets the RPC target to be used when communicating with the remove service.
+     * Sets the RPC target to be used when communicating with the remote service.
      *
      * @param target The target to set.
      */

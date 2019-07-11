@@ -83,6 +83,9 @@ TEST(IdempotentStateTransitionTest, changed_storage_node_state_disallows_elision
 
     EXPECT_FALSE(db_pruning_may_be_elided(state_of("distributor:3 storage:3 .0.s:d"),
                                           state_of("distributor:3 storage:3 .1.s:d")));
+
+    EXPECT_FALSE(db_pruning_may_be_elided(state_of("distributor:3 storage:3 .0.s:r"),
+                                          state_of("distributor:3 storage:3 .0.s:d")));
 }
 
 TEST(IdempotentStateTransitionTest, may_elide_for_transition_between_different_effective_storage_down_states) {

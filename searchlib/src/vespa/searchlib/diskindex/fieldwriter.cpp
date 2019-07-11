@@ -9,13 +9,14 @@
 
 LOG_SETUP(".diskindex.fieldwriter");
 
+using search::index::FieldLengthInfo;
+
 namespace search::diskindex {
 
 using vespalib::getLastErrorString;
 using common::FileHeaderContext;
 
-FieldWriter::FieldWriter(uint32_t docIdLimit,
-                         uint64_t numWordIds)
+FieldWriter::FieldWriter(uint32_t docIdLimit, uint64_t numWordIds)
     : _wordNum(noWordNum()),
       _prevDocId(0),
       _dictFile(),
@@ -37,8 +38,10 @@ FieldWriter::open(const vespalib::string &prefix,
                   uint32_t minSkipDocs,
                   uint32_t minChunkDocs,
                   bool dynamicKPosOccFormat,
+                  bool encode_interleaved_features,
                   const Schema &schema,
                   const uint32_t indexId,
+                  const FieldLengthInfo &field_length_info,
                   const TuneFileSeqWrite &tuneFileWrite,
                   const FileHeaderContext &fileHeaderContext)
 {
@@ -49,10 +52,7 @@ FieldWriter::open(const vespalib::string &prefix,
     PostingListParams featureParams;
     PostingListParams countParams;
 
-    diskindex::setupDefaultPosOccParameters(&countParams,
-            &params,
-            _numWordIds,
-            _docIdLimit);
+    diskindex::setupDefaultPosOccParameters(&countParams, &params, _numWordIds, _docIdLimit);
 
     if (minSkipDocs != 0) {
         countParams.set("minSkipDocs", minSkipDocs);
@@ -62,18 +62,14 @@ FieldWriter::open(const vespalib::string &prefix,
         countParams.set("minChunkDocs", minChunkDocs);
         params.set("minChunkDocs", minChunkDocs);
     }
-
+    if (encode_interleaved_features) {
+        params.set("interleaved_features", encode_interleaved_features);
+    }
+    
     _dictFile = std::make_unique<PageDict4FileSeqWrite>();
     _dictFile->setParams(countParams);
 
-    _posoccfile.reset(diskindex::makePosOccWrite(name,
-                                                 _dictFile.get(),
-                                                 dynamicKPosOccFormat,
-                                                 params,
-                                                 featureParams,
-                                                 schema,
-                                                 indexId,
-                                                 tuneFileWrite));
+    _posoccfile = makePosOccWrite(_dictFile.get(), dynamicKPosOccFormat, params, featureParams, schema, indexId, field_length_info);
     vespalib::string cname = _prefix + "dictionary";
 
     // Open output dictionary file
@@ -147,8 +143,7 @@ FieldWriter::close()
     if (_posoccfile) {
         bool closeRes = _posoccfile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for write");
+            LOG(error, "Could not close posocc file for write");
             ret = false;
         }
         _posoccfile.reset();
@@ -156,8 +151,7 @@ FieldWriter::close()
     if (_dictFile) {
         bool closeRes = _dictFile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc count file for write");
+            LOG(error, "Could not close posocc count file for write");
             ret = false;
         }
         _dictFile.reset();

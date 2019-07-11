@@ -3,6 +3,7 @@
 #include "value.h"
 #include "operator.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <ostream>
 
 namespace document {
 namespace select {

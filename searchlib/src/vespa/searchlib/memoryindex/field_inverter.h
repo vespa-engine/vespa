@@ -13,6 +13,8 @@
 #include <map>
 #include <set>
 
+namespace search::index { class FieldLengthCalculator; }
+
 namespace search::memoryindex {
 
 class IOrderedFieldIndexInserter;
@@ -99,14 +101,18 @@ private:
     public:
         int32_t _weight;
         uint32_t _len;
+        uint32_t _field_length;
 
         ElemInfo(int32_t weight)
             : _weight(weight),
-              _len(0u)
+              _len(0u),
+              _field_length(0u)
         {
         }
 
         void setLen(uint32_t len) { _len = len; }
+        uint32_t get_field_length() const { return _field_length; }
+        void set_field_length(uint32_t field_length) { _field_length = field_length; }
     };
 
     using ElemInfoVec = std::vector<ElemInfo>;
@@ -179,6 +185,10 @@ private:
     std::vector<PositionRange>      _abortedDocs;
     std::map<uint32_t, PositionRange> _pendingDocs;
     std::vector<uint32_t>             _removeDocs;
+
+    FieldIndexRemover                &_remover;
+    IOrderedFieldIndexInserter       &_inserter;
+    index::FieldLengthCalculator     &_calculator;
 
     void
     invertNormalDocTextField(const document::FieldValue &val);
@@ -277,7 +287,10 @@ public:
     /**
      * Create a new field inverter for the given fieldId, using the given schema.
      */
-    FieldInverter(const index::Schema &schema, uint32_t fieldId);
+    FieldInverter(const index::Schema &schema, uint32_t fieldId,
+                  FieldIndexRemover &remover,
+                  IOrderedFieldIndexInserter &inserter,
+                  index::FieldLengthCalculator &calculator);
 
     /**
      * Apply pending removes using the given remover.
@@ -285,12 +298,12 @@ public:
      * The remover is tracking all {word, docId} tuples that should removed,
      * and forwards this to the remove() function in this class (via IFieldIndexRemoveListener interface).
      */
-    void applyRemoves(FieldIndexRemover &remover);
+    void applyRemoves();
 
     /**
      * Push the current batch of inverted documents to the FieldIndex using the given inserter.
      */
-    void pushDocuments(IOrderedFieldIndexInserter &inserter);
+    void pushDocuments();
 
     /**
      * Invert a normal text field, based on annotations.
@@ -317,13 +330,7 @@ public:
         _wpos = 0;
     }
 
-    void endDoc() {
-        uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
-        _pendingDocs.insert({ _docId,
-                                 { _oldPosSize, newPosSize - _oldPosSize } });
-        _docId = 0;
-        _oldPosSize = newPosSize;
-    }
+    void endDoc();
 
     void addWord(const vespalib::stringref word) {
         uint32_t wordRef = saveWord(word);

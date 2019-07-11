@@ -9,7 +9,6 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
@@ -18,9 +17,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,39 +27,43 @@ import java.util.stream.Stream;
  * @author hakonhall
  */
 public class DuperModelManager implements DuperModelInfraApi {
-    private static Logger logger = Logger.getLogger(DuperModelManager.class.getName());
 
     // Infrastructure applications
-    private final ConfigServerHostApplication configServerHostApplication = new ConfigServerHostApplication();
-    private final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
-    private final ControllerApplication controllerApplication = new ControllerApplication();
-    private final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
-    private final ConfigServerApplication configServerApplication = new ConfigServerApplication();
+    static final ControllerHostApplication controllerHostApplication = new ControllerHostApplication();
+    static final ControllerApplication controllerApplication = new ControllerApplication();
+    static final ConfigServerHostApplication configServerHostApplication = new ConfigServerHostApplication();
+    static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
+    static final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
+    static final TenantHostApplication tenantHostApplication = new TenantHostApplication();
 
-    private final Map<ApplicationId, InfraApplication> supportedInfraApplications = Stream.of(
-            configServerApplication,
-            configServerHostApplication,
-            proxyHostApplication,
-            controllerApplication,
-            controllerHostApplication)
-            .collect(Collectors.toMap(InfraApplication::getApplicationId, Function.identity()));
-
-    private final boolean multitenant;
+    private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
 
     private final Object monitor = new Object();
     private final DuperModel duperModel;
     // The set of active infrastructure ApplicationInfo. Not all are necessarily in the DuperModel for historical reasons.
-    private final Set<ApplicationId> activeInfraInfos = new HashSet<>(2 * supportedInfraApplications.size());
+    private final Set<ApplicationId> activeInfraInfos = new HashSet<>(10);
+
 
     @Inject
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
-        this(configServerConfig.multitenant(), superModelProvider, new DuperModel());
+        this(configServerConfig.multitenant(),
+                configServerConfig.serverNodeType() == ConfigserverConfig.ServerNodeType.Enum.controller,
+                superModelProvider, new DuperModel(), flagSource);
     }
 
     /** For testing */
-    public DuperModelManager(boolean multitenant, SuperModelProvider superModelProvider, DuperModel duperModel) {
-        this.multitenant = multitenant;
+    DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource) {
         this.duperModel = duperModel;
+
+        if (multitenant) {
+            supportedInfraApplications =
+                    (isController ?
+                            Stream.of(controllerHostApplication, controllerApplication) :
+                            Stream.of(configServerHostApplication, configServerApplication, proxyHostApplication, tenantHostApplication)
+                    ).collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
+        } else {
+            supportedInfraApplications = Map.of();
+        }
 
         superModelProvider.registerListener(new SuperModelListener() {
             @Override
@@ -89,36 +92,18 @@ public class DuperModelManager implements DuperModelInfraApi {
         }
     }
 
-    public ConfigServerApplication getConfigServerApplication() {
-        return configServerApplication;
-    }
-
-    public ConfigServerHostApplication getConfigServerHostApplication() {
-        return configServerHostApplication;
-    }
-
-    public ProxyHostApplication getProxyHostApplication() {
-        return proxyHostApplication;
-    }
-
-    public ControllerApplication getControllerApplication() {
-        return controllerApplication;
-    }
-
-    public ControllerHostApplication getControllerHostApplication() {
-        return controllerHostApplication;
-    }
-
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
         return new ArrayList<>(supportedInfraApplications.values());
     }
 
+    @Override
+    public Optional<InfraApplicationApi> getInfraApplication(ApplicationId applicationId) {
+        return Optional.ofNullable(supportedInfraApplications.get(applicationId));
+    }
+
     /**
      * Returns true if application is considered an infrastructure application by the DuperModel.
-     *
-     * <p>Note: The tenant host "application" is NOT considered an infrastructure application: It is just a
-     * cluster in the {@link ZoneApplication zone application}.
      */
     public boolean isSupportedInfraApplication(ApplicationId applicationId) {
         return supportedInfraApplications.containsKey(applicationId);
@@ -140,50 +125,25 @@ public class DuperModelManager implements DuperModelInfraApi {
 
         synchronized (monitor) {
             activeInfraInfos.add(applicationId);
-            if (infraApplicationBelongsInDuperModel(applicationId)) {
-                duperModel.add(application.makeApplicationInfo(hostnames));
-            }
+            duperModel.add(application.makeApplicationInfo(hostnames));
         }
     }
 
     @Override
     public void infraApplicationRemoved(ApplicationId applicationId) {
+        if (!supportedInfraApplications.containsKey(applicationId)) {
+            throw new IllegalArgumentException("There is no infrastructure application with ID '" + applicationId + "'");
+        }
+
         synchronized (monitor) {
             activeInfraInfos.remove(applicationId);
-            if (infraApplicationBelongsInDuperModel(applicationId)) {
-                duperModel.remove(applicationId);
-            }
+            duperModel.remove(applicationId);
         }
     }
 
     public List<ApplicationInfo> getApplicationInfos() {
         synchronized (monitor) {
             return duperModel.getApplicationInfos();
-        }
-    }
-
-    private boolean infraApplicationBelongsInDuperModel(ApplicationId applicationId) {
-        // At most 1 of the config server and controller applications can be in the duper model.
-        // The problem of allowing more than 1 is that orchestration will fail since hostname -> application lookup
-        // will not be unique.
-        if (applicationId.equals(controllerApplication.getApplicationId())) {
-            if (!multitenant) return false;
-            if (duperModel.contains(configServerApplication.getApplicationId())) {
-                logger.log(LogLevel.ERROR, "Refusing to add controller application to duper model " +
-                        "since it already contains config server");
-                return false;
-            }
-            return true;
-        } else if (applicationId.equals(configServerApplication.getApplicationId())) {
-            if (!multitenant) return false;
-            if (duperModel.contains(controllerApplication.getApplicationId())) {
-                logger.log(LogLevel.ERROR, "Refusing to add config server application to duper model " +
-                        "since it already contains controller");
-                return false;
-            }
-            return true;
-        } else {
-            return true;
         }
     }
 }

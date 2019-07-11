@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::memoryindex {
@@ -27,7 +27,7 @@ public:
         return _store.getEntry<char>(internalRef);
     }
 
-    MemoryUsage getMemoryUsage() const {
+    vespalib::MemoryUsage getMemoryUsage() const {
         return _store.getMemoryUsage();
     }
 };

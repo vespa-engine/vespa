@@ -1,13 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributor_bucket_space.h"
+#include <vespa/storage/bucketdb/mapbucketdatabase.h>
+#include <vespa/storage/bucketdb/btree_bucket_database.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
 namespace storage::distributor {
 
+namespace {
+
+std::unique_ptr<BucketDatabase> make_default_db_impl() {
+    //return std::make_unique<BTreeBucketDatabase>();
+    return std::make_unique<MapBucketDatabase>();
+}
+
+}
+
 DistributorBucketSpace::DistributorBucketSpace()
-    : _bucketDatabase(),
+    : _bucketDatabase(make_default_db_impl()),
       _clusterState(),
       _distribution()
 {

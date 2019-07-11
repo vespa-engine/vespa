@@ -15,11 +15,8 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.configchange.MockRestartAction;
@@ -39,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -97,7 +93,7 @@ public class HostedDeployTest {
                               DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), clock, Zone.defaultZone());
         tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
 
     /**
@@ -108,7 +104,8 @@ public class HostedDeployTest {
     public void testCreateOnlyNeededModelVersions() {
         List<Host> hosts = Arrays.asList(createHost("host1", "6.0.0"),
                                          createHost("host2", "6.1.0"),
-                                         createHost("host3")); //Use a host with no version as well
+                                         createHost("host3"), //Use a host with no version as well
+                                         createHost("host4", "6.1.0"));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
         CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
@@ -127,7 +124,7 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.0.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory600.creationCount() > 0);
@@ -145,7 +142,7 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateOnlyNeededModelVersionsNewNodes() {
-        List<Host> hosts = Arrays.asList(createHost("host1"), createHost("host2"), createHost("host3"));
+        List<Host> hosts = Arrays.asList(createHost("host1"), createHost("host2"), createHost("host3"), createHost("host4"));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
         CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
@@ -157,7 +154,7 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.0.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory700.creationCount() > 0);
@@ -195,7 +192,8 @@ public class HostedDeployTest {
         String newestOnNewMajorVersion = newestMajorVersion + ".2.0";
         List<Host> hosts = Arrays.asList(createHost("host1", oldestVersion),
                                          createHost("host2", newestOnOldMajorVersion),
-                                         createHost("host3", newestOnOldMajorVersion));
+                                         createHost("host3", newestOnOldMajorVersion),
+                                         createHost("host4", newestOnOldMajorVersion));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
         CountingModelFactory factory1 = DeployTester.createModelFactory(Version.fromString(oldestVersion));
@@ -205,7 +203,7 @@ public class HostedDeployTest {
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         tester.deployApp("src/test/apps/hosted/", oldestVersion, Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory1.creationCount() > 0);
@@ -256,7 +254,7 @@ public class HostedDeployTest {
     @Test
     public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
-        List<Host> hosts = IntStream.rangeClosed(1,6).mapToObj(i -> createHost("host" + i, "6.0.0")).collect(Collectors.toList());
+        List<Host> hosts = IntStream.rangeClosed(1,8).mapToObj(i -> createHost("host" + i, "6.0.0")).collect(Collectors.toList());
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
 
         CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
@@ -269,12 +267,12 @@ public class HostedDeployTest {
         ApplicationId applicationId = tester.applicationId();
         // Deploy with oldest version
         tester.deployApp("src/test/apps/hosted/", "6.0.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(applicationId).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(applicationId).getHosts().size());
 
         // Deploy with version that does not exist on hosts and with app package that has no write access control,
         // validation of access control should not be done, since the app is already deployed in prod
         tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(applicationId).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(applicationId).getHosts().size());
     }
 
     @Test
@@ -321,7 +319,8 @@ public class HostedDeployTest {
     public void testThatConfigChangeActionsAreCollectedFromAllModels() {
         List<Host> hosts = Arrays.asList(createHost("host1", "6.1.0"),
                                          createHost("host2", "6.2.0"),
-                                         createHost("host3", "6.2.0"));
+                                         createHost("host3", "6.2.0"),
+                                         createHost("host4", "6.2.0"));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         List<ServiceInfo> services = Collections.singletonList(
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
@@ -333,28 +332,10 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
 
-        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         List<RestartActions.Entry> actions = prepareResult.configChangeActions().getRestartActions().getEntries();
         assertThat(actions.size(), is(1));
         assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
-    }
-
-    @Test
-    public void testDeployWithClusterRotations() {
-        CountingModelFactory modelFactory = DeployTester.createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
-        DeployTester tester = new DeployTester(Collections.singletonList(modelFactory), createConfigserverConfig());
-        ApplicationId applicationId = tester.applicationId();
-
-        tester.deployApp("src/test/apps/hosted/", "4.5.6", Instant.now());
-        Set<HostSpec> containers = tester.getAllocatedHostsOf(applicationId).getHosts().stream()
-                                         .filter(h -> h.membership().get().cluster().type() == ClusterSpec.Type.container)
-                                         .collect(Collectors.toSet());
-        assertFalse("Allocated container hosts", containers.isEmpty());
-
-        Set<RotationName> expected = Set.of(RotationName.from("eu-cluster"), RotationName.from("us-cluster"));
-        for (HostSpec container : containers) {
-            assertEquals(expected, container.membership().get().cluster().rotations());
-        }
     }
 
     private static ConfigserverConfig createConfigserverConfig() {

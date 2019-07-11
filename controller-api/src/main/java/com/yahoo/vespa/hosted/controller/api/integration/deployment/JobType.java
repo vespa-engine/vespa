@@ -1,19 +1,21 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.provision.SystemName.Public;
+import static com.yahoo.config.provision.SystemName.PublicCd;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.config.provision.SystemName.vaas;
 
 /** Job types that exist in the build system */
 public enum JobType {
@@ -22,12 +24,14 @@ public enum JobType {
                             Map.of()),
 
     systemTest             ("system-test",
-                            Map.of(main, ZoneId.from("test"   , "us-east-1"),
-                                   cd  , ZoneId.from("test"   , "cd-us-central-1"))),
+                            Map.of(main    , ZoneId.from("test", "us-east-1"),
+                                   cd      , ZoneId.from("test", "cd-us-central-1"),
+                                   PublicCd, ZoneId.from("test", "aws-us-east-1c"))),
 
     stagingTest            ("staging-test",
-                            Map.of(main, ZoneId.from("staging", "us-east-3"),
-                                   cd  , ZoneId.from("staging", "cd-us-central-1"))),
+                            Map.of(main    , ZoneId.from("staging", "us-east-3"),
+                                   cd      , ZoneId.from("staging", "cd-us-central-1"),
+                                   PublicCd, ZoneId.from("staging", "aws-us-east-1c"))),
 
     productionUsEast3      ("production-us-east-3",
                             Map.of(main, ZoneId.from("prod"   , "us-east-3"))),
@@ -52,6 +56,9 @@ public enum JobType {
 
     productionAwsUsEast1a  ("production-aws-us-east-1a",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a"))),
+
+    productionAwsUsEast1c  ("production-aws-us-east-1c",
+                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"))),
 
     productionAwsUsWest2a  ("production-aws-us-west-2a",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a"))),
@@ -81,8 +88,9 @@ public enum JobType {
     devCdUsCentral1        ("dev-cd-us-central-1",
                             Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
 
-    devAwsUsEast1b         ("dev-aws-us-east-1b",
-                            Map.of(vaas, ZoneId.from("dev"    , "vaas-aws-us-east-1b"))),
+    devAwsUsEast1c         ("dev-aws-us-east-1c",
+                            Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
+                                   PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
 
     perfUsEast3            ("perf-us-east-3",
                             Map.of(main, ZoneId.from("perf"   , "us-east-3")));
@@ -106,6 +114,10 @@ public enum JobType {
             throw new IllegalArgumentException(this + " does not have any zones in " + system);
 
         return zones.get(system);
+    }
+
+    public static List<JobType> allIn(SystemName system) {
+        return Stream.of(values()).filter(job -> job.zones.containsKey(system)).collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns whether this is a production job */

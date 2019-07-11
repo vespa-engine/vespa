@@ -14,7 +14,7 @@ using search::AttributeVector;
 using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
-using search::AddressSpace;
+using vespalib::AddressSpace;
 
 using AttributePtr = AttributeVector::SP;
 using AttributeStatus = search::attribute::Status;

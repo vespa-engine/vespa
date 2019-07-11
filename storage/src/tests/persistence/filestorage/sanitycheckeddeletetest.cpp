@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/persistence/spi/test.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
@@ -10,26 +9,16 @@
 
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-class SanityCheckedDeleteTest : public FileStorTestFixture {
-public:
-    void delete_bucket_fails_when_provider_out_of_sync();
-    void differing_document_sizes_not_considered_out_of_sync();
-
-    CPPUNIT_TEST_SUITE(SanityCheckedDeleteTest);
-    CPPUNIT_TEST(delete_bucket_fails_when_provider_out_of_sync);
-    CPPUNIT_TEST(differing_document_sizes_not_considered_out_of_sync);
-    CPPUNIT_TEST_SUITE_END();
-
+struct SanityCheckedDeleteTest : FileStorTestFixture {
     spi::BucketInfo send_put_and_get_bucket_info(TestFileStorComponents &c, const spi::Bucket &spiBucket);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(SanityCheckedDeleteTest);
-
-void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
-    TestFileStorComponents c(*this, "delete_bucket_fails_when_provider_out_of_sync");
+TEST_F(SanityCheckedDeleteTest, delete_bucket_fails_when_provider_out_of_sync) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(8, 123);
     document::BucketId syncBucket(8, 234);
     spi::Bucket spiBucket(makeSpiBucket(bucket));
@@ -55,11 +44,10 @@ void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
     c.top.sendDown(cmd);
     c.top.waitForMessages(1, MSG_WAIT_TIME);
     api::StorageMessage::SP reply(c.top.getReply(0));
-    api::DeleteBucketReply& deleteReply(
-            dynamic_cast<api::DeleteBucketReply&>(*reply));
+    auto& deleteReply = dynamic_cast<api::DeleteBucketReply&>(*reply);
     // Reply happens in a filestor manager context and before the sanity
     // check kicks in, meaning it will always be OK.
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, resultOf(deleteReply));
+    ASSERT_EQ(api::ReturnCode::OK, resultOf(deleteReply));
     // At this point we do not know if the scheduled delete has been
     // executed; it may still be in the persistence queue.
     // Send a put to another bucket to serialize the operation (guaranteed
@@ -69,8 +57,8 @@ void SanityCheckedDeleteTest::delete_bucket_fails_when_provider_out_of_sync() {
     // Should still be able to get identical bucket info for bucket.
     spi::BucketInfoResult infoResult(
             _node->getPersistenceProvider().getBucketInfo(spiBucket));
-    CPPUNIT_ASSERT_MSG(infoResult.getErrorMessage(), !infoResult.hasError());
-    CPPUNIT_ASSERT(infoBefore == infoResult.getBucketInfo());
+    ASSERT_FALSE(infoResult.hasError()) << infoResult.getErrorMessage();
+    EXPECT_TRUE(infoBefore == infoResult.getBucketInfo());
 }
 
 spi::BucketInfo SanityCheckedDeleteTest::send_put_and_get_bucket_info(
@@ -83,8 +71,8 @@ spi::BucketInfo SanityCheckedDeleteTest::send_put_and_get_bucket_info(
     return _node->getPersistenceProvider().getBucketInfo(spiBucket).getBucketInfo();
 }
 
-void SanityCheckedDeleteTest::differing_document_sizes_not_considered_out_of_sync() {
-    TestFileStorComponents c(*this, "differing_document_sizes_not_considered_out_of_sync");
+TEST_F(SanityCheckedDeleteTest, differing_document_sizes_not_considered_out_of_sync) {
+    TestFileStorComponents c(*this);
     document::BucketId bucket(8, 123);
     spi::Bucket spiBucket(makeSpiBucket(bucket));
 
@@ -100,7 +88,7 @@ void SanityCheckedDeleteTest::differing_document_sizes_not_considered_out_of_syn
     // Bucket should now well and truly be gone. Will trigger a getBucketInfo error response.
     spi::BucketInfoResult info_post_delete(
             _node->getPersistenceProvider().getBucketInfo(spiBucket));
-    CPPUNIT_ASSERT_MSG(info_post_delete.getErrorMessage(), info_post_delete.hasError());
+    ASSERT_TRUE(info_post_delete.hasError()) << info_post_delete.getErrorMessage();
 }
 
 } // namespace storage

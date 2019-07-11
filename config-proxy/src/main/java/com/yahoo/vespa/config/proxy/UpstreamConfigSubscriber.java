@@ -23,7 +23,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
     private final static Logger log = Logger.getLogger(UpstreamConfigSubscriber.class.getName());
 
     private final RawConfig config;
-    private final ClientUpdater clientUpdater;
+    private final ConfigSourceClient configSourceClient;
     private final ConfigSource configSourceSet;
     private final TimingValues timingValues;
     private final Map<ConfigSourceSet, JRTConfigRequester> requesterPool;
@@ -31,11 +31,11 @@ public class UpstreamConfigSubscriber implements Subscriber {
     private GenericConfigSubscriber subscriber;
     private GenericConfigHandle handle;
 
-    UpstreamConfigSubscriber(RawConfig config, ClientUpdater clientUpdater, ConfigSource configSourceSet,
+    UpstreamConfigSubscriber(RawConfig config, ConfigSourceClient configSourceClient, ConfigSource configSourceSet,
                              TimingValues timingValues, Map<ConfigSourceSet, JRTConfigRequester> requesterPool,
                              MemoryCache memoryCache) {
         this.config = config;
-        this.clientUpdater = clientUpdater;
+        this.configSourceClient = configSourceClient;
         this.configSourceSet = configSourceSet;
         this.timingValues = timingValues;
         this.requesterPool = requesterPool;
@@ -70,7 +70,7 @@ public class UpstreamConfigSubscriber implements Subscriber {
                 "', generation=" + newConfig.getGeneration() +
                 ", payload=" + newConfig.getPayload());
         memoryCache.update(newConfig);
-        clientUpdater.updateSubscribers(newConfig);
+        configSourceClient.updateSubscribers(newConfig);
     }
 
     @Override

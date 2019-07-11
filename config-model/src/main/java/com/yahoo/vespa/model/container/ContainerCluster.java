@@ -28,6 +28,7 @@ import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.jdisc.http.filter.SecurityFilterInvoker;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -69,6 +70,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -126,8 +128,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
-    private static final boolean messageBusEnabled = true;
-
     private final String name;
 
     protected List<CONTAINER> containers = new ArrayList<>();
@@ -139,7 +139,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
 
+    // TODO: move all message-bus related fields/methods to ApplicationContainerCluster. No need for mbus for other clusters.
     private MbusParams mbusParams;
+    private boolean messageBusEnabled = true;
+
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
 
@@ -175,6 +178,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         // TODO: Better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
+        addSimpleComponent(SecurityFilterInvoker.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricUpdater");
@@ -200,7 +204,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addVipHandler();
     }
 
-    public void addDefaultHandlersExceptStatus() {
+    public final void addDefaultHandlersExceptStatus() {
         addDefaultRootHandler();
         addMetricStateHandler();
         addApplicationStatusHandler();
@@ -500,28 +504,21 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
-        if (containerSearch!=null) containerSearch.getConfig(builder);
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        QrStartConfig.Jvm.Builder jvmBuilder = new QrStartConfig.Jvm.Builder();
+        QrStartConfig.Jvm.Builder jvmBuilder = builder.jvm;
         if (getMemoryPercentage().isPresent()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
         } else if (isHostedVespa()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
-        if (jvmGCOptions != null) {
-            jvmBuilder.gcopts(jvmGCOptions);
-        } else {
-            jvmBuilder.gcopts(G1GC);
-        }
+        jvmBuilder.gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
         if (environmentVars != null) {
-            QrStartConfig.Qrs.Builder qrsBuilder = new QrStartConfig.Qrs.Builder();
-            qrsBuilder.env(environmentVars);
-            builder.qrs(qrsBuilder);
+            builder.qrs.env(environmentVars);
         }
-        builder.jvm(jvmBuilder);
     }
 
     @Override
@@ -609,7 +606,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     @Override
     public void getConfig(ConfigserverConfig.Builder builder) {
-        builder.system(zone.system().name());
+        builder.system(zone.system().value());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
     }
@@ -662,6 +659,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * or empty if this is not specified by the application.
      */
     public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
+
+    public final void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
 
     boolean messageBusEnabled() { return messageBusEnabled; }
 

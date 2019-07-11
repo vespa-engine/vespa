@@ -58,14 +58,14 @@ public class FilesApplicationPackageTest {
                 "        <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
                 "      </nodes>\n" +
                 "    </content>\n" +
-                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "    <container id=\"stateless\" version=\"1.0\">\n" +
                 "      <search/>\n" +
                 "      <component bundle=\"foobundle\" class=\"MyFoo\" id=\"foo\"/>\n" +
                 "      <component bundle=\"foobundle\" class=\"TestBar\" id=\"bar\"/>\n" +
                 "      <nodes>\n" +
                 "        <node hostalias=\"node0\" baseport=\"5000\"/>\n" +
                 "      </nodes>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>";
         TestBase.assertDocument(expectedServices, processed.getServices());
         String expectedHosts = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><hosts xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\">\n" +

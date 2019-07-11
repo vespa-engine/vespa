@@ -1,22 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/btree/btreeroot.h>
-#include <vespa/searchlib/btree/btreebuilder.h>
-#include <vespa/searchlib/btree/btreenodeallocator.h>
-#include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/btree/btreestore.h>
+#include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/btree/btreebuilder.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/searchlib/util/rand48.h>
 
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreebuilder.hpp>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
-#include <vespa/searchlib/btree/btreeaggregator.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/btree/btreeaggregator.hpp>
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>

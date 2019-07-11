@@ -1,22 +1,33 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Objects;
 
 
 /**
  * A Spec is a network address used for either listening or
  * connecting.
  */
-public class Spec {
+public class Spec implements Comparable<Spec> {
 
-    private SocketAddress address;
-    private String        host;
-    private int           port;
-    private boolean       malformed;
+    private final String        host;
+    private final int           port;
+    private final boolean       malformed;
+    private final String asString;
 
+    private static SocketAddress createAddress(String host, int port) {
+        return (host == null)
+                ? new InetSocketAddress(port)
+                : new InetSocketAddress(host, port);
+    }
+
+    private static String createString(String host, int port) {
+        return (host == null)
+                ?  "tcp/" + port
+                : "tcp/" + host + ":" + port;
+    }
     /**
      * Create a Spec from a string. The form of the input string is
      * 'tcp/host:port' or 'tcp/port' where 'host' is the host name and
@@ -29,21 +40,29 @@ public class Spec {
         if (spec.startsWith("tcp/")) {
             int sep = spec.indexOf(':');
             String portStr;
+            String hostStr = null;
             if (sep == -1) {
                 portStr = spec.substring(4);
             } else {
-                host = spec.substring(4, sep);
+                hostStr = spec.substring(4, sep);
                 portStr = spec.substring(sep + 1);
             }
+            boolean correct = true;
+            int portNum = 0;
             try {
-                port = Integer.parseInt(portStr);
+                portNum = Integer.parseInt(portStr);
             } catch (NumberFormatException e) {
-                host = null;
-                port = 0;
-                malformed = true;
+                correct = false;
             }
+            port = portNum;
+            malformed = ! correct;
+            host = correct ? hostStr : null;
+            asString = correct ? createString(host, port) : "MALFORMED";
         } else {
             malformed = true;
+            port = 0;
+            host = null;
+            asString = "MALFORMED";
         }
     }
 
@@ -56,6 +75,8 @@ public class Spec {
     public Spec(String host, int port) {
         this.host = host;
         this.port = port;
+        malformed = false;
+        asString = createString(host, port);
     }
 
     /**
@@ -68,7 +89,7 @@ public class Spec {
      * @param port port number
      */
     public Spec(int port) {
-        this.port = port;
+        this(null, port);
     }
 
     /**
@@ -105,18 +126,8 @@ public class Spec {
      *
      * @return socket address
      */
-    SocketAddress address() {
-        if (malformed) {
-            return null;
-        }
-        if (address == null) {
-            if (host == null) {
-                address = new InetSocketAddress(port);
-            } else {
-                address = new InetSocketAddress(host, port);
-            }
-        }
-        return address;
+    SocketAddress resolveAddress() {
+        return !malformed ? createAddress(host, port) : null;
     }
 
     /**
@@ -126,13 +137,37 @@ public class Spec {
      * @return string representation of this address
      */
     public String toString() {
-        if (malformed) {
-            return "MALFORMED";
-        }
-        if (host == null) {
-            return "tcp/" + port;
-        }
-        return "tcp/" + host + ":" + port;
+        return asString;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Spec spec = (Spec) o;
+        return port == spec.port &&
+                malformed == spec.malformed &&
+                Objects.equals(host, spec.host);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(host, port, malformed);
+    }
+
+    @Override
+    public int compareTo(Spec o) {
+        int cmp = 0;
+        if ((host != null) && (o.host != null)) {
+            cmp = host.compareTo(o.host);
+        } else if (host != null) {
+            return -1;
+        } else if (o.host != null) {
+            return 1;
+        }
+        return (cmp == 0)
+                ? Integer.compare(port, o.port)
+                : cmp;
+
+    }
 }

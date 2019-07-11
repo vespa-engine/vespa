@@ -3,6 +3,9 @@ package com.yahoo.config.provision;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Systems in hosted Vespa
@@ -11,39 +14,65 @@ import java.util.Set;
  */
 public enum SystemName {
 
-    /** Local development system */
-    dev,
-
     /** Continuous deployment system */
-    cd,
+    cd(false, true),
 
     /** Production system */
-    main,
+    main(false, false),
 
-    /** System accessible for the public */
-    Public,
+    /** System accessible to the public */
+    Public(true, false),
 
-    /** VaaS */
-    vaas; // TODO: Remove this and use public everywhere
+    /** Continuous deployment system for testing the Public system */
+    PublicCd(true, true),
+
+    /** Local development system */
+    dev(false, false);
+
+    private final boolean isPublic;
+    private final boolean isCd;
+
+    SystemName(boolean isPublic, boolean isCd) {
+        this.isPublic = isPublic;
+        this.isCd = isCd;
+    }
 
     public static SystemName defaultSystem() {
         return main;
     }
 
     public static SystemName from(String value) {
-        switch (value) {
+        switch (value.toLowerCase()) {
             case "dev": return dev;
             case "cd": return cd;
             case "main": return main;
-            case "public":
-            case "Public": return Public;
-            case "vaas": return vaas;
+            case "public": return Public;
+            case "publiccd": return PublicCd;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         }
     }
 
-    public static Set<SystemName> all() {
-        return EnumSet.allOf(SystemName.class);
+    public String value() {
+        switch (this) {
+            case dev: return "dev";
+            case cd: return "cd";
+            case main: return "main";
+            case Public: return "public";
+            case PublicCd: return "publiccd";
+            default : throw new IllegalStateException();
+        }
+    }
+
+    /** Whether the system is similar to Public, e.g. PublicCd. */
+    public boolean isPublic() { return isPublic; }
+
+    /** Whether the system is used for continuous deployment. */
+    public boolean isCd() { return isCd; }
+
+    public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
+
+    public static Set<SystemName> allOf(Predicate<SystemName> predicate) {
+        return Stream.of(values()).filter(predicate).collect(Collectors.toUnmodifiableSet());
     }
 
 }

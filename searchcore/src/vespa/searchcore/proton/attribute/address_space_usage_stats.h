@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/address_space.h>
+#include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace proton {
@@ -14,18 +14,18 @@ namespace proton {
  */
 class AddressSpaceUsageStats
 {
-    search::AddressSpace _usage;
+    vespalib::AddressSpace _usage;
     vespalib::string _attributeName;
     vespalib::string _subDbName;
 
 public:
-    AddressSpaceUsageStats(const search::AddressSpace &usage);
+    explicit AddressSpaceUsageStats(const vespalib::AddressSpace &usage);
     ~AddressSpaceUsageStats();
-    void merge(const search::AddressSpace &usage,
+    void merge(const vespalib::AddressSpace &usage,
                const vespalib::string &attributeName,
                const vespalib::string &subDbName);
 
-    const search::AddressSpace &getUsage() const { return _usage; }
+    const vespalib::AddressSpace &getUsage() const { return _usage; }
     const vespalib::string &getAttributeName() const { return _attributeName; }
     const vespalib::string &getSubDbName() const { return _subDbName; }
 };

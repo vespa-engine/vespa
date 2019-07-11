@@ -10,8 +10,6 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.service.duper.ProxyHostApplication;
-import com.yahoo.vespa.service.duper.TestZoneApplication;
-import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.Cancellable;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.monitor.ServiceId;
@@ -43,14 +41,11 @@ public class StateV1HealthModelTest {
     private final List<HostName> hostnames = Stream.of("host1", "host2").map(HostName::from).collect(Collectors.toList());
     private final ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
-    private StateV1HealthModel model;
-    private Map<ServiceId, HealthEndpoint> endpoints;
+    private final StateV1HealthModel model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor);
 
     @Test
     public void test() {
-        model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor, false);
-        endpoints = model.extractHealthEndpoints(proxyHostApplicationInfo);
-
+        Map<ServiceId, HealthEndpoint> endpoints = model.extractHealthEndpoints(proxyHostApplicationInfo);
         assertEquals(2, endpoints.size());
 
         ApplicationId applicationId = ApplicationId.from("hosted-vespa", "proxy-host", "default");
@@ -71,25 +66,6 @@ public class StateV1HealthModelTest {
         try (HealthMonitor healthMonitor = endpoint1.startMonitoring()) {
             assertEquals(ServiceStatus.NOT_CHECKED, healthMonitor.getStatus().serviceStatus());
         }
-    }
-
-    @Test
-    public void testMonitoringTenantHostHealth() {
-        model = new StateV1HealthModel(healthStaleness, requestTimeout, keepAlive, executor, true);
-        ApplicationInfo zoneApplicationInfo = new TestZoneApplication.Builder()
-                .addNodeAdminCluster("h1")
-                .addRoutingCluster("r1")
-                .build()
-                .makeApplicationInfo();
-
-        endpoints = model.extractHealthEndpoints(zoneApplicationInfo);
-        assertEquals(1, endpoints.size());
-        HealthEndpoint endpoint = endpoints.values().iterator().next();
-        assertEquals("http://h1:8080/state/v1/health", endpoint.description());
-        ServiceId serviceId = endpoint.getServiceId();
-        assertEquals(ZoneApplication.getApplicationId(), serviceId.getApplicationId());
-        assertEquals(ZoneApplication.getNodeAdminClusterId(), serviceId.getClusterId());
-        assertEquals(ZoneApplication.getNodeAdminServiceType(), serviceId.getServiceType());
     }
 
     @Test

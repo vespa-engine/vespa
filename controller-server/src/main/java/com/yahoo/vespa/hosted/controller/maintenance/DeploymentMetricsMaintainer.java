@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -22,6 +23,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +43,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     private final ApplicationController applications;
 
     public DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
-        super(controller, duration, jobControl);
+        super(controller, duration, jobControl, DeploymentMetricsMaintainer.class.getSimpleName(),
+              SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.applications = controller.applications();
     }
 

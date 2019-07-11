@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,8 +20,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devAwsUsEast2a;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
@@ -28,6 +31,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -111,6 +115,23 @@ public class JobControllerApiHandlerHelperTest {
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root/")), "overview.json");
 
+        tester.jobs().deploy(appId, JobType.devAwsUsEast2a, Optional.empty(), applicationPackage);
+        tester.runJob(JobType.devAwsUsEast2a);
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
+    }
+
+    @Test
+    public void testDevResponses() {
+        InternalDeploymentTester tester = new InternalDeploymentTester();
+        tester.clock().setInstant(Instant.EPOCH);
+
+        ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
+        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.configServer().convergeServices(appId, zone);
+        tester.setEndpoints(appId, zone);
+        tester.runner().run();
+
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root")), "dev-overview.json");
     }
 
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {

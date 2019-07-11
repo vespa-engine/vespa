@@ -10,6 +10,8 @@
 #include <limits>
 #include <stdexcept>
 #include <cassert>
+#include <cmath>
+#include <charconv>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.stllike.asciistream");
@@ -76,9 +78,7 @@ asciistream::asciistream(stringref buf) :
     }
 }
 
-asciistream::~asciistream()
-{
-}
+asciistream::~asciistream() = default;
 
 asciistream::asciistream(const asciistream & rhs) :
     _rPos(0),
@@ -144,19 +144,30 @@ namespace {
 
 int getValue(double & val, const char *buf) __attribute__((noinline));
 int getValue(float & val, const char *buf) __attribute__((noinline));
-int getValue(unsigned long long & val, const char *buf) __attribute__((noinline));
-int getValue(long long & val, const char *buf) __attribute__((noinline));
 void throwInputError(int e, const char * t, const char * buf) __attribute__((noinline));
+void throwInputError(std::errc e, const char * t, const char * buf) __attribute__((noinline));
 void throwUnderflow(size_t pos) __attribute__((noinline));
+template <typename T>
+T strToInt(T & v, const char *begin, const char *end) __attribute__((noinline));
 
 void throwInputError(int e, const char * t, const char * buf)
 {
     if (e == 0) {
         throw IllegalArgumentException("Failed decoding a " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
     } else if (errno == ERANGE) {
-        throw IllegalArgumentException(string(t) + " value is outside of range '" + string(buf) + "'.", VESPA_STRLOC);
+        throw IllegalArgumentException(string(t) + " value '" + string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else if (errno == EINVAL) {
         throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
+    } else {
+        throw IllegalArgumentException("Unknown error decoding an " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
+    }
+}
+
+void throwInputError(std::errc e, const char * t, const char * buf) {
+    if (e == std::errc::invalid_argument) {
+        throw IllegalArgumentException("Illegal " + string(t) + " value '" + string(buf) + "'.", VESPA_STRLOC);
+    } else if (e == std::errc::result_out_of_range) {
+        throw IllegalArgumentException(string(t) + " value '" + string(buf) + "' is outside of range.", VESPA_STRLOC);
     } else {
         throw IllegalArgumentException("Unknown error decoding an " + string(t) + " from '" + string(buf) + "'.", VESPA_STRLOC);
     }
@@ -171,7 +182,7 @@ int getValue(double & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = locale::c::strtod(buf, &ebuf);
+    val = locale::c::strtod_au(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "double", buf);
     }
@@ -182,33 +193,35 @@ int getValue(float & val, const char *buf)
 {
     char *ebuf;
     errno = 0;
-    val = locale::c::strtof(buf, &ebuf);
+    val = locale::c::strtof_au(buf, &ebuf);
     if ((errno != 0) || (buf == ebuf)) {
         throwInputError(errno, "float", buf);
     }
     return ebuf - buf;
 }
 
-int getValue(unsigned long long & val, const char *buf)
+template <typename T>
+T strToInt(T & v, const char *begin, const char *end)
 {
-    char *ebuf;
-    errno = 0;
-    val = strtoull(buf, &ebuf, 0);
-    if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "unsigned long long", buf);
-    }
-    return ebuf - buf;
-}
+    const char * curr = begin;
+    for (;(curr < end) && std::isspace(*curr); curr++);
 
-int getValue(long long & val, const char *buf)
-{
-    char *ebuf;
-    errno = 0;
-    val = strtoll(buf, &ebuf, 0);
-    if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "long long", buf);
+    std::from_chars_result err;
+    if (((end - curr) > 2) && (curr[0] == '0') && ((curr[1] | 0x20) == 'x')) {
+        err = std::from_chars(curr+2, end, v, 16);
+    } else {
+        err = std::from_chars(curr, end, v, 10);
     }
-    return ebuf - buf;
+    if (err.ec == std::errc::invalid_argument) {
+        if (err.ptr >= end) {
+            throwUnderflow(err.ptr - begin);
+        }
+        throwInputError(err.ec, "strToInt", begin);
+    } else if (err.ec == std::errc::result_out_of_range) {
+        throwInputError(err.ec, "strToInt", begin);
+    }
+
+    return err.ptr - begin;
 }
 
 }
@@ -235,6 +248,17 @@ asciistream & asciistream::operator >> (char & v)
     return *this;
 }
 
+asciistream & asciistream::operator >> (signed char & v)
+{
+    for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
+    if (_rPos < length()) {
+        v = _rbuf[_rPos++];
+    } else {
+        throwUnderflow(_rPos);
+    }
+    return *this;
+}
+
 asciistream & asciistream::operator >> (unsigned char & v)
 {
     for (;(_rPos < length()) && std::isspace(_rbuf[_rPos]); _rPos++);
@@ -248,81 +272,49 @@ asciistream & asciistream::operator >> (unsigned char & v)
 
 asciistream & asciistream::operator >> (unsigned short & v)
 {
-    unsigned long long l(0);
-    size_t r = getValue(l, &_rbuf[_rPos]);
-    if (l > std::numeric_limits<unsigned short>::max()) {
-        throw IllegalArgumentException(make_string("An unsigned short can not represent '%lld'.", l), VESPA_STRLOC);
-    }
-    _rPos += r;
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (unsigned int & v)
 {
-    unsigned long long l(0);
-    size_t r = getValue(l, &_rbuf[_rPos]);
-    if (l > std::numeric_limits<unsigned int>::max()) {
-        throw IllegalArgumentException(make_string("An unsigned int can not represent '%lld'.", l), VESPA_STRLOC);
-    }
-    _rPos += r;
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (unsigned long & v)
 {
-    unsigned long long l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (unsigned long long & v)
 {
-    unsigned long long l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (short & v)
 {
-    long long l(0);
-    size_t r = getValue(l, &_rbuf[_rPos]);
-    if ((l < std::numeric_limits<short>::min()) || (l > std::numeric_limits<short>::max())) {
-        throw IllegalArgumentException(make_string("A short can not represent '%lld'.", l), VESPA_STRLOC);
-    }
-    _rPos += r;
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (int & v)
 {
-    long long l(0);
-    size_t r = getValue(l, &_rbuf[_rPos]);
-    if ((l < std::numeric_limits<int>::min()) || (l > std::numeric_limits<int>::max())) {
-        throw IllegalArgumentException(make_string("An int can not represent '%lld'.", l), VESPA_STRLOC);
-    }
-    _rPos += r;
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (long & v)
 {
-    long long l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 
 asciistream & asciistream::operator >> (long long & v)
 {
-    long long l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
-    v = l;
+    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
     return *this;
 }
 

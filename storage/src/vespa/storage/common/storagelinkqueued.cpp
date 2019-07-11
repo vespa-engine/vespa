@@ -65,7 +65,7 @@ void StorageLinkQueued::logError(const char* err) {
 };
 
 void StorageLinkQueued::logDebug(const char* err) {
-    LOG(info, "%s", err);
+    LOG(debug, "%s", err);
 };
 
 template class StorageLinkQueued::Dispatcher<storage::api::StorageMessage>;

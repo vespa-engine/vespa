@@ -19,9 +19,9 @@ RPCClient::Main()
         printf("usage  : rpc_client <connectspec>\n");
         return 1;
     }
-    FRT_Supervisor supervisor;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
 
-    supervisor.Start();
     FRT_Target *target = supervisor.GetTarget(_argv[1]);
 
     const char *str1 = "abc";
@@ -80,7 +80,6 @@ RPCClient::Main()
 
     req->SubRef();
     target->SubRef();
-    supervisor.ShutDown(true);
     return 0;
 }
 

@@ -11,6 +11,7 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {
 
@@ -34,7 +35,7 @@ struct PersistenceTestEnvironment {
     std::vector<std::unique_ptr<PersistenceUtil> > _diskEnvs;
 };
 
-class PersistenceTestUtils : public CppUnit::TestFixture {
+class PersistenceTestUtils : public testing::Test {
 public:
     std::unique_ptr<PersistenceTestEnvironment> _env;
 
@@ -50,7 +51,7 @@ public:
 
     void setupDisks(uint32_t disks);
 
-    void tearDown() override {
+    void TearDown() override {
         _env.reset();
     }
 
@@ -202,7 +203,7 @@ public:
 class SingleDiskPersistenceTestUtils : public PersistenceTestUtils
 {
 public:
-    void setUp() override {
+    void SetUp() override {
         setupDisks(1);
     }
 };

@@ -6,5 +6,6 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
  */
 public enum TenantType {
     USER,
-    ATHENS
+    ATHENS,
+    CLOUD
 }

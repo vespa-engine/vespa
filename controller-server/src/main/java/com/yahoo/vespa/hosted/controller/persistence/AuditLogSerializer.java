@@ -19,6 +19,13 @@ import java.util.function.Function;
  */
 public class AuditLogSerializer {
 
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup), changes to the serialized format must be made
+    //          such that what is serialized on version N+1 can be read by version N:
+    //          - ADDING FIELDS: Always ok
+    //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+    //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
+
     private static final String entriesField = "entries";
     private static final String atField = "at";
     private static final String principalField = "principal";
@@ -60,6 +67,7 @@ public class AuditLogSerializer {
         switch (method) {
             case POST: return "POST";
             case PATCH: return "PATCH";
+            case PUT: return "PUT";
             case DELETE: return "DELETE";
             default: throw new IllegalArgumentException("No serialization defined for method " + method);
         }
@@ -69,6 +77,7 @@ public class AuditLogSerializer {
         switch (field.asString()) {
             case "POST": return AuditLog.Entry.Method.POST;
             case "PATCH": return AuditLog.Entry.Method.PATCH;
+            case "PUT": return AuditLog.Entry.Method.PUT;
             case "DELETE": return AuditLog.Entry.Method.DELETE;
             default: throw new IllegalArgumentException("Unknown serialized value '" + field.asString() + "'");
         }

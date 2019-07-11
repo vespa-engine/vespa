@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -79,17 +80,19 @@ public final class CompoundName {
     }
 
     private static List<String> parse(String s) {
-        ArrayList<String> l = new ArrayList<>();
+        ArrayList<String> l = null;
+
         int p = 0;
         final int m = s.length();
         for (int i = 0; i < m; i++) {
             if (s.charAt(i) == '.') {
+                if (l == null) l = new ArrayList<>(8);
                 l.add(s.substring(p, i));
                 p = i + 1;
             }
         }
         if (p == 0) {
-            l.add(s);
+            return ImmutableList.of(s);
         } else if (p < m) {
             l.add(s.substring(p, m));
         } else {

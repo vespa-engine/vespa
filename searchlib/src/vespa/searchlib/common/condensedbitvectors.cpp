@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "condensedbitvectors.h"
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
@@ -77,7 +77,7 @@ private:
     size_t getCapacity() const override { return _v.capacity(); }
     size_t getSize() const override { return _v.size(); }
     void adjustDocIdLimit(uint32_t docId) override;
-    attribute::RcuVectorBase<T> _v;
+    vespalib::RcuVectorBase<T> _v;
 };
 
 template <typename T>

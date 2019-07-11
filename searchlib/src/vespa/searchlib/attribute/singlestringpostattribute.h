@@ -71,7 +71,7 @@ public:
 
 private:
     void freezeEnumDictionary() override;
-    void mergeMemoryStats(MemoryUsage & total) override;
+    void mergeMemoryStats(vespalib::MemoryUsage & total) override;
     void applyUpdateValueChange(const Change & c,
                                 EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> &currEnumIndices);

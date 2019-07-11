@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
+import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
+import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
+import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.google.common.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
@@ -46,7 +51,7 @@ public final class Application implements AutoCloseable {
 
     /**
      * This system property is set to "true" upon creation of an Application.
-     * This is useful for components which are created by dependendy injection which needs to modify
+     * This is useful for components which are created by dependency injection which needs to modify
      * their behavior to function without reliance on any processes outside the JVM.
      */
     public static final String vespaLocalProperty = "vespa.local";
@@ -109,9 +114,13 @@ public final class Application implements AutoCloseable {
 
     private VespaModel createVespaModel() {
         try {
+            List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
+                                                           new TensorFlowImporter(),
+                                                           new OnnxImporter(),
+                                                           new XGBoostImporter());
             DeployState deployState = new DeployState.Builder()
-                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), 
-                                                                         /* Include source files */ true))
+                    .applicationPackage(FilesApplicationPackage.fromFile(path.toFile(), true))
+                    .modelImporters(modelImporters)
                     .deployLogger((level, s) -> { })
                     .build();
             return new VespaModel(new NullConfigModelRegistry(), deployState);
@@ -133,6 +142,7 @@ public final class Application implements AutoCloseable {
     @Override
     public void close() {
         container.close();
+        IOUtils.recursiveDeleteDir(new File(path.toFile(), "models.generated"));
         if (deletePathWhenClosing)
             IOUtils.recursiveDeleteDir(path.toFile());
     }
@@ -142,6 +152,7 @@ public final class Application implements AutoCloseable {
      */
     @Beta
     public static class Builder {
+
         private static final ThreadLocal<Random> random = new ThreadLocal<>();
         private static final String DEFAULT_CHAIN = "default";
 
@@ -217,7 +228,7 @@ public final class Application implements AutoCloseable {
         }
 
         // copy from com.yahoo.application.ApplicationBuilder
-        private void createFile(final Path path, final String content) throws IOException {
+        private void createFile(Path path, String content) throws IOException {
             Files.createDirectories(path.getParent());
             Files.write(path, Utf8.toBytes(content));
         }
@@ -237,16 +248,15 @@ public final class Application implements AutoCloseable {
         /**
          * @param name             name of document type (search definition)
          * @param searchDefinition add this search definition to the application
-         * @return builder
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder documentType(final String name, final String searchDefinition) throws IOException {
+        public Builder documentType(String name, String searchDefinition) throws IOException {
             Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.SD_NAME_SUFFIX);
             createFile(path, searchDefinition);
             return this;
         }
 
-        public Builder expressionInclude(final String name, final String searchDefinition) throws IOException {
+        public Builder expressionInclude(String name, String searchDefinition) throws IOException {
             Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
             createFile(path, searchDefinition);
             return this;
@@ -255,10 +265,9 @@ public final class Application implements AutoCloseable {
         /**
          * @param name                  name of rank expression
          * @param rankExpressionContent add this rank expression to the application
-         * @return builder
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder rankExpression(final String name, final String rankExpressionContent) throws IOException {
+        public Builder rankExpression(String name, String rankExpressionContent) throws IOException {
             Path path = nestedResource(ApplicationPackage.SEARCH_DEFINITIONS_DIR, name, ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX);
             createFile(path, rankExpressionContent);
             return this;
@@ -270,7 +279,7 @@ public final class Application implements AutoCloseable {
          * @return builder
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder queryProfile(final String name, final String queryProfile) throws IOException {
+        public Builder queryProfile(String name, String queryProfile) throws IOException {
             Path path = nestedResource(ApplicationPackage.QUERY_PROFILES_DIR, name, ".xml");
             createFile(path, queryProfile);
             return this;
@@ -282,14 +291,14 @@ public final class Application implements AutoCloseable {
          * @return builder
          * @throws java.io.IOException e.g.if file not found
          */
-        public Builder queryProfileType(final String name, final String queryProfileType) throws IOException {
+        public Builder queryProfileType(String name, String queryProfileType) throws IOException {
             Path path = nestedResource(ApplicationPackage.QUERY_PROFILE_TYPES_DIR, name, ".xml");
             createFile(path, queryProfileType);
             return this;
         }
 
         // copy from com.yahoo.application.ApplicationBuilder
-        private Path nestedResource(final com.yahoo.path.Path nestedPath, final String name, final String fileType) {
+        private Path nestedResource(com.yahoo.path.Path nestedPath, String name, String fileType) {
             String nameWithoutSuffix = StringUtilities.stripSuffix(name, fileType);
             return path.resolve(nestedPath.getRelative()).resolve(nameWithoutSuffix + fileType);
         }
@@ -298,7 +307,7 @@ public final class Application implements AutoCloseable {
          * @param networking enable or disable networking (disabled by default)
          * @return builder
          */
-        public Builder networking(final Networking networking) {
+        public Builder networking(Networking networking) {
             this.networking = networking;
             return this;
         }
@@ -335,15 +344,14 @@ public final class Application implements AutoCloseable {
         private void generateXml() throws Exception {
             try (PrintWriter xml = new PrintWriter(Files.newOutputStream(path.resolve("services.xml")))) {
                 xml.println("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-                //xml.println("<services version=\"1.0\">");
                 for (Map.Entry<String, Container> entry : containers.entrySet()) {
                     entry.getValue().build(xml, entry.getKey(), (networking == Networking.enable ? getRandomPort() : -1));
                 }
-                //xml.println("</services>");
             }
         }
 
         public static class Container {
+
             private final Map<String, List<ComponentItem<? extends DocumentProcessor>>> docprocs = new LinkedHashMap<>();
             private final Map<String, List<ComponentItem<? extends Searcher>>> searchers = new LinkedHashMap<>();
             private final List<ComponentItem<? extends Renderer>> renderers = new ArrayList<>();
@@ -372,7 +380,7 @@ public final class Application implements AutoCloseable {
              * @param docproc add this docproc to the default document processing chain
              * @return builder
              */
-            public Container documentProcessor(final Class<? extends DocumentProcessor> docproc) {
+            public Container documentProcessor(Class<? extends DocumentProcessor> docproc) {
                 return documentProcessor(DEFAULT_CHAIN, docproc);
             }
 
@@ -382,7 +390,7 @@ public final class Application implements AutoCloseable {
              * @param configs   local docproc configs
              * @return builder
              */
-            public Container documentProcessor(final String chainName, final Class<? extends DocumentProcessor> docproc, ConfigInstance... configs) {
+            public Container documentProcessor(String chainName, Class<? extends DocumentProcessor> docproc, ConfigInstance... configs) {
                 return documentProcessor(docproc.getName(), chainName, docproc, configs);
             }
 
@@ -393,7 +401,7 @@ public final class Application implements AutoCloseable {
              * @param configs   local docproc configs
              * @return builder
              */
-            public Container documentProcessor(String id, final String chainName, final Class<? extends DocumentProcessor> docproc, ConfigInstance... configs) {
+            public Container documentProcessor(String id, String chainName, Class<? extends DocumentProcessor> docproc, ConfigInstance... configs) {
                 List<ComponentItem<? extends DocumentProcessor>> chain = docprocs.get(chainName);
                 if (chain == null) {
                     chain = new ArrayList<>();
@@ -416,7 +424,7 @@ public final class Application implements AutoCloseable {
              * @param searcher add this searcher to the default search chain
              * @return builder
              */
-            public Container searcher(final Class<? extends Searcher> searcher) {
+            public Container searcher(Class<? extends Searcher> searcher) {
                 return searcher(DEFAULT_CHAIN, searcher);
             }
 
@@ -426,7 +434,7 @@ public final class Application implements AutoCloseable {
              * @param configs   local searcher configs
              * @return builder
              */
-            public Container searcher(final String chainName, final Class<? extends Searcher> searcher, ConfigInstance... configs) {
+            public Container searcher(String chainName, Class<? extends Searcher> searcher, ConfigInstance... configs) {
                 return searcher(searcher.getName(), chainName, searcher, configs);
             }
 
@@ -437,7 +445,7 @@ public final class Application implements AutoCloseable {
              * @param configs   local searcher configs
              * @return builder
              */
-            public Container searcher(String id, final String chainName, final Class<? extends Searcher> searcher, ConfigInstance... configs) {
+            public Container searcher(String id, String chainName, Class<? extends Searcher> searcher, ConfigInstance... configs) {
                 List<ComponentItem<? extends Searcher>> chain = searchers.get(chainName);
                 if (chain == null) {
                     chain = new ArrayList<>();
@@ -453,7 +461,7 @@ public final class Application implements AutoCloseable {
              * @param configs  local renderer configs
              * @return builder
              */
-            public Container renderer(String id, final Class<? extends Renderer> renderer, ConfigInstance... configs) {
+            public Container renderer(String id, Class<? extends Renderer> renderer, ConfigInstance... configs) {
                 renderers.add(new ComponentItem<>(id, renderer, configs));
                 return this;
             }
@@ -463,7 +471,7 @@ public final class Application implements AutoCloseable {
              * @param handler the handler class
              * @return builder
              */
-            public Container handler(final String binding, final Class<? extends RequestHandler> handler) {
+            public Container handler(String binding, Class<? extends RequestHandler> handler) {
                 handlers.add(new ComponentItem<>(binding, handler));
                 return this;
             }
@@ -473,7 +481,7 @@ public final class Application implements AutoCloseable {
              * @param client  the client class
              * @return builder
              */
-            public Container client(final String binding, final Class<? extends ClientProvider> client) {
+            public Container client(String binding, Class<? extends ClientProvider> client) {
                 clients.add(new ComponentItem<>(binding, client));
                 return this;
             }
@@ -483,7 +491,7 @@ public final class Application implements AutoCloseable {
              * @param server the server class
              * @return builder
              */
-            public Container server(final String id, final Class<? extends ServerProvider> server) {
+            public Container server(String id, Class<? extends ServerProvider> server) {
                 servers.add(new ComponentItem<>(id, server));
                 return this;
             }
@@ -492,7 +500,7 @@ public final class Application implements AutoCloseable {
              * @param component make this component available to the container
              * @return builder
              */
-            public Container component(final Class<?> component) {
+            public Container component(Class<?> component) {
                 return component(component.getName(), component, (ConfigInstance) null);
             }
 
@@ -500,7 +508,7 @@ public final class Application implements AutoCloseable {
              * @param component make this component available to the container
              * @return builder
              */
-            public Container component(String id, final Class<?> component, ConfigInstance... configs) {
+            public Container component(String id, Class<?> component, ConfigInstance... configs) {
                 components.add(new ComponentItem<>(id, component, configs));
                 return this;
             }
@@ -516,7 +524,7 @@ public final class Application implements AutoCloseable {
 
             // generate services.xml based on this builder
             private void build(PrintWriter xml, String id, int port) throws Exception {
-                xml.println("<jdisc version=\"1.0\" id=\"" + id + "\">");
+                xml.println("<container version=\"1.0\" id=\"" + id + "\">");
 
                 if (port > 0) {
                     xml.println("<http>");
@@ -576,7 +584,7 @@ public final class Application implements AutoCloseable {
                     xml.println("</search>");
                 }
 
-                xml.println("</jdisc>");
+                xml.println("</container>");
             }
 
             private void generateComponent(PrintWriter xml, ComponentItem<?> componentItem, String elementName) throws Exception {

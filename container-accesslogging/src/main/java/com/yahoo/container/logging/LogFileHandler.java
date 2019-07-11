@@ -2,10 +2,10 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,8 +22,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -41,15 +39,15 @@ public class LogFileHandler extends StreamHandler {
     private final boolean compressOnRotation;
     private long[] rotationTimes = {0}; //default to one log per day, at midnight
     private String filePattern = "./log.%T";  // default to current directory, ms time stamp
-    private long lastRotationTime = -1; // absolute time (millis since epoch) of current file start
-    private int numberOfRecords = -1;
     private long nextRotationTime = 0;
-    private OutputStream currentOutputStream = null;
+    private FileOutputStream currentOutputStream = null;
     private String fileName;
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
     private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+    private final NativeIO nativeIO = new NativeIO();
+    private long lastDropPosition = 0;
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -122,7 +120,21 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void internalPublish(LogRecord r) throws InterruptedException {
+    @Override
+    public synchronized void flush() {
+        super.flush();
+        try {
+            if (currentOutputStream != null) {
+                long newPos = currentOutputStream.getChannel().position();
+                nativeIO.dropPartialFileFromCache(currentOutputStream.getFD(), lastDropPosition, newPos, true);
+                lastDropPosition = newPos;
+            }
+        } catch (IOException e) {
+            logger.warning("Failed dropping from cache : " + Exceptions.toMessageString(e));
+        }
+    }
+
+    private void internalPublish(LogRecord r) {
         // first check to see if new file needed.
         // if so, use this.internalRotateNow() to do it
 
@@ -133,8 +145,6 @@ public class LogFileHandler extends StreamHandler {
         if (now > nextRotationTime || currentOutputStream == null) {
             internalRotateNow();
         }
-        // count records, and publish
-        numberOfRecords++;
         super.publish(r);
     }
 
@@ -177,9 +187,9 @@ public class LogFileHandler extends StreamHandler {
         }
         long nowTod = timeOfDayMillis(now);
         long next = 0;
-        for (int i = 0; i<rotationTimes.length; i++) {
-            if (nowTod < rotationTimes[i]) {
-                next = rotationTimes[i]-nowTod + now;
+        for (long rotationTime : rotationTimes) {
+            if (nowTod < rotationTime) {
+                next = rotationTime-nowTod + now;
                 break;
             }
         }
@@ -197,7 +207,7 @@ public class LogFileHandler extends StreamHandler {
             } catch (InterruptedException e) {
             }
         }
-        super.flush();
+        flush();
     }
 
     private void checkAndCreateDir(String pathname) {
@@ -220,14 +230,14 @@ public class LogFileHandler extends StreamHandler {
 
     // Throw InterruptedException upwards rather than relying on isInterrupted to stop the thread as
     // isInterrupted() returns false after interruption in p.waitFor
-    private void internalRotateNow() throws InterruptedException {
+    private void internalRotateNow() {
         // figure out new file name, then
         // use super.setOutputStream to switch to a new file
 
         String oldFileName = fileName;
         long now = System.currentTimeMillis();
         fileName = LogFormatter.insertDate(filePattern, now);
-        super.flush();
+        flush();
         super.close();
 
         try {
@@ -235,6 +245,7 @@ public class LogFileHandler extends StreamHandler {
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
             super.setOutputStream(os);
             currentOutputStream = os;
+            lastDropPosition = 0;
             LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
@@ -243,8 +254,6 @@ public class LogFileHandler extends StreamHandler {
 
         createSymlinkToCurrentFile();
 
-        numberOfRecords = 0;
-        lastRotationTime = now;
         nextRotationTime = 0; //figure it out later (lazy evaluation)
         if ((oldFileName != null)) {
             File oldFile = new File(oldFileName);
@@ -252,30 +261,30 @@ public class LogFileHandler extends StreamHandler {
                 if (compressOnRotation) {
                     executor.execute(() -> runCompression(oldFile));
                 } else {
-                    NativeIO nativeIO = new NativeIO();
                     nativeIO.dropFileFromCache(oldFile);
                 }
             }
         }
     }
 
-    private void runCompression(File oldFile) {
-        File gzippedFile = new File(oldFile.getPath() + ".gz");
-        try {
-            GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
-            FileInputStream inputStream = new FileInputStream(oldFile);
-            byte [] buffer = new byte[0x100000];
 
+    static void runCompression(File oldFile) {
+        File gzippedFile = new File(oldFile.getPath() + ".gz");
+        try (GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
+             FileInputStream inputStream = new FileInputStream(oldFile))
+        {
+            byte [] buffer = new byte[0x400000]; // 4M buffer
+
+            long totalBytesRead = 0;
+            NativeIO nativeIO = new NativeIO();
             for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
                 compressor.write(buffer, 0, read);
+                nativeIO.dropPartialFileFromCache(inputStream.getFD(), totalBytesRead, read, false);
+                totalBytesRead += read;
             }
-            inputStream.close();
             compressor.finish();
             compressor.flush();
-            compressor.close();
 
-            NativeIO nativeIO = new NativeIO();
-            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
             oldFile.delete();
             nativeIO.dropFileFromCache(gzippedFile);
         } catch (IOException e) {
@@ -306,28 +315,6 @@ public class LogFileHandler extends StreamHandler {
         } catch (IOException e) {
             logger.warning("Got '" + e + "' while doing'" + Arrays.toString(cmd) + "'.");
         }
-    }
-
-    /**
-     * Name the current file to "name.n" where n
-     * 1+ the largest integer in existing file names
-     */
-    private void moveCurrentFile() {
-        File file=new File(fileName);
-        if ( ! file.exists()) return; // no current file
-        File dir=file.getParentFile();
-        Pattern logFilePattern=Pattern.compile(".*\\.(\\d+)");
-        long largestN=0;
-        for (File existingFile : dir.listFiles()) {
-            Matcher matcher=logFilePattern.matcher(existingFile.getName());
-            if (!matcher.matches()) continue;
-            long thisN=Long.parseLong(matcher.group(1));
-            if (thisN>largestN)
-                largestN=thisN;
-        }
-        File newFn = new File(dir, file.getName() + "." + (largestN + 1));
-        LogFileDb.nowLoggingTo(newFn.getAbsolutePath());
-        file.renameTo(newFn);
     }
 
     /**

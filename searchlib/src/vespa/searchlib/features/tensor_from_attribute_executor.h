@@ -5,7 +5,8 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 
 namespace search::features {
 
@@ -18,7 +19,7 @@ class TensorFromAttributeExecutor : public fef::FeatureExecutor
 {
 private:
     const search::attribute::IAttributeVector *_attribute;
-    vespalib::string _dimension;
+    vespalib::eval::ValueType _type;
     WeightedBufferType _attrBuffer;
     std::unique_ptr<vespalib::tensor::Tensor> _tensor;
 
@@ -26,7 +27,7 @@ public:
     TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
                                 const vespalib::string &dimension)
         : _attribute(attribute),
-          _dimension(dimension),
+          _type(vespalib::eval::ValueType::tensor_type({{dimension}})),
           _attrBuffer(),
           _tensor()
     {
@@ -40,11 +41,12 @@ void
 TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
 {
     _attrBuffer.fill(*_attribute, docId);
-    vespalib::tensor::DefaultTensor::builder builder;
-    vespalib::tensor::TensorBuilder::Dimension dimensionEnum = builder.define_dimension(_dimension);
+    vespalib::tensor::DirectSparseTensorBuilder builder(_type);
+    vespalib::tensor::SparseTensorAddressBuilder address;
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {
-        builder.add_label(dimensionEnum, vespalib::string(_attrBuffer[i].value()));
-        builder.add_cell(_attrBuffer[i].weight());
+        address.clear();
+        address.add(vespalib::string(_attrBuffer[i].value()));
+        builder.insertCell(address, _attrBuffer[i].weight(), [](double, double v){ return v; });
     }
     _tensor = builder.build();
     outputs().set_object(0, *_tensor);

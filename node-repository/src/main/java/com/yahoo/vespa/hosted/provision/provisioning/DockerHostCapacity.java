@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Capacity calculation for docker hosts.
@@ -18,61 +18,32 @@ import java.util.List;
  */
 public class DockerHostCapacity {
 
-    /**
-     * An immutable list of nodes
-     */
-    private final NodeList allNodes;
+    private final LockedNodeList allNodes;
+    private final HostResourcesCalculator hostResourcesCalculator;
 
-    public DockerHostCapacity(List<Node> allNodes) {
-        this(new NodeList(allNodes));
-    }
-
-    public DockerHostCapacity(NodeList allNodes) {
-        this.allNodes = allNodes;
-    }
-
-    /**
-     * Compare hosts on free capacity.
-     * Used in prioritizing hosts for allocation in <b>descending</b> order.
-     */
-    int compare(Node hostA, Node hostB) {
-        int comp = compare(freeCapacityOf(hostB, false),
-                           freeCapacityOf(hostA, false));
-        if (comp == 0) {
-            comp = compare(freeCapacityOf(hostB, false),
-                           freeCapacityOf(hostA, false));
-            if (comp == 0) {
-                // If resources are equal - we want to assign to the one with the most IPaddresses free
-                comp = freeIPs(hostB) - freeIPs(hostA);
-            }
-        }
-        return comp;
+    DockerHostCapacity(LockedNodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
+        this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
+        this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
 
     int compareWithoutInactive(Node hostA, Node hostB) {
-        int comp = compare(freeCapacityOf(hostB,  true),
-                           freeCapacityOf(hostA, true));
-        if (comp == 0) {
-            comp = compare(freeCapacityOf(hostB, true),
-                           freeCapacityOf(hostA, true));
-            if (comp == 0) {
-                // If resources are equal - we want to assign to the one with the most IPaddresses free
-                comp = freeIPs(hostB) - freeIPs(hostA);
-            }
-        }
-        return comp;
+        int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
+        if (result != 0) return result;
+
+        // If resources are equal we want to assign to the one with the most IPaddresses free
+        return freeIPs(hostB) - freeIPs(hostA);
     }
 
-    private int compare(ResourceCapacity a, ResourceCapacity b) {
-        return ResourceCapacityComparator.defaultOrder().compare(a, b);
+    private int compare(NodeResources a, NodeResources b) {
+        return NodeResourceComparator.defaultOrder().compare(a, b);
     }
 
     /**
      * Checks the node capacity and free ip addresses to see
      * if we could allocate a flavor on the docker host.
      */
-    boolean hasCapacity(Node dockerHost, ResourceCapacity requestedCapacity) {
-        return freeCapacityOf(dockerHost, false).hasCapacityFor(requestedCapacity) && freeIPs(dockerHost) > 0;
+    boolean hasCapacity(Node dockerHost, NodeResources requestedCapacity) {
+        return freeCapacityOf(dockerHost, false).satisfies(requestedCapacity) && freeIPs(dockerHost) > 0;
     }
 
     /**
@@ -82,76 +53,31 @@ public class DockerHostCapacity {
         return dockerHost.ipAddressPool().findUnused(allNodes).size();
     }
 
-    public ResourceCapacity getFreeCapacityTotal() {
-        return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(n -> freeCapacityOf(n, false))
-                .reduce(ResourceCapacity.NONE, ResourceCapacity::add);
-    }
-
-    public ResourceCapacity getCapacityTotal() {
-        return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(ResourceCapacity::of)
-                .reduce(ResourceCapacity.NONE, ResourceCapacity::add);
-    }
-
-
-    public int freeCapacityInFlavorEquivalence(Flavor flavor) {
-        return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .map(n -> canFitNumberOf(n, flavor))
-                .reduce(0, (a, b) -> a + b);
-    }
-
-    public long getNofHostsAvailableFor(Flavor flavor) {
-        return allNodes.asList().stream()
-                .filter(n -> n.type().equals(NodeType.host))
-                .filter(n -> hasCapacity(n, ResourceCapacity.of(flavor)))
-                .count();
-    }
-
-    private int canFitNumberOf(Node node, Flavor flavor) {
-        ResourceCapacity freeCapacity = freeCapacityOf(node, false);
-        int capacityFactor = freeCapacityInFlavorEquivalence(freeCapacity, flavor);
-        int ips = freeIPs(node);
-        return Math.min(capacityFactor, ips);
-    }
-
-    int freeCapacityInFlavorEquivalence(ResourceCapacity freeCapacity, Flavor flavor) {
-        if ( ! freeCapacity.hasCapacityFor(ResourceCapacity.of(flavor))) return 0;
-
-        double cpuFactor = Math.floor(freeCapacity.vcpu() / flavor.getMinCpuCores());
-        double memoryFactor = Math.floor(freeCapacity.memoryGb() / flavor.getMinMainMemoryAvailableGb());
-        double diskFactor =  Math.floor(freeCapacity.diskGb() / flavor.getMinDiskAvailableGb());
-
-        return (int) Math.min(Math.min(memoryFactor, cpuFactor), diskFactor);
-    }
-
     /**
      * Calculate the remaining capacity for the dockerHost.
-     * @param dockerHost The host to find free capacity of.
      *
+     * @param dockerHost The host to find free capacity of.
      * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    public ResourceCapacity freeCapacityOf(Node dockerHost, boolean treatInactiveOrRetiredAsUnusedCapacity) {
+    NodeResources freeCapacityOf(Node dockerHost, boolean excludeInactive) {
         // Only hosts have free capacity
-        if (!dockerHost.type().equals(NodeType.host)) return ResourceCapacity.NONE;
+        if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0);
+        NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(dockerHost.flavor().resources());
 
+        // Subtract used resources without taking disk speed into account since existing allocations grandfathered in
+        // may not use reflect the actual disk speed (as of May 2019). This (the 3 diskSpeed assignments below)
+        // can be removed when all node allocations accurately reflect the true host disk speed
         return allNodes.childrenOf(dockerHost).asList().stream()
-                .filter(container -> !(treatInactiveOrRetiredAsUnusedCapacity && isInactiveOrRetired(container)))
-                .map(ResourceCapacity::of)
-                .reduce(ResourceCapacity.of(dockerHost), ResourceCapacity::subtract);
+                .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
+                .map(node -> node.flavor().resources().withDiskSpeed(NodeResources.DiskSpeed.any))
+                .reduce(hostResources.withDiskSpeed(NodeResources.DiskSpeed.any), NodeResources::subtract)
+                .withDiskSpeed(dockerHost.flavor().resources().diskSpeed());
     }
 
-    private boolean isInactiveOrRetired(Node node) {
-        boolean isInactive = node.state().equals(Node.State.inactive);
-        boolean isRetired = false;
-        if (node.allocation().isPresent()) {
-            isRetired = node.allocation().get().membership().retired();
-        }
-
-        return isInactive || isRetired;
+    private static boolean isInactiveOrRetired(Node node) {
+        if (node.state() == Node.State.inactive) return true;
+        if (node.allocation().isPresent() && node.allocation().get().membership().retired()) return true;
+        return false;
     }
 
 }

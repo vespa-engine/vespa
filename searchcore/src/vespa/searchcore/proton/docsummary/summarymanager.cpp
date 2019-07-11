@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "summarymanager.h"
 #include "documentstoreadapter.h"
 #include "summarycompacttarget.h"
 #include "summaryflushtarget.h"
-#include "summarymanager.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/juniper/rpinterface.h>
@@ -12,6 +12,8 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastlib/text/normwordfolder.h>
+
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -84,7 +86,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
              const search::IAttributeManager::SP &attributeMgr, const search::IDocumentStore::SP & docStore,
              const std::shared_ptr<const DocumentTypeRepo> &repo)
     : _docsumWriter(),
-      _wordFolder(),
+      _wordFolder(std::make_unique<Fast_NormalizeWordFolder>()),
       _juniperProps(juniperCfg),
       _juniperConfig(),
       _attributeMgr(attributeMgr),
@@ -103,7 +105,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
                          baseDir.c_str(), oss.str().c_str()));
     }
 
-    _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, &_wordFolder);
+    _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
     _docsumWriter = std::make_unique<DynamicDocsumWriter>(resultConfig.release(), nullptr);
     DynamicDocsumConfig dynCfg(this, _docsumWriter.get());
     dynCfg.configure(summarymapCfg);

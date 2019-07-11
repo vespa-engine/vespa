@@ -39,12 +39,9 @@ public class DeploymentApiTest extends ControllerContainerTest {
                 .build();
 
         // 3 applications deploy on current system version
-        Application failingApplication = tester.createApplication("domain1", "tenant1",
-                                                                  "application1");
-        Application productionApplication = tester.createApplication("domain2", "tenant2",
-                                                                     "application2");
-        Application applicationWithoutDeployment = tester.createApplication("domain3", "tenant3",
-                                                                             "application3");
+        Application failingApplication = tester.createApplication("domain1", "tenant1", "application1", "default");
+        Application productionApplication = tester.createApplication("domain2", "tenant2", "application2", "default");
+        Application applicationWithoutDeployment = tester.createApplication("domain3", "tenant3", "application3", "default");
         tester.deployCompletely(failingApplication, applicationPackage, 1L, false);
         tester.deployCompletely(productionApplication, applicationPackage, 2L, false);
 
@@ -77,6 +74,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.committedAt(),
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
+                                           version.isReleased(),
                                            ImmutableSet.of("config1.test", "config2.test").stream()
                                                        .map(HostName::from)
                                                        .collect(Collectors.toSet()),

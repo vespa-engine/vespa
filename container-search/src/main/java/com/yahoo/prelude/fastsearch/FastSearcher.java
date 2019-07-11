@@ -5,7 +5,6 @@ import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.PingPacket;
 import com.yahoo.fs4.PongPacket;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
@@ -53,6 +52,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     private final Dispatcher dispatcher;
 
     private final Backend dispatchBackend;
+    private final FS4ResourcePool fs4ResourcePool;
 
     /**
      * Creates a Fastsearcher.
@@ -75,6 +75,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         init(fs4ResourcePool.getServerId(), docSumParams, clusterParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
         this.dispatcher = dispatcher;
+        this.fs4ResourcePool = fs4ResourcePool;
     }
 
     /**
@@ -213,7 +214,9 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         Optional<Node> direct = getDirectNode(query);
         if(direct.isPresent()) {
-            return dispatcher.getFS4InvokerFactory().createDirectSearchInvoker(this, query, direct.get());
+            var node = direct.get();
+            Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
+            return new FS4SearchInvoker(this, query, backend.openChannel(), direct);
         }
         return new FS4SearchInvoker(this, query, dispatchBackend.openChannel(), Optional.empty());
     }
@@ -232,7 +235,9 @@ public class FastSearcher extends VespaBackEndSearcher {
 
         Optional<Node> direct = getDirectNode(query);
         if (direct.isPresent()) {
-            return dispatcher.getFS4InvokerFactory().createFillInvoker(this, result, direct.get());
+            var node = direct.get();
+            Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
+            return new FS4FillInvoker(this, query, backend);
         }
         return new FS4FillInvoker(this, query, dispatchBackend);
     }

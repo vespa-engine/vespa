@@ -65,10 +65,10 @@
           "tasks": {
             "deploy": "running"
           },
-          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test/run/1"
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1"
         }
       ],
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/system-test"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test"
     },
     "staging-test": {
       "runs": [
@@ -101,10 +101,10 @@
             "report": "unfinished"
           },
           "tasks": {},
-          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test/run/1"
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/1"
         }
       ],
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/staging-test"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test"
     },
     "us-west-1": {
       "runs": [
@@ -126,7 +126,9 @@
           }
         }
       ],
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1"
     }
-  }
+  },
+  "devJobs": {}
 }
+

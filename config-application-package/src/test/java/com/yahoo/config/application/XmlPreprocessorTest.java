@@ -39,14 +39,14 @@ public class XmlPreprocessorTest {
                 "        <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
                 "      </nodes>\n" +
                 "    </content>\n" +
-                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "    <container id=\"stateless\" version=\"1.0\">\n" +
                 "      <search/>\n" +
                 "      <component bundle=\"foobundle\" class=\"MyFoo\" id=\"foo\"/>\n" +
                 "      <component bundle=\"foobundle\" class=\"TestBar\" id=\"bar\"/>\n" +
                 "      <nodes>\n" +
                 "        <node hostalias=\"node0\" baseport=\"5000\"/>\n" +
                 "      </nodes>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>";
         TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, Environment.dev, RegionName.from("default")).run());
 
@@ -65,14 +65,14 @@ public class XmlPreprocessorTest {
                 "        <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
                 "      </nodes>\n" +
                 "    </content>\n" +
-                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "    <container id=\"stateless\" version=\"1.0\">\n" +
                 "      <search/>\n" +
                 "      <component bundle=\"foobundle\" class=\"MyFoo\" id=\"foo\"/>\n" +
                 "" +   //  Difference from dev: no TestBar
                 "      <nodes>\n" +
                 "        <node hostalias=\"node0\" baseport=\"5000\"/>\n" +
                 "      </nodes>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>";
         // System.out.println(Xml.documentAsString(new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run()));
         TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run());
@@ -94,7 +94,7 @@ public class XmlPreprocessorTest {
                 "        <node distribution-key=\"2\" hostalias=\"node2\"/>\n" +
                 "      </nodes>\n" +
                 "    </content>\n" +
-                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "    <container id=\"stateless\" version=\"1.0\">\n" +
                 "      <search>\n" +
                 "        <chain id=\"common\">\n" +
                 "          <searcher id=\"MySearcher1\"/>\n" +
@@ -107,7 +107,7 @@ public class XmlPreprocessorTest {
                 "      <nodes>\n" +
                 "        <node hostalias=\"node0\" baseport=\"5001\"/>\n" +
                 "      </nodes>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>";
         TestBase.assertDocument(expectedUsWest, new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-west")).run());
 
@@ -127,7 +127,7 @@ public class XmlPreprocessorTest {
                 "        <node distribution-key=\"1\" hostalias=\"node1\"/>\n" +
                 "      </nodes>\n" +
                 "    </content>\n" +
-                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "    <container id=\"stateless\" version=\"1.0\">\n" +
                 "      <search>\n" +
                 "        <chain id=\"common\">\n" +
                 "          <searcher id=\"MySearcher1\"/>\n" +
@@ -140,7 +140,7 @@ public class XmlPreprocessorTest {
                 "      <nodes>\n" +
                 "        <node hostalias=\"node0\" baseport=\"5002\"/>\n" +
                 "      </nodes>\n" +
-                "    </jdisc>\n" +
+                "    </container>\n" +
                 "</services>";
         TestBase.assertDocument(expectedUsEastAndCentral,
                                 new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-east")).run());

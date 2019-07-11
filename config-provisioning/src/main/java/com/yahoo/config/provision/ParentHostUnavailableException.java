@@ -9,7 +9,7 @@ package com.yahoo.config.provision;
  * @author freva
  *
  */
-public class ParentHostUnavailableException extends RuntimeException {
+public class ParentHostUnavailableException extends TransientException {
 
     public ParentHostUnavailableException(String message) {
         super(message);

@@ -105,7 +105,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
                 .build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepo = TenantApplications.create(curator, new MockReloadHandler(), tenantName);
+        applicationRepo = TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName);
         localRepo = new LocalSessionRepo(clock, curator);
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
         hostProvisioner = new MockProvisioner();
@@ -232,7 +232,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
                                               new SessionContext(app, zkc, new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId)),
-                                                                 applicationRepo, new HostRegistry<>(), new SuperModelGenerationCounter(curator),
+                                                                 applicationRepo, new HostRegistry<>(),
                                                                  flagSource)));
     }
 

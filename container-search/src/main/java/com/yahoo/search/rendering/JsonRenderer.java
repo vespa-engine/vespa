@@ -39,6 +39,7 @@ import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
@@ -171,7 +172,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private void doVisit(final long timestamp, final Object payload, final boolean hasChildren) throws IOException {
+        private void doVisit(long timestamp, Object payload, boolean hasChildren) throws IOException {
             boolean dirty = false;
             if (timestamp != 0L) {
                 header();
@@ -343,7 +344,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return q != null && q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
     }
 
-    private void renderTrace(Trace trace) throws IOException {
+    protected void renderTrace(Trace trace) throws IOException {
         if (!trace.traceNode().children().iterator().hasNext()) return;
         if (getResult().getQuery().getTraceLevel() == 0) return;
 
@@ -386,7 +387,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
-    private void renderHitGroupHead(HitGroup hitGroup) throws IOException {
+    protected void renderHitGroupHead(HitGroup hitGroup) throws IOException {
         generator.writeStartObject();
 
         renderHitContents(hitGroup);
@@ -400,7 +401,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         // the framework will invoke begin methods as needed from here
     }
 
-    private void renderErrors(Set<ErrorMessage> errors) throws IOException {
+    protected void renderErrors(Set<ErrorMessage> errors) throws IOException {
         if (errors.isEmpty()) return;
 
         generator.writeArrayFieldStart(ERRORS);
@@ -432,7 +433,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     }
 
-    private void renderCoverage() throws IOException {
+    protected void renderCoverage() throws IOException {
         Coverage c = getResult().getCoverage(false);
         if (c == null) return;
 
@@ -454,7 +455,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
-    private void renderHit(Hit hit) throws IOException {
+    protected void renderHit(Hit hit) throws IOException {
         if (!shouldRender(hit)) return;
 
         childrenArray();
@@ -463,11 +464,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
-    private boolean shouldRender(Hit hit) {
+    protected boolean shouldRender(Hit hit) {
         return ! (hit instanceof DefaultErrorHit);
     }
 
-    private void renderHitContents(Hit hit) throws IOException {
+    protected void renderHitContents(Hit hit) throws IOException {
         String id = hit.getDisplayId();
         if (id != null)
             generator.writeStringField(ID, id);
@@ -491,7 +492,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         renderAllFields(hit);
     }
 
-    private void renderAllFields(Hit hit) throws IOException {
+    protected void renderAllFields(Hit hit) throws IOException {
         fieldConsumer.startHitFields();
         renderTotalHitCount(hit);
         renderStandardFields(hit);
@@ -527,7 +528,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeStringField(LABEL, a.getLabel());
     }
 
-    private void renderContinuations(Map<String, Continuation> continuations) throws IOException {
+    protected void renderContinuations(Map<String, Continuation> continuations) throws IOException {
         if (continuations.isEmpty()) return;
 
         generator.writeObjectFieldStart(CONTINUATION);
@@ -537,7 +538,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
-    private void renderGroupMetadata(GroupId id) throws IOException {
+    protected void renderGroupMetadata(GroupId id) throws IOException {
         if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) return;
 
         if (id instanceof ValueGroupId) {
@@ -564,7 +565,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getTo()) : id.getTo()).toString();
     }
 
-    private void renderTotalHitCount(Hit hit) throws IOException {
+    protected void renderTotalHitCount(Hit hit) throws IOException {
         if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
         fieldConsumer.ensureFieldsField();
@@ -651,7 +652,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void setGenerator(JsonGenerator generator, boolean debugRendering) {
         this.generator = generator;
-        this.fieldConsumer = generator == null ? null : new FieldConsumer(generator, debugRendering);
+        this.fieldConsumer = generator == null ? null : createFieldConsumer(generator, debugRendering);
+    }
+
+    protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
+        return new FieldConsumer(generator, debugRendering);
     }
 
     /**
@@ -666,7 +671,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * This instance is reused for all hits of a Result since we are in a single-threaded context
      * and want to limit object creation.
      */
-    private static class FieldConsumer implements Hit.RawUtf8Consumer {
+    public static class FieldConsumer implements Hit.RawUtf8Consumer {
 
         private final JsonGenerator generator;
         private final boolean debugRendering;
@@ -728,7 +733,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private boolean shouldRender(String name, Object value) {
+        protected boolean shouldRender(String name, Object value) {
             if (debugRendering) return true;
             if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
             if (value instanceof CharSequence && ((CharSequence) value).length() == 0) return false;
@@ -738,7 +743,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             return true;
         }
 
-        private boolean shouldRenderUtf8Value(String name, int length) {
+        protected boolean shouldRenderUtf8Value(String name, int length) {
             if (debugRendering) return true;
             if (name.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
             if (length == 0) return false;
@@ -771,7 +776,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             } else {
                 renderInspectorDirect(data);
             }
-
         }
 
         private void renderInspectorDirect(Inspector data) throws IOException {
@@ -780,8 +784,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeRawValue(intermediate.toString());
         }
 
-        private void renderFieldContents(Object field) throws IOException {
-            if (field instanceof Inspectable) {
+        protected void renderFieldContents(Object field) throws IOException {
+            if (field instanceof Inspectable && ! (field instanceof FeatureData)) {
                 renderInspector(((Inspectable)field).inspect());
             } else {
                 renderFieldContentsDirect(field);
@@ -799,6 +803,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator.writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
+            } else if (field instanceof FeatureData) {
+                generator.writeRawValue(((FeatureData)field).toJson());
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -811,8 +817,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 // the null below is the field which has already been written
                 ((FieldValue) field).serialize(null, new JsonWriter(generator));
             } else if (field instanceof JSONArray || field instanceof JSONObject) {
-                // org.json returns null if the object would not result in
-                // syntactically correct JSON
+                // org.json returns null if the object would not result in syntactically correct JSON
                 String s = field.toString();
                 if (s == null) {
                     generator.writeNull();

@@ -2,22 +2,15 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetireIPv4OnlyNodes;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicy;
-import com.yahoo.vespa.hosted.provision.maintenance.retire.RetirementPolicyList;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareChecker;
-import com.yahoo.vespa.hosted.provision.provisioning.FlavorSpareCount;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -48,34 +41,32 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final DirtyExpirer dirtyExpirer;
     private final ProvisionedExpirer provisionedExpirer;
     private final NodeRebooter nodeRebooter;
-    private final NodeRetirer nodeRetirer;
     private final MetricsReporter metricsReporter;
     private final InfrastructureProvisioner infrastructureProvisioner;
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<HostProvisionMaintainer> hostProvisionMaintainer;
     private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
+    private final CapacityReportMaintainer capacityReportMaintainer;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig,
                                      ProvisionServiceProvider provisionServiceProvider,
                                      FlagSource flagSource) {
         this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, configserverConfig, provisionServiceProvider, flagSource);
+                orchestrator, metric, provisionServiceProvider, flagSource);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Clock clock, Orchestrator orchestrator, Metric metric,
-                                     ConfigserverConfig configserverConfig,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         DefaultTimes defaults = new DefaultTimes(zone);
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric, configserverConfig);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, defaults.redeployMaintainerInterval, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval));
-        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval));
+        operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval));
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry));
         retiredExpirer = new RetiredExpirer(nodeRepository, orchestrator, deployer, clock, durationFromEnv("retired_interval").orElse(defaults.retiredInterval), durationFromEnv("retired_expiry").orElse(defaults.retiredExpiry));
         inactiveExpirer = new InactiveExpirer(nodeRepository, clock, durationFromEnv("inactive_expiry").orElse(defaults.inactiveExpiry));
@@ -86,19 +77,15 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, durationFromEnv("metrics_interval").orElse(defaults.metricsInterval));
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval));
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
-                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expiry").orElse(defaults.loadBalancerExpiry), lbService));
+                new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expirer_interval").orElse(defaults.loadBalancerExpirerInterval), lbService));
         hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), hostProvisioner, flagSource));
+        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("alert_interval").orElse(defaults.nodeAlerterInterval));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
-
-        RetirementPolicy policy = new RetirementPolicyList(new RetireIPv4OnlyNodes(zone));
-        FlavorSpareChecker flavorSpareChecker = new FlavorSpareChecker(
-                NodeRetirer.SPARE_NODES_POLICY, FlavorSpareCount.constructFlavorSpareCountGraph(zone.nodeFlavors().get().getFlavors()));
-        nodeRetirer = new NodeRetirer(nodeRepository, flavorSpareChecker, durationFromEnv("retire_interval").orElse(defaults.nodeRetirerInterval), deployer, policy);
     }
 
     @Override
@@ -112,7 +99,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer.deconstruct();
         dirtyExpirer.deconstruct();
         nodeRebooter.deconstruct();
-        nodeRetirer.deconstruct();
+        capacityReportMaintainer.deconstruct();
         provisionedExpirer.deconstruct();
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
@@ -156,11 +143,11 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration dirtyExpiry;
         private final Duration provisionedExpiry;
         private final Duration rebootInterval;
-        private final Duration nodeRetirerInterval;
+        private final Duration nodeAlerterInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
-        private final Duration loadBalancerExpiry;
+        private final Duration loadBalancerExpirerInterval;
         private final Duration hostProvisionerInterval;
         private final Duration hostDeprovisionerInterval;
 
@@ -170,21 +157,21 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             failGrace = Duration.ofMinutes(30);
             periodicRedeployInterval = Duration.ofMinutes(30);
             // Don't redeploy in test environments
-            redeployMaintainerInterval = zone.environment().isTest() ? Duration.ofDays(1) : Duration.ofMinutes(1);
+            redeployMaintainerInterval = Duration.ofMinutes(1);
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
             rebootInterval = Duration.ofDays(30);
-            nodeRetirerInterval = Duration.ofMinutes(30);
+            nodeAlerterInterval = Duration.ofHours(1);
             metricsInterval = Duration.ofMinutes(1);
-            infrastructureProvisionInterval = Duration.ofMinutes(3);
+            infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            loadBalancerExpiry = Duration.ofHours(1);
+            loadBalancerExpirerInterval = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             hostProvisionerInterval = Duration.ofMinutes(5);
             hostDeprovisionerInterval = Duration.ofMinutes(5);
 
-            if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
+            if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node

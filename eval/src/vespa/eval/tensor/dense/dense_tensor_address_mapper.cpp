@@ -25,7 +25,7 @@ DenseTensorAddressMapper::mapLabelToNumber(stringref label)
 }
 
 uint32_t
-DenseTensorAddressMapper::mapAddressToIndex(const TensorAddress &address, const eval::ValueType type)
+DenseTensorAddressMapper::mapAddressToIndex(const TensorAddress &address, const eval::ValueType &type)
 {
     uint32_t idx = 0;
     TensorAddressElementIterator<TensorAddress> addressIterator(address);

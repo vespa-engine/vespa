@@ -21,13 +21,13 @@ public class Bug6068056Test {
             "    <adminserver hostalias=\"node1\" />" +
             "  </admin>" +
 
-            "  <jdisc id=\"docproc\" version=\"1.0\">" +
+            "  <container id=\"docproc\" version=\"1.0\">" +
             "    <search/>" +
             "    <document-processing/>" +
             "    <nodes>" +
             "      <node hostalias=\"node1\"/>" +
             "    </nodes>" +
-            "  </jdisc>" +
+            "  </container>" +
 
             "<content version='1.0' id='music'>\n" +
             "     <redundancy>1</redundancy>\n" +

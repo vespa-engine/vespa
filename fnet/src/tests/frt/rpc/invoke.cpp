@@ -249,8 +249,8 @@ public:
 class Fixture
 {
 private:
-    FRT_Supervisor     _client;
-    FRT_Supervisor     _server;
+    fnet::frt::StandaloneFRT  _client;
+    fnet::frt::StandaloneFRT  _server;
     vespalib::string   _peerSpec;
     FRT_Target        *_target;
     TestRPC            _testRPC;
@@ -258,7 +258,7 @@ private:
 
 public:
     FRT_Target &target() { return *_target; }
-    FRT_Target *make_bad_target() { return _client.GetTarget("bogus address"); }
+    FRT_Target *make_bad_target() { return _client.supervisor().GetTarget("bogus address"); }
     RequestLatch &detached_req() { return _testRPC.detached_req(); }
     EchoTest &echo() { return _echoTest; }
 
@@ -267,16 +267,14 @@ public:
           _server(crypto),
           _peerSpec(),
           _target(nullptr),
-          _testRPC(&_server),
-          _echoTest(&_server)
+          _testRPC(&_server.supervisor()),
+          _echoTest(&_server.supervisor())
     {
-        _client.GetTransport()->SetTCPNoDelay(true);
-        _server.GetTransport()->SetTCPNoDelay(true);
-        ASSERT_TRUE(_server.Listen("tcp/0"));
-        ASSERT_TRUE(_server.Start());
-        ASSERT_TRUE(_client.Start());
-        _peerSpec = SocketSpec::from_host_port("localhost", _server.GetListenPort()).spec();
-        _target = _client.GetTarget(_peerSpec.c_str());
+        _client.supervisor().GetTransport()->SetTCPNoDelay(true);
+        _server.supervisor().GetTransport()->SetTCPNoDelay(true);
+        ASSERT_TRUE(_server.supervisor().Listen("tcp/0"));
+        _peerSpec = SocketSpec::from_host_port("localhost", _server.supervisor().GetListenPort()).spec();
+        _target = _client.supervisor().GetTarget(_peerSpec.c_str());
         //---------------------------------------------------------------------
         MyReq req("frt.rpc.ping");
         target().InvokeSync(req.borrow(), timeout);
@@ -284,8 +282,6 @@ public:
     }
 
     ~Fixture() {
-        _client.ShutDown(true);
-        _server.ShutDown(true);
         _target->SubRef();
     }
 };

@@ -12,7 +12,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -61,7 +60,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 
@@ -94,7 +93,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3", "host4");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
         tester.deployApp("src/test/apps/hosted/");
 

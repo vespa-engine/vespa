@@ -58,7 +58,7 @@ public class Acceptor {
             if (spec.port() != 0) {
                 serverChannel.socket().setReuseAddress(true);
             }
-            serverChannel.socket().bind(spec.address(), 500);
+            serverChannel.socket().bind(spec.resolveAddress(), 500);
         } catch (Exception e) {
             if (serverChannel != null) {
                 try { serverChannel.socket().close(); } catch (Exception ignore) {}
@@ -100,8 +100,9 @@ public class Acceptor {
     private void run() {
         while (serverChannel.isOpen()) {
             try {
-                parent.addConnection(new Connection(parent, owner, serverChannel.accept()));
-                parent.sync();
+                TransportThread tt = parent.selectThread();
+                tt.addConnection(new Connection(tt, owner, serverChannel.accept()));
+                tt.sync();
             } catch (ClosedChannelException ignore) {
             } catch (Exception e) {
                 log.log(Level.WARNING, "Error accepting connection", e);

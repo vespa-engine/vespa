@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "direct_tensor_builder.h"
 #include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
 
 namespace vespalib::tensor {
@@ -15,7 +14,7 @@ class TensorOperation
 {
 public:
     using TensorImplType = TensorT;
-    using MyTensorBuilder = DirectTensorBuilder<TensorT>;
+    using MyTensorBuilder = DirectSparseTensorBuilder;
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = typename MyTensorBuilder::AddressBuilderType;
     using AddressRefType = typename MyTensorBuilder::AddressRefType;

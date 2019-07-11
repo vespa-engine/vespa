@@ -30,6 +30,7 @@ import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.dispatch.rpc.MockRpcResourcePoolBuilder;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
@@ -66,7 +67,6 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-@SuppressWarnings({ "rawtypes", "unchecked", "deprecation" })
 public class FastSearcherTestCase {
 
     private final static DocumentdbInfoConfig documentdbInfoConfig = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder());
@@ -77,7 +77,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
+                                                     MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbInfoConfig);
@@ -94,7 +94,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
+                                                     MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbInfoConfig);
@@ -121,18 +121,20 @@ public class FastSearcherTestCase {
 
         List<Node> nodes = new ArrayList<>();
         nodes.add(new Node(0, "host1", 5000, 0));
-        nodes.add(new Node(2, "host2", 5000, 0));
+        nodes.add(new Node(1, "host2", 5000, 0));
 
-        MockFS4ResourcePool mockFs4ResourcePool = new MockFS4ResourcePool();
+        var mockFs4ResourcePool = new MockFS4ResourcePool();
+        var mockRpcResourcePool = new MockRpcResourcePoolBuilder().connection(0).connection(1).build();
+
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                 mockFs4ResourcePool,
-                new MockDispatcher("a", nodes, mockFs4ResourcePool, 1, new VipStatus()),
+                MockDispatcher.create(nodes, mockFs4ResourcePool, mockRpcResourcePool, 1, new VipStatus()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 documentdbConfigWithOneDb);
 
         { // No direct.summaries
-            String query = "?query=sddocname:a&summary=simple";
+            String query = "?query=sddocname:a&summary=simple&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
@@ -140,23 +142,21 @@ public class FastSearcherTestCase {
         }
 
         { // direct.summaries due to query cache
-            String query = "?query=sddocname:a&ranking.queryCache&timeout=5000ms";
+            String query = "?query=sddocname:a&ranking.queryCache&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
             assertEquals("Since we don't actually run summary backends we get this error when the Dispatcher is used",
-                         "Error response from rpc node connection to hostX:0: Connection error",
-                          error.getDetailedMessage().replaceAll("host[12]", "hostX"));
+                    "getDocsums(..) attempted for node X", error.getDetailedMessage().replaceAll("\\d", "X"));
         }
 
         { // direct.summaries due to no summary features
-            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler&timeout=5000ms";
+            String query = "?query=sddocname:a&dispatch.summaries&summary=simple&ranking=simpler&timeout=20s";
             Result result = doSearch(fastSearcher, new Query(query), 0, 10);
             doFill(fastSearcher, result);
             ErrorMessage error = result.hits().getError();
             assertEquals("Since we don't actually run summary backends we get this error when the Dispatcher is used",
-                         "Error response from rpc node connection to hostX:0: Connection error",
-                         error.getDetailedMessage().replaceAll("host[12]", "hostX"));
+                    "getDocsums(..) attempted for node X", error.getDetailedMessage().replaceAll("\\d", "X"));
         }
     }
 
@@ -167,7 +167,7 @@ public class FastSearcherTestCase {
             new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("testDb")));
         FastSearcher fastSearcher = new FastSearcher(mockBackend,
                                                      new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
+                                                     MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbConfigWithOneDb);
@@ -335,7 +335,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         return new FastSearcher(mockBackend,
                                 new FS4ResourcePool("container.0", 1),
-                                new MockDispatcher("a", Collections.emptyList()),
+                                MockDispatcher.create(Collections.emptyList()),
                                 new SummaryParameters(null),
                                 new ClusterParams("testhittype"),
                                 config);
@@ -345,7 +345,7 @@ public class FastSearcherTestCase {
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher(new Node(0, "host0", 123, 0)),
+                                                     MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 123, 0))),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbInfoConfig);
@@ -366,9 +366,7 @@ public class FastSearcherTestCase {
 
     @Test
     public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher =
-                new MockDispatcher("a", ImmutableList.of(new Node(0, "host0", 123, 0),
-                                                    new Node(2, "host1", 123, 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(ImmutableList.of(new Node(0, "host0", 123, 0), new Node(2, "host1", 123, 0)));
 
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool("container.0", 1),
@@ -411,7 +409,7 @@ public class FastSearcherTestCase {
         Backend backend = listeners.getBackend(server.host.getHostString(),server.host.getPort());
         FastSearcher fastSearcher = new FastSearcher(backend,
                                                      new FS4ResourcePool("container.0", 1),
-                                                     new MockDispatcher("a", Collections.emptyList()),
+                                                     MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbInfoConfig);

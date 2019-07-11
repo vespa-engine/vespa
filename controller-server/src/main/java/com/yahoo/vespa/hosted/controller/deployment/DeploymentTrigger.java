@@ -92,7 +92,7 @@ public class DeploymentTrigger {
      * trigger next.
      */
     public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.INFO, String.format("Notified of %s for %s of %s (%d)",
+        log.log(LogLevel.DEBUG, String.format("Notified of %s for %s of %s (%d)",
                                              report.jobError().map(e -> e.toString() + " error")
                                                    .orElse("success"),
                                              report.jobType(),
@@ -124,14 +124,16 @@ public class DeploymentTrigger {
                 }
             }
             else {
-                triggering = application.get().deploymentJobs().statusOf(report.jobType())
-                                        .filter(job ->    job.lastTriggered().isPresent()
-                                                       && job.lastCompleted()
-                                                             .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
-                                                             .orElse(true))
-                                        .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
-                                                                                     report.applicationId() + ", but that has neither been triggered nor deployed"))
-                                        .lastTriggered().get();
+                Optional<JobStatus> status = application.get().deploymentJobs().statusOf(report.jobType());
+                triggering = status.filter(job ->    job.lastTriggered().isPresent()
+                                                  && job.lastCompleted()
+                                                        .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
+                                                        .orElse(true))
+                                   .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
+                                                                                report.applicationId() + ", but that has not been triggered; last was " +
+                                                                                status.flatMap(job -> job.lastTriggered().map(run -> run.at().toString()))
+                                                                                      .orElse("never")))
+                                   .lastTriggered().get();
             }
             application = application.withJobCompletion(report.projectId(),
                                                         report.jobType(),
@@ -181,7 +183,7 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attempts.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.INFO, String.format("Triggering %s: %s", job, job.triggering));
+        log.log(LogLevel.DEBUG, String.format("Triggering %s: %s", job, job.triggering));
         try {
             applications().lockOrThrow(job.applicationId(), application -> {
                 if (application.get().deploymentJobs().deployedInternally())

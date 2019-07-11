@@ -12,6 +12,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 
+/**
+ * @author olaaun
+ */
 public class LogRetriever {
 
     private final HttpClient httpClient = HttpClientBuilder.create().build();
@@ -26,6 +29,7 @@ public class LogRetriever {
     }
 
     private static class ProxyResponse extends HttpResponse {
+
         private final org.apache.http.HttpResponse clientResponse;
 
         private ProxyResponse(org.apache.http.HttpResponse clientResponse) {
@@ -45,4 +49,5 @@ public class LogRetriever {
             clientResponse.getEntity().writeTo(outputStream);
         }
     }
+
 }

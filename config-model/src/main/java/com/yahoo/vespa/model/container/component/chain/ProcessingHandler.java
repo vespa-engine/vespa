@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.container.component.Handler;
  * Represents a handler for processing chains.
  *
  * @author gjoranv
- * @since 5.1.7
  */
 public class ProcessingHandler<CHAINS extends Chains<?>>
         extends Handler<AbstractConfigProducer<?>>

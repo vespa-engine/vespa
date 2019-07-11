@@ -2,11 +2,11 @@
 
 #include "predicate_index.h"
 #include "predicate_hash.h"
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
 
 using search::datastore::EntryRef;
@@ -224,9 +224,9 @@ void PredicateIndex::transferHoldLists(generation_t generation) {
     _zero_constraint_docs.getAllocator().transferHoldLists(generation);
 }
 
-MemoryUsage PredicateIndex::getMemoryUsage() const {
+vespalib::MemoryUsage PredicateIndex::getMemoryUsage() const {
     // TODO Include bit vector cache memory usage
-    MemoryUsage combined;
+    vespalib::MemoryUsage combined;
     combined.merge(_interval_index.getMemoryUsage());
     combined.merge(_bounds_index.getMemoryUsage());
     combined.merge(_zero_constraint_docs.getMemoryUsage());

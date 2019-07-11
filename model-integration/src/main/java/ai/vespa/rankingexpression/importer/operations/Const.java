@@ -62,9 +62,7 @@ public class Const extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override
@@ -86,4 +84,23 @@ public class Const extends IntermediateOperation {
         }
         return value.get();
     }
+
+    @Override
+    public Const withInputs(List<IntermediateOperation> inputs) {
+        return new Const(modelName(), name(), inputs, attributeMap, type);
+    }
+
+    @Override
+    public String operationName() { return "Const"; }
+
+    @Override
+    public String toString() {
+        return "Const(" + type + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\tConst(" + type + ")";
+    }
+
 }

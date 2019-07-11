@@ -35,7 +35,6 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
         vespalib::ThreadExecutor &warmupExecutor,
-        vespalib::ThreadStackExecutorBase &sharedExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
         MetricsWireService &metricsWireService,
         DocumentDBTaggedMetrics &metrics,
@@ -61,7 +60,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
 
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
-                                       sharedExecutor, _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
+                                       _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
         (new SearchableDocSubDB(
                 SearchableDocSubDB::Config(
@@ -140,18 +139,21 @@ wrapRetriever(const IDocumentRetriever::SP &retriever, ICommitable &commit)
 
 void DocumentSubDBCollection::maintenanceSync(MaintenanceController &mc, ICommitable &commit) {
     RetrieversSP retrievers = getRetrievers();
-    MaintenanceDocumentSubDB readySubDB(
-            getReadySubDB()->getDocumentMetaStoreContext().getSP(),
-            wrapRetriever((*retrievers)[_readySubDbId], commit),
-            _readySubDbId);
-    MaintenanceDocumentSubDB remSubDB(
-            getRemSubDB()->getDocumentMetaStoreContext().getSP(),
-            (*retrievers)[_remSubDbId],
-            _remSubDbId);
-    MaintenanceDocumentSubDB notReadySubDB(
-            getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
-            wrapRetriever((*retrievers)[_notReadySubDbId], commit),
-            _notReadySubDbId);
+    MaintenanceDocumentSubDB readySubDB(getReadySubDB()->getName(),
+                                        _readySubDbId,
+                                        getReadySubDB()->getDocumentMetaStoreContext().getSP(),
+                                        wrapRetriever((*retrievers)[_readySubDbId], commit),
+                                        getReadySubDB()->getFeedView());
+    MaintenanceDocumentSubDB remSubDB(getRemSubDB()->getName(),
+                                      _remSubDbId,
+                                      getRemSubDB()->getDocumentMetaStoreContext().getSP(),
+                                      (*retrievers)[_remSubDbId],
+                                      getRemSubDB()->getFeedView());
+    MaintenanceDocumentSubDB notReadySubDB(getNotReadySubDB()->getName(),
+                                           _notReadySubDbId,
+                                           getNotReadySubDB()->getDocumentMetaStoreContext().getSP(),
+                                           wrapRetriever((*retrievers)[_notReadySubDbId], commit),
+                                           getNotReadySubDB()->getFeedView());
     mc.syncSubDBs(readySubDB, remSubDB, notReadySubDB);
 }
 

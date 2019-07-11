@@ -1,15 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sparse_binary_format.h"
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/tensor_builder.h>
+#include <vespa/eval/tensor/sparse/direct_sparse_tensor_builder.h>
+#include <vespa/eval/tensor/sparse/sparse_tensor_address_builder.h>
 #include <vespa/eval/tensor/tensor_visitor.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <sstream>
 #include <cassert>
 
 using vespalib::nbostream;
+using vespalib::eval::ValueType;
+using CellType = vespalib::eval::ValueType::CellType;
 
 namespace vespalib::tensor {
 
@@ -17,10 +21,9 @@ namespace {
 
 vespalib::string undefinedLabel("");
 
-void
-writeTensorAddress(nbostream &output,
-                   const eval::ValueType &type,
-                   const TensorAddress &value)
+void writeTensorAddress(nbostream &output,
+                        const eval::ValueType &type,
+                        const TensorAddress &value)
 {
     auto elemItr = value.elements().cbegin();
     auto elemItrEnd = value.elements().cend();
@@ -35,85 +38,125 @@ writeTensorAddress(nbostream &output,
     assert(elemItr == elemItrEnd);
 }
 
-}
-
+template <typename T>
 class SparseBinaryFormatSerializer : public TensorVisitor
 {
-    uint32_t _numCells;
-    nbostream _cells;
-    eval::ValueType _type;
-
+private:
+    uint32_t _num_cells;
+    nbostream &_cells;
+    const ValueType &_type;
 public:
-    SparseBinaryFormatSerializer();
+    SparseBinaryFormatSerializer(nbostream &cells, const ValueType &type);
+    size_t num_cells() const { return _num_cells; }
     virtual ~SparseBinaryFormatSerializer() override;
     virtual void visit(const TensorAddress &address, double value) override;
-    void serialize(nbostream &stream, const Tensor &tensor);
 };
 
-SparseBinaryFormatSerializer::SparseBinaryFormatSerializer()
-    : _numCells(0u),
-      _cells(),
-      _type(eval::ValueType::error_type())
+template <typename T>
+SparseBinaryFormatSerializer<T>::SparseBinaryFormatSerializer(nbostream &cells, const ValueType &type)
+    : _num_cells(0),
+      _cells(cells),
+      _type(type)
 {
 }
 
+template <typename T>
+SparseBinaryFormatSerializer<T>::~SparseBinaryFormatSerializer() = default;
 
-SparseBinaryFormatSerializer::~SparseBinaryFormatSerializer() = default;
-
+template <typename T>
 void
-SparseBinaryFormatSerializer::visit(const TensorAddress &address, double value)
+SparseBinaryFormatSerializer<T>::visit(const TensorAddress &address, double value)
 {
-    ++_numCells;
+    ++_num_cells;
     writeTensorAddress(_cells, _type, address);
-    _cells << value;
+    _cells << static_cast<T>(value);
 }
 
-
-void
-SparseBinaryFormatSerializer::serialize(nbostream &stream, const Tensor &tensor)
-{
-    _type = tensor.type();
-    tensor.accept(*this);
-    stream.putInt1_4Bytes(_type.dimensions().size());
-    for (const auto &dimension : _type.dimensions()) {
+void encodeDimensions(nbostream &stream, const eval::ValueType &type) {
+    stream.putInt1_4Bytes(type.dimensions().size());
+    for (const auto &dimension : type.dimensions()) {
         stream.writeSmallString(dimension.name);
     }
-    stream.putInt1_4Bytes(_numCells);
-    stream.write(_cells.peek(), _cells.size());
 }
 
+template <typename T>
+size_t encodeCells(nbostream &stream, const Tensor &tensor) {
+    SparseBinaryFormatSerializer<T> serializer(stream, tensor.type());
+    tensor.accept(serializer);
+    return serializer.num_cells();
+}
+
+size_t encodeCells(nbostream &stream, const Tensor &tensor, CellType cell_type) {
+    switch (cell_type) {
+    case CellType::DOUBLE:
+        return encodeCells<double>(stream, tensor);
+        break;
+    case CellType::FLOAT:
+        return encodeCells<float>(stream, tensor);
+        break;
+    }
+    return 0;
+}
+
+template<typename T>
+void decodeCells(nbostream &stream, size_t dimensionsSize, size_t cellsSize, DirectSparseTensorBuilder &builder) {
+    T cellValue = 0.0;
+    vespalib::string str;
+    SparseTensorAddressBuilder address;
+    for (size_t cellIdx = 0; cellIdx < cellsSize; ++cellIdx) {
+        address.clear();
+        for (size_t dimension = 0; dimension < dimensionsSize; ++dimension) {
+            stream.readSmallString(str);
+            if (!str.empty()) {
+                address.add(str);
+            } else {
+                address.addUndefined();
+            }
+        }
+        stream >> cellValue;
+        builder.insertCell(address, cellValue, [](double, double v){ return v; });
+    }
+}
+
+void decodeCells(CellType cell_type, nbostream &stream, size_t dimensionsSize, size_t cellsSize, DirectSparseTensorBuilder &builder) {
+    switch (cell_type) {
+    case CellType::DOUBLE:
+        decodeCells<double>(stream, dimensionsSize, cellsSize, builder);
+        break;
+    case CellType::FLOAT:
+        decodeCells<float>(stream, dimensionsSize, cellsSize, builder);
+        break;
+    }
+}
+
+}
 
 void
 SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
-    SparseBinaryFormatSerializer serializer;
-    serializer.serialize(stream, tensor);
+    const auto &type = tensor.type();
+    encodeDimensions(stream, type);
+    nbostream cells;
+    size_t numCells = encodeCells(cells, tensor, type.cell_type());
+    stream.putInt1_4Bytes(numCells);
+    stream.write(cells.peek(), cells.size());
 }
 
-
-void
-SparseBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
+std::unique_ptr<Tensor>
+SparseBinaryFormat::deserialize(nbostream &stream, CellType cell_type)
 {
     vespalib::string str;
     size_t dimensionsSize = stream.getInt1_4Bytes();
-    std::vector<TensorBuilder::Dimension> dimensions;
+    std::vector<ValueType::Dimension> dimensions;
     while (dimensions.size() < dimensionsSize) {
         stream.readSmallString(str);
-        dimensions.emplace_back(builder.define_dimension(str));
+        dimensions.emplace_back(str);
     }
+    ValueType type = ValueType::tensor_type(std::move(dimensions), cell_type);
+    DirectSparseTensorBuilder builder(type);
     size_t cellsSize = stream.getInt1_4Bytes();
-    double cellValue = 0.0;
-    for (size_t cellIdx = 0; cellIdx < cellsSize; ++cellIdx) {
-        for (size_t dimension = 0; dimension < dimensionsSize; ++dimension) {
-            stream.readSmallString(str);
-            if (!str.empty()) {
-                builder.add_label(dimensions[dimension], str);
-            }
-        }
-        stream >> cellValue;
-        builder.add_cell(cellValue);
-    }
+    decodeCells(cell_type, stream, dimensionsSize, cellsSize, builder);
+    return builder.build();
 }
-
 
 }

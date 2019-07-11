@@ -33,12 +33,12 @@ public class DeploymentFileValidatorTest {
                 "  <admin  version='2.0'>" +
                 "    <adminserver hostalias='node0' />" +
                 "  </admin>" +
-                "  <jdisc id='default' version='1.0'>" +
+                "  <container id='default' version='1.0'>" +
                 "    <search/>" +
                 "      <nodes>" +
                 "        <node hostalias='node0'/>" +
                 "     </nodes>" +
-                "   </jdisc>" +
+                "   </container>" +
                 "</services>";
 
         final String deploymentSpec = "<?xml version='1.0' encoding='UTF-8'?>" +

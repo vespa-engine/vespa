@@ -5,6 +5,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <ostream>
 
 namespace document {
 

@@ -138,14 +138,4 @@ void addFileConfig(vdstestlib::DirConfig& dc,
     in.close();
 }
 
-TestName::TestName(const std::string& n)
-    : name(n)
-{
-    LOG(debug, "Starting test %s", name.c_str());
-}
-
-TestName::~TestName() {
-    LOG(debug, "Done with test %s", name.c_str());
-}
-
 } // storage

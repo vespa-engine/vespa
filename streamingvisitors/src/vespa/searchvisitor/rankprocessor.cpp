@@ -202,7 +202,7 @@ RankProcessor::calculateFeatureSet()
 {
     LOG(debug, "Calculate feature set");
     RankProgram &rankProgram = *(_summaryProgram.get() != nullptr ? _summaryProgram : _rankProgram);
-    search::fef::FeatureResolver resolver(rankProgram.get_seeds());
+    search::fef::FeatureResolver resolver(rankProgram.get_seeds(false));
     LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
     RankProgramWrapper wrapper(*_match_data);
     FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, resolver);

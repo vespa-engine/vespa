@@ -7,8 +7,8 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("predicate_index_test");

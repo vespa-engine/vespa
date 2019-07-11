@@ -2,15 +2,15 @@
 
 #include "enumstorebase.h"
 #include "enumstore.h"
-#include <vespa/searchlib/datastore/datastore.hpp>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -112,17 +112,17 @@ EnumStoreBase::getBufferIndex(datastore::BufferState::State status)
     return Index::numBuffers();
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 EnumStoreBase::getMemoryUsage() const
 {
     return _store.getMemoryUsage();
 }
 
-AddressSpace
+vespalib::AddressSpace
 EnumStoreBase::getAddressSpaceUsage() const
 {
     const datastore::BufferState &activeState = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-    return AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
+    return vespalib::AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
 }
 
 void
@@ -333,7 +333,7 @@ EnumStoreDict<Dictionary>::getNumUniques() const
 
 
 template <typename Dictionary>
-MemoryUsage
+vespalib::MemoryUsage
 EnumStoreDict<Dictionary>::getTreeMemoryUsage() const
 {
     return _dict.getMemoryUsage();
@@ -632,10 +632,6 @@ template class EnumStoreDict<EnumTree>;
 
 template class EnumStoreDict<EnumPostingTree>;
 
-namespace attribute {
-    template class RcuVectorBase<EnumStoreIndex>;
-}
-
 template
 class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::INTERNAL_SLOTS>;
 
@@ -708,6 +704,10 @@ template
 class btree::BTreeIteratorBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
 
+template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+
+template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+
 template
 class btree::BTreeIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
                            const EnumStoreComparatorWrapper, EnumTreeTraits>;
@@ -723,6 +723,10 @@ class btree::BTree<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregate
                    const EnumStoreComparatorWrapper, EnumTreeTraits>;
 
 
+}
+
+namespace vespalib {
+template class RcuVectorBase<search::EnumStoreIndex>;
 }
 
 VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::EnumStoreIndex, search::EnumStoreIndex,

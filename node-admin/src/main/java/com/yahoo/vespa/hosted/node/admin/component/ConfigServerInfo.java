@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.net.URI;
 import java.util.Collections;

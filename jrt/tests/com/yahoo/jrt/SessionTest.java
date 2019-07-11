@@ -122,22 +122,18 @@ public class SessionTest implements SessionHandler {
     @Before
     public void setUp() throws ListenFailedException {
         Session.reset();
-        server   = new Test.Orb(new Transport(crypto));
+        server   = new Test.Orb(new Transport(crypto, 1));
         server.setSessionHandler(this);
-        client   = new Test.Orb(new Transport(crypto));
+        client   = new Test.Orb(new Transport(crypto, 1));
         client.setSessionHandler(this);
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()),
                                   new Session());
 
-        server.addMethod(new Method("set", "i", "", this,
-                                    "rpc_set"));
-        server.addMethod(new Method("get", "", "i", this,
-                                    "rpc_get"));
-        server.addMethod(new Method("call_detach", "", "", this,
-                                    "rpc_call_detach"));
-        client.addMethod(new Method("detach", "", "", this,
-                                    "rpc_detach"));
+        server.addMethod(new Method("set", "i", "", this::rpc_set));
+        server.addMethod(new Method("get", "", "i", this::rpc_get));
+        server.addMethod(new Method("call_detach", "", "", this::rpc_call_detach));
+        client.addMethod(new Method("detach", "", "", this::rpc_detach));
         receptor = new Test.Receptor();
     }
 
@@ -197,23 +193,23 @@ public class SessionTest implements SessionHandler {
         }
     }
 
-    public void rpc_set(Request req) {
+    private void rpc_set(Request req) {
         Session s = (Session) req.target().getContext();
         s.value(req.parameters().get(0).asInt32());
     }
 
-    public void rpc_get(Request req) {
+    private void rpc_get(Request req) {
         Session s = (Session) req.target().getContext();
         req.returnValues().add(new Int32Value(s.value()));
     }
 
-    public void rpc_call_detach(Request req) {
+    private void rpc_call_detach(Request req) {
         Session s = (Session) req.target().getContext();
         s.touch();
         req.target().invokeVoid(new Request("detach"));
     }
 
-    public void rpc_detach(Request req) {
+    private void rpc_detach(Request req) {
         Session s = (Session) req.target().getContext();
         if (s == null) {
             Session.setError();

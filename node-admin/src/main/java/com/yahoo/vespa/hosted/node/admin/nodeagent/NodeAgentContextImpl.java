@@ -1,13 +1,13 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -33,22 +33,22 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final ContainerName containerName;
     private final AthenzIdentity identity;
     private final DockerNetworking dockerNetworking;
-    private final ZoneId zoneId;
+    private final ZoneApi zone;
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
     private final String vespaUser;
     private final String vespaUserOnHost;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
-                                DockerNetworking dockerNetworking, ZoneId zoneId,
+                                DockerNetworking dockerNetworking, ZoneApi zone,
                                 Path pathToContainerStorage, Path pathToVespaHome,
                                 String vespaUser, String vespaUserOnHost) {
         this.node = Objects.requireNonNull(node);
         this.acl = Objects.requireNonNull(acl);
-        this.containerName = ContainerName.fromHostname(node.getHostname());
+        this.containerName = ContainerName.fromHostname(node.hostname());
         this.identity = Objects.requireNonNull(identity);
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking);
-        this.zoneId = Objects.requireNonNull(zoneId);
+        this.zone = Objects.requireNonNull(zone);
         this.pathToNodeRootOnHost = Objects.requireNonNull(pathToContainerStorage).resolve(containerName.asString());
         this.pathToVespaHome = Objects.requireNonNull(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
@@ -82,8 +82,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public ZoneId zoneId() {
-        return zoneId;
+    public ZoneApi zone() {
+        return zone;
     }
 
     @Override
@@ -146,7 +146,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                 ", containerName=" + containerName +
                 ", identity=" + identity +
                 ", dockerNetworking=" + dockerNetworking +
-                ", zoneId=" + zoneId +
+                ", zone=" + zone +
                 ", pathToNodeRootOnHost=" + pathToNodeRootOnHost +
                 ", pathToVespaHome=" + pathToVespaHome +
                 ", vespaUser='" + vespaUser + '\'' +
@@ -160,7 +160,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private Acl acl;
         private AthenzIdentity identity;
         private DockerNetworking dockerNetworking;
-        private ZoneId zoneId;
+        private ZoneApi zone;
         private Path pathToContainerStorage;
         private Path pathToVespaHome;
         private String vespaUser;
@@ -179,12 +179,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             this.nodeSpecBuilder
                     .hostname(hostname)
                     .state(NodeState.active)
-                    .nodeType(NodeType.tenant)
+                    .type(NodeType.tenant)
                     .flavor("d-2-8-50");
         }
 
         public Builder nodeType(NodeType nodeType) {
-            this.nodeSpecBuilder.nodeType(nodeType);
+            this.nodeSpecBuilder.type(nodeType);
             return this;
         }
 
@@ -203,8 +203,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder zoneId(ZoneId zoneId) {
-            this.zoneId = zoneId;
+        public Builder zone(ZoneApi zone) {
+            this.zone = zone;
             return this;
         }
 
@@ -238,7 +238,22 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(acl).orElse(Acl.EMPTY),
                     Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
                     Optional.ofNullable(dockerNetworking).orElse(DockerNetworking.HOST_NETWORK),
-                    Optional.ofNullable(zoneId).orElseGet(() -> new ZoneId(SystemName.dev, Environment.dev, RegionName.defaultName())),
+                    Optional.ofNullable(zone).orElseGet(() -> new ZoneApi() {
+                        @Override
+                        public SystemName getSystemName() {
+                            return SystemName.defaultSystem();
+                        }
+
+                        @Override
+                        public ZoneId getId() {
+                            return ZoneId.defaultId();
+                        }
+
+                        @Override
+                        public CloudName getCloudName() {
+                            return CloudName.defaultName();
+                        }
+                    }),
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),

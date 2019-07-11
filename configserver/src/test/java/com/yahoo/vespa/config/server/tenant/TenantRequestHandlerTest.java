@@ -93,11 +93,11 @@ public class TenantRequestHandlerTest {
         Metrics sh = Metrics.createTestMetrics();
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
-        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries(), curator);
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
                 .modelFactoryRegistry(createRegistry())
                 .build();
+        server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), componentRegistry);
     }
 
     private void feedApp(File appDir, long sessionId, ApplicationId appId, boolean  internalRedeploy) throws IOException {
@@ -357,12 +357,12 @@ public class TenantRequestHandlerTest {
 
         configNames = server.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
         System.out.println(configNames);
-        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "jdisc", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document")));
-        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "jdisc", "document.config")));
-        assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "jdisc", "container.jdisc.config")));
-        assertTrue(configNames.contains(new ConfigKey<>("specific", "jdisc", "project")));
+        assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "container", "container.jdisc.config")));
+        assertTrue(configNames.contains(new ConfigKey<>("specific", "container", "project")));
     }
 
     @Test

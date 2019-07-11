@@ -49,15 +49,15 @@ public class ModelAmendingTestCase {
         String services =
                                              "<services version='1.0'>" +
                                              "    <admin version='4.0'/>" +
-                                             "    <jdisc id='test1' version='1.0'>" +
+                                             "    <container id='test1' version='1.0'>" +
                                              "        <search/>" +
                                              "        <nodes count='2'/>" +
-                                             "    </jdisc>" +
-                                             "    <jdisc id='test2' version='1.0'>" +
+                                             "    </container>" +
+                                             "    <container id='test2' version='1.0'>" +
                                              "        <http><server id='server1' port='19110'/></http>" +
                                              "        <document-api/>" +
                                              "        <nodes count='2'/>" +
-                                             "    </jdisc>" +
+                                             "    </container>" +
                                              "    <content id='test3' version='1.0'>" +
                                              "        <redundancy>1</redundancy>" +
                                              "        <documents>" +

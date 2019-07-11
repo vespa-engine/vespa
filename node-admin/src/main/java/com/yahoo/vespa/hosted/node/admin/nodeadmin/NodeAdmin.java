@@ -9,15 +9,15 @@ import java.util.Set;
 
 /**
  * NodeAdmin manages the life cycle of NodeAgents.
- * @author dybis
+ * @author Haakon Dybdahl
  */
 public interface NodeAdmin {
 
     /** Start/stop NodeAgents and schedule next NodeAgent ticks with the given NodeAgentContexts */
     void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts);
 
-    /** Gather node agent and its docker container metrics and forward them to the {@code MetricReceiverWrapper} */
-    void updateNodeAgentMetrics();
+    /** Update node admin metrics */
+    void updateMetrics();
 
     /**
      * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that
@@ -29,7 +29,7 @@ public interface NodeAdmin {
     boolean setFrozen(boolean frozen);
 
     /**
-     * Returns whether the NodeAdmin itself is currently frozen, meaning it will not pick up any changes
+     * Returns whether NodeAdmin itself is currently frozen, meaning it will not pick up any changes
      * from NodeRepository.
      */
     boolean isFrozen();

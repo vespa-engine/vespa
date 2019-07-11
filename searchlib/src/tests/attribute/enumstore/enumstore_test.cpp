@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("enumstore_test");
 #include <vespa/vespalib/testkit/testapp.h>
-//#define LOG_ENUM_STORE
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <limits>
 #include <string>
 #include <iostream>
+
+#include <vespa/log/log.h>
+LOG_SETUP("enumstore_test");
 
 namespace search {
 
@@ -702,7 +702,7 @@ EnumStoreTest::testMemoryUsage()
     uint32_t entrySize = StringEnumStore::alignEntrySize(8 + 1 + 5); // enum(4) + refcount(4) + 1(\0) + strlen("enumx")
 
     // usage before inserting enums
-    MemoryUsage usage = ses.getMemoryUsage();
+    vespalib::MemoryUsage usage = ses.getMemoryUsage();
     EXPECT_EQUAL(ses.getNumUniques(), uint32_t(0));
     // Note: Sizes of underlying data store buffers are power of 2.
     EXPECT_EQUAL(vespalib::roundUp2inN(enumStoreAlign(200u) + RESERVED_BYTES), usage.allocatedBytes());
@@ -748,7 +748,7 @@ EnumStoreTest::testMemoryUsage()
     ses.performCompaction(400, old2New);
 
     // usage after compaction
-    MemoryUsage usage2 = ses.getMemoryUsage();
+    vespalib::MemoryUsage usage2 = ses.getMemoryUsage();
     EXPECT_EQUAL(ses.getNumUniques(), num / 2);
     EXPECT_EQUAL(usage.usedBytes() + (num / 2) * entrySize, usage2.usedBytes());
     EXPECT_EQUAL(usage.deadBytes(), usage2.deadBytes());
@@ -758,7 +758,7 @@ EnumStoreTest::testMemoryUsage()
     ses.trimHoldLists(sesGen + 1);
 
     // usage after hold list trimming
-    MemoryUsage usage3 = ses.getMemoryUsage();
+    vespalib::MemoryUsage usage3 = ses.getMemoryUsage();
     EXPECT_EQUAL((num / 2) * entrySize, usage3.usedBytes());
     EXPECT_EQUAL(0u, usage3.deadBytes());
     EXPECT_EQUAL(0u, usage3.allocatedBytesOnHold());
@@ -790,6 +790,7 @@ EnumStoreTest::requireThatAddressSpaceUsageIsReported()
     const size_t ADDRESS_LIMIT = 34359738368; // NumericEnumStore::DataStoreType::RefType::offsetSize()
     NumericEnumStore store(200, false);
 
+    using vespalib::AddressSpace;
     EXPECT_EQUAL(AddressSpace(16, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     NumericEnumStore::Index idx1 = addEnum(store, 10);
     EXPECT_EQUAL(AddressSpace(32, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());

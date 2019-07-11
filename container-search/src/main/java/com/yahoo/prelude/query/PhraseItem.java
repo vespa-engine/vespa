@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * A term which contains a phrase - a collection of word terms
@@ -32,10 +33,12 @@ public class PhraseItem extends CompositeIndexedItem {
         }
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.PHRASE;
     }
 
+    @Override
     public String getName() {
         return "PHRASE";
     }
@@ -125,6 +128,13 @@ public class PhraseItem extends CompositeIndexedItem {
         }
     }
 
+    @Override
+    public Optional<Item> extractSingleChild() {
+        Optional<Item> extracted = super.extractSingleChild();
+        extracted.ifPresent(e -> e.setWeight(this.getWeight()));
+        return extracted;
+    }
+
     private void addIndexedItem(IndexedItem word) {
         word.setIndexName(this.getIndexName());
         super.addItem((Item) word);
@@ -162,10 +172,12 @@ public class PhraseItem extends CompositeIndexedItem {
         return (BlockItem) getItem(index);
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
     }
 
+    @Override
     public int encode(ByteBuffer buffer) {
         encodeThis(buffer);
         int itemCount = 1;
@@ -186,13 +198,16 @@ public class PhraseItem extends CompositeIndexedItem {
     }
 
     /** Returns false, no parenthezes for phrases */
+    @Override
     protected boolean shouldParenthize() {
         return false;
     }
 
     /** Phrase items uses a empty heading instead of "PHRASE " */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) { }
 
+    @Override
     protected void appendBodyString(StringBuilder buffer) {
         appendIndexString(buffer);
 

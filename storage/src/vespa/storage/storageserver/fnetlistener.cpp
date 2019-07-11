@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/transport.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -16,7 +17,9 @@ namespace storage {
 
 FNetListener::FNetListener(MessageEnqueuer& messageEnqueuer, const config::ConfigUri & configUri, uint32_t port)
     : _messageEnqueuer(messageEnqueuer),
-      _orb(std::make_unique<FRT_Supervisor>()),
+      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _closed(false),
       _slobrokRegister(*_orb, configUri)
 {
@@ -26,7 +29,7 @@ FNetListener::FNetListener(MessageEnqueuer& messageEnqueuer, const config::Confi
         ost << "Failed to listen to RPC port " << port << ".";
         throw vespalib::IllegalStateException(ost.str(), VESPA_STRLOC);
     }
-    _orb->Start();
+    _transport->Start(_threadPool.get());
 }
 
 FNetListener::~FNetListener()
@@ -57,7 +60,7 @@ FNetListener::close()
 {
     _closed = true;
     _slobrokRegister.unregisterName(_handle);
-    _orb->ShutDown(true);
+    _transport->ShutDown(true);
 }
 
 void

@@ -80,7 +80,7 @@ struct SpecList
 bool
 compare(MirrorAPI &api, const char *pattern, SpecList expect)
 {
-    for (int i = 0; i < 250; ++i) {
+    for (int i = 0; i < 600; ++i) {
         SpecList actual(api.lookup(pattern));
         if (actual == expect) {
             return true;
@@ -97,8 +97,8 @@ Test::Main()
 {
     TEST_INIT("configure_test");
 
-    FRT_Supervisor orb1;
-    FRT_Supervisor orb2;
+    fnet::frt::StandaloneFRT orb1;
+    fnet::frt::StandaloneFRT orb2;
 
     config::ConfigSet set;
     cloud::config::SlobroksConfigBuilder srv1Builder;
@@ -141,18 +141,16 @@ Test::Main()
     SlobrokServer serverOne(srvConfig1);
     SlobrokServer serverTwo(srvConfig2);
 
-    MirrorAPI mirror1(orb1, cliConfig3); // NB this one will be changed
-    MirrorAPI mirror2(orb2, cliConfig2);
+    MirrorAPI mirror1(orb1.supervisor(), cliConfig3); // NB this one will be changed
+    MirrorAPI mirror2(orb2.supervisor(), cliConfig2);
 
-    RegisterAPI reg1(orb1, cliConfig1);
-    RegisterAPI reg2(orb2, cliConfig2);
+    RegisterAPI reg1(orb1.supervisor(), cliConfig1);
+    RegisterAPI reg2(orb2.supervisor(), cliConfig2);
 
-    orb1.Listen(18526);
-    orb2.Listen(18527);
-    std::string myspec1 = createSpec(orb1.GetListenPort());
-    std::string myspec2 = createSpec(orb2.GetListenPort());
-    orb1.Start();
-    orb2.Start();
+    orb1.supervisor().Listen(18526);
+    orb2.supervisor().Listen(18527);
+    std::string myspec1 = createSpec(orb1.supervisor().GetListenPort());
+    std::string myspec2 = createSpec(orb2.supervisor().GetListenPort());
 
     reg1.registerName("A");
     reg2.registerName("B");
@@ -183,16 +181,14 @@ Test::Main()
     reg1.registerName("A");
     reg2.registerName("B");
 
-    FRT_Supervisor orb3;
-    FRT_Supervisor orb4;
-    RegisterAPI  reg3(orb3, cliConfig1);
-    RegisterAPI  reg4(orb4, cliConfig2);
-    orb3.Listen(18528);
-    orb4.Listen(18529);
-    std::string myspec3 = createSpec(orb3.GetListenPort());
-    std::string myspec4 = createSpec(orb4.GetListenPort());
-    orb3.Start();
-    orb4.Start();
+    fnet::frt::StandaloneFRT orb3;
+    fnet::frt::StandaloneFRT orb4;
+    RegisterAPI  reg3(orb3.supervisor(), cliConfig1);
+    RegisterAPI  reg4(orb4.supervisor(), cliConfig2);
+    orb3.supervisor().Listen(18528);
+    orb4.supervisor().Listen(18529);
+    std::string myspec3 = createSpec(orb3.supervisor().GetListenPort());
+    std::string myspec4 = createSpec(orb4.supervisor().GetListenPort());
     reg3.registerName("B");
     reg4.registerName("A");
 
@@ -217,9 +213,5 @@ Test::Main()
     serverOne.stop();
     serverTwo.stop();
 
-    orb1.ShutDown(true);
-    orb2.ShutDown(true);
-    orb3.ShutDown(true);
-    orb4.ShutDown(true);
     TEST_DONE();
 }

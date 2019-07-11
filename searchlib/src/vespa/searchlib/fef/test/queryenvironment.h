@@ -6,10 +6,9 @@
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/location.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
+#include <unordered_map>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 /**
  * Implementation of the IQueryEnvironment interface used for testing.
@@ -25,6 +24,7 @@ private:
     Properties                  _properties;
     Location                    _location;
     search::attribute::IAttributeContext::UP _attrCtx;
+    std::unordered_map<std::string, double> _avg_field_lengths;
 
 public:
     /**
@@ -40,6 +40,13 @@ public:
     const ITermData *getTerm(uint32_t idx) const override { return idx < _terms.size() ? &_terms[idx] : NULL; }
     const Location & getLocation() const override { return _location; }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
+    double get_average_field_length(const vespalib::string& field_name) const override {
+        auto itr = _avg_field_lengths.find(field_name);
+        if (itr != _avg_field_lengths.end()) {
+            return itr->second;
+        }
+        return 1.0;
+    }
     const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != NULL); return *_indexEnv; }
 
     /** Returns a reference to the index environment of this. */
@@ -76,9 +83,9 @@ public:
 
     /** Returns a reference to the location of this. */
     Location & getLocation() { return _location; }
+
+    std::unordered_map<std::string, double>& get_avg_field_lengths() { return _avg_field_lengths; }
 };
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}
 

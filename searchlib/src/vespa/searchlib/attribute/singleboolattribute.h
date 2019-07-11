@@ -101,6 +101,7 @@ protected:
         return false;
     }
 private:
+    void ensureRoom(DocId docIdLimit);
     int8_t getFromEnum(EnumHandle) const override {
         return 0;
     }

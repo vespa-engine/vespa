@@ -16,6 +16,7 @@ import java.util.function.Consumer;
  * @author ollivir
  */
 public class MapConverter {
+
     public static void convertMapTensors(Map<String, Object> map, Consumer<TensorProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
@@ -26,7 +27,7 @@ public class MapConverter {
         }
     }
 
-    public static void convertMapStrings(Map<String, Object> map, Consumer<StringProperty.Builder> inserter) {
+    public static void convertMapPrimitives(Map<String, Object> map, Consumer<StringProperty.Builder> inserter) {
         for (var entry : map.entrySet()) {
             var value = entry.getValue();
             if (!(value instanceof Tensor)) {
@@ -66,4 +67,5 @@ public class MapConverter {
             }
         }
     }
+
 }

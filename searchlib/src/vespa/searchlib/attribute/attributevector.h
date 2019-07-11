@@ -13,13 +13,13 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/address_space.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/fastos/time.h>
 #include <cmath>
 #include <mutex>
@@ -378,8 +378,8 @@ protected:
         return value;
     }
 
-    virtual AddressSpace getEnumStoreAddressSpaceUsage() const;
-    virtual AddressSpace getMultiValueAddressSpaceUsage() const;
+    virtual vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const;
+    virtual vespalib::AddressSpace getMultiValueAddressSpaceUsage() const;
     void logEnumStoreEvent(const char *reason, const char *stage);
 
 public:
@@ -662,7 +662,7 @@ public:
 
     static bool isEnumerated(const vespalib::GenericHeader &header);
 
-    virtual MemoryUsage getChangeVectorMemoryUsage() const;
+    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
 };
 
 }

@@ -58,7 +58,7 @@ public class ApplicationBuilderTest {
         expectedException.expectMessage(containsString("build method"));
 
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.servicesXml("<jdisc version=\"1.0\" />");
+        builder.servicesXml("<container version=\"1.0\" />");
         try (Application application = builder.build()) {
             // do nothing
         }

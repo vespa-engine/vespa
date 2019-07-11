@@ -36,7 +36,7 @@ public class NodeTypeProvisioningTest {
     private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
     private final ClusterSpec clusterSpec = ClusterSpec.request(
-            ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
+            ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
 
     @Before
     public void setup() {
@@ -109,7 +109,7 @@ public class NodeTypeProvisioningTest {
 
         Node nodeToRetire = tester.nodeRepository().getNodes(NodeType.proxy, Node.State.active).get(5);
         { // Pick out a node and retire it
-            tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)));
+            tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)), () -> {});
 
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(11, hosts.size());
@@ -178,7 +178,7 @@ public class NodeTypeProvisioningTest {
         String currentyRetiringHostname;
         {
             nodesToRetire.forEach(nodeToRetire ->
-                    tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true))));
+                    tester.nodeRepository().write(nodeToRetire.with(nodeToRetire.status().withWantToRetire(true)), () -> {}));
 
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(11, hosts.size());

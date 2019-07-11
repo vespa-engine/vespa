@@ -9,32 +9,31 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
  * Special words known by the index used for marking things.
  * The reserved word itself is not public, while a symbol representation is.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class MarkerWordItem extends WordItem {
 
-    /** Creates a special word item which marks the start of a host name */
-    public static WordItem createStartOfHost() {
-        return new MarkerWordItem("^", UrlTokenizer.TERM_STARTHOST);
-    }
+    private final String markerWord;
 
-    /** Creates a special word item which marks the end of a host name */
-    public static WordItem createEndOfHost() {
-        return new MarkerWordItem("$", UrlTokenizer.TERM_ENDHOST);
-    }
+    private final static String startAnchor = "^";
+    private final static String endAnchor = "$";
 
-    private String markerWord;
-
-    private MarkerWordItem(String publicSymbol, String markerWord) {
-        super(publicSymbol);
+    private MarkerWordItem(String publicSymbol, String markerWord, String indexName) {
+        super(publicSymbol, indexName);
         this.markerWord = markerWord;
     }
 
+    public boolean isStartAnchor() { return getWord().equals(startAnchor); }
+
+    public boolean isEndAnchor() { return getWord().equals(endAnchor); }
+
     /** Returns the marker word for encoding */
+    @Override
     protected String getEncodedWord() {
         return markerWord;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!super.equals(o)) {
             return false;
@@ -48,6 +47,7 @@ public class MarkerWordItem extends WordItem {
         return markerWord.equals(other.markerWord);
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() + 499 * markerWord.hashCode();
     }
@@ -57,4 +57,25 @@ public class MarkerWordItem extends WordItem {
         super.disclose(discloser);
         discloser.addProperty("markerWord", markerWord);
     }
+
+    /** Creates a special word item which marks the start of a host name */
+    public static MarkerWordItem createStartOfHost(String indexName) {
+        return new MarkerWordItem(startAnchor, UrlTokenizer.TERM_STARTHOST, indexName);
+    }
+
+    /** Creates a special word item which marks the start of a host name, matching the default index */
+    public static MarkerWordItem createStartOfHost() {
+        return createStartOfHost("");
+    }
+
+    /** Creates a special word item which marks the end of a host name */
+    public static MarkerWordItem createEndOfHost(String indexName) {
+        return new MarkerWordItem(endAnchor, UrlTokenizer.TERM_ENDHOST, indexName);
+    }
+
+    /** Creates a special word item which marks the end of a host name matching the default index */
+    public static MarkerWordItem createEndOfHost() {
+        return createEndOfHost("");
+    }
+
 }

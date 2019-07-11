@@ -16,7 +16,7 @@ import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
+import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -54,13 +54,11 @@ public class LocalSessionTest {
     private Curator curator;
     private ConfigCurator configCurator;
     private TenantFileSystemDirs tenantFileSystemDirs;
-    private SuperModelGenerationCounter superModelGenerationCounter;
 
     @Before
     public void setupTest() {
         curator = new MockCurator();
         configCurator = ConfigCurator.create(curator);
-        superModelGenerationCounter = new SuperModelGenerationCounter(curator);
         tenantFileSystemDirs = new TenantFileSystemDirs(Files.createTempDir(), TenantName.from("test_tenant"));
     }
 
@@ -130,11 +128,9 @@ public class LocalSessionTest {
         String sessionNode = TenantRepository.getSessionsPath(tenantName).append(String.valueOf(3)).getAbsolute();
         assertTrue(configCurator.exists(sessionNode));
         assertTrue(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
-        long gen = superModelGenerationCounter.get();
         NestedTransaction transaction = new NestedTransaction();
         session.delete(transaction);
         transaction.commit();
-        assertThat(superModelGenerationCounter.get(), is(gen + 1));
         assertFalse(configCurator.exists(sessionNode));
         assertFalse(new File(tenantFileSystemDirs.sessionsPath(), "3").exists());
     }
@@ -196,7 +192,7 @@ public class LocalSessionTest {
         zkClient.write(Collections.singletonMap(new Version(0, 0, 0), new MockFileRegistry()));
         File sessionDir = new File(tenantFileSystemDirs.sessionsPath(), String.valueOf(sessionId));
         sessionDir.createNewFile();
-        TenantApplications applications = TenantApplications.create(curator, new MockReloadHandler(), tenant);
+        TenantApplications applications = TenantApplications.create(new TestComponentRegistry.Builder().curator(curator).build(), new MockReloadHandler(), tenant);
         applications.createApplication(zkc.readApplicationId());
         return new LocalSession(tenant, sessionId, preparer,
                 new SessionContext(
@@ -205,7 +201,6 @@ public class LocalSessionTest {
                         sessionDir,
                         applications,
                         new HostRegistry<>(),
-                        superModelGenerationCounter,
                         flagSource));
     }
 

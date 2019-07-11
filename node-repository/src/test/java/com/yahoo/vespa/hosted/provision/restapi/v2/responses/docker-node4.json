@@ -9,7 +9,6 @@
   "canonicalFlavor": "large",
   "minDiskAvailableGb": 1600.0,
   "minMainMemoryAvailableGb": 32.0,
-  "description": "Flavor-name-is-large",
   "minCpuCores": 4.0,
   "fastDisk": true,
   "bandwidth":0.0,
@@ -60,12 +59,12 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.103.1",
+    "::103:1"
   ],
   "additionalIpAddresses": [
-    "::2",
-    "::3",
-    "::4"
+    "::103:2",
+    "::103:3",
+    "::103:4"
   ]
 }

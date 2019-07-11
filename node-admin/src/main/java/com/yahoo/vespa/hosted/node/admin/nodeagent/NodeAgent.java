@@ -13,29 +13,24 @@ public interface NodeAgent {
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
      * striving to make the current state equal to the wanted state.
      */
-    void start();
+    void start(NodeAgentContext context);
 
     /**
      * Stop the node in anticipation of host suspension, e.g. reboot or docker upgrade.
      */
-    void stopForHostSuspension();
+    void stopForHostSuspension(NodeAgentContext context);
 
     /**
      * Signals to the agent that the node is at the end of its lifecycle and no longer needs a managing agent.
      * Cleans up any resources the agent owns, such as threads, connections etc. Cleanup is synchronous; when this
      * method returns, no more actions will be taken by the agent.
      */
-    void stopForRemoval();
+    void stopForRemoval(NodeAgentContext context);
 
     /**
      * Updates metric receiver with the latest node-agent stats
      */
-    void updateContainerNodeMetrics();
-
-    /**
-     * Returns true if NodeAgent is waiting for an image download to finish
-     */
-    boolean isDownloadingImage();
+    default void updateContainerNodeMetrics(NodeAgentContext context) {}
 
     /**
      * Returns and resets number of unhandled exceptions

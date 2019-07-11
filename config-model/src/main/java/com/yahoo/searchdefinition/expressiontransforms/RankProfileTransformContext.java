@@ -3,7 +3,9 @@ package com.yahoo.searchdefinition.expressiontransforms;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 
@@ -28,7 +30,7 @@ public class RankProfileTransformContext extends TransformContext {
                                        ImportedMlModels importedModels,
                                        Map<String, Value> constants,
                                        Map<String, RankProfile.RankingExpressionFunction> inlineFunctions) {
-        super(constants);
+        super(constants, rankProfile.typeContext(queryProfiles));
         this.rankProfile = rankProfile;
         this.queryProfiles = queryProfiles;
         this.importedModels = importedModels;

@@ -25,10 +25,10 @@
       "url": "http://localhost:8080/nodes/v2/state/active",
       "nodes": [
         @include(node6.json),
+        @include(docker-container1.json),
         @include(node13.json),
         @include(node2.json),
         @include(node14.json),
-        @include(docker-container1.json),
         @include(node4.json),
         @include(docker-node4.json),
         @include(docker-node5.json),

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types.test;
 
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.profile.QueryProfile;
@@ -50,6 +51,12 @@ public class NameTestCase {
         assertIllegalFieldName("aBc.dooEee.ce_d.-some-other.moreHere",
                                "Could not set 'aBc.dooEee.ce_d.-some-other.moreHere' to 'anyValue'",
                                "Illegal name '-some-other'");
+    }
+
+    @Test
+    public void testComponentIdAsCompoundName() {
+        String name = "a/b";
+        assertEquals(new CompoundName(name), new QueryProfileType(name).getComponentIdAsCompoundName());
     }
 
     private void assertLegalName(String name) {

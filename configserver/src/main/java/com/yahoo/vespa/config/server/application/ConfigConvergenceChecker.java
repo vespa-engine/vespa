@@ -7,7 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.glassfish.jersey.client.ClientProperties;
@@ -22,13 +22,12 @@ import javax.ws.rs.client.WebTarget;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
@@ -43,17 +42,17 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER
  */
 public class ConfigConvergenceChecker extends AbstractComponent {
 
-    private static final ApplicationId routingApplicationId = ApplicationId.from("hosted-vespa", "routing", "default");
+    private static final Logger log = Logger.getLogger(ConfigConvergenceChecker.class.getName());
     private static final String statePath = "/state/v1/";
     private static final String configSubPath = "config";
-    private final static Set<String> serviceTypesToCheck = new HashSet<>(Arrays.asList(
+    private final static Set<String> serviceTypesToCheck = Set.of(
             CONTAINER.serviceName,
             QRSERVER.serviceName,
             LOGSERVER_CONTAINER.serviceName,
             "searchnode",
             "storagenode",
             "distributor"
-    ));
+    );
 
     private final StateApiFactory stateApiFactory;
 
@@ -68,11 +67,11 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     /** Check all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
+        log.log(LogLevel.DEBUG, () -> "Finding services to check config convergence for in '" + application);
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
                    .forEach(host -> host.getServices().stream()
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
-                                        .filter(service -> ! isHostAdminService(application.getId(), service))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
         Map<ServiceInfo, Long> currentGenerations = getServiceGenerations(servicesToCheck, timeoutPerService);
@@ -174,13 +173,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private static StateApi createStateApi(Client client, URI uri) {
         WebTarget target = client.target(uri);
         return WebResourceFactory.newResource(StateApi.class, target);
-    }
-
-    private static boolean isHostAdminService(ApplicationId id, ServiceInfo service) {
-        return routingApplicationId.equals(id)
-               && service.getProperty("clustername")
-                         .map("node-admin"::equals)
-                         .orElse(false);
     }
 
     private static class ServiceListResponse extends JSONResponse {

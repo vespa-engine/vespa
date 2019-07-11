@@ -49,17 +49,15 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
     }
 }
 
-PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition()
-{
-}
+PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition() = default;
 
 PendingBucketSpaceDbTransition::Range
 PendingBucketSpaceDbTransition::skipAllForSameBucket()
 {
     Range r(_iter, _iter);
 
-    for (document::BucketId& bid = _entries[_iter].bucketId;
-         _iter < _entries.size() && _entries[_iter].bucketId == bid;
+    for (uint64_t bkey = _entries[_iter].bucket_key;
+         (_iter < _entries.size()) && (_entries[_iter].bucket_key == bkey);
          ++_iter)
     {
     }
@@ -93,14 +91,9 @@ PendingBucketSpaceDbTransition::insertInfo(BucketDatabase::Entry& info, const Ra
     std::vector<uint16_t> order(
             dist.getIdealStorageNodes(
                     _newClusterState,
-                    _entries[range.first].bucketId,
+                    _entries[range.first].bucket_id(),
                     _clusterInfo->getStorageUpStates()));
     info->addNodes(copiesToAddOrUpdate, order, TrustedUpdate::DEFER);
-
-    LOG_BUCKET_OPERATION_NO_LOCK(
-            _entries[range.first].bucketId,
-            vespalib::make_string("insertInfo: %s",
-                                        info.toString().c_str()));
 }
 
 std::string
@@ -139,21 +132,29 @@ PendingBucketSpaceDbTransition::removeCopiesFromNodesThatWereRequested(BucketDat
 }
 
 bool
-PendingBucketSpaceDbTransition::databaseIteratorHasPassedBucketInfoIterator(const document::BucketId& bucketId) const
+PendingBucketSpaceDbTransition::databaseIteratorHasPassedBucketInfoIterator(uint64_t bucket_key) const
 {
-    return (_iter < _entries.size()
-            && _entries[_iter].bucketId.toKey() < bucketId.toKey());
+    return ((_iter < _entries.size())
+            && (_entries[_iter].bucket_key < bucket_key));
 }
 
 bool
-PendingBucketSpaceDbTransition::bucketInfoIteratorPointsToBucket(const document::BucketId& bucketId) const
+PendingBucketSpaceDbTransition::bucketInfoIteratorPointsToBucket(uint64_t bucket_key) const
 {
-    return _iter < _entries.size() && _entries[_iter].bucketId == bucketId;
+    return _iter < _entries.size() && _entries[_iter].bucket_key == bucket_key;
 }
 
-bool
-PendingBucketSpaceDbTransition::process(BucketDatabase::Entry& e)
-{
+using MergeResult = BucketDatabase::MergingProcessor::Result;
+
+MergeResult PendingBucketSpaceDbTransition::merge(BucketDatabase::Merger& merger) {
+    const uint64_t bucket_key = merger.bucket_key();
+
+    while (databaseIteratorHasPassedBucketInfoIterator(bucket_key)) {
+        LOG(spam, "Found new bucket %s, adding", _entries[_iter].bucket_id().toString().c_str());
+        addToMerger(merger, skipAllForSameBucket());
+    }
+
+    auto& e = merger.current_entry();
     document::BucketId bucketId(e.getBucketId());
 
     LOG(spam,
@@ -162,19 +163,10 @@ PendingBucketSpaceDbTransition::process(BucketDatabase::Entry& e)
         bucketId.toString().c_str(),
         e.getBucketInfo().toString().c_str());
 
-    while (databaseIteratorHasPassedBucketInfoIterator(bucketId)) {
-        LOG(spam, "Found new bucket %s, adding",
-            _entries[_iter].bucketId.toString().c_str());
-
-        _missingEntries.push_back(skipAllForSameBucket());
-    }
-
     bool updated(removeCopiesFromNodesThatWereRequested(e, bucketId));
 
-    if (bucketInfoIteratorPointsToBucket(bucketId)) {
-        LOG(spam, "Updating bucket %s",
-            _entries[_iter].bucketId.toString().c_str());
-
+    if (bucketInfoIteratorPointsToBucket(bucket_key)) {
+        LOG(spam, "Updating bucket %s", _entries[_iter].bucket_id().toString().c_str());
         insertInfo(e, skipAllForSameBucket());
         updated = true;
     }
@@ -182,37 +174,57 @@ PendingBucketSpaceDbTransition::process(BucketDatabase::Entry& e)
     if (updated) {
         // Remove bucket if we've previously removed all nodes from it
         if (e->getNodeCount() == 0) {
-            _removedBuckets.push_back(bucketId);
+            return MergeResult::Skip;
         } else {
             e.getBucketInfo().updateTrusted();
+            return MergeResult::Update;
         }
     }
 
-    LOG(spam,
-        "After merging info from nodes [%s], bucket %s had info %s",
-        requestNodesToString().c_str(),
-        bucketId.toString().c_str(),
-        e.getBucketInfo().toString().c_str());
+    return MergeResult::KeepUnchanged;
+}
 
-    return true;
+void PendingBucketSpaceDbTransition::insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) {
+    while (_iter < _entries.size()) {
+        addToInserter(inserter, skipAllForSameBucket());
+    }
 }
 
 void
-PendingBucketSpaceDbTransition::addToBucketDB(BucketDatabase& db, const Range& range)
+PendingBucketSpaceDbTransition::addToMerger(BucketDatabase::Merger& merger, const Range& range)
 {
     LOG(spam, "Adding new bucket %s with %d copies",
-        _entries[range.first].bucketId.toString().c_str(),
+        _entries[range.first].bucket_id().toString().c_str(),
         range.second - range.first);
 
-    BucketDatabase::Entry e(_entries[range.first].bucketId, BucketInfo());
+    BucketDatabase::Entry e(_entries[range.first].bucket_id(), BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
         e->setLastGarbageCollectionTime(
                 framework::MicroSecTime(_creationTimestamp)
-                    .getSeconds().getTime());
+                        .getSeconds().getTime());
     }
     e.getBucketInfo().updateTrusted();
-    db.update(e);
+    merger.insert_before_current(e);
+}
+
+void
+PendingBucketSpaceDbTransition::addToInserter(BucketDatabase::TrailingInserter& inserter, const Range& range)
+{
+    // TODO dedupe
+    LOG(spam, "Adding new bucket %s with %d copies",
+        _entries[range.first].bucket_id().toString().c_str(),
+        range.second - range.first);
+
+    BucketDatabase::Entry e(_entries[range.first].bucket_id(), BucketInfo());
+    insertInfo(e, range);
+    if (e->getLastGarbageCollectionTime() == 0) {
+        e->setLastGarbageCollectionTime(
+                framework::MicroSecTime(_creationTimestamp)
+                        .getSeconds().getTime());
+    }
+    e.getBucketInfo().updateTrusted();
+    inserter.insert_at_end(e);
 }
 
 void
@@ -220,22 +232,7 @@ PendingBucketSpaceDbTransition::mergeIntoBucketDatabase()
 {
     BucketDatabase &db(_distributorBucketSpace.getBucketDatabase());
     std::sort(_entries.begin(), _entries.end());
-
-    db.forEach(*this);
-
-    for (uint32_t i = 0; i < _removedBuckets.size(); ++i) {
-        db.remove(_removedBuckets[i]);
-    }
-    _removedBuckets.clear();
-
-    // All of the remaining were not already in the bucket database.
-    while (_iter < _entries.size()) {
-        _missingEntries.push_back(skipAllForSameBucket());
-    }
-
-    for (uint32_t i = 0; i < _missingEntries.size(); ++i) {
-        addToBucketDB(db, _missingEntries[i]);
-    }
+    db.merge(*this);
 }
 
 void

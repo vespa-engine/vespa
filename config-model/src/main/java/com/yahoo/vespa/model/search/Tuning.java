@@ -62,7 +62,8 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
         public enum IoType {
             NORMAL("NORMAL"),
             DIRECTIO("DIRECTIO"),
-            MMAP("MMAP");
+            MMAP("MMAP"),
+            POPULATE("POPULATE");
 
             public final String name;
 
@@ -183,6 +184,11 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     if (read != null) {
                         builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
                     }
+                    if (search != null) {
+                        if (search.equals(IoType.POPULATE)) {
+                            builder.search.mmap.options.add(ProtonConfig.Search.Mmap.Options.POPULATE);
+                        }
+                    }
                 }
             }
             public static class Warmup implements ProtonConfig.Producer {
@@ -242,7 +248,12 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                         builder.write.io(ProtonConfig.Summary.Write.Io.Enum.valueOf(write.name));
                     }
                     if (read != null) {
-                        builder.read.io(ProtonConfig.Summary.Read.Io.Enum.valueOf(read.name));
+                        if (read.equals(IoType.POPULATE)) {
+                            builder.read.io(ProtonConfig.Summary.Read.Io.MMAP);
+                            builder.read.mmap.options.add(ProtonConfig.Summary.Read.Mmap.Options.POPULATE);
+                        } else {
+                            builder.read.io(ProtonConfig.Summary.Read.Io.Enum.valueOf(read.name));
+                        }
                     }
                 }
             }

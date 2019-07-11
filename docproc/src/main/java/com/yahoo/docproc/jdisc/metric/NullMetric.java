@@ -6,9 +6,10 @@ import com.yahoo.jdisc.Metric;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class NullMetric implements Metric {
+
     @Override
     public void set(String key, Number val, Context ctx) {
     }
@@ -25,4 +26,5 @@ public class NullMetric implements Metric {
     private static class NullContext implements Context {
         private static final NullContext INSTANCE = new NullContext();
     }
+
 }

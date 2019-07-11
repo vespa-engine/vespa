@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "memoryusage.h"
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace search {
 
@@ -13,17 +13,17 @@ namespace search {
 class SearchableStats
 {
 private:
-    MemoryUsage _memoryUsage;
+    vespalib::MemoryUsage _memoryUsage;
     size_t _docsInMemory;
     size_t _sizeOnDisk;
 
 public:
     SearchableStats() : _memoryUsage(), _docsInMemory(0), _sizeOnDisk(0) {}
-    SearchableStats &memoryUsage(const MemoryUsage &usage) {
+    SearchableStats &memoryUsage(const vespalib::MemoryUsage &usage) {
         _memoryUsage = usage;
         return *this;
     }
-    const MemoryUsage &memoryUsage() const { return _memoryUsage; }
+    const vespalib::MemoryUsage &memoryUsage() const { return _memoryUsage; }
     SearchableStats &docsInMemory(size_t value) {
         _docsInMemory = value;
         return *this;

@@ -8,7 +8,7 @@
 
 namespace vespalib::tensor {
 
-using XWInput = DenseTensorView::CellsRef;
+using XWInput = ConstArrayRef<double>;
 using XWOutput = ArrayRef<double>;
 
 /**

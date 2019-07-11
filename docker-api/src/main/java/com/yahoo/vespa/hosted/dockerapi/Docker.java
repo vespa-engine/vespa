@@ -70,8 +70,6 @@ public interface Docker {
 
     void updateContainer(ContainerName containerName, ContainerResources containerResources);
 
-    List<Container> getAllContainersManagedBy(String manager);
-
     Optional<Container> getContainer(ContainerName containerName);
 
     /**
@@ -83,9 +81,8 @@ public interface Docker {
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
 
-    /**
-     * Deletes the local images that are currently not in use by any container and not recently used.
-     */
+    boolean noManagedContainersRunning(String manager);
+
     boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**

@@ -12,6 +12,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;

@@ -1,23 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdslib/thread/taskscheduler.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace vdslib {
-
-struct TaskSchedulerTest : public CppUnit::TestFixture {
-    void testSimple();
-    void testMultipleTasksAtSameTime();
-    void testRemoveTask();
-
-    CPPUNIT_TEST_SUITE(TaskSchedulerTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST(testMultipleTasksAtSameTime);
-    CPPUNIT_TEST(testRemoveTask);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(TaskSchedulerTest);
 
 namespace {
 
@@ -106,10 +92,9 @@ std::string join(std::vector<std::string>& v) {
     return ost.str();
 }
 
-} // End of anonymous namespace
+}
 
-void
-TaskSchedulerTest::testSimple()
+TEST(TaskSchedulerTest, test_simple)
 {
     FastOS_ThreadPool threadPool(128 * 1024);
     TestWatch watch(0);
@@ -127,7 +112,7 @@ TaskSchedulerTest::testSimple()
         task->registerCallsWithName("", calls);
         scheduler.add(TestTask::UP(task));
         scheduler.waitForTaskCounterOfAtLeast(counter + 1);
-        CPPUNIT_ASSERT_EQUAL(std::string("0"), join(calls));
+        EXPECT_EQ(std::string("0"), join(calls));
         scheduler.waitUntilNoTasksRemaining(); // Ensure task is complete
     }
         // Test that task is repeated at intervals if wanted.
@@ -142,8 +127,8 @@ TaskSchedulerTest::testSimple()
             scheduler.waitForTaskCounterOfAtLeast(counter + i);
             watch.increment(100);
         }
-        CPPUNIT_ASSERT_EQUAL(std::string("0,110,220,330,440"),
-                             join(calls));
+        EXPECT_EQ(std::string("0,110,220,330,440"),
+                  join(calls));
         scheduler.waitUntilNoTasksRemaining(); // Ensure task is complete
     }
         // Test that task scheduled at specific time works, and that if
@@ -158,23 +143,22 @@ TaskSchedulerTest::testSimple()
         watch.increment(49); // Not yet time to run
         FastOS_Thread::Sleep(5);
             // Check that it has not run yet..
-        CPPUNIT_ASSERT_EQUAL(counter, scheduler.getTaskCounter());
+        EXPECT_EQ(counter, scheduler.getTaskCounter());
         watch.increment(10); // Now time is enough for it to run
         scheduler.waitForTaskCounterOfAtLeast(counter + 1);
         watch.increment(10);
         FastOS_Thread::Sleep(5);
             // Check that it has not run yet..
-        CPPUNIT_ASSERT_EQUAL(counter + 1, scheduler.getTaskCounter());
+        EXPECT_EQ(counter + 1, scheduler.getTaskCounter());
         watch.increment(50);
         scheduler.waitForTaskCounterOfAtLeast(counter + 2);
-        CPPUNIT_ASSERT_EQUAL(std::string("59,129,129,129"),
-                             join(calls));
+        EXPECT_EQ(std::string("59,129,129,129"),
+                  join(calls));
         scheduler.waitUntilNoTasksRemaining(); // Ensure task is complete
     }
 }
 
-void
-TaskSchedulerTest::testMultipleTasksAtSameTime()
+TEST(TaskSchedulerTest, test_multiple_tasks_at_same_time)
 {
     FastOS_ThreadPool threadPool(128 * 1024);
     TestWatch watch(0);
@@ -200,19 +184,18 @@ TaskSchedulerTest::testMultipleTasksAtSameTime()
         std::ostringstream ost;
         for (size_t i=0; i<calls.size(); ++i) ost << calls[i] << "\n";
 
-        CPPUNIT_ASSERT_EQUAL(std::string(
-                    "10 task1\n"
-                    "10 task2\n"
-                    "10 task1\n"
-                    "10 task2\n"
-                    "10 task1\n"
-                    "10 task2\n"
-                ), ost.str());
+        EXPECT_EQ(std::string(
+                          "10 task1\n"
+                          "10 task2\n"
+                          "10 task1\n"
+                          "10 task2\n"
+                          "10 task1\n"
+                          "10 task2\n"
+                  ), ost.str());
     }
 }
 
-void
-TaskSchedulerTest::testRemoveTask()
+TEST(TaskSchedulerTest, test_remove_task)
 {
     FastOS_ThreadPool threadPool(128 * 1024);
     TestWatch watch(0);
@@ -236,7 +219,7 @@ TaskSchedulerTest::testRemoveTask()
         scheduler.remove(task);
         delete task;
             // Time should not be advanced as task didn't get to run
-        CPPUNIT_ASSERT_EQUAL(0, (int) watch.getTime());
+        EXPECT_EQ(0, (int) watch.getTime());
     }
 }
 

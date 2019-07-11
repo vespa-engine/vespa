@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -22,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,9 +31,9 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * <p>A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
- * index through indexing and how data from documents should be served at search time.</p> <p>The identity of this
- * class is its name.</p>
+ * A search definition describes (or uses) some document types, defines how these are turned into a relevancy tuned
+ * index through indexing and how data from documents should be served at search time. The identity of this
+ * class is its name.
  *
  * @author bratseth
  */
@@ -55,32 +53,30 @@ public class Search implements Serializable, ImmutableSearch {
         return RESERVED_NAMES.contains(name);
     }
 
-    // Field sets
     private FieldSets fieldSets = new FieldSets();
 
-    // The unique name of this search definition.
+    /** The unique name of this search definition */
     private String name;
 
-    // True if this doesn't define a search, just some documents.
+    /** True if this doesn't define a search, just a document type */
     private boolean documentsOnly = false;
 
-    // The stemming setting of this search definition. Default is BEST.
+    /** The stemming setting of this search definition. Default is BEST. */
     private Stemming stemming = Stemming.BEST;
 
-    // Documents contained in this definition.
+    /** Documents contained in this definition */
     private SDDocumentType docType;
 
-    // The extra fields of this search definition.
+    /** The extra fields of this search definition */
     private Map<String, SDField> fields = new LinkedHashMap<>();
 
-    // The explicitly defined indices of this search definition.
+    /** The explicitly defined indices of this search definition */
     private Map<String, Index> indices = new LinkedHashMap<>();
 
-    // The explicitly defined summaries of this search definition.
-    // _Must_ preserve order
+    /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
     private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
-    // Ranking constants of this
+    /** Ranking constants of this */
     private RankingConstants rankingConstants = new RankingConstants();
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());

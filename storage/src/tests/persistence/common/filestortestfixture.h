@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/testhelper.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
@@ -9,10 +8,11 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage {
 
-class FileStorTestFixture : public CppUnit::TestFixture
+class FileStorTestFixture : public ::testing::Test
 {
 public:
     static spi::LoadType defaultLoadType;
@@ -26,8 +26,8 @@ public:
     typedef uint32_t DocumentIndex;
     typedef uint64_t PutTimestamp;
 
-    void setUp() override;
-    void tearDown() override;
+    void SetUp() override;
+    void TearDown() override;
     void setupPersistenceThreads(uint32_t diskCount);
     void createBucket(const document::BucketId& bid);
     bool bucketExistsInDb(const document::BucketId& bucket) const;
@@ -53,7 +53,7 @@ public:
 
     void
     expectNoReplies(DummyStorageLink& link) {
-        CPPUNIT_ASSERT_EQUAL(size_t(0), link.getNumReplies());
+        EXPECT_EQ(0, link.getNumReplies());
     }
 
     template <typename ReplyType>
@@ -65,12 +65,10 @@ public:
         api::StorageReply* reply(
                 dynamic_cast<ReplyType*>(link.getReply(0).get()));
         if (reply == 0) {
-            std::ostringstream ss;
-            ss << "got unexpected reply "
-            << link.getReply(0)->toString(true);
-            CPPUNIT_FAIL(ss.str());
+            FAIL() << "got unexpected reply "
+                   << link.getReply(0)->toString(true);
         }
-        CPPUNIT_ASSERT_EQUAL(result, reply->getResult().getResult());
+        EXPECT_EQ(result, reply->getResult().getResult());
     }
 
     template <typename ReplyType>
@@ -89,14 +87,12 @@ public:
     struct TestFileStorComponents
     {
     private:
-        TestName _testName;
         FileStorTestFixture& _fixture;
     public:
         DummyStorageLink top;
         FileStorManager* manager;
 
         TestFileStorComponents(FileStorTestFixture& fixture,
-                               const char* testName,
                                const StorageLinkInjector& i = NoOpStorageLinkInjector());
 
         void sendDummyGet(const document::BucketId& bid);

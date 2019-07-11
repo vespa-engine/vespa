@@ -80,25 +80,13 @@ FNET_ControlPacket::Print(uint32_t indent)
 }
 
 FNET_ControlPacket
-FNET_ControlPacket::NoCommand(FNET_CMD_NOCOMMAND);
-
-FNET_ControlPacket
 FNET_ControlPacket::ChannelLost(FNET_CMD_CHANNEL_LOST);
 
 FNET_ControlPacket
 FNET_ControlPacket::IOCAdd(FNET_CMD_IOC_ADD);
 
 FNET_ControlPacket
-FNET_ControlPacket::IOCEnableRead(FNET_CMD_IOC_ENABLE_READ);
-
-FNET_ControlPacket
-FNET_ControlPacket::IOCDisableRead(FNET_CMD_IOC_DISABLE_READ);
-
-FNET_ControlPacket
 FNET_ControlPacket::IOCEnableWrite(FNET_CMD_IOC_ENABLE_WRITE);
-
-FNET_ControlPacket
-FNET_ControlPacket::IOCDisableWrite(FNET_CMD_IOC_DISABLE_WRITE);
 
 FNET_ControlPacket
 FNET_ControlPacket::IOCHandshakeACT(FNET_CMD_IOC_HANDSHAKE_ACT);

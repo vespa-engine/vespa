@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.transaction.Mutex;
@@ -22,16 +24,26 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Performs activation of nodes for an application
+ * Performs activation of resources for an application. E.g. nodes or load balancers.
  *
  * @author bratseth
  */
 class Activator {
 
     private final NodeRepository nodeRepository;
+    private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
-    public Activator(NodeRepository nodeRepository) {
+    public Activator(NodeRepository nodeRepository, Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
+        this.loadBalancerProvisioner = loadBalancerProvisioner;
+    }
+
+    /** Activate required resources for given application */
+    public void activate(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction) {
+        try (Mutex lock = nodeRepository.lock(application)) {
+            activateNodes(application, hosts, transaction, lock);
+            activateLoadBalancers(application, hosts, lock);
+        }
     }
 
     /**
@@ -46,36 +58,50 @@ class Activator {
      * @param transaction Transaction with operations to commit together with any operations done within the repository.
      * @param application the application to allocate nodes for
      * @param hosts the hosts to make the set of active nodes of this
+     * @param applicationLock application lock that must be held when calling this
      */
-    public void activate(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction) {
-        try (Mutex lock = nodeRepository.lock(application)) {
-            Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
-            NodeList allNodes = nodeRepository.list();
-            NodeList applicationNodes = allNodes.owner(application);
+    private void activateNodes(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction,
+                               @SuppressWarnings("unused") Mutex applicationLock) {
+        Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
+        NodeList allNodes = nodeRepository.list();
+        NodeList applicationNodes = allNodes.owner(application);
 
-            List<Node> reserved = applicationNodes.state(Node.State.reserved).asList();
-            List<Node> reservedToActivate = retainHostsInList(hostnames, reserved);
-            List<Node> active = applicationNodes.state(Node.State.active).asList();
-            List<Node> continuedActive = retainHostsInList(hostnames, active);
-            List<Node> allActive = new ArrayList<>(continuedActive);
-            allActive.addAll(reservedToActivate);
-            if ( ! containsAll(hostnames, allActive))
-                throw new IllegalArgumentException("Activation of " + application + " failed. " +
-                                                   "Could not find all requested hosts." +
-                                                   "\nRequested: " + hosts +
-                                                   "\nReserved: " + toHostNames(reserved) +
-                                                   "\nActive: " + toHostNames(active) +
-                                                   "\nThis might happen if the time from reserving host to activation takes " +
-                                                   "longer time than reservation expiry (the hosts will then no longer be reserved)");
+        List<Node> reserved = applicationNodes.state(Node.State.reserved).asList();
+        List<Node> reservedToActivate = retainHostsInList(hostnames, reserved);
+        List<Node> active = applicationNodes.state(Node.State.active).asList();
+        List<Node> continuedActive = retainHostsInList(hostnames, active);
+        List<Node> allActive = new ArrayList<>(continuedActive);
+        allActive.addAll(reservedToActivate);
+        if (!containsAll(hostnames, allActive))
+            throw new IllegalArgumentException("Activation of " + application + " failed. " +
+                                               "Could not find all requested hosts." +
+                                               "\nRequested: " + hosts +
+                                               "\nReserved: " + toHostNames(reserved) +
+                                               "\nActive: " + toHostNames(active) +
+                                               "\nThis might happen if the time from reserving host to activation takes " +
+                                               "longer time than reservation expiry (the hosts will then no longer be reserved)");
 
-            validateParentHosts(application, allNodes, reservedToActivate);
+        validateParentHosts(application, allNodes, reservedToActivate);
 
-            List<Node> activeToRemove = removeHostsFromList(hostnames, active);
-            activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
-            nodeRepository.deactivate(activeToRemove, transaction);
-            nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
-            nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
-        }
+        List<Node> activeToRemove = removeHostsFromList(hostnames, active);
+        activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
+        nodeRepository.deactivate(activeToRemove, transaction);
+        nodeRepository.activate(updateFrom(hosts, continuedActive), transaction); // update active with any changes
+        nodeRepository.activate(updatePortsFrom(hosts, reservedToActivate), transaction);
+    }
+
+    /** Activate load balancers */
+    private void activateLoadBalancers(ApplicationId application, Collection<HostSpec> hosts,
+                                       @SuppressWarnings("unused") Mutex applicationLock) {
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, clustersOf(hosts)));
+    }
+
+    private static List<ClusterSpec> clustersOf(Collection<HostSpec> hosts) {
+        return hosts.stream()
+                    .map(HostSpec::membership)
+                    .flatMap(Optional::stream)
+                    .map(ClusterMembership::cluster)
+                    .collect(Collectors.toUnmodifiableList());
     }
 
     private static void validateParentHosts(ApplicationId application, NodeList nodes, List<Node> potentialChildren) {

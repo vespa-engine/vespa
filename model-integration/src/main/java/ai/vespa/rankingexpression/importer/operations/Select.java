@@ -81,8 +81,16 @@ public class Select extends IntermediateOperation {
         String bDim1 = bDimensions.get(1).name();
 
         // These tensors should have the same dimension names
-        renamer.addConstraint(aDim0, bDim0, DimensionRenamer::equals, this);
-        renamer.addConstraint(aDim1, bDim1, DimensionRenamer::equals, this);
+        renamer.addConstraint(aDim0, bDim0, DimensionRenamer.Constraint.equal(false), this);
+        renamer.addConstraint(aDim1, bDim1, DimensionRenamer.Constraint.equal(false), this);
     }
+
+    @Override
+    public Select withInputs(List<IntermediateOperation> inputs) {
+        return new Select(modelName(), name(), inputs);
+    }
+
+    @Override
+    public String operationName() { return "Select"; }
 
 }

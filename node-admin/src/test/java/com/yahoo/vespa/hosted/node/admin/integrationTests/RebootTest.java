@@ -52,9 +52,9 @@ public class RebootTest {
                 .hostname(hostname)
                 .wantedDockerImage(dockerImage)
                 .state(NodeState.active)
-                .nodeType(NodeType.tenant)
+                .type(NodeType.tenant)
                 .flavor("docker")
-                .vespaVersion(Version.fromString("6.50.0"))
+                .currentVespaVersion(Version.fromString("6.50.0"))
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
                 .build();

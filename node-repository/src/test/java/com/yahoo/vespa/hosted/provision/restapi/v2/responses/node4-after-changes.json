@@ -10,7 +10,6 @@
   "canonicalFlavor": "d-2-8-100",
   "minDiskAvailableGb": 100.0,
   "minMainMemoryAvailableGb": 8.0,
-  "description": "Flavor-name-is-d-2-8-100",
   "minCpuCores": 2.0,
   "fastDisk": true,
   "bandwidth":0.0,

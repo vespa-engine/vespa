@@ -3,15 +3,24 @@
 #include "fusion.h"
 #include "fieldreader.h"
 #include "dictionarywordreader.h"
+#include "field_length_scanner.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/count_down_latch.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/document/util/queue.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 LOG_SETUP(".diskindex.fusion");
 
 using search::FileKit;
@@ -20,83 +29,91 @@ using search::common::FileHeaderContext;
 using search::diskindex::DocIdMapping;
 using search::diskindex::WordNumMapping;
 using search::docsummary::DocumentSummary;
+using search::index::FieldLengthInfo;
+using search::bitcompression::PosOccFieldParams;
+using search::bitcompression::PosOccFieldsParams;
 using search::index::PostingListParams;
 using search::index::Schema;
 using search::index::SchemaUtil;
 using search::index::schema::DataType;
 using vespalib::getLastErrorString;
+using vespalib::IllegalArgumentException;
+using vespalib::make_string;
 
 namespace search::diskindex {
 
-void
-FusionInputIndex::setSchema(const Schema::SP &schema)
-{
-    _schema = schema;
+namespace {
+
+vespalib::string
+createTmpPath(const vespalib::string & base, uint32_t index) {
+    vespalib::asciistream os;
+    os << base;
+    os << "/tmpindex";
+    os << index;
+    return os.str();
 }
 
-Fusion::Fusion(bool dynamicKPosIndexFormat,
-               const TuneFileIndexing &tuneFileIndexing,
+std::vector<FusionInputIndex>
+createInputIndexes(const std::vector<vespalib::string> & sources, const SelectorArray &selector)
+{
+    std::vector<FusionInputIndex> indexes;
+    indexes.reserve(sources.size());
+    uint32_t i = 0;
+    for (const auto & source : sources) {
+        indexes.emplace_back(source, i++, selector);
+    }
+    return indexes;
+}
+
+}
+
+FusionInputIndex::FusionInputIndex(const vespalib::string &path, uint32_t index, const SelectorArray &selector)
+    : _path(path),
+      _index(index),
+      _schema()
+{
+    vespalib::string fname = path + "/schema.txt";
+    if ( ! _schema.loadFromFile(fname)) {
+        throw IllegalArgumentException(make_string("Failed loading schema %s", fname.c_str()));
+    }
+    if ( ! SchemaUtil::validateSchema(_schema)) {
+        throw IllegalArgumentException(make_string("Failed validating schema %s", fname.c_str()));
+    }
+    if (!_docIdMapping.readDocIdLimit(path)) {
+        throw IllegalArgumentException(make_string("Cannot determine docIdLimit for old index \"%s\"", path.c_str()));
+    }
+    _docIdMapping.setup(_docIdMapping._docIdLimit, &selector, index);
+}
+
+FusionInputIndex::~FusionInputIndex() = default;
+
+Fusion::Fusion(uint32_t docIdLimit, const Schema & schema, const vespalib::string & dir,
+               const std::vector<vespalib::string> & sources, const SelectorArray &selector,
+               bool dynamicKPosIndexFormat, const TuneFileIndexing &tuneFileIndexing,
                const FileHeaderContext &fileHeaderContext)
-    : _schema(nullptr),
-      _oldIndexes(),
-      _docIdLimit(0u),
-      _numWordIds(0u),
+    : _schema(schema),
+      _oldIndexes(createInputIndexes(sources, selector)),
+      _docIdLimit(docIdLimit),
       _dynamicKPosIndexFormat(dynamicKPosIndexFormat),
-      _outDir("merged"),
+      _outDir(dir),
       _tuneFileIndexing(tuneFileIndexing),
       _fileHeaderContext(fileHeaderContext)
-{ }
-
-Fusion::~Fusion()
 {
-    ReleaseMappingTables();
-}
-
-void
-Fusion::setSchema(const Schema *schema)
-{
-    _schema = schema;
-}
-
-void
-Fusion::setOutDir(const vespalib::string &outDir)
-{
-    _outDir = outDir;
-}
-
-void
-Fusion::SetOldIndexList(const std::vector<vespalib::string> &oldIndexList)
-{
-    _oldIndexes.resize(oldIndexList.size());
-    OldIndexIterator oldIndexIt = _oldIndexes.begin();
-    uint32_t i = 0;
-    for (std::vector<vespalib::string>::const_iterator
-             it = oldIndexList.begin(), ite = oldIndexList.end();
-         it != ite;
-         ++it, ++oldIndexIt, ++i) {
-        oldIndexIt->reset(allocOldIndex());
-        OldIndex &oi = **oldIndexIt;
-        oi.setPath(*it);
-        std::ostringstream tmpindexpath0;
-        tmpindexpath0 << _outDir;
-        tmpindexpath0 << "/tmpindex";
-        tmpindexpath0 << i;
-        oi.setTmpPath(tmpindexpath0.str());
+    if (!readSchemaFiles()) {
+        throw IllegalArgumentException("Cannot read schema files for source indexes");
     }
 }
 
+Fusion::~Fusion() = default;
 
 bool
-Fusion::openInputWordReaders(const SchemaUtil::IndexIterator &index,
-                             std::vector<
-                                 std::unique_ptr<DictionaryWordReader> > &
-                             readers,
+Fusion::openInputWordReaders(const vespalib::string & dir, const SchemaUtil::IndexIterator &index,
+                             std::vector<std::unique_ptr<DictionaryWordReader> > & readers,
                              PostingPriorityQueue<DictionaryWordReader> &heap)
 {
-    for (auto &i : getOldIndexes()) {
-        OldIndex &oi = *i;
+    for (auto & oi : _oldIndexes) {
         auto reader(std::make_unique<DictionaryWordReader>());
-        const vespalib::string &tmpindexpath = oi.getTmpPath();
+        const vespalib::string &tmpindexpath = createTmpPath(dir, oi.getIndex());
         const vespalib::string &oldindexpath = oi.getPath();
         vespalib::string wordMapName = tmpindexpath + "/old2new.dat";
         vespalib::string fieldDir(oldindexpath + "/" + index.getName());
@@ -105,12 +122,9 @@ Fusion::openInputWordReaders(const SchemaUtil::IndexIterator &index,
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
-        bool res = reader->open(dictName,
-                                wordMapName,
-                                _tuneFileIndexing._read);
+        bool res = reader->open(dictName, wordMapName, _tuneFileIndexing._read);
         if (!res) {
-            LOG(error, "Could not open dictionary %s to generate %s",
-                dictName.c_str(), wordMapName.c_str());
+            LOG(error, "Could not open dictionary %s to generate %s", dictName.c_str(), wordMapName.c_str());
             return false;
         }
         reader->read();
@@ -124,7 +138,8 @@ Fusion::openInputWordReaders(const SchemaUtil::IndexIterator &index,
 
 
 bool
-Fusion::renumberFieldWordIds(const SchemaUtil::IndexIterator &index)
+Fusion::renumberFieldWordIds(const vespalib::string & dir, const SchemaUtil::IndexIterator &index,
+                             WordNumMappingList & list, uint64_t &  numWordIds)
 {
     vespalib::string indexName = index.getName();
     LOG(debug, "Renumber word IDs for field %s", indexName.c_str());
@@ -133,12 +148,12 @@ Fusion::renumberFieldWordIds(const SchemaUtil::IndexIterator &index)
     PostingPriorityQueue<DictionaryWordReader> heap;
     WordAggregator out;
 
-    if (!openInputWordReaders(index, readers, heap)) {
+    if (!openInputWordReaders(dir, index, readers, heap)) {
         return false;
     }
     heap.merge(out, 4);
     assert(heap.empty());
-    _numWordIds = out.getWordNum();
+    numWordIds = out.getWordNum();
 
     // Close files
     for (auto &i : readers) {
@@ -147,28 +162,37 @@ Fusion::renumberFieldWordIds(const SchemaUtil::IndexIterator &index)
 
     // Now read mapping files back into an array
     // XXX: avoid this, and instead make the array here
-    if (!ReadMappingFiles(&index)) {
+    if (!readMappingFiles(dir, &index, list)) {
         return false;
     }
-    LOG(debug, "Finished renumbering words IDs for field %s",
-        indexName.c_str());
+    LOG(debug, "Finished renumbering words IDs for field %s", indexName.c_str());
 
     return true;
 }
 
 
 bool
-Fusion::mergeFields()
+Fusion::mergeFields(vespalib::ThreadExecutor & executor)
 {
-   typedef SchemaUtil::IndexIterator IndexIterator;
-
     const Schema &schema = getSchema();
-    for (IndexIterator index(schema); index.isValid(); ++index) {
-        if (!mergeField(index.getIndex())) {
-            return false;
-        }
+    std::atomic<uint32_t> failed(0);
+    uint32_t maxConcurrentThreads = std::max(1ul, executor.getNumThreads()/2);
+    document::Semaphore concurrent(maxConcurrentThreads);
+    vespalib::CountDownLatch  done(schema.getNumIndexFields());
+    for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
+        concurrent.wait();
+        executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent]() {
+            if (!mergeField(index)) {
+                failed++;
+            }
+            concurrent.post();
+            done.countDown();
+        }));
     }
-    return true;
+    LOG(debug, "Waiting for %u fields", schema.getNumIndexFields());
+    done.await();
+    LOG(debug, "Done waiting for %u fields", schema.getNumIndexFields());
+    return (failed == 0u);
 }
 
 
@@ -190,37 +214,35 @@ Fusion::mergeField(uint32_t id)
     if (FileKit::hasStamp(indexDir + "/.mergeocc_done")) {
         return true;
     }
-    vespalib::mkdir(indexDir.c_str(), false);
+    vespalib::mkdir(indexDir, false);
 
-    LOG(debug, "mergeField for field %s dir %s",
-        indexName.c_str(), indexDir.c_str());
+    LOG(debug, "mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
 
-    makeTmpDirs();
+    makeTmpDirs(indexDir);
 
-    if (!renumberFieldWordIds(index)) {
-        LOG(error, "Could not renumber field word ids for field %s dir %s",
-            indexName.c_str(), indexDir.c_str());
+    WordNumMappingList list(_oldIndexes.size());
+    uint64_t numWordIds(0);
+    if (!renumberFieldWordIds(indexDir, index, list, numWordIds)) {
+        LOG(error, "Could not renumber field word ids for field %s dir %s", indexName.c_str(), indexDir.c_str());
         return false;
     }
 
     // Tokamak
-    bool res = mergeFieldPostings(index);
+    bool res = mergeFieldPostings(index, list, numWordIds);
     if (!res) {
-        LOG(error, "Could not merge field postings for field %s dir %s",
-            indexName.c_str(), indexDir.c_str());
-        LOG_ABORT("should not be reached");
+        throw IllegalArgumentException(make_string("Could not merge field postings for field %s dir %s",
+                                                   indexName.c_str(), indexDir.c_str()));
     }
     if (!FileKit::createStamp(indexDir +  "/.mergeocc_done")) {
         return false;
     }
     vespalib::File::sync(indexDir);
 
-    if (!CleanTmpDirs()) {
+    if (!cleanTmpDirs(indexDir)) {
         return false;
     }
 
-    LOG(debug, "Finished mergeField for field %s dir %s",
-        indexName.c_str(), indexDir.c_str());
+    LOG(debug, "Finished mergeField for field %s dir %s", indexName.c_str(), indexDir.c_str());
 
     return true;
 }
@@ -264,8 +286,7 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
         }
     }
     if (!cookedFormatOK) {
-        LOG(error,
-            "Cannot perform fusion, cooked feature formats don't match");
+        LOG(error, "Cannot perform fusion, cooked feature formats don't match");
         return false;
     }
     if (rawFormatOK) {
@@ -287,21 +308,40 @@ Fusion::selectCookedOrRawFeatures(Reader &reader, Writer &writer)
 }
 
 
-bool
-Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index,
-                              std::vector<std::unique_ptr<FieldReader> > &
-                              readers)
+std::shared_ptr<FieldLengthScanner>
+Fusion::allocate_field_length_scanner(const SchemaUtil::IndexIterator &index)
 {
+    if (index.use_interleaved_features()) {
+        PosOccFieldsParams fieldsParams;
+        fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
+        assert(fieldsParams.getNumFields() > 0);
+        const PosOccFieldParams &fieldParams = fieldsParams.getFieldParams()[0];
+        if (fieldParams._hasElements) {
+            for (const auto &old_index : _oldIndexes) {
+                const Schema &old_schema = old_index.getSchema();
+                if (index.hasOldFields(old_schema) &&
+                    !index.has_matching_use_interleaved_features(old_schema)) {
+                    return std::make_shared<FieldLengthScanner>(_docIdLimit);
+                }
+            }
+        }
+    }
+    return std::shared_ptr<FieldLengthScanner>();
+}
+
+bool
+Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list,
+                              std::vector<std::unique_ptr<FieldReader> > & readers)
+{
+    auto field_length_scanner = allocate_field_length_scanner(index);
     vespalib::string indexName = index.getName();
-    for (auto &i : _oldIndexes) {
-        OldIndex &oi = *i;
+    for (const auto &oi : _oldIndexes) {
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
-        auto reader = FieldReader::allocFieldReader(index, oldSchema);
-        reader->setup(oi.getWordNumMapping(),
-                      oi.getDocIdMapping());
+        auto reader = FieldReader::allocFieldReader(index, oldSchema, field_length_scanner);
+        reader->setup(list[oi.getIndex()], oi.getDocIdMapping());
         if (!reader->open(oi.getPath() + "/" + indexName + "/", _tuneFileIndexing._read)) {
             return false;
         }
@@ -312,33 +352,24 @@ Fusion::openInputFieldReaders(const SchemaUtil::IndexIterator &index,
 
 
 bool
-Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index,
-                        FieldWriter &writer)
+Fusion::openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter &writer, const FieldLengthInfo &field_length_info)
 {
     vespalib::string dir = _outDir + "/" + index.getName();
 
-    if (!writer.open(dir + "/",
-                     64,
-                     262144,
-                     _dynamicKPosIndexFormat,
-                     index.getSchema(),
+    if (!writer.open(dir + "/", 64, 262144, _dynamicKPosIndexFormat,
+                     index.use_interleaved_features(), index.getSchema(),
                      index.getIndex(),
-                     _tuneFileIndexing._write,
-                     _fileHeaderContext)) {
-        LOG(error, "Could not open output posocc + dictionary in %s",
-            dir.c_str());
-        LOG_ABORT("should not be reached");
-        return false;
+                     field_length_info,
+                     _tuneFileIndexing._write, _fileHeaderContext)) {
+        throw IllegalArgumentException(make_string("Could not open output posocc + dictionary in %s", dir.c_str()));
     }
     return true;
 }
 
 
 bool
-Fusion::setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > &
-                       readers,
-                       FieldWriter &writer,
-                       PostingPriorityQueue<FieldReader> &heap)
+Fusion::setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > & readers,
+                       FieldWriter &writer, PostingPriorityQueue<FieldReader> &heap)
 {
     for (auto &reader : readers) {
         if (!selectCookedOrRawFeatures(*reader, writer)) {
@@ -356,18 +387,22 @@ Fusion::setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > &
 
 
 bool
-Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index)
+Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index, const WordNumMappingList & list, uint64_t numWordIds)
 {
     std::vector<std::unique_ptr<FieldReader>> readers;
     PostingPriorityQueue<FieldReader> heap;
     /* OUTPUT */
-    FieldWriter fieldWriter(_docIdLimit, _numWordIds);
+    FieldWriter fieldWriter(_docIdLimit, numWordIds);
     vespalib::string indexName = index.getName();
 
-    if (!openInputFieldReaders(index, readers)) {
+    if (!openInputFieldReaders(index, list, readers)) {
         return false;
     }
-    if (!openFieldWriter(index, fieldWriter)) {
+    FieldLengthInfo field_length_info;
+    if (!readers.empty()) {
+        field_length_info = readers.back()->get_field_length_info();
+    }
+    if (!openFieldWriter(index, fieldWriter, field_length_info)) {
         return false;
     }
     if (!setupMergeHeap(readers, fieldWriter, heap)) {
@@ -383,32 +418,23 @@ Fusion::mergeFieldPostings(const SchemaUtil::IndexIterator &index)
         }
     }
     if (!fieldWriter.close()) {
-        LOG(error, "Could not close output posocc + dictionary in %s/%s",
-            _outDir.c_str(), indexName.c_str());
-        LOG_ABORT("should not be reached");
+        throw IllegalArgumentException(make_string("Could not close output posocc + dictionary in %s/%s",
+                                                   _outDir.c_str(), indexName.c_str()));
     }
     return true;
 }
 
 
 bool
-Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
+Fusion::readMappingFiles(const vespalib::string & dir, const SchemaUtil::IndexIterator *index, WordNumMappingList & list)
 {
-    ReleaseMappingTables();
-
-    size_t numberOfOldIndexes = _oldIndexes.size();
-    for (uint32_t i = 0; i < numberOfOldIndexes; i++)
-    {
-        OldIndex &oi = *_oldIndexes[i];
-        WordNumMapping &wordNumMapping = oi.getWordNumMapping();
+    for (const auto & oi : _oldIndexes) {
         std::vector<uint32_t> oldIndexes;
         const Schema &oldSchema = oi.getSchema();
-        if (!SchemaUtil::getIndexIds(oldSchema,
-                                     DataType::STRING,
-                                     oldIndexes))
-        {
+        if (!SchemaUtil::getIndexIds(oldSchema, DataType::STRING, oldIndexes)) {
             return false;
         }
+        WordNumMapping &wordNumMapping = list[oi.getIndex()];
         if (oldIndexes.empty()) {
             wordNumMapping.noMappingFile();
             continue;
@@ -418,7 +444,7 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         }
 
         // Open word mapping file
-        vespalib::string old2newname = oi.getTmpPath() + "/old2new.dat";
+        vespalib::string old2newname = createTmpPath(dir, oi.getIndex()) + "/old2new.dat";
         wordNumMapping.readMappingFile(old2newname, _tuneFileIndexing._read);
     }
 
@@ -426,40 +452,20 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
 }
 
 
-bool
-Fusion::ReleaseMappingTables()
-{
-    size_t numberOfOldIndexes = _oldIndexes.size();
-    for (uint32_t i = 0; i < numberOfOldIndexes; i++)
-    {
-        OldIndex &oi = *_oldIndexes[i];
-        oi.getWordNumMapping().clear();
-    }
-    return true;
-}
-
-
 void
-Fusion::makeTmpDirs()
+Fusion::makeTmpDirs(const vespalib::string & dir)
 {
-    for (auto &i : getOldIndexes()) {
-        OldIndex &oi = *i;
-        // Make tmpindex directories
-        const vespalib::string &tmpindexpath = oi.getTmpPath();
-        vespalib::mkdir(tmpindexpath, false);
+    for (const auto & index : _oldIndexes) {
+        vespalib::mkdir(createTmpPath(dir, index.getIndex()), false);
     }
 }
 
 bool
-Fusion::CleanTmpDirs()
+Fusion::cleanTmpDirs(const vespalib::string & dir)
 {
     uint32_t i = 0;
     for (;;) {
-        std::ostringstream tmpindexpath0;
-        tmpindexpath0 << _outDir;
-        tmpindexpath0 << "/tmpindex";
-        tmpindexpath0 << i;
-        const vespalib::string &tmpindexpath = tmpindexpath0.str();
+        vespalib::string tmpindexpath = createTmpPath(dir, i);
         FastOS_StatInfo statInfo;
         if (!FastOS_File::Stat(tmpindexpath.c_str(), &statInfo)) {
             if (statInfo._error == FastOS_StatInfo::FileNotFound) {
@@ -472,12 +478,7 @@ Fusion::CleanTmpDirs()
     }
     while (i > 0) {
         i--;
-        // Remove tmpindex directories
-        std::ostringstream tmpindexpath0;
-        tmpindexpath0 << _outDir;
-        tmpindexpath0 << "/tmpindex";
-        tmpindexpath0 << i;
-        const vespalib::string &tmpindexpath = tmpindexpath0.str();
+        vespalib::string tmpindexpath = createTmpPath(dir, i);
         search::DirectoryTraverse dt(tmpindexpath.c_str());
         if (!dt.RemoveTree()) {
             LOG(error, "Failed to clean tmpdir %s", tmpindexpath.c_str());
@@ -491,30 +492,13 @@ Fusion::CleanTmpDirs()
 bool
 Fusion::checkSchemaCompat()
 {
+    /* TODO: Check compatibility */
     return true;
 }
-
 
 bool
 Fusion::readSchemaFiles()
 {
-    OldIndexIterator oldIndexIt = _oldIndexes.begin();
-    OldIndexIterator oldIndexIte = _oldIndexes.end();
-
-    for (; oldIndexIt != oldIndexIte; ++oldIndexIt) {
-        OldIndex &oi = **oldIndexIt;
-        vespalib::string oldcfname = oi.getPath() + "/schema.txt";
-        Schema::SP schema(new Schema);
-        if (!schema->loadFromFile(oldcfname)) {
-            return false;
-        }
-        if (!SchemaUtil::validateSchema(*_schema)) {
-            return false;
-        }
-        oi.setSchema(schema);
-    }
-
-    /* TODO: Check compatibility */
     bool res = checkSchemaCompat();
     if (!res) {
         LOG(error, "Index fusion cannot continue due to incompatible indexes");
@@ -522,15 +506,11 @@ Fusion::readSchemaFiles()
     return res;
 }
 
-
 bool
-Fusion::merge(const Schema &schema,
-              const vespalib::string &dir,
-              const std::vector<vespalib::string> &sources,
-              const SelectorArray &selector,
-              bool dynamicKPosOccFormat,
-              const TuneFileIndexing &tuneFileIndexing,
-              const FileHeaderContext &fileHeaderContext)
+Fusion::merge(const Schema &schema, const vespalib::string &dir, const std::vector<vespalib::string> &sources,
+              const SelectorArray &selector, bool dynamicKPosOccFormat,
+              const TuneFileIndexing &tuneFileIndexing, const FileHeaderContext &fileHeaderContext,
+              vespalib::ThreadExecutor & executor)
 {
     assert(sources.size() <= 255);
     uint32_t docIdLimit = selector.size();
@@ -563,46 +543,18 @@ Fusion::merge(const Schema &schema,
     vespalib::mkdir(dir, false);
     schema.saveToFile(dir + "/schema.txt");
     if (!DocumentSummary::writeDocIdLimit(dir, trimmedDocIdLimit)) {
-        LOG(error, "Could not write docsum count in dir %s: %s",
-            dir.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not write docsum count in dir %s: %s", dir.c_str(), getLastErrorString().c_str());
         return false;
     }
 
-    std::unique_ptr<Fusion> fusion(new Fusion(dynamicKPosOccFormat,
-                                         tuneFileIndexing,
-                                         fileHeaderContext));
-    fusion->setSchema(&schema);
-    fusion->setOutDir(dir);
-    fusion->SetOldIndexList(sources);
-    if (!fusion->readSchemaFiles()) {
-        LOG(error, "Cannot read schema files for source indexes");
+    try {
+        auto fusion = std::make_unique<Fusion>(trimmedDocIdLimit, schema, dir, sources, selector,
+                                               dynamicKPosOccFormat, tuneFileIndexing, fileHeaderContext);
+        return fusion->mergeFields(executor);
+    } catch (const std::exception & e) {
+        LOG(error, "%s", e.what());
         return false;
     }
-    uint32_t idx = 0;
-    std::vector<std::shared_ptr<OldIndex> > &oldIndexes =
-        fusion->getOldIndexes();
-
-    for (OldIndexIterator i = oldIndexes.begin(), ie = oldIndexes.end();
-         i != ie; ++i, ++idx) {
-        OldIndex &oi = **i;
-        // Make tmpindex directories
-        const vespalib::string &tmpindexpath = oi.getTmpPath();
-        vespalib::mkdir(tmpindexpath, false);
-        DocIdMapping &docIdMapping = oi.getDocIdMapping();
-        if (!docIdMapping.readDocIdLimit(oi.getPath())) {
-            LOG(error, "Cannot determine docIdLimit for old index \"%s\"",
-                oi.getPath().c_str());
-            return false;
-        }
-        docIdMapping.setup(docIdMapping._docIdLimit,
-                           &selector,
-                           idx);
-    }
-    fusion->setDocIdLimit(trimmedDocIdLimit);
-    if (!fusion->mergeFields()) {
-        return false;
-    }
-    return true;
 }
 
 }

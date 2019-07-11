@@ -24,13 +24,23 @@ class Preparer {
 
     private final NodeRepository nodeRepository;
     private final GroupPreparer groupPreparer;
+    private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
     private final int spareCount;
 
     public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    BooleanFlag dynamicProvisioningEnabled) {
+                    HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabled,
+                    Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.spareCount = spareCount;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, dynamicProvisioningEnabled);
+        this.loadBalancerProvisioner = loadBalancerProvisioner;
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, dynamicProvisioningEnabled);
+    }
+
+    /** Prepare all required resources for the given application and cluster */
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+        var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
+        prepareLoadBalancer(application, cluster, requestedNodes);
+        return nodes;
     }
 
     /**
@@ -41,7 +51,7 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+    public List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
@@ -56,6 +66,11 @@ class Preparer {
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
         replace(acceptedNodes, retire(surplusNodes));
         return acceptedNodes;
+    }
+
+    /** Prepare a load balancer for given application and cluster */
+    public void prepareLoadBalancer(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requestedNodes));
     }
 
     /**

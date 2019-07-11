@@ -19,4 +19,7 @@ public interface NodeAgentScheduler {
      * @return True if node agent has converged to the desired state
      */
     boolean setFrozen(boolean frozen, Duration timeout);
+
+    /** @return the last scheduled context or a default value */
+    NodeAgentContext currentContext();
 }

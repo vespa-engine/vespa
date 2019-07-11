@@ -8,10 +8,12 @@ import java.util.Set;
 /**
  * @author gjoranv
  */
-@SuppressWarnings("UnusedDeclaration") // Used by model amenders
 public class SystemMetrics {
     public static final String CPU_UTIL = "cpu.util";
     public static final String CPU_SYS_UTIL = "cpu.sys.util";
+    public static final String CPU_THROTTLED_TIME = "cpu.throttled_time.rate";
+    public static final String CPU_THROTTLED_CPU_TIME = "cpu.throttled_cpu_time.rate";
+    public static final String CPU_VCPUS = "cpu.vcpus";
     public static final String DISK_LIMIT = "disk.limit";
     public static final String DISK_USED = "disk.used";
     public static final String DISK_UTIL = "disk.util";
@@ -27,6 +29,9 @@ public class SystemMetrics {
         Set<Metric> dockerNodeMetrics =
                 ImmutableSet.of(new Metric(CPU_UTIL),
                                 new Metric(CPU_SYS_UTIL),
+                                new Metric(CPU_THROTTLED_TIME),
+                                new Metric(CPU_THROTTLED_CPU_TIME),
+                                new Metric(CPU_VCPUS),
                                 new Metric(DISK_LIMIT),
                                 new Metric(DISK_USED),
                                 new Metric(DISK_UTIL),

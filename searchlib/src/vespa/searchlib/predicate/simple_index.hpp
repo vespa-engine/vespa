@@ -3,7 +3,7 @@
 
 #include "simple_index.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::predicate {
 
@@ -232,7 +232,7 @@ void SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(datastore::En
     size_t size = getDocumentCount(ref);
     double ratio = getDocumentRatio(size, doc_id_limit);
     if (shouldCreateVectorPosting(size, ratio)) {
-        auto vector = new attribute::RcuVectorBase<Posting>(_config.grow_strategy, _generation_holder);
+        auto vector = new vespalib::RcuVectorBase<Posting>(_config.grow_strategy, _generation_holder);
         vector->unsafe_resize(doc_id_limit);
         _btree_posting_lists.foreach_unfrozen(
                 ref, [&](DocId d, const Posting &p) { (*vector)[d] = p; });
@@ -301,8 +301,8 @@ void SimpleIndex<Posting, Key, DocId>::transferHoldLists(generation_t generation
 }
 
 template <typename Posting, typename Key, typename DocId>
-MemoryUsage SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
-    MemoryUsage combined;
+vespalib::MemoryUsage SimpleIndex<Posting, Key, DocId>::getMemoryUsage() const {
+    vespalib::MemoryUsage combined;
     combined.merge(_dictionary.getMemoryUsage());
     combined.merge(_btree_posting_lists.getMemoryUsage());
     combined.merge(_vector_posting_lists.getMemoryUsage());

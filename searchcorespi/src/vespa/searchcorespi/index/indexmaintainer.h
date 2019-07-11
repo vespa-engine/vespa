@@ -22,18 +22,11 @@
 #include <memory>
 #include <vector>
 
-namespace document {
-class Document;
-}
+namespace document { class Document; }
 
-namespace search {
-namespace common {
-class FileHeaderContext;
-}
-}
+namespace search::common { class FileHeaderContext; }
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * The IndexMaintainer provides a holistic view of a set of disk and
@@ -42,13 +35,11 @@ namespace index {
  * of memory indexes and fusion of disk indexes.
  */
 class IndexMaintainer : public IIndexManager,
-                        public IWarmupDone
-{
+                        public IWarmupDone {
     /**
      * Extra memory that is frozen but not yet flushed.
      */
-    class FrozenMemoryIndexRef
-    {
+    class FrozenMemoryIndexRef {
     public:
         typedef search::FixedSourceSelector::SaveInfo SaveInfo;
         typedef search::SerialNum SerialNum;
@@ -70,8 +61,7 @@ class IndexMaintainer : public IIndexManager,
         { }
     };
 
-    class ChangeGens
-    {
+    class ChangeGens {
     public:
         uint32_t _pruneGen;
 
@@ -81,9 +71,10 @@ class IndexMaintainer : public IIndexManager,
         bool operator!=(const ChangeGens &rhs) const { return _pruneGen != rhs._pruneGen; }
     };
 
-    typedef std::vector<uint32_t> FlushIds;
-    typedef std::vector<FrozenMemoryIndexRef> FrozenMemoryIndexRefs;
-    typedef search::queryeval::ISourceSelector ISourceSelector;
+    using FlushIds = std::vector<uint32_t>;
+    using FrozenMemoryIndexRefs = std::vector<FrozenMemoryIndexRef>;
+    using ISourceSelector = search::queryeval::ISourceSelector;
+
     const vespalib::string _base_dir;
     const WarmupConfig     _warmupConfig;
     ActiveDiskIndexes::SP  _active_indexes;
@@ -100,6 +91,7 @@ class IndexMaintainer : public IIndexManager,
     uint32_t          _next_id;          // Protected by SL + IUL
     uint32_t          _current_index_id; // Protected by SL + IUL
     IMemoryIndex::SP  _current_index;    // Protected by SL + IUL
+    bool              _flush_empty_current_index;
     SerialNum         _current_serial_num;// Protected by IUL
     SerialNum         _flush_serial_num;  // Protected by SL
     fastos::TimeStamp _lastFlushTime; // Protected by SL
@@ -165,27 +157,24 @@ class IndexMaintainer : public IIndexManager,
      */
     bool reopenDiskIndexes(ISearchableIndexCollection &coll);
 
-    void
-    updateDiskIndexSchema(const vespalib::string &indexDir,
-                          const Schema &schema,
-                          SerialNum serialNum);
+    void updateDiskIndexSchema(const vespalib::string &indexDir,
+                               const Schema &schema,
+                               SerialNum serialNum);
 
-    void
-    updateIndexSchemas(IIndexCollection &coll,
-                       const Schema &schema,
-                       SerialNum serialNum);
+    void updateIndexSchemas(IIndexCollection &coll,
+                            const Schema &schema,
+                            SerialNum serialNum);
 
     void updateActiveFusionPrunedSchema(const Schema &schema);
     void deactivateDiskIndexes(vespalib::string indexDir);
     IDiskIndex::SP loadDiskIndex(const vespalib::string &indexDir);
     IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex);
 
-    IDiskIndex::SP
-    flushMemoryIndex(IMemoryIndex &memoryIndex,
-                     uint32_t indexId,
-                     uint32_t docIdLimit,
-                     SerialNum serialNum,
-                     search::FixedSourceSelector::SaveInfo &saveInfo);
+    IDiskIndex::SP flushMemoryIndex(IMemoryIndex &memoryIndex,
+                                    uint32_t indexId,
+                                    uint32_t docIdLimit,
+                                    SerialNum serialNum,
+                                    search::FixedSourceSelector::SaveInfo &saveInfo);
 
     ISearchableIndexCollection::UP loadDiskIndexes(const FusionSpec &spec, ISearchableIndexCollection::UP sourceList);
     void replaceSource(uint32_t sourceId, const IndexSearchable::SP &source);
@@ -229,8 +218,7 @@ class IndexMaintainer : public IIndexManager,
     bool doneFlush(FlushArgs *args, IDiskIndex::SP *disk_index);
 
 
-    class FusionArgs
-    {
+    class FusionArgs {
     public:
         uint32_t   _new_fusion_id;
         ChangeGens _changeGens;
@@ -253,8 +241,7 @@ class IndexMaintainer : public IIndexManager,
     bool canRunFusion(const FusionSpec &spec) const;
     bool doneFusion(FusionArgs *args, IDiskIndex::SP *new_index);
 
-    class SetSchemaArgs
-    {
+    class SetSchemaArgs {
     public:
         Schema           _newSchema;
         Schema           _oldSchema;
@@ -311,8 +298,7 @@ public:
     uint32_t runFusion(const FusionSpec &fusion_spec);
     void removeOldDiskIndexes();
 
-    struct FlushStats
-    {
+    struct FlushStats {
         FlushStats() :
             memory_before_bytes(0),
             memory_after_bytes(0),
@@ -326,8 +312,7 @@ public:
         uint64_t cpu_time_required;
     };
 
-    struct FusionStats
-    {
+    struct FusionStats {
         FusionStats()
             : diskUsage(0),
               maxFlushed(0),
@@ -387,6 +372,5 @@ public:
     void setMaxFlushed(uint32_t maxFlushed) override;
 };
 
-} // namespace index
-} // namespace searchcorespi
+}
 

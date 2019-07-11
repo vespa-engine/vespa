@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "constant_value_repo.h"
-#include "error_constant_value.h"
 
 using vespalib::eval::ConstantValue;
 
@@ -27,7 +26,7 @@ ConstantValueRepo::getConstant(const vespalib::string &name) const
     if (constant != nullptr) {
         return _factory.create(constant->filePath, constant->type);
     }
-    return std::make_unique<ErrorConstantValue>();
+    return ConstantValue::UP(nullptr);
 }
 
 }

@@ -25,13 +25,6 @@ public class EndpointList {
     private final List<Endpoint> endpoints;
 
     private EndpointList(List<Endpoint> endpoints) {
-        long mainEndpoints = endpoints.stream()
-                                      .filter(endpoint -> endpoint.scope() == Endpoint.Scope.global)
-                                      .filter(Predicate.not(Endpoint::directRouting))
-                                      .filter(Predicate.not(Endpoint::legacy)).count();
-        if (mainEndpoints > 1) {
-            throw new IllegalArgumentException("Can have only 1 non-legacy global endpoint, got " + endpoints);
-        }
         if (endpoints.stream().distinct().count() != endpoints.size()) {
             throw new IllegalArgumentException("Expected all endpoints to be distinct, got " + endpoints);
         }
@@ -67,16 +60,14 @@ public class EndpointList {
     }
 
     /** Returns the default global endpoints in given system. Default endpoints are served by a pre-provisioned routing layer */
-    public static EndpointList defaultGlobal(ApplicationId application, SystemName system) {
-        // Rotation name is always default in the routing layer
-        RotationName rotation = RotationName.from("default");
+    public static EndpointList create(ApplicationId application, EndpointId endpointId, SystemName system) {
         switch (system) {
             case cd:
             case main:
                 return new EndpointList(List.of(
-                        Endpoint.of(application).target(rotation).on(Port.plain(4080)).legacy().in(system),
-                        Endpoint.of(application).target(rotation).on(Port.tls(4443)).legacy().in(system),
-                        Endpoint.of(application).target(rotation).on(Port.tls(4443)).in(system)
+                        Endpoint.of(application).named(endpointId).on(Port.plain(4080)).legacy().in(system),
+                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).legacy().in(system),
+                        Endpoint.of(application).named(endpointId).on(Port.tls(4443)).in(system)
                 ));
         }
         return EMPTY;

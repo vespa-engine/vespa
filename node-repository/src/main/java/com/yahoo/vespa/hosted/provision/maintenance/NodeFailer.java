@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -68,13 +70,11 @@ public class NodeFailer extends Maintainer {
     private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
-    private final ConfigserverConfig configserverConfig;
 
     public NodeFailer(Deployer deployer, HostLivenessTracker hostLivenessTracker,
                       ServiceMonitor serviceMonitor, NodeRepository nodeRepository,
                       Duration downTimeLimit, Clock clock, Orchestrator orchestrator,
-                      ThrottlePolicy throttlePolicy, Metric metric,
-                      ConfigserverConfig configserverConfig) {
+                      ThrottlePolicy throttlePolicy, Metric metric) {
         // check ping status every five minutes, but at least twice as often as the down time limit
         super(nodeRepository, min(downTimeLimit.dividedBy(2), Duration.ofMinutes(5)));
         this.deployer = deployer;
@@ -86,7 +86,6 @@ public class NodeFailer extends Maintainer {
         this.constructionTime = clock.instant();
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
-        this.configserverConfig = configserverConfig;
     }
 
     @Override
@@ -95,7 +94,7 @@ public class NodeFailer extends Maintainer {
 
         // Ready nodes
         try (Mutex lock = nodeRepository().lockAllocation()) {
-            updateNodeLivenessEventsForReadyNodes();
+            updateNodeLivenessEventsForReadyNodes(lock);
 
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
@@ -129,7 +128,7 @@ public class NodeFailer extends Maintainer {
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
 
-    private void updateNodeLivenessEventsForReadyNodes() {
+    private void updateNodeLivenessEventsForReadyNodes(Mutex lock) {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
@@ -139,7 +138,7 @@ public class NodeFailer extends Maintainer {
             if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                 History updatedHistory = node.history()
                         .with(new History.Event(History.Event.Type.requested, Agent.system, lastLocalRequest.get()));
-                nodeRepository().write(node.with(updatedHistory));
+                nodeRepository().write(node.with(updatedHistory), lock);
             }
         }
     }
@@ -244,7 +243,7 @@ public class NodeFailer extends Maintainer {
     }
 
     private boolean expectConfigRequests(Node node) {
-        return !node.type().isDockerHost() || configserverConfig.nodeAdminInContainer();
+        return !node.type().isDockerHost();
     }
 
     private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {
@@ -329,7 +328,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            return nodeRepository().write(node.downAt(clock.instant()));
+            return nodeRepository().write(node.downAt(clock.instant()), lock);
         }
     }
 
@@ -338,7 +337,7 @@ public class NodeFailer extends Maintainer {
 
         try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
             node = nodeRepository().getNode(node.hostname(), Node.State.active).get(); // re-get inside lock
-            nodeRepository().write(node.up());
+            nodeRepository().write(node.up(), lock);
         }
     }
 
@@ -372,8 +371,11 @@ public class NodeFailer extends Maintainer {
             try {
                 deployment.get().activate();
                 return true;
-            }
-            catch (RuntimeException e) {
+            } catch (TransientException e) {
+                log.log(LogLevel.INFO, "Failed to redeploy " + node.allocation().get().owner() +
+                        " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
+                return true;
+            } catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
                 nodeRepository().reactivate(node.hostname(), Agent.system,

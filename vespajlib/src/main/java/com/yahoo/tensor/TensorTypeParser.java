@@ -24,6 +24,7 @@ public class TensorTypeParser {
     private static final Pattern mappedPattern = Pattern.compile("(\\w+)\\{\\}");
 
     public static TensorType fromSpec(String specString) {
+        specString = specString.trim();
         if ( ! specString.startsWith(START_STRING) || ! specString.endsWith(END_STRING))
             throw formatException(specString);
         String specBody = specString.substring(START_STRING.length(), specString.length() - END_STRING.length());
@@ -112,9 +113,9 @@ public class TensorTypeParser {
 
     private static IllegalArgumentException formatException(String spec, Optional<String> errorDetail) {
         throw new IllegalArgumentException("A tensor type spec must be on the form " +
-                                           "tensor[<valuetype>]?(dimensionidentifier[{}|[length?]*), but was '" + spec + "'. " +
+                                           "tensor[<valuetype>]?(dimensionidentifier[{}|[length]*), but was '" + spec + "'. " +
                                            errorDetail.map(s -> s + ". ").orElse("") +
-                                           "Examples: tensor(x[]), tensor<float>(name{}, x[10])");
+                                           "Examples: tensor(x[3]), tensor<float>(name{}, x[10])");
     }
 
 }

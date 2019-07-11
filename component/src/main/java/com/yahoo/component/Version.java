@@ -119,7 +119,7 @@ public final class Version implements Comparable<Version> {
      */
     public Version(String versionString) {
         if (! "".equals(versionString)) {
-            String[] components=versionString.split("\\x2e"); // Split on dot
+            String[] components=versionString.split("\\."); // Split on dot
 
             if (components.length > 0)
                 major = Integer.parseInt(components[0]);

@@ -11,7 +11,6 @@ LOG_SETUP("dense_dot_product_function_test");
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_xw_product_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
@@ -39,13 +38,13 @@ EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("y1", spec({y(1)}, MyVecSeq()))
         .add("y3", spec({y(3)}, MyVecSeq()))
-        .add("y3f", spec({y(3)}, MyVecSeq()), "tensor<float>(y[3])")
+        .add("y3f", spec(float_cells({y(3)}), MyVecSeq()))
         .add("y5", spec({y(5)}, MyVecSeq()))
         .add("y16", spec({y(16)}, MyVecSeq()))
         .add("x1y1", spec({x(1),y(1)}, MyMatSeq()))
         .add("y1z1", spec({y(1),z(1)}, MyMatSeq()))
         .add("x2y3", spec({x(2),y(3)}, MyMatSeq()))
-        .add("x2y3f", spec({x(2),y(3)}, MyMatSeq()), "tensor<float>(x[2],y[3])")
+        .add("x2y3f", spec(float_cells({x(2),y(3)}), MyMatSeq()))
         .add("x2z3", spec({x(2),z(3)}, MyMatSeq()))
         .add("y3z2", spec({y(3),z(2)}, MyMatSeq()))
         .add("x8y5", spec({x(8),y(5)}, MyMatSeq()))

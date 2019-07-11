@@ -56,8 +56,8 @@ public class Index implements Cloneable, Serializable {
     /** The boolean index definition, if set */
     private BooleanIndexDefinition boolIndex;
 
-    // TODO: Remove when experimental posting list format is made default
-    private boolean experimentalPostingListFormat = false;
+    /** Whether the posting lists of this index field should have interleaved features (num occs, field length) in document id stream. */
+    private boolean interleavedFeatures = false;
 
     public Index(String name) {
         this(name, false);
@@ -184,12 +184,12 @@ public class Index implements Cloneable, Serializable {
         boolIndex = def;
     }
 
-    public void setExperimentalPostingListFormat(boolean value) {
-        experimentalPostingListFormat = value;
+    public void setInterleavedFeatures(boolean value) {
+        interleavedFeatures = value;
     }
 
-    public boolean useExperimentalPostingListFormat() {
-        return experimentalPostingListFormat;
+    public boolean useInterleavedFeatures() {
+        return interleavedFeatures;
     }
 
 }

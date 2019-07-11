@@ -3,6 +3,7 @@ package com.yahoo.vespa.http.client;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
+import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import org.junit.Test;
 
@@ -35,7 +36,6 @@ public class SyncFeedClientTest {
                                                                            .build())
                                               .build();
         SyncFeedClient feedClient = new SyncFeedClient(sessionParams);
-
 
         assertFeedSuccessful(feedClient);
         assertFeedSuccessful(feedClient); // ensure the client can be reused

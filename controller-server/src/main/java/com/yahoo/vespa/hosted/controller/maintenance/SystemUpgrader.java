@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -30,23 +30,26 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
+    protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
         if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
                                                               .orElse(true)) {
-            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
-            controller().applications().deploy(application, zone, target);
+            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+            controller().applications().deploy(application, zone.getId(), target);
         }
     }
 
     @Override
-    protected boolean convergedOn(Version target, SystemApplication application, ZoneId zone) {
-        return    minVersion(zone, application, Node::currentVersion).map(target::equals)
-                                                                     .orElse(true)
-               && application.configConvergedIn(zone, controller());
+    protected boolean convergedOn(Version target, SystemApplication application, ZoneApi zone) {
+        Optional<Version> minVersion = minVersion(zone, application, Node::currentVersion);
+        // Skip application convergence check if there are no nodes belonging to the application in the zone
+        if (minVersion.isEmpty()) return true;
+
+        return     minVersion.get().equals(target)
+                && application.configConvergedIn(zone.getId(), controller(), Optional.of(target));
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone) {
+    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
         return eligibleForUpgrade(node);
     }
 

@@ -1,33 +1,35 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "indexmaintainer.h"
 #include "diskindexcleaner.h"
 #include "eventlogger.h"
 #include "fusionrunner.h"
 #include "indexflushtarget.h"
 #include "indexfusiontarget.h"
+#include "indexmaintainer.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
+#include <vespa/fastos/file.h>
+#include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
+#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/autoclosurecaller.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <sstream>
-#include <vespa/searchcorespi/flush/closureflushtask.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/fastos/file.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.indexmaintainer");
 
 using document::Document;
 using search::FixedSourceSelector;
 using search::TuneFileAttributes;
 using search::index::Schema;
+using search::index::SchemaUtil;
 using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
@@ -42,13 +44,11 @@ using vespalib::Executor;
 using vespalib::LockGuard;
 using vespalib::Runnable;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 namespace {
 
-class ReconfigRunnable : public Runnable
-{
+class ReconfigRunnable : public Runnable {
 public:
     bool &_result;
     IIndexManager::Reconfigurer &_reconfigurer;
@@ -123,6 +123,13 @@ public:
     }
     void accept(IndexSearchableVisitor &visitor) const override {
         _index->accept(visitor);
+    }
+
+    /**
+     * Implements IFieldLengthInspector
+     */
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
+        return _index->get_field_length_info(field_name);
     }
 
     /**
@@ -461,7 +468,9 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
     {
         LockGuard lock(_index_update_lock);
         if (!_current_index->hasReceivedDocumentInsert() &&
-            _source_selector_changes == 0) {
+            _source_selector_changes == 0 &&
+            !_flush_empty_current_index)
+        {
             args->_skippedEmptyLast = true; // Skip flush of empty memory index
         }
 
@@ -475,6 +484,7 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, IMemoryIndex::SP *new_index)
             _source_selector_changes = 0;
         }
         _current_index = *new_index;
+        _flush_empty_current_index = false;
     }
     if (args->_skippedEmptyLast) {
         replaceSource(_current_index_id, _current_index);
@@ -718,6 +728,23 @@ IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
     }
 }
 
+namespace {
+
+bool
+has_matching_interleaved_features(const Schema& old_schema, const Schema& new_schema)
+{
+    for (SchemaUtil::IndexIterator itr(new_schema); itr.isValid(); ++itr) {
+        if (itr.hasMatchingOldFields(old_schema) &&
+                !itr.has_matching_use_interleaved_features(old_schema))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+}
+
 
 void
 IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
@@ -753,6 +780,12 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, IMemoryIndex::SP &newIndex)
             _frozenMemoryIndexes.emplace_back(args._oldIndex, freezeSerialNum, std::move(saveInfo), oldAbsoluteId);
         }
         _current_index = newIndex;
+        // Non-matching interleaved features in schemas means that we need to
+        // reconstruct or drop interleaved features in posting lists.
+        // If so, we must flush the new index to disk even if it is empty.
+        // This ensures that 2x triggerFlush will run fusion
+        // to reconstruct or drop interleaved features in the posting lists.
+        _flush_empty_current_index = !has_matching_interleaved_features(args._oldSchema, args._newSchema);
     }
     if (dropEmptyLast) {
         replaceSource(_current_index_id, _current_index);
@@ -817,6 +850,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _next_id(),
       _current_index_id(),
       _current_index(),
+      _flush_empty_current_index(false),
       _current_serial_num(0),
       _flush_serial_num(0),
       _lastFlushTime(),
@@ -865,11 +899,11 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
         _selector.reset(getSourceSelector().cloneAndSubtract(ost.str(), id_diff).release());
         assert(_last_fusion_id == _selector->getBaseId());
     }
-    _current_index = operations.createMemoryIndex(_schema, _current_serial_num);
     _current_index_id = getNewAbsoluteId() - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
     _selector->setDefaultSource(_current_index_id);
     ISearchableIndexCollection::UP sourceList(loadDiskIndexes(spec, ISearchableIndexCollection::UP(new IndexCollection(_selector))));
+    _current_index = operations.createMemoryIndex(_schema, *sourceList, _current_serial_num);
     LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
@@ -895,7 +929,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         _current_serial_num = std::max(_current_serial_num, serialNum);
     }
 
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), *_current_index, _current_serial_num));
     FlushArgs args;
     args.stats = stats;
     scheduleCommit();
@@ -1203,7 +1237,7 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
-    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, _current_serial_num));
+    IMemoryIndex::SP new_index(_operations.createMemoryIndex(schema, *_current_index, _current_serial_num));
     SetSchemaArgs args;
 
     args._newSchema = schema;
@@ -1250,5 +1284,4 @@ IndexMaintainer::setMaxFlushed(uint32_t maxFlushed)
     _maxFlushed = maxFlushed;
 }
 
-}  // namespace index
-}  // namespace searchcorespi
+}

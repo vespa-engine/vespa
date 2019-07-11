@@ -15,11 +15,11 @@
 #include <vespa/storage/distributor/simpleclusterinformation.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <sstream>
 #include <iomanip>
-
-#include <gtest/gtest.h>
 
 using namespace storage::api;
 using namespace storage::lib;
@@ -270,16 +270,16 @@ public:
         }
     };
 
-    void sortSentMessagesByIndex(MessageSenderStub& sender,
+    void sortSentMessagesByIndex(DistributorMessageSenderStub& sender,
                                  size_t sortFromOffset = 0)
     {
-        std::sort(sender.commands.begin() + sortFromOffset,
-                  sender.commands.end(),
+        std::sort(sender.commands().begin() + sortFromOffset,
+                  sender.commands().end(),
                   OrderByIncreasingNodeIndex());
     }
 
     void setSystemState(const lib::ClusterState& state) {
-        const size_t sizeBeforeState = _sender.commands.size();
+        const size_t sizeBeforeState = _sender.commands().size();
         getBucketDBUpdater().onSetSystemState(
                 std::make_shared<api::SetSystemStateCommand>(state));
         // A lot of test logic has the assumption that all messages sent as a
@@ -291,7 +291,7 @@ public:
     }
 
     void set_cluster_state_bundle(const lib::ClusterStateBundle& state) {
-        const size_t sizeBeforeState = _sender.commands.size();
+        const size_t sizeBeforeState = _sender.commands().size();
         getBucketDBUpdater().onSetSystemState(
                 std::make_shared<api::SetSystemStateCommand>(state));
         sortSentMessagesByIndex(_sender, sizeBeforeState);
@@ -303,8 +303,8 @@ public:
     }
     
     void assert_has_activate_cluster_state_reply_with_actual_version(uint32_t version) {
-        ASSERT_EQ(size_t(1), _sender.replies.size());
-        auto* response = dynamic_cast<api::ActivateClusterStateVersionReply*>(_sender.replies.back().get());
+        ASSERT_EQ(size_t(1), _sender.replies().size());
+        auto* response = dynamic_cast<api::ActivateClusterStateVersionReply*>(_sender.replies().back().get());
         ASSERT_TRUE(response != nullptr);
         ASSERT_EQ(version, response->actualVersion());
         _sender.clear();
@@ -315,10 +315,10 @@ public:
                                      uint32_t bucketCount = 1,
                                      uint32_t invalidBucketCount = 0)
     {
-        ASSERT_EQ(expectedMsgs, _sender.commands.size());
+        ASSERT_EQ(expectedMsgs, _sender.commands().size());
 
-        for (uint32_t i = 0; i < _sender.commands.size(); i++) {
-            ASSERT_NO_FATAL_FAILURE(fakeBucketReply(state, *_sender.commands[i],
+        for (uint32_t i = 0; i < _sender.commands().size(); i++) {
+            ASSERT_NO_FATAL_FAILURE(fakeBucketReply(state, *_sender.command(i),
                                                     bucketCount, invalidBucketCount));
         }
     }
@@ -356,9 +356,9 @@ public:
         setSystemState(newState);
 
         for (uint32_t i=0; i< messageCount(numStorageNodes); i++) {
-            ASSERT_EQ(_sender.commands[i]->getType(), MessageType::REQUESTBUCKETINFO);
+            ASSERT_EQ(_sender.command(i)->getType(), MessageType::REQUESTBUCKETINFO);
 
-            const api::StorageMessageAddress *address = _sender.commands[i]->getAddress();
+            const api::StorageMessageAddress *address = _sender.command(i)->getAddress();
             ASSERT_EQ((uint32_t)(i / _bucketSpaces.size()), (uint32_t)address->getIndex());
         }
     }
@@ -373,7 +373,7 @@ public:
         lib::ClusterState newState(state);
 
         for (uint32_t i=0; i< messageCount(numStorageNodes); i++) {
-            ASSERT_NO_FATAL_FAILURE(fakeBucketReply(newState, *_sender.commands[i], numBuckets));
+            ASSERT_NO_FATAL_FAILURE(fakeBucketReply(newState, *_sender.command(i), numBuckets));
         }
         ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, state));
     }
@@ -495,7 +495,7 @@ public:
     }
 
     struct PendingClusterStateFixture {
-        MessageSenderStub sender;
+        DistributorMessageSenderStub sender;
         framework::defaultimplementation::FakeClock clock;
         std::unique_ptr<PendingClusterState> state;
 
@@ -514,7 +514,7 @@ public:
             OutdatedNodesMap outdatedNodesMap;
             state = PendingClusterState::createForClusterStateChange(
                     clock, clusterInfo, sender,
-                    owner.getBucketSpaceRepo(), owner.getReadOnlyBucketSpaceRepo(),
+                    owner.getBucketSpaceRepo(),
                     cmd, outdatedNodesMap, api::Timestamp(1));
         }
 
@@ -526,8 +526,7 @@ public:
                     owner.createClusterInfo(oldClusterState));
 
             state = PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(),
-                    owner.getReadOnlyBucketSpaceRepo(), api::Timestamp(1));
+                    clock, clusterInfo, sender, owner.getBucketSpaceRepo(), api::Timestamp(1));
         }
     };
 
@@ -543,6 +542,12 @@ public:
     {
         return std::make_unique<PendingClusterStateFixture>(*this, oldClusterState);
     }
+
+    uint32_t populate_bucket_db_via_request_bucket_info_for_benchmarking();
+
+    void complete_recovery_mode() {
+        _distributor->scanAllBuckets();
+    }
 };
 
 BucketDBUpdaterTest::BucketDBUpdaterTest()
@@ -551,20 +556,20 @@ BucketDBUpdaterTest::BucketDBUpdaterTest()
 {
 }
 
-TEST_F(BucketDBUpdaterTest, testNormalUsage) {
+TEST_F(BucketDBUpdaterTest, normal_usage) {
     setSystemState(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"));
 
-    ASSERT_EQ(messageCount(3), _sender.commands.size());
+    ASSERT_EQ(messageCount(3), _sender.commands().size());
 
     // Ensure distribution hash is set correctly
     ASSERT_EQ(
             defaultDistributorBucketSpace().getDistribution()
             .getNodeGraph().getDistributionConfigHash(),
             dynamic_cast<const RequestBucketInfoCommand&>(
-                    *_sender.commands[0]).getDistributionHash());
+                    *_sender.command(0)).getDistributionHash());
 
     ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"),
-                                            *_sender.commands[0], 10));
+                                            *_sender.command(0), 10));
 
     _sender.clear();
 
@@ -572,9 +577,9 @@ TEST_F(BucketDBUpdaterTest, testNormalUsage) {
     // change is only implemented after completion of previous cluster state
     setSystemState(lib::ClusterState("distributor:2 .0.s:i storage:3"));
 
-    ASSERT_EQ(messageCount(3), _sender.commands.size());
+    ASSERT_EQ(messageCount(3), _sender.commands().size());
     // Expect reply of first set SystemState request.
-    ASSERT_EQ(size_t(1), _sender.replies.size());
+    ASSERT_EQ(size_t(1), _sender.replies().size());
 
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(
             lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"),
@@ -582,74 +587,74 @@ TEST_F(BucketDBUpdaterTest, testNormalUsage) {
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(10, "distributor:2 storage:3"));
 }
 
-TEST_F(BucketDBUpdaterTest, testDistributorChange) {
+TEST_F(BucketDBUpdaterTest, distributor_change) {
     int numBuckets = 100;
 
     // First sends request
     setSystemState(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"));
-    ASSERT_EQ(messageCount(3), _sender.commands.size());
+    ASSERT_EQ(messageCount(3), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"),
                                                         messageCount(3), numBuckets));
     _sender.clear();
 
     // No change from initializing to up (when done with last job)
     setSystemState(lib::ClusterState("distributor:2 storage:3"));
-    ASSERT_EQ(size_t(0), _sender.commands.size());
+    ASSERT_EQ(size_t(0), _sender.commands().size());
     _sender.clear();
 
     // Adding node. No new read requests, but buckets thrown
     setSystemState(lib::ClusterState("distributor:3 storage:3"));
-    ASSERT_EQ(size_t(0), _sender.commands.size());
+    ASSERT_EQ(size_t(0), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, "distributor:3 storage:3"));
     _sender.clear();
 
     // Removing distributor. Need to refetch new data from all nodes.
     setSystemState(lib::ClusterState("distributor:2 storage:3"));
-    ASSERT_EQ(messageCount(3), _sender.commands.size());
+    ASSERT_EQ(messageCount(3), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:2 storage:3"),
                                                         messageCount(3), numBuckets));
     _sender.clear();
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, "distributor:2 storage:3"));
 }
 
-TEST_F(BucketDBUpdaterTest, testDistributorChangeWithGrouping) {
+TEST_F(BucketDBUpdaterTest, distributor_change_with_grouping) {
     std::string distConfig(getDistConfig6Nodes2Groups());
     setDistribution(distConfig);
     int numBuckets = 100;
 
     setSystemState(lib::ClusterState("distributor:6 storage:6"));
-    ASSERT_EQ(messageCount(6), _sender.commands.size());
+    ASSERT_EQ(messageCount(6), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:6 storage:6"),
                                                         messageCount(6), numBuckets));
     _sender.clear();
 
     // Distributor going down in other group, no change
     setSystemState(lib::ClusterState("distributor:6 .5.s:d storage:6"));
-    ASSERT_EQ(size_t(0), _sender.commands.size());
+    ASSERT_EQ(size_t(0), _sender.commands().size());
     _sender.clear();
 
     setSystemState(lib::ClusterState("distributor:6 storage:6"));
-    ASSERT_EQ(size_t(0), _sender.commands.size());
+    ASSERT_EQ(size_t(0), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, "distributor:6 storage:6"));
     _sender.clear();
 
     // Unchanged grouping cause no change.
     setDistribution(distConfig);
-    ASSERT_EQ(size_t(0), _sender.commands.size());
+    ASSERT_EQ(size_t(0), _sender.commands().size());
 
     // Changed grouping cause change
     setDistribution(getDistConfig6Nodes4Groups());
 
-    ASSERT_EQ(messageCount(6), _sender.commands.size());
+    ASSERT_EQ(messageCount(6), _sender.commands().size());
 }
 
-TEST_F(BucketDBUpdaterTest, testNormalUsageInitializing) {
+TEST_F(BucketDBUpdaterTest, normal_usage_initializing) {
     setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1 .0.s:i"));
 
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     // Not yet passing on system state.
-    ASSERT_EQ(size_t(0), _senderDown.commands.size());
+    ASSERT_EQ(size_t(0), _senderDown.commands().size());
 
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:1 .0.s:i storage:1"),
                                                         _bucketSpaces.size(), 10, 10));
@@ -661,7 +666,7 @@ TEST_F(BucketDBUpdaterTest, testNormalUsageInitializing) {
     }
 
     // Pass on cluster state and recheck buckets now.
-    ASSERT_EQ(size_t(1), _senderDown.commands.size());
+    ASSERT_EQ(size_t(1), _senderDown.commands().size());
 
     _sender.clear();
     _senderDown.clear();
@@ -669,28 +674,28 @@ TEST_F(BucketDBUpdaterTest, testNormalUsageInitializing) {
     setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1"));
 
     // Send a new request bucket info up.
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:1 .0.s:i storage:1"),
                                                         _bucketSpaces.size(), 20));
 
     // Pass on cluster state and recheck buckets now.
-    ASSERT_EQ(size_t(1), _senderDown.commands.size());
+    ASSERT_EQ(size_t(1), _senderDown.commands().size());
 
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(20, "distributor:1 storage:1"));
 }
 
-TEST_F(BucketDBUpdaterTest, testFailedRequestBucketInfo) {
+TEST_F(BucketDBUpdaterTest, failed_request_bucket_info) {
     setSystemState(lib::ClusterState("distributor:1 .0.s:i storage:1"));
 
     // 2 messages sent up: 1 to the nodes, and one reply to the setsystemstate.
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     {
         for (uint32_t i = 0; i < _bucketSpaces.size(); ++i) {
             std::shared_ptr<api::RequestBucketInfoReply> reply =
                 getFakeBucketReply(lib::ClusterState("distributor:1 .0.s:i storage:1"),
-                                   *((RequestBucketInfoCommand*)_sender.commands[i].get()),
+                                   *((RequestBucketInfoCommand*)_sender.command(i).get()),
                                    0,
                                    10);
             reply->setResult(api::ReturnCode::NOT_CONNECTED);
@@ -705,11 +710,11 @@ TEST_F(BucketDBUpdaterTest, testFailedRequestBucketInfo) {
     // Should be resent.
     ASSERT_EQ(getRequestBucketInfoStrings(messageCount(2)), _sender.getCommands());
 
-    ASSERT_EQ(size_t(0), _senderDown.commands.size());
+    ASSERT_EQ(size_t(0), _senderDown.commands().size());
 
     for (uint32_t i = 0; i < _bucketSpaces.size(); ++i) {
         ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:1 .0.s:i storage:1"),
-                                                *_sender.commands[_bucketSpaces.size() + i], 10));
+                                                *_sender.command(_bucketSpaces.size() + i), 10));
     }
 
     for (int i=0; i<10; i++) {
@@ -722,19 +727,19 @@ TEST_F(BucketDBUpdaterTest, testFailedRequestBucketInfo) {
     EXPECT_EQ(std::string("Set system state"), _senderDown.getCommands());
 }
 
-TEST_F(BucketDBUpdaterTest, testDownWhileInit) {
+TEST_F(BucketDBUpdaterTest, down_while_init) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
 
     ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:1 storage:3"),
-                                            *_sender.commands[0], 5));
+                                            *_sender.command(0), 5));
 
     setSystemState(lib::ClusterState("distributor:1 storage:3 .1.s:d"));
 
     ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:1 storage:3"),
-                                            *_sender.commands[2], 5));
+                                            *_sender.command(2), 5));
 
     ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:1 storage:3"),
-                                            *_sender.commands[1], 5));
+                                            *_sender.command(1), 5));
 }
 
 bool
@@ -785,7 +790,7 @@ BucketDBUpdaterTest::expandNodeVec(const std::vector<uint16_t> &nodes)
     return res;
 }
 
-TEST_F(BucketDBUpdaterTest, testNodeDown) {
+TEST_F(BucketDBUpdaterTest, node_down) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
     enableDistributorClusterState("distributor:1 storage:3");
 
@@ -800,7 +805,7 @@ TEST_F(BucketDBUpdaterTest, testNodeDown) {
     EXPECT_FALSE(bucketExistsThatHasNode(100, 1));
 }
 
-TEST_F(BucketDBUpdaterTest, testStorageNodeInMaintenanceClearsBucketsForNode) {
+TEST_F(BucketDBUpdaterTest, storage_node_in_maintenance_clears_buckets_for_node) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
     enableDistributorClusterState("distributor:1 storage:3");
 
@@ -815,7 +820,7 @@ TEST_F(BucketDBUpdaterTest, testStorageNodeInMaintenanceClearsBucketsForNode) {
     EXPECT_FALSE(bucketExistsThatHasNode(100, 1));
 }
 
-TEST_F(BucketDBUpdaterTest, testNodeDownCopiesGetInSync) {
+TEST_F(BucketDBUpdaterTest, node_down_copies_get_in_sync) {
     ASSERT_NO_FATAL_FAILURE(setStorageNodes(3));
 
     lib::ClusterState systemState("distributor:1 storage:3");
@@ -832,45 +837,45 @@ TEST_F(BucketDBUpdaterTest, testNodeDownCopiesGetInSync) {
             dumpBucket(bid));
 }
 
-TEST_F(BucketDBUpdaterTest, testInitializingWhileRecheck) {
+TEST_F(BucketDBUpdaterTest, initializing_while_recheck) {
    lib::ClusterState systemState("distributor:1 storage:2 .0.s:i .0.i:0.1");
     setSystemState(systemState);
 
-    ASSERT_EQ(messageCount(2), _sender.commands.size());
-    ASSERT_EQ(size_t(0), _senderDown.commands.size());
+    ASSERT_EQ(messageCount(2), _sender.commands().size());
+    ASSERT_EQ(size_t(0), _senderDown.commands().size());
 
     getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
     for (uint32_t i = 0; i < messageCount(2); ++i) {
-        ASSERT_NO_FATAL_FAILURE(fakeBucketReply(systemState, *_sender.commands[i], 100));
+        ASSERT_NO_FATAL_FAILURE(fakeBucketReply(systemState, *_sender.command(i), 100));
     }
 
     // Now we can pass on system state.
-    ASSERT_EQ(size_t(1), _senderDown.commands.size());
-    EXPECT_EQ(MessageType::SETSYSTEMSTATE, _senderDown.commands[0]->getType());
+    ASSERT_EQ(size_t(1), _senderDown.commands().size());
+    EXPECT_EQ(MessageType::SETSYSTEMSTATE, _senderDown.command(0)->getType());
 }
 
-TEST_F(BucketDBUpdaterTest, testBitChange) {
+TEST_F(BucketDBUpdaterTest, bit_change) {
     std::vector<document::BucketId> bucketlist;
 
     {
         setSystemState(lib::ClusterState("bits:14 storage:1 distributor:2"));
 
-        ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+        ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
         for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
-            ASSERT_EQ(_sender.commands[bsi]->getType(), MessageType::REQUESTBUCKETINFO);
-            const auto &req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.commands[bsi]);
+            ASSERT_EQ(_sender.command(bsi)->getType(), MessageType::REQUESTBUCKETINFO);
+            const auto &req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.command(bsi));
             auto sreply = std::make_shared<RequestBucketInfoReply>(req);
             sreply->setAddress(storageAddress(0));
-            api::RequestBucketInfoReply::EntryVector &vec = sreply->getBucketInfo();
+            auto& vec = sreply->getBucketInfo();
             if (req.getBucketSpace() == FixedBucketSpaces::default_space()) {
                 int cnt=0;
                 for (int i=0; cnt < 2; i++) {
                     lib::Distribution distribution = defaultDistributorBucketSpace().getDistribution();
                     std::vector<uint16_t> distributors;
                     if (distribution.getIdealDistributorNode(
-                        lib::ClusterState("redundancy:1 bits:14 storage:1 distributor:2"),
+                        lib::ClusterState("bits:14 storage:1 distributor:2"),
                         document::BucketId(16, i))
                         == 0)
                     {
@@ -899,11 +904,11 @@ TEST_F(BucketDBUpdaterTest, testBitChange) {
         _sender.clear();
         setSystemState(lib::ClusterState("bits:16 storage:1 distributor:2"));
 
-        ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+        ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
         for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
 
-            ASSERT_EQ(_sender.commands[bsi]->getType(), MessageType::REQUESTBUCKETINFO);
-            const auto &req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.commands[bsi]);
+            ASSERT_EQ(_sender.command(bsi)->getType(), MessageType::REQUESTBUCKETINFO);
+            const auto &req = dynamic_cast<const RequestBucketInfoCommand &>(*_sender.command(bsi));
             auto sreply = std::make_shared<RequestBucketInfoReply>(req);
             sreply->setAddress(storageAddress(0));
             sreply->setResult(api::ReturnCode::OK);
@@ -949,22 +954,22 @@ TEST_F(BucketDBUpdaterTest, testBitChange) {
     }
 };
 
-TEST_F(BucketDBUpdaterTest, testRecheckNodeWithFailure) {
+TEST_F(BucketDBUpdaterTest, recheck_node_with_failure) {
     ASSERT_NO_FATAL_FAILURE(initializeNodesAndBuckets(3, 5));
 
     _sender.clear();
 
     getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
-    ASSERT_EQ(size_t(1), _sender.commands.size());
+    ASSERT_EQ(size_t(1), _sender.commands().size());
 
     uint16_t index = 0;
     {
-        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[0]);
+        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(0));
         ASSERT_EQ(size_t(1), rbi.getBuckets().size());
         EXPECT_EQ(document::BucketId(16, 3), rbi.getBuckets()[0]);
         auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
-        const api::StorageMessageAddress *address = _sender.commands[0]->getAddress();
+        const api::StorageMessageAddress *address = _sender.command(0)->getAddress();
         index = address->getIndex();
         reply->setResult(api::ReturnCode::NOT_CONNECTED);
         getBucketDBUpdater().onRequestBucketInfoReply(reply);
@@ -973,14 +978,14 @@ TEST_F(BucketDBUpdaterTest, testRecheckNodeWithFailure) {
         getBucketDBUpdater().resendDelayedMessages();
     }
 
-    ASSERT_EQ(size_t(2), _sender.commands.size());
+    ASSERT_EQ(size_t(2), _sender.commands().size());
 
     setSystemState(
            lib::ClusterState(vespalib::make_string("distributor:1 storage:3 .%d.s:d", index)));
 
     // Recheck bucket.
     {
-        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[1]);
+        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(1));
         ASSERT_EQ(size_t(1), rbi.getBuckets().size());
         EXPECT_EQ(document::BucketId(16, 3), rbi.getBuckets()[0]);
         auto reply = std::make_shared<api::RequestBucketInfoReply>(rbi);
@@ -989,19 +994,19 @@ TEST_F(BucketDBUpdaterTest, testRecheckNodeWithFailure) {
     }
 
     // Should not retry since node is down.
-    EXPECT_EQ(size_t(2), _sender.commands.size());
+    EXPECT_EQ(size_t(2), _sender.commands().size());
 }
 
-TEST_F(BucketDBUpdaterTest, testRecheckNode) {
+TEST_F(BucketDBUpdaterTest, recheck_node) {
     ASSERT_NO_FATAL_FAILURE(initializeNodesAndBuckets(3, 5));
 
     _sender.clear();
 
     getBucketDBUpdater().recheckBucketInfo(1, makeDocumentBucket(document::BucketId(16, 3)));
 
-    ASSERT_EQ(size_t(1), _sender.commands.size());
+    ASSERT_EQ(size_t(1), _sender.commands().size());
 
-    auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[0]);
+    auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(0));
     ASSERT_EQ(size_t(1), rbi.getBuckets().size());
     EXPECT_EQ(document::BucketId(16, 3), rbi.getBuckets()[0]);
 
@@ -1030,11 +1035,11 @@ TEST_F(BucketDBUpdaterTest, testRecheckNode) {
     EXPECT_EQ(api::BucketInfo(20,10,12, 50, 60, true, true), copy->getBucketInfo());
 }
 
-TEST_F(BucketDBUpdaterTest, testNotifyBucketChange) {
+TEST_F(BucketDBUpdaterTest, notify_bucket_change) {
     enableDistributorClusterState("distributor:1 storage:1");
 
     addNodesToBucketDB(document::BucketId(16, 1), "0=1234");
-    _sender.replies.clear();
+    _sender.replies().clear();
 
     {
         api::BucketInfo info(1, 2, 3, 4, 5, true, true);
@@ -1053,11 +1058,11 @@ TEST_F(BucketDBUpdaterTest, testNotifyBucketChange) {
     }
 
     // Must receive reply
-    ASSERT_EQ(size_t(2), _sender.replies.size());
+    ASSERT_EQ(size_t(2), _sender.replies().size());
 
     for (int i = 0; i < 2; ++i) {
         ASSERT_EQ(MessageType::NOTIFYBUCKETCHANGE_REPLY,
-                  _sender.replies[i]->getType());
+                  _sender.reply(i)->getType());
     }
 
     // No database update until request bucket info replies have been received.
@@ -1067,14 +1072,14 @@ TEST_F(BucketDBUpdaterTest, testNotifyBucketChange) {
               dumpBucket(document::BucketId(16, 1)));
     EXPECT_EQ(std::string("NONEXISTING"), dumpBucket(document::BucketId(16, 2)));
 
-    ASSERT_EQ(size_t(2), _sender.commands.size());
+    ASSERT_EQ(size_t(2), _sender.commands().size());
 
     std::vector<api::BucketInfo> infos;
     infos.push_back(api::BucketInfo(4567, 200, 2000, 400, 4000, true, true));
     infos.push_back(api::BucketInfo(8999, 300, 3000, 500, 5000, false, false));
 
     for (int i = 0; i < 2; ++i) {
-        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[i]);
+        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(i));
         ASSERT_EQ(size_t(1), rbi.getBuckets().size());
         EXPECT_EQ(document::BucketId(16, i + 1), rbi.getBuckets()[0]);
 
@@ -1093,12 +1098,12 @@ TEST_F(BucketDBUpdaterTest, testNotifyBucketChange) {
               dumpBucket(document::BucketId(16, 2)));
 }
 
-TEST_F(BucketDBUpdaterTest, testNotifyBucketChangeFromNodeDown) {
+TEST_F(BucketDBUpdaterTest, notify_bucket_change_from_node_down) {
     enableDistributorClusterState("distributor:1 storage:2");
 
     addNodesToBucketDB(document::BucketId(16, 1), "1=1234");
 
-    _sender.replies.clear();
+    _sender.replies().clear();
 
     {
         api::BucketInfo info(8999, 300, 3000, 500, 5000, false, false);
@@ -1115,14 +1120,14 @@ TEST_F(BucketDBUpdaterTest, testNotifyBucketChangeFromNodeDown) {
                           "node(idx=1,crc=0x4d2,docs=1234/1234,bytes=1234/1234,trusted=false,active=false,ready=false)"),
               dumpBucket(document::BucketId(16, 1)));
 
-    ASSERT_EQ(size_t(1), _sender.replies.size());
-    ASSERT_EQ(MessageType::NOTIFYBUCKETCHANGE_REPLY, _sender.replies[0]->getType());
+    ASSERT_EQ(size_t(1), _sender.replies().size());
+    ASSERT_EQ(MessageType::NOTIFYBUCKETCHANGE_REPLY, _sender.reply(0)->getType());
 
     // Currently, this pending operation will be auto-flushed when the cluster state
     // changes so the behavior is still correct. Keep this test around to prevent
     // regressions here.
-    ASSERT_EQ(size_t(1), _sender.commands.size());
-    auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[0]);
+    ASSERT_EQ(size_t(1), _sender.commands().size());
+    auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(0));
     ASSERT_EQ(size_t(1), rbi.getBuckets().size());
     EXPECT_EQ(document::BucketId(16, 1), rbi.getBuckets()[0]);
 
@@ -1147,9 +1152,9 @@ TEST_F(BucketDBUpdaterTest, testNotifyBucketChangeFromNodeDown) {
  * distributor in the pending state but not by the current state would be
  * discarded when attempted inserted into the bucket database.
  */
-TEST_F(BucketDBUpdaterTest, testNotifyChangeWithPendingStateQueuesBucketInfoRequests) {
+TEST_F(BucketDBUpdaterTest, notify_change_with_pending_state_queues_bucket_info_requests) {
     setSystemState(lib::ClusterState("distributor:1 storage:1"));
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     {
         api::BucketInfo info(8999, 300, 3000, 500, 5000, false, false);
@@ -1159,15 +1164,15 @@ TEST_F(BucketDBUpdaterTest, testNotifyChangeWithPendingStateQueuesBucketInfoRequ
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
 
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(lib::ClusterState("distributor:1 storage:1"),
                                                         _bucketSpaces.size(), 10));
 
-    ASSERT_EQ(_bucketSpaces.size() + 1, _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size() + 1, _sender.commands().size());
 
     {
-        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[_bucketSpaces.size()]);
+        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(_bucketSpaces.size()));
         ASSERT_EQ(size_t(1), rbi.getBuckets().size());
         EXPECT_EQ(document::BucketId(16, 1), rbi.getBuckets()[0]);
     }
@@ -1179,14 +1184,14 @@ TEST_F(BucketDBUpdaterTest, testNotifyChangeWithPendingStateQueuesBucketInfoRequ
         uint32_t expectedMsgs = _bucketSpaces.size(), dummyBucketsToReturn = 1;
         ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(state, expectedMsgs, dummyBucketsToReturn));
     }
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
     {
-        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.commands[0]);
+        auto& rbi = dynamic_cast<RequestBucketInfoCommand&>(*_sender.command(0));
         EXPECT_EQ(size_t(0), rbi.getBuckets().size());
     }
 }
 
-TEST_F(BucketDBUpdaterTest, testMergeReply) {
+TEST_F(BucketDBUpdaterTest, merge_reply) {
     enableDistributorClusterState("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(16, 1234),
@@ -1204,10 +1209,10 @@ TEST_F(BucketDBUpdaterTest, testMergeReply) {
     _sender.clear();
     getBucketDBUpdater().onMergeBucketReply(reply);
 
-    ASSERT_EQ(size_t(3), _sender.commands.size());
+    ASSERT_EQ(size_t(3), _sender.commands().size());
 
     for (uint32_t i = 0; i < 3; i++) {
-        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.commands[i]);
+        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.command(i));
 
         ASSERT_TRUE(req.get() != nullptr);
         ASSERT_EQ(size_t(1), req->getBuckets().size());
@@ -1228,7 +1233,7 @@ TEST_F(BucketDBUpdaterTest, testMergeReply) {
               dumpBucket(document::BucketId(16, 1234)));
 };
 
-TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDown) {
+TEST_F(BucketDBUpdaterTest, merge_reply_node_down) {
     enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
 
@@ -1247,10 +1252,10 @@ TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDown) {
     _sender.clear();
     getBucketDBUpdater().onMergeBucketReply(reply);
 
-    ASSERT_EQ(size_t(2), _sender.commands.size());
+    ASSERT_EQ(size_t(2), _sender.commands().size());
 
     for (uint32_t i = 0; i < 2; i++) {
-        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.commands[i]);
+        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.command(i));
 
         ASSERT_TRUE(req.get() != nullptr);
         ASSERT_EQ(size_t(1), req->getBuckets().size());
@@ -1270,7 +1275,7 @@ TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDown) {
               dumpBucket(document::BucketId(16, 1234)));
 };
 
-TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDownAfterRequestSent) {
+TEST_F(BucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
     enableDistributorClusterState("distributor:1 storage:3");
     std::vector<api::MergeBucketCommand::Node> nodes;
 
@@ -1287,12 +1292,12 @@ TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDownAfterRequestSent) {
     _sender.clear();
     getBucketDBUpdater().onMergeBucketReply(reply);
 
-    ASSERT_EQ(size_t(3), _sender.commands.size());
+    ASSERT_EQ(size_t(3), _sender.commands().size());
 
     setSystemState(lib::ClusterState("distributor:1 storage:2"));
 
     for (uint32_t i = 0; i < 3; i++) {
-        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.commands[i]);
+        auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.command(i));
 
         ASSERT_TRUE(req.get() != nullptr);
         ASSERT_EQ(size_t(1), req->getBuckets().size());
@@ -1313,7 +1318,7 @@ TEST_F(BucketDBUpdaterTest, testMergeReplyNodeDownAfterRequestSent) {
 };
 
 
-TEST_F(BucketDBUpdaterTest, testFlush) {
+TEST_F(BucketDBUpdaterTest, flush) {
     enableDistributorClusterState("distributor:1 storage:3");
     _sender.clear();
 
@@ -1331,12 +1336,12 @@ TEST_F(BucketDBUpdaterTest, testFlush) {
     _sender.clear();
     getBucketDBUpdater().onMergeBucketReply(reply);
 
-    ASSERT_EQ(size_t(3), _sender.commands.size());
-    ASSERT_EQ(size_t(0), _senderDown.replies.size());
+    ASSERT_EQ(size_t(3), _sender.commands().size());
+    ASSERT_EQ(size_t(0), _senderDown.replies().size());
 
     getBucketDBUpdater().flush();
     // Flushing should drop all merge bucket replies
-    EXPECT_EQ(size_t(0), _senderDown.commands.size());
+    EXPECT_EQ(size_t(0), _senderDown.commands().size());
 }
 
 std::string
@@ -1350,8 +1355,8 @@ BucketDBUpdaterTest::getSentNodes(
     sortSentMessagesByIndex(fixture->sender);
 
     std::ostringstream ost;
-    for (uint32_t i = 0; i < fixture->sender.commands.size(); i++) {
-        auto& req = dynamic_cast<RequestBucketInfoCommand&>(*fixture->sender.commands[i]);
+    for (uint32_t i = 0; i < fixture->sender.commands().size(); i++) {
+        auto& req = dynamic_cast<RequestBucketInfoCommand&>(*fixture->sender.command(i));
 
         if (i > 0) {
             ost << ",";
@@ -1367,20 +1372,19 @@ std::string
 BucketDBUpdaterTest::getSentNodesDistributionChanged(
         const std::string& oldClusterState)
 {
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
 
     framework::defaultimplementation::FakeClock clock;
     ClusterInformation::CSP clusterInfo(createClusterInfo(oldClusterState));
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForDistributionChange(
-                    clock, clusterInfo, sender, getBucketSpaceRepo(),
-                    getReadOnlyBucketSpaceRepo(), api::Timestamp(1)));
+                    clock, clusterInfo, sender, getBucketSpaceRepo(), api::Timestamp(1)));
 
     sortSentMessagesByIndex(sender);
 
     std::ostringstream ost;
-    for (uint32_t i = 0; i < sender.commands.size(); i++) {
-        auto& req = dynamic_cast<RequestBucketInfoCommand&>(*sender.commands[i]);
+    for (uint32_t i = 0; i < sender.commands().size(); i++) {
+        auto& req = dynamic_cast<RequestBucketInfoCommand&>(*sender.command(i));
 
         if (i > 0) {
             ost << ",";
@@ -1392,7 +1396,7 @@ BucketDBUpdaterTest::getSentNodesDistributionChanged(
     return ost.str();
 }
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateSendMessages) {
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_send_messages) {
     EXPECT_EQ(getNodeList({0, 1, 2}),
              getSentNodes("cluster:d",
                           "distributor:1 storage:3"));
@@ -1497,8 +1501,8 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateSendMessages) {
                            "distributor:3 storage:3 .1.s:m"));
 };
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateReceive) {
-    MessageSenderStub sender;
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_receive) {
+    DistributorMessageSenderStub sender;
 
     auto cmd(std::make_shared<api::SetSystemStateCommand>(
             lib::ClusterState("distributor:1 storage:3")));
@@ -1508,16 +1512,16 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateReceive) {
     OutdatedNodesMap outdatedNodesMap;
     std::unique_ptr<PendingClusterState> state(
             PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                    clock, clusterInfo, sender, getBucketSpaceRepo(),
                     cmd, outdatedNodesMap, api::Timestamp(1)));
 
-    ASSERT_EQ(messageCount(3), sender.commands.size());
+    ASSERT_EQ(messageCount(3), sender.commands().size());
 
     sortSentMessagesByIndex(sender);
 
     std::ostringstream ost;
-    for (uint32_t i = 0; i < sender.commands.size(); i++) {
-        auto* req = dynamic_cast<RequestBucketInfoCommand*>(sender.commands[i].get());
+    for (uint32_t i = 0; i < sender.commands().size(); i++) {
+        auto* req = dynamic_cast<RequestBucketInfoCommand*>(sender.command(i).get());
         ASSERT_TRUE(req != nullptr);
 
         auto rep = std::make_shared<RequestBucketInfoReply>(*req);
@@ -1528,14 +1532,14 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateReceive) {
                         api::BucketInfo(i, i, i, i, i)));
 
         ASSERT_TRUE(state->onRequestBucketInfoReply(rep));
-        ASSERT_EQ((i == (sender.commands.size() - 1)), state->done());
+        ASSERT_EQ((i == (sender.commands().size() - 1)), state->done());
     }
 
     auto& pendingTransition = state->getPendingBucketSpaceDbTransition(makeBucketSpace());
     EXPECT_EQ(3, (int)pendingTransition.results().size());
 }
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateWithGroupDown) {
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_with_group_down) {
     std::string config(getDistConfig6Nodes4Groups());
     config += "distributor_auto_ownership_transfer_on_whole_group_down true\n";
     setDistribution(config);
@@ -1554,7 +1558,7 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateWithGroupDown) {
                            "distributor:6 .2.s:d storage:6"));
 }
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateWithGroupDownAndNoHandover) {
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_with_group_down_and_no_handover) {
     std::string config(getDistConfig6Nodes4Groups());
     config += "distributor_auto_ownership_transfer_on_whole_group_down false\n";
     setDistribution(config);
@@ -1617,7 +1621,7 @@ struct BucketDumper : public BucketDatabase::EntryProcessor
     {
     }
 
-    bool process(const BucketDatabase::Entry& e) override {
+    bool process(const BucketDatabase::ConstEntryRef& e) override {
         document::BucketId bucketId(e.getBucketId());
 
         ost << (uint32_t)bucketId.getRawId() << ":";
@@ -1650,7 +1654,7 @@ BucketDBUpdaterTest::mergeBucketLists(
     framework::defaultimplementation::FakeClock clock;
     framework::MilliSecTimer timer(clock);
 
-    MessageSenderStub sender;
+    DistributorMessageSenderStub sender;
     OutdatedNodesMap outdatedNodesMap;
 
     {
@@ -1661,7 +1665,7 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo("cluster:d"));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                        clock, clusterInfo, sender, getBucketSpaceRepo(),
                         cmd, outdatedNodesMap, beforeTime));
 
         parseInputData(existingData, beforeTime, *state, includeBucketInfo);
@@ -1680,7 +1684,7 @@ BucketDBUpdaterTest::mergeBucketLists(
         ClusterInformation::CSP clusterInfo(createClusterInfo(oldState.toString()));
         std::unique_ptr<PendingClusterState> state(
                 PendingClusterState::createForClusterStateChange(
-                        clock, clusterInfo, sender, getBucketSpaceRepo(), getReadOnlyBucketSpaceRepo(),
+                        clock, clusterInfo, sender, getBucketSpaceRepo(),
                         cmd, outdatedNodesMap, afterTime));
 
         parseInputData(newData, afterTime, *state, includeBucketInfo);
@@ -1707,7 +1711,7 @@ BucketDBUpdaterTest::mergeBucketLists(const std::string& existingData,
             includeBucketInfo);
 }
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateMerge) {
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_merge) {
     // Simple initializing case - ask all nodes for info
     EXPECT_EQ(
             // Result is on the form: [bucket w/o count bits]:[node indexes]|..
@@ -1777,7 +1781,7 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateMerge) {
               mergeBucketLists("", "0:5/0/0/0|1:5/2/3/4", true));
 }
 
-TEST_F(BucketDBUpdaterTest, testPendingClusterStateMergeReplicaChanged) {
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_merge_replica_changed) {
     // Node went from initializing to up and non-invalid bucket changed.
     EXPECT_EQ(
             std::string("2:0/2/3/4/t|3:0/2/4/6/t|"),
@@ -1789,7 +1793,7 @@ TEST_F(BucketDBUpdaterTest, testPendingClusterStateMergeReplicaChanged) {
                     true));
 }
 
-TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInCurrentState) {
+TEST_F(BucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_current_state) {
     document::BucketId bucket(16, 3);
     lib::ClusterState stateBefore("distributor:1 storage:1");
     {
@@ -1800,10 +1804,10 @@ TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInCurrentState)
 
     getBucketDBUpdater().recheckBucketInfo(0, makeDocumentBucket(bucket));
 
-    ASSERT_EQ(size_t(1), _sender.commands.size());
+    ASSERT_EQ(size_t(1), _sender.commands().size());
     std::shared_ptr<api::RequestBucketInfoCommand> rbi(
             std::dynamic_pointer_cast<RequestBucketInfoCommand>(
-                    _sender.commands[0]));
+                    _sender.command(0)));
 
     lib::ClusterState stateAfter("distributor:3 storage:3");
 
@@ -1819,7 +1823,7 @@ TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInCurrentState)
     EXPECT_EQ(std::string("NONEXISTING"), dumpBucket(bucket));
 }
 
-TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInPendingState) {
+TEST_F(BucketDBUpdaterTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     document::BucketId bucket(16, 3);
     lib::ClusterState stateBefore("distributor:1 storage:1");
     {
@@ -1830,10 +1834,10 @@ TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInPendingState)
 
     getBucketDBUpdater().recheckBucketInfo(0, makeDocumentBucket(bucket));
 
-    ASSERT_EQ(size_t(1), _sender.commands.size());
+    ASSERT_EQ(size_t(1), _sender.commands().size());
     std::shared_ptr<api::RequestBucketInfoCommand> rbi(
             std::dynamic_pointer_cast<RequestBucketInfoCommand>(
-                    _sender.commands[0]));
+                    _sender.command(0)));
 
     lib::ClusterState stateAfter("distributor:3 storage:3");
     // Set, but _don't_ enable cluster state. We want it to be pending.
@@ -1855,7 +1859,7 @@ TEST_F(BucketDBUpdaterTest, testNoDbResurrectionForBucketNotOwnedInPendingState)
  * will with a high likelihood end up not getting the complete view of the buckets in
  * the cluster.
  */
-TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistributionChangePending) {
+TEST_F(BucketDBUpdaterTest, cluster_state_always_sends_full_fetch_when_distribution_change_pending) {
     lib::ClusterState stateBefore("distributor:6 storage:6");
     {
         uint32_t expectedMsgs = messageCount(6), dummyBucketsToReturn = 1;
@@ -1866,19 +1870,19 @@ TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistribution
     setDistribution(distConfig);
 
     sortSentMessagesByIndex(_sender);
-    ASSERT_EQ(messageCount(6), _sender.commands.size());
+    ASSERT_EQ(messageCount(6), _sender.commands().size());
     // Suddenly, a wild cluster state change appears! Even though this state
     // does not in itself imply any bucket changes, it will still overwrite the
     // pending cluster state and thus its state of pending bucket info requests.
     setSystemState(lib::ClusterState("distributor:6 .2.t:12345 storage:6"));
 
-    ASSERT_EQ(messageCount(12), _sender.commands.size());
+    ASSERT_EQ(messageCount(12), _sender.commands().size());
 
     // Send replies for first messageCount(6) (outdated requests).
     int numBuckets = 10;
     for (uint32_t i = 0; i < messageCount(6); ++i) {
         ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:6 storage:6"),
-                                *_sender.commands[i], numBuckets));
+                                *_sender.command(i), numBuckets));
     }
     // No change from these.
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(1, "distributor:6 storage:6"));
@@ -1886,7 +1890,7 @@ TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistribution
     // Send for current pending.
     for (uint32_t i = 0; i < messageCount(6); ++i) {
         ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:6 .2.t:12345 storage:6"),
-                                                *_sender.commands[i + messageCount(6)],
+                                                *_sender.command(i + messageCount(6)),
                                                 numBuckets));
     }
     ASSERT_NO_FATAL_FAILURE(assertCorrectBuckets(numBuckets, "distributor:6 storage:6"));
@@ -1894,14 +1898,14 @@ TEST_F(BucketDBUpdaterTest, testClusterStateAlwaysSendsFullFetchWhenDistribution
 
     // No more pending global fetch; this should be a no-op state.
     setSystemState(lib::ClusterState("distributor:6 .3.t:12345 storage:6"));
-    EXPECT_EQ(size_t(0), _sender.commands.size());
+    EXPECT_EQ(size_t(0), _sender.commands().size());
 }
 
-TEST_F(BucketDBUpdaterTest, testChangedDistributionConfigTriggersRecoveryMode) {
+TEST_F(BucketDBUpdaterTest, changed_distribution_config_triggers_recovery_mode) {
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"), messageCount(6), 20));
     _sender.clear();
-    // First cluster state; implicit scan of all buckets which does not
-    // use normal recovery mode ticking-path.
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    complete_recovery_mode();
     EXPECT_FALSE(_distributor->isInRecoveryMode());
 
     std::string distConfig(getDistConfig6Nodes4Groups());
@@ -1910,16 +1914,18 @@ TEST_F(BucketDBUpdaterTest, testChangedDistributionConfigTriggersRecoveryMode) {
     // No replies received yet, still no recovery mode.
     EXPECT_FALSE(_distributor->isInRecoveryMode());
 
-    ASSERT_EQ(messageCount(6), _sender.commands.size());
+    ASSERT_EQ(messageCount(6), _sender.commands().size());
     uint32_t numBuckets = 10;
     for (uint32_t i = 0; i < messageCount(6); ++i) {
         ASSERT_NO_FATAL_FAILURE(fakeBucketReply(lib::ClusterState("distributor:6 storage:6"),
-                                                *_sender.commands[i], numBuckets));
+                                                *_sender.command(i), numBuckets));
     }
 
     // Pending cluster state (i.e. distribution) has been enabled, which should
     // cause recovery mode to be entered.
     EXPECT_TRUE(_distributor->isInRecoveryMode());
+    complete_recovery_mode();
+    EXPECT_FALSE(_distributor->isInRecoveryMode());
 }
 
 namespace {
@@ -1931,7 +1937,7 @@ struct FunctorProcessor : BucketDatabase::EntryProcessor {
     template <typename F>
     explicit FunctorProcessor(F&& f) : _f(std::forward<F>(f)) {}
 
-    bool process(const BucketDatabase::Entry& e) override {
+    bool process(const BucketDatabase::ConstEntryRef& e) override {
         _f(e);
         return true;
     }
@@ -1964,7 +1970,7 @@ TEST_F(BucketDBUpdaterTest, changed_distribution_config_does_not_elide_bucket_db
     }));
 }
 
-TEST_F(BucketDBUpdaterTest, testNewlyAddedBucketsHaveCurrentTimeAsGcTimestamp) {
+TEST_F(BucketDBUpdaterTest, newly_added_buckets_have_current_time_as_gc_timestamp) {
     getClock().setAbsoluteTimeInSeconds(101234);
     lib::ClusterState stateBefore("distributor:1 storage:1");
     {
@@ -1979,7 +1985,7 @@ TEST_F(BucketDBUpdaterTest, testNewlyAddedBucketsHaveCurrentTimeAsGcTimestamp) {
     EXPECT_EQ(uint32_t(101234), e->getLastGarbageCollectionTime());
 }
 
-TEST_F(BucketDBUpdaterTest, testNewerMutationsNotOverwrittenByEarlierBucketFetch) {
+TEST_F(BucketDBUpdaterTest, newer_mutations_not_overwritten_by_earlier_bucket_fetch) {
     {
         lib::ClusterState stateBefore("distributor:1 storage:1 .0.s:i");
         uint32_t expectedMsgs = _bucketSpaces.size(), dummyBucketsToReturn = 0;
@@ -1992,7 +1998,7 @@ TEST_F(BucketDBUpdaterTest, testNewerMutationsNotOverwrittenByEarlierBucketFetch
     getClock().setAbsoluteTimeInSeconds(1000);
     lib::ClusterState state("distributor:1 storage:1");
     setSystemState(state);
-    ASSERT_EQ(_bucketSpaces.size(), _sender.commands.size());
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
 
     // Before replying with the bucket info, simulate the arrival of a mutation
     // reply that alters the state of the bucket with information that will be
@@ -2017,7 +2023,7 @@ TEST_F(BucketDBUpdaterTest, testNewerMutationsNotOverwrittenByEarlierBucketFetch
     // correctness, as this should contain the same bucket info as that
     // contained in the full bucket reply and the DB update is thus idempotent.
     for (uint32_t i = 0; i < _bucketSpaces.size(); ++i) {
-        ASSERT_NO_FATAL_FAILURE(fakeBucketReply(state, *_sender.commands[i], bucketsReturned));
+        ASSERT_NO_FATAL_FAILURE(fakeBucketReply(state, *_sender.command(i), bucketsReturned));
     }
 
     BucketDatabase::Entry e(getBucket(bucket));
@@ -2029,8 +2035,8 @@ std::vector<uint16_t>
 BucketDBUpdaterTest::getSendSet() const
 {
     std::vector<uint16_t> nodes;
-    std::transform(_sender.commands.begin(),
-                   _sender.commands.end(),
+    std::transform(_sender.commands().begin(),
+                   _sender.commands().end(),
                    std::back_inserter(nodes),
                    [](auto& cmd)
     {
@@ -2074,7 +2080,7 @@ using nodeVec = std::vector<uint16_t>;
  * database modifications caused by intermediate states will not be
  * accounted for (basically the ABA problem in a distributed setting).
  */
-TEST_F(BucketDBUpdaterTest, preemptedDistrChangeCarriesNodeSetOverToNextStateFetch) {
+TEST_F(BucketDBUpdaterTest, preempted_distributor_change_carries_node_set_over_to_next_state_fetch) {
     EXPECT_EQ(
         expandNodeVec({0, 1, 2, 3, 4, 5}),
         getSentNodesWithPreemption("version:1 distributor:6 storage:6",
@@ -2083,7 +2089,7 @@ TEST_F(BucketDBUpdaterTest, preemptedDistrChangeCarriesNodeSetOverToNextStateFet
                                    "version:3 distributor:6 storage:6"));
 }
 
-TEST_F(BucketDBUpdaterTest, preemptedStorChangeCarriesNodeSetOverToNextStateFetch) {
+TEST_F(BucketDBUpdaterTest, preempted_storage_change_carries_node_set_over_to_next_state_fetch) {
     EXPECT_EQ(
         expandNodeVec({2, 3}),
         getSentNodesWithPreemption(
@@ -2093,7 +2099,7 @@ TEST_F(BucketDBUpdaterTest, preemptedStorChangeCarriesNodeSetOverToNextStateFetc
                 "version:3 distributor:6 storage:6"));
 }
 
-TEST_F(BucketDBUpdaterTest, preemptedStorageNodeDownMustBeReFetched) {
+TEST_F(BucketDBUpdaterTest, preempted_storage_node_down_must_be_re_fetched) {
     EXPECT_EQ(
         expandNodeVec({2}),
         getSentNodesWithPreemption(
@@ -2103,7 +2109,7 @@ TEST_F(BucketDBUpdaterTest, preemptedStorageNodeDownMustBeReFetched) {
                 "version:3 distributor:6 storage:6"));
 }
 
-TEST_F(BucketDBUpdaterTest, doNotSendToPreemptedNodeNowInDownState) {
+TEST_F(BucketDBUpdaterTest, do_not_send_to_preempted_node_now_in_down_state) {
     EXPECT_EQ(
         nodeVec{},
         getSentNodesWithPreemption(
@@ -2125,7 +2131,7 @@ TEST_F(BucketDBUpdaterTest, doNotSendToPreemptedNodeNotPartOfNewState) {
                 "version:3 distributor:6 storage:6"));
 }
 
-TEST_F(BucketDBUpdaterTest, outdatedNodeSetClearedAfterSuccessfulStateCompletion) {
+TEST_F(BucketDBUpdaterTest, outdated_node_set_cleared_after_successful_state_completion) {
     lib::ClusterState stateBefore(
             "version:1 distributor:6 storage:6 .1.t:1234");
     uint32_t expectedMsgs = messageCount(6), dummyBucketsToReturn = 10;
@@ -2136,7 +2142,7 @@ TEST_F(BucketDBUpdaterTest, outdatedNodeSetClearedAfterSuccessfulStateCompletion
     // (completed) cluster state has been set.
     lib::ClusterState stateAfter("version:3 distributor:6 storage:6");
     setSystemState(stateAfter);
-    EXPECT_EQ(size_t(0), _sender.commands.size());
+    EXPECT_EQ(size_t(0), _sender.commands().size());
 }
 
 // XXX test currently disabled since distribution config currently isn't used
@@ -2145,7 +2151,7 @@ TEST_F(BucketDBUpdaterTest, outdatedNodeSetClearedAfterSuccessfulStateCompletion
 // distribution config will follow very shortly after the config has been
 // applied to the node. The new cluster state will then send out requests to
 // the correct node set.
-TEST_F(BucketDBUpdaterTest, DISABLED_clusterConfigDownsizeOnlySendsToAvailableNodes) {
+TEST_F(BucketDBUpdaterTest, DISABLED_cluster_config_downsize_only_sends_to_available_nodes) {
     uint32_t expectedMsgs = 6, dummyBucketsToReturn = 20;
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"),
                                                      expectedMsgs, dummyBucketsToReturn));
@@ -2160,7 +2166,7 @@ TEST_F(BucketDBUpdaterTest, DISABLED_clusterConfigDownsizeOnlySendsToAvailableNo
     EXPECT_EQ((nodeVec{0, 1, 2}), getSendSet());
 }
 
-TEST_F(BucketDBUpdaterTest, changedDiskSetTriggersReFetch) {
+TEST_F(BucketDBUpdaterTest, changed_disk_set_triggers_re_fetch) {
     // Same number of online disks, but the set of disks has changed.
     EXPECT_EQ(
             getNodeList({1}),
@@ -2176,7 +2182,7 @@ TEST_F(BucketDBUpdaterTest, changedDiskSetTriggersReFetch) {
  *
  * See VESPA-790 for details.
  */
-TEST_F(BucketDBUpdaterTest, nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer) {
+TEST_F(BucketDBUpdaterTest, node_missing_from_config_is_treated_as_needing_ownership_transfer) {
     uint32_t expectedMsgs = messageCount(3), dummyBucketsToReturn = 1;
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:3 storage:3"),
                                                      expectedMsgs, dummyBucketsToReturn));
@@ -2348,10 +2354,10 @@ TEST_F(BucketDBUpdaterTest, global_distribution_hash_falls_back_to_legacy_format
     const vespalib::string legacy_hash = "(0d3|3|*(0;0;1;2)(1;3;4;5))";
 
     setSystemState(lib::ClusterState("distributor:6 storage:6"));
-    ASSERT_EQ(messageCount(6), _sender.commands.size());
+    ASSERT_EQ(messageCount(6), _sender.commands().size());
 
     api::RequestBucketInfoCommand* global_req = nullptr;
-    for (auto& cmd : _sender.commands) {
+    for (auto& cmd : _sender.commands()) {
         auto& req_cmd = dynamic_cast<api::RequestBucketInfoCommand&>(*cmd);
         if (req_cmd.getBucketSpace() == document::FixedBucketSpaces::global_space()) {
             global_req = &req_cmd;
@@ -2369,8 +2375,8 @@ TEST_F(BucketDBUpdaterTest, global_distribution_hash_falls_back_to_legacy_format
     getBucketDBUpdater().resendDelayedMessages();
 
     // Should now be a resent request with legacy distribution hash
-    ASSERT_EQ(messageCount(6) + 1, _sender.commands.size());
-    auto& legacy_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands.back());
+    ASSERT_EQ(messageCount(6) + 1, _sender.commands().size());
+    auto& legacy_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands().back());
     ASSERT_EQ(legacy_hash, legacy_req.getDistributionHash());
 
     // Now if we reject it _again_ we should cycle back to the current hash
@@ -2382,8 +2388,8 @@ TEST_F(BucketDBUpdaterTest, global_distribution_hash_falls_back_to_legacy_format
     getClock().addSecondsToTime(10);
     getBucketDBUpdater().resendDelayedMessages();
 
-    ASSERT_EQ(messageCount(6) + 2, _sender.commands.size());
-    auto& new_current_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands.back());
+    ASSERT_EQ(messageCount(6) + 2, _sender.commands().size());
+    auto& new_current_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands().back());
     ASSERT_EQ(current_hash, new_current_req.getDistributionHash());
 }
 
@@ -2414,7 +2420,7 @@ TEST_F(BucketDBUpdaterTest, non_owned_buckets_moved_to_read_only_db_on_ownership
     lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
     set_cluster_state_bundle(lib::ClusterStateBundle(initial_state, {}, false)); // Skip activation step for simplicity
 
-    ASSERT_EQ(messageCount(4), _sender.commands.size());
+    ASSERT_EQ(messageCount(4), _sender.commands().size());
     constexpr uint32_t n_buckets = 10;
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(initial_state, messageCount(4), n_buckets));
     _sender.clear();
@@ -2467,7 +2473,7 @@ TEST_F(BucketDBUpdaterTest, non_owned_buckets_purged_when_read_only_support_is_c
     lib::ClusterState initial_state("distributor:1 storage:4"); // All buckets owned by us by definition
     set_cluster_state_bundle(lib::ClusterStateBundle(initial_state, {}, false)); // Skip activation step for simplicity
 
-    ASSERT_EQ(messageCount(4), _sender.commands.size());
+    ASSERT_EQ(messageCount(4), _sender.commands().size());
     constexpr uint32_t n_buckets = 10;
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(initial_state, messageCount(4), n_buckets));
     _sender.clear();
@@ -2494,14 +2500,14 @@ void BucketDBUpdaterTest::trigger_completed_but_not_yet_activated_transition(
     getConfig().setAllowStaleReadsDuringClusterStateTransitions(true);
     lib::ClusterState initial_state(initial_state_str);
     setSystemState(initial_state);
-    ASSERT_EQ(messageCount(initial_expected_msgs), _sender.commands.size());
+    ASSERT_EQ(messageCount(initial_expected_msgs), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(
             initial_state, messageCount(initial_expected_msgs), initial_buckets));
     _sender.clear();
 
     lib::ClusterState pending_state(pending_state_str); // Ownership change
     set_cluster_state_bundle(lib::ClusterStateBundle(pending_state, {}, true));
-    ASSERT_EQ(messageCount(pending_expected_msgs), _sender.commands.size());
+    ASSERT_EQ(messageCount(pending_expected_msgs), _sender.commands().size());
     ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(
             pending_state, messageCount(pending_expected_msgs), pending_buckets));
     _sender.clear();
@@ -2575,7 +2581,150 @@ TEST_F(BucketDBUpdaterTest, activate_cluster_state_request_without_pending_trans
     // Note: state manager is not modelled in this test, so we just check that the message handler returns
     // false (meaning "didn't take message ownership") and there's no auto-generated reply.
     EXPECT_FALSE(activate_cluster_state_version(3));
-    EXPECT_EQ(size_t(0), _sender.replies.size());
+    EXPECT_EQ(size_t(0), _sender.replies().size());
+}
+
+TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_bulk_loading_into_empty_db) {
+    // Need to trigger an initial edge to complete first bucket scan
+    ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:2 storage:1"),
+                                                     messageCount(1), 0));
+    _sender.clear();
+
+    lib::ClusterState state("distributor:1 storage:1");
+    setSystemState(state);
+
+    constexpr uint32_t superbuckets = 1u << 16u;
+    constexpr uint32_t sub_buckets = 14;
+    constexpr uint32_t n_buckets = superbuckets * sub_buckets;
+
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
+    for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
+        ASSERT_EQ(_sender.command(bsi)->getType(), MessageType::REQUESTBUCKETINFO);
+        const auto& req = dynamic_cast<const RequestBucketInfoCommand&>(*_sender.command(bsi));
+
+        auto sreply = std::make_shared<RequestBucketInfoReply>(req);
+        sreply->setAddress(storageAddress(0));
+        auto& vec = sreply->getBucketInfo();
+        if (req.getBucketSpace() == FixedBucketSpaces::default_space()) {
+            for (uint32_t sb = 0; sb < superbuckets; ++sb) {
+                for (uint64_t i = 0; i < sub_buckets; ++i) {
+                    document::BucketId bucket(48, (i << 32ULL) | sb);
+                    vec.push_back(api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(10, 1, 1)));
+                }
+            }
+        }
+
+        vespalib::BenchmarkTimer timer(1.0);
+        // Global space has no buckets but will serve as a trigger for merging
+        // buckets into the DB. This lets us measure the overhead of just this part.
+        if (req.getBucketSpace() == FixedBucketSpaces::global_space()) {
+            timer.before();
+        }
+        getBucketDBUpdater().onRequestBucketInfoReply(sreply);
+        if (req.getBucketSpace() == FixedBucketSpaces::global_space()) {
+            timer.after();
+            fprintf(stderr, "Took %g seconds to merge %u buckets into DB\n", timer.min_time(), n_buckets);
+        }
+    }
+
+    EXPECT_EQ(size_t(n_buckets), mutable_default_db().size());
+    EXPECT_EQ(size_t(0), mutable_global_db().size());
+}
+
+uint32_t BucketDBUpdaterTest::populate_bucket_db_via_request_bucket_info_for_benchmarking() {
+    // Need to trigger an initial edge to complete first bucket scan
+    setAndEnableClusterState(lib::ClusterState("distributor:2 storage:1"), messageCount(1), 0);
+    _sender.clear();
+
+    lib::ClusterState state("distributor:1 storage:1");
+    setSystemState(state);
+
+    constexpr uint32_t superbuckets = 1u << 16u;
+    constexpr uint32_t sub_buckets = 14;
+    constexpr uint32_t n_buckets = superbuckets * sub_buckets;
+
+    assert(_bucketSpaces.size() == _sender.commands().size());
+    for (uint32_t bsi = 0; bsi < _bucketSpaces.size(); ++bsi) {
+        assert(_sender.command(bsi)->getType() == MessageType::REQUESTBUCKETINFO);
+        const auto& req = dynamic_cast<const RequestBucketInfoCommand&>(*_sender.command(bsi));
+
+        auto sreply = std::make_shared<RequestBucketInfoReply>(req);
+        sreply->setAddress(storageAddress(0));
+        auto& vec = sreply->getBucketInfo();
+        if (req.getBucketSpace() == FixedBucketSpaces::default_space()) {
+            for (uint32_t sb = 0; sb < superbuckets; ++sb) {
+                for (uint64_t i = 0; i < sub_buckets; ++i) {
+                    document::BucketId bucket(48, (i << 32ULL) | sb);
+                    vec.push_back(api::RequestBucketInfoReply::Entry(bucket, api::BucketInfo(10, 1, 1)));
+                }
+            }
+        }
+        getBucketDBUpdater().onRequestBucketInfoReply(sreply);
+    }
+
+    assert(mutable_default_db().size() == n_buckets);
+    assert(mutable_global_db().size() == 0);
+    return n_buckets;
+}
+
+TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_removing_buckets_for_unavailable_storage_nodes) {
+    const uint32_t n_buckets = populate_bucket_db_via_request_bucket_info_for_benchmarking();
+
+    lib::ClusterState no_op_state("distributor:1 storage:1 .0.s:m"); // Removing all buckets via ownership
+    vespalib::BenchmarkTimer timer(1.0);
+    timer.before();
+    setSystemState(no_op_state);
+    timer.after();
+    fprintf(stderr, "Took %g seconds to scan and remove %u buckets\n", timer.min_time(), n_buckets);
+}
+
+TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_no_buckets_removed_during_node_remover_db_pass) {
+    const uint32_t n_buckets = populate_bucket_db_via_request_bucket_info_for_benchmarking();
+
+    // TODO this benchmark is void if we further restrict the pruning elision logic to allow
+    // elision when storage nodes come online.
+    lib::ClusterState no_op_state("distributor:1 storage:2"); // Not removing any buckets
+    vespalib::BenchmarkTimer timer(1.0);
+    timer.before();
+    setSystemState(no_op_state);
+    timer.after();
+    fprintf(stderr, "Took %g seconds to scan %u buckets with no-op action\n", timer.min_time(), n_buckets);
+}
+
+TEST_F(BucketDBUpdaterTest, DISABLED_benchmark_all_buckets_removed_during_node_remover_db_pass) {
+    const uint32_t n_buckets = populate_bucket_db_via_request_bucket_info_for_benchmarking();
+
+    lib::ClusterState no_op_state("distributor:1 storage:1 .0.s:m"); // Removing all buckets via all replicas gone
+    vespalib::BenchmarkTimer timer(1.0);
+    timer.before();
+    setSystemState(no_op_state);
+    timer.after();
+    fprintf(stderr, "Took %g seconds to scan and remove %u buckets\n", timer.min_time(), n_buckets);
+}
+
+TEST_F(BucketDBUpdaterTest, pending_cluster_state_getter_is_non_null_only_when_state_is_pending) {
+    auto initial_baseline = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:d");
+    auto initial_default = std::make_shared<lib::ClusterState>("distributor:1 storage:2 .0.s:m");
+
+    lib::ClusterStateBundle initial_bundle(*initial_baseline, {{FixedBucketSpaces::default_space(), initial_default},
+                                                               {FixedBucketSpaces::global_space(), initial_baseline}});
+    set_cluster_state_bundle(initial_bundle);
+
+    auto* state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::default_space());
+    ASSERT_TRUE(state != nullptr);
+    EXPECT_EQ(*initial_default, *state);
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::global_space());
+    ASSERT_TRUE(state != nullptr);
+    EXPECT_EQ(*initial_baseline, *state);
+
+    ASSERT_NO_FATAL_FAILURE(completeBucketInfoGathering(*initial_baseline, messageCount(1), 0));
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::default_space());
+    EXPECT_TRUE(state == nullptr);
+
+    state = getBucketDBUpdater().pendingClusterStateOrNull(FixedBucketSpaces::global_space());
+    EXPECT_TRUE(state == nullptr);
 }
 
 }

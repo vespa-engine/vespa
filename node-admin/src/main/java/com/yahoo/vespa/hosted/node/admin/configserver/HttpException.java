@@ -1,13 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver;
 
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+
 import javax.ws.rs.core.Response;
 
 /**
  * @author hakonhall
  */
 @SuppressWarnings("serial")
-public class HttpException extends RuntimeException {
+public class HttpException extends ConvergenceException {
 
     private final boolean isRetryable;
 
@@ -21,7 +23,12 @@ public class HttpException extends RuntimeException {
         this.isRetryable = isRetryable;
     }
 
-    public boolean isRetryable() {
+    private HttpException(String message) {
+        super(message);
+        this.isRetryable = false;
+    }
+
+    boolean isRetryable() {
         return isRetryable;
     }
 

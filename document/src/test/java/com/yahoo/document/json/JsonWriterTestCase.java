@@ -26,7 +26,6 @@ import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -273,10 +272,13 @@ public class JsonWriterTestCase {
     }
 
     @Test
-    public final void rawTest() throws IOException {
+    public final void raw_fields_are_emitted_as_basic_base64() throws IOException {
+        // "string long enough to emit more than 76 base64 characters and which should certainly not be newline-delimited!"
         String payload = new String(
-                new JsonStringEncoder().quoteAsString(new Base64()
-                        .encodeToString(Utf8.toBytes("smoketest"))));
+                new JsonStringEncoder().quoteAsString(
+                        "c3RyaW5nIGxvbmcgZW5vdWdoIHRvIGVtaXQgbW9yZSB0aGFuIDc2IGJhc2U2NCBjaGFyYWN0ZXJzIGFuZC" +
+                              "B3aGljaCBzaG91bGQgY2VydGFpbmx5IG5vdCBiZSBuZXdsaW5lLWRlbGltaXRlZCE="));
+
         String docId = "id:unittest:testraw::whee";
 
         String fields = "{ \"actualraw\": \"" + payload + "\"" + " }";

@@ -14,7 +14,7 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
         ASSERT_TRUE(pos != param_repo.map.end());
-        param_types.push_back(ValueType::from_spec(pos->second.type));
+        param_types.push_back(ValueType::from_spec(pos->second.value.type()));
         ASSERT_TRUE(!param_types.back().is_error());
     }
     return NodeTypes(function, param_types);

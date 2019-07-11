@@ -105,8 +105,7 @@ public class FS4Channel {
      * @param packetCount the number of packets to receive, or -1 to receive any number up to eol/error
      */
     public BasicPacket[] receivePackets(long timeout, int packetCount)
-        throws InvalidChannelException, ChannelTimeoutException
-    {
+            throws InvalidChannelException, ChannelTimeoutException {
         ensureValid();
 
         List<BasicPacket> packets = new ArrayList<>(12);

@@ -2,9 +2,9 @@
 
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/serialization/typed_binary_format.h>
-#include <vespa/eval/tensor/tensor_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -55,10 +55,9 @@ using search::index::schema::CollectionType;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
+using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
-using vespalib::tensor::TensorFactory;
+using vespalib::tensor::DefaultTensorEngine;
 using namespace vespalib::slime;
 
 typedef std::unique_ptr<GeneralResult> GeneralResultPtr;
@@ -137,10 +136,9 @@ getDocTypeName()
     return "searchdocument";
 }
 
-Tensor::UP createTensor(const TensorCells &cells,
-                        const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return TensorFactory::create(cells, dimensions, builder);
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
 
 vespalib::string asVstring(vespalib::Memory str) {
@@ -657,7 +655,7 @@ Test::requireThatSummariesTimeout()
     vespalib::Slime summary = getSlime(*rep, 0, false);
     JsonFormat::encode(summary, buf, false);
     auto bufstring = buf.get().make_stringref(); 
-    EXPECT_TRUE(std::regex_search(bufstring.data(), bufstring.data() + bufstring.size(), std::basic_regex<char>("Timed out with -[0-9]+us left.")));
+    EXPECT_TRUE(std::regex_search(bufstring.data(), bufstring.data() + bufstring.size(), std::regex("Timed out with -[0-9]+us left.")));
 }
 
 void
@@ -750,7 +748,8 @@ Test::requireThatAttributesAreUsed()
            endElement().
            endField().
            startAttributeField("bj").
-           addTensor(createTensor({ {{{"x","f"},{"y","g"}}, 3} }, { "x", "y"})).
+           addTensor(make_tensor(TensorSpec("tensor(x{},y{})")
+                                 .add({{"x", "f"}, {"y", "g"}}, 3))).
            endField().
            endDocument(),
            2);
@@ -776,7 +775,8 @@ Test::requireThatAttributesAreUsed()
                             "bh:[{item:40.4,weight:4},{item:50.5,weight:5}],"
                             "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
                             "bj:'0x01020178017901016601674008000000000000'}", *rep, 0, true));
-    TEST_DO(assertTensor(createTensor({ {{{"x","f"},{"y","g"}}, 3} }, { "x", "y"}),
+    TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
+                                     .add({{"x", "f"}, {"y", "g"}}, 3)),
                          "bj", *rep, 0, rclass));
 
     // empty doc
@@ -790,13 +790,15 @@ Test::requireThatAttributesAreUsed()
 
     attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(bjAttr->getNamePrefix()),
                                  [&]() {
-                                     bjTensorAttr->setTensor(3, *createTensor({ {{{"x", "a"},{"y", "b"}}, 4} }, { "x"}));
+                                     bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
+                                                     .add({{"x", "a"}, {"y", "b"}}, 4)));
                                      bjTensorAttr->commit();
                                  });
     attributeFieldWriter.sync();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
-    TEST_DO(assertTensor(createTensor({ {{{"x","a"},{"y","b"}}, 4} }, { "x", "y"}),
+    TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
+                                     .add({{"x", "a"}, {"y", "b"}}, 4)),
                          "bj", *rep2, 1, rclass));
 
     DocsumRequest req3;

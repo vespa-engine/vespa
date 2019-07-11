@@ -45,7 +45,7 @@ struct ArrayParam : public fef::Anything {
 namespace wset {
 
 template <typename DimensionVType, typename DimensionHType, typename ComponentType, typename HashMapComparator = std::equal_to<DimensionHType> >
-class VectorBase {
+class VectorBase : public fef::Anything {
 public:
     typedef std::pair<DimensionVType, ComponentType> Element; // <dimension, component>
     typedef std::vector<Element>                    Vector;
@@ -74,6 +74,10 @@ public:
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
     }
 };
+
+extern template class VectorBase<int64_t, int64_t, double>;
+extern template class VectorBase<uint32_t, uint32_t, double>;
+extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;
 
@@ -118,11 +122,11 @@ public:
     using AT = multivalue::WeightedValue<BaseType>;
     using V  = VectorBase<BaseType, BaseType, feature_t>;
 private:
-    V                                         _queryVector;
-    const typename V::HashMap::const_iterator _end;
+    const V                                    & _queryVector;
+    const typename V::HashMap::const_iterator    _end;
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count) = 0;
 public:
-    DotProductExecutorBase(V queryVector);
+    DotProductExecutorBase(const V & queryVector);
     ~DotProductExecutorBase() override;
     void execute(uint32_t docId) override;
 };
@@ -135,9 +139,11 @@ public:
 protected:
     const A * _attribute;
 private:
+    std::unique_ptr<V> _backing;
     size_t getAttributeValues(uint32_t docid, const AT * & count) override;
 public:
-    DotProductExecutor(const A * attribute, V queryVector);
+    DotProductExecutor(const A * attribute, const V & queryVector);
+    DotProductExecutor(const A * attribute, std::unique_ptr<V> queryVector);
     ~DotProductExecutor();
 };
 
@@ -149,12 +155,13 @@ template <typename Vector, typename Buffer>
 class DotProductExecutorByCopy final : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector *            _attribute;
-    Vector                                         _queryVector;
+    const Vector &                                 _queryVector;
     const typename Vector::HashMap::const_iterator _end;
     Buffer                                         _buffer;
-
+    std::unique_ptr<Vector>                        _backing;
 public:
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, Vector queryVector);
+    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, const Vector & queryVector);
+    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, std::unique_ptr<Vector> queryVector);
     ~DotProductExecutorByCopy() override;
     void execute(uint32_t docId) override;
 };
@@ -302,11 +309,12 @@ class DotProductBlueprint : public fef::Blueprint {
 private:
     using IAttributeVector = attribute::IAttributeVector;
     vespalib::string _defaultAttribute;
+    vespalib::string _attributeOverride;
     vespalib::string _queryVector;
+    vespalib::string _attrKey;
+    vespalib::string _queryVectorKey;
 
-    mutable const IAttributeVector * _attribute;
-
-    vespalib::string getAttribute(const fef::IQueryEnvironment & env) const;
+    const vespalib::string & getAttribute(const fef::IQueryEnvironment & env) const;
     const IAttributeVector * upgradeIfNecessary(const IAttributeVector * attribute, const fef::IQueryEnvironment & env) const;
 
 public:

@@ -4,15 +4,16 @@
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/simple_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor.h>
+#include <vespa/eval/tensor/dense/typed_dense_tensor_builder.h>
 #include <vespa/eval/tensor/sparse/sparse_tensor.h>
 #include <vespa/eval/tensor/wrapped_simple_tensor.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 
 using vespalib::eval::SimpleTensor;
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::DenseTensor;
+using vespalib::tensor::TypedDenseTensorBuilder;
+using vespalib::tensor::dispatch_0;
 using vespalib::tensor::SparseTensor;
 using vespalib::tensor::WrappedSimpleTensor;
 using document::TensorDataType;
@@ -29,20 +30,13 @@ constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 // minimum dead bytes in tensor attribute before consider compaction
 constexpr size_t DEAD_SLACK = 0x10000u;
 
-
-ValueType
-createEmptyTensorType(const ValueType &type)
-{
-    std::vector<ValueType::Dimension> list;
-    for (const auto &dim : type.dimensions()) {
-        if (dim.is_indexed() && !dim.is_bound()) {
-            list.emplace_back(dim.name, 1);
-        } else {
-            list.emplace_back(dim);
-        }
+struct CallMakeEmptyTensor {
+    template <typename CT>
+    static Tensor::UP call(const ValueType &type) {
+        TypedDenseTensorBuilder<CT> builder(type);
+        return builder.build();
     }
-    return ValueType::tensor_type(std::move(list));
-}
+};
 
 Tensor::UP
 createEmptyTensor(const ValueType &type)
@@ -50,11 +44,7 @@ createEmptyTensor(const ValueType &type)
     if (type.is_sparse()) {
         return std::make_unique<SparseTensor>(type, SparseTensor::Cells());
     } else if (type.is_dense()) {
-        size_t size = 1;
-        for (const auto &dimension : type.dimensions()) {
-            size *= dimension.size;
-        }
-        return std::make_unique<DenseTensor>(type, DenseTensor::Cells(size));
+        return dispatch_0<CallMakeEmptyTensor>(type.cell_type(), type);
     } else {
         return std::make_unique<WrappedSimpleTensor>(std::make_unique<SimpleTensor>(type, SimpleTensor::Cells()));
     }
@@ -76,7 +66,7 @@ TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, Te
                  cfg.getGrowStrategy().getDocsGrowDelta(),
                  getGenerationHolder()),
       _tensorStore(tensorStore),
-      _emptyTensor(createEmptyTensor(createEmptyTensorType(cfg.tensorType()))),
+      _emptyTensor(createEmptyTensor(cfg.tensorType())),
       _compactGeneration(0)
 {
 }
@@ -125,7 +115,7 @@ void
 TensorAttribute::onUpdateStat()
 {
     // update statistics
-    MemoryUsage total = _refVector.getMemoryUsage();
+    vespalib::MemoryUsage total = _refVector.getMemoryUsage();
     total.merge(_tensorStore.getMemoryUsage());
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     this->updateStatistics(_refVector.size(),

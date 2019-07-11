@@ -8,7 +8,7 @@
 
 namespace logdemon {
 
-class Metrics;
+struct Metrics;
 
 /**
  * Class used to subscribe for logd config.
@@ -28,8 +28,7 @@ private:
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
     bool _has_available;
     bool _need_new_forwarder;
-    FRT_Supervisor _supervisor;
-
+    fnet::frt::StandaloneFRT _server;
 public:
     bool checkAvailable();
     void latch();

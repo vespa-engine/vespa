@@ -35,8 +35,6 @@ public class ImplicitStructTypesTestCase extends SearchDefinitionTestCase {
         assertField(docType, "doc_str_sum", DataType.STRING);
         assertField(docType, "doc_uri", DataType.URI);
         assertField(docType, "docsum_str", DataType.STRING);
-        assertField(docType, "rankfeatures", DataType.STRING);
-        assertField(docType, "summaryfeatures", DataType.STRING);
     }
 
     @SuppressWarnings({ "UnusedDeclaration" })

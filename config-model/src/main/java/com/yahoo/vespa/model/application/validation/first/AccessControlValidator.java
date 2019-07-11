@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.first;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.VespaModel;
@@ -42,9 +43,9 @@ public class AccessControlValidator extends Validator {
                     offendingClusters.add(cluster.getName());
         }
         if (! offendingClusters.isEmpty())
-            throw new IllegalArgumentException(
-                    "Access-control must be enabled for write operations to container clusters in production zones: " +
-                            mkString(offendingClusters, "[", ", ", "]."));
+            deployState.validationOverrides().invalid(ValidationId.accessControl,
+                                                      "Access-control must be enabled for write operations to container clusters in production zones: " +
+                                                              mkString(offendingClusters, "[", ", ", "]."), deployState.now());
     }
 
     private boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {

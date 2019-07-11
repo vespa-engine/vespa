@@ -617,7 +617,6 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public Reader getRankingExpression(String name) {
         try {
-            File file = expressionFileNameToFile(name);
             return IOUtils.createReader(expressionFileNameToFile(name), "utf-8");
         }
         catch (IOException e) {

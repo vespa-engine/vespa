@@ -32,7 +32,7 @@ assertIndexField(const Schema::IndexField& exp,
 {
     assertField(exp, act);
     EXPECT_EQ(exp.getAvgElemLen(), act.getAvgElemLen());
-    EXPECT_EQ(exp.use_experimental_posting_list_format(), act.use_experimental_posting_list_format());
+    EXPECT_EQ(exp.use_interleaved_features(), act.use_interleaved_features());
 }
 
 void
@@ -183,7 +183,7 @@ TEST(SchemaTest, test_load_and_save)
         EXPECT_EQ(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));
-        assertIndexField(SIF("c", SDT::STRING).set_experimental_posting_list_format(true), s.getIndexField(2));
+        assertIndexField(SIF("c", SDT::STRING).set_interleaved_features(true), s.getIndexField(2));
 
         EXPECT_EQ(9u, s.getNumAttributeFields());
         assertField(SAF("a", SDT::STRING, SCT::SINGLE),
@@ -448,7 +448,7 @@ TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_pro
     ASSERT_EQ(1, index_fields.size());
     assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE).
                              setAvgElemLen(512).
-                             set_experimental_posting_list_format(false),
+                             set_interleaved_features(false),
                      index_fields[0]);
     assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE), index_fields[0]);
 }

@@ -4,7 +4,9 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/locale/c.h>
 #include <iomanip>
+#include <float.h>
 
 using namespace vespalib;
 
@@ -26,6 +28,7 @@ public:
     void testMoveIsWellDefined();
     void testIllegalNumbers();
     void testDouble();
+    void testFloat();
     void testStateSaver();
 };
 
@@ -37,10 +40,21 @@ AsciistreamTest::verifyBothWays(T value, const char * expected)
     os << value;
     EXPECT_EQUAL(os.str(), string(expected));
     EXPECT_EQUAL(os.size(), strlen(expected));
-    T v;
-    os >> v;
-    EXPECT_EQUAL(value, v);
-    EXPECT_TRUE(os.empty());
+    {
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+    }
+
+    {
+        os << "   " << expected;
+        T v;
+        os >> v;
+        EXPECT_EQUAL(value, v);
+        EXPECT_TRUE(os.empty());
+        EXPECT_EQUAL(0u, os.size());
+    }
 }
 
 template <typename T>
@@ -69,46 +83,46 @@ AsciistreamTest::testIllegalNumbers()
     {
         asciistream is("777777777777");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         int16_t si(0);
-        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "A short can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> si, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         int32_t ii(0);
-        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "An int can not represent '777777777777'");
+        EXPECT_EXCEPTION(is >> ii, IllegalArgumentException, "strToInt value '777777777777' is outside of range");
         EXPECT_EQUAL(12u, is.size());
         is << "777777777777";
         EXPECT_EQUAL(24u, is.size());
         uint64_t l(0);
-        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "value '777777777777777777777777' is outside of range");
         EXPECT_EQUAL(24u, is.size());
         int64_t li(0);
-        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "value is outside of range '777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> li, IllegalArgumentException, "value '777777777777777777777777' is outside of range");
         EXPECT_EQUAL(24u, is.size());
     }
     {
         asciistream is("-77");
         uint16_t s(0);
-        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "An unsigned short can not represent '-77'");
+        EXPECT_EXCEPTION(is >> s, IllegalArgumentException, "Illegal strToInt value '-77'");
         EXPECT_EQUAL(3u, is.size());
         uint32_t i(0);
-        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "An unsigned int can not represent '-77'");
+        EXPECT_EXCEPTION(is >> i, IllegalArgumentException, "Illegal strToInt value '-77'");
         EXPECT_EQUAL(3u, is.size());
     }
     {
         asciistream is("7777777777777777777777777777777777777777");
         EXPECT_EQUAL(40u, is.size());
         float f(0);
-        EXPECT_EXCEPTION(is >> f, IllegalArgumentException, "float value is outside of range '7777777777777777777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> f, IllegalArgumentException, "float value '7777777777777777777777777777777777777777' is outside of range");
         EXPECT_EQUAL(40u, is.size());
         vespalib::string tmp = is.str();
         is << "e" << tmp;
         EXPECT_EQUAL(81u, is.size());
         double d(0);
-        EXPECT_EXCEPTION(is >> d, IllegalArgumentException, "double value is outside of range '7777777777777777777777777777777777777777e7777777777777777777777777777777777777777'");
+        EXPECT_EXCEPTION(is >> d, IllegalArgumentException, "double value '7777777777777777777777777777777777777777e7777777777777777777777777777777777777777' is outside of range");
         EXPECT_EQUAL(81u, is.size());
     }
     {
@@ -128,12 +142,12 @@ AsciistreamTest::testIllegalNumbers()
         EXPECT_TRUE(is.empty());
         {
             uint32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a unsigned long long from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "buffer underflow at pos 0.");
             EXPECT_TRUE(is.empty());
         }
         {
             int32_t l(0);
-            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "Failed decoding a long long from ''.");
+            EXPECT_EXCEPTION(is >> l, IllegalArgumentException, "buffer underflow at pos 0");
             EXPECT_TRUE(is.empty());
         }
         {
@@ -481,6 +495,68 @@ AsciistreamTest::testDouble() {
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.0", automatic << forcedot, 1);
     VERIFY_DOUBLE_SERIALIZATION(0.0, "0.0", automatic << forcedot, 16);
     VERIFY_DOUBLE_SERIALIZATION(maxInteger, "9007199254740992.0", automatic << forcedot, 16);
+
+    asciistream as;
+    as.clear();
+    as << (3 * std::numeric_limits<double>::min());
+    double dv = 0;
+    as >> dv;
+    EXPECT_TRUE(dv > 0);
+
+    as.clear();
+    as << (3 * std::numeric_limits<double>::denorm_min());
+    dv = 0;
+    as >> dv;
+    EXPECT_TRUE(dv > 0);
+
+    as.clear();
+    as << "1.0e-325";
+    dv = 42.0;
+    as >> dv;
+    EXPECT_EQUAL(dv, 0.0);
+
+    as.clear();
+    as << "1.0e666";
+    dv = 42.0;
+    EXPECT_EXCEPTION(as >> dv, IllegalArgumentException, "double value '1.0e666' is outside of range.");
+    EXPECT_EQUAL(dv, 42.0);
+}
+
+void
+AsciistreamTest::testFloat() {
+    float f = 0;
+    asciistream as("-5.490412E-39");
+    as >> f;
+    EXPECT_EQUAL(f, -5.490412E-39f);
+
+    as.clear();
+    as << "0.0001E-50";
+    f = 42.0;
+    as >> f;
+    EXPECT_EQUAL(f, 0.0);
+
+    as.clear();
+    as << "123.4E50";
+    f = 42.0;
+    EXPECT_EXCEPTION(as >> f, IllegalArgumentException, "float value '123.4E50' is outside of range.");
+    EXPECT_EQUAL(f, 42.0);
+
+    errno = 0;
+    char *ep;
+    f = locale::c::strtof_au("-5.490412E-39", &ep);
+    EXPECT_EQUAL(f, -5.490412E-39f);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("0.0001E-50", &ep);
+    EXPECT_EQUAL(f, 0.0);
+    EXPECT_EQUAL(errno, 0);
+    EXPECT_EQUAL(*ep, 0);
+
+    f = locale::c::strtof_au("123.4E50", &ep);
+    EXPECT_EQUAL(f, HUGE_VALF);
+    EXPECT_EQUAL(errno, ERANGE);
+    EXPECT_EQUAL(*ep, 0);
 }
 
 void
@@ -508,6 +584,8 @@ AsciistreamTest::Main()
     TEST_DO(verify<double>(7.89, -1.3, "7.89", "7.89 -1.3", ' '));
     TEST_DO(verify<bool>(true, false, "1", "1 0", ' '));
     TEST_DO(verify<char>(65, 66, "A", "A B", ' '));
+    TEST_DO(verify<unsigned char>(65, 66, "A", "A B", ' '));
+    TEST_DO(verify<signed char>(65, 66, "A", "A B", ' '));
 //    TEST_DO(verify<int8_t>(65, -1, "65", "65 -1", ' '));
     TEST_DO(verify<int16_t>(0, -1, "0", "0 -1", ' '));
     TEST_DO(verify<int16_t>(789, -1, "789", "789 -1", ' '));
@@ -545,6 +623,7 @@ AsciistreamTest::Main()
     testGetLine();
     testIllegalNumbers();
     testDouble();
+    testFloat();
     testStateSaver();
     TEST_DONE();
 }

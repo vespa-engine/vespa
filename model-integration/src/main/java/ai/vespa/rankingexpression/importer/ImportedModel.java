@@ -4,11 +4,16 @@ package ai.vespa.rankingexpression.importer;
 import com.google.common.collect.ImmutableMap;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -116,6 +121,38 @@ public class ImportedModel implements ImportedMlModel {
     public void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     public void function(String name, RankingExpression expression) { functions.put(name, expression); }
 
+    public void expression(String name, String expression) {
+        try {
+            expression = expression.trim();
+            if ( expression.startsWith("file:")) {
+                String filePath = expression.substring("file:".length()).trim();
+                if ( ! filePath.endsWith(ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX))
+                    filePath = filePath + ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX;
+                expression = IOUtils.readFile(relativeFile(filePath, "function '" + name + "'"));
+            }
+            expression(name, new RankingExpression(expression));
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not read file referenced in '" + name + "'");
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Could not parse function '" + name + "'", e);
+        }
+    }
+
+    /**
+     * Returns a reference to the File at a path given relative to the source root of this model
+     *
+     * @throws IllegalArgumentException if the path is illegal or non-existent
+     */
+    public File relativeFile(String relativePath, String descriptionOfPath) {
+        File file = new File(new File(source()).getParent(), relativePath);
+        if ( ! file.exists())
+            throw new IllegalArgumentException(descriptionOfPath + " references '" + relativePath +
+                                               "', but this file does not exist");
+        return file;
+    }
+
     /**
      * Returns all the output expressions of this indexed by name. The names consist of one or two parts
      * separated by dot, where the first part is the signature name
@@ -184,7 +221,6 @@ public class ImportedModel implements ImportedMlModel {
         private final Map<String, String> inputs = new LinkedHashMap<>();
         private final Map<String, String> outputs = new LinkedHashMap<>();
         private final Map<String, String> skippedOutputs = new HashMap<>();
-        private final List<String> importWarnings = new ArrayList<>();
 
         Signature(String name) {
             this.name = name;
@@ -206,7 +242,7 @@ public class ImportedModel implements ImportedMlModel {
             ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
             // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
             // in the model, as these are the names which must actually be bound, if we are to avoid creating an
-            // "input mapping" to accomodate this complexity in
+            // "input mapping" to accommodate this complexity
             for (Map.Entry<String, String> inputEntry : inputs().entrySet())
                 inputs.put(inputEntry.getValue(), owner().inputs().get(inputEntry.getValue()));
             return inputs.build();
@@ -224,14 +260,14 @@ public class ImportedModel implements ImportedMlModel {
          */
         public Map<String, String> skippedOutputs() { return Collections.unmodifiableMap(skippedOutputs); }
 
-        /** Returns an immutable list of possibly non-fatal warnings encountered during import. */
-        public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
-
         /** Returns the expression this output references as an imported function */
         public ImportedMlFunction outputFunction(String outputName, String functionName) {
+            RankingExpression outputExpression = owner().expressions().get(outputs.get(outputName));
+            if (outputExpression == null)
+                throw new IllegalArgumentException("Missing output '" + outputName + "' in " + this);
             return new ImportedMlFunction(functionName,
                                           new ArrayList<>(inputs.values()),
-                                          owner().expressions().get(outputs.get(outputName)).getRoot().toString(),
+                                          outputExpression.getRoot().toString(),
                                           asStrings(inputMap()),
                                           Optional.empty());
         }
@@ -242,7 +278,6 @@ public class ImportedModel implements ImportedMlModel {
         void input(String inputName, String argumentName) { inputs.put(inputName, argumentName); }
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
-        void importWarning(String warning) { importWarnings.add(warning); }
 
     }
 

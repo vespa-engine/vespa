@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/vespalib/datastore/datastore.h>
 
 namespace search::memoryindex {
 
@@ -193,7 +194,7 @@ public:
     void clearHoldLists() { _store.clearHoldLists();}
     std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
     void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
-    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
 };
 

@@ -50,8 +50,22 @@ public class UnixPath {
         return path;
     }
 
+    public boolean exists() {
+        return Files.exists(path);
+    }
+
     public String readUtf8File() {
         return new String(readBytes(), StandardCharsets.UTF_8);
+    }
+
+    public Optional<String> readUtf8FileIfExists() {
+        try {
+            return Optional.of(Files.readString(path));
+        } catch (NoSuchFileException ignored) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public byte[] readBytes() {
@@ -205,6 +219,16 @@ public class UnixPath {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /**
+     * Creates a symbolic link from {@code link} to {@code this} (the target)
+     * @param link the path for the symbolic link
+     * @return the path to the symbolic link
+     */
+    public UnixPath createSymbolicLink(Path link) {
+        uncheck(() -> Files.createSymbolicLink(link, path));
+        return new UnixPath(link);
     }
 
     @Override

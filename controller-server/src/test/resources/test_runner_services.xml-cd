@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <services xmlns:deploy='vespa' version='1.0'>
-    <container version='1.0' id='default'>
+    <container version='1.0' id='tester'>
 
         <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
-                <surefireMemoryMb>7680</surefireMemoryMb>
+                <surefireMemoryMb>5120</surefireMemoryMb>
             </config>
         </component>
 
@@ -38,6 +38,8 @@
             </filtering>
         </http>
 
-        <nodes count="1" flavor="d-2-12-75" allocated-memory="17%" />
+        <nodes count="1" flavor="d-2-12-75">
+            <jvm allocated-memory="17%" />
+        </nodes>
     </container>
 </services>

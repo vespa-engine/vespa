@@ -8,14 +8,11 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * A common utility class to represent a requirement for nodes during model building.
@@ -161,15 +158,7 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger) {
-        return provision(hostSystem, clusterType, clusterId, logger, Collections.emptySet());
-    }
-
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
-                                                          ClusterSpec.Type clusterType,
-                                                          ClusterSpec.Id clusterId,
-                                                          DeployLogger logger,
-                                                          Set<RotationName> rotations) {
-        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive, rotations);
+        ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 
@@ -178,7 +167,8 @@ public class NodesSpecification {
         if (resources != null) {
             return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
                                                  parseGbAmount(resources.requiredStringAttribute("memory")),
-                                                 parseGbAmount(resources.requiredStringAttribute("disk"))));
+                                                 parseGbAmount(resources.requiredStringAttribute("disk")),
+                                                 parseOptionalDiskSpeed(resources.stringAttribute("disk-speed"))));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
             return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));
@@ -220,6 +210,17 @@ public class NodesSpecification {
             throw new IllegalArgumentException("Invalid byte amount '" + byteAmount +
                                                "': Must be a floating point number " +
                                                "optionally followed by k, M, G, T, P, E, Z or Y");
+        }
+    }
+
+    private static NodeResources.DiskSpeed parseOptionalDiskSpeed(String diskSpeedString) {
+        if (diskSpeedString == null) return NodeResources.DiskSpeed.fast;
+        switch (diskSpeedString) {
+            case "fast" : return NodeResources.DiskSpeed.fast;
+            case "slow" : return NodeResources.DiskSpeed.slow;
+            case "any" : return NodeResources.DiskSpeed.any;
+            default: throw new IllegalArgumentException("Illegal disk-speed value '" + diskSpeedString +
+                                                        "': Legal values are 'fast', 'slow' and 'any')");
         }
     }
 

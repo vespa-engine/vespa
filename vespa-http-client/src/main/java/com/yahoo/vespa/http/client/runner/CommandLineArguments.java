@@ -18,6 +18,8 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.message.BasicLineParser;
 
 import javax.inject.Inject;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -49,10 +51,22 @@ public class CommandLineArguments {
         if (cmdArgs.helpOption.showHelpIfRequested()) {
             return null;
         }
-
-        if (cmdArgs.hostArg == null) {
-            System.err.println("'--host' not set.");
-            return null;
+        if (cmdArgs.endpointArg != null) {
+            if (cmdArgs.hostArg != null) {
+                System.err.println("Cannot set both '--host' and '--endpoint' ");
+                return null;
+            }
+            try {
+                URL url = new URL(cmdArgs.endpointArg);
+            } catch (MalformedURLException e) {
+                e.printStackTrace(System.err);
+                return null;
+            }
+        } else {
+            if (cmdArgs.hostArg == null) {
+                System.err.println("'--host' or '--endpoint' not set.");
+                return null;
+            }
         }
         if (cmdArgs.priorityArg != null && ! checkPriorityFlag(cmdArgs.priorityArg)) {
             return null;
@@ -114,8 +128,12 @@ public class CommandLineArguments {
             description = "(=default)The route to send the data to.")
     private String routeArg = "default";
 
+    @Option(name = {"--endpoint"},
+            description = "Vespa endpoint.")
+    private String endpointArg;
+
     @Option(name = {"--host"},
-            description = "The host(s) for the gateway. If using several, use comma to sepparate them.")
+            description = "The host(s) for the gateway. If using several, use comma to separate them.")
     private String hostArg;
 
     @Option(name = {"--port"},
@@ -141,7 +159,7 @@ public class CommandLineArguments {
 
     @Option(name = {"-v", "--verbose"},
             description = "Enable verbose output of progress.")
-    private boolean verboaseArg = false;
+    private boolean verboseArg = false;
 
     @Option(name = {"--noretry"},
             description = "Turns off retries of recoverable failures..")
@@ -199,7 +217,7 @@ public class CommandLineArguments {
 
     public String getFile() { return fileArg; };
 
-    public boolean getVerbose() { return verboaseArg; }
+    public boolean getVerbose() { return verboseArg; }
 
     public boolean getAddRootElementToXml() { return addRootElementToXml; }
 
@@ -239,11 +257,21 @@ public class CommandLineArguments {
                         // Enable dynamic throttling.
                 .setThrottlerMinSize(minThrottleValue)
                 .setClientQueueSize(maxPendingOperationCountArg);
-        Iterable<String> hosts = Splitter.on(',').trimResults().split(hostArg);
-        for (String host : hosts) {
-            builder.addCluster(new Cluster.Builder()
-                    .addEndpoint(Endpoint.create(host, portArg, useTls))
-                    .build());
+        if (endpointArg != null) {
+            try {
+                builder.addCluster(new Cluster.Builder()
+                        .addEndpoint(Endpoint.create(new URL(endpointArg)))
+                        .build());
+            }
+            catch (MalformedURLException e) {} // already checked when parsing arguments
+        }
+        else {
+            Iterable<String> hosts = Splitter.on(',').trimResults().split(hostArg);
+            for (String host : hosts) {
+                builder.addCluster(new Cluster.Builder()
+                        .addEndpoint(Endpoint.create(host, portArg, useTls))
+                        .build());
+            }
         }
         return builder.build();
     }

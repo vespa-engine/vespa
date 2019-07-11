@@ -10,7 +10,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 public class ContainerConfig {
 
     public static String servicesXmlV2(int port) {
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>20</maxthreads>\n" +
                "  </config>  \n" +
@@ -38,7 +38,7 @@ public class ContainerConfig {
                "  <http>\n" +
                "    <server id='myServer' port='" + port + "'/>\n" +
                "  </http>\n" +
-               "</jdisc>";
+               "</container>";
     }
 
 }

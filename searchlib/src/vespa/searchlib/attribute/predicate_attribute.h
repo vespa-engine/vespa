@@ -4,7 +4,7 @@
 
 #include "not_implemented_attribute.h"
 #include <vespa/searchlib/predicate/common.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace document { class PredicateFieldValue; }
 
@@ -36,7 +36,7 @@ public:
     typedef uint8_t MinFeature;
     typedef std::pair<const MinFeature *, size_t> MinFeatureHandle;
     using IntervalRange = uint16_t;
-    using IntervalRangeVector = attribute::RcuVectorBase<IntervalRange>;
+    using IntervalRangeVector = vespalib::RcuVectorBase<IntervalRange>;
 
     DECLARE_IDENTIFIABLE_ABSTRACT(PredicateAttribute);
 
@@ -86,7 +86,7 @@ private:
     int64_t _lower_bound;
     int64_t _upper_bound;
 
-    typedef attribute::RcuVectorBase<uint8_t> MinFeatureVector;
+    typedef vespalib::RcuVectorBase<uint8_t> MinFeatureVector;
     MinFeatureVector _min_feature;
 
     IntervalRangeVector _interval_range_vector;

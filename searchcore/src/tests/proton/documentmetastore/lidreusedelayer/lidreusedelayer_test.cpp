@@ -143,13 +143,15 @@ public:
 class Fixture
 {
 public:
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeServiceReal;
     test::ThreadingServiceObserver _writeService;
     MyMetaStore _store;
     documentmetastore::LidReuseDelayer _lidReuseDelayer;
 
     Fixture()
-        : _writeServiceReal(),
+        : _sharedExecutor(1, 0x10000),
+          _writeServiceReal(_sharedExecutor),
           _writeService(_writeServiceReal),
           _store(),
           _lidReuseDelayer(_writeService, _store)

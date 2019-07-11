@@ -6,8 +6,8 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/btree/btreestore.h>
+#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/btree/btreestore.h>
 #include "dociditerator.h"
 #include "postinglistsearchcontext.h"
 #include "postingchange.h"
@@ -65,7 +65,7 @@ protected:
                        uint32_t toLid, EnumStoreComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
-    virtual MemoryUsage getMemoryUsage() const override;
+    virtual vespalib::MemoryUsage getMemoryUsage() const override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }

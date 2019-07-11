@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,21 +14,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * All the available node flavors.
+ * All the flavors *configured* in this zone (i.e this should be called HostFlavors).
  *
  * @author bratseth
  */
 public class NodeFlavors {
 
     /** Flavors which are configured in this zone */
-    private final ImmutableMap<String, Flavor> configuredFlavors;
+    private final Map<String, Flavor> configuredFlavors;
 
     @Inject
     public NodeFlavors(FlavorsConfig config) {
-        ImmutableMap.Builder<String, Flavor> b = new ImmutableMap.Builder<>();
+        HashMap<String, Flavor> b = new HashMap<>();
         for (Flavor flavor : toFlavors(config))
             b.put(flavor.name(), flavor);
-        this.configuredFlavors = b.build();
+        this.configuredFlavors = Collections.unmodifiableMap(b);
     }
 
     public List<Flavor> getFlavors() {

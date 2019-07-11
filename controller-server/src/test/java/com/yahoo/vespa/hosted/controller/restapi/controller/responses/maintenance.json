@@ -4,6 +4,9 @@
       "name": "ApplicationOwnershipConfirmer"
     },
     {
+      "name": "BillingMaintainer"
+    },
+    {
       "name": "ClusterInfoMaintainer"
     },
     {
@@ -28,9 +31,6 @@
       "name": "DeploymentMetricsMaintainer"
     },
     {
-      "name": "DnsMaintainer"
-    },
-    {
       "name": "JobRunner"
     },
     {
@@ -50,9 +50,6 @@
     },
     {
       "name": "ResourceMeterMaintainer"
-    },
-    {
-      "name": "RoutingPolicyMaintainer"
     },
     {
       "name": "SystemUpgrader"

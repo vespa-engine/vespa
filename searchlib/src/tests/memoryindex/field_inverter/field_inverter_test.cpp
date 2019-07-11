@@ -2,9 +2,12 @@
 
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchlib/index/field_length_calculator.h>
+#include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
+#include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
 
@@ -18,9 +21,7 @@ using namespace index;
 
 namespace memoryindex {
 
-
 namespace {
-
 
 Document::UP
 makeDoc10(DocBuilder &b)
@@ -31,7 +32,6 @@ makeDoc10(DocBuilder &b)
         endField();
     return b.endDocument();
 }
-
 
 Document::UP
 makeDoc11(DocBuilder &b)
@@ -46,7 +46,6 @@ makeDoc11(DocBuilder &b)
     return b.endDocument();
 }
 
-
 Document::UP
 makeDoc12(DocBuilder &b)
 {
@@ -56,7 +55,6 @@ makeDoc12(DocBuilder &b)
         endField();
     return b.endDocument();
 }
-
 
 Document::UP
 makeDoc13(DocBuilder &b)
@@ -68,7 +66,6 @@ makeDoc13(DocBuilder &b)
     return b.endDocument();
 }
 
-
 Document::UP
 makeDoc14(DocBuilder &b)
 {
@@ -79,14 +76,12 @@ makeDoc14(DocBuilder &b)
     return b.endDocument();
 }
 
-
 Document::UP
 makeDoc15(DocBuilder &b)
 {
     b.startDocument("doc::15");
     return b.endDocument();
 }
-
 
 Document::UP
 makeDoc16(DocBuilder &b)
@@ -98,18 +93,28 @@ makeDoc16(DocBuilder &b)
     return b.endDocument();
 }
 
+Document::UP
+makeDoc17(DocBuilder &b)
+{
+    b.startDocument("doc::17");
+    b.startIndexField("f1").addStr("foo0").addStr("bar0").endField();
+    b.startIndexField("f2").startElement(1).addStr("foo").addStr("bar").endElement().startElement(1).addStr("bar").endElement().endField();
+    b.startIndexField("f3").startElement(3).addStr("foo2").addStr("bar2").endElement().startElement(4).addStr("bar2").endElement().endField();
+    return b.endDocument();
 }
 
-struct Fixture
-{
+}
+
+struct FieldInverterTest : public ::testing::Test {
     Schema _schema;
     DocBuilder _b;
-    std::vector<std::unique_ptr<FieldInverter> > _inverters;
+    WordStore                       _word_store;
+    FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
+    std::vector<std::unique_ptr<FieldLengthCalculator>> _calculators;
+    std::vector<std::unique_ptr<FieldInverter> > _inverters;
 
-    static Schema
-    makeSchema()
-    {
+    static Schema makeSchema() {
         Schema schema;
         schema.addIndexField(Schema::IndexField("f0", DataType::STRING));
         schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
@@ -118,22 +123,27 @@ struct Fixture
         return schema;
     }
 
-    Fixture()
+    FieldInverterTest()
         : _schema(makeSchema()),
           _b(_schema),
-          _inverters(),
-          _inserter()
+          _word_store(),
+          _remover(_word_store),
+          _inserter(),
+          _calculators(),
+          _inverters()
     {
         for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
              ++fieldId) {
+            _calculators.emplace_back(std::make_unique<FieldLengthCalculator>());
             _inverters.push_back(std::make_unique<FieldInverter>(_schema,
-                                                                 fieldId));
+                                                                 fieldId,
+                                                                 _remover,
+                                                                 _inserter,
+                                                                 *_calculators.back()));
         }
     }
 
-    void
-    invertDocument(uint32_t docId, const Document &doc)
-    {
+    void invertDocument(uint32_t docId, const Document &doc) {
         uint32_t fieldId = 0;
         for (auto &inverter : _inverters) {
             vespalib::stringref fieldName =
@@ -143,188 +153,216 @@ struct Fixture
         }
     }
 
-    void
-    pushDocuments()
-    {
+    void pushDocuments() {
         uint32_t fieldId = 0;
         for (auto &inverter : _inverters) {
             _inserter.setFieldId(fieldId);
-            inverter->pushDocuments(_inserter);
+            inverter->pushDocuments();
             ++fieldId;
         }
     }
 
-    void
-    removeDocument(uint32_t docId) {
+    void removeDocument(uint32_t docId) {
         for (auto &inverter : _inverters) {
             inverter->removeDocument(docId);
         }
     }
+
+    void assert_calculator(uint32_t field_id, double exp_avg, uint32_t exp_samples) {
+        const auto &calc = *_calculators[field_id];
+        EXPECT_DOUBLE_EQ(exp_avg, calc.get_average_field_length());
+        EXPECT_EQ(exp_samples, calc.get_num_samples());
+    }
+
 };
 
-
-TEST_F("requireThatFreshInsertWorks", Fixture)
+TEST_F(FieldInverterTest, require_that_fresh_insert_works)
 {
-    f.invertDocument(10, *makeDoc10(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,"
-                 "w=b,a=10,"
-                 "w=c,a=10,"
-                 "w=d,a=10",
-                 f._inserter.toStr());
+    invertDocument(10, *makeDoc10(_b));
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,"
+              "w=b,a=10,"
+              "w=c,a=10,"
+              "w=d,a=10",
+              _inserter.toStr());
 }
 
-
-TEST_F("requireThatMultipleDocsWork", Fixture)
+TEST_F(FieldInverterTest, require_that_multiple_docs_work)
 {
-    f.invertDocument(10, *makeDoc10(f._b));
-    f.invertDocument(11, *makeDoc11(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,a=11,"
-                 "w=b,a=10,a=11,"
-                 "w=c,a=10,w=d,a=10,"
-                 "w=e,a=11,"
-                 "w=f,a=11,"
-                 "f=1,w=a,a=11,"
-                 "w=g,a=11",
-                 f._inserter.toStr());
+    invertDocument(10, *makeDoc10(_b));
+    invertDocument(11, *makeDoc11(_b));
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,a=11,"
+              "w=b,a=10,a=11,"
+              "w=c,a=10,w=d,a=10,"
+              "w=e,a=11,"
+              "w=f,a=11,"
+              "f=1,w=a,a=11,"
+              "w=g,a=11",
+              _inserter.toStr());
 }
 
-
-TEST_F("requireThatRemoveWorks", Fixture)
+TEST_F(FieldInverterTest, require_that_remove_works)
 {
-    f._inverters[0]->remove("b", 10);
-    f._inverters[0]->remove("a", 10);
-    f._inverters[0]->remove("b", 11);
-    f._inverters[2]->remove("c", 12);
-    f._inverters[1]->remove("a", 10);
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,r=10,"
-                 "w=b,r=10,r=11,"
-                 "f=1,w=a,r=10,"
-                 "f=2,w=c,r=12",
-                 f._inserter.toStr());
+    _inverters[0]->remove("b", 10);
+    _inverters[0]->remove("a", 10);
+    _inverters[0]->remove("b", 11);
+    _inverters[2]->remove("c", 12);
+    _inverters[1]->remove("a", 10);
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,r=10,"
+              "w=b,r=10,r=11,"
+              "f=1,w=a,r=10,"
+              "f=2,w=c,r=12",
+              _inserter.toStr());
 }
 
-
-TEST_F("requireThatReputWorks", Fixture)
+TEST_F(FieldInverterTest, require_that_reput_works)
 {
-    f.invertDocument(10, *makeDoc10(f._b));
-    f.invertDocument(10, *makeDoc11(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,"
-                 "w=b,a=10,"
-                 "w=e,a=10,"
-                 "w=f,a=10,"
-                 "f=1,w=a,a=10,"
-                 "w=g,a=10",
-                 f._inserter.toStr());
+    invertDocument(10, *makeDoc10(_b));
+    invertDocument(10, *makeDoc11(_b));
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,"
+              "w=b,a=10,"
+              "w=e,a=10,"
+              "w=f,a=10,"
+              "f=1,w=a,a=10,"
+              "w=g,a=10",
+              _inserter.toStr());
 }
 
-
-TEST_F("requireThatAbortPendingDocWorks", Fixture)
+TEST_F(FieldInverterTest, require_that_abort_pending_doc_works)
 {
-    Document::UP doc10 = makeDoc10(f._b);
-    Document::UP doc11 = makeDoc11(f._b);
-    Document::UP doc12 = makeDoc12(f._b);
-    Document::UP doc13 = makeDoc13(f._b);
-    Document::UP doc14 = makeDoc14(f._b);
+    auto doc10 = makeDoc10(_b);
+    auto doc11 = makeDoc11(_b);
+    auto doc12 = makeDoc12(_b);
+    auto doc13 = makeDoc13(_b);
+    auto doc14 = makeDoc14(_b);
 
-    f.invertDocument(10, *doc10);
-    f.invertDocument(11, *doc11);
-    f.removeDocument(10);
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=11,"
-                 "w=b,a=11,"
-                 "w=e,a=11,"
-                 "w=f,a=11,"
-                 "f=1,w=a,a=11,"
-                 "w=g,a=11",
-                 f._inserter.toStr());
+    invertDocument(10, *doc10);
+    invertDocument(11, *doc11);
+    removeDocument(10);
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=11,"
+              "w=b,a=11,"
+              "w=e,a=11,"
+              "w=f,a=11,"
+              "f=1,w=a,a=11,"
+              "w=g,a=11",
+              _inserter.toStr());
 
-    f.invertDocument(10, *doc10);
-    f.invertDocument(11, *doc11);
-    f.invertDocument(12, *doc12);
-    f.invertDocument(13, *doc13);
-    f.invertDocument(14, *doc14);
-    f.removeDocument(11);
-    f.removeDocument(13);
-    f._inserter.reset();
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,"
-                 "w=b,a=10,"
-                 "w=c,a=10,"
-                 "w=d,a=10,"
-                 "w=doc12,a=12,"
-                 "w=doc14,a=14,"
-                 "w=h,a=12,"
-                 "w=j,a=14",
-                 f._inserter.toStr());
+    invertDocument(10, *doc10);
+    invertDocument(11, *doc11);
+    invertDocument(12, *doc12);
+    invertDocument(13, *doc13);
+    invertDocument(14, *doc14);
+    removeDocument(11);
+    removeDocument(13);
+    _inserter.reset();
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,"
+              "w=b,a=10,"
+              "w=c,a=10,"
+              "w=d,a=10,"
+              "w=doc12,a=12,"
+              "w=doc14,a=14,"
+              "w=h,a=12,"
+              "w=j,a=14",
+              _inserter.toStr());
 
-    f.invertDocument(10, *doc10);
-    f.invertDocument(11, *doc11);
-    f.invertDocument(12, *doc12);
-    f.invertDocument(13, *doc13);
-    f.invertDocument(14, *doc14);
-    f.removeDocument(11);
-    f.removeDocument(12);
-    f.removeDocument(13);
-    f.removeDocument(14);
-    f._inserter.reset();
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,"
-                 "w=b,a=10,"
-                 "w=c,a=10,"
-                 "w=d,a=10",
-                 f._inserter.toStr());
-
-
+    invertDocument(10, *doc10);
+    invertDocument(11, *doc11);
+    invertDocument(12, *doc12);
+    invertDocument(13, *doc13);
+    invertDocument(14, *doc14);
+    removeDocument(11);
+    removeDocument(12);
+    removeDocument(13);
+    removeDocument(14);
+    _inserter.reset();
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,"
+              "w=b,a=10,"
+              "w=c,a=10,"
+              "w=d,a=10",
+              _inserter.toStr());
 }
 
-
-TEST_F("requireThatMixOfAddAndRemoveWorks", Fixture)
+TEST_F(FieldInverterTest, require_that_mix_of_add_and_remove_works)
 {
-    f._inverters[0]->remove("a", 11);
-    f._inverters[0]->remove("c", 9);
-    f._inverters[0]->remove("d", 10);
-    f._inverters[0]->remove("z", 12);
-    f.invertDocument(10, *makeDoc10(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,w=a,a=10,r=11,"
-                 "w=b,a=10,"
-                 "w=c,r=9,a=10,"
-                 "w=d,r=10,a=10,"
-                 "w=z,r=12",
-                 f._inserter.toStr());
+    _inverters[0]->remove("a", 11);
+    _inverters[0]->remove("c", 9);
+    _inverters[0]->remove("d", 10);
+    _inverters[0]->remove("z", 12);
+    invertDocument(10, *makeDoc10(_b));
+    pushDocuments();
+    EXPECT_EQ("f=0,w=a,a=10,r=11,"
+              "w=b,a=10,"
+              "w=c,r=9,a=10,"
+              "w=d,r=10,a=10,"
+              "w=z,r=12",
+              _inserter.toStr());
 }
 
-
-TEST_F("require that empty document can be inverted", Fixture)
+TEST_F(FieldInverterTest, require_that_empty_document_can_be_inverted)
 {
-    f.invertDocument(15, *makeDoc15(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
+    invertDocument(15, *makeDoc15(_b));
+    pushDocuments();
+    EXPECT_EQ("",
+              _inserter.toStr());
 }
 
-TEST_F("require that multiple words at same position works", Fixture)
+TEST_F(FieldInverterTest, require_that_multiple_words_at_same_position_works)
 {
-    f.invertDocument(16, *makeDoc16(f._b));
-    f._inserter.setVerbose();
-    f.pushDocuments();
-    EXPECT_EQUAL("f=0,"
-                 "w=altbaz,a=16(e=0,w=1,l=5[2]),"
-                 "w=alty,a=16(e=0,w=1,l=5[3]),"
-                 "w=bar,a=16(e=0,w=1,l=5[1]),"
-                 "w=baz,a=16(e=0,w=1,l=5[2]),"
-                 "w=foo,a=16(e=0,w=1,l=5[0]),"
-                 "w=y,a=16(e=0,w=1,l=5[3]),"
-                 "w=z,a=16(e=0,w=1,l=5[4])",
-                 f._inserter.toStr());
+    invertDocument(16, *makeDoc16(_b));
+    _inserter.setVerbose();
+    pushDocuments();
+    EXPECT_EQ("f=0,"
+              "w=altbaz,a=16(e=0,w=1,l=5[2]),"
+              "w=alty,a=16(e=0,w=1,l=5[3]),"
+              "w=bar,a=16(e=0,w=1,l=5[1]),"
+              "w=baz,a=16(e=0,w=1,l=5[2]),"
+              "w=foo,a=16(e=0,w=1,l=5[0]),"
+              "w=y,a=16(e=0,w=1,l=5[3]),"
+              "w=z,a=16(e=0,w=1,l=5[4])",
+              _inserter.toStr());
 }
 
+TEST_F(FieldInverterTest, require_that_interleaved_features_are_calculated)
+{
+    invertDocument(17, *makeDoc17(_b));
+    _inserter.setVerbose();
+    _inserter.set_show_interleaved_features();
+    pushDocuments();
+    EXPECT_EQ("f=1,"
+              "w=bar0,a=17(fl=2,occs=1,e=0,w=1,l=2[1]),"
+              "w=foo0,a=17(fl=2,occs=1,e=0,w=1,l=2[0]),"
+              "f=2,"
+              "w=bar,a=17(fl=3,occs=2,e=0,w=1,l=2[1],e=1,w=1,l=1[0]),"
+              "w=foo,a=17(fl=3,occs=1,e=0,w=1,l=2[0]),"
+              "f=3,"
+              "w=bar2,a=17(fl=3,occs=2,e=0,w=3,l=2[1],e=1,w=4,l=1[0]),"
+              "w=foo2,a=17(fl=3,occs=1,e=0,w=3,l=2[0])",
+              _inserter.toStr());
+}
 
-} // namespace memoryindex
-} // namespace search
+TEST_F(FieldInverterTest, require_that_average_field_length_is_calculated)
+{
+    invertDocument(10, *makeDoc10(_b));
+    pushDocuments();
+    assert_calculator(0, 4.0, 1);
+    assert_calculator(1, 0.0, 0);
+    invertDocument(11, *makeDoc11(_b));
+    pushDocuments();
+    assert_calculator(0, (4.0 + 4.0)/2, 2);
+    assert_calculator(1, 2.0, 1);
+    invertDocument(12, *makeDoc12(_b));
+    pushDocuments();
+    assert_calculator(0, (4.0 + 4.0 + 2.0)/3, 3);
+    assert_calculator(1, 2.0, 1);
+}
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+}
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

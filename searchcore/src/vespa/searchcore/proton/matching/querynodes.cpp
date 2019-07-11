@@ -14,6 +14,7 @@ using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::IIndexEnvironment;
 using search::fef::MatchData;
+using search::fef::MatchDataDetails;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::query::Node;
@@ -33,10 +34,10 @@ ProtonTermData & ProtonTermData::operator = (const ProtonTermData &) = default;
 ProtonTermData::~ProtonTermData() = default;
 
 void
-ProtonTermData::setDocumentFrequency(double freq)
+ProtonTermData::propagate_document_frequency(uint32_t matching_doc_count, uint32_t total_doc_count)
 {
     for (size_t i = 0; i < _fields.size(); ++i) {
-        _fields[i].setDocFreq(freq);
+        _fields[i].setDocFreq(matching_doc_count, total_doc_count);
     }
 }
 
@@ -96,10 +97,9 @@ void
 ProtonTermData::setDocumentFrequency(uint32_t estHits, uint32_t docIdLimit)
 {
     if (docIdLimit > 1) {
-        double hits = estHits;
-        setDocumentFrequency(hits / (docIdLimit - 1));
+        propagate_document_frequency(estHits, docIdLimit - 1);
     } else {
-        setDocumentFrequency(0.0);
+        propagate_document_frequency(0, 1);
     }
 }
 
@@ -115,10 +115,10 @@ ProtonTermData::lookupField(uint32_t fieldId) const
 }
 
 TermFieldHandle
-ProtonTermData::FieldEntry::getHandle() const
+ProtonTermData::FieldEntry::getHandle(MatchDataDetails requested_details) const
 {
-    TermFieldHandle handle(search::fef::SimpleTermFieldData::getHandle());
-    HandleRecorder::registerHandle(handle);
+    TermFieldHandle handle(search::fef::SimpleTermFieldData::getHandle(requested_details));
+    HandleRecorder::register_handle(handle, requested_details);
     return handle;
 }
 

@@ -100,7 +100,8 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse setActive(String jobName, boolean active) {
-        if ( ! maintenance.jobControl().jobs().contains(jobName))
+        boolean activatingInactiveJob = active && !maintenance.jobControl().isActive(jobName);
+        if (!activatingInactiveJob && !maintenance.jobControl().jobs().contains(jobName))
             return ErrorResponse.notFoundError("No job named '" + jobName + "'");
         maintenance.jobControl().setActive(jobName, active);
         return new MessageResponse((active ? "Re-activated" : "Deactivated" ) + " job '" + jobName + "'");

@@ -11,12 +11,12 @@ namespace searchcorespi {
  * Interface to both an IndexCollection and to an IndexSearchable
  */
 class ISearchableIndexCollection : public IIndexCollection,
-                                   public IndexSearchable
-{
+                                   public IndexSearchable {
 public:
     ISearchableIndexCollection() : _currentIndex(-1) { }
-    typedef std::unique_ptr<ISearchableIndexCollection> UP;
-    typedef std::shared_ptr<ISearchableIndexCollection> SP;
+    using UP = std::unique_ptr<ISearchableIndexCollection>;
+    using SP = std::shared_ptr<ISearchableIndexCollection>;
+
     virtual void append(uint32_t id, const IndexSearchable::SP &source) = 0;
     virtual void replace(uint32_t id, const IndexSearchable::SP &source) = 0;
     virtual IndexSearchable::SP getSearchableSP(uint32_t i) const = 0;
@@ -25,6 +25,7 @@ public:
     void setCurrentIndex(uint32_t id);
     uint32_t getCurrentIndex() const;
     bool valid() const;
+
 private:
     int32_t _currentIndex;
 };

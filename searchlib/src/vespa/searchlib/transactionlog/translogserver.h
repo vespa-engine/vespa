@@ -10,6 +10,7 @@
 
 
 class FRT_Supervisor;
+class FNET_Transport;
 
 namespace search::common { class FileHeaderContext; }
 
@@ -85,7 +86,8 @@ private:
     const DomainPart::Crc               _defaultCrcType;
     vespalib::ThreadStackExecutor       _commitExecutor;
     vespalib::ThreadStackExecutor       _sessionExecutor;
-    FastOS_ThreadPool                   _threadPool;
+    std::unique_ptr<FastOS_ThreadPool>  _threadPool;
+    std::unique_ptr<FNET_Transport>     _transport;
     std::unique_ptr<FRT_Supervisor>     _supervisor;
     DomainList                          _domains;
     mutable std::mutex                  _lock;          // Protects _domains

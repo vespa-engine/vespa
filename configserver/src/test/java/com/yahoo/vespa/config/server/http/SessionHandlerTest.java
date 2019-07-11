@@ -99,7 +99,7 @@ public class SessionHandlerTest {
         }
 
         private MockSession(long id, ApplicationPackage app, InMemoryFlagSource flagSource) {
-            super(TenantName.defaultName(), id, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), null, flagSource));
+            super(TenantName.defaultName(), id, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), flagSource));
             this.app = app;
             this.preparer = new SessionTest.MockSessionPreparer();
             this.flagSource = flagSource;

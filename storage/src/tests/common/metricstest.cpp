@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
@@ -14,15 +13,18 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.metrics");
 
+using namespace ::testing;
+
 namespace storage {
 
-struct MetricsTest : public CppUnit::TestFixture {
-    FastOS_ThreadPool _threadPool;
+struct MetricsTest : public Test {
     framework::defaultimplementation::FakeClock* _clock;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
@@ -40,48 +42,33 @@ struct MetricsTest : public CppUnit::TestFixture {
                                uint64_t expected);
 
     MetricsTest();
+    ~MetricsTest() override;
 
-    void setUp() override;
-    void tearDown() override;
-    void runLoad(uint32_t count = 1);
+    void SetUp() override;
+    void TearDown() override;
     void createFakeLoad();
-
-    void testFileStorMetrics();
-    void testSnapshotPresenting();
-    void testHtmlMetricsReport();
-    void testCurrentGaugeValuesOverrideSnapshotValues();
-    void testVerboseReportIncludesNonSetMetricsEvenAfterSnapshot();
-
-    CPPUNIT_TEST_SUITE(MetricsTest);
-    CPPUNIT_TEST(testFileStorMetrics);
-    CPPUNIT_TEST(testSnapshotPresenting);
-    CPPUNIT_TEST(testHtmlMetricsReport);
-    CPPUNIT_TEST(testCurrentGaugeValuesOverrideSnapshotValues);
-    CPPUNIT_TEST(testVerboseReportIncludesNonSetMetricsEvenAfterSnapshot);
-    CPPUNIT_TEST_SUITE_END();
 };
-
-CPPUNIT_TEST_SUITE_REGISTRATION(MetricsTest);
 
 namespace {
     struct MetricClock : public metrics::MetricManager::Timer
     {
         framework::Clock& _clock;
-        MetricClock(framework::Clock& c) : _clock(c) {}
+        explicit MetricClock(framework::Clock& c) : _clock(c) {}
         time_t getTime() const override { return _clock.getTimeInSeconds().getTime(); }
         time_t getTimeInMilliSecs() const override { return _clock.getTimeInMillis().getTime(); }
     };
 }
 
 MetricsTest::MetricsTest()
-    : _threadPool(256*1024),
-      _clock(0),
+    : _clock(nullptr),
       _top(),
       _metricsConsumer()
 {
 }
 
-void MetricsTest::setUp() {
+MetricsTest::~MetricsTest() = default;
+
+void MetricsTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "metricstest"));
     assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
     try {
@@ -124,7 +111,7 @@ void MetricsTest::setUp() {
     _metricManager->init(_config->getConfigId(), _node->getThreadPool());
 }
 
-void MetricsTest::tearDown() {
+void MetricsTest::TearDown() {
     _metricManager->stop();
     _metricsConsumer.reset();
     _topSet.reset();
@@ -220,21 +207,17 @@ void MetricsTest::createFakeLoad()
     }
 }
 
-void MetricsTest::testFileStorMetrics() {
+TEST_F(MetricsTest, filestor_metrics) {
     createFakeLoad();
     std::ostringstream ost;
     framework::HttpUrlPath path("metrics?interval=-1&format=text");
     bool retVal = _metricsConsumer->reportStatus(ost, path);
-    CPPUNIT_ASSERT_MESSAGE("_metricsConsumer->reportStatus failed", retVal);
+    ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
     std::string s = ost.str();
-    CPPUNIT_ASSERT_MESSAGE("No get statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.get.sum.count count=240") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No put statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.put.sum.count count=200") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No remove statistics in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.remove.sum.count count=120") != std::string::npos);
-    CPPUNIT_ASSERT_MESSAGE("No removenotfound stats in:\n" + s,
-            s.find("vds.filestor.alldisks.allthreads.remove.sum.not_found count=20") != std::string::npos);
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.get.sum.count count=240"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.put.sum.count count=200"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.count count=120"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.not_found count=20"));
 }
 
 #define ASSERT_METRIC(interval, metric, count) \
@@ -244,30 +227,28 @@ void MetricsTest::testFileStorMetrics() {
     std::ostringstream ost;\
     framework::HttpUrlPath path(pathost.str()); \
     bool retVal = _metricsConsumer->reportStatus(ost, path); \
-    CPPUNIT_ASSERT_MESSAGE("_metricsConsumer->reportStatus failed", retVal); \
+    ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed"; \
     std::string s = ost.str(); \
     if (count == -1) { \
-        CPPUNIT_ASSERT_MESSAGE(std::string("Metric ") + metric + " was set", \
-                               s.find(metric) == std::string::npos); \
+        ASSERT_TRUE(s.find(metric) == std::string::npos) << std::string("Metric ") + metric + " was set"; \
     } else { \
         std::ostringstream valueost; \
         valueost << metric << " count=" << count; \
-        CPPUNIT_ASSERT_MESSAGE("Did not find value " + valueost.str() \
-                                    + " in metric dump " + s, \
-                               s.find(valueost.str()) != std::string::npos); \
+        ASSERT_TRUE(s.find(valueost.str()) != std::string::npos) \
+                << "Did not find value " + valueost.str() + " in metric dump " + s; \
     } \
 }
 
-void MetricsTest::testSnapshotPresenting() {
+TEST_F(MetricsTest, snapshot_presenting) {
     FileStorDiskMetrics& disk0(*_filestorMetrics->disks[0]);
     FileStorThreadMetrics& thread0(*disk0.threads[0]);
 
-    LOG(info, "Adding to get metric");
+    LOG(debug, "Adding to get metric");
 
     using documentapi::LoadType;
     thread0.get[LoadType::DEFAULT].count.inc(1);
 
-    LOG(info, "Waiting for 5 minute snapshot to be taken");
+    LOG(debug, "Waiting for 5 minute snapshot to be taken");
     // Wait until active metrics have been added to 5 min snapshot and reset
     for (uint32_t i=0; i<6; ++i) {
         _clock->addSecondsToTime(60);
@@ -279,7 +260,7 @@ void MetricsTest::testSnapshotPresenting() {
             FastOS_Thread::Sleep(1);
         }
     }
-    LOG(info, "5 minute snapshot should have been taken. Adding put count");
+    LOG(debug, "5 minute snapshot should have been taken. Adding put count");
 
     thread0.put[LoadType::DEFAULT].count.inc(1);
 
@@ -300,7 +281,7 @@ void MetricsTest::testSnapshotPresenting() {
     ASSERT_METRIC(-1, "vds.filestor.alldisks.allthreads.get.sum.count", 1);
 }
 
-void MetricsTest::testHtmlMetricsReport() {
+TEST_F(MetricsTest, html_metrics_report) {
     createFakeLoad();
     _clock->addSecondsToTime(6 * 60);
     _metricManager->timeChangedNotification();
@@ -309,16 +290,7 @@ void MetricsTest::testHtmlMetricsReport() {
     std::ostringstream ost;
     framework::HttpUrlPath path("metrics?interval=300&format=html");
     bool retVal = _metricsConsumer->reportStatus(ost, path);
-    CPPUNIT_ASSERT_MESSAGE("_metricsConsumer->reportStatus failed", retVal);
-    std::string s = ost.str();
-    // Not actually testing against content. Better to manually verify that
-    // HTML look sane after changes.
-    //std::cerr << s << "\n";
-    {
-        std::ofstream out("metricsreport.html");
-        out << s;
-        out.close();
-    }
+    ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
 }
 
 void
@@ -332,13 +304,12 @@ MetricsTest::assertMetricLastValue(const std::string& name,
          << "&verbosity=2";
     std::ostringstream report;
     framework::HttpUrlPath uri(path.str());
-    CPPUNIT_ASSERT(_metricsConsumer->reportStatus(report, uri));
+    ASSERT_TRUE(_metricsConsumer->reportStatus(report, uri));
     std::ostringstream expectedSubstr;
     expectedSubstr << " last=" << expected;
     auto str = report.str();
-    CPPUNIT_ASSERT_MESSAGE("Did not find value " + expectedSubstr.str()
-                           + " in metric dump " + str,
-                           str.find(expectedSubstr.str()) != std::string::npos);
+    ASSERT_TRUE(str.find(expectedSubstr.str()) != std::string::npos)
+            << "Did not find value " + expectedSubstr.str() + " in metric dump " + str;
 }
 
 using namespace std::chrono_literals;
@@ -355,9 +326,7 @@ MetricsTest::createSnapshotForPeriod(std::chrono::seconds secs)
     }
 }
 
-void
-MetricsTest::testCurrentGaugeValuesOverrideSnapshotValues()
-{
+TEST_F(MetricsTest, current_gauge_values_override_snapshot_values) {
     auto& metrics(*_bucketManagerMetrics->disks[0]);
     metrics.docs.set(1000);
     // Take a 5 minute snapshot of active metrics (1000 docs).
@@ -371,9 +340,7 @@ MetricsTest::testCurrentGaugeValuesOverrideSnapshotValues()
     assertMetricLastValue("vds.datastored.alldisks.docs", -1, 2000);
 }
 
-void
-MetricsTest::testVerboseReportIncludesNonSetMetricsEvenAfterSnapshot()
-{
+TEST_F(MetricsTest, verbose_report_includes_non_set_metrics_even_after_snapshot) {
     createSnapshotForPeriod(5min);
     // When using verbosity=2 (which is what the system test framework invokes),
     // all metrics should be included regardless of whether they've been set or

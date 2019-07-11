@@ -11,6 +11,8 @@ import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
+import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,6 +122,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
     private boolean isConstant(ExpressionNode node) {
         if (node instanceof ConstantNode) return true;
         if (node instanceof ReferenceNode) return false;
+        if (node instanceof TensorFunctionNode) return false; // TODO: We could support asking it if it is constant
         if ( ! (node instanceof CompositeNode)) return false;
         for (ExpressionNode child : ((CompositeNode)node).children()) {
             if ( ! isConstant(child)) return false;

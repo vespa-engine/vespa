@@ -3,9 +3,11 @@ package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.search.result.StructuredData;
@@ -17,9 +19,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
@@ -62,6 +66,7 @@ public class SlimeSummaryTestCase {
         assertNull(hit.getField("jsonstring_field"));
         assertNull(hit.getField("tensor_field1"));
         assertNull(hit.getField("tensor_field2"));
+        assertNull(hit.getField("summaryfeatures"));
     }
 
     @Test
@@ -75,7 +80,7 @@ public class SlimeSummaryTestCase {
     @Test
     public void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
-        Tensor tensor2 = Tensor.from("tensor(x[],y[1]):{{x:0,y:0}:-0.3}");
+        Tensor tensor2 = Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:-0.3}");
         DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
         assertNull(docsum.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
@@ -111,6 +116,12 @@ public class SlimeSummaryTestCase {
         }
         assertEquals(tensor1, hit.getField("tensor_field1"));
         assertEquals(tensor2, hit.getField("tensor_field2"));
+        FeatureData featureData = (FeatureData)hit.getField("summaryfeatures");
+        assertEquals("double_feature,tensor1_feature,tensor2_feature",
+                     featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
+        assertEquals(0.5, featureData.getDouble("double_feature"), 0.00000001);
+        assertEquals(tensor1, featureData.getTensor("tensor1_feature"));
+        assertEquals(tensor2, featureData.getTensor("tensor2_feature"));
     }
 
     @Test
@@ -238,7 +249,9 @@ public class SlimeSummaryTestCase {
         assertFields(expected, hit);
 
         // --- Add full summary
-        assertNull(fullDocsum.lazyDecode("default", fullishSummary(), hit));
+        Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
+        Tensor tensor2 = Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:-0.3}");
+        assertNull(fullDocsum.lazyDecode("default", fullishSummary(tensor1, tensor2), hit));
         expected.put("integer_field", 4);
         expected.put("short_field", (short)2);
         expected.put("byte_field", (byte)1);
@@ -247,7 +260,15 @@ public class SlimeSummaryTestCase {
         expected.put("int64_field", 8L);
         expected.put("string_field", "string_value");
         expected.put("longstring_field", "longstring_value");
-        assertFields(expected, hit);
+        expected.put("tensor_field1", tensor1);
+        expected.put("tensor_field2", tensor2);
+
+        Slime slime = new Slime();
+        Cursor summaryFeatures = slime.setObject();
+        summaryFeatures.setDouble("double_feature", 0.5);
+        summaryFeatures.setData("tensor1_feature", TypedBinaryFormat.encode(tensor1));
+        summaryFeatures.setData("tensor2_feature", TypedBinaryFormat.encode(tensor2));
+        expected.put("summaryfeatures", new FeatureData(new SlimeAdapter(slime.get())));
 
         hit.removeField("string_field");
         hit.removeField("integer_field");
@@ -272,7 +293,7 @@ public class SlimeSummaryTestCase {
                 fail("Multiple callbacks for " + name);
             traversed.put(name, value);
         });
-        assertEquals(expected, traversed);
+        assertEqualMaps(expected, traversed);
         // raw utf8 field traverser
         Map<String, Object> traversedUtf8 = new HashMap<>();
         hit.forEachFieldAsRaw(new Utf8FieldTraverser(traversedUtf8));
@@ -288,7 +309,7 @@ public class SlimeSummaryTestCase {
         // fieldKeys
         assertEquals(expected.keySet(), hit.fieldKeys());
         // fields
-        assertEquals(expected, hit.fields());
+        assertEqualMaps(expected, hit.fields());
         // fieldIterator
         int fieldIteratorFieldCount = 0;
         for (Iterator<Map.Entry<String, Object>> i = hit.fieldIterator(); i.hasNext(); ) {
@@ -300,6 +321,15 @@ public class SlimeSummaryTestCase {
         // getField
         for (Map.Entry<String, Object> field : expected.entrySet())
             assertEquals(field.getValue(), hit.getField(field.getKey()));
+    }
+
+    private void assertEqualMaps(Map<String, Object> expected, Map<String, Object> actual) {
+        assertEquals("Map sizes", expected.size(), actual.size());
+        assertEquals("Keys", expected.keySet(), actual.keySet());
+        for (var expectedEntry : expected.entrySet()) {
+            assertEquals("Key '" + expectedEntry.getKey() + "'",
+                         expectedEntry.getValue(), actual.get(expectedEntry.getKey()));
+        }
     }
 
     private byte[] emptySummary() {
@@ -339,7 +369,7 @@ public class SlimeSummaryTestCase {
         return encode((slime));
     }
 
-    private byte[] fullishSummary() {
+    private byte[] fullishSummary(Tensor tensor1, Tensor tensor2) {
         Slime slime = new Slime();
         Cursor docsum = slime.setObject();
         docsum.setLong("integer_field", 4);
@@ -352,6 +382,7 @@ public class SlimeSummaryTestCase {
         //docsum.setData("data_field", "data_value".getBytes(StandardCharsets.UTF_8));
         docsum.setString("longstring_field", "longstring_value");
         //docsum.setData("longdata_field", "longdata_value".getBytes(StandardCharsets.UTF_8));
+        addTensors(tensor1, tensor2, docsum);
         return encode((slime));
     }
 
@@ -374,11 +405,23 @@ public class SlimeSummaryTestCase {
             field.setLong("foo", 1);
             field.setLong("bar", 2);
         }
+
+        addTensors(tensor1, tensor2, docsum);
+        return encode((slime));
+    }
+
+    private void addTensors(Tensor tensor1, Tensor tensor2, Cursor docsum) {
         if (tensor1 != null)
             docsum.setData("tensor_field1", TypedBinaryFormat.encode(tensor1));
         if (tensor2 != null)
             docsum.setData("tensor_field2", TypedBinaryFormat.encode(tensor2));
-        return encode((slime));
+
+        if (tensor1 !=null && tensor2 != null) {
+            Cursor summaryFeatures = docsum.setObject("summaryfeatures");
+            summaryFeatures.setDouble("double_feature", 0.5);
+            summaryFeatures.setData("tensor1_feature", TypedBinaryFormat.encode(tensor1));
+            summaryFeatures.setData("tensor2_feature", TypedBinaryFormat.encode(tensor2));
+        }
     }
 
     private byte[] encode(Slime slime) {

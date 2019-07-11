@@ -42,8 +42,8 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         SearchClusterSpec searchCluster = new SearchClusterSpec(CLUSTERNAME, null, null);
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
-        assertIndexing(model, new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
-        assertFeedingRoute(model, CLUSTERNAME, "jdisc/chain.indexing");
+        assertIndexing(model, new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
+        assertFeedingRoute(model, CLUSTERNAME, "container/chain.indexing");
     }
 
     @Test
@@ -54,8 +54,8 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
         searchCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
-        assertIndexing(model, new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
-        assertFeedingRoute(model, CLUSTERNAME, "jdisc/chain.indexing");
+        assertIndexing(model, new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
+        assertFeedingRoute(model, CLUSTERNAME, "container/chain.indexing");
     }
 
     @Test
@@ -72,10 +72,10 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(musicCluster, booksCluster));
 
         assertIndexing(model,
-                new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
+                new DocprocClusterSpec("container", new DocprocChainSpec("container/chain.indexing")));
 
-        assertFeedingRoute(model, MUSIC, "jdisc/chain.indexing");
-        assertFeedingRoute(model, BOOKS, "jdisc/chain.indexing");
+        assertFeedingRoute(model, MUSIC, "container/chain.indexing");
+        assertFeedingRoute(model, BOOKS, "container/chain.indexing");
     }
 
 
@@ -111,7 +111,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                 "                </nodes>\n" +
                 "    </content>\n" +
                 "  \n" +
-                "  <jdisc version='1.0' id='dpcluster'>\n" +
+                "  <container version='1.0' id='dpcluster'>\n" +
                 "    <document-processing>\n" +
                 "      <chain id='fooindexing' inherits='indexing '/>\n" +
                 "    </document-processing>\n" +
@@ -121,7 +121,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                 "    <http>\n" +
                 "      <server id='dpcluster' port='8000'/>\n" +
                 "    </http>\n" +
-                "  </jdisc>\n" +
+                "  </container>\n" +
                 "</services>\n";
         VespaModel model = getIndexedSearchVespaModel(xml);
         assertIndexing(model, new DocprocClusterSpec("dpcluster", new DocprocChainSpec("dpcluster/chain.fooindexing", "indexing"),
@@ -156,12 +156,12 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                         "  <admin version='2.0'>\n" +
                         "    <adminserver hostalias='node0'/>\n" +
                         "  </admin>\n" +
-                        "  <jdisc version='1.0' id='dokprok'>\n" +
+                        "  <container version='1.0' id='dokprok'>\n" +
                         "    <document-processing />\n" +
                         "    <nodes>\n" +
                         "      <node hostalias='node0'/>\n" +
                         "    </nodes>\n" +
-                        "  </jdisc>\n" +
+                        "  </container>\n" +
                         "</services>\n";
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("music", "title", "artist");
@@ -382,16 +382,16 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                         "    <adminserver hostalias='node0'/>\n" +
                         "  </admin>\n" +
 
-                        "  <jdisc version='1.0'>\n" +
+                        "  <container version='1.0'>\n" +
                         "    <search/>\n" +
                         "    <nodes>\n" +
                         "      <node hostalias='node0'/>\n" +
                         "    </nodes>\n" +
-                        "  </jdisc>\n";
+                        "  </container>\n";
         int clusterNo = 0;
         for (DocprocClusterSpec docprocClusterSpec : docprocClusterSpecs) {
             String docprocCluster = "";
-            docprocCluster += "  <jdisc version='1.0' id='" + docprocClusterSpec.name + "'>\n";
+            docprocCluster += "  <container version='1.0' id='" + docprocClusterSpec.name + "'>\n";
 
             if (docprocClusterSpec.chains != null && docprocClusterSpec.chains.size() > 0) {
                 docprocCluster += "    <document-processing>\n";
@@ -421,7 +421,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
             docprocCluster += "    <nodes>\n" +
                     "      <node hostalias='node0'/>\n" +
                     "    </nodes>\n" +
-                    "  </jdisc>\n";
+                    "  </container>\n";
             mainPre += docprocCluster;
             clusterNo++;
         }

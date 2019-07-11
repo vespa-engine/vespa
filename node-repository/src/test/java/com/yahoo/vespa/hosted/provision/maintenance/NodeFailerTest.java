@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
@@ -49,7 +48,7 @@ public class NodeFailerTest {
                         .orElse(node.hostname().equals(hostWithHwFailure)))
                 .forEach(node -> {
             Node updatedNode = node.with(node.status().withHardwareFailureDescription(Optional.of("HW failure")));
-            tester.nodeRepository.write(updatedNode);
+            tester.nodeRepository.write(updatedNode, () -> {});
         });
 
         testNodeFailingWith(tester, hostWithHwFailure);
@@ -66,7 +65,7 @@ public class NodeFailerTest {
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
                     Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
-                    tester.nodeRepository.write(updatedNode);
+                    tester.nodeRepository.write(updatedNode, () -> {});
                 });
 
         testNodeFailingWith(tester, hostWithFailureReports);
@@ -136,7 +135,7 @@ public class NodeFailerTest {
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
                     Node updatedNode = node.with(node.reports().withReport(badTotalMemorySizeReport));
-                    tester.nodeRepository.write(updatedNode);
+                    tester.nodeRepository.write(updatedNode, () -> {});
                 });
 
         // The ready node will be failed, but neither the host nor the 2 active nodes since they have not been suspended
@@ -215,8 +214,8 @@ public class NodeFailerTest {
         // Hardware failures are detected on two ready nodes, which are then failed
         Node readyFail1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(2);
         Node readyFail2 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(3);
-        tester.nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailureDescription(Optional.of("memory_mcelog"))));
-        tester.nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailureDescription(Optional.of("disk_smart"))));
+        tester.nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailureDescription(Optional.of("memory_mcelog"))), () -> {});
+        tester.nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailureDescription(Optional.of("disk_smart"))), () -> {});
         assertEquals(4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         tester.failer.run();
         assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
@@ -282,7 +281,7 @@ public class NodeFailerTest {
         }
 
         // A new node is available
-        tester.createReadyNodes(1, 16);
+        tester.createReadyNodes(1, 16, NodeFailTester.nodeResources);
         tester.clock.advance(Duration.ofDays(1));
         tester.allNodesMakeAConfigRequestExcept();
         tester.failer.run();
@@ -302,7 +301,8 @@ public class NodeFailerTest {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // Add ready docker node
-        tester.createReadyNodes(1, 16, "docker");
+        NodeResources newNodeResources = new NodeResources(3,4,5);
+        tester.createReadyNodes(1, 16, newNodeResources);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
@@ -316,9 +316,9 @@ public class NodeFailerTest {
 
         // Two ready nodes and a ready docker node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER).findFirst().get();
+        Node dockerNode = ready.stream().filter(node -> node.flavor().resources().equals(newNodeResources)).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                               .filter(node -> ! node.flavor().resources().equals(newNodeResources))
                                .collect(Collectors.toList());
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         tester.failer.run();
@@ -335,34 +335,8 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void docker_host_failed_without_config_requests() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications(
-                new ConfigserverConfig(new ConfigserverConfig.Builder().nodeAdminInContainer(true))
-        );
-
-        // For a day all nodes work so nothing happens
-        for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
-            tester.clock.advance(Duration.ofMinutes(interval));
-            tester.allNodesMakeAConfigRequestExcept();
-            tester.failer.run();
-            assertEquals( 3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
-            assertEquals( 0, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
-        }
-
-
-        // Two ready nodes and a ready docker node die, but only 2 of those are failed out
-        tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerHost = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).iterator().next();
-        tester.allNodesMakeAConfigRequestExcept(dockerHost);
-        tester.failer.run();
-        assertEquals( 2, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
-        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.host, Node.State.failed).size());
-    }
-
-    @Test
-    public void not_failed_without_config_requests_if_node_admin_on_host() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications(
-                new ConfigserverConfig(new ConfigserverConfig.Builder().nodeAdminInContainer(false)));
+    public void docker_host_not_failed_without_config_requests() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
@@ -540,7 +514,7 @@ public class NodeFailerTest {
         assertEquals(Node.State.ready, readyNode.state());
 
         tester.nodeRepository.write(readyNode.with(readyNode.status()
-                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))));
+                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))), () -> {});
 
         tester.failer.run();
 

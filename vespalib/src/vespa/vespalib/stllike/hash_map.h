@@ -3,6 +3,7 @@
 
 #include "hashtable.h"
 #include "hash_fun.h"
+#include "select.h"
 
 namespace vespalib {
 
@@ -13,7 +14,7 @@ public:
     typedef std::pair<K, V> value_type;
     typedef K key_type;
     typedef V mapped_type;
-    using HashTable = hashtable< K, value_type, H, EQ, std::_Select1st< value_type >, M >;
+    using HashTable = hashtable< K, value_type, H, EQ, Select1st<value_type>, M >;
 private:
     HashTable _ht;
 public:
@@ -27,6 +28,7 @@ public:
     hash_map & operator = (const hash_map &) = default;
     hash_map(size_t reserveSize=0);
     hash_map(size_t reserveSize, H hasher, EQ equality);
+    hash_map(std::initializer_list<value_type> input);
     ~hash_map();
     iterator begin()                         { return _ht.begin(); }
     iterator end()                           { return _ht.end(); }

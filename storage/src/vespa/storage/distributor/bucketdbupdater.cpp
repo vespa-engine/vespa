@@ -4,8 +4,9 @@
 #include "bucket_db_prune_elision.h"
 #include "distributor.h"
 #include "distributor_bucket_space.h"
-#include "simpleclusterinformation.h"
 #include "distributormetricsset.h"
+#include "simpleclusterinformation.h"
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -71,12 +72,19 @@ BucketOwnership
 BucketDBUpdater::checkOwnershipInPendingState(const document::Bucket& b) const
 {
     if (hasPendingClusterState()) {
-        const lib::ClusterState& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
+        const auto& state(*_pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(b.getBucketSpace()));
         if (!_distributorComponent.ownsBucketInState(state, b)) {
             return BucketOwnership::createNotOwnedInState(state);
         }
     }
     return BucketOwnership::createOwned();
+}
+
+const lib::ClusterState*
+BucketDBUpdater::pendingClusterStateOrNull(const document::BucketSpace& space) const {
+    return (hasPendingClusterState()
+            ? _pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(space).get()
+            : nullptr);
 }
 
 void
@@ -135,7 +143,8 @@ BucketDBUpdater::removeSuperfluousBuckets(
         if (!is_distribution_config_change
             && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
         {
-            LOG(debug, "Eliding DB pruning for state transition '%s' -> '%s'",
+            LOG(info, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
+                document::FixedBucketSpaces::to_string(elem.first).data(),
                 oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
         }
@@ -145,26 +154,20 @@ BucketDBUpdater::removeSuperfluousBuckets(
 
         // Remove all buckets not belonging to this distributor, or
         // being on storage nodes that are no longer up.
-        NodeRemover proc(
+        MergingNodeRemover proc(
                 oldClusterState,
                 *new_cluster_state,
                 _distributorComponent.getIndex(),
                 newDistribution,
-                up_states);
-        bucketDb.forEach(proc);
+                up_states,
+                move_to_read_only_db);
 
-        for (const auto & bucket : proc.getBucketsToRemove()) {
-            bucketDb.remove(bucket);
+        bucketDb.merge(proc);
+        // Non-owned entries vector only has contents if move_to_read_only_db is true.
+        // TODO either rewrite in terms of merge() or remove entirely
+        for (const auto& db_entry : proc.getNonOwnedEntries()) {
+            readOnlyDb.update(db_entry); // TODO Entry move support
         }
-        // TODO vec of Entry instead to avoid lookup and remove? Uses more transient memory...
-        for (const auto& bucket : proc.getNonOwnedBuckets()) {
-            if (move_to_read_only_db) {
-                auto db_entry = bucketDb.get(bucket);
-                readOnlyDb.update(db_entry); // TODO Entry move support
-            }
-            bucketDb.remove(bucket);
-        }
-
     }
 }
 
@@ -210,7 +213,6 @@ BucketDBUpdater::storageDistributionChanged()
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
-            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             _distributorComponent.getUniqueTimestamp());
     _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
 }
@@ -266,7 +268,6 @@ BucketDBUpdater::onSetSystemState(
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
-            _distributorComponent.getReadOnlyBucketSpaceRepo(),
             cmd,
             _outdatedNodesMap,
             _distributorComponent.getUniqueTimestamp());
@@ -733,40 +734,39 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     return "";
 }
 
-bool
-BucketDBUpdater::BucketListGenerator::process(BucketDatabase::Entry& e)
-{
-    document::BucketId bucketId(e.getBucketId());
-
-    const BucketCopy* copy(e->getNode(_node));
-    if (copy) {
-        _entries.emplace_back(bucketId, copy->getBucketInfo());
-    }
-    return true;
-}
-
-BucketDBUpdater::NodeRemover::NodeRemover(
+BucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
         const lib::ClusterState& oldState,
         const lib::ClusterState& s,
         uint16_t localIndex,
         const lib::Distribution& distribution,
-        const char* upStates)
+        const char* upStates,
+        bool track_non_owned_entries)
     : _oldState(oldState),
       _state(s),
+      _available_nodes(),
       _nonOwnedBuckets(),
-      _removedBuckets(),
+      _removed_buckets(0),
       _localIndex(localIndex),
       _distribution(distribution),
       _upStates(upStates),
+      _track_non_owned_entries(track_non_owned_entries),
       _cachedDecisionSuperbucket(UINT64_MAX),
       _cachedOwned(false)
-{}
+{
+    // TODO intersection of cluster state and distribution config
+    const uint16_t storage_count = s.getNodeCount(lib::NodeType::STORAGE);
+    _available_nodes.resize(storage_count);
+    for (uint16_t i = 0; i < storage_count; ++i) {
+        if (s.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState().oneOf(_upStates)) {
+            _available_nodes[i] = true;
+        }
+    }
+}
 
 void
-BucketDBUpdater::NodeRemover::logRemove(const document::BucketId& bucketId, const char* msg) const
+BucketDBUpdater::MergingNodeRemover::logRemove(const document::BucketId& bucketId, const char* msg) const
 {
     LOG(spam, "Removing bucket %s: %s", bucketId.toString().c_str(), msg);
-    LOG_BUCKET_OPERATION_NO_LOCK(bucketId, msg);    
 }
 
 namespace {
@@ -779,7 +779,7 @@ uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution
 }
 
 bool
-BucketDBUpdater::NodeRemover::distributorOwnsBucket(
+BucketDBUpdater::MergingNodeRemover::distributorOwnsBucket(
         const document::BucketId& bucketId) const
 {
     // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
@@ -811,7 +811,7 @@ BucketDBUpdater::NodeRemover::distributorOwnsBucket(
 }
 
 void
-BucketDBUpdater::NodeRemover::setCopiesInEntry(
+BucketDBUpdater::MergingNodeRemover::setCopiesInEntry(
         BucketDatabase::Entry& e,
         const std::vector<BucketCopy>& copies) const
 {
@@ -822,77 +822,74 @@ BucketDBUpdater::NodeRemover::setCopiesInEntry(
 
     e->addNodes(copies, order);
 
-    LOG(debug, "Changed %s", e->toString().c_str());
-    LOG_BUCKET_OPERATION_NO_LOCK(
-            e.getBucketId(),
-            vespalib::make_string("updated bucketdb entry to %s",
-                                        e->toString().c_str()));
-}
-
-void
-BucketDBUpdater::NodeRemover::removeEmptyBucket(const document::BucketId& bucketId)
-{
-    _removedBuckets.push_back(bucketId);
-
-    LOG(debug,
-        "After system state change %s, bucket %s now has no copies.",
-        _oldState.getTextualDifference(_state).c_str(),
-        bucketId.toString().c_str());
-    LOG_BUCKET_OPERATION_NO_LOCK(bucketId, "bucket now has no copies");
+    LOG(spam, "Changed %s", e->toString().c_str());
 }
 
 bool
-BucketDBUpdater::NodeRemover::process(BucketDatabase::Entry& e)
+BucketDBUpdater::MergingNodeRemover::has_unavailable_nodes(const storage::BucketDatabase::Entry& e) const
 {
-    const document::BucketId& bucketId(e.getBucketId());
-
-    LOG(spam, "Check for remove: bucket %s", e.toString().c_str());
-    if (e->getNodeCount() == 0) {
-        removeEmptyBucket(e.getBucketId());
-        return true;
+    const uint16_t n_nodes = e->getNodeCount();
+    for (uint16_t i = 0; i < n_nodes; i++) {
+        const uint16_t node_idx = e->getNodeRef(i).getNode();
+        if (!storage_node_is_available(node_idx)) {
+            return true;
+        }
     }
+    return false;
+}
+
+BucketDatabase::MergingProcessor::Result
+BucketDBUpdater::MergingNodeRemover::merge(storage::BucketDatabase::Merger& merger)
+{
+    document::BucketId bucketId(merger.bucket_id());
+    LOG(spam, "Check for remove: bucket %s", bucketId.toString().c_str());
     if (!distributorOwnsBucket(bucketId)) {
-        _nonOwnedBuckets.push_back(bucketId);
-        return true;
+        // TODO remove in favor of DB snapshotting
+        if (_track_non_owned_entries) {
+            _nonOwnedBuckets.emplace_back(merger.current_entry());
+        }
+        return Result::Skip;
+    }
+    auto& e = merger.current_entry();
+
+    if (e->getNodeCount() == 0) { // TODO when should this edge ever trigger?
+        return Result::Skip;
+    }
+
+    if (!has_unavailable_nodes(e)) {
+        return Result::KeepUnchanged;
     }
 
     std::vector<BucketCopy> remainingCopies;
     for (uint16_t i = 0; i < e->getNodeCount(); i++) {
-        Node n(NodeType::STORAGE, e->getNodeRef(i).getNode());
-
-        if (_state.getNodeState(n).getState().oneOf(_upStates)) {
+        const uint16_t node_idx = e->getNodeRef(i).getNode();
+        if (storage_node_is_available(node_idx)) {
             remainingCopies.push_back(e->getNodeRef(i));
         }
     }
 
-    if (remainingCopies.size() == e->getNodeCount()) {
-        return true;
-    }
-
     if (remainingCopies.empty()) {
-        removeEmptyBucket(bucketId);
+        ++_removed_buckets;
+        return Result::Skip;
     } else {
         setCopiesInEntry(e, remainingCopies);
+        return Result::Update;
     }
-
-    return true;
 }
 
-BucketDBUpdater::NodeRemover::~NodeRemover()
+bool
+BucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t index) const noexcept
 {
-    if ( !_removedBuckets.empty()) {
-        std::ostringstream ost;
-        ost << "After system state change "
-            << _oldState.getTextualDifference(_state) << ", we removed "
-            << "buckets. Data is unavailable until node comes back up. "
-            << _removedBuckets.size() << " buckets removed:";
-        for (uint32_t i=0; i < 10 && i < _removedBuckets.size(); ++i) {
-            ost << " " << _removedBuckets[i];
-        }
-        if (_removedBuckets.size() >= 10) {
-            ost << " ...";
-        }
-        LOGBM(info, "%s", ost.str().c_str());
+    return ((index < _available_nodes.size()) && _available_nodes[index]);
+}
+
+BucketDBUpdater::MergingNodeRemover::~MergingNodeRemover()
+{
+    if (_removed_buckets != 0) {
+        LOGBM(info, "After cluster state change %s, %" PRIu64 " buckets no longer "
+                    "have available replicas. Documents in these buckets will "
+                    "be unavailable until nodes come back up",
+                    _oldState.getTextualDifference(_state).c_str(), _removed_buckets);
     }
 }
 

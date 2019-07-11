@@ -11,43 +11,38 @@ class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
     std::stringstream _ss;
     bool _first;
     bool _verbose;
+    bool _show_interleaved_features;
     uint32_t _fieldId;
 
-    void
-    addComma()
-    {
+    void addComma() {
         if (!_first) {
             _ss << ",";
         } else {
             _first = false;
         }
     }
+
 public:
     OrderedFieldIndexInserter()
         : _ss(),
           _first(true),
           _verbose(false),
+          _show_interleaved_features(false),
           _fieldId(0)
     {
     }
 
-    virtual void
-    setNextWord(const vespalib::stringref word) override
-    {
+    virtual void setNextWord(const vespalib::stringref word) override {
         addComma();
         _ss << "w=" << word;
     }
 
-    void
-    setFieldId(uint32_t fieldId)
-    {
+    void setFieldId(uint32_t fieldId) {
         _fieldId = fieldId;
     }
 
-    virtual void
-    add(uint32_t docId,
-        const index::DocIdAndFeatures &features) override
-    {
+    virtual void add(uint32_t docId,
+                     const index::DocIdAndFeatures &features) override {
         (void) features;
         addComma();
         _ss << "a=" << docId;
@@ -55,6 +50,11 @@ public:
             _ss << "(";
             auto wpi = features.word_positions().begin();
             bool firstElement = true;
+            if (_show_interleaved_features) {
+                _ss << "fl=" << features.field_length() <<
+                    ",occs=" << features.num_occs();
+                firstElement = false;
+            }
             for (auto &el : features.elements()) {
                 if (!firstElement) {
                     _ss << ",";
@@ -70,6 +70,7 @@ public:
                     }
                     firstWordPos = false;
                     _ss << wpi->getWordPos();
+                    ++wpi;
                 }
                 _ss << "]";
             }
@@ -77,34 +78,32 @@ public:
         }
     }
 
-    virtual void
-    remove(uint32_t docId) override
-    {
+    virtual datastore::EntryRef getWordRef() const override { return datastore::EntryRef(); }
+
+    virtual void remove(uint32_t docId) override {
         addComma();
         _ss << "r=" << docId;
     }
 
     virtual void flush() override { }
+    virtual void commit() override { }
     virtual void rewind() override {
         addComma();
         _ss << "f=" << _fieldId;
     }
 
-    std::string
-    toStr() const
-    {
+    std::string toStr() const {
         return _ss.str();
     }
 
-    void
-    reset()
-    {
+    void reset() {
         _ss.str("");
         _first = true;
         _verbose = false;
     }
 
     void setVerbose() { _verbose = true; }
+    void set_show_interleaved_features() { _show_interleaved_features = true; }
 };
 
 }

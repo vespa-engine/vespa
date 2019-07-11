@@ -2,12 +2,9 @@
 
 #pragma once
 
+namespace vespalib { class MemoryUsage; }
 
-namespace search
-{
-
-namespace attribute
-{
+namespace search::attribute {
 
 class IPostingListAttributeBase
 {
@@ -23,11 +20,8 @@ public:
                   uint32_t toLid) = 0;
 
     virtual void forwardedShrinkLidSpace(uint32_t newSize) = 0;
-    virtual MemoryUsage getMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
 };
 
-
-} // namespace attribute
-
-} // namespace search
+} // namespace search::attribute
 

@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
+import com.yahoo.text.ExpressionFormatter;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,20 +52,40 @@ public class MatMul extends IntermediateOperation {
         List<TensorType.Dimension> aDimensions = inputs.get(0).type().get().dimensions();
         List<TensorType.Dimension> bDimensions = inputs.get(1).type().get().dimensions();
 
+        assertTwoDimensions(aDimensions, inputs.get(0), "first argument");
+        assertTwoDimensions(bDimensions, inputs.get(1), "second argument");
+
         String aDim0 = aDimensions.get(0).name();
         String aDim1 = aDimensions.get(1).name();
         String bDim0 = bDimensions.get(0).name();
         String bDim1 = bDimensions.get(1).name();
 
         // The second dimension of a should have the same name as the first dimension of b
-        renamer.addConstraint(aDim1, bDim0, DimensionRenamer::equals, this);
+        renamer.addConstraint(aDim1, bDim0, DimensionRenamer.Constraint.equal(false), this);
 
         // The first dimension of a should have a different name than the second dimension of b
-        renamer.addConstraint(aDim0, bDim1, DimensionRenamer::lesserThan, this);
+        renamer.addConstraint(aDim0, bDim1, DimensionRenamer.Constraint.lessThan(false), this);
 
         // For efficiency, the dimensions to join over should be innermost - soft constraint
-        renamer.addConstraint(aDim0, aDim1, DimensionRenamer::lesserThan, this);
-        renamer.addConstraint(bDim0, bDim1, DimensionRenamer::greaterThan, this);
+        renamer.addConstraint(aDim0, aDim1, DimensionRenamer.Constraint.lessThan(true), this);
+        renamer.addConstraint(bDim0, bDim1, DimensionRenamer.Constraint.greaterThan(true), this);
     }
+
+    private void assertTwoDimensions(List<TensorType.Dimension> dimensions, IntermediateOperation supplier, String inputDescription) {
+        if (dimensions.size() >= 2) return;
+
+
+        throw new IllegalArgumentException("Expected 2 dimensions in the " + inputDescription + " to " + this +
+                                           " but got just " + dimensions + " from\n" +
+                                           ExpressionFormatter.inTwoColumnMode(70, 50).format(supplier.toFullString()));
+    }
+
+    @Override
+    public MatMul withInputs(List<IntermediateOperation> inputs) {
+        return new MatMul(modelName(), name(), inputs);
+    }
+
+    @Override
+    public String operationName() { return "MatMul"; }
 
 }

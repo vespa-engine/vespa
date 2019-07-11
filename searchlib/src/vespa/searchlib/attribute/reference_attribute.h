@@ -3,10 +3,10 @@
 #pragma once
 
 #include "not_implemented_attribute.h"
-#include "reference_mappings.h"
 #include "reference.h"
-#include <vespa/searchlib/datastore/unique_store.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include "reference_mappings.h"
+#include <vespa/vespalib/datastore/unique_store.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace search { class IGidToLidMapperFactory; }
 
@@ -27,7 +27,7 @@ public:
     using EntryRef = search::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using ReferenceStore = datastore::UniqueStore<Reference>;
-    using ReferenceStoreIndices = RcuVectorBase<EntryRef>;
+    using ReferenceStoreIndices = vespalib::RcuVectorBase<EntryRef>;
     using IndicesCopyVector = vespalib::Array<EntryRef>;
     // Class used to map from target lid to source lids
     using ReverseMapping = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
@@ -41,7 +41,7 @@ public:
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    MemoryUsage _cachedUniqueStoreMemoryUsage;
+    vespalib::MemoryUsage _cachedUniqueStoreMemoryUsage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 
@@ -71,7 +71,7 @@ public:
     bool addDoc(DocId &doc) override;
     uint32_t clearDoc(DocId doc) override;
     void update(DocId doc, const GlobalId &gid);
-    const Reference *getReference(DocId doc);
+    const Reference *getReference(DocId doc) const;
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
     std::shared_ptr<IGidToLidMapperFactory> getGidToLidMapperFactory() const { return _gidToLidMapperFactory; }
     TargetLids getTargetLids() const { return _referenceMappings.getTargetLids(); }
@@ -91,6 +91,8 @@ public:
     foreach_lid(uint32_t targetLid, FunctionType &&func) const {
         _referenceMappings.foreach_lid(targetLid, std::forward<FunctionType>(func));
     }
+
+    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
 };
 
 }

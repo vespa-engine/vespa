@@ -13,13 +13,9 @@ import java.util.concurrent.TimeUnit;
  */
 public final class FeedParams {
 
-    public boolean getDenyIfBusyV3() {
-        return denyIfBusyV3;
-    }
+    public boolean getDenyIfBusyV3() { return denyIfBusyV3; }
 
-    public long getMaxSleepTimeMs() {
-        return maxSleepTimeMs;
-    }
+    public long getMaxSleepTimeMs() { return maxSleepTimeMs; }
 
     public boolean getSilentUpgrade() { return silentUpgrade; }
 
@@ -36,6 +32,7 @@ public final class FeedParams {
      * Mutable class used to instantiate a {@link FeedParams}.
      */
     public static final class Builder {
+
         private DataFormat dataFormat = DataFormat.JSON_UTF8;
         private long serverTimeout = TimeUnit.SECONDS.toMillis(180);
         private long clientTimeout = TimeUnit.SECONDS.toMillis(20);
@@ -57,7 +54,7 @@ public final class FeedParams {
          * @return this, for chaining
          */
         @Beta
-        public Builder withSilentUpgrade(boolean silentUpgrade) {
+        public Builder setSilentUpgrade(boolean silentUpgrade) {
             this.silentUpgrade = silentUpgrade;
             return this;
         }
@@ -165,6 +162,7 @@ public final class FeedParams {
 
         /**
          * Sets the maximum number of operations to be in-flight.
+         *
          * @param maxInFlightRequests max number of operations.
          * @return this, for chaining
          */
@@ -246,10 +244,13 @@ public final class FeedParams {
             return maxChunkSizeBytes;
         }
 
-        public int getmaxInFlightRequests() {
+        public int getMaxInFlightRequests() {
             return maxInFlightRequests;
         }
+
     }
+
+    // NOTE! See toBuilder at the end of this class if you add fields here
 
     private final DataFormat dataFormat;
     private final long serverTimeoutMillis;
@@ -262,7 +263,6 @@ public final class FeedParams {
     private final boolean denyIfBusyV3;
     private final long maxSleepTimeMs;
     private final boolean silentUpgrade;
-
 
     private FeedParams(DataFormat dataFormat, long serverTimeout, long clientTimeout, String route,
                        int maxChunkSizeBytes, final int maxInFlightRequests,
@@ -317,6 +317,22 @@ public final class FeedParams {
 
     public long getLocalQueueTimeOut() {
         return localQueueTimeOut;
+    }
+
+    /** Returns a builder initialized to the values of this */
+    public FeedParams.Builder toBuilder() {
+        Builder b = new Builder();
+        b.setDataFormat(dataFormat);
+        b.setServerTimeout(serverTimeoutMillis, TimeUnit.MILLISECONDS);
+        b.setClientTimeout(clientTimeoutMillis, TimeUnit.MILLISECONDS);
+        b.setRoute(route);
+        b.setMaxChunkSizeBytes(maxChunkSizeBytes);
+        b.setMaxInFlightRequests(maxInFlightRequests);
+        b.setPriority(priority);
+        b.setDenyIfBusyV3(denyIfBusyV3);
+        b.setMaxSleepTimeMs(maxSleepTimeMs);
+        b.setSilentUpgrade(silentUpgrade);
+        return b;
     }
 
 }

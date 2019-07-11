@@ -5,8 +5,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NetworkPortsSerializer;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
@@ -148,8 +148,6 @@ class NodesResponse extends HttpResponse {
         object.setString("canonicalFlavor", node.flavor().canonicalName());
         object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
         object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
-        if (node.flavor().getDescription() != null && ! node.flavor().getDescription().isEmpty())
-            object.setString("description", node.flavor().getDescription());
         object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
@@ -161,7 +159,7 @@ class NodesResponse extends HttpResponse {
             toSlime(allocation.membership(), object.setObject("membership"));
             object.setLong("restartGeneration", allocation.restartGeneration().wanted());
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
-            object.setString("wantedDockerImage", nodeRepository.dockerImage(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
+            object.setString("wantedDockerImage", dockerImageFor(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
@@ -220,7 +218,13 @@ class NodesResponse extends HttpResponse {
                 .or(() -> Optional.of(node)
                         .filter(n -> n.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                         .flatMap(n -> n.status().vespaVersion()
-                                .map(version -> nodeRepository.dockerImages().dockerImageFor(n.type()).withTag(version))));
+                                .map(version -> dockerImageFor(n.type()).withTag(version))));
+    }
+
+    // Docker hosts are not running in an image, but return the image of the node type running on it anyway,
+    // this allows the docker host to pre-download the (likely) image its node will run
+    private DockerImage dockerImageFor(NodeType nodeType) {
+        return nodeRepository.dockerImage(nodeType.isDockerHost() ? nodeType.childNodeType() : nodeType);
     }
 
 

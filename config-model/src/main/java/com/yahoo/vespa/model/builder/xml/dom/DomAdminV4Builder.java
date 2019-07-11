@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.HostResource;
@@ -22,7 +21,6 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,8 +30,6 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class DomAdminV4Builder extends DomAdminBuilderBase {
-
-    private ApplicationId ZONE_APPLICATION_ID = ApplicationId.from("hosted-vespa", "routing", "default");
 
     private final Collection<ContainerModel> containerModels;
     private final ConfigModelContext context;
@@ -134,32 +130,15 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
      * @param minHostsPerContainerCluster the desired number of hosts per cluster
      */
     private List<HostResource> pickContainerHostsForSlobrok(int count, int minHostsPerContainerCluster) {
-        Collection<ContainerModel> containerModelsWithSlobrok = containerModels.stream()
-                .filter(this::shouldHaveSlobrok)
-                .collect(Collectors.toList());
         int hostsPerCluster = (int) Math.max(minHostsPerContainerCluster,
-                                             Math.ceil((double) count / containerModelsWithSlobrok.size()));
+                                             Math.ceil((double) count / containerModels.size()));
 
         // Pick from all container clusters to make sure we don't lose all nodes at once if some clusters are removed.
         // This will overshoot the desired size (due to ceil and picking at least one node per cluster).
         List<HostResource> picked = new ArrayList<>();
-        for (ContainerModel containerModel : containerModelsWithSlobrok)
+        for (ContainerModel containerModel : containerModels)
             picked.addAll(pickContainerHostsFrom(containerModel, hostsPerCluster));
         return picked;
-    }
-
-    private boolean shouldHaveSlobrok(ContainerModel containerModel) {
-        // Avoid Slobroks on node-admin container cluster, as node-admin is migrating
-        // TODO: Remove this hack once node-admin has migrated out the zone app
-
-        ApplicationId applicationId = context.getDeployState().getProperties().applicationId();
-        if (!applicationId.equals(ZONE_APPLICATION_ID)) {
-            return true;
-        }
-
-        // aka clustername, aka application-model's ClusterId
-        String clustername = containerModel.getCluster().getName();
-        return !Objects.equals(clustername, "node-admin");
     }
 
     private List<HostResource> pickContainerHostsFrom(ContainerModel model, int count) {

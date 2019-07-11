@@ -16,6 +16,10 @@ import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.config.provision.Environment.prod;
@@ -85,7 +89,6 @@ public class AccessControlValidatorTest  {
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         new AccessControlValidator().validate(model, deployState);
-
     }
 
     @Test
@@ -133,15 +136,31 @@ public class AccessControlValidatorTest  {
         new AccessControlValidator().validate(model, deployState);
     }
 
+    @Test
+    public void write_protection_is_not_required_with_validation_override() throws IOException, SAXException{
+        DeployState deployState = deployState(servicesXml(true, false),
+                                              "<validation-overrides><allow until='2000-01-30'>access-control</allow></validation-overrides>",
+                                              LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant());
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+
+        new AccessControlValidator().validate(model, deployState);
+    }
+
     private static DeployState deployState(String servicesXml) {
+        return deployState(servicesXml, "<validation-overrides></validation-overrides>", Instant.now());
+    }
+
+    private static DeployState deployState(String servicesXml, String validationOverrides, Instant now) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
+                .withValidationOverrides(validationOverrides)
                 .build();
 
         DeployState.Builder builder = new DeployState.Builder()
                 .applicationPackage(app)
                 .zone(new Zone(Environment.prod, RegionName.from("foo")) )
-                .properties(new TestProperties().setHostedVespa(true));
+                .properties(new TestProperties().setHostedVespa(true))
+                .now(now);
         final DeployState deployState = builder.build();
 
         assertTrue("Test must emulate a hosted deployment.", deployState.isHosted());

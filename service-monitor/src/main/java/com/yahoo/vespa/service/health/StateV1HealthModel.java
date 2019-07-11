@@ -6,14 +6,11 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.service.duper.HostAdminApplication;
-import com.yahoo.vespa.service.duper.ZoneApplication;
 import com.yahoo.vespa.service.executor.RunletExecutor;
 import com.yahoo.vespa.service.model.ApplicationInstanceGenerator;
 import com.yahoo.vespa.service.monitor.ServiceId;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -28,54 +25,35 @@ public class StateV1HealthModel implements AutoCloseable {
     private static final String PORT_TAG_HTTP = "HTTP";
 
     /** Port tags implying /state/v1/health is served on HTTP. */
-    public static final List<String> HTTP_HEALTH_PORT_TAGS = Arrays.asList(PORT_TAG_HTTP, PORT_TAG_STATE);
+    public static final List<String> HTTP_HEALTH_PORT_TAGS = List.of(PORT_TAG_HTTP, PORT_TAG_STATE);
     private final Duration targetHealthStaleness;
     private final Duration requestTimeout;
     private final Duration connectionKeepAlive;
     private final RunletExecutor executor;
-    private final boolean monitorTenantHostHealth;
 
     StateV1HealthModel(Duration targetHealthStaleness,
                        Duration requestTimeout,
                        Duration connectionKeepAlive,
-                       RunletExecutor executor,
-                       boolean monitorTenantHostHealth) {
+                       RunletExecutor executor) {
         this.targetHealthStaleness = targetHealthStaleness;
         this.requestTimeout = requestTimeout;
         this.connectionKeepAlive = connectionKeepAlive;
         this.executor = executor;
-        this.monitorTenantHostHealth = monitorTenantHostHealth;
     }
 
     Map<ServiceId, HealthEndpoint> extractHealthEndpoints(ApplicationInfo application) {
         Map<ServiceId, HealthEndpoint> endpoints = new HashMap<>();
 
-        boolean isZoneApplication = application.getApplicationId().equals(ZoneApplication.getApplicationId());
-
         for (HostInfo hostInfo : application.getModel().getHosts()) {
             HostName hostname = HostName.from(hostInfo.getHostname());
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
-
-                boolean isNodeAdmin = false;
-                if (monitorTenantHostHealth && isZoneApplication) {
-                    if (ZoneApplication.isNodeAdminServiceInfo(application.getApplicationId(), serviceInfo)) {
-                        isNodeAdmin = true;
-                    } else {
-                        // Only the node admin/host admin cluster of the zone application should be monitored
-                        // TODO: Move the node admin cluster out to a separate infrastructure application
-                        continue;
-                    }
-                }
-
                 ServiceId serviceId = ApplicationInstanceGenerator.getServiceId(application, serviceInfo);
                 for (PortInfo portInfo : serviceInfo.getPorts()) {
                     if (portTaggedWith(portInfo, HTTP_HEALTH_PORT_TAGS)) {
-                        // The host-admin-in-zone-application is one big hack.
-                        int port = isNodeAdmin ? HostAdminApplication.HOST_ADMIN_HEALT_PORT : portInfo.getPort();
                         StateV1HealthEndpoint endpoint = new StateV1HealthEndpoint(
                                 serviceId,
                                 hostname,
-                                port,
+                                portInfo.getPort(),
                                 targetHealthStaleness,
                                 requestTimeout,
                                 connectionKeepAlive,

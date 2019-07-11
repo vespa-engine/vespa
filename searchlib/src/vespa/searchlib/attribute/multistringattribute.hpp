@@ -6,10 +6,10 @@
 #include "multistringattribute.h"
 #include "enumattribute.hpp"
 #include "multienumattribute.hpp"
-#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/searchlib/query/queryterm.h>
 
 namespace search {

@@ -16,16 +16,16 @@ class SearchContext : public matching::ISearchContext
 {
 private:
     /// Snapshot of the indexes used.
-    Searchable::SP                    _indexSearchable;
+    std::shared_ptr<IndexSearchable>  _indexSearchable;
     search::AttributeBlueprintFactory _attributeBlueprintFactory;
     uint32_t                          _docIdLimit;
 
-    Searchable &getIndexes() override;
+    IndexSearchable &getIndexes() override;
     Searchable &getAttributes() override;
     uint32_t getDocIdLimit() override;
 
 public:
-    SearchContext(const Searchable::SP &indexSearchable, uint32_t docIdLimit);
+    SearchContext(const std::shared_ptr<IndexSearchable> &indexSearchable, uint32_t docIdLimit);
 };
 
 } // namespace proton

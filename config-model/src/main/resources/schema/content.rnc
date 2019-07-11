@@ -319,7 +319,7 @@ Tuning = element tuning {
          element io {
             element write { TuningIoOptionsLight }? &
             element read { TuningIoOptionsLight }? &
-            element search { TuningIoOptionsFull }?
+            element search { TuningIoOptionsSearch }?
          }? &
          element warmup { 
             element time { xsd:double { minInclusive = "0.0" } }? &
@@ -369,7 +369,8 @@ Tuning = element tuning {
 }
 
 TuningIoOptionsLight = string "normal" | string "directio"
-TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "mlock"
+TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "mlock" | string "populate"
+TuningIoOptionsSearch = string "mmap" | string "mlock" | string "populate"
 
 TuningCompression = element compression {
    element type { string "none" | string "lz4" | string "zstd" }? &

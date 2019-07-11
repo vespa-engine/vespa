@@ -2,28 +2,36 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.prelude.fastsearch.FS4PingFactory;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
-import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
-import java.util.Collections;
 import java.util.List;
 
 class MockDispatcher extends Dispatcher {
+    public static MockDispatcher create(List<Node> nodes) {
+        var fs4ResourcePool = new FS4ResourcePool("container.0", 1);
+        var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
-    public MockDispatcher(Node node) {
-        this(node.hostname(), Collections.singletonList(node));
+        return create(nodes, fs4ResourcePool, rpcResourcePool, 1, new VipStatus());
     }
 
-    public MockDispatcher(String clusterId, List<Node> nodes) {
-        this(clusterId, nodes, new FS4ResourcePool("container.0", 1), 1, new VipStatus());
+    public static MockDispatcher create(List<Node> nodes, FS4ResourcePool fs4ResourcePool, RpcResourcePool rpcResourcePool,
+            int containerClusterSize, VipStatus vipStatus) {
+        var dispatchConfig = toDispatchConfig(nodes);
+        var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus);
+        return new MockDispatcher(searchCluster, dispatchConfig, fs4ResourcePool, rpcResourcePool);
     }
 
-    public MockDispatcher(String clusterId, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
-                          int containerClusterSize, VipStatus vipStatus) {
-        super(clusterId, toDispatchConfig(nodes), fs4ResourcePool, containerClusterSize, vipStatus, new MockMetric());
+    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
+            RpcResourcePool rpcResourcePool) {
+        super(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, !dispatchConfig.useFdispatchByDefault()),
+                new FS4PingFactory(fs4ResourcePool), new MockMetric());
     }
 
     private static DispatchConfig toDispatchConfig(List<Node> nodes) {
@@ -39,8 +47,5 @@ class MockDispatcher extends Dispatcher {
             dispatchConfigBuilder.node(dispatchConfigNodeBuilder);
         }
         return new DispatchConfig(dispatchConfigBuilder);
-    }
-
-    public void fill(Result result, String summaryClass) {
     }
 }

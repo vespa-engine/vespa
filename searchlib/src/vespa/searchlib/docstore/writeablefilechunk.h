@@ -3,7 +3,7 @@
 #pragma once
 
 #include "filechunk.h"
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/executor.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/fastos/file.h>
 #include <map>
@@ -42,7 +42,7 @@ public:
 
 public:
     typedef std::unique_ptr<WriteableFileChunk> UP;
-    WriteableFileChunk(vespalib::ThreadExecutor & executor, FileId fileId, NameId nameId,
+    WriteableFileChunk(vespalib::Executor & executor, FileId fileId, NameId nameId,
                        const vespalib::string & baseName, uint64_t initialSerialNum,
                        uint32_t docIdLimit, const Config & config,
                        const TuneFileSummary &tune, const common::FileHeaderContext &fileHeaderContext,
@@ -62,7 +62,7 @@ public:
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
-    MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
     size_t updateLidMap(const LockGuard &guard, ISetLid &lidMap, uint64_t serialNum, uint32_t docIdLimit) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);
@@ -128,7 +128,7 @@ private:
     bool              _writeTaskIsRunning;
     vespalib::Monitor _writeMonitor;
     ProcessedChunkQ   _writeQ;
-    vespalib::ThreadExecutor & _executor;
+    vespalib::Executor & _executor;
     ProcessedChunkMap _orderedChunks;
     BucketDensityComputer _bucketMap;
 };

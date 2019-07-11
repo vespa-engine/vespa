@@ -2,11 +2,10 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
@@ -27,18 +26,18 @@ public interface NodeAgentContext extends TaskContext {
 
     /** @return hostname of the docker container this context applies to */
     default HostName hostname() {
-        return HostName.from(node().getHostname());
+        return HostName.from(node().hostname());
     }
 
     default NodeType nodeType() {
-        return node().getNodeType();
+        return node().type();
     }
 
     AthenzIdentity identity();
 
     DockerNetworking dockerNetworking();
 
-    ZoneId zoneId();
+    ZoneApi zone();
 
     String vespaUser();
 

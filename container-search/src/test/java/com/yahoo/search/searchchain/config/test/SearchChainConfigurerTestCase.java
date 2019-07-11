@@ -10,6 +10,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.SearcherRegistry;
@@ -309,6 +310,7 @@ public class SearchChainConfigurerTestCase {
     /**
      * Copies the component ids from another config, e.g. 'handlers' to a 'components' array in a new components file,
      * to avoid a manually written 'components' file for tests where the bundle spec is given by the component id.
+     *
      * @param configFile  Full path to the original config file, e.g. 'handlers'
      * @param componentsFile  Full path to the new 'components' file
      * @param componentType   The type of component, e.g. 'handler'
@@ -324,7 +326,7 @@ public class SearchChainConfigurerTestCase {
         if (append) {
             Pattern p = Pattern.compile("^[a-z]+" + "\\[\\d+\\]\\.id (.+)");
             BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(new File(componentsFile)), "UTF-8"));
+                                                       new FileInputStream(new File(componentsFile)), "UTF-8"));
             while ((line = reader.readLine()) != null) {
                 Matcher m = p.matcher(line);
                 if (m.matches() && !m.group(1).equals(HandlersConfigurerDi.RegistriesHack.class.getName())) {
@@ -344,10 +346,11 @@ public class SearchChainConfigurerTestCase {
                 i++;
             }
         }
-        buf.append("components[").append(i).append("].id ").
-                                                                   append(HandlersConfigurerDi.RegistriesHack.class.getName()).append("\n");
-        i++;
         reader.close();
+
+        buf.append("components[").append(i++).append("].id ").append(HandlersConfigurerDi.RegistriesHack.class.getName()).append("\n");
+        if (componentType.equals("components"))
+            buf.append("components[").append(i++).append("].id ").append(ExecutionFactory.class.getName()).append("\n");
         buf.insert(0, "components["+i+"]\n");
 
         Writer writer = new OutputStreamWriter(new FileOutputStream(new File(componentsFile)), "UTF-8");

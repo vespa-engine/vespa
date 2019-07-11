@@ -20,9 +20,6 @@ struct CryptoEngine {
     virtual CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) = 0;
     virtual ~CryptoEngine();
     static CryptoEngine::SP get_default();
-private:
-    static std::mutex _shared_lock;
-    static CryptoEngine::SP _shared_default;
 };
 
 /**

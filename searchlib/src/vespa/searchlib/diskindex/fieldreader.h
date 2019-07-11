@@ -13,7 +13,7 @@
 
 namespace search::diskindex {
 
-class FieldReaderFieldInfo;
+class FieldLengthScanner;
 
 /*
  * FieldReader is used to read a dictionary and posting list file
@@ -28,10 +28,9 @@ class FieldReaderFieldInfo;
  */
 class FieldReader
 {
-    FieldReader(const FieldReader &rhs) = delete;
-    FieldReader(const FieldReader &&rhs) = delete;
-    FieldReader &operator=(const FieldReader &rhs) = delete;
-    FieldReader &operator=(const FieldReader &&rhs) = delete;
+private:
+    void VESPA_DLL_LOCAL readCounts();
+    void VESPA_DLL_LOCAL readDocIdAndFeatures();
 public:
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
 
@@ -42,7 +41,7 @@ public:
     typedef index::PostingListCounts PostingListCounts;
     typedef index::PostingListParams PostingListParams;
 
-    uint64_t _wordNum;
+    uint64_t        _wordNum;
     DocIdAndFeatures _docIdAndFeatures;
 protected:
     std::unique_ptr<DictionaryFileSeqRead> _dictFile;
@@ -62,10 +61,12 @@ protected:
         return 0u;
     }
 
-    void readCounts();
-    void readDocIdAndFeatures();
-
 public:
+    FieldReader(const FieldReader &rhs) = delete;
+    FieldReader(const FieldReader &&rhs) = delete;
+    FieldReader &operator=(const FieldReader &rhs) = delete;
+    FieldReader &operator=(const FieldReader &&rhs) = delete;
+
     FieldReader();
 
     virtual ~FieldReader();
@@ -94,8 +95,9 @@ public:
     virtual void setFeatureParams(const PostingListParams &params);
     virtual void getFeatureParams(PostingListParams &params);
     uint32_t getDocIdLimit() const { return _docIdLimit; }
+    const index::FieldLengthInfo &get_field_length_info() const;
 
-    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema);
+    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema, std::shared_ptr<FieldLengthScanner> field_length_scanner);
 };
 
 
@@ -117,16 +119,22 @@ public:
 /*
  * Field reader that strips information from source, e.g. remove
  * weights or discard nonzero elements, due to collection type change.
+ * It is also used to regenerate interleaved features from normal features.
  */
 class FieldReaderStripInfo : public FieldReader
 {
 private:
     bool _hasElements;
     bool _hasElementWeights;
+    bool _want_interleaved_features;
+    bool _regenerate_interleaved_features;
+    std::shared_ptr<FieldLengthScanner> _field_length_scanner;
 public:
-    FieldReaderStripInfo(const IndexIterator &index);
+    FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner>);
     bool allowRawFeatures() override;
+    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void read() override;
+    void scan_element_lengths();
     void getFeatureParams(PostingListParams &params) override;
 };
 

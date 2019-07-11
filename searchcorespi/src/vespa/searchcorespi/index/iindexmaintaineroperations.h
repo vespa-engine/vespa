@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/diskindex/docidmapper.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
 
 namespace searchcorespi::index {
 
@@ -13,6 +14,7 @@ namespace searchcorespi::index {
  * Interface for operations needed by an index maintainer.
  */
 struct IIndexMaintainerOperations {
+    using IFieldLengthInspector = search::index::IFieldLengthInspector;
     using Schema = search::index::Schema;
     using SelectorArray = search::diskindex::SelectorArray;
     virtual ~IIndexMaintainerOperations() {}
@@ -20,7 +22,9 @@ struct IIndexMaintainerOperations {
     /**
      * Creates a new memory index using the given schema.
      */
-    virtual IMemoryIndex::SP createMemoryIndex(const Schema &schema, search::SerialNum serialNum) = 0;
+    virtual IMemoryIndex::SP createMemoryIndex(const Schema& schema,
+                                               const IFieldLengthInspector& inspector,
+                                               search::SerialNum serialNum) = 0;
 
     /**
      * Loads a disk index from the given directory.

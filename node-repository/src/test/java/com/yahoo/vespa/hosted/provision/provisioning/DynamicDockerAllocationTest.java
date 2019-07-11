@@ -9,11 +9,12 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
@@ -35,7 +36,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -76,8 +76,8 @@ public class DynamicDockerAllocationTest {
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
         ClusterSpec clusterSpec2 = clusterSpec("myContent.t2.a2");
-        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), clusterSpec2, flavor, 0, tester);
-        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 1, tester);
+        addAndAssignNode(application2, "2a", dockerHosts.get(2).hostname(), clusterSpec2, flavor, 3, tester);
+        addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 4, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
         deployApp(application1, clusterSpec1, flavor, tester, 2);
@@ -219,17 +219,13 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
-        DockerHostCapacity capacity = new DockerHostCapacity(tester.nodeRepository().getNodes(Node.State.values()));
-        assertThat(capacity.freeCapacityInFlavorEquivalence(new Flavor(flavor)), greaterThan(0));
-
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
         assertThat(initialSpareCapacity.size(), is(2));
 
         try {
             hosts = tester.prepare(application1, clusterSpec, 4, 1, flavor);
             fail("Was able to deploy with 4 nodes, should not be able to use spare capacity");
-        } catch (OutOfCapacityException e) {
-        }
+        } catch (OutOfCapacityException ignored) { }
 
         tester.fail(hosts.get(0));
         hosts = tester.prepare(application1, clusterSpec, 3, 1, flavor);
@@ -250,7 +246,17 @@ public class DynamicDockerAllocationTest {
         tester.activate(application1, ImmutableSet.copyOf(hosts));
 
         List<Node> initialSpareCapacity = findSpareCapacity(tester);
-        assertThat(initialSpareCapacity.size(), is(0));
+        assertEquals(0, initialSpareCapacity.size());
+    }
+
+    @Test
+    public void cd_uses_slow_disk_nodes_for_docker_hosts() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.test, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(4, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+        ApplicationId application1 = tester.makeApplicationId();
+        List<HostSpec> hosts = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 3, 1, new NodeResources(1, 1, 1));
+        tester.activate(application1, ImmutableSet.copyOf(hosts));
     }
 
     @Test(expected = OutOfCapacityException.class)
@@ -278,6 +284,114 @@ public class DynamicDockerAllocationTest {
         assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
     }
 
+    @Test
+    public void legacy_bare_metal_allocations_are_not_altered() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(5, "host-large", NodeType.tenant);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = NodeResources.fromLegacyName("host-large");
+
+        List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
+        assertEquals(2, hosts.size());
+        assertEquals("host-large", hosts.get(0).flavor().get().name());
+        tester.activate(application, hosts);
+    }
+
+    @Test
+    public void provisioning_fast_disk_speed_do_not_get_slow_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.fast, true);
+    }
+
+    @Test
+    public void provisioning_slow_disk_speed_do_not_get_fast_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.slow, true);
+    }
+
+    @Test
+    public void provisioning_any_disk_speed_gets_slow_and_fast_nodes() {
+        provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.any, false);
+    }
+
+    @Test
+    public void slow_disk_nodes_are_preferentially_allocated() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = new NodeResources(1, 1, 1, NodeResources.DiskSpeed.any);
+
+        List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
+        assertEquals(2, hosts.size());
+        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
+        assertEquals(NodeResources.DiskSpeed.slow, hosts.get(1).flavor().get().resources().diskSpeed());
+        tester.activate(application, hosts);
+    }
+
+    private void provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed requestDiskSpeed, boolean expectOutOfCapacity) {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = new NodeResources(1, 1, 1, requestDiskSpeed);
+
+        try {
+            List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
+            if (expectOutOfCapacity) fail("Expected out of capacity");
+            assertEquals(4, hosts.size());
+            tester.activate(application, hosts);
+        }
+        catch (OutOfCapacityException e) {
+            if ( ! expectOutOfCapacity) throw e;
+        }
+    }
+
+    @Test
+    public void nodeResourcesAreRelaxedInDev() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)), NodeType.host, 10, true);
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+        NodeResources resources = new NodeResources(1, 1, 1, NodeResources.DiskSpeed.fast);
+
+        List<HostSpec> hosts = tester.prepare(application, cluster, 4, 1, resources);
+        assertEquals(1, hosts.size());
+        tester.activate(application, hosts);
+        assertEquals(0.1, hosts.get(0).flavor().get().resources().vcpu(), 0.000001);
+        assertEquals("Slow nodes are allowed in dev and preferred because they are cheaper",
+                     NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
+    }
+
+    @Test
+    public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(2, new Flavor(new NodeResources(5, 20, 140)), NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
+
+        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.fromNodeCount(2, Optional.of("d-2-8-50"), false, true), 1);
+        tester.activate(application, hosts1);
+
+        NodeResources resources = new NodeResources(1.5, 8, 50);
+        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.fromCount(2, resources), 1);
+        tester.activate(application, hosts2);
+
+        assertEquals(hosts1, hosts2);
+    }
+
     private ApplicationId makeApplicationId(String tenant, String appName) {
         return ApplicationId.from(tenant, appName, "default");
     }
@@ -288,7 +402,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", Collections.singleton("127.0.0.100"), new HashSet<>(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
+        Node node1a = Node.create("open1", Set.of("127.0.233." + index), Set.of(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());
@@ -319,6 +433,7 @@ public class DynamicDockerAllocationTest {
         b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2-8-50", 2, 8, 50, Flavor.Type.DOCKER_CONTAINER);
         return b.build();
     }
 
@@ -328,7 +443,7 @@ public class DynamicDockerAllocationTest {
                 ClusterSpec.request(ClusterSpec.Type.container,
                                     ClusterSpec.Id.from("node-admin"),
                                     Version.fromString("6.42"),
-                                    false, Collections.emptySet()),
+                                    false),
                 Capacity.fromRequiredNodeType(NodeType.host),
                 1);
         tester.activate(applicationId, ImmutableSet.copyOf(list));
@@ -345,6 +460,6 @@ public class DynamicDockerAllocationTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false, Collections.emptySet());
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
     }
 }

@@ -1,18 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
- * A host flavor (type). This is a value object where the identity is the name.
- * Use {@link NodeFlavors} to create a flavor.
+ * A host or node flavor.
+ * *Host* flavors come from a configured set which corresponds to the actual flavors available in a zone.
+ * *Node* flavors are simply a wrapper of a NodeResources object (for now (May 2019) with the exception of some
+ *        legacy behavior where nodes are allocated by specifying a physical host flavor directly).
  *
  * @author bratseth
  */
@@ -23,43 +22,30 @@ public class Flavor {
     private final int cost;
     private final boolean isStock;
     private final Type type;
-    private final double minCpuCores;
-    private final double minMainMemoryAvailableGb;
-    private final double minDiskAvailableGb;
-    private final boolean fastDisk;
     private final double bandwidth;
-    private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
-    private int idealHeadroom; // Note: Not used after Vespa 6.282
 
     /** The hardware resources of this flavor */
     private NodeResources resources;
 
-    /**
-     * Creates a Flavor, but does not set the replacesFlavors.
-     *
-     * @param flavorConfig config to be used for Flavor.
-     */
+    /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this.configured = true;
         this.name = flavorConfig.name();
         this.cost = flavorConfig.cost();
         this.isStock = flavorConfig.stock();
         this.type = Type.valueOf(flavorConfig.environment());
-        this.minCpuCores = flavorConfig.minCpuCores();
-        this.minMainMemoryAvailableGb = flavorConfig.minMainMemoryAvailableGb();
-        this.minDiskAvailableGb = flavorConfig.minDiskAvailableGb();
-        this.fastDisk = flavorConfig.fastDisk();
+        this.resources = new NodeResources(flavorConfig.minCpuCores(),
+                                           flavorConfig.minMainMemoryAvailableGb(),
+                                           flavorConfig.minDiskAvailableGb(),
+                                           flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         this.bandwidth = flavorConfig.bandwidth();
-        this.description = flavorConfig.description();
         this.retired = flavorConfig.retired();
         this.replacesFlavors = new ArrayList<>();
-        this.idealHeadroom = flavorConfig.idealHeadroom();
-        this.resources = new NodeResources(minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
     }
 
-    /** Create a Flavor from a Flavor spec and all other fields set to Docker defaults */
+    /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
         Objects.requireNonNull(resources, "Resources cannot be null");
         if (resources.allocateByLegacyName())
@@ -70,19 +56,13 @@ public class Flavor {
         this.cost = 0;
         this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
-        this.minCpuCores = resources.vcpu();
-        this.minMainMemoryAvailableGb = resources.memoryGb();
-        this.minDiskAvailableGb = resources.diskGb();
-        this.fastDisk = true;
         this.bandwidth = 1;
-        this.description = "";
         this.retired = false;
-        this.replacesFlavors = Collections.emptyList();
-        this.idealHeadroom = 0;
+        this.replacesFlavors = List.of();
         this.resources = resources;
     }
 
-    /** Returns the unique identity of this flavor */
+    /** Returns the unique identity of this flavor if it is configured, or the resource spec string otherwise */
     public String name() { return name; }
 
     /**
@@ -95,17 +75,23 @@ public class Flavor {
     
     public boolean isStock() { return isStock; }
 
-    public double getMinMainMemoryAvailableGb() { return minMainMemoryAvailableGb; }
+    /**
+     * True if this is a configured flavor used for hosts,
+     * false if it is a virtual flavor created on the fly from node resources
+     */
+    public boolean isConfigured() { return configured; }
 
-    public double getMinDiskAvailableGb() { return minDiskAvailableGb; }
+    public NodeResources resources() { return resources; }
 
-    public boolean hasFastDisk() { return fastDisk; }
+    public double getMinMainMemoryAvailableGb() { return resources.memoryGb(); }
+
+    public double getMinDiskAvailableGb() { return resources.diskGb(); }
+
+    public boolean hasFastDisk() { return resources.diskSpeed() == NodeResources.DiskSpeed.fast; }
 
     public double getBandwidth() { return bandwidth; }
 
-    public double getMinCpuCores() { return minCpuCores; }
-
-    public String getDescription() { return description; }
+    public double getMinCpuCores() { return resources.vcpu(); }
 
     /** Returns whether the flavor is retired */
     public boolean isRetired() {
@@ -116,11 +102,6 @@ public class Flavor {
     
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
-
-    /** The free capacity we would like to preserve for this flavor */
-    public int getIdealHeadroom() {
-        return idealHeadroom;
-    }
 
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.
@@ -167,49 +148,32 @@ public class Flavor {
         return false;
     }
 
-    /**
-     * Returns whether this flavor has at least the given resources, i.e if all resources of this are at least
-     * as large as the given resources.
-     */
-    public boolean hasAtLeast(NodeResources resources) {
-        return this.minCpuCores >= resources.vcpu() &&
-               this.minMainMemoryAvailableGb >= resources.memoryGb() &&
-               this.minDiskAvailableGb >= resources.diskGb();
-    }
-
     /** Irreversibly freezes the content of this */
     public void freeze() {
-        replacesFlavors = ImmutableList.copyOf(replacesFlavors);
+        replacesFlavors = List.copyOf(replacesFlavors);
     }
-    
-    /** Returns whether this flavor has at least as much of each hardware resource as the given flavor */
-    public boolean isLargerThan(Flavor other) {
-        return this.minCpuCores >= other.minCpuCores &&
-               this.minDiskAvailableGb >= other.minDiskAvailableGb &&
-               this.minMainMemoryAvailableGb >= other.minMainMemoryAvailableGb &&
-               this.fastDisk || ! other.fastDisk;
-    }
-
-    /**
-     * True if this is a configured flavor used for hosts,
-     * false if it is a virtual flavor created on the fly from node resources
-     */
-    public boolean isConfigured() { return configured; }
-
-    public NodeResources resources() { return resources; }
 
     @Override
     public int hashCode() { return name.hashCode(); }
 
     @Override
-    public boolean equals(Object other) {
-        if (other == this) return true;
-        if ( ! (other instanceof Flavor)) return false;
-        return ((Flavor)other).name.equals(this.name);
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof Flavor)) return false;
+        Flavor other = (Flavor)o;
+        if (configured)
+            return other.name.equals(this.name);
+        else
+            return this.resources.equals(other.resources);
     }
 
     @Override
-    public String toString() { return "flavor '" + name + "'"; }
+    public String toString() {
+        if (isConfigured())
+            return "flavor '" + name + "'";
+        else
+            return name;
+    }
 
     public enum Type {
         undefined, // Default value in config (flavors.def)

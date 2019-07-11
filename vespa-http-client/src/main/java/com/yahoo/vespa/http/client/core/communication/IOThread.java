@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class for handling asynchronous feeding of new documents and processing of results.
+ * Thread which feeds document operations asynchronously and processes the results.
  * 
  * @author Einar M R Rosenvinge
  */
@@ -53,19 +53,18 @@ class IOThread implements Runnable, AutoCloseable {
     private final AtomicInteger docsReceivedCounter = new AtomicInteger(0);
     private final AtomicInteger statusReceivedCounter = new AtomicInteger(0);
     private final AtomicInteger pendingDocumentStatusCount = new AtomicInteger(0);
-    private final AtomicInteger successfullHandshakes = new AtomicInteger(0);
+    private final AtomicInteger successfulHandshakes = new AtomicInteger(0);
     private final AtomicInteger lastGatewayProcessTimeMillis = new AtomicInteger(0);
 
-    IOThread(
-            ThreadGroup ioThreadGroup,
-            EndpointResultQueue endpointResultQueue,
-            GatewayConnection client,
-            int clusterId,
-            int maxChunkSizeBytes,
-            int maxInFlightRequests,
-            long localQueueTimeOut,
-            DocumentQueue documentQueue,
-            long maxSleepTimeMs) {
+    IOThread(ThreadGroup ioThreadGroup,
+             EndpointResultQueue endpointResultQueue,
+             GatewayConnection client,
+             int clusterId,
+             int maxChunkSizeBytes,
+             int maxInFlightRequests,
+             long localQueueTimeOut,
+             DocumentQueue documentQueue,
+             long maxSleepTimeMs) {
         this.documentQueue = documentQueue;
         this.endpoint = client.getEndpoint();
         this.client = client;
@@ -86,6 +85,9 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
     public static class ConnectionStats {
+
+        // NOTE: These fields are accessed by reflection in JSON serialization
+
         public final int wrongSessionDetectedCounter;
         public final int wrongVersionDetectedCounter;
         public final int problemStatusCodeFromServerCounter;
@@ -96,16 +98,15 @@ class IOThread implements Runnable, AutoCloseable {
         public final int successfullHandshakes;
         public final int lastGatewayProcessTimeMillis;
 
-        protected ConnectionStats(
-                final int wrongSessionDetectedCounter,
-                final int wrongVersionDetectedCounter,
-                final int problemStatusCodeFromServerCounter,
-                final int executeProblemsCounter,
-                final int docsReceivedCounter,
-                final int statusReceivedCounter,
-                final int pendingDocumentStatusCount,
-                final int successfullHandshakes,
-                final int lastGatewayProcessTimeMillis) {
+        ConnectionStats(int wrongSessionDetectedCounter,
+                        int wrongVersionDetectedCounter,
+                        int problemStatusCodeFromServerCounter,
+                        int executeProblemsCounter,
+                        int docsReceivedCounter,
+                        int statusReceivedCounter,
+                        int pendingDocumentStatusCount,
+                        int successfullHandshakes,
+                        int lastGatewayProcessTimeMillis) {
             this.wrongSessionDetectedCounter = wrongSessionDetectedCounter;
             this.wrongVersionDetectedCounter = wrongVersionDetectedCounter;
             this.problemStatusCodeFromServerCounter = problemStatusCodeFromServerCounter;
@@ -130,16 +131,14 @@ class IOThread implements Runnable, AutoCloseable {
                 docsReceivedCounter.get(),
                 statusReceivedCounter.get(),
                 pendingDocumentStatusCount.get(),
-                successfullHandshakes.get(),
+                successfulHandshakes.get(),
                 lastGatewayProcessTimeMillis.get());
     }
 
     @Override
     public void close() {
         documentQueue.close();
-        if (stopSignal.getCount() == 0) {
-            return;
-        }
+        if (stopSignal.getCount() == 0) return;
 
         stopSignal.countDown();
         log.finer("Closed called.");
@@ -166,8 +165,7 @@ class IOThread implements Runnable, AutoCloseable {
         log.fine("Session to " + endpoint + " closed.");
     }
 
-
-    public void post(final Document document) throws InterruptedException {
+    public void post(Document document) throws InterruptedException {
         documentQueue.put(document, Thread.currentThread().getThreadGroup() == ioThreadGroup);
     }
 
@@ -177,8 +175,8 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
 
-    List<Document> getNextDocsForFeeding(int maxWaitUnits, TimeUnit timeUnit) {
-        final List<Document> docsForSendChunk = new ArrayList<>();
+    List<Document> getNextDocsForFeeding(long maxWaitUnits, TimeUnit timeUnit) {
+        List<Document> docsForSendChunk = new ArrayList<>();
         int chunkSizeBytes = 0;
         try {
             drainFirstDocumentsInQueueIfOld();
@@ -214,8 +212,7 @@ class IOThread implements Runnable, AutoCloseable {
         }
     }
 
-    private void markDocumentAsFailed(
-            List<Document> docs, ServerResponseException servletException) {
+    private void markDocumentAsFailed(List<Document> docs, ServerResponseException servletException) {
         for (Document doc : docs) {
             resultQueue.failOperation(
                     EndPointResultFactory.createTransientError(
@@ -223,8 +220,7 @@ class IOThread implements Runnable, AutoCloseable {
         }
     }
 
-    private InputStream sendAndReceive(List<Document> docs)
-            throws IOException, ServerResponseException {
+    private InputStream sendAndReceive(List<Document> docs) throws IOException, ServerResponseException {
         try {
             // Post the new docs and get async responses for other posts.
             return client.writeOperations(docs);
@@ -238,17 +234,19 @@ class IOThread implements Runnable, AutoCloseable {
     }
 
     private static class ProcessResponse {
+
         private final int transitiveErrorCount;
         private final int processResultsCount;
+
         ProcessResponse(int transitiveErrorCount, int processResultsCount) {
             this.transitiveErrorCount = transitiveErrorCount;
             this.processResultsCount = processResultsCount;
         }
+
     }
 
     private ProcessResponse processResponse(InputStream serverResponse) throws IOException {
-        final Collection<EndpointResult> endpointResults =
-                EndPointResultFactory.createResult(endpoint, serverResponse);
+        Collection<EndpointResult> endpointResults = EndPointResultFactory.createResult(endpoint, serverResponse);
         statusReceivedCounter.addAndGet(endpointResults.size());
         int transientErrors = 0;
         for (EndpointResult endpointResult : endpointResults) {
@@ -271,15 +269,14 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
-    private ProcessResponse pullAndProcessData(int maxWaitTimeMilliSecs)
-            throws ServerResponseException, IOException {
-        final int pendingResultQueueSize = resultQueue.getPendingSize();
+    private ProcessResponse pullAndProcessData(long maxWaitTimeMs) throws ServerResponseException, IOException {
+        int pendingResultQueueSize = resultQueue.getPendingSize();
         pendingDocumentStatusCount.set(pendingResultQueueSize);
 
-        List<Document> nextDocsForFeeding = (pendingResultQueueSize > maxInFlightRequests)
+        List<Document> nextDocsForFeeding =
+                (pendingResultQueueSize > maxInFlightRequests)
               ? new ArrayList<>()       // The queue is full, will not send more documents.
-              : getNextDocsForFeeding(maxWaitTimeMilliSecs, TimeUnit.MILLISECONDS);
-
+              : getNextDocsForFeeding(maxWaitTimeMs, TimeUnit.MILLISECONDS);
 
         if (nextDocsForFeeding.isEmpty() && pendingResultQueueSize == 0) {
             //we have no unfinished business with the server now.
@@ -288,6 +285,7 @@ class IOThread implements Runnable, AutoCloseable {
         }
         log.finest("Awaiting " + pendingResultQueueSize + " results.");
         ProcessResponse processResponse = feedDocumentAndProcessResults(nextDocsForFeeding);
+
         if (pendingResultQueueSize > maxInFlightRequests && processResponse.processResultsCount == 0) {
             try {
                 // Max outstanding document operations, no more results on server side, wait a bit
@@ -319,7 +317,7 @@ class IOThread implements Runnable, AutoCloseable {
             case CONNECTED:
                 try {
                     client.handshake();
-                    successfullHandshakes.getAndIncrement();
+                    successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
                     log.info("Handshake did not work out " + endpoint + ": " + Exceptions.toMessageString(ser));
@@ -337,7 +335,7 @@ class IOThread implements Runnable, AutoCloseable {
                 return ThreadState.SESSION_SYNCED;
             case SESSION_SYNCED:
                 try {
-                    ProcessResponse processResponse = pullAndProcessData(100);
+                    ProcessResponse processResponse = pullAndProcessData(1);
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {
@@ -387,9 +385,8 @@ class IOThread implements Runnable, AutoCloseable {
     private void drainFirstDocumentsInQueueIfOld() {
         while (true) {
             Optional<Document> document = documentQueue.pollDocumentIfTimedoutInQueue(localQueueTimeOut);
-            if (! document.isPresent()) {
-                return;
-            }
+            if ( ! document.isPresent()) return;
+
             EndpointResult endpointResult = EndPointResultFactory.createTransientError(
                     endpoint, document.get().getOperationId(),
                     new Exception("Not sending document operation, timed out in queue after "

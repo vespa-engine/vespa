@@ -3,18 +3,24 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.yolean.Exceptions;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -26,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -33,10 +40,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper, set for example
- * by the prepare HTTP handler on another configserver. The zookeeper state watched in this class is shared
- * between all config servers, so it should not modify any global state, because the operation will be performed
- * on all servers. The repo can be regarded as read only from the POV of the configserver.
+ * Will watch/prepare sessions (applications) based on watched nodes in ZooKeeper. The zookeeper state watched in
+ * this class is shared between all config servers, so it should not modify any global state, because the operation
+ * will be performed on all servers. The repo can be regarded as read only from the POV of the configserver.
  *
  * @author Vegard Havdal
  * @author Ulf Lilleengen
@@ -44,9 +50,6 @@ import java.util.stream.Collectors;
 public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
-    // One thread pool for all instances of this class
-    private static final ExecutorService pathChildrenExecutor =
-            Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(RemoteSessionRepo.class.getName()));
 
     private final Curator curator;
     private final Path sessionsPath;
@@ -55,31 +58,29 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
     private final MetricUpdater metrics;
+    private final FlagSource flagSource;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
+    private final Executor zkWatcherExecutor;
 
-    /**
-     * @param curator              a {@link Curator} instance.
-     * @param remoteSessionFactory a {@link com.yahoo.vespa.config.server.session.RemoteSessionFactory}
-     * @param reloadHandler        a {@link com.yahoo.vespa.config.server.ReloadHandler}
-     * @param tenantName           a {@link TenantName} instance.
-     * @param applicationRepo      a {@link TenantApplications} instance.
-     */
-    public RemoteSessionRepo(Curator curator,
+    public RemoteSessionRepo(GlobalComponentRegistry registry,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
-                             TenantApplications applicationRepo,
-                             MetricUpdater metricUpdater) {
-        this.curator = curator;
+                             TenantApplications applicationRepo) {
+
+        this.curator = registry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
-        this.metrics = metricUpdater;
+        this.metrics = registry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        this.flagSource = registry.getFlagSource();
+        StripedExecutor<TenantName> zkWatcherExecutor = registry.getZkWatcherExecutor();
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, pathChildrenExecutor);
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
@@ -94,6 +95,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.metrics = null;
         this.directoryCache = null;
         this.applicationRepo = null;
+        this.flagSource = new InMemoryFlagSource();
+        this.zkWatcherExecutor = Runnable::run;
     }
 
     public List<Long> getSessions() {
@@ -104,6 +107,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         int deleted = 0;
         for (long sessionId : getSessions()) {
             RemoteSession session = getSession(sessionId);
+            if (session == null) continue; // Internal sessions not in synch with zk, continue
             Instant created = Instant.ofEpochSecond(session.getCreateTime());
             if (sessionHasExpired(created, expiryTime)) {
                 log.log(LogLevel.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
@@ -128,7 +132,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         return children.stream().map(Long::parseLong).collect(Collectors.toList());
     }
 
-    // TODO: Add sessions in parallel
     private void initializeSessions() throws NumberFormatException {
         getSessions().forEach(this::sessionAdded);
     }
@@ -158,16 +161,17 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      */
     private void sessionAdded(long sessionId) {
         try {
-            log.log(LogLevel.DEBUG, "Adding session to RemoteSessionRepo: " + sessionId);
+            log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
             Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
             fileCache.addListener(this::nodeChanged);
             loadSessionIfActive(session);
-            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics));
+            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
             addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
+            if (Flags.CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED.bindTo(flagSource).value()) throw e;
             log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
         }
     }
@@ -181,15 +185,11 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private void loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
-            try {
-                if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
-                    log.log(LogLevel.DEBUG, "Found active application for session " + session.getSessionId() + " , loading it");
-                    reloadHandler.reloadConfig(session.ensureApplicationLoaded());
-                    log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId);
-                    return;
-                }
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + "Skipping loading of application '" + applicationId + "': " + Exceptions.toMessageString(e));
+            if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
+                log.log(LogLevel.DEBUG, () -> "Found active application for session " + session.getSessionId() + " , loading it");
+                reloadHandler.reloadConfig(session.ensureApplicationLoaded());
+                log.log(LogLevel.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
+                return;
             }
         }
     }
@@ -207,39 +207,42 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     }
 
     private void nodeChanged() {
-        Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-        for (RemoteSession session : listSessions()) {
-            sessionMetrics.add(session.getStatus());
-        }
-        metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
-        metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
-        metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
-        metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+        zkWatcherExecutor.execute(() -> {
+            Multiset<Session.Status> sessionMetrics = HashMultiset.create();
+            for (RemoteSession session : listSessions()) {
+                sessionMetrics.add(session.getStatus());
+            }
+            metrics.setNewSessions(sessionMetrics.count(Session.Status.NEW));
+            metrics.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
+            metrics.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
+            metrics.setDeactivatedSessions(sessionMetrics.count(Session.Status.DEACTIVATE));
+        });
     }
 
-    private void childEvent(CuratorFramework framework, PathChildrenCacheEvent event) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Got child event: " + event);
-        }
-        switch (event.getType()) {
-            case CHILD_ADDED:
-                sessionsChanged();
-                synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
-                break;
-            case CHILD_REMOVED:
-                sessionsChanged();
-                break;
-            case CONNECTION_RECONNECTED:
-                sessionsChanged();
-                break;
-        }
+    @SuppressWarnings("unused")
+    private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
+        zkWatcherExecutor.execute(() -> {
+            log.log(LogLevel.DEBUG, () -> "Got child event: " + event);
+            switch (event.getType()) {
+                case CHILD_ADDED:
+                    sessionsChanged();
+                    synchronizeOnNew(getSessionListFromDirectoryCache(Collections.singletonList(event.getData())));
+                    break;
+                case CHILD_REMOVED:
+                    sessionsChanged();
+                    break;
+                case CONNECTION_RECONNECTED:
+                    sessionsChanged();
+                    break;
+            }
+        });
     }
 
     private void synchronizeOnNew(List<Long> sessionList) {
         for (long sessionId : sessionList) {
             RemoteSession session = getSession(sessionId);
             if (session == null) continue; // session might have been deleted after getting session list
-            log.log(LogLevel.DEBUG, session.logPre() + "Confirming upload for session " + sessionId);
+            log.log(LogLevel.DEBUG, () -> session.logPre() + "Confirming upload for session " + sessionId);
             session.confirmUpload();
         }
     }

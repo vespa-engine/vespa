@@ -1,8 +1,8 @@
 {
   "tenant": "tenant1",
   "application": "application1",
-  "instance": "default",
-  "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/",
+  "instance": "instance1",
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/",
   "source": {
     "gitRepository": "repository1",
     "gitBranch": "master",
@@ -223,7 +223,7 @@
   ],
   "rotationId": "rotation-id-1",
   "instances": [
-    @include(dev-us-west-1.json),
+    @include(dev-us-east-1.json),
     @include(prod-us-central-1.json)
   ],
   "metrics": {

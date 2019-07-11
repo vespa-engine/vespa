@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -56,13 +57,13 @@ public class ApplicationHandler extends HttpHandler {
     @Override
     public HttpResponse handleGET(HttpRequest request) {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
-        Tenant tenant = verifyTenantAndApplication(applicationId);
         Duration timeout = HttpHandler.getRequestTimeout(request, Duration.ofSeconds(5));
 
         if (isServiceConvergeRequest(request)) {
             // Expects both hostname and port in the request (hostname:port)
             String hostAndPort = getHostNameFromRequest(request);
-            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(), timeout);
+            return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(),
+                                                                          timeout, getVespaVersionFromRequest(request));
         }
 
         if (isClusterControllerStatusRequest(request)) {
@@ -72,10 +73,10 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isContentRequest(request)) {
-            long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
+            long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
             String contentPath = ApplicationContentRequest.getContentPath(request);
             ApplicationFile applicationFile =
-                    applicationRepository.getApplicationFileFromSession(tenant.getName(),
+                    applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
                                                                         sessionId,
                                                                         contentPath,
                                                                         ContentRequest.getApplicationFileMode(request.getMethod()));
@@ -89,7 +90,8 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isServiceConvergeListRequest(request)) {
-            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout);
+            return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(), timeout,
+                                                                             getVespaVersionFromRequest(request));
         }
 
         if (isFiledistributionStatusRequest(request)) {
@@ -134,14 +136,6 @@ public class ApplicationHandler extends HttpHandler {
                                request.getProperty("flavor"),
                                request.getProperty("clusterType"),
                                request.getProperty("clusterId"));
-    }
-
-    private Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        try {
-            return applicationRepository.verifyTenantAndApplication(applicationId);
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e.getMessage());
-        }
     }
 
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
@@ -233,6 +227,13 @@ public class ApplicationHandler extends HttpHandler {
             .tenant(tenant)
             .applicationName(application).instanceName(instance)
             .build();
+    }
+
+    private static Optional<Version> getVespaVersionFromRequest(HttpRequest request) {
+        String vespaVersion = request.getProperty("vespaVersion");
+        return (vespaVersion == null || vespaVersion.isEmpty())
+                ? Optional.empty()
+                : Optional.of(Version.fromString(vespaVersion));
     }
 
     private static class DeleteApplicationResponse extends JSONResponse {

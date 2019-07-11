@@ -11,19 +11,25 @@ import com.yahoo.data.access.ObjectTraverser;
  *
  * @author arnej27959
  */
-public final class JsonRender
-{
+public final class JsonRender {
+
     public static StringBuilder render(Inspectable value,
                                        StringBuilder target,
-                                       boolean compact)
-    {
-        StringEncoder enc = new StringEncoder(target, compact);
-        enc.encode(value.inspect());
-        return target;
+                                       boolean compact) {
+        return render(value, new StringEncoder(target, compact));
     }
 
-    public static final class StringEncoder implements ArrayTraverser, ObjectTraverser
-    {
+    /**
+     * Renders the given value to the target stringbuilder with a given encoder.
+     * This is useful to use an encoder where rendering of some value types is customized.
+     */
+    public static StringBuilder render(Inspectable value, StringEncoder encoder) {
+        encoder.encode(value.inspect());
+        return encoder.target();
+    }
+
+    public static class StringEncoder implements ArrayTraverser, ObjectTraverser {
+
         private final StringBuilder out;
         private boolean head = true;
         private boolean compact;
@@ -41,21 +47,21 @@ public final class JsonRender
             }
         }
 
-        private void encodeEMPTY() {
+        protected void encodeEMPTY() {
             out.append("null");
         }
 
-        private void encodeBOOL(boolean value) {
+        protected void encodeBOOL(boolean value) {
             out.append(value ? "true" : "false");
         }
 
-        private void encodeLONG(long value) {
-            out.append(String.valueOf(value));
+        protected void encodeLONG(long value) {
+            out.append(value);
         }
 
-        private void encodeDOUBLE(double value) {
+        protected void encodeDOUBLE(double value) {
             if (Double.isFinite(value)) {
-                out.append(String.valueOf(value));
+                out.append(value);
             } else {
                 out.append("null");
             }
@@ -63,7 +69,7 @@ public final class JsonRender
 
         static final char[] hex = "0123456789ABCDEF".toCharArray();
 
-        private void encodeSTRING(String value) {
+        protected void encodeSTRING(String value) {
             out.append('"');
             for (char c : value.toCharArray()) {
                 switch (c) {
@@ -89,7 +95,7 @@ public final class JsonRender
             out.append('"');
         }
 
-        private void encodeDATA(byte[] value) {
+        protected void encodeDATA(byte[] value) {
             out.append('"');
             out.append("0x");
             for (int pos = 0; pos < value.length; pos++) {
@@ -99,14 +105,14 @@ public final class JsonRender
             out.append('"');
         }
 
-        private void encodeARRAY(Inspector inspector) {
+        protected void encodeARRAY(Inspector inspector) {
             openScope("[");
             ArrayTraverser at = this;
             inspector.traverse(at);
             closeScope("]");
         }
 
-        private void encodeOBJECT(Inspector inspector) {
+        protected void encodeOBJECT(Inspector inspector) {
             openScope("{");
             ObjectTraverser ot = this;
             inspector.traverse(ot);
@@ -164,5 +170,10 @@ public final class JsonRender
                 out.append(' ');
             encodeValue(inspector);
         }
+
+        /** Returns the target this is encoding values to */
+        public StringBuilder target() { return out; }
+
     }
+
 }

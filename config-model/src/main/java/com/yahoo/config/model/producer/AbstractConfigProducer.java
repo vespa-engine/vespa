@@ -406,7 +406,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return findInheritedClassLoader(clazz.getSuperclass(), producerName);
     }
 
-    public ClassLoader getConfigClassLoader(String producerName) {
+    protected ClassLoader getConfigClassLoader(String producerName) {
         ClassLoader classLoader = findInheritedClassLoader(getClass(), producerName);
         if (classLoader != null)
             return classLoader;

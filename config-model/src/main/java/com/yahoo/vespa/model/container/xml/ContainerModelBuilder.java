@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -22,7 +23,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -37,17 +37,16 @@ import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
-import com.yahoo.vespa.model.builder.xml.dom.Rotations;
 import com.yahoo.vespa.model.builder.xml.dom.ServletBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocprocChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.processing.DomProcessingBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.search.DomSearchChainsBuilder;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
+import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.IdentityProvider;
@@ -74,6 +73,7 @@ import org.w3c.dom.Node;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,20 +83,22 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * @author Tony Vaagenes
  * @author gjoranv
  */
 public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
-    /**
-     * Default path to vip status file for container in Hosted Vespa.
-     */
-    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/mediasearch/oor/status.html");
-    /**
-     * Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
-     */
+    // Default path to vip status file for container in Hosted Vespa.
+    static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
+
+    //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
+
+    private static final String TAG_NAME = "container";
+    private static final String DEPRECATED_TAG_NAME = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     public enum Networking { disable, enable }
@@ -109,7 +111,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected DeployLogger log;
 
     public static final List<ConfigModelId> configModelIds =  
-            ImmutableList.of(ConfigModelId.fromName("container"), ConfigModelId.fromName("jdisc"));
+            ImmutableList.of(ConfigModelId.fromName(TAG_NAME), ConfigModelId.fromName(DEPRECATED_TAG_NAME));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -130,13 +132,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
+        log = modelContext.getDeployLogger();
         app = modelContext.getApplicationPackage();
-        checkVersion(spec);
 
-        this.log = modelContext.getDeployLogger();
+        checkVersion(spec);
+        checkTagName(spec, log);
+
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
+        cluster.setMessageBusEnabled(rpcServerEnabled);
         cluster.setRpcServerEnabled(rpcServerEnabled);
         cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
@@ -203,6 +208,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addAthensCopperArgos(ApplicationContainerCluster cluster, ConfigModelContext context) {
+        if ( ! context.getDeployState().isHosted()) return;
         app.getDeployment().map(DeploymentSpec::fromXml)
                 .ifPresent(deploymentSpec -> {
                     addIdentityProvider(cluster,
@@ -212,22 +218,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                         context.getDeployState().getProperties().athenzDnsSuffix(),
                                         context.getDeployState().zone(),
                                         deploymentSpec);
-                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), deploymentSpec);
+                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), context.getDeployState().getEndpoints(), deploymentSpec);
                 });
     }
 
-    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, DeploymentSpec spec) {
+    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
         cluster.getContainers().forEach(container -> {
-            setRotations(container, rotations, spec.globalServiceId(), cluster.getName());
+            setRotations(container, rotations, endpoints, spec.globalServiceId(), cluster.getName());
             container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
-    }
-
-    private boolean zoneHasActiveRotation(Zone zone) {
-        return app.getDeployment()
-                  .map(DeploymentSpec::fromXml)
-                  .map(spec -> zoneHasActiveRotation(zone, spec))
-                  .orElse(true);
     }
 
     private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
@@ -236,13 +235,30 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                              declaredZone.active());
     }
 
-    private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
+    private void setRotations(Container container,
+                              Set<Rotation> rotations,
+                              Set<ContainerEndpoint> endpoints,
+                              Optional<String> globalServiceId,
+                              String containerClusterName) {
+        final Set<String> rotationsProperty = new HashSet<>();
 
+        // Add the legacy rotations to the list of available rotations.  Using the same test
+        // as was used before to mirror the old business logic for global-service-id.
         if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
             if (containerClusterName.equals(globalServiceId.get())) {
-                container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
+                rotations.stream().map(Rotation::getId).forEach(rotationsProperty::add);
             }
         }
+
+        // For ContainerEndpoints this is more straight-forward, just add all that are present
+        endpoints.stream()
+                .filter(endpoint -> endpoint.clusterId().equals(containerClusterName))
+                .flatMap(endpoint -> endpoint.names().stream())
+                .forEach(rotationsProperty::add);
+
+        // Build the comma delimited list of endpoints this container should be known as.
+        // Confusingly called 'rotations' for legacy reasons.
+        container.setProp("rotations", String.join(",", rotationsProperty));
     }
 
     private void addRoutingAliases(ApplicationContainerCluster cluster, Element spec, Environment environment) {
@@ -411,6 +427,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    private void checkTagName(Element spec, DeployLogger logger) {
+        if (spec.getTagName().equals(DEPRECATED_TAG_NAME)) {
+            logger.log(WARNING, "'" + DEPRECATED_TAG_NAME + "' is deprecated as tag name. Use '" + TAG_NAME + "' instead.");
+        }
+    }
+
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
             addStandaloneNode(cluster);
@@ -419,7 +441,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ApplicationContainerCluster cluster) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa(), cluster.getTlsSecrets());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -450,39 +472,61 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
+                deployLogger.log(WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
                 cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }
         return jvmOptions;
     }
+
+    void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                      Element nodesElement, ConfigModelContext context)
+    {
+        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
+
+        if (!cluster.getJvmGCOptions().isPresent()) {
+            String jvmGCOptions = nodesElement.hasAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
+                    ? nodesElement.getAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
+                    : null;
+            cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+        }
+
+        applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+    }
+    void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                       Element jvmElement, ConfigModelContext context)
+    {
+        applyNodesTagJvmArgs(nodes, jvmElement.getAttribute(VespaDomBuilder.OPTIONS));
+        applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
+        String jvmGCOptions = jvmElement.hasAttribute(VespaDomBuilder.GC_OPTIONS)
+                ? jvmElement.getAttribute(VespaDomBuilder.GC_OPTIONS)
+                : null;
+        cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+    }
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa(), cluster.getTlsSecrets());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService(context.getDeployLogger());
             cluster.addContainers(Collections.singleton(node));
         } else {
-            List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, rotationsElement, context);
-            applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
+            List<ApplicationContainer> nodes = createNodes(cluster, nodesElement, context);
 
-            if ( !cluster.getJvmGCOptions().isPresent()) {
-                String jvmGCOptions = nodesElement.hasAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
-                        ? nodesElement.getAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
-                        : null;
-                cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
+            Element jvmElement = XML.getChild(nodesElement, "jvm");
+            if (jvmElement == null) {
+                extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
+            } else {
+                extractJvmTag(nodes, cluster, jvmElement, context);
             }
-
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
             if (environmentVars != null && !environmentVars.isEmpty()) {
                 cluster.setEnvironmentVars(environmentVars);
             }
-            applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
 
@@ -500,9 +544,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return sb.toString();
     }
     
-    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element nodesElement, Element rotationsElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement, rotationsElement, context);
+            return createNodesFromNodeCount(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
@@ -511,7 +555,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
 
-    private void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
+    private static void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
         if (!cluster.serviceAliases().isEmpty()) {
             result.forEach(container -> {
                 container.setProp("servicealiases", cluster.serviceAliases().stream().collect(Collectors.joining(",")));
@@ -524,7 +568,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
     
-    private void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
+    private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
         if (memoryPercentage == null || memoryPercentage.isEmpty()) return;
         memoryPercentage = memoryPercentage.trim();
 
@@ -555,8 +599,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               deployState.getWantedNodeVespaVersion(),
-                                                              false,
-                                                              Collections.emptySet());
+                                                              false);
                 Capacity capacity = Capacity.fromNodeCount(1,
                                                            Optional.empty(),
                                                            false,
@@ -568,17 +611,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, Element rotationsElement, ConfigModelContext context) {
+    private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        Set<RotationName> rotations = Set.of();
-        if (zoneHasActiveRotation(context.getDeployState().zone())) {
-            rotations = Rotations.from(rotationsElement);
-        }
         Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
-                                                                                  log,
-                                                                                  rotations);
+                                                                                  log);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
@@ -587,8 +625,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
                                                       ClusterSpec.Id.from(cluster.getName()), 
                                                       context.getDeployState().getWantedNodeVespaVersion(),
-                                                      false,
-                                                      Collections.emptySet());
+                                                      false);
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);
@@ -659,7 +696,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa(), cluster.getTlsSecrets());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);
@@ -688,30 +725,33 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return Optional.empty();
     }
 
-    private boolean useCpuSocketAffinity(Element nodesElement) {
+    private static boolean useCpuSocketAffinity(Element nodesElement) {
         if (nodesElement.hasAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME))
             return Boolean.parseBoolean(nodesElement.getAttribute(VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME));
         else
             return false;
     }
 
-    private void applyNodesTagJvmArgs(List<ApplicationContainer> containers, String jvmArgs) {
+    private static void applyNodesTagJvmArgs(List<ApplicationContainer> containers, String jvmArgs) {
         for (Container container: containers) {
             if (container.getAssignedJvmOptions().isEmpty())
                 container.prependJvmOptions(jvmArgs);
         }
     }
 
-    private void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
+    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
         if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
         for (Container container: containers)
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
     private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
-        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(
-                cluster.getSearch().getChains(), "com.yahoo.search.handler.SearchHandler");
+        // Magic spell is needed to receive the chains config :-|
+        cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
+                                                     "com.yahoo.search.searchchain.ExecutionFactory"));
 
+        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(cluster.getSearch().getChains(),
+                                                                                "com.yahoo.search.handler.SearchHandler");
         String[] defaultBindings = {"http://*/search/*"};
         for (String binding: serverBindings(searchElement, defaultBindings)) {
             searchHandler.addServerBindings(binding);

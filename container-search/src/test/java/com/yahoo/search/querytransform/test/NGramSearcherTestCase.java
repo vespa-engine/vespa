@@ -71,7 +71,7 @@ public class NGramSearcherTestCase {
         gram14.setDynamicSummary(true);
         sd.addIndex(gram14);
 
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        return new IndexFacts(new IndexModel(sd));
     }
 
     private Searcher createSearcher() {

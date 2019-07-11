@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::Value;
 using eval::ValueType;
 using eval::TensorFunction;
@@ -20,14 +19,25 @@ using namespace eval::operation;
 
 namespace {
 
+struct CallVectorFromDoubles {
+    template <typename CT>
+    static TypedCells
+    call(eval::InterpretedFunction::State &state, size_t numCells) {
+        ArrayRef<CT> outputCells = state.stash.create_array<CT>(numCells);
+        for (size_t i = numCells; i-- > 0; ) {
+            outputCells[i] = (CT) state.peek(0).as_double();
+            state.stack.pop_back();
+        }
+        return TypedCells(outputCells);
+    }
+};
+
 void my_vector_from_doubles_op(eval::InterpretedFunction::State &state, uint64_t param) {
     const auto *self = (const VectorFromDoublesFunction::Self *)(param);
-    ArrayRef<double> outputCells = state.stash.create_array<double>(self->resultSize);
-    for (size_t i = self->resultSize; i-- > 0; ) {
-        outputCells[i] = state.peek(0).as_double();
-        state.stack.pop_back();
-    }
-    const Value &result = state.stash.create<DenseTensorView>(self->resultType, outputCells);
+    CellType ct = self->resultType.cell_type();
+    size_t numCells = self->resultSize;
+    TypedCells cells = dispatch_0<CallVectorFromDoubles>(ct, state, numCells);
+    const Value &result = state.stash.create<DenseTensorView>(self->resultType, cells);
     state.stack.push_back(result);
 }
 

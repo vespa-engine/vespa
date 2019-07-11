@@ -1,20 +1,24 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Each metric reported to secret agent has dimensions.
- *
- * @author valerijf
+ * @author freva
  */
 public class Dimensions {
-    final Map<String, Object> dimensionsMap;
 
-    private Dimensions(Map<String, Object> dimensionsMap) {
-        this.dimensionsMap = dimensionsMap;
+    public static final Dimensions NONE = new Dimensions(Map.of());
+
+    private final Map<String, String> dimensionsMap;
+
+    public Dimensions(Map<String, String> dimensionsMap) {
+        this.dimensionsMap = Map.copyOf(dimensionsMap);
+    }
+
+    public Map<String, String> asMap() {
+        return dimensionsMap;
     }
 
     @Override
@@ -45,7 +49,7 @@ public class Dimensions {
         }
 
         public Dimensions build() {
-            return new Dimensions(Collections.unmodifiableMap(new HashMap<>(dimensionsMap)));
+            return new Dimensions(dimensionsMap);
         }
     }
 }

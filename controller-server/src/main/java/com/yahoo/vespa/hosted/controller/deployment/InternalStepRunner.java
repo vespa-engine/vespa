@@ -11,13 +11,11 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -28,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -41,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -57,7 +53,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -66,6 +61,7 @@ import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.CERTIFICATE_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.PARENT_HOST_NOT_READY;
@@ -99,10 +95,12 @@ public class InternalStepRunner implements StepRunner {
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
     private final Controller controller;
+    private final TestConfigSerializer testConfigSerializer;
     private final DeploymentFailureMails mails;
 
     public InternalStepRunner(Controller controller) {
         this.controller = controller;
+        this.testConfigSerializer = new TestConfigSerializer(controller.system());
         this.mails = new DeploymentFailureMails(controller.zoneRegistry());
     }
 
@@ -234,7 +232,8 @@ public class InternalStepRunner implements StepRunner {
             if (   e.getErrorCode() == OUT_OF_CAPACITY && type.isTest()
                 || e.getErrorCode() == ACTIVATION_CONFLICT
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE
-                || e.getErrorCode() == PARENT_HOST_NOT_READY) {
+                || e.getErrorCode() == PARENT_HOST_NOT_READY
+                || e.getErrorCode() == CERTIFICATE_NOT_READY) {
                 logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
                 return Optional.empty();
             }
@@ -268,9 +267,15 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
         if (   nodesConverged(id.application(), id.type(), platform, logger)
-            && servicesConverged(id.application(), id.type(), logger)) {
-            logger.log("Installation succeeded!");
-            return Optional.of(running);
+            && servicesConverged(id.application(), id.type(), platform, logger)) {
+            if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
+                logger.log("Installation succeeded!");
+                return Optional.of(running);
+            }
+            else if (timedOut(deployment.get(), endpointTimeout)) {
+                logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
+                return Optional.of(error);
+            }
         }
 
         if (timedOut(deployment.get(), installationTimeout)) {
@@ -292,9 +297,15 @@ public class InternalStepRunner implements StepRunner {
         Version platform = controller.jobController().run(id).get().versions().targetPlatform();
         logger.log("Checking installation of tester container ...");
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
-            && servicesConverged(id.tester().id(), id.type(), logger)) {
-            logger.log("Tester container successfully installed!");
-            return Optional.of(running);
+            && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
+            if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
+                logger.log("Tester container successfully installed!");
+                return Optional.of(running);
+            }
+            else if (timedOut(deployment.get(), endpointTimeout)) {
+                logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
+                return Optional.of(error);
+            }
         }
 
         if (timedOut(deployment.get(), installationTimeout)) {
@@ -304,6 +315,27 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Installation of tester not yet complete.");
         return Optional.empty();
+    }
+
+    private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+        logger.log("Attempting to find deployment endpoints ...");
+        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zoneId));
+        if ( ! endpoints.containsKey(zoneId)) {
+            logger.log("Endpoints not yet ready.");
+            return false;
+        }
+        logEndpoints(endpoints, logger);
+        return true;
+    }
+
+    private void logEndpoints(Map<ZoneId, Map<ClusterSpec.Id, URI>> endpoints, DualLogger logger) {
+        List<String> messages = new ArrayList<>();
+        messages.add("Found endpoints:");
+        endpoints.forEach((zone, uris) -> {
+            messages.add("- " + zone);
+            uris.forEach((cluster, uri) -> messages.add(" |-- " + uri + " (" + cluster + ")"));
+        });
+        logger.log(messages);
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
@@ -325,9 +357,10 @@ public class InternalStepRunner implements StepRunner {
                                                && node.rebootGeneration() >= node.wantedRebootGeneration());
     }
 
-    private boolean servicesConverged(ApplicationId id, JobType type, DualLogger logger) {
-        Optional<ServiceConvergence> convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())));
-        if ( ! convergence.isPresent()) {
+    private boolean servicesConverged(ApplicationId id, JobType type, Version platform, DualLogger logger) {
+        var convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
+                                                                       Optional.of(platform));
+        if (convergence.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
             return false;
         }
@@ -341,6 +374,8 @@ public class InternalStepRunner implements StepRunner {
                                                     serviceStatus.currentGeneration() == -1 ? "not started!" : Long.toString(serviceStatus.currentGeneration())))
                 .collect(Collectors.toList());
         logger.log(statuses);
+        if (statuses.isEmpty())
+            logger.log("All services on wanted config generation.");
 
         return convergence.get().converged();
     }
@@ -352,45 +387,34 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
-        Set<ZoneId> zones = testedZoneAndProductionZones(id);
+        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id.application(), id.type());
 
         logger.log("Attempting to find endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
-        List<String> messages = new ArrayList<>();
-        messages.add("Found endpoints");
-        endpoints.forEach((zone, uris) -> {
-            messages.add("- " + zone);
-            uris.forEach(uri -> messages.add(" |-- " + uri));
-        });
-        logger.log(messages);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
-            if (timedOut(deployment.get(), endpointTimeout)) {
-                logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
-                return Optional.of(error);
-            }
-
-            logger.log("Endpoints for the deployment to test are not yet ready.");
-            return Optional.empty();
+        var endpoints = controller.applications().clusterEndpoints(id.application(), zones);
+        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
+            logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
+            return Optional.of(error);
         }
-
-        Map<ZoneId, List<String>> clusters = listClusters(id.application(), zones);
+        logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
-            logger.log("Starting tests ...");
-            controller.jobController().cloud().startTests(testerEndpoint.get(),
-                                                          TesterCloud.Suite.of(id.type()),
-                                                          testConfig(id.application(), id.type().zone(controller.system()),
-                                                                     controller.system(), endpoints, clusters));
-            return Optional.of(running);
-        }
-
-        if (timedOut(deployment.get(), endpointTimeout)) {
-            logger.log(WARNING, "Endpoint for tester failed to show up within " + endpointTimeout.toMinutes() + " minutes of real deployment!");
+        if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
+            logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
             return Optional.of(error);
         }
 
-        logger.log("Endpoints of tester container not yet available.");
+        if (controller.jobController().cloud().ready(testerEndpoint.get())) {
+            logger.log("Starting tests ...");
+            controller.jobController().cloud().startTests(testerEndpoint.get(),
+                                                          TesterCloud.Suite.of(id.type()),
+                                                          testConfigSerializer.configJson(id.application(),
+                                                                                          id.type(),
+                                                                                          endpoints,
+                                                                                          listClusters(id.application(), zones)));
+            return Optional.of(running);
+        }
+
+        logger.log("Tester container not yet ready.");
         return Optional.empty();
     }
 
@@ -430,7 +454,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
         ZoneId zone = id.type().zone(controller.system());
-        if (controller.applications().require(id.application()).deployments().containsKey(zone))
+        if (deployment(id.application(), id.type()).isPresent())
             try {
                 logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
                 List<LogEntry> entries = new ArrayList<>();
@@ -451,20 +475,33 @@ public class InternalStepRunner implements StepRunner {
             }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
+                return Optional.of(error);
             }
-        return Optional.of(running); // Don't let failure here stop cleanup.
+        return Optional.of(running);
     }
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
-        logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting application " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
-        logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.jobController().deactivateTester(id.tester(), id.type());
-        return Optional.of(running);
+        try {
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            controller.jobController().deactivateTester(id.tester(), id.type());
+            return Optional.of(running);
+        }
+        catch (RuntimeException e) {
+            logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
+            return Optional.of(error);
+        }
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
@@ -481,7 +518,8 @@ public class InternalStepRunner implements StepRunner {
             });
         }
         catch (IllegalStateException e) {
-            logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
+            logger.log(INFO, "Job '" + id.type() + "' no longer supposed to run?", e);
+            return Optional.of(error);
         }
         return Optional.of(running);
     }
@@ -526,6 +564,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the real application with the given id. */
     private Application application(ApplicationId id) {
+        controller.applications().lockOrThrow(id, __ -> { }); // Memory fence.
         return controller.applications().require(id);
     }
 
@@ -571,23 +610,6 @@ public class InternalStepRunner implements StepRunner {
         throw new IllegalStateException("No step deploys to the zone this run is for!");
     }
 
-    /** Returns a stream containing the zone of the deployment tested in the given run, and all production zones for the application. */
-    private Set<ZoneId> testedZoneAndProductionZones(RunId id) {
-        return Stream.concat(Stream.of(id.type().zone(controller.system())),
-                             application(id.application()).productionDeployments().keySet().stream())
-                     .collect(Collectors.toSet());
-    }
-
-    /** Returns all endpoints for all current deployments of the given real application. */
-    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
-        ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
-        for (ZoneId zone : zones)
-            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
-                      .filter(endpoints -> ! endpoints.isEmpty())
-                      .ifPresent(endpoints -> deployments.put(zone, endpoints));
-        return deployments.build();
-    }
-
     /** Returns all content clusters in all current deployments of the given real application. */
     private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
@@ -603,12 +625,12 @@ public class InternalStepRunner implements StepRunner {
         String flavor = testerFlavor.orElse("d-1-4-50");
         int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
-        int testMemoryMb = 768 * (memoryGb - 2); // Memory allocated to Surefire running tests. ≥25% left for other stuff.
+        int testMemoryMb = 512 * (memoryGb - 2); // Memory allocated to Surefire running tests. ≥25% left for other stuff.
 
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
-                "    <container version='1.0' id='default'>\n" +
+                "    <container version='1.0' id='tester'>\n" +
                 "\n" +
                 "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
@@ -646,7 +668,9 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"" + flavor + "\" allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
+                "        <nodes count=\"1\" flavor=\"" + flavor  + "\">\n" +
+                "            <jvm allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
+                "        </nodes>\n" +
                 "    </container>\n" +
                 "</services>\n";
 
@@ -662,38 +686,6 @@ public class InternalStepRunner implements StepRunner {
                 athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
                 + "/>";
         return deploymentSpec.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /** Returns the config for the tests to run for the given job. */
-    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system,
-                                     Map<ZoneId, List<URI>> deployments, Map<ZoneId, List<String>> clusters) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-
-        root.setString("application", id.serializedForm());
-        root.setString("zone", testerZone.value());
-        root.setString("system", system.name());
-
-        Cursor endpointsObject = root.setObject("endpoints");
-        deployments.forEach((zone, endpoints) -> {
-            Cursor endpointArray = endpointsObject.setArray(zone.value());
-            for (URI endpoint : endpoints)
-                endpointArray.addString(endpoint.toString());
-        });
-
-        Cursor clustersObject = root.setObject("clusters");
-        clusters.forEach((zone, clusterList) -> {
-            Cursor clusterArray = clustersObject.setArray(zone.value());
-            for (String cluster : clusterList)
-                clusterArray.addString(cluster);
-        });
-
-        try {
-            return SlimeUtils.toJsonBytes(slime);
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */

@@ -2,8 +2,8 @@
 package com.yahoo.docproc;
 
 /**
- * Exception to be thrown by a document processor on transient failures.&nbsp;Caller
- * is welcome to try the call again later.
+ * Exception to be thrown by a document processor on transient failures.
+ * Caller is welcome to try the call again later.
  *
  * @author Einar M R Rosenvinge
  */

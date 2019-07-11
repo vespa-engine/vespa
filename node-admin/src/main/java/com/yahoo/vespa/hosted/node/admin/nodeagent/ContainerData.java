@@ -16,5 +16,13 @@ public interface ContainerData {
      * @param data            The content of the file.
      */
     void addFile(Path pathInContainer, String data);
+
+    /**
+     * Symlink to a file in container at path.
+     *
+     * @param symlink The path to the symlink inside the container, absolute or relative root /.
+     * @param target The path to the target file for the symbolic link inside the container, absolute or relative root /.
+     */
+    void createSymlink(Path symlink, Path target);
 }
 

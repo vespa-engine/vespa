@@ -74,6 +74,8 @@ public:
 
     BucketOwnership checkOwnershipInPendingState(const document::Bucket &bucket) const override;
 
+    const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
+
     /**
      * Enables a new cluster state. Called after the bucket db updater has
      * retrieved all bucket info related to the change.
@@ -112,7 +114,9 @@ public:
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
-    void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority) override;
+    void checkBucketForSplit(document::BucketSpace bucketSpace,
+                             const BucketDatabase::Entry& e,
+                             uint8_t priority) override;
 
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
 
@@ -165,14 +169,7 @@ public:
         return *_readOnlyBucketSpaceRepo;
     }
 
-private:
-    friend class Distributor_Test;
-    friend class BucketDBUpdaterTest;
-    friend class DistributorTestUtil;
-    friend class ExternalOperationHandler_Test;
-    friend class Operation_Test;
-    friend class MetricUpdateHook;
-
+    class Status;
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
     public:
@@ -188,6 +185,12 @@ private:
     private:
         Distributor& _self;
     };
+
+private:
+    friend struct DistributorTest;
+    friend class BucketDBUpdaterTest;
+    friend class DistributorTestUtil;
+    friend class MetricUpdateHook;
 
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
@@ -288,7 +291,6 @@ private:
     framework::TickingThreadPool& _threadPool;
     vespalib::Monitor _statusMonitor;
 
-    class Status;
     mutable std::vector<std::shared_ptr<Status>> _statusToDo;
     mutable std::vector<std::shared_ptr<Status>> _fetchedStatusRequests;
 

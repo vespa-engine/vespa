@@ -21,6 +21,7 @@ public class Endpoint {
     public static final String YAHOO_DNS_SUFFIX = ".vespa.yahooapis.com";
     public static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
     public static final String PUBLIC_DNS_SUFFIX = ".public.vespa.oath.cloud";
+    public static final String PUBLIC_CD_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final URI url;
     private final Scope scope;
@@ -118,7 +119,7 @@ public class Endpoint {
     private static String separator(SystemName system, boolean directRouting, boolean tls) {
         if (!tls) return ".";
         if (directRouting) return ".";
-        if (isPublic(system)) return ".";
+        if (system.isPublic()) return ".";
         return "--";
     }
 
@@ -140,8 +141,8 @@ public class Endpoint {
     }
 
     private static String systemPart(SystemName system, String separator) {
-        if (system == SystemName.main || isPublic(system)) return "";
-        return system.name() + separator;
+        if (!system.isCd()) return "";
+        return system.value() + separator;
     }
 
     private static String dnsSuffix(SystemName system, boolean legacy) {
@@ -151,14 +152,11 @@ public class Endpoint {
                 if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
             case Public:
-            case vaas:
                 return PUBLIC_DNS_SUFFIX;
+            case PublicCd:
+                return PUBLIC_CD_DNS_SUFFIX;
             default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
-    }
-
-    private static boolean isPublic(SystemName system) { // TODO: Remove and inline once we're down to one
-        return system == SystemName.Public || system == SystemName.vaas;
     }
 
     /** An endpoint's scope */
@@ -219,6 +217,7 @@ public class Endpoint {
         private ZoneId zone;
         private ClusterSpec.Id cluster;
         private RotationName rotation;
+        private EndpointId endpointId;
         private Port port;
         private boolean legacy = false;
         private boolean directRouting = false;
@@ -229,8 +228,8 @@ public class Endpoint {
 
         /** Sets the cluster and zone target of this  */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
-            if (rotation != null) {
-                throw new IllegalArgumentException("Cannot set both cluster and rotation target");
+            if (rotation != null || endpointId != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
             this.zone = zone;
@@ -239,10 +238,19 @@ public class Endpoint {
 
         /** Sets the rotation target of this */
         public EndpointBuilder target(RotationName rotation) {
-            if (cluster != null && zone != null) {
-                throw new IllegalArgumentException("Cannot set both cluster and rotation target");
+            if ((cluster != null && zone != null) || endpointId != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.rotation = rotation;
+            return this;
+        }
+
+        /** Sets the endpoint ID as defines in deployments.xml */
+        public EndpointBuilder named(EndpointId endpointId) {
+            if (rotation != null || cluster != null || zone != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
+            }
+            this.endpointId = endpointId;
             return this;
         }
 
@@ -271,10 +279,12 @@ public class Endpoint {
                 name = cluster.value();
             } else if (rotation != null) {
                 name = rotation.value();
+            } else if (endpointId != null) {
+                name = endpointId.id();
             } else {
                 throw new IllegalArgumentException("Must set either cluster or rotation target");
             }
-            if (isPublic(system) && !directRouting) {
+            if (system.isPublic() && !directRouting) {
                 throw new IllegalArgumentException("Public system only supports direct routing endpoints");
             }
             if (directRouting && !port.isDefault()) {

@@ -50,13 +50,15 @@ public interface ModelContext {
         boolean hostedVespa();
         Zone zone();
         Set<Rotation> rotations();
+        Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault();
         boolean dispatchWithProtobuf();
         boolean useAdaptiveDispatch();
-        boolean enableMetricsProxyContainer();
+        // TODO: Remove temporary default implementation
+        default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
     }
 
 }

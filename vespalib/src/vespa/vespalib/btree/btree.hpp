@@ -1,0 +1,26 @@
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "btree.h"
+
+namespace search::btree {
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::BTree()
+    : _alloc(),
+      _tree()
+{
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+BTree<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::~BTree()
+{
+    clear();
+    _alloc.freeze();
+    _alloc.clearHoldLists();
+}
+
+}

@@ -3,12 +3,12 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/common/address_space.h>
-#include <vespa/searchlib/datastore/datastore.h>
-#include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/datastore/datastore.h>
+#include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchlib/btree/btree.h>
 #include <set>
 #include <atomic>
 
@@ -66,7 +66,7 @@ public:
 
     virtual void freezeTree() = 0;
     virtual uint32_t getNumUniques() const = 0;
-    virtual MemoryUsage getTreeMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getTreeMemoryUsage() const = 0;
     virtual void reEnumerate() = 0;
     virtual void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const = 0;
     virtual ssize_t deserialize(const void *src, size_t available, IndexVector &idx) = 0;
@@ -116,7 +116,7 @@ public:
     
     void freezeTree() override;
     uint32_t getNumUniques() const override;
-    MemoryUsage getTreeMemoryUsage() const override;
+    vespalib::MemoryUsage getTreeMemoryUsage() const override;
     void reEnumerate() override;
     void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const override;
     ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override;
@@ -297,10 +297,10 @@ public:
     uint32_t getCapacity() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).capacity();
     }
-    MemoryUsage getMemoryUsage() const;
-    MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
+    vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
 
-    AddressSpace getAddressSpaceUsage() const;
+    vespalib::AddressSpace getAddressSpaceUsage() const;
 
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
@@ -466,6 +466,10 @@ class btree::BTreeIteratorBase<EnumStoreBase::Index, btree::BTreeNoLeafData, btr
 extern template
 class btree::BTreeIteratorBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
+
+extern template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+
+extern template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
 
 extern template
 class btree::BTreeIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,

@@ -71,6 +71,7 @@ class GraphImporter {
             case "sqrt":        return new Map(modelName, nodeName, inputs, ScalarFunctions.sqrt());
             case "sigmoid":     return new Map(modelName, nodeName, inputs, ScalarFunctions.sigmoid());
             case "sub":         return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
+            case "square":      return new Map(modelName, nodeName, inputs, ScalarFunctions.square());
             case "tan":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tan());
             case "tanh":        return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());
         }

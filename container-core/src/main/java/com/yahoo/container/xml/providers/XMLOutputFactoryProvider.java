@@ -6,12 +6,12 @@ import com.yahoo.container.di.componentgraph.Provider;
 import javax.xml.stream.XMLOutputFactory;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
 public class XMLOutputFactoryProvider implements Provider<XMLOutputFactory> {
+
     public static final String FACTORY_CLASS = "com.sun.xml.internal.stream.XMLOutputFactoryImpl";
     @Override
     public XMLOutputFactory get() {
@@ -24,4 +24,5 @@ public class XMLOutputFactoryProvider implements Provider<XMLOutputFactory> {
 
     @Override
     public void deconstruct() { }
+
 }

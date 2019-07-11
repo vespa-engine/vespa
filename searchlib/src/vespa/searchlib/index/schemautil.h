@@ -83,6 +83,10 @@ public:
             return _schema.getIndexField(_index).getName();
         }
 
+        bool use_interleaved_features() const {
+            return _schema.getIndexField(_index).use_interleaved_features();
+        }
+
         IndexIterator &operator++() {
             if (_index < _schema.getNumIndexFields()) {
                 ++_index;
@@ -115,6 +119,8 @@ public:
          * @param oldSchema old schema, present in an input index
          */
         bool hasMatchingOldFields(const Schema &oldSchema) const;
+
+        bool has_matching_use_interleaved_features(const Schema &oldSchema) const;
     };
 
     static IndexSettings getIndexSettings(const Schema &schema, const uint32_t index);

@@ -132,7 +132,7 @@ Schema::Field::operator!=(const Field &rhs) const
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
     : Field(name, dt),
       _avgElemLen(512),
-      _experimental_posting_list_format(false)
+      _interleaved_features(false)
 {
 }
 
@@ -140,14 +140,14 @@ Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
                                CollectionType ct)
     : Field(name, dt, ct),
       _avgElemLen(512),
-      _experimental_posting_list_format(false)
+      _interleaved_features(false)
 {
 }
 
 Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
     : Field(lines),
       _avgElemLen(ConfigParser::parse<int32_t>("averageelementlen", lines, 512)),
-      _experimental_posting_list_format(ConfigParser::parse<bool>("experimentalpostinglistformat", lines, false))
+      _interleaved_features(ConfigParser::parse<bool>("interleavedfeatures", lines, false))
 {
 }
 
@@ -156,7 +156,7 @@ Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix
 {
     Field::write(os, prefix);
     os << prefix << "averageelementlen " << static_cast<int32_t>(_avgElemLen) << "\n";
-    os << prefix << "experimentalpostinglistformat " << (_experimental_posting_list_format ? "true" : "false") << "\n";
+    os << prefix << "interleavedfeatures " << (_interleaved_features ? "true" : "false") << "\n";
 
     // TODO: Remove prefix, phrases and positions when breaking downgrade is no longer an issue.
     os << prefix << "prefix false" << "\n";
@@ -169,7 +169,7 @@ Schema::IndexField::operator==(const IndexField &rhs) const
 {
     return Field::operator==(rhs) &&
             _avgElemLen == rhs._avgElemLen &&
-            _experimental_posting_list_format == rhs._experimental_posting_list_format;
+            _interleaved_features == rhs._interleaved_features;
 }
 
 bool
@@ -177,7 +177,7 @@ Schema::IndexField::operator!=(const IndexField &rhs) const
 {
     return Field::operator!=(rhs) ||
             _avgElemLen != rhs._avgElemLen ||
-            _experimental_posting_list_format != rhs._experimental_posting_list_format;
+            _interleaved_features != rhs._interleaved_features;
 }
 
 Schema::FieldSet::FieldSet(const std::vector<vespalib::string> & lines) :

@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class Constant extends IntermediateOperation {
@@ -48,14 +49,32 @@ public class Constant extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override
     public boolean isConstant() {
         return true;
+    }
+
+    @Override
+    public Constant withInputs(List<IntermediateOperation> inputs) {
+        if ( ! inputs.isEmpty())
+            throw new IllegalArgumentException("Constant cannot take inputs");
+        return new Constant(modelName(), name(), type);
+    }
+
+    @Override
+    public String operationName() { return "Constant"; }
+
+    @Override
+    public String toString() {
+        return "Constant(" + type + ")";
+    }
+
+    @Override
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\tConstant(" + type + ")";
     }
 
 }

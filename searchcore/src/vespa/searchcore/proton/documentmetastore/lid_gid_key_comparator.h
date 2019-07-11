@@ -5,8 +5,8 @@
 #include "gid_compare.h"
 #include "raw_document_meta_data.h"
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton {
 namespace documentmetastore {
@@ -22,7 +22,7 @@ public:
 
 private:
     typedef search::IDocumentMetaStore::DocId DocId;
-    typedef search::attribute::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
+    typedef vespalib::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
 
     const document::GlobalId &_gid;
     const MetaDataStore      &_metaDataStore;

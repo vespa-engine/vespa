@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 
@@ -21,7 +20,6 @@ public class Zone {
     private final SystemName systemName;
     private final Environment environment;
     private final RegionName region;
-    private final FlavorDefaults flavorDefaults;
     private final Optional<NodeFlavors> nodeFlavors;
 
     @Inject
@@ -30,7 +28,6 @@ public class Zone {
              SystemName.from(configserverConfig.system()),
              Environment.from(configserverConfig.environment()),
              RegionName.from(configserverConfig.region()),
-             new FlavorDefaults(configserverConfig),
              nodeFlavors);
     }
 
@@ -50,25 +47,15 @@ public class Zone {
     }
 
     /** Create from cloud, system, environment, region and node flavors. Use for testing. */
-    public Zone(CloudName cloudName,
-                SystemName systemName,
-                Environment environment,
-                RegionName region,
-                NodeFlavors nodeFlavors) {
-        this(cloudName, systemName, environment, region, new FlavorDefaults("default"), nodeFlavors);
-    }
-
     private Zone(CloudName cloudName,
                  SystemName systemName,
                  Environment environment,
                  RegionName region,
-                 FlavorDefaults flavorDefaults,
                  NodeFlavors nodeFlavors) {
         this.cloudName = cloudName;
         this.systemName = systemName;
         this.environment = environment;
         this.region = region;
-        this.flavorDefaults = flavorDefaults;
         this.nodeFlavors = Optional.ofNullable(nodeFlavors);
     }
 
@@ -87,9 +74,6 @@ public class Zone {
     public RegionName region() {
         return region;
     }
-
-    /** Returns the default hardware flavor to assign in this zone */
-    public String defaultFlavor(ClusterSpec.Type clusterType) { return flavorDefaults.flavor(clusterType); }
 
     /** Returns all available node flavors for the zone, or empty if not set for this Zone. */
     public Optional<NodeFlavors> nodeFlavors() { return nodeFlavors; }
@@ -116,59 +100,6 @@ public class Zone {
     @Override
     public int hashCode() {
         return Objects.hash(environment, region);
-    }
-
-    private static class FlavorDefaults {
-
-        /** The default default flavor */
-        private final String defaultFlavor;
-
-        /** The default flavor for each cluster type, or empty to use defaultFlavor */
-        private final Optional<String> adminFlavor;
-        private final Optional<String> containerFlavor;
-        private final Optional<String> contentFlavor;
-
-        /** Creates this with a default flavor and all cluster type flavors empty */
-        public FlavorDefaults(String defaultFlavor) {
-            this(defaultFlavor, Optional.empty(), Optional.empty(), Optional.empty());
-        }
-
-        /** Creates this with a default flavor and all cluster type flavors empty */
-        public FlavorDefaults(String defaultFlavor,
-                              Optional<String> adminFlavor, Optional<String> containerFlavor, Optional<String> contentFlavor) {
-            this.defaultFlavor = defaultFlavor;
-            this.adminFlavor = adminFlavor;
-            this.containerFlavor = containerFlavor;
-            this.contentFlavor = contentFlavor;
-        }
-
-        public FlavorDefaults(ConfigserverConfig config) {
-            this(config.defaultFlavor(),
-                 emptyIfDefault(config.defaultAdminFlavor()),
-                 emptyIfDefault(config.defaultContainerFlavor()),
-                 emptyIfDefault(config.defaultContentFlavor()));
-        }
-
-        /** Map "default" to empty - this config cannot have missing values due to the need for supporting non-hosted */
-        private static Optional<String> emptyIfDefault(String value) {
-            if (Strings.isNullOrEmpty(value)) return Optional.empty();
-            if (value.equals("default")) return Optional.empty();
-            return Optional.of(value);
-        }
-
-        /**
-         * Returns the flavor default for a given cluster type.
-         * This may be "default" - which is an invalid value - but never null.
-         */
-        public String flavor(ClusterSpec.Type clusterType) {
-            switch (clusterType) {
-                case admin: return adminFlavor.orElse(defaultFlavor);
-                case container: return containerFlavor.orElse(defaultFlavor);
-                case content: return contentFlavor.orElse(defaultFlavor);
-                default: return defaultFlavor; // future cluster types
-            }
-        }
-
     }
 
 }

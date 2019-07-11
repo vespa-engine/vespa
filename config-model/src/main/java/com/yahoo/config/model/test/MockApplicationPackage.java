@@ -42,6 +42,9 @@ import java.util.stream.Collectors;
  */
 public class MockApplicationPackage implements ApplicationPackage {
 
+    public static final String DEPLOYED_BY_USER = "user";
+    public static final String APPLICATION_NAME = "application";
+    public static final long APPLICATION_GENERATION = 1L;
     public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
     public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
 
@@ -70,7 +73,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 1L, 0L);
+        applicationMetaData = new ApplicationMetaData(DEPLOYED_BY_USER, "dir", 0L, false, APPLICATION_NAME, "checksum", APPLICATION_GENERATION, 0L);
     }
 
     /** Returns the root of this application package relative to the current dir */

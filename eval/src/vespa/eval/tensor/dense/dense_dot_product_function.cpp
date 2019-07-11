@@ -9,7 +9,6 @@
 
 namespace vespalib::tensor {
 
-using CellsRef = DenseTensorView::CellsRef;
 using eval::ValueType;
 using eval::TensorFunction;
 using eval::as;
@@ -19,19 +18,46 @@ using namespace eval::operation;
 
 namespace {
 
-CellsRef getCellsRef(const eval::Value &value) {
+template <typename T>
+ConstArrayRef<T> getCellsRef(const eval::Value &value) {
     const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return denseTensor.cellsRef();
+    return denseTensor.cellsRef().typify<T>();
 }
 
+template <typename LCT, typename RCT>
+struct HWSupport {
+    static double call(hwaccelrated::IAccelrated *, const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs) {
+        double result = 0.0;
+        for (size_t i = 0; i < lhs.size(); ++i) {
+            result += (lhs[i] * rhs[i]);
+        }
+        return result;
+    }
+};
+template <> struct HWSupport<float, float> {
+    static double call(hwaccelrated::IAccelrated *hw, const ConstArrayRef<float> &lhs, const ConstArrayRef<float> &rhs) {
+        return hw->dotProduct(lhs.cbegin(), rhs.cbegin(), lhs.size());
+    }
+};
+template <> struct HWSupport<double, double> {
+    static double call(hwaccelrated::IAccelrated *hw, const ConstArrayRef<double> &lhs, const ConstArrayRef<double> &rhs) {
+        return hw->dotProduct(lhs.cbegin(), rhs.cbegin(), lhs.size());
+    }
+};
+
+template <typename LCT, typename RCT>
 void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
-    auto *hw_accelerator = (hwaccelrated::IAccelrated *)(param);
-    DenseTensorView::CellsRef lhsCells = getCellsRef(state.peek(1));
-    DenseTensorView::CellsRef rhsCells = getCellsRef(state.peek(0));
-    size_t numCells = std::min(lhsCells.size(), rhsCells.size());
-    double result = hw_accelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
+    auto *hw = (hwaccelrated::IAccelrated *)(param);
+    auto lhs = getCellsRef<LCT>(state.peek(1));
+    auto rhs = getCellsRef<RCT>(state.peek(0));
+    double result = HWSupport<LCT,RCT>::call(hw, lhs, rhs);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }
+
+struct MyDotProductOp {
+    template <typename LCT, typename RCT>
+    static auto get_fun() { return my_dot_product_op<LCT,RCT>; }
+};
 
 } // namespace vespalib::tensor::<unnamed>
 
@@ -45,18 +71,15 @@ DenseDotProductFunction::DenseDotProductFunction(const eval::TensorFunction &lhs
 eval::InterpretedFunction::Instruction
 DenseDotProductFunction::compile_self(Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_dot_product_op, (uint64_t)(_hwAccelerator.get()));
+    auto op = select_2<MyDotProductOp>(lhs().result_type().cell_type(),
+                                       rhs().result_type().cell_type());
+    return eval::InterpretedFunction::Instruction(op, (uint64_t)(_hwAccelerator.get()));
 }
 
 bool
 DenseDotProductFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
-    if (lhs.cell_type() != ValueType::CellType::DOUBLE ||
-        rhs.cell_type() != ValueType::CellType::DOUBLE)
-    {
-        return false; // non-double cell types not supported
-    }
-    return (res.is_double() && lhs.is_dense() && (rhs == lhs));
+    return (res.is_double() && lhs.is_dense() && (rhs.dimensions() == lhs.dimensions()));
 }
 
 const TensorFunction &

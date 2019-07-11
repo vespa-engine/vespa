@@ -41,7 +41,7 @@ public:
                       DistributorComponentRegister& compReg,
                       bool manageActiveBucketCopies);
 
-    ~IdealStateManager();
+    ~IdealStateManager() override;
 
     void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
@@ -86,6 +86,7 @@ public:
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 
 private:
+    void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
     void fillParentAndChildBuckets(StateChecker::Context& c) const;
     void fillSiblingBucket(StateChecker::Context& c) const;
     StateChecker::Result generateHighestPriority(
@@ -94,13 +95,6 @@ private:
     StateChecker::Result runStateCheckers(StateChecker::Context& c) const;
 
     BucketDatabase::Entry* getEntryForPrimaryBucket(StateChecker::Context& c) const;
-
-    friend class Operation_TestCase;
-    friend class RemoveBucketOperation_Test;
-    friend class MergeOperation_Test;
-    friend class CreateBucketOperation_Test;
-    friend class SplitOperation_Test;
-    friend class JoinOperation_Test;
 
     std::shared_ptr<IdealStateMetricSet> _metrics;
     document::BucketId _lastPrioritizedBucket;
@@ -112,8 +106,7 @@ private:
 
     DistributorComponent            _distributorComponent;
     DistributorBucketSpaceRepo     &_bucketSpaceRepo;
-
-    std::vector<IdealStateOperation::SP> generateOperationsForBucket(StateChecker::Context& c) const;
+    mutable bool _has_logged_phantom_replica_warning;
 
     bool iAmUp() const;
 
@@ -128,14 +121,13 @@ private:
         StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
             : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}
 
-        bool process(const BucketDatabase::Entry& e) override {
+        bool process(const BucketDatabase::ConstEntryRef& e) override {
             _ism.getBucketStatus(_bucketSpace, e, _statsTracker, _out);
             return true;
         }
     };
-    friend class StatusBucketVisitor;
 
-    void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::Entry& entry,
+    void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::ConstEntryRef& entry,
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
     void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 };

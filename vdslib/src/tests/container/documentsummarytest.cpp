@@ -2,51 +2,40 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/vdslib/container/documentsummary.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 namespace vdslib {
 
-struct DocumentSummaryTest : public CppUnit::TestFixture {
-
-    void testSimple();
-
-    CPPUNIT_TEST_SUITE(DocumentSummaryTest);
-    CPPUNIT_TEST(testSimple);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DocumentSummaryTest);
-
-void DocumentSummaryTest::testSimple()
+TEST(DocumentSummaryTest, test_simple)
 {
     DocumentSummary a;
-    CPPUNIT_ASSERT(a.getSummaryCount() == 0);
+    EXPECT_EQ(0, a.getSummaryCount());
     a.addSummary("doc1", "summary1", 8);
-    CPPUNIT_ASSERT(a.getSummaryCount() == 1);
+    ASSERT_EQ(1, a.getSummaryCount());
     a.addSummary("aoc12", "summary17", 9);
-    CPPUNIT_ASSERT(a.getSummaryCount() == 2);
+    ASSERT_EQ(2, a.getSummaryCount());
 
     size_t r;
     const char * docId;
-    const void * buf(NULL);
+    const void * buf(nullptr);
     a.getSummary(0, docId, buf, r);
-    CPPUNIT_ASSERT(r == 8);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(memcmp(buf, "summary1", r) == 0);
+    EXPECT_EQ(8, r);
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_TRUE(memcmp(buf, "summary1", r) == 0);
     a.getSummary(1, docId, buf, r);
-    CPPUNIT_ASSERT(r == 9);
-    CPPUNIT_ASSERT(strcmp(docId, "aoc12") == 0);
-    CPPUNIT_ASSERT(memcmp(buf, "summary17", r) == 0);
+    EXPECT_EQ(9, r);
+    EXPECT_EQ("aoc12", std::string(docId));
+    EXPECT_TRUE(memcmp(buf, "summary17", r) == 0);
 
     a.sort();
     a.getSummary(0, docId, buf, r);
-    CPPUNIT_ASSERT(r == 9);
-    CPPUNIT_ASSERT(strcmp(docId, "aoc12") == 0);
-    CPPUNIT_ASSERT(memcmp(buf, "summary17", r) == 0);
+    EXPECT_EQ(9, r);
+    EXPECT_EQ("aoc12", std::string(docId));
+    EXPECT_TRUE(memcmp(buf, "summary17", r) == 0);
     a.getSummary(1, docId, buf, r);
-    CPPUNIT_ASSERT(r == 8);
-    CPPUNIT_ASSERT(strcmp(docId, "doc1") == 0);
-    CPPUNIT_ASSERT(memcmp(buf, "summary1", r) == 0);
+    EXPECT_EQ(8, r);
+    EXPECT_EQ("doc1", std::string(docId));
+    EXPECT_TRUE(memcmp(buf, "summary1", r) == 0);
 }
 
 }

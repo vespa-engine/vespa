@@ -4,6 +4,7 @@ package com.yahoo.vespa.model;
 
 /**
  * Interface implemented by services using network ports, identifying its requirements.
+ *
  * @author arnej
  */
 public interface NetworkPortRequestor {
@@ -11,10 +12,10 @@ public interface NetworkPortRequestor {
     /** Returns the type of service */
     String getServiceType();
 
-   /** Returns the name that identifies this service for the config-sentinel */
+   /** Returns the name that identifies this service for the config-sentinel, never null */
     String getServiceName();
 
-    /** Returns the config id */
+    /** Returns the config id, never null */
     String getConfigId();
 
     /**
@@ -25,7 +26,11 @@ public interface NetworkPortRequestor {
      */
     default int getWantedPort() { return 0; }
 
-    /** Returns the number of ports needed by this service. */
+    /**
+     * Returns the number of ports needed by this service.
+     * User-defined ports for container http servers should not be counted, as those
+     * ports are required to be outside Vespa's port range.
+     */
     int getPortCount();
 
     /**
@@ -48,6 +53,6 @@ public interface NetworkPortRequestor {
     /**
      * Return names for each port requested.
      * The size of the returned array must be equal to getPortCount().
-     **/
+     */
     String[] getPortSuffixes();
 }

@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
@@ -88,6 +87,7 @@ struct ViewSet
 {
     IndexManagerDummyReconfigurer _reconfigurer;
     DummyFileHeaderContext _fileHeaderContext;
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
     SearchableFeedView::SerialNum serialNum;
     std::shared_ptr<const DocumentTypeRepo> repo;
@@ -117,7 +117,8 @@ struct ViewSet
 ViewSet::ViewSet()
     : _reconfigurer(),
       _fileHeaderContext(),
-      _writeService(),
+      _sharedExecutor(1, 0x10000),
+      _writeService(_sharedExecutor),
       serialNum(1),
       repo(createRepo()),
       _docTypeName(DOC_TYPE),
@@ -136,7 +137,7 @@ ViewSet::~ViewSet() {}
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
     virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
-        return std::make_unique<ErrorConstantValue>();
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
 
@@ -195,7 +196,7 @@ Fixture::initViewSet(ViewSet &views)
     auto attrMgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
                                                  views._writeService.attributeFieldWriter(),views._hwInfo);
     auto summaryMgr = make_shared<SummaryManager>
-            (_summaryExecutor, search::LogDocumentStore::Config(), GrowStrategy(), BASE_DIR, views._docTypeName,
+            (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR, views._docTypeName,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
     auto sesMgr = make_shared<SessionManager>(100);
     auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<BucketDBOwner>());
@@ -285,11 +286,13 @@ MyFastAccessFeedView::~MyFastAccessFeedView() = default;
 
 struct FastAccessFixture
 {
+    vespalib::ThreadStackExecutor _sharedExecutor;
     ExecutorThreadingService _writeService;
     MyFastAccessFeedView _view;
     FastAccessDocSubDBConfigurer _configurer;
     FastAccessFixture()
-        : _writeService(),
+        : _sharedExecutor(1, 0x10000),
+          _writeService(_sharedExecutor),
           _view(_writeService),
           _configurer(_view._feedView, IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
     {

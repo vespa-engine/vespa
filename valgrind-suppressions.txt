@@ -24,57 +24,6 @@
    fun:(below main)
 }
 {
-   This is a bug in cppunit.
-   Memcheck:Leak
-   fun:_Znwm
-   fun:*addTestsToSuite*CppUnit*TestSuiteBuilderContextBase*
-}
-{
-   Bug in cppunit. This suppression is created on CentOS7.
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:_Znwm
-   fun:addTestsToSuite
-   fun:suite
-   fun:*makeTest*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_ZN10vdstestlib17CppUnitTestRunner3runEiPKPKc
-   fun:main
-}
-{
-   Bug in cppunit. This suppression is created on CentOS7.
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:_Znwm
-   fun:allocate
-   fun:_S_create
-   fun:_S_construct<char const*>
-   fun:_S_construct_aux<char const*>
-   fun:_S_construct<char const*>
-   fun:_ZNSsC1EPKcRKSaIcE
-   fun:_ZN7CppUnit10TestRunnerC1Ev
-   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
-   fun:_ZN10vdstestlib17CppUnitTestRunner3runEiPPKc
-   fun:main
-}
-{
-   Bug in cppunit. This suppression is created on CentOS7.
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:_Znwm
-   fun:allocate
-   fun:_S_create
-   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
-   fun:_S_construct_aux<char const*>
-   fun:_S_construct<char const*>
-   fun:_ZNSsC1EPKcRKSaIcE
-   fun:_ZN7CppUnit10TestRunnerC1Ev
-   fun:_ZN7CppUnit14TextTestRunnerC1EPNS_9OutputterE
-   fun:_ZN10vdstestlib17CppUnitTestRunner3runEiPPKc
-   fun:main
-}
-{
    RHEL6 strlen is eager and will read 16 bytes blocks.
    Memcheck:Cond
    fun:__strlen_sse42

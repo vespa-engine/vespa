@@ -6,7 +6,6 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
-#include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
 #include <vespa/searchcore/proton/matching/isearchcontext.h>
@@ -33,6 +32,9 @@
 #include <vespa/searchcore/proton/matching/match_params.h>
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -54,6 +56,10 @@ using search::attribute::test::MockAttributeContext;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
 using search::fef::indexproperties::hitcollector::HeapSize;
+
+using vespalib::nbostream;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
 
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
@@ -98,7 +104,7 @@ const uint32_t NUM_DOCS = 1000;
 
 struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
-        return std::make_unique<proton::matching::ErrorConstantValue>();
+        return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
 
@@ -134,7 +140,10 @@ struct MyWorld {
         config.add(indexproperties::hitcollector::HeapSize::NAME, (vespalib::asciistream() << heapSize).str());
         config.add(indexproperties::hitcollector::ArraySize::NAME, (vespalib::asciistream() << arraySize).str());
         config.add(indexproperties::summary::Feature::NAME, "attribute(a1)");
+        config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"reduce(tensor(x[3])(x),sum)\")");
+        config.add(indexproperties::summary::Feature::NAME, "rankingExpression(\"tensor(x[3])(x)\")");
         config.add(indexproperties::summary::Feature::NAME, "value(100)");
+
         config.add(indexproperties::dump::IgnoreDefaultFeatures::NAME, "true");
         config.add(indexproperties::dump::Feature::NAME, "attribute(a2)");
 
@@ -630,21 +639,35 @@ TEST("require that summary features are filled") {
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
     FeatureSet::SP fs = world.getSummaryFeatures(req);
-    const feature_t * f = NULL;
-    EXPECT_EQUAL(2u, fs->numFeatures());
+    const FeatureSet::Value * f = NULL;
+    EXPECT_EQUAL(4u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
-    EXPECT_EQUAL("value(100)", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"reduce(tensor(x[3])(x),sum)\")", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"tensor(x[3])(x)\")", fs->getNames()[2]);
+    EXPECT_EQUAL("value(100)", fs->getNames()[3]);
     EXPECT_EQUAL(2u, fs->numDocs());
     f = fs->getFeaturesByDocId(10);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(10, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(10, f[0].as_double());
+    EXPECT_EQUAL(100, f[3].as_double());
     f = fs->getFeaturesByDocId(15);
     EXPECT_TRUE(f == NULL);
     f = fs->getFeaturesByDocId(30);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[3].as_double());
+    EXPECT_TRUE(f[1].is_double());
+    EXPECT_TRUE(!f[1].is_data());
+    EXPECT_EQUAL(f[1].as_double(), 3.0); // 0 + 1 + 2
+    EXPECT_TRUE(!f[2].is_double());
+    EXPECT_TRUE(f[2].is_data());
+    {
+        auto &engine = DefaultTensorEngine::ref();
+        nbostream buf(f[2].as_data().data, f[2].as_data().size);
+        auto actual = engine.to_spec(*engine.decode(buf));
+        auto expect = TensorSpec("tensor(x[3])").add({{"x", 0}}, 0).add({{"x", 1}}, 1).add({{"x", 2}}, 2);
+        EXPECT_EQUAL(actual, expect);
+    }
 }
 
 TEST("require that rank features are filled") {
@@ -653,18 +676,18 @@ TEST("require that rank features are filled") {
     world.basicResults();
     DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
     FeatureSet::SP fs = world.getRankFeatures(req);
-    const feature_t * f = NULL;
+    const FeatureSet::Value * f = NULL;
     EXPECT_EQUAL(1u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a2)", fs->getNames()[0]);
     EXPECT_EQUAL(2u, fs->numDocs());
     f = fs->getFeaturesByDocId(10);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(20, f[0]);
+    EXPECT_EQUAL(20, f[0].as_double());
     f = fs->getFeaturesByDocId(15);
     EXPECT_TRUE(f == NULL);
     f = fs->getFeaturesByDocId(30);
     EXPECT_TRUE(f != NULL);
-    EXPECT_EQUAL(60, f[0]);
+    EXPECT_EQUAL(60, f[0].as_double());
 }
 
 TEST("require that search session can be cached") {
@@ -699,25 +722,29 @@ TEST("require that getSummaryFeatures can use cached query setup") {
     docsum_request->hits.back().docid = 30;
 
     FeatureSet::SP fs = world.getSummaryFeatures(docsum_request);
-    ASSERT_EQUAL(2u, fs->numFeatures());
+    ASSERT_EQUAL(4u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
-    EXPECT_EQUAL("value(100)", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"reduce(tensor(x[3])(x),sum)\")", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"tensor(x[3])(x)\")", fs->getNames()[2]);
+    EXPECT_EQUAL("value(100)", fs->getNames()[3]);
     ASSERT_EQUAL(1u, fs->numDocs());
-    const feature_t *f = fs->getFeaturesByDocId(30);
+    const auto *f = fs->getFeaturesByDocId(30);
     ASSERT_TRUE(f);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[3].as_double());
 
     // getSummaryFeatures can be called multiple times.
     fs = world.getSummaryFeatures(docsum_request);
-    ASSERT_EQUAL(2u, fs->numFeatures());
+    ASSERT_EQUAL(4u, fs->numFeatures());
     EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
-    EXPECT_EQUAL("value(100)", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"reduce(tensor(x[3])(x),sum)\")", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"tensor(x[3])(x)\")", fs->getNames()[2]);
+    EXPECT_EQUAL("value(100)", fs->getNames()[3]);
     ASSERT_EQUAL(1u, fs->numDocs());
     f = fs->getFeaturesByDocId(30);
     ASSERT_TRUE(f);
-    EXPECT_EQUAL(30, f[0]);
-    EXPECT_EQUAL(100, f[1]);
+    EXPECT_EQUAL(30, f[0].as_double());
+    EXPECT_EQUAL(100, f[3].as_double());
 }
 
 TEST("require that getSummaryFeatures prefers cached query setup") {
@@ -733,7 +760,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     req->sessionId = request->sessionId;
     req->propertiesMap.lookupCreate(search::MapNames::CACHES).add("query", "true");
     FeatureSet::SP fs = world.getSummaryFeatures(req);
-    EXPECT_EQUAL(2u, fs->numFeatures());
+    EXPECT_EQUAL(4u, fs->numFeatures());
     ASSERT_EQUAL(0u, fs->numDocs());  // "spread" has no hits
 
     // Empty cache
@@ -742,7 +769,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     world.sessionManager->pruneTimedOutSessions(pruneTime);
 
     fs = world.getSummaryFeatures(req);
-    EXPECT_EQUAL(2u, fs->numFeatures());
+    EXPECT_EQUAL(4u, fs->numFeatures());
     ASSERT_EQUAL(2u, fs->numDocs());  // "foo" has two hits
 }
 

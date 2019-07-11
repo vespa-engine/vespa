@@ -1,0 +1,34 @@
+{
+  "currentrate": {
+    "cpu": 0.0,
+    "mem": 0.0,
+    "disk": 0.0
+  },
+  "thismonth": {
+    "cpu": 0.0,
+    "mem": 0.0,
+    "disk": 0.0
+  },
+  "lastmonth": {
+    "cpu": 0.0,
+    "mem": 0.0,
+    "disk": 0.0
+  },
+  "details": {
+    "cpu": {
+      "dummy": {
+        "data": []
+      }
+    },
+    "mem": {
+      "dummy": {
+        "data": []
+      }
+    },
+    "disk": {
+      "dummy": {
+        "data": []
+      }
+    }
+  }
+}

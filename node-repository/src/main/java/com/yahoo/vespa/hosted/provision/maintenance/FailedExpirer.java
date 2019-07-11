@@ -4,9 +4,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.document.datatypes.Array;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -41,15 +40,14 @@ import java.util.stream.Collectors;
  * to failed due to some undetected hardware failure will end up being failed again.
  * When that has happened enough they will not be recycled.
  * <p>
- * The Chef recipe running locally on the node may set hardwareFailureDescription to avoid the node
- * being automatically recycled in cases where an error has been positively detected.
+ * Nodes with detected hardware issues will not be recycled.
  *
  * @author bratseth
  * @author mpolden
  */
 public class FailedExpirer extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(NodeRetirer.class.getName());
+    private static final Logger log = Logger.getLogger(FailedExpirer.class.getName());
     private static final int maxAllowedFailures = 5; // Stop recycling nodes after this number of failures
 
     private final NodeRepository nodeRepository;
@@ -63,21 +61,24 @@ public class FailedExpirer extends Maintainer {
         this.nodeRepository = nodeRepository;
         this.zone = zone;
         this.clock = clock;
-        if (zone.system() == SystemName.main) {
+        if (zone.system().isCd()) {
+            defaultExpiry = containerExpiry = Duration.ofMinutes(30);
+        } else {
             if (zone.environment() == Environment.staging || zone.environment() == Environment.test) {
                 defaultExpiry = Duration.ofHours(1);
             } else {
                 defaultExpiry = Duration.ofDays(4);
             }
             containerExpiry = Duration.ofHours(1);
-        } else {
-            defaultExpiry = containerExpiry = Duration.ofMinutes(30);
         }
     }
 
     @Override
     protected void maintain() {
-        List<Node> remainingNodes = new ArrayList<>(nodeRepository.getNodes(Node.State.failed));
+        List<Node> remainingNodes = new ArrayList<>(nodeRepository.list()
+                .state(Node.State.failed)
+                .nodeType(NodeType.tenant, NodeType.host)
+                .asList());
 
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->

@@ -12,6 +12,7 @@
 
 #include <map>
 #include <vespa/vespalib/util/printable.h>
+#include <ostream>
 
 namespace storage {
 

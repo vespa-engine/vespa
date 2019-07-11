@@ -17,41 +17,25 @@ import static org.mockito.Mockito.mock;
  * @author hakonhall
  */
 public class SystemCtlTest {
+
     private final TaskContext taskContext = mock(TaskContext.class);
     private final TestTerminal terminal = new TestTerminal();
 
     @Test
     public void enable() {
-        terminal.expectCommand(
-                "systemctl show docker 2>&1",
-                0,
-                "a=b\n" +
-                        "UnitFileState=disabled\n" +
-                        "bar=zoo\n")
-                .expectCommand("systemctl enable docker 2>&1", 0, "");
+        terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "")
+                .expectCommand("systemctl enable docker 2>&1")
+                .expectCommand("systemctl --quiet is-enabled docker 2>&1");
 
         SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
         assertTrue(enableDockerService.converge(taskContext));
+        assertFalse("Already converged", enableDockerService.converge(taskContext));
     }
 
     @Test
-    public void enableIsNoop() {
-        terminal.expectCommand(
-                        "systemctl show docker 2>&1",
-                        0,
-                        "a=b\n" +
-                                "UnitFileState=enabled\n" +
-                                "bar=zoo\n")
-                .expectCommand("systemctl enable docker 2>&1", 0, "");
-
-        SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
-        assertFalse(enableDockerService.converge(taskContext));
-    }
-
-
-    @Test
-    public void enableCommandFailre() {
-        terminal.expectCommand("systemctl show docker 2>&1", 1, "error");
+    public void enableCommandFailure() {
+        terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "")
+                .expectCommand("systemctl enable docker 2>&1", 1, "error enabling service");
         SystemCtl.SystemCtlEnable enableDockerService = new SystemCtl(terminal).enable("docker");
         try {
             enableDockerService.converge(taskContext);
@@ -106,15 +90,12 @@ public class SystemCtlTest {
 
     @Test
     public void disable() {
-        terminal.expectCommand(
-                        "systemctl show docker 2>&1",
-                        0,
-                        "a=b\n" +
-                                "UnitFileState=enabled\n" +
-                                "bar=zoo\n")
-                .expectCommand("systemctl disable docker 2>&1", 0, "");
+        terminal.expectCommand("systemctl --quiet is-enabled docker 2>&1")
+                .expectCommand("systemctl disable docker 2>&1")
+                .expectCommand("systemctl --quiet is-enabled docker 2>&1", 1, "");
 
         assertTrue(new SystemCtl(terminal).disable("docker").converge(taskContext));
+        assertFalse("Already converged", new SystemCtl(terminal).disable("docker").converge(taskContext));
     }
 
     @Test
@@ -161,4 +142,5 @@ public class SystemCtlTest {
             assertThat(e.getMessage(), containsString("garbage"));
         }
     }
+
 }

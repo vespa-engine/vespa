@@ -9,6 +9,8 @@
 #include <vespa/documentapi/common.h>
 
 class FRT_Supervisor;
+class FNET_Transport;
+class FastOS_ThreadPool;
 
 namespace documentapi {
 
@@ -19,9 +21,11 @@ namespace documentapi {
 class ExternPolicy : public mbus::IRoutingPolicy {
 private:
     using IMirrorAPI = slobrok::api::IMirrorAPI;
-    vespalib::Lock                   _lock;
-    std::unique_ptr<FRT_Supervisor>  _orb;
-    std::unique_ptr<IMirrorAPI>      _mirror;
+    vespalib::Lock                      _lock;
+    std::unique_ptr<FastOS_ThreadPool>  _threadPool;
+    std::unique_ptr<FNET_Transport>     _transport;
+    std::unique_ptr<FRT_Supervisor>     _orb;
+    std::unique_ptr<IMirrorAPI>         _mirror;
     string                           _pattern;
     string                           _session;
     string                           _error;

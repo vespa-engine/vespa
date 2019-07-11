@@ -279,6 +279,30 @@ FieldInverter::remove(const vespalib::stringref word, uint32_t docId)
 }
 
 void
+FieldInverter::endDoc()
+{
+    uint32_t field_length = 0;
+    if (_elem > 0) {
+        auto itr = _elems.end() - _elem;
+        while (itr != _elems.end()) {
+            field_length += itr->_len;
+            ++itr;
+        }
+        itr = _elems.end() - _elem;
+        while (itr != _elems.end()) {
+            itr->set_field_length(field_length);
+            ++itr;
+        }
+    }
+    _calculator.add_field_length(field_length);
+    uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
+    _pendingDocs.insert({ _docId,
+                             { _oldPosSize, newPosSize - _oldPosSize } });
+    _docId = 0;
+    _oldPosSize = newPosSize;
+}
+
+void
 FieldInverter::processNormalDocTextField(const StringFieldValue &field)
 {
     startElement(1);
@@ -317,7 +341,10 @@ FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldValue 
     }
 }
 
-FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
+FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId,
+                             FieldIndexRemover &remover,
+                             IOrderedFieldIndexInserter &inserter,
+                             index::FieldLengthCalculator &calculator)
     : _fieldId(fieldId),
       _elem(0u),
       _wpos(0u),
@@ -333,7 +360,10 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId)
       _terms(),
       _abortedDocs(),
       _pendingDocs(),
-      _removeDocs()
+      _removeDocs(),
+      _remover(remover),
+      _inserter(inserter),
+      _calculator(calculator)
 {
 }
 
@@ -398,11 +428,13 @@ FieldInverter::trimAbortedDocs()
 void
 FieldInverter::invertField(uint32_t docId, const FieldValue::UP &val)
 {
-    startDoc(docId);
     if (val) {
+        startDoc(docId);
         invertNormalDocTextField(*val);
+        endDoc();
+    } else {
+        removeDocument(docId);
     }
-    endDoc();
 }
 
 void
@@ -459,16 +491,16 @@ struct FullRadix {
 }
 
 void
-FieldInverter::applyRemoves(FieldIndexRemover &remover)
+FieldInverter::applyRemoves()
 {
     for (auto docId : _removeDocs) {
-        remover.remove(docId, *this);
+        _remover.remove(docId, *this);
     }
     _removeDocs.clear();
 }
 
 void
-FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
+FieldInverter::pushDocuments()
 {
     trimAbortedDocs();
 
@@ -493,24 +525,25 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
     vespalib::stringref word;
     bool emptyFeatures = true;
 
-    inserter.rewind();
+    _inserter.rewind();
 
     for (auto &i : _positions) {
         assert(i._wordNum <= numWordIds);
         (void) numWordIds;
         if (lastWordNum != i._wordNum || lastDocId != i._docId) {
             if (!emptyFeatures) {
-                inserter.add(lastDocId, _features);
+                _features.set_num_occs(_features.word_positions().size());
+                _inserter.add(lastDocId, _features);
                 emptyFeatures = true;
             }
             if (lastWordNum != i._wordNum) {
                 lastWordNum = i._wordNum;
                 word = getWordFromNum(lastWordNum);
-                inserter.setNextWord(word);
+                _inserter.setNextWord(word);
             }
             lastDocId = i._docId;
             if (i.removed()) {
-                inserter.remove(lastDocId);
+                _inserter.remove(lastDocId);
                 continue;
             }
         }
@@ -520,6 +553,8 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
                 _features.clear(lastDocId);
                 lastElemId = NO_ELEMENT_ID;
                 lastWordPos = NO_WORD_POS;
+                const ElemInfo &elem = _elems[i._elemRef];
+                _features.set_field_length(elem.get_field_length());
             } else {
                 continue; // ignore dup remove
             }
@@ -539,9 +574,11 @@ FieldInverter::pushDocuments(IOrderedFieldIndexInserter &inserter)
     }
 
     if (!emptyFeatures) {
-        inserter.add(lastDocId, _features);
+        _features.set_num_occs(_features.word_positions().size());
+        _inserter.add(lastDocId, _features);
     }
-    inserter.flush();
+    _inserter.flush();
+    _inserter.commit();
     reset();
 }
 

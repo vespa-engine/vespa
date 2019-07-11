@@ -20,6 +20,7 @@ import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
@@ -47,7 +48,7 @@ public class VespaModelFactory implements ModelFactory {
     private final Clock clock;
     private final Version version;
 
-    /** Creates a factory for vespa models for this version of the source */
+    /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<MlModelImporter> modelImporters,
@@ -62,6 +63,7 @@ public class VespaModelFactory implements ModelFactory {
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.modelImporters = modelImporters.allComponents();
         this.zone = zone;
+
         this.clock = Clock.systemUTC();
     }
     
@@ -139,6 +141,7 @@ public class VespaModelFactory implements ModelFactory {
             .vespaVersion(version())
             .modelHostProvisioner(createHostProvisioner(modelContext))
             .rotations(modelContext.properties().rotations())
+            .endpoints(modelContext.properties().endpoints())
             .modelImporters(modelImporters)
             .zone(zone)
             .now(clock.instant())
@@ -165,7 +168,7 @@ public class VespaModelFactory implements ModelFactory {
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
             return Validation.validate(model, validationParameters, deployState);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | TransientException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -173,7 +176,7 @@ public class VespaModelFactory implements ModelFactory {
         return new ArrayList<>();
     }
 
-    private static void rethrowUnlessIgnoreErrors(IllegalArgumentException e, boolean ignoreValidationErrors) {
+    private static void rethrowUnlessIgnoreErrors(RuntimeException e, boolean ignoreValidationErrors) {
         if (!ignoreValidationErrors) {
             throw e;
         }

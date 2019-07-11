@@ -105,14 +105,14 @@ public class RealNodeRepositoryTest {
         List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
         NodeSpec node = containersToRun.get(0);
-        assertThat(node.getHostname(), is("host4.yahoo.com"));
-        assertThat(node.getWantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
-        assertThat(node.getState(), is(NodeState.active));
-        assertThat(node.getWantedRestartGeneration().get(), is(0L));
-        assertThat(node.getCurrentRestartGeneration().get(), is(0L));
-        assertEquals(1, node.getMinCpuCores(), delta);
-        assertEquals(1, node.getMinMainMemoryAvailableGb(), delta);
-        assertEquals(100, node.getMinDiskAvailableGb(), delta);
+        assertThat(node.hostname(), is("host4.yahoo.com"));
+        assertThat(node.wantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
+        assertThat(node.state(), is(NodeState.active));
+        assertThat(node.wantedRestartGeneration().get(), is(0L));
+        assertThat(node.currentRestartGeneration().get(), is(0L));
+        assertEquals(1, node.vcpus(), delta);
+        assertEquals(1, node.memoryGb(), delta);
+        assertEquals(100, node.diskGb(), delta);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class RealNodeRepositoryTest {
         String hostname = "host4.yahoo.com";
         Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
         assertTrue(node.isPresent());
-        assertEquals(hostname, node.get().getHostname());
+        assertEquals(hostname, node.get().hostname());
     }
 
     @Test
@@ -176,8 +176,8 @@ public class RealNodeRepositoryTest {
         NodeSpec hostSpecInNodeRepo = nodeRepositoryApi.getOptionalNode("host123.domain.tld")
                 .orElseThrow(RuntimeException::new);
 
-        assertEquals(host.nodeFlavor, hostSpecInNodeRepo.getFlavor());
-        assertEquals(host.nodeType, hostSpecInNodeRepo.getNodeType());
+        assertEquals(host.nodeFlavor, hostSpecInNodeRepo.flavor());
+        assertEquals(host.nodeType, hostSpecInNodeRepo.type());
 
         assertTrue(nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").isPresent());
     }

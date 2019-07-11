@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
@@ -69,8 +70,8 @@ public class HostProvisionMaintainerTest {
         Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.provisioned, Optional.empty());
         Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.reserved, Optional.of(tenantApp));
 
-        Node host4new = host4.withIpAddresses(Set.of("::2"));
-        Node host41new = host41.withIpAddresses(Set.of("::4", "10.0.0.1"));
+        Node host4new = host4.with(host4.ipConfig().with(Set.of("::2")));
+        Node host41new = host41.with(host4.ipConfig().with(Set.of("::4", "10.0.0.1")));
         assertTrue(Stream.of(host4, host41).map(Node::ipAddresses).allMatch(Set::isEmpty));
         when(hostProvisioner.provision(eq(host4), eq(Set.of(host41)))).thenReturn(List.of(host4new, host41new));
 
@@ -146,9 +147,9 @@ public class HostProvisionMaintainerTest {
                             ClusterMembership.from("container/default/0/0", Version.fromString("7.3")),
                             Generation.initial(),
                             false));
-            Set<String> ips = state == Node.State.active ? Set.of("::1") : Set.of();
-            return new Node("fake-id-" + hostname, ips, Set.of(), hostname,
-                    parentHostname, flavor, Status.initial(), state, allocation, History.empty(), nodeType, new Reports(), Optional.empty());
+            var ipConfig = new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());
+            return new Node("fake-id-" + hostname, ipConfig, hostname, parentHostname, flavor, Status.initial(),
+                            state, allocation, History.empty(), nodeType, new Reports(), Optional.empty());
         }
 
         NodeRepository nodeRepository() {

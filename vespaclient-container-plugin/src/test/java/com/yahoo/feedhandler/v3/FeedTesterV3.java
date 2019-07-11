@@ -2,6 +2,7 @@
 package com.yahoo.feedhandler.v3;
 
 import com.google.common.base.Splitter;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.logging.AccessLog;
@@ -12,6 +13,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.jdisc.ReferencedResource;
+import com.yahoo.messagebus.Result;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -20,10 +22,12 @@ import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
-import com.yahoo.vespa.http.server.ReplyContext;
 import com.yahoo.vespa.http.server.FeedHandlerV3;
+import com.yahoo.vespa.http.server.MetricNames;
+import com.yahoo.vespa.http.server.ReplyContext;
 import org.junit.Test;
-import com.yahoo.container.jdisc.HttpRequest;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,15 +36,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.yahoo.messagebus.Result;
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
 
 public class FeedTesterV3 {
+    final CollectingMetric metric = new CollectingMetric();
 
     @Test
     public void feedOneDocument() throws Exception {
@@ -50,7 +53,17 @@ public class FeedTesterV3 {
         httpResponse.render(outStream);
         assertThat(httpResponse.getContentType(), is("text/plain"));
         assertThat(Utf8.toString(outStream.toByteArray()), is("1230 OK message trace\n"));
+    }
 
+    @Test
+    public void feedOneBrokenDocument() throws Exception {
+        final FeedHandlerV3 feedHandlerV3 = setupFeederHandler();
+        HttpResponse httpResponse = feedHandlerV3.handle(createBrokenRequest());
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        httpResponse.render(outStream);
+        assertThat(httpResponse.getContentType(), is("text/plain"));
+        assertThat(Utf8.toString(outStream.toByteArray()), startsWith("1230 ERROR "));
+        assertThat(metric.get(MetricNames.PARSE_ERROR), is(1L));
     }
 
     @Test
@@ -64,7 +77,7 @@ public class FeedTesterV3 {
         assertThat(Splitter.on("\n").splitToList(result).size(), is(101));
     }
 
-    DocumentTypeManager createDoctypeManager() {
+    private static DocumentTypeManager createDoctypeManager() {
         DocumentTypeManager docTypeManager = new DocumentTypeManager();
         DocumentType documentType = new DocumentType("testdocument");
         documentType.addField("title", DataType.STRING);
@@ -73,37 +86,44 @@ public class FeedTesterV3 {
         return docTypeManager;
     }
 
-    HttpRequest createRequest(int numberOfDocs) {
-        String clientId = "client123";
+    private static HttpRequest createRequest(int numberOfDocs) {
         StringBuilder wireData = new StringBuilder();
         for (int x = 0; x < numberOfDocs; x++) {
             String docData = "[{\"put\": \"id:testdocument:testdocument::c\", \"fields\": { \"title\": \"fooKey\", \"body\": \"value\"}}]";
             String operationId = "123" + x;
             wireData.append(operationId + " " + Integer.toHexString(docData.length()) + "\n" + docData);
         }
-        InputStream inputStream =  new ByteArrayInputStream(wireData.toString().getBytes());
-        HttpRequest request = HttpRequest.createTestRequest(
-                "http://dummyhostname:19020/reserved-for-internal-use/feedapi",
-                com.yahoo.jdisc.http.HttpRequest.Method.POST,
-                inputStream);
+        return createRequestWithPayload(wireData.toString());
+    }
+
+    private static HttpRequest createBrokenRequest() {
+        String docData = "[{\"put oops I broke it]";
+        String wireData = "1230 " + Integer.toHexString(docData.length()) + "\n" + docData;
+        return createRequestWithPayload(wireData);
+    }
+
+    private static HttpRequest createRequestWithPayload(String payload) {
+        InputStream inputStream = new ByteArrayInputStream(payload.getBytes());
+        HttpRequest request = HttpRequest.createTestRequest("http://dummyhostname:19020/reserved-for-internal-use/feedapi",
+                com.yahoo.jdisc.http.HttpRequest.Method.POST, inputStream);
         request.getJDiscRequest().headers().add(Headers.VERSION, "3");
         request.getJDiscRequest().headers().add(Headers.DATA_FORMAT, FeedParams.DataFormat.JSON_UTF8.name());
         request.getJDiscRequest().headers().add(Headers.TIMEOUT, "1000000000");
-        request.getJDiscRequest().headers().add(Headers.CLIENT_ID, clientId);
+        request.getJDiscRequest().headers().add(Headers.CLIENT_ID, "client123");
         request.getJDiscRequest().headers().add(Headers.PRIORITY, "LOWEST");
         request.getJDiscRequest().headers().add(Headers.TRACE_LEVEL, "4");
         request.getJDiscRequest().headers().add(Headers.DRAIN, "true");
         return request;
     }
 
-    FeedHandlerV3 setupFeederHandler() throws Exception {
+    private FeedHandlerV3 setupFeederHandler() throws Exception {
         Executor threadPool = Executors.newCachedThreadPool();
         DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
-                new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), new NullFeedMetric(true)),
+                new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), metric),
                 docMan,
                 null /* session cache */,
-                null /* thread pool config */, 
+                null /* thread pool config */,
                 new DocumentApiMetrics(MetricReceiver.nullImplementation, "test")) {
             @Override
             protected ReferencedResource<SharedSourceSession> retainSource(
@@ -111,7 +131,7 @@ public class FeedTesterV3 {
                 SharedSourceSession sharedSourceSession = mock(SharedSourceSession.class);
 
                 try {
-                    Mockito.stub(sharedSourceSession.sendMessageBlocking(anyObject())).toAnswer((Answer) invocation -> {
+                    Mockito.stub(sharedSourceSession.sendMessageBlocking(anyObject())).toAnswer((Answer<?>) invocation -> {
                         Object[] args = invocation.getArguments();
                         PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
                         ReplyContext replyContext = (ReplyContext)putDocumentMessage.getContext();

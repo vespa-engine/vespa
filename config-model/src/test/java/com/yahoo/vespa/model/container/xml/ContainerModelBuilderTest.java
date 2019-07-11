@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -14,7 +13,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -42,11 +40,13 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static org.hamcrest.CoreMatchers.is;
@@ -57,132 +57,60 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
+ * Tests for "core functionality" of the container model, e.g. ports, or the 'components' and 'bundles' configs.
+ *
+ * Before adding a new test to this class, check if the test fits into one of the other existing subclasses
+ * of {@link ContainerModelBuilderTestBase}. If not, consider creating a new subclass.
+ *
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void detect_conflicting_jvmgcoptions_in_jvmargs() {
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("abc -XX:+UseParNewGC xyz"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:CMSInitiatingOccupancyFraction=19"));
-    }
-
-    @Test
-    public void honours_jvm_gc_options() {
+    public void deprecated_jdisc_tag_is_allowed() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
-                "  <search/>",
-                "  <nodes jvm-gc-options='-XX:+UseG1GC'>",
-                "    <node hostalias='mockhost'/>",
-                "  </nodes>",
+                nodesXml,
                 "</jdisc>" );
-        createModel(root, clusterElem);
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        root.getConfig(qrStartBuilder, "jdisc/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals("-XX:+UseG1GC", qrStartConfig.jvm().gcopts());
-    }
+        TestLogger logger = new TestLogger();
+        createModel(root, logger, clusterElem);
+        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
+        assertNotNull(container);
 
-    private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.G1GC);
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
-
-    }
-    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(boolean isHosted, String jvmOptionsName, String expectedGC) throws IOException, SAXException {
-        String servicesXml =
-                "<jdisc version='1.0'>" +
-                        "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
-                        "    <node hostalias='mockhost'/>" +
-                        "  </nodes>" +
-                        "</jdisc>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new TestProperties().setHostedVespa(isHosted))
-                .build());
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrStartBuilder, "jdisc/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(expectedGC, qrStartConfig.jvm().gcopts());
-    }
-
-    @Test
-    public void ignores_jvmgcoptions_on_conflicting_jvmargs() throws IOException, SAXException {
-        verifyIgnoreJvmGCOptions(false);
-        verifyIgnoreJvmGCOptions(true);
-    }
-
-    private void verifyJvmGCOptions(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
-        String servicesXml =
-                "<jdisc version='1.0'>" +
-                        "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
-                        "    <node hostalias='mockhost'/>" +
-                        "  </nodes>" +
-                        "</jdisc>";
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
-        // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .deployLogger(logger)
-                .zone(zone)
-                .properties(new TestProperties().setHostedVespa(isHosted))
-                .build());
-        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrStartBuilder, "jdisc/container.0");
-        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(expected, qrStartConfig.jvm().gcopts());
-    }
-
-    private void verifyJvmGCOptions(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
-        verifyJvmGCOptions(isHosted, null, zone, expected);
-        verifyJvmGCOptions(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
-        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyJvmGCOptions(isHosted, null, DEV, ContainerCluster.G1GC);
-        verifyJvmGCOptions(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
-    }
-
-    @Test
-    public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
-        verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.G1GC);
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals("'jdisc' is deprecated as tag name. Use 'container' instead.", logger.msgs.get(0).getSecond());
     }
 
     @Test
     public void default_port_is_4080() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                   nodesXml,
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
+        AbstractService container = (AbstractService)root.getProducer("container/container.0");
         assertThat(container.getRelativePort(0), is(getDefaults().vespaWebServicePort()));
     }
 
     @Test
     public void http_server_port_is_configurable_and_does_not_affect_other_ports() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
                   nodesXml,
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
+        AbstractService container = (AbstractService)root.getProducer("container/container.0");
         assertThat(container.getRelativePort(0), is(9000));
         assertThat(container.getRelativePort(1), is(not(9001)));
     }
@@ -194,16 +122,16 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "<admin version='3.0'>" +
                 "    <nodes count='1'/>" +
                 "</admin>" +
-                "<jdisc version='1.0'>" +
+                "<container version='1.0'>" +
                 "  <http>" +
                 "    <server port='9000' id='foo' />" +
                 "  </http>" +
                 nodesXml +
-                "</jdisc>" +
+                "</container>" +
                 "</services>";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
-        final MyLogger logger = new MyLogger();
+        final TestLogger logger = new TestLogger();
         new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .deployLogger(logger)
@@ -213,37 +141,29 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
     }
 
-    private static class MyLogger implements DeployLogger {
-        List<Pair<Level, String>> msgs = new ArrayList<>();
-        @Override
-        public void log(Level level, String message) {
-            msgs.add(new Pair<>(level, message));
-        }
-    }
-
     @Test
     public void one_cluster_with_explicit_port_and_one_without_is_ok() {
         Element cluster1Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0' />");
+                "<container id='cluster1' version='1.0' />");
         Element cluster2Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster2' version='1.0'>",
+                "<container id='cluster2' version='1.0'>",
                 "  <http>",
                 "    <server port='8000' id='foo' />",
                 "  </http>",
-                "</jdisc>");
+                "</container>");
         createModel(root, cluster1Elem, cluster2Elem);
     }
 
     @Test
     public void two_clusters_without_explicit_port_throws_exception() {
         Element cluster1Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster1' version='1.0'>",
+                "<container id='cluster1' version='1.0'>",
                   nodesXml,
-                "</jdisc>" );
+                "</container>" );
         Element cluster2Elem = DomBuilderTest.parse(
-                "<jdisc id='cluster2' version='1.0'>",
+                "<container id='cluster2' version='1.0'>",
                   nodesXml,
-                "</jdisc>" );
+                "</container>" );
         try {
             createModel(root, cluster1Elem, cluster2Elem);
             fail("Expected exception");
@@ -255,7 +175,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void verify_bindings_for_builtin_handlers() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' />"
+                "<container id='default' version='1.0' />"
         );
         createModel(root, clusterElem);
         JdiscBindingsConfig config = root.getConfig(JdiscBindingsConfig.class, "default/container.0");
@@ -275,11 +195,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void default_root_handler_is_disabled_when_user_adds_a_handler_with_same_binding() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>" +
+                "<container id='default' version='1.0'>" +
                         "  <handler id='userRootHandler'>" +
                         "    <binding>" + ContainerCluster.ROOT_HANDLER_BINDING + "</binding>" +
                         "  </handler>" +
-                        "</jdisc>");
+                        "</container>");
         createModel(root, clusterElem);
 
         ComponentsConfig.Components userRootHandler = getComponent(componentsConfig(), BindingsOverviewHandler.class.getName());
@@ -304,13 +224,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     private void createClusterWithJDiscHandler() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <handler id='discHandler'>",
                 "    <binding>binding0</binding>",
                 "    <binding>binding1</binding>",
                 "    <clientBinding>clientBinding</clientBinding>",
                 "  </handler>",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
     }
@@ -336,14 +256,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     private void createClusterWithServlet() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <servlet id='myServlet' class='myClass' bundle='myBundle'>",
                 "    <path>p/a/t/h</path>",
                 "    <servlet-config>",
                 "      <myKey>myValue</myKey>",
                 "    </servlet-config>",
                 "  </servlet>",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
     }
@@ -352,12 +272,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void processing_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <processing>",
                 "    <binding>binding0</binding>",
                 "    <binding>binding1</binding>",
                 "  </processing>",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
 
@@ -385,13 +305,13 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     private void createModelWithClientProvider() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>" +
+                "<container id='default' version='1.0'>" +
                 "  <client id='discClient'>" +
                 "    <binding>binding0</binding>" +
                 "    <binding>binding1</binding>" +
                 "    <serverBinding>serverBinding</serverBinding>" +
                 "  </client>" +
-                "</jdisc>" );
+                "</container>" );
 
         createModel(root, clusterElem);
     }
@@ -399,9 +319,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void serverProviders_are_included_in_components_config() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>" +
+                "<container id='default' version='1.0'>" +
                 "  <server id='discServer' />" +
-                "</jdisc>" );
+                "</container>" );
 
         createModel(root, clusterElem);
 
@@ -433,7 +353,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     private void createClusterWithProcessingAndSearchChains() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>" +
+                "<container id='default' version='1.0'>" +
                         "  <search>" +
                         "    <chain id='default'>" +
                         "      <searcher id='testSearcher' />" +
@@ -445,7 +365,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         "    </chain>" +
                         "  </processing>" +
                         nodesXml +
-                        " </jdisc>");
+                        " </container>");
 
         createModel(root, clusterElem);
     }
@@ -453,7 +373,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void user_config_can_be_overridden_on_node() {
         Element containerElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <config name=\"prelude.cluster.qr-monitor\">" +
                 "    <requesttimeout>111</requesttimeout>",
                 "  </config> " +
@@ -465,7 +385,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "      </config> ",
                 "    </node>",
                 "  </nodes>",
-                "</jdisc>");
+                "</container>");
 
         root = ContentClusterUtils.createMockRoot(new String[]{"host1", "host2"});
         createModel(root, containerElem);
@@ -478,14 +398,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void nested_components_are_injected_to_handlers() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <handler id='myHandler'>",
                 "    <component id='injected' />",
                 "  </handler>",
                 "  <client id='myClient'>",  // remember, a client is also a request handler
                 "    <component id='injected' />",
                 "  </client>",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
         Component<?,?> handler = getContainerComponent("default", "myHandler");
@@ -509,14 +429,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void affinity_is_set() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='" + getDefaults().vespaWebServicePort() + "' id='main' />",
                 "  </http>",
                 "  <nodes cpu-socket-affinity='true'>",
                 "    <node hostalias='node1' />",
                 "  </nodes>" +
-                "</jdisc>");
+                "</container>");
         createModel(root, clusterElem);
         assertTrue(getContainerCluster("default").getContainers().get(0).getAffinity().isPresent());
         assertThat(getContainerCluster("default").getContainers().get(0).getAffinity().get().cpuSocket(), is(0));
@@ -524,7 +444,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void singlenode_servicespec_is_used_with_hosts_xml() throws IOException, SAXException {
-        String servicesXml = "<jdisc id='default' version='1.0' />";
+        String servicesXml = "<container id='default' version='1.0' />";
         String hostsXml = "<hosts>\n" +
                 "    <host name=\"test1.yahoo.com\">\n" +
                 "        <alias>node1</alias>\n" +
@@ -541,7 +461,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void http_aliases_are_stored_on_cluster_and_on_service_properties() {
         Element clusterElem = DomBuilderTest.parse(
-                        "<jdisc id='default' version='1.0'>",
+                        "<container id='default' version='1.0'>",
                         "  <aliases>",
                         "    <service-alias>service1</service-alias>",
                         "    <service-alias>service2</service-alias>",
@@ -551,7 +471,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         "  <nodes>",
                         "    <node hostalias='host1' />",
                         "  </nodes>",
-                        "</jdisc>");
+                        "</container>");
 
         createModel(root, clusterElem);
         assertEquals(getContainerCluster("default").serviceAliases().get(0), "service1");
@@ -566,7 +486,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void http_aliases_are_only_honored_in_prod_environment() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <aliases>",
                 "    <service-alias>service1</service-alias>",
                 "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
@@ -574,7 +494,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <nodes>",
                 "    <node hostalias='host1' />",
                 "  </nodes>",
-                "</jdisc>");
+                "</container>");
 
         DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
         createModel(root, deployState, null, clusterElem);
@@ -586,8 +506,50 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void endpoints_are_added_to_containers() throws IOException, SAXException {
+        final var servicesXml = joinLines("",
+                "<container id='comics-search' version='1.0'>",
+                "  <nodes>",
+                "    <node hostalias='host1' />",
+                "  </nodes>",
+                "</container>"
+        );
+
+        final var deploymentXml = joinLines("",
+                "<deployment version='1.0'>",
+                "  <prod />",
+                "</deployment>"
+        );
+
+        final var applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(servicesXml)
+                .withDeploymentSpec(deploymentXml)
+                .build();
+
+        final var deployState = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
+                .endpoints(Set.of(new ContainerEndpoint("comics-search", List.of("nalle", "balle"))))
+                .properties(new TestProperties().setHostedVespa(true))
+                .build();
+
+        final var model = new VespaModel(new NullConfigModelRegistry(), deployState);
+        final var containers = model.getContainerClusters().values().stream()
+                .flatMap(cluster -> cluster.getContainers().stream())
+                .collect(Collectors.toList());
+
+        assertFalse("Missing container objects based on configuration", containers.isEmpty());
+
+        containers.forEach(container -> {
+            final var rotations = container.getServicePropertyString("rotations").split(",");
+            final var rotationsSet = Set.of(rotations);
+            assertEquals(Set.of("balle", "nalle"), rotationsSet);
+        });
+    }
+
+    @Test
     public void singlenode_servicespec_is_used_with_hosted_vespa() throws IOException, SAXException {
-        String servicesXml = "<jdisc id='default' version='1.0' />";
+        String servicesXml = "<container id='default' version='1.0' />";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                 .modelHostProvisioner(new InMemoryProvisioner(true, "host1.yahoo.com", "host2.yahoo.com"))
@@ -617,9 +579,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void vip_status_handler_uses_file_for_hosted_vespa() throws Exception {
         String servicesXml = "<services>" +
-                "<jdisc version='1.0'>" +
+                "<container version='1.0'>" +
                 nodesXml +
-                "</jdisc>" +
+                "</container>" +
                 "</services>";
 
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
@@ -629,7 +591,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .build());
 
         AbstractConfigProducerRoot modelRoot = model.getRoot();
-        VipStatusConfig vipStatusConfig = modelRoot.getConfig(VipStatusConfig.class, "jdisc/component/status.html-status-handler");
+        VipStatusConfig vipStatusConfig = modelRoot.getConfig(VipStatusConfig.class, "container/component/status.html-status-handler");
         assertTrue(vipStatusConfig.accessdisk());
         assertEquals(ContainerModelBuilder.HOSTED_VESPA_STATUS_FILE, vipStatusConfig.statusfile());
     }
@@ -641,11 +603,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         "<admin version='3.0'>" +
                         "    <nodes count='1'/>" +
                         "</admin>" +
-                        "<jdisc id ='default' version='1.0'>" +
+                        "<container id ='default' version='1.0'>" +
                         "  <nodes>" +
                         "    <node hostalias='node1' />" +
                         "  </nodes>" +
-                        "</jdisc>" +
+                        "</container>" +
                         "</services>";
 
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
@@ -671,19 +633,19 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void secret_store_can_be_set_up() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
+                "<container version='1.0'>",
                 "  <secret-store>",
                 "    <group name='group1' environment='env1'/>",
                 "  </secret-store>",
-                "</jdisc>");
+                "</container>");
         createModel(root, clusterElem);
-        SecretStore secretStore = getContainerCluster("jdisc").getSecretStore().get();
+        SecretStore secretStore = getContainerCluster("container").getSecretStore().get();
         assertEquals("group1", secretStore.getGroups().get(0).name);
         assertEquals("env1", secretStore.getGroups().get(0).environment);
     }
 
     @Test
-    public void honours_environment_vars() {
+    public void environment_vars_are_honoured() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <nodes>",
@@ -703,10 +665,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     private Element generateContainerElementWithRenderer(String rendererId) {
         return DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <search>",
                 String.format("    <renderer id='%s'/>", rendererId),
                 "  </search>",
-                "</jdisc>");
+                "</container>");
     }
 }

@@ -10,12 +10,13 @@
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 
 namespace searchcorespi::index { struct IThreadService; }
 namespace search { class IBucketizer; }
 namespace search::common { class FileHeaderContext; }
+
+class Fast_NormalizeWordFolder;
 
 namespace proton {
 
@@ -25,7 +26,7 @@ public:
     class SummarySetup : public ISummarySetup {
     private:
         std::unique_ptr<search::docsummary::DynamicDocsumWriter> _docsumWriter;
-        Fast_NormalizeWordFolder              _wordFolder;
+        std::unique_ptr<Fast_NormalizeWordFolder>                _wordFolder;
         search::docsummary::JuniperProperties _juniperProps;
         std::unique_ptr<juniper::Juniper>     _juniperConfig;
         search::IAttributeManager::SP         _attributeMgr;

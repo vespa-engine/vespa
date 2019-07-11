@@ -6,6 +6,11 @@
       "cloud": "cloud1",
       "nodes": [
         {
+          "hostname": "node-1-configserver-host",
+          "environment": "prod",
+          "region": "us-east-3"
+        },
+        {
           "hostname": "node-3-configserver-host",
           "environment": "prod",
           "region": "us-east-3"
@@ -18,7 +23,7 @@
         {
           "hostname": "node-1-configserver-host",
           "environment": "prod",
-          "region": "us-east-3"
+          "region": "us-west-1"
         },
         {
           "hostname": "node-3-configserver-host",
@@ -31,17 +36,7 @@
           "region": "us-west-1"
         },
         {
-          "hostname": "node-1-configserver-host",
-          "environment": "prod",
-          "region": "us-west-1"
-        },
-        {
           "hostname": "node-2-proxy-host",
-          "environment": "prod",
-          "region": "us-east-3"
-        },
-        {
-          "hostname": "node-1-proxy-host",
           "environment": "prod",
           "region": "us-east-3"
         },
@@ -51,7 +46,17 @@
           "region": "us-east-3"
         },
         {
+          "hostname": "node-1-proxy-host",
+          "environment": "prod",
+          "region": "us-east-3"
+        },
+        {
           "hostname": "node-2-proxy-host",
+          "environment": "prod",
+          "region": "us-west-1"
+        },
+        {
+          "hostname": "node-3-proxy-host",
           "environment": "prod",
           "region": "us-west-1"
         },
@@ -61,7 +66,32 @@
           "region": "us-west-1"
         },
         {
-          "hostname": "node-3-proxy-host",
+          "hostname": "node-2-tenant-host",
+          "environment": "prod",
+          "region": "us-east-3"
+        },
+        {
+          "hostname": "node-1-tenant-host",
+          "environment": "prod",
+          "region": "us-east-3"
+        },
+        {
+          "hostname": "node-3-tenant-host",
+          "environment": "prod",
+          "region": "us-east-3"
+        },
+        {
+          "hostname": "node-2-tenant-host",
+          "environment": "prod",
+          "region": "us-west-1"
+        },
+        {
+          "hostname": "node-1-tenant-host",
+          "environment": "prod",
+          "region": "us-west-1"
+        },
+        {
+          "hostname": "node-3-tenant-host",
           "environment": "prod",
           "region": "us-west-1"
         }
@@ -73,6 +103,11 @@
       "cloud": "cloud2",
       "nodes": [
         {
+          "hostname": "node-1-configserver-host",
+          "environment": "prod",
+          "region": "eu-west-1"
+        },
+        {
           "hostname": "node-3-configserver-host",
           "environment": "prod",
           "region": "eu-west-1"
@@ -83,12 +118,12 @@
           "region": "eu-west-1"
         },
         {
-          "hostname": "node-1-configserver-host",
+          "hostname": "node-2-proxy-host",
           "environment": "prod",
           "region": "eu-west-1"
         },
         {
-          "hostname": "node-2-proxy-host",
+          "hostname": "node-3-proxy-host",
           "environment": "prod",
           "region": "eu-west-1"
         },
@@ -98,7 +133,17 @@
           "region": "eu-west-1"
         },
         {
-          "hostname": "node-3-proxy-host",
+          "hostname": "node-2-tenant-host",
+          "environment": "prod",
+          "region": "eu-west-1"
+        },
+        {
+          "hostname": "node-1-tenant-host",
+          "environment": "prod",
+          "region": "eu-west-1"
+        },
+        {
+          "hostname": "node-3-tenant-host",
           "environment": "prod",
           "region": "eu-west-1"
         }

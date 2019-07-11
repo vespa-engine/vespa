@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/query/tree/node.h>
-#include <vespa/searchlib/queryeval/field_spec.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/queryeval/irequestcontext.h>
-#include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/index/i_field_length_inspector.h>
+#include <vespa/searchlib/query/tree/node.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/field_spec.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchlib/util/searchable_stats.h>
 
 namespace searchcorespi {
 
@@ -26,8 +27,8 @@ class IndexSearchableVisitor;
  * that let the components access a per query attribute context that expose
  * attribute vectors that can be utilized during query evaluation.
  **/
-class IndexSearchable : public search::queryeval::Searchable
-{
+class IndexSearchable : public search::queryeval::Searchable,
+                        public search::index::IFieldLengthInspector {
 protected:
     using IRequestContext = search::queryeval::IRequestContext;
     using FieldSpec = search::queryeval::FieldSpec;
@@ -43,12 +44,12 @@ public:
      */
     virtual search::SearchableStats getSearchableStats() const = 0;
 
-    /*
+    /**
      * Returns the serial number for this index searchable.
      */
     virtual search::SerialNum getSerialNum() const = 0;
 
-    /*
+    /**
      * Calls visitor with properly downcasted argument to differentiate
      * between different types of indexes (disk index or memory index).
      */

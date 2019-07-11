@@ -12,10 +12,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetNodesResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +29,7 @@ import java.util.stream.Stream;
  * @author stiankri, dybis
  */
 public class RealNodeRepository implements NodeRepository {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(RealNodeRepository.class);
+    private static final Logger logger = Logger.getLogger(RealNodeRepository.class.getName());
 
     private final ConfigServerApi configServerApi;
 
@@ -46,7 +45,7 @@ public class RealNodeRepository implements NodeRepository {
 
         NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to add nodes: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -80,43 +79,37 @@ public class RealNodeRepository implements NodeRepository {
      */
     @Override
     public Map<String, Acl> getAcls(String hostName) {
-        try {
-            String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
-            GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
+        String path = String.format("/nodes/v2/acl/%s?children=true", hostName);
+        GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
-            // Group ports by container hostname that trusts them
-            Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
-                    .collect(Collectors.groupingBy(
-                            GetAclResponse.Port::getTrustedBy,
-                            Collectors.mapping(port -> port.port, Collectors.toSet())));
+        // Group ports by container hostname that trusts them
+        Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
+                .collect(Collectors.groupingBy(
+                        GetAclResponse.Port::getTrustedBy,
+                        Collectors.mapping(port -> port.port, Collectors.toSet())));
 
-            // Group node ip-addresses by container hostname that trusts them
-            Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
-                    .collect(Collectors.groupingBy(
-                            GetAclResponse.Node::getTrustedBy,
-                            Collectors.mapping(
-                                    node -> new Acl.Node(node.hostname, node.ipAddress),
-                                    Collectors.toSet())));
+        // Group node ip-addresses by container hostname that trusts them
+        Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
+                .collect(Collectors.groupingBy(
+                        GetAclResponse.Node::getTrustedBy,
+                        Collectors.mapping(
+                                node -> new Acl.Node(node.hostname, node.ipAddress),
+                                Collectors.toSet())));
 
-            // Group trusted networks by container hostname that trusts them
-            Map<String, Set<String>> trustedNetworks = response.trustedNetworks.stream()
-                     .collect(Collectors.groupingBy(GetAclResponse.Network::getTrustedBy,
-                                                    Collectors.mapping(node -> node.network, Collectors.toSet())));
+        // Group trusted networks by container hostname that trusts them
+        Map<String, Set<String>> trustedNetworks = response.trustedNetworks.stream()
+                 .collect(Collectors.groupingBy(GetAclResponse.Network::getTrustedBy,
+                                                Collectors.mapping(node -> node.network, Collectors.toSet())));
 
 
-            // For each hostname create an ACL
-            return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
-                         .flatMap(Set::stream)
-                         .distinct()
-                         .collect(Collectors.toMap(
-                                 Function.identity(),
-                                 hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
-                                                     trustedNetworks.get(hostname))));
-        } catch (HttpException.NotFoundException e) {
-            NODE_ADMIN_LOGGER.warning("Failed to fetch ACLs for " + hostName + " No ACL will be applied");
-        }
-
-        return Collections.emptyMap();
+        // For each hostname create an ACL
+        return Stream.of(trustedNodes.keySet(), trustedPorts.keySet(), trustedNetworks.keySet())
+                     .flatMap(Set::stream)
+                     .distinct()
+                     .collect(Collectors.toMap(
+                             Function.identity(),
+                             hostname -> new Acl(trustedPorts.get(hostname), trustedNodes.get(hostname),
+                                                 trustedNetworks.get(hostname))));
     }
 
     @Override
@@ -127,7 +120,7 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
 
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to update node attributes: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -137,10 +130,10 @@ public class RealNodeRepository implements NodeRepository {
                 "/nodes/v2/state/" + state + "/" + hostName,
                 Optional.empty(), /* body */
                 NodeMessageResponse.class);
-        NODE_ADMIN_LOGGER.info(response.message);
+        logger.info(response.message);
 
         if (Strings.isNullOrEmpty(response.errorCode)) return;
-        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+        throw new NodeRepositoryException("Failed to set node state: " + response.message + " " + response.errorCode);
     }
 
     private static NodeSpec createNodeSpec(NodeRepositoryNode node) {
@@ -149,30 +142,13 @@ public class RealNodeRepository implements NodeRepository {
 
         Objects.requireNonNull(node.state, "Unknown node state");
         NodeState nodeState = NodeState.valueOf(node.state);
-        if (nodeState == NodeState.active) {
-            Objects.requireNonNull(node.wantedVespaVersion, "Unknown vespa version for active node");
-            Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
-            Objects.requireNonNull(node.restartGeneration, "Unknown restartGeneration for active node");
-            Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");
-        }
 
-        String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
-
-        NodeOwner owner = null;
-        if (node.owner != null) {
-            owner = new NodeOwner(node.owner.tenant, node.owner.application, node.owner.instance);
-        }
-
-        NodeMembership membership = null;
-        if (node.membership != null) {
-            membership = new NodeMembership(node.membership.clusterType, node.membership.clusterId,
-                    node.membership.group, node.membership.index, node.membership.retired);
-        }
-
-        NodeReports reports = NodeReports.fromMap(node.reports == null ? Collections.emptyMap() : node.reports);
+        Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
+                .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
+        NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
 
         return new NodeSpec(
-                hostName,
+                node.hostname,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),
                 Optional.ofNullable(node.currentDockerImage).map(DockerImage::fromString),
                 nodeState,
@@ -185,8 +161,8 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
-                Optional.ofNullable(owner),
-                Optional.ofNullable(membership),
+                Optional.ofNullable(node.owner).map(o -> new NodeOwner(o.tenant, o.application, o.instance)),
+                membership,
                 Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
                 node.rebootGeneration,
@@ -200,7 +176,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.fastDisk,
                 node.bandwidth,
                 node.ipAddresses,
-                Optional.ofNullable(node.hardwareFailureDescription),
+                node.additionalIpAddresses,
                 reports,
                 Optional.ofNullable(node.parentHostname));
     }
@@ -225,7 +201,6 @@ public class RealNodeRepository implements NodeRepository {
         node.vespaVersion = nodeAttributes.getVespaVersion().map(Version::toFullString).orElse(null);
         node.currentOsVersion = nodeAttributes.getCurrentOsVersion().map(Version::toFullString).orElse(null);
         node.currentFirmwareCheck = nodeAttributes.getCurrentFirmwareCheck().map(Instant::toEpochMilli).orElse(null);
-        node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
 
         Map<String, JsonNode> reports = nodeAttributes.getReports();

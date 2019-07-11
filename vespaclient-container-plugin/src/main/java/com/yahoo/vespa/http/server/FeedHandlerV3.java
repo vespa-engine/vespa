@@ -7,7 +7,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
@@ -23,7 +22,6 @@ import com.yahoo.yolean.Exceptions;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +31,7 @@ import java.util.logging.Logger;
  * This code is based on v2 code, however, in v3, one client has one ClientFeederV3 shared between all client threads.
  * The new API has more logic for shutting down cleanly as the server is more likely to be upgraded.
  * The code is restructured a bit.
- * 
+ *
  * @author dybis
  */
 public class FeedHandlerV3 extends LoggingRequestHandler {

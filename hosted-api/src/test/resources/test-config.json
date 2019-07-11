@@ -1,0 +1,13 @@
+{
+  "application": "t:a:i",
+  "zone": "dev.aws-us-east-1c",
+  "system": "publiccd",
+  "zoneEndpoints": {
+    "dev.aws-us-east-1c": {
+      "default": "https://dev.endpoint:443/"
+    },
+    "prod.aws-us-east-1a": {
+      "default": "https://prod.endpoint:443/"
+    }
+  }
+}

@@ -126,16 +126,46 @@
                         </goals>
                         <configuration>
                             <minimizeJar>false</minimizeJar>
+
                             <relocations>
                                 <relocation>
-                                    <pattern>org.apache.http</pattern>
-                                    <shadedPattern>com.yahoo.vespa.feeder.shaded.internal.apache.http</shadedPattern>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>org.apache.commons</pattern>
-                                    <shadedPattern>com.yahoo.vespa.feeder.shaded.internal.apache.commons</shadedPattern>
+                                    <pattern>commons-codec</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>commons-logging</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.hadoop.**</exclude>
+                                        <exclude>org.apache.pig.**</exclude>
+                                    </excludes>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.codehaus</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.airlift</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.ctc.wstx</pattern>
+                                    <shadedPattern>shaded.vespa</shadedPattern>
                                 </relocation>
                             </relocations>
+
                         </configuration>
                     </execution>
                 </executions>

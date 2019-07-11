@@ -118,7 +118,8 @@ struct ServerSampler : public FRT_Invokable
 };
 
 TEST("testExplicitShared") {
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT frt;
+    FRT_Supervisor & orb = frt.supervisor();
     MyBlob         blob;
 
     FRT_RPCRequest *req = orb.AllocRPCRequest();
@@ -171,7 +172,8 @@ TEST("testExplicitShared") {
 
 TEST("testImplicitShared") {
     DataSet dataSet;
-    FRT_Supervisor orb;
+    fnet::frt::StandaloneFRT frt;
+    FRT_Supervisor & orb = frt.supervisor();
     FRT_RPCRequest *req = orb.AllocRPCRequest();
     ServerSampler serverSampler(dataSet, req);
     {
@@ -182,7 +184,6 @@ TEST("testImplicitShared") {
     orb.Listen(0);
     int port = orb.GetListenPort();
     ASSERT_TRUE(port != 0);
-    orb.Start();
 
     char tmp[64];
     snprintf(tmp, sizeof(tmp), "tcp/localhost:%d", port);
@@ -255,7 +256,6 @@ TEST("testImplicitShared") {
     }
     req->SubRef();
     target->SubRef();
-    orb.ShutDown(true);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

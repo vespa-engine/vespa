@@ -6,6 +6,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
@@ -59,10 +60,10 @@ public class ContainerTester {
 
     public void upgradeSystem(Version version) {
         controller().curator().writeControllerVersion(controller().hostname(), version);
-        for (ZoneId zone : controller().zoneRegistry().zones().all().ids()) {
+        for (ZoneApi zone : controller().zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
-                configServer().setVersion(application.id(), zone, version);
-                configServer().convergeServices(application.id(), zone);
+                configServer().setVersion(application.id(), zone.getId(), version);
+                configServer().convergeServices(application.id(), zone.getId());
             }
         }
         computeVersionStatus();

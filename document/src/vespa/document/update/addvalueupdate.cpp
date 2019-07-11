@@ -7,6 +7,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <ostream>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;

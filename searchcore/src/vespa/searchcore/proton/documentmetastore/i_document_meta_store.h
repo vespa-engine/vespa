@@ -5,10 +5,10 @@
 #include "lid_gid_key_comparator.h"
 #include "i_simple_document_meta_store.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/btree/btree.h>
-#include <vespa/searchlib/btree/btreenodeallocator.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
 
 namespace proton {
 

@@ -5,19 +5,19 @@
 #include "documentmetastoresaver.h"
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/readerbase.h>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
-#include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/searchlib/common/rcuvector.hpp>
 #include <vespa/searchlib/query/queryterm.h>
+#include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/fastos/file.h>
 #include "document_meta_store_versions.h"
 
@@ -32,7 +32,7 @@ using search::FileReader;
 using search::GrowStrategy;
 using search::IAttributeSaveTarget;
 using search::LidUsageStats;
-using search::MemoryUsage;
+using vespalib::MemoryUsage;
 using search::attribute::SearchContextParams;
 using search::btree::BTreeNoLeafData;
 using search::fef::TermFieldMatchData;
@@ -200,7 +200,7 @@ DocumentMetaStore::insert(DocId lid, const RawDocumentMetaData &metaData)
 void
 DocumentMetaStore::onUpdateStat()
 {
-    MemoryUsage usage = _metaDataStore.getMemoryUsage();
+    vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
     usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);
@@ -1079,8 +1079,12 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
 
 }  // namespace proton
 
-template class search::btree::
-BTreeIterator<proton::DocumentMetaStore::DocId,
-              search::btree::BTreeNoLeafData,
-              search::btree::NoAggregated,
-              const proton::DocumentMetaStore::KeyComp &>;
+namespace search::btree {
+
+template class BTreeIteratorBase<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS, BTreeDefaultTraits::PATH_SIZE>;
+
+template class BTreeConstIterator<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+
+template class BTreeIterator<proton::DocumentMetaStore::DocId, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+
+}

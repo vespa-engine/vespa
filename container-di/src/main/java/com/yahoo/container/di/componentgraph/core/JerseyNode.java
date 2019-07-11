@@ -47,7 +47,7 @@ public class JerseyNode extends ComponentNode {
         }
 
         componentsToInject.forEach(component -> restApiContext.addInjectableComponent(component.instanceKey(), component.componentId(),
-                component.newOrCachedInstance()));
+                component.component()));
 
         return restApiContext;
     }

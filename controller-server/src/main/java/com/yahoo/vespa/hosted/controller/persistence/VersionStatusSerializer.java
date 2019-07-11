@@ -27,6 +27,13 @@ import java.util.Set;
  */
 public class VersionStatusSerializer {
 
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup), changes to the serialized format must be made
+    //          such that what is serialized on version N+1 can be read by version N:
+    //          - ADDING FIELDS: Always ok
+    //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+    //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
+
     // VersionStatus fields
     private static final String versionsField = "versions";
 
@@ -35,6 +42,7 @@ public class VersionStatusSerializer {
     private static final String committedAtField = "releasedAt";
     private static final String isControllerVersionField = "isCurrentControllerVersion";
     private static final String isSystemVersionField = "isCurrentSystemVersion";
+    private static final String isReleasedField = "isReleased";
     private static final String deploymentStatisticsField = "deploymentStatistics";
     private static final String confidenceField = "confidence";
     private static final String configServersField = "configServerHostnames";
@@ -66,6 +74,7 @@ public class VersionStatusSerializer {
         object.setLong(committedAtField, version.committedAt().toEpochMilli());
         object.setBool(isControllerVersionField, version.isControllerVersion());
         object.setBool(isSystemVersionField, version.isSystemVersion());
+        object.setBool(isReleasedField, version.isReleased());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
         configServersToSlime(version.systemApplicationHostnames(), object.setArray(configServersField));
@@ -98,6 +107,7 @@ public class VersionStatusSerializer {
                                 Instant.ofEpochMilli(object.field(committedAtField).asLong()),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
+                                object.field(isReleasedField).valid() ? object.field(isReleasedField).asBool() : true,
                                 configServersFromSlime(object.field(configServersField)),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );

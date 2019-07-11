@@ -106,7 +106,7 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.fs4ResourcePool = fs4ResourcePool;
 
-        Dispatcher dispatcher = new Dispatcher(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus, metric);
+        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus, metric);
 
         monitor = (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
                 ? new ClusterMonitor(this, monitorConfig, Optional.empty())
@@ -145,7 +145,6 @@ public class ClusterSearcher extends Searcher {
                                                        documentDbConfig);
             addBackendSearcher(searcher);
         } else {
-            System.out.println("Dispatchers: " + searchClusterConfig.dispatcher().size());
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {

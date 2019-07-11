@@ -2,7 +2,7 @@
 
 #include "predicate_interval_store.h"
 #include "predicate_interval.h"
-#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 using search::datastore::BufferState;
 using search::datastore::EntryRef;

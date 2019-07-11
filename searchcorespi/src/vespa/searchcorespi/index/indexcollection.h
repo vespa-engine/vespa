@@ -57,6 +57,12 @@ public:
     static ISearchableIndexCollection::UP
     replaceAndRenumber(const ISourceSelectorSP & selector, const ISearchableIndexCollection &fsc,
                        uint32_t id_diff, const IndexSearchable::SP &new_source);
+
+    // Implements IFieldLengthInspector
+    /**
+     * Returns field length info from the newest disk index, or empty info for all fields if no disk index exists.
+     */
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
 };
 
 }  // namespace searchcorespi

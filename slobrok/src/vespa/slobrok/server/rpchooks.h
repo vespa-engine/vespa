@@ -65,7 +65,6 @@ private:
     void rpc_listManagedRpcServers(FRT_RPCRequest *req);
     void rpc_lookupManaged(FRT_RPCRequest *req);
     void rpc_listAllRpcServers(FRT_RPCRequest *req);
-    void rpc_mirrorFetch(FRT_RPCRequest *req);
     void rpc_incrementalFetch(FRT_RPCRequest *req);
     void rpc_wantAdd(FRT_RPCRequest *req);
     void rpc_doAdd(FRT_RPCRequest *req);

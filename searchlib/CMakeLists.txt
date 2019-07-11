@@ -23,10 +23,8 @@ vespa_define_module(
     src/vespa/searchlib/aggregation
     src/vespa/searchlib/attribute
     src/vespa/searchlib/bitcompression
-    src/vespa/searchlib/btree
     src/vespa/searchlib/common
     src/vespa/searchlib/config
-    src/vespa/searchlib/datastore
     src/vespa/searchlib/diskindex
     src/vespa/searchlib/docstore
     src/vespa/searchlib/engine
@@ -97,24 +95,18 @@ vespa_define_module(
     src/tests/attribute/tensorattribute
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
-    src/tests/btree
     src/tests/bytecomplens
     src/tests/common/bitvector
     src/tests/common/foregroundtaskexecutor
     src/tests/common/location
     src/tests/common/packets
-    src/tests/common/rcuvector
     src/tests/common/resultset
     src/tests/common/sequencedtaskexecutor
     src/tests/common/summaryfeatures
-    src/tests/datastore/array_store
-    src/tests/datastore/array_store_config
-    src/tests/datastore/buffer_type
-    src/tests/datastore/datastore
-    src/tests/datastore/unique_store
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex
     src/tests/diskindex/fieldwriter
+    src/tests/diskindex/field_length_scanner
     src/tests/diskindex/fusion
     src/tests/diskindex/pagedict4
     src/tests/docstore/chunk
@@ -133,6 +125,7 @@ vespa_define_module(
     src/tests/expression/attributenode
     src/tests/features
     src/tests/features/beta
+    src/tests/features/bm25
     src/tests/features/constant
     src/tests/features/element_completeness
     src/tests/features/element_similarity_feature
@@ -171,6 +164,7 @@ vespa_define_module(
     src/tests/hitcollector
     src/tests/index/docbuilder
     src/tests/index/doctypebuilder
+    src/tests/index/field_length_calculator
     src/tests/indexmetainfo
     src/tests/ld-library-path
     src/tests/memoryindex/compact_words_store

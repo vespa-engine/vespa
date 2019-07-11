@@ -12,6 +12,7 @@ namespace search::diskindex {
 using search::bitcompression::PosOccFieldsParams;
 using search::bitcompression::EG2PosOccDecodeContext;
 using search::bitcompression::EGPosOccDecodeContext;
+using search::index::FieldLengthInfo;
 using search::index::PostingListCountFileSeqRead;
 using search::index::PostingListCountFileSeqWrite;
 
@@ -52,9 +53,15 @@ Zc4PosOccSeqRead::getSubIdentifier()
     return d.getIdentifier();
 }
 
+const FieldLengthInfo &
+Zc4PosOccSeqRead::get_field_length_info() const
+{
+    return _fieldsParams.getFieldParams()->get_field_length_info();
+}
 
 Zc4PosOccSeqWrite::Zc4PosOccSeqWrite(const Schema &schema,
                                      uint32_t indexId,
+                                     const FieldLengthInfo &field_length_info,
                                      PostingListCountFileSeqWrite *countFile)
     : Zc4PostingSeqWrite(countFile),
       _fieldsParams(),
@@ -62,6 +69,7 @@ Zc4PosOccSeqWrite::Zc4PosOccSeqWrite(const Schema &schema,
 {
     _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
+    _fieldsParams.set_field_length_info(field_length_info);
 }
 
 
@@ -102,9 +110,15 @@ ZcPosOccSeqRead::getSubIdentifier()
     return d.getIdentifier();
 }
 
+const FieldLengthInfo &
+ZcPosOccSeqRead::get_field_length_info() const
+{
+    return _fieldsParams.getFieldParams()->get_field_length_info();
+}
 
 ZcPosOccSeqWrite::ZcPosOccSeqWrite(const Schema &schema,
                                    uint32_t indexId,
+                                   const FieldLengthInfo &field_length_info,
                                    PostingListCountFileSeqWrite *countFile)
     : ZcPostingSeqWrite(countFile),
       _fieldsParams(),
@@ -112,6 +126,7 @@ ZcPosOccSeqWrite::ZcPosOccSeqWrite(const Schema &schema,
 {
     _writer.set_encode_features(&_realEncodeFeatures);
     _fieldsParams.setSchemaParams(schema, indexId);
+    _fieldsParams.set_field_length_info(field_length_info);
 }
 
 }

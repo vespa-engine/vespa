@@ -29,6 +29,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
@@ -39,7 +40,6 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
-import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -86,6 +86,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERC
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -109,7 +110,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus;
     private final Orchestrator orchestrator;
-    private final LogRetriever logRetriever = new LogRetriever();
+    private final LogRetriever logRetriever;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -119,9 +120,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  HttpProxy httpProxy,
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator) {
-        this(tenantRepository, hostProvisionerProvider.getHostProvisioner(), infraDeployerProvider.getInfraDeployer(),
-             configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
-             Clock.systemUTC(), new FileDistributionStatus());
+        this(tenantRepository,
+             hostProvisionerProvider.getHostProvisioner(),
+             infraDeployerProvider.getInfraDeployer(),
+             configConvergenceChecker,
+             httpProxy,
+             configserverConfig,
+             orchestrator,
+             new LogRetriever(),
+             new FileDistributionStatus(),
+             Clock.systemUTC());
     }
 
     // For testing
@@ -129,17 +137,45 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
                                  Clock clock) {
-        this(tenantRepository, hostProvisioner, orchestrator, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        this(tenantRepository,
+             hostProvisioner,
+             orchestrator,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()),
+             new LogRetriever(),
+             clock);
     }
 
     // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
                                  Orchestrator orchestrator,
-                                 Clock clock,
-                                 ConfigserverConfig configserverConfig) {
-        this(tenantRepository, Optional.of(hostProvisioner), Optional.empty(), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig, orchestrator, clock, new FileDistributionStatus());
+                                 LogRetriever logRetriever,
+                                 Clock clock) {
+        this(tenantRepository,
+             hostProvisioner,
+             orchestrator,
+             new ConfigserverConfig(new ConfigserverConfig.Builder()),
+             logRetriever,
+             clock);
+    }
+
+    // For testing
+    public ApplicationRepository(TenantRepository tenantRepository,
+                                 Provisioner hostProvisioner,
+                                 Orchestrator orchestrator,
+                                 ConfigserverConfig configserverConfig,
+                                 LogRetriever logRetriever,
+                                 Clock clock) {
+        this(tenantRepository,
+             Optional.of(hostProvisioner),
+             Optional.empty(),
+             new ConfigConvergenceChecker(),
+             new HttpProxy(new SimpleHttpFetcher()),
+             configserverConfig,
+             orchestrator,
+             logRetriever,
+             new FileDistributionStatus(),
+             clock);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -149,17 +185,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
                                   Orchestrator orchestrator,
-                                  Clock clock,
-                                  FileDistributionStatus fileDistributionStatus) {
+                                  LogRetriever logRetriever,
+                                  FileDistributionStatus fileDistributionStatus,
+                                  Clock clock) {
         this.tenantRepository = tenantRepository;
         this.hostProvisioner = hostProvisioner;
         this.infraDeployer = infraDeployer;
         this.convergeChecker = configConvergenceChecker;
         this.httpProxy = httpProxy;
-        this.clock = clock;
         this.configserverConfig = configserverConfig;
         this.orchestrator = orchestrator;
+        this.logRetriever = logRetriever;
         this.fileDistributionStatus = fileDistributionStatus;
+        this.clock = clock;
     }
 
     // ---------------- Deploying ----------------------------------------------------------------
@@ -318,22 +356,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TenantApplications tenantApplications = tenant.getApplicationRepo();
         try (Lock lock = tenantApplications.lock(applicationId)) {
             if ( ! tenantApplications.exists(applicationId)) return false;
+
             // Deleting an application is done by deleting the remote session and waiting
             // until the config server where the deployment happened picks it up and deletes
             // the local session
-            long sessionId = tenantApplications.requireActiveSessionOf(applicationId);
-            RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
-            remoteSession.createDeleteTransaction().commit();
-
-            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
-            // TODO: Add support for timeout in request
-            Duration waitTime = Duration.ofSeconds(60);
-            if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
-            } else {
-                log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
-                return false;
-            }
+            boolean sessionDeleted = tenantApplications.activeSessionOf(applicationId).map(sessionId -> {
+                RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
+                remoteSession.createDeleteTransaction().commit();
+                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+                // TODO: Add support for timeout in request
+                Duration waitTime = Duration.ofSeconds(60);
+                if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
+                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+                    return true;
+                } else {
+                    log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
+                    return false;
+                }
+            }).orElse(true);
 
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
@@ -344,9 +384,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
             transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
             transaction.commit();
+            return sessionDeleted;
         }
-
-        return true;
     }
 
     public HttpResponse clusterControllerStatusPage(ApplicationId applicationId, String hostName, String pathSuffix) {
@@ -419,12 +458,19 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private Application getApplication(ApplicationId applicationId) {
+        return getApplication(applicationId, Optional.empty());
+    }
+
+    private Application getApplication(ApplicationId applicationId, Optional<Version> version) {
         try {
             Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
-            if (tenant == null) throw new IllegalArgumentException("Tenant '" + applicationId.tenant() + "' not found");
+            if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
             long sessionId = getSessionIdForApplication(tenant, applicationId);
             RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
-            return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty(), clock.instant());
+            return session.ensureApplicationLoaded().getForVersionOrLatest(version, clock.instant());
+        } catch (NotFoundException e) {
+            log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed getting application for '" + applicationId + "'", e);
             throw e;
@@ -468,12 +514,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Convergence ----------------------------------------------------------------
 
-    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri, Duration timeout) {
-        return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri, timeout);
+    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
+                                                         Duration timeout, Optional<Version> vespaVersion) {
+        return convergeChecker.checkService(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeoutPerService) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeoutPerService);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
+                                                            Duration timeoutPerService, Optional<Version> vespaVersion) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
@@ -494,10 +542,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getActiveSession(tenantRepository.getTenant(applicationId.tenant()), applicationId);
     }
 
-    public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
+    public long getSessionIdForApplication(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+        return getSessionIdForApplication(tenant, applicationId);
+    }
+
+    private long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         if (applicationRepo == null)
-            throw new IllegalArgumentException("Application repo for tenant '" + tenant.getName() + "' not found");
+            throw new NotFoundException("Application repo for tenant '" + tenant.getName() + "' not found");
 
         return applicationRepo.requireActiveSessionOf(applicationId);
     }
@@ -567,7 +621,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())
                 .filter(tenantName -> !tenantName.equals(TenantName.defaultName())) // Not allowed to remove 'default' tenant
-                .filter(tenantName -> !tenantName.equals(TenantRepository.HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
+                .filter(tenantName -> !tenantName.equals(HOSTED_VESPA_TENANT)) // Not allowed to remove 'hosted-vespa' tenant
                 .filter(tenantName -> tenantRepository.getTenant(tenantName).getCreatedTime().isBefore(now.minus(ttlForUnusedTenant)))
                 .peek(tenantRepository::deleteTenant)
                 .collect(Collectors.toSet());
@@ -594,19 +648,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
-
-    public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        TenantName tenantName = applicationId.tenant();
-        if (!tenantRepository.checkThatTenantExists(tenantName)) {
-            throw new IllegalArgumentException("Tenant " + tenantName + " was not found.");
-        }
-        Tenant tenant = tenantRepository.getTenant(tenantName);
-        List<ApplicationId> applicationIds = listApplicationIds(tenant);
-        if (!applicationIds.contains(applicationId)) {
-            throw new IllegalArgumentException("No such application id: " + applicationId);
-        }
-        return tenant;
-    }
 
     public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
         return getLocalSession(tenant, sessionId).getMetaData();
@@ -669,11 +710,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private List<ApplicationId> listApplicationIds(Tenant tenant) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return applicationRepo.activeApplications();
-    }
-
     private void cleanupTempDirectory(File tempDir) {
         logger.log(LogLevel.DEBUG, "Deleting tmp dir '" + tempDir + "'");
         if (!IOUtils.recursiveDeleteDir(tempDir)) {
@@ -710,21 +746,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private String getLogServerURI(ApplicationId applicationId, Optional<String> hostname) {
+        // Allow to get logs from a given hostname if the application is under the hosted-vespa tenant.
+        // We make no validation that the hostname is actually allocated to the given application since
+        // most applications under hosted-vespa are not known to the model and its OK for a user to get
+        // logs for any host if they are authorized for the hosted-vespa tenant.
+        if (hostname.isPresent()) {
+            if (HOSTED_VESPA_TENANT.equals(applicationId.tenant()))
+                return "http://" + hostname.get() + ":8080/logs";
+            else throw new IllegalArgumentException("Only hostname paramater unsupported for application " + applicationId);
+        }
+
         Application application = getApplication(applicationId);
         Collection<HostInfo> hostInfos = application.getModel().getHosts();
-
-        // In ServiceInfo: node-admin does not have
-        // 1) Correct ports
-        // 2) logserver
-        // Assume if hostname is set that this is node-admin hostname
-        // TODO: Fix and simplify this once the above to problems have been fixed
-        if (hostname.isPresent()) {
-            HostInfo logServerHostInfo = hostInfos.stream()
-                    .filter(host -> host.getHostname().equalsIgnoreCase(hostname.get()))
-                    .findFirst().orElseThrow(() ->
-                            new IllegalArgumentException("Host " + hostname.get() + " does not belong to " + applicationId));
-            return "http://" + logServerHostInfo.getHostname() + ":8080/logs";
-        }
 
         HostInfo logServerHostInfo = hostInfos.stream()
                 .filter(host -> host.getServices().stream()
@@ -782,7 +815,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
         if (     environment.isManuallyDeployed()
             &&   sessionVersion.getMajor() == Vtag.currentVersion.getMajor()
-            && ! "hosted-vespa".equals(application.tenant().value()) // Never change version of system applications
+            && ! HOSTED_VESPA_TENANT.equals(application.tenant()) // Never change version of system applications
             && ! application.instance().isTester() // Never upgrade tester containers
             && ! bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;

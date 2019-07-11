@@ -1,9 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/*
- * // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- *
- *
- */
 package com.yahoo.searchdefinition;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -37,6 +32,12 @@ public class FeatureNames {
         if ( ! reference.isSimple()) return false;
         String name = reference.name();
         return name.equals("attribute") || name.equals("constant") || name.equals("query");
+    }
+
+    /** Returns true if this is a constant */
+    public static boolean isConstantFeature(Reference reference) {
+        if ( ! isSimpleFeature(reference)) return false;
+        return reference.name().equals("constant");
     }
 
     /**

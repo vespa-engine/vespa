@@ -22,20 +22,20 @@ public:
     typedef const TermFieldMatchDataPosition * PositionsIterator;
     typedef TermFieldMatchDataPosition * MutablePositionsIterator;
     struct Positions {
+        TermFieldMatchDataPosition *_positions;
         uint16_t                    _maxElementLength;
         uint16_t                    _allocated;
-        TermFieldMatchDataPosition *_positions;
-    } __attribute__((packed));
+    };
 
     union Features {
         feature_t     _rawScore;
         unsigned char _position[sizeof(TermFieldMatchDataPosition)];
         Positions     _positions;
         uint64_t      _subqueries;
-    } __attribute__((packed));
+    };
 private:
-    bool  isRawScore()  const { return _fieldId & 0x8000; }
-    bool  isMultiPos()  const { return _fieldId & 0x4000; }
+    bool  isRawScore()  const { return _flags & RAW_SCORE_FLAG; }
+    bool  isMultiPos()  const { return _flags & MULTIPOS_FLAG; }
     bool  empty() const { return _sz == 0; }
     void  clear() { _sz = 0; }
     bool  allocated() const { return isMultiPos(); }
@@ -49,12 +49,23 @@ private:
     void allocateVector();
     void resizePositionVector(size_t sz) __attribute__((noinline));
 
-    enum { FIELDID_MASK = 0x1fff};
+    static constexpr uint16_t ILLEGAL_FIELD_ID = std::numeric_limits<uint16_t>::max();
+    static constexpr uint16_t RAW_SCORE_FLAG = 1;
+    static constexpr uint16_t MULTIPOS_FLAG = 2;
+    static constexpr uint16_t UNPACK_NORMAL_FEATURES_FLAG = 4;
+    static constexpr uint16_t UNPACK_INTERLEAVED_FEATURES_FLAG = 8;
+    static constexpr uint16_t UNPACK_ALL_FEATURES_MASK = UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
 
     uint32_t  _docId;
-    // 3 upper bits used to tell if it is use for RawScore, SinglePos or multiPos.
     uint16_t  _fieldId;
+    uint16_t  _flags;
     uint16_t  _sz;
+
+    // Number of occurrences and field length used when unpacking interleaved features.
+    // This can exist in addition to full position features.
+    uint16_t _numOccs;
+    uint16_t _fieldLength;
+
     Features  _data;
 
     friend class ::MatchDataHeapTest;
@@ -107,7 +118,7 @@ public:
      * @return field id
      **/
     uint32_t getFieldId() const {
-        return __builtin_expect((_fieldId & FIELDID_MASK) != FIELDID_MASK, true) ? (_fieldId & FIELDID_MASK) : IllegalFieldId;
+        return __builtin_expect(_fieldId != ILLEGAL_FIELD_ID, true) ? _fieldId : IllegalFieldId;
     }
 
     /**
@@ -120,6 +131,8 @@ public:
     TermFieldMatchData &reset(uint32_t docId) {
         _docId = docId;
         _sz = 0;
+        _numOccs = 0;
+        _fieldLength = 0;
         if (isRawScore()) {
             _data._rawScore = 0.0;
         } else if (isMultiPos()) {
@@ -157,7 +170,7 @@ public:
         return *this;
     }
     TermFieldMatchData & enableRawScore() {
-        _fieldId = _fieldId | 0x8000;
+        _flags |= RAW_SCORE_FLAG;
         return *this;
     }
 
@@ -236,24 +249,49 @@ public:
         return FieldPositionsIterator(len != 0 ? len : FieldPositionsIterator::UNKNOWN_LENGTH, begin(), end());
     }
 
+    uint16_t getNumOccs() const { return _numOccs; }
+    uint16_t getFieldLength() const { return _fieldLength; }
+
+    void setNumOccs(uint16_t value) { _numOccs = value; }
+    void setFieldLength(uint16_t value) { _fieldLength = value; }
+
     /**
      * This indicates if this instance is actually used for ranking or not.
      * @return true if it is not needed.
      */
-    bool  isNotNeeded() const { return _fieldId & 0x2000; }
+    bool  isNotNeeded() const { return ((_flags & (UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG)) == 0u); }
+
+    bool needs_normal_features() const { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
+
+    bool needs_interleaved_features() const { return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
 
     /**
      * Tag that this instance is not really used for ranking.
      */
     void tagAsNotNeeded() {
-        _fieldId = _fieldId | 0x2000;
+        _flags &=  ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG);
     }
 
     /**
-     * Tag that this instance is used for ranking.
+     * Tag that this instance is used for ranking (normal features)
      */
-    void tagAsNeeded() {
-        _fieldId = _fieldId & ~0x2000;
+    void setNeedNormalFeatures(bool needed) {
+        if (needed) {
+            _flags |= UNPACK_NORMAL_FEATURES_FLAG;
+        } else {
+            _flags &= ~UNPACK_NORMAL_FEATURES_FLAG;
+        }
+    }
+
+    /**
+     * Tag that this instance is used for ranking (interleaved features)
+     */
+    void setNeedInterleavedFeatures(bool needed) {
+        if (needed) {
+            _flags |= UNPACK_INTERLEAVED_FEATURES_FLAG;
+        } else {
+            _flags &= ~UNPACK_INTERLEAVED_FEATURES_FLAG;
+        }
     }
 
     /**
@@ -263,6 +301,6 @@ public:
      * @return constant
      **/
     static uint32_t invalidId() { return 0xdeadbeefU; }
-} __attribute__((packed));
+};
 
 }

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/entryref.h>
 
 namespace search::attribute {
 

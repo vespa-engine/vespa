@@ -6,9 +6,8 @@ import com.yahoo.data.access.Type;
 import com.yahoo.search.result.FeatureData;
 
 /**
- * Class representing a "feature data" field.  This was historically
- * just a string containing JSON; now it's a structure of
- * data (that will be rendered as JSON by default).
+ * Class representing a "feature data" field: A map of values which are
+ * either floats or tensors.
  */
 public class FeatureDataField extends LongstringField {
 
@@ -23,12 +22,8 @@ public class FeatureDataField extends LongstringField {
 
     @Override
     public Object convert(Inspector value) {
-        if (! value.valid()) {
-            return null;
-        }
-        if (value.type() == Type.STRING) {
-            return value.asString();
-        }
+        if ( ! value.valid()) return null;
+        if (value.type() == Type.STRING) return value.asString();
         return new FeatureData(value);
     }
 

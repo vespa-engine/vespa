@@ -10,8 +10,7 @@ LOG_SETUP(".fef.blueprint");
 namespace search::fef {
 
 const FeatureType &
-Blueprint::defineInput(vespalib::stringref inName,
-                       AcceptInput accept)
+Blueprint::defineInput(vespalib::stringref inName, AcceptInput accept)
 {
     assert(_dependency_handler != nullptr);
     return _dependency_handler->resolve_input(inName, accept);
@@ -60,13 +59,48 @@ Blueprint::setup(const IIndexEnvironment &indexEnv,
 }
 
 bool
-Blueprint::setup(const IIndexEnvironment &indexEnv,
-                 const ParameterList &params)
+Blueprint::setup(const IIndexEnvironment &indexEnv, const ParameterList &params)
 {
     (void) indexEnv; (void) params;
     LOG(error, "The setup function using a typed parameter list does not have a default implementation. "
         "Make sure the setup function is implemented in the rank feature %s.", getBaseName().c_str());
     return false;
+}
+
+void
+Blueprint::prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const {
+    (void) queryEnv; (void) objectStore;
+}
+
+const attribute::IAttributeVector *
+Blueprint::lookupAndStoreAttribute(const vespalib::string & key, vespalib::stringref attrName,
+                                   const IQueryEnvironment & env, IObjectStore & store)
+{
+    const Anything * obj = store.get(key);
+    if (obj == nullptr) {
+        const IAttributeVector * attribute = env.getAttributeContext().getAttribute(attrName);
+        store.add(key, std::make_unique<AnyWrapper<const IAttributeVector *>>(attribute));
+        return attribute;
+    }
+    return static_cast<const AnyWrapper<const IAttributeVector *> *>(obj)->getValue();
+}
+
+const attribute::IAttributeVector *
+Blueprint::lookupAttribute(const vespalib::string & key, vespalib::stringref attrName, const IQueryEnvironment & env)
+{
+    const Anything * attributeArg = env.getObjectStore().get(key);
+    const IAttributeVector * attribute = (attributeArg != nullptr)
+                                       ? static_cast<const AnyWrapper<const IAttributeVector *> *>(attributeArg)->getValue()
+                                       : nullptr;
+    if (attribute == nullptr) {
+        attribute = env.getAttributeContext().getAttribute(attrName);
+    }
+    return attribute;;
+}
+
+vespalib::string
+Blueprint::createAttributeKey(vespalib::stringref attrName) {
+    return "fef.attribute.key." + attrName;
 }
 
 }

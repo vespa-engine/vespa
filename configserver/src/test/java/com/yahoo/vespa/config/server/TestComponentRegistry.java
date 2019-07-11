@@ -3,10 +3,14 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -28,6 +32,7 @@ import com.yahoo.vespa.model.VespaModelFactory;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 
 
 /**
@@ -40,7 +45,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Metrics metrics;
     private final SessionPreparer sessionPreparer;
     private final ConfigserverConfig configserverConfig;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
     private final ConfigDefinitionRepo defRepo;
     private final ReloadListener reloadListener;
     private final TenantListener tenantListener;
@@ -52,6 +56,9 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final Zone zone;
     private final Clock clock;
     private final ConfigServerDB configServerDB;
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final ExecutorService zkCacheExecutor;
+    private final SecretStore secretStore;
 
     private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
                                   ModelFactoryRegistry modelFactoryRegistry,
@@ -65,14 +72,14 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ReloadListener reloadListener,
                                   TenantListener tenantListener,
                                   Zone zone,
-                                  Clock clock) {
+                                  Clock clock,
+                                  SecretStore secretStore) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
-        this.superModelGenerationCounter = new SuperModelGenerationCounter(curator);
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
@@ -83,6 +90,9 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.zone = zone;
         this.clock = clock;
         this.configServerDB = new ConfigServerDB(configserverConfig);
+        this.zkWatcherExecutor = new StripedExecutor<>(new InThreadExecutorService());
+        this.zkCacheExecutor = new InThreadExecutorService();
+        this.secretStore = secretStore;
     }
 
     public static class Builder {
@@ -92,6 +102,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
                         .configServerDBDir(Files.createTempDir().getAbsolutePath())
+                        .sessionLifetime(5)
                         .configDefinitionsDir(Files.createTempDir().getAbsolutePath()));
         private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
         private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
@@ -151,14 +162,15 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                     .orElse(new MockFileDistributionFactory(configserverConfig));
             HostProvisionerProvider hostProvisionerProvider = hostProvisioner.
                     map(HostProvisionerProvider::withProvisioner).orElseGet(HostProvisionerProvider::empty);
+            SecretStore secretStore = new MockSecretStore();
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
-                                                                  zone, new InMemoryFlagSource());
+                                                                  zone, new InMemoryFlagSource(), secretStore);
             return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
                                              permApp, fileDistributionFactory, hostRegistries, configserverConfig,
                                              sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
-                                             zone, clock);
+                                             zone, clock, secretStore);
         }
     }
 
@@ -176,8 +188,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public TenantListener getTenantListener() { return tenantListener; }
     @Override
     public ReloadListener getReloadListener() { return reloadListener; }
-    @Override
-    public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return defRepo; }
     @Override
@@ -198,8 +208,24 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public Clock getClock() { return clock;}
     @Override
     public ConfigServerDB getConfigServerDB() { return configServerDB;}
+
+    @Override
+    public StripedExecutor<TenantName> getZkWatcherExecutor() {
+        return zkWatcherExecutor;
+    }
+
     @Override
     public FlagSource getFlagSource() { return new InMemoryFlagSource(); }
+
+    @Override
+    public ExecutorService getZkCacheExecutor() {
+        return zkCacheExecutor;
+    }
+
+    @Override
+    public SecretStore getSecretStore() {
+        return secretStore;
+    }
 
     public FileDistributionFactory getFileDistributionFactory() { return fileDistributionFactory; }
 

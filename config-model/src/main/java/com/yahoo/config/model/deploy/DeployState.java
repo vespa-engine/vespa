@@ -11,9 +11,11 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -67,6 +69,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final ModelContext.Properties properties;
     private final Version vespaVersion;
     private final Set<Rotation> rotations;
+    private final Set<ContainerEndpoint> endpoints;
     private final Zone zone;
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
@@ -78,6 +81,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     public static DeployState createTestState() {
         return new Builder().build();
+    }
+
+    public static DeployState createTestState(DeployLogger testLogger) {
+        return new Builder().deployLogger(testLogger).build();
     }
 
     public static DeployState createTestState(ApplicationPackage applicationPackage) {
@@ -96,6 +103,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel,
                         Set<Rotation> rotations,
+                        Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
                         Zone zone,
                         QueryProfiles queryProfiles,
@@ -115,17 +123,19 @@ public class DeployState implements ConfigDefinitionStore {
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.rotations = rotations;
+        this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = new ImportedMlModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR),
                                                    modelImporters);
 
+        ValidationOverrides suppliedValidationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
+                                                                            .orElse(ValidationOverrides.empty);
         this.validationOverrides =
-                zone.environment().isManuallyDeployed()
-                ? ValidationOverrides.all // Don't protect manually deployed zones
-                : applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
-                                    .orElse(ValidationOverrides.empty);
+                zone.environment().isManuallyDeployed() // // Warn but allow in manually deployed zones
+                ? new ValidationOverrides.AllowAllValidationOverrides(suppliedValidationOverrides, deployLogger)
+                : suppliedValidationOverrides;
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
@@ -233,6 +243,10 @@ public class DeployState implements ConfigDefinitionStore {
         return this.rotations; // todo: consider returning a copy or immutable view
     }
 
+    public Set<ContainerEndpoint> getEndpoints() {
+        return endpoints;
+    }
+
     /** Returns the zone in which this is currently running */
     public Zone zone() { return zone; }
 
@@ -247,6 +261,8 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Instant now() { return now; }
 
+    public Optional<TlsSecrets> tlsSecrets() { return properties.tlsSecrets(); }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -259,10 +275,12 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
         private Set<Rotation> rotations = new HashSet<>();
+        private Set<ContainerEndpoint> endpoints = Set.of();
         private Collection<MlModelImporter> modelImporters = Collections.emptyList();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
+        private Optional<TlsSecrets> tlsSecrets = Optional.empty();
 
         public Builder applicationPackage(ApplicationPackage applicationPackage) {
             this.applicationPackage = applicationPackage;
@@ -314,6 +332,11 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
+        public Builder endpoints(Set<ContainerEndpoint> endpoints) {
+            this.endpoints = endpoints;
+            return this;
+        }
+
         public Builder modelImporters(Collection<MlModelImporter> modelImporters) {
             this.modelImporters = modelImporters;
             return this;
@@ -340,7 +363,7 @@ public class DeployState implements ConfigDefinitionStore {
 
         public DeployState build(ValidationParameters validationParameters) {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-            QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage);
+            QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, logger, queryProfiles, validationParameters);
             return new DeployState(applicationPackage,
@@ -355,6 +378,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    configDefinitionRepo,
                                    previousModel,
                                    rotations,
+                                   endpoints,
                                    modelImporters,
                                    zone,
                                    queryProfiles,

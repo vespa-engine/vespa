@@ -5,5 +5,7 @@ vespa_add_library(searchlib_bitcompression OBJECT
     countcompression.cpp
     pagedict4.cpp
     posocccompression.cpp
+    posocc_fields_params.cpp
+    posocc_field_params.cpp
     DEPENDS
 )

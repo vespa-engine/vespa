@@ -46,7 +46,6 @@ public class LocalSessionRepoTest {
     }
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
-        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(new MockCurator()).build();
         TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         if (createInitialSessions) {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "1"));
@@ -54,11 +53,14 @@ public class LocalSessionRepoTest {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "3"));
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
+        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(new MockCurator())
+                                                                                             .clock(clock)
+                                                                                             .build();
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
-                                                           TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName),
+                                                           TenantApplications.create(globalComponentRegistry, new MockReloadHandler(), tenantName),
                                                            tenantFileSystemDirs, new HostRegistry<>(),
                                                            tenantName);
-        repo = new LocalSessionRepo(tenantFileSystemDirs, loader, clock, 5, globalComponentRegistry.getCurator());
+        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, tenantFileSystemDirs, loader);
     }
 
     @Test

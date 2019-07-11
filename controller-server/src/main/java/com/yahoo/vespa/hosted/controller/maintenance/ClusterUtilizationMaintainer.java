@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Fetch utilization metrics and update applications with this data.
@@ -24,7 +26,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     private final Controller controller;
 
     public ClusterUtilizationMaintainer(Controller controller, Duration duration, JobControl jobControl) {
-        super(controller, duration, jobControl);
+        super(controller, duration, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.controller = controller;
     }
 

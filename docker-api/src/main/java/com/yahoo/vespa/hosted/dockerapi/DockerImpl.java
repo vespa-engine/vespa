@@ -26,9 +26,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
@@ -42,7 +41,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DockerImpl implements Docker {
@@ -57,19 +55,18 @@ public class DockerImpl implements Docker {
 
     private final DockerClient dockerClient;
     private final DockerImageGarbageCollector dockerImageGC;
-    private final CounterWrapper numberOfDockerDaemonFails;
+    private final Counter numberOfDockerApiFails;
 
     @Inject
-    public DockerImpl(MetricReceiverWrapper metricReceiverWrapper) {
-        this(createDockerClient(), metricReceiverWrapper);
+    public DockerImpl(Metrics metrics) {
+        this(createDockerClient(), metrics);
     }
 
-    DockerImpl(DockerClient dockerClient, MetricReceiverWrapper metricReceiver) {
+    DockerImpl(DockerClient dockerClient, Metrics metrics) {
         this.dockerClient = dockerClient;
         this.dockerImageGC = new DockerImageGarbageCollector(this);
 
-        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
-        numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
+        numberOfDockerApiFails = metrics.declareCounter("docker.api_fails");
     }
 
     @Override
@@ -87,7 +84,7 @@ public class DockerImpl implements Docker {
                 return true;
             }
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to pull image '" + image.asString() + "'", e);
         }
     }
@@ -111,7 +108,7 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException e) {
             return Optional.empty();
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to inspect image '" + dockerImage.asString() + "'", e);
         }
     }
@@ -147,7 +144,7 @@ public class DockerImpl implements Docker {
 
             return new ProcessResult(state.getExitCode(), new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (RuntimeException | InterruptedException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Container '" + containerName.asString()
                     + "' failed to execute " + Arrays.toString(command), e);
         }
@@ -172,7 +169,7 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException ignored) {
             return Optional.empty();
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to get info for container '" + container + "'", e);
         }
     }
@@ -187,7 +184,7 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException ignored) {
             return Optional.empty();
         } catch (RuntimeException | InterruptedException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to get stats for container '" + containerName.asString() + "'", e);
         }
     }
@@ -201,7 +198,7 @@ public class DockerImpl implements Docker {
         } catch (NotModifiedException ignored) {
             // If is already started, ignore
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to start container '" + containerName.asString() + "'", e);
         }
     }
@@ -215,7 +212,7 @@ public class DockerImpl implements Docker {
         } catch (NotModifiedException ignored) {
             // If is already stopped, ignore
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to stop container '" + containerName.asString() + "'", e);
         }
     }
@@ -227,7 +224,7 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException e) {
             throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to delete container '" + containerName.asString() + "'", e);
         }
     }
@@ -254,18 +251,9 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException e) {
             throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to update container '" + containerName.asString() + "' to " + resources, e);
         }
-    }
-
-    @Override
-    public List<Container> getAllContainersManagedBy(String manager) {
-        return listAllContainers().stream()
-                .filter(container -> isManagedBy(container, manager))
-                .map(com.github.dockerjava.api.model.Container::getId)
-                .flatMap(this::asContainer)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -306,11 +294,18 @@ public class DockerImpl implements Docker {
         return encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length());
     }
 
+    @Override
+    public boolean noManagedContainersRunning(String manager) {
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .noneMatch(container -> "running".equalsIgnoreCase(container.getState()));
+    }
+
     List<com.github.dockerjava.api.model.Container> listAllContainers() {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to list all containers", e);
         }
     }
@@ -319,7 +314,7 @@ public class DockerImpl implements Docker {
         try {
             return dockerClient.listImagesCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to list all images", e);
         }
     }
@@ -330,7 +325,7 @@ public class DockerImpl implements Docker {
         } catch (NotFoundException ignored) {
             // Image was already deleted, ignore
         } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
+            numberOfDockerApiFails.increment();
             throw new DockerException("Failed to delete docker image " + dockerImage.asString(), e);
         }
     }
@@ -360,6 +355,7 @@ public class DockerImpl implements Docker {
                 logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
                 removeScheduledPoll(dockerImage);
             } else {
+                numberOfDockerApiFails.increment();
                 throw new DockerClientException("Could not download image: " + dockerImage);
             }
         }

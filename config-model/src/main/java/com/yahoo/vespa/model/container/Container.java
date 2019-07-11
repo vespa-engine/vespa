@@ -10,6 +10,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -36,6 +37,10 @@ import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
 
 /**
+ * Note about components: In general, all components should belong to the cluster and not the container. However,
+ * components that need node specific config must be added at the container level, along with the node-specific
+ * parts of the config generation (getConfig).
+ *
  * @author gjoranv
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
@@ -70,7 +75,6 @@ public abstract class Container extends AbstractService implements
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
     protected final int numHttpServerPorts;
-    private static final int numRpcServerPorts = 2;
 
     protected Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, false, index);
@@ -84,6 +88,7 @@ public abstract class Container extends AbstractService implements
         this.index = index;
 
         if (getHttp() == null) {
+            // TODO Vespa 8: set to 1. The second (health) port has not been used since Vespa 6 or earlier.
             numHttpServerPorts = 2;
             addChild(defaultHttpServer);
         } else if (getHttp().getHttpServer() == null) {
@@ -107,11 +112,15 @@ public abstract class Container extends AbstractService implements
         return components;
     }
 
-    public void addComponent(Component c) {
+    public final void addComponent(Component c) {
         components.addComponent(c);
     }
 
-    public void addHandler(Handler h) {
+    public final void addSimpleComponent(String idSpec, String classSpec, String bundleSpec) {
+        addComponent(new SimpleComponent(new ComponentModel(idSpec, classSpec, bundleSpec)));
+    }
+
+    public final void addHandler(Handler h) {
         handlers.addComponent(h);
     }
     
@@ -156,16 +165,19 @@ public abstract class Container extends AbstractService implements
     }
 
     protected void tagServers() {
+        int offset = 0;
         if (numHttpServerPorts > 0) {
-            portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
+            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
         }
 
         for (int i = 1; i < numHttpServerPorts; i++)
-            portsMeta.on(i).tag("http").tag("external");
+            portsMeta.on(offset++).tag("http").tag("external");
 
+        if (messageBusEnabled()) {
+            portsMeta.on(offset++).tag("rpc").tag("messaging");
+        }
         if (rpcServerEnabled()) {
-            portsMeta.on(numHttpServerPorts + 0).tag("rpc").tag("messaging");
-            portsMeta.on(numHttpServerPorts + 1).tag("rpc").tag("admin");
+            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 
@@ -226,12 +238,12 @@ public abstract class Container extends AbstractService implements
     }
 
     /**
-     * @return the number of ports needed by the Container - those reserved manually(reservePortPrepended)
+     * @return the number of ports needed by the Container except those reserved manually(reservePortPrepended)
      */
     public int getPortCount() {
-        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2; // TODO remove +2, only here to keep irrelevant unit tests from failing.
-        int rpcPorts = (rpcServerEnabled()) ? numRpcServerPorts : 0;
-        return httpPorts + rpcPorts;
+        // TODO Vespa 8: remove +2, only here for historical reasons
+        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2;
+        return httpPorts + numMessageBusPorts() + numRpcPorts();
     }
 
     @Override
@@ -247,12 +259,11 @@ public abstract class Container extends AbstractService implements
         for (int i = 1; i < httpPorts; i++) {
             suffixes[off++] = "http/" + i;
         }
-        int rpcPorts = (rpcServerEnabled()) ? numRpcServerPorts : 0;
-        if (rpcPorts > 0) {
+        if (messageBusEnabled()) {
             suffixes[off++] = "messaging";
         }
-        if (rpcPorts > 1) {
-            suffixes[off++] = "rpc";
+        if (rpcServerEnabled()) {
+            suffixes[off++] = "rpc/admin";
         }
         while (off < n) {
             suffixes[off] = "unused/" + off;
@@ -274,12 +285,17 @@ public abstract class Container extends AbstractService implements
     }
 
     private int getRpcPort() {
-        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + 1) : 0;
+        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + numMessageBusPorts()) : 0;
     }
 
+    protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }
+
+
     private int getMessagingPort() {
-        return getRelativePort(numHttpServerPorts);
+        return messageBusEnabled() ? getRelativePort(numHttpServerPorts) : 0;
     }
+
+    protected int numMessageBusPorts() { return messageBusEnabled() ? 1 : 0; }
 
     @Override
     public int getHealthPort()  {

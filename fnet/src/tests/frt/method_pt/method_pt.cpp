@@ -18,6 +18,7 @@ class ComplexHandler3;
 
 Test             *_test;
 
+std::unique_ptr<fnet::frt::StandaloneFRT> _server;
 FRT_Supervisor   *_supervisor;
 FRT_Target       *_target;
 SimpleHandler    *_simpleHandler;
@@ -176,7 +177,8 @@ public:
 //-------------------------------------------------------------
 
 void initTest() {
-  _supervisor      = new FRT_Supervisor();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+  _supervisor      = &_server->supervisor();
   _simpleHandler   = new SimpleHandler();
   _mediumHandler1  = new MediumHandler1();
   _mediumHandler2  = new MediumHandler2();
@@ -199,9 +201,6 @@ void initTest() {
                                            _supervisor->GetListenPort());
   _target = _supervisor->GetTarget(spec.c_str());
   ASSERT_TRUE(_target != nullptr);
-
-  bool startOK = _supervisor->Start();
-  ASSERT_TRUE(startOK);
 
   FRT_ReflectionBuilder rb(_supervisor);
 
@@ -247,7 +246,6 @@ void initTest() {
 
 
 void finiTest() {
-  _supervisor->ShutDown(true);
   delete _complexHandler1;
   delete _complexHandler2;
   delete _complexHandler3;
@@ -256,7 +254,7 @@ void finiTest() {
   delete _mediumHandler3;
   delete _simpleHandler;
   _target->SubRef();
-  delete _supervisor;
+  _server.reset();
 }
 
 

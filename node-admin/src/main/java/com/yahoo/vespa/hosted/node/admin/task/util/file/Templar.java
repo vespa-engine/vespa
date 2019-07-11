@@ -14,8 +14,8 @@ import java.util.Map;
 public class Templar {
     private final String template;
 
-    private String prefix = "<%=";
-    private String suffix = "%>";
+    private static final String prefix = "<%=";
+    private static final String suffix = "%>";
 
     private final Map<String, String> settings = new HashMap<>();
 

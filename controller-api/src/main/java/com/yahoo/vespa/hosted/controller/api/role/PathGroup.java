@@ -50,7 +50,9 @@ enum PathGroup {
     application(Matcher.tenant,
                 Matcher.application,
                 Optional.of("/api"),
-                "/application/v4/tenant/{tenant}/application/{application}"),
+                "/application/v4/tenant/{tenant}/application/{application}",
+                "/application/v4/tenant/{tenant}/application/{application}/instance/",
+                "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}"),
 
     /** Paths used for user management on the application level. */
     applicationUsers(Matcher.tenant,
@@ -63,17 +65,26 @@ enum PathGroup {
                     Matcher.application,
                     Optional.of("/api"),
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspended",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/suspended",
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{*}",
-                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}"),
+                    "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/{*}",
+                    "/application/v4/tenant/{tenant}/application/{application}/metering"),
 
     /** Path used to restart development nodes. */
     developmentRestart(Matcher.tenant,
                        Matcher.application,
                        Optional.of("/api"),
+                       "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/dev/region/{region}/restart",
+                       "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/perf/region/{region}/restart",
                        "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{ignored}/restart",
                        "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{ignored}/restart"),
 
@@ -81,6 +92,9 @@ enum PathGroup {
     productionRestart(Matcher.tenant,
                       Matcher.application,
                       Optional.of("/api"),
+                      "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/prod/region/{region}/restart",
+                      "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/test/region/{region}/restart",
+                      "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/environment/staging/region/{region}/restart",
                       "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{ignored}/restart",
                       "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{ignored}/restart",
                       "/application/v4/tenant/{tenant}/application/{application}/environment/staging/region/{region}/instance/{ignored}/restart"),
@@ -90,6 +104,10 @@ enum PathGroup {
                           Matcher.application,
                           Optional.of("/api"),
                           "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{job}",
+                          "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/dev/region/{region}",
+                          "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/dev/region/{region}/deploy",
+                          "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/perf/region/{region}",
+                          "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/perf/region/{region}/deploy",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/deploy",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}",
@@ -99,6 +117,12 @@ enum PathGroup {
     productionDeployment(Matcher.tenant,
                          Matcher.application,
                          Optional.of("/api"),
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/prod/region/{region}",
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/prod/region/{region}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/test/region/{region}",
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/test/region/{region}/deploy",
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/staging/region/{region}",
+                         "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/staging/region/{region}/deploy",
                          "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}",
                          "/application/v4/tenant/{tenant}/application/{application}/environment/prod/region/{region}/instance/{instance}/deploy",
                          "/application/v4/tenant/{tenant}/application/{application}/environment/test/region/{region}/instance/{instance}",
@@ -110,15 +134,15 @@ enum PathGroup {
     submission(Matcher.tenant,
                Matcher.application,
                Optional.of("/api"),
-               "/application/v4/tenant/{tenant}/application/{application}/submit"),
+               "/application/v4/tenant/{tenant}/application/{application}/submit",
+               "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit"),
 
     /** Paths used for other tasks by build services. */ // TODO: This will vanish.
     buildService(Matcher.tenant,
                  Matcher.application,
                  Optional.of("/api"),
                  "/application/v4/tenant/{tenant}/application/{application}/jobreport",
-                 "/application/v4/tenant/{tenant}/application/{application}/promote",
-                 "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/promote"),
+                 "/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/jobreport"),
 
     /** Paths which contain (not very strictly) classified information about customers. */
     classifiedTenantInfo(Optional.of("/api"),
@@ -134,7 +158,8 @@ enum PathGroup {
                    "/statuspage/v1/{*}"),
 
     /** Paths providing public information. */
-    publicInfo("/badge/v1/{*}",
+    publicInfo(Optional.of("/api"),
+               "/badge/v1/{*}",
                "/zone/v1/{*}");
 
     final List<String> pathSpecs;

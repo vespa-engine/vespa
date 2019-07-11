@@ -9,10 +9,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -33,10 +33,9 @@ import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,8 +50,7 @@ public class FailedExpirerTest {
 
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
     private static final ClusterSpec tenantHostApplicationClusterSpec =  ClusterSpec.request(
-            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false,
-            Collections.emptySet());
+            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
     @Test
@@ -128,6 +126,27 @@ public class FailedExpirerTest {
 
         scenario.assertNodesIn(Node.State.dirty, "node1");
         scenario.assertNodesIn(Node.State.parked, "node2", "node3");
+    }
+
+    @Test
+    public void ensure_non_tenant_nodes_and_hosts_are_not_recycled() {
+        FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
+                .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy1")
+                .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy2")
+                .withNode(NodeType.proxy, FailureScenario.defaultFlavor, "proxy3")
+                .setReady("proxy1", "proxy2", "proxy3")
+                .allocate( ApplicationId.from("vespa", "zone-app", "default"),
+                        ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("routing"), Version.fromString("6.42"), false),
+                        Capacity.fromRequiredNodeType(NodeType.proxy))
+                .failNode(1, "proxy1");
+
+        for (int i = 0; i < 10; i++) {
+            scenario.clock().advance(Duration.ofHours(2));
+            scenario.expirer().run();
+        }
+
+        scenario.assertNodesIn(Node.State.failed, "proxy1");
+        scenario.assertNodesIn(Node.State.active, "proxy2", "proxy3");
     }
 
     @Test
@@ -274,7 +293,7 @@ public class FailedExpirerTest {
         }
 
         public FailureScenario withNode(NodeType type, NodeResources flavor, String hostname, String parentHostname) {
-            nodeRepository.addNodes(Collections.singletonList(
+            nodeRepository.addNodes(List.of(
                     nodeRepository.createNode(UUID.randomUUID().toString(), hostname,
                                               Optional.ofNullable(parentHostname), new Flavor(flavor), type)
             ));
@@ -292,7 +311,7 @@ public class FailedExpirerTest {
         public FailureScenario failNode(int times, String... hostname) {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
-                nodeRepository.write(node.with(node.status().setFailCount(times)));
+                nodeRepository.write(node.with(node.status().setFailCount(times)), () -> {});
                 nodeRepository.fail(h, Agent.system, "Failed by unit test");
             });
             return this;
@@ -302,7 +321,7 @@ public class FailedExpirerTest {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
                 nodeRepository.write(node.with(node.status().withHardwareFailureDescription(
-                        Optional.of("memory_mcelog"))));
+                        Optional.of("memory_mcelog"))), () -> {});
                 nodeRepository.fail(h, Agent.system, "Failed by unit test");
             });
             return this;
@@ -325,8 +344,8 @@ public class FailedExpirerTest {
             ClusterSpec clusterSpec = ClusterSpec.request(clusterType,
                                                           ClusterSpec.Id.from("test"),
                                                           Version.fromString("6.42"),
-                                                          false,
-                                                          Collections.emptySet());
+                                                          false
+            );
             Capacity capacity = Capacity.fromCount(hostname.length, Optional.of(flavor), false, true);
             return allocate(applicationId, clusterSpec, capacity);
         }
@@ -334,7 +353,7 @@ public class FailedExpirerTest {
         public FailureScenario allocate(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity capacity) {
             List<HostSpec> preparedNodes = provisioner.prepare(applicationId, clusterSpec, capacity, 1, null);
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(transaction, applicationId, new HashSet<>(preparedNodes));
+            provisioner.activate(transaction, applicationId, Set.copyOf(preparedNodes));
             transaction.commit();
             return this;
         }

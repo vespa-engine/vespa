@@ -29,9 +29,13 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
     }
 
     @Override
-    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
-        LoadBalancerId id = new LoadBalancerId(application, cluster);
-        LoadBalancerInstance instance = new LoadBalancerInstance(
+    public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
+        var id = new LoadBalancerId(application, cluster);
+        var oldInstance = instances.get(id);
+        if (!force && oldInstance != null && !oldInstance.reals().isEmpty() && reals.isEmpty()) {
+            throw new IllegalArgumentException("Refusing to remove all reals from load balancer " + id);
+        }
+        var instance = new LoadBalancerInstance(
                 HostName.from("lb-" + application.toShortString() + "-" + cluster.value()),
                 Optional.of(new DnsZone("zone-id-1")),
                 Collections.singleton(4443),

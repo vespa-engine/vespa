@@ -5,6 +5,8 @@
 
 namespace search {
 
+using vespalib::AddressSpace;
+
 AddressSpaceUsage::AddressSpaceUsage()
         : _enumStoreUsage(defaultEnumStoreUsage()),
           _multiValueUsage(defaultMultiValueUsage()) {

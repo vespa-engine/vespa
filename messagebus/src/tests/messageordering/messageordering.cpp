@@ -54,7 +54,7 @@ public:
             simpleMsg.getValue().c_str(),
             expected.c_str());
 
-        SimpleReply::UP sr(new SimpleReply("test reply"));
+        auto sr =std::make_unique<SimpleReply>("test reply");
         msg->swapState(*sr);
 
         if (simpleMsg.getValue() != expected) {
@@ -163,11 +163,11 @@ Test::Main()
     int commonMessageId = 42;
 
     // send messages on client
-    const int messageCount = 10000;
+    const int messageCount = 5000;
     for (int i = 0; i < messageCount; ++i) {
         vespalib::string str(vespalib::make_string("%d", i));
         //FastOS_Thread::Sleep(1);
-        SimpleMessage::UP msg(new SimpleMessage(str, true, commonMessageId));
+        auto msg = std::make_unique<SimpleMessage>(str, true, commonMessageId);
         msg->getTrace().setLevel(9);
         //LOG(debug, "Sending message %p for %d", msg.get(), i);
         ASSERT_EQUAL(uint32_t(ErrorCode::NONE),

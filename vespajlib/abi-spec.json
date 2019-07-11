@@ -104,14 +104,22 @@
       "com.yahoo.data.access.ObjectTraverser"
     ],
     "attributes": [
-      "public",
-      "final"
+      "public"
     ],
     "methods": [
       "public void <init>(java.lang.StringBuilder, boolean)",
       "public void encode(com.yahoo.data.access.Inspector)",
+      "protected void encodeEMPTY()",
+      "protected void encodeBOOL(boolean)",
+      "protected void encodeLONG(long)",
+      "protected void encodeDOUBLE(double)",
+      "protected void encodeSTRING(java.lang.String)",
+      "protected void encodeDATA(byte[])",
+      "protected void encodeARRAY(com.yahoo.data.access.Inspector)",
+      "protected void encodeOBJECT(com.yahoo.data.access.Inspector)",
       "public void entry(int, com.yahoo.data.access.Inspector)",
-      "public void field(java.lang.String, com.yahoo.data.access.Inspector)"
+      "public void field(java.lang.String, com.yahoo.data.access.Inspector)",
+      "public java.lang.StringBuilder target()"
     ],
     "fields": []
   },
@@ -124,7 +132,8 @@
     ],
     "methods": [
       "public void <init>()",
-      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, java.lang.StringBuilder, boolean)"
+      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, java.lang.StringBuilder, boolean)",
+      "public static java.lang.StringBuilder render(com.yahoo.data.access.Inspectable, com.yahoo.data.access.simple.JsonRender$StringEncoder)"
     ],
     "fields": []
   },
@@ -788,7 +797,11 @@
     ],
     "methods": [
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, float[])",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, double[])",
       "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes)",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes, float[])",
+      "public static com.yahoo.tensor.IndexedTensor$Builder of(com.yahoo.tensor.TensorType, com.yahoo.tensor.DimensionSizes, double[])",
       "public varargs abstract com.yahoo.tensor.IndexedTensor$Builder cell(double, long[])",
       "public varargs abstract com.yahoo.tensor.IndexedTensor$Builder cell(float, long[])",
       "public com.yahoo.tensor.TensorType type()",
@@ -1086,6 +1099,8 @@
       "public java.lang.Double setValue(java.lang.Double)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
+      "public java.lang.String toString(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.Tensor$Cell detach()",
       "public bridge synthetic java.lang.Object setValue(java.lang.Object)",
       "public bridge synthetic java.lang.Object getValue()",
       "public bridge synthetic java.lang.Object getKey()"
@@ -1167,6 +1182,8 @@
       "public com.yahoo.tensor.Tensor sum()",
       "public com.yahoo.tensor.Tensor sum(java.lang.String)",
       "public com.yahoo.tensor.Tensor sum(java.util.List)",
+      "public java.util.List largest()",
+      "public java.util.List smallest()",
       "public abstract java.lang.String toString()",
       "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor)",
       "public static java.lang.String contentToString(com.yahoo.tensor.Tensor)",
@@ -1176,7 +1193,8 @@
       "public static boolean approxEquals(double, double)",
       "public static com.yahoo.tensor.Tensor from(com.yahoo.tensor.TensorType, java.lang.String)",
       "public static com.yahoo.tensor.Tensor from(java.lang.String, java.lang.String)",
-      "public static com.yahoo.tensor.Tensor from(java.lang.String)"
+      "public static com.yahoo.tensor.Tensor from(java.lang.String)",
+      "public static com.yahoo.tensor.Tensor from(double)"
     ],
     "fields": []
   },
@@ -1347,7 +1365,8 @@
       "public static com.yahoo.tensor.TensorType$Value[] values()",
       "public static com.yahoo.tensor.TensorType$Value valueOf(java.lang.String)",
       "public static com.yahoo.tensor.TensorType$Value largestOf(java.util.List)",
-      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)"
+      "public static com.yahoo.tensor.TensorType$Value largestOf(com.yahoo.tensor.TensorType$Value, com.yahoo.tensor.TensorType$Value)",
+      "public java.lang.String toString()"
     ],
     "fields": [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
@@ -2554,6 +2573,20 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
       "public final com.yahoo.text.Utf8String getUtf8()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.text.ExpressionFormatter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String format(java.lang.String)",
+      "public static java.lang.String on(java.lang.String)",
+      "public static com.yahoo.text.ExpressionFormatter withLineLength(int)",
+      "public static com.yahoo.text.ExpressionFormatter inTwoColumnMode(int, int)"
     ],
     "fields": []
   },

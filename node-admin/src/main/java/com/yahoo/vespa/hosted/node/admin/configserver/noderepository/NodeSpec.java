@@ -7,7 +7,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -18,7 +17,7 @@ import java.util.Set;
 public class NodeSpec {
     private final String hostname;
     private final NodeState state;
-    private final NodeType nodeType;
+    private final NodeType type;
     private final String flavor;
     private final String canonicalFlavor;
 
@@ -26,7 +25,7 @@ public class NodeSpec {
     private final Optional<DockerImage> currentDockerImage;
 
     private final Optional<Version> wantedVespaVersion;
-    private final Optional<Version> vespaVersion;
+    private final Optional<Version> currentVespaVersion;
 
     private final Optional<Version> wantedOsVersion;
     private final Optional<Version> currentOsVersion;
@@ -47,15 +46,15 @@ public class NodeSpec {
     private final Optional<NodeOwner> owner;
     private final Optional<NodeMembership> membership;
 
-    private final double minCpuCores;
-    private final double minMainMemoryAvailableGb;
-    private final double minDiskAvailableGb;
+    private final double vcpus;
+    private final double memoryGb;
+    private final double diskGb;
 
     private final boolean fastDisk;
     private final double bandwidth;
     private final Set<String> ipAddresses;
+    private final Set<String> additionalIpAddresses;
 
-    private final Optional<String> hardwareFailureDescription;
     private final NodeReports reports;
 
     private final Optional<String> parentHostname;
@@ -65,11 +64,11 @@ public class NodeSpec {
             Optional<DockerImage> wantedDockerImage,
             Optional<DockerImage> currentDockerImage,
             NodeState state,
-            NodeType nodeType,
+            NodeType type,
             String flavor,
             String canonicalFlavor,
             Optional<Version> wantedVespaVersion,
-            Optional<Version> vespaVersion,
+            Optional<Version> currentVespaVersion,
             Optional<Version> wantedOsVersion,
             Optional<Version> currentOsVersion,
             Optional<Boolean> allowedToBeDown,
@@ -83,25 +82,32 @@ public class NodeSpec {
             Optional<Instant> wantedFirmwareCheck,
             Optional<Instant> currentFirmwareCheck,
             Optional<String> modelName,
-            double minCpuCores,
-            double minMainMemoryAvailableGb,
-            double minDiskAvailableGb,
+            double vcpus,
+            double memoryGb,
+            double diskGb,
             boolean fastDisk,
             double bandwidth,
             Set<String> ipAddresses,
-            Optional<String> hardwareFailureDescription,
+            Set<String> additionalIpAddresses,
             NodeReports reports,
             Optional<String> parentHostname) {
+        if (state == NodeState.active) {
+            Objects.requireNonNull(wantedVespaVersion, "Unknown vespa version for active node");
+            Objects.requireNonNull(wantedDockerImage, "Unknown docker image for active node");
+            Objects.requireNonNull(wantedRestartGeneration, "Unknown restartGeneration for active node");
+            Objects.requireNonNull(currentRestartGeneration, "Unknown currentRestartGeneration for active node");
+        }
+
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);
         this.state = Objects.requireNonNull(state);
-        this.nodeType = Objects.requireNonNull(nodeType);
+        this.type = Objects.requireNonNull(type);
         this.flavor = Objects.requireNonNull(flavor);
         this.canonicalFlavor = canonicalFlavor;
         this.modelName = modelName;
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
-        this.vespaVersion = Objects.requireNonNull(vespaVersion);
+        this.currentVespaVersion = Objects.requireNonNull(currentVespaVersion);
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
         this.currentOsVersion = Objects.requireNonNull(currentOsVersion);
         this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
@@ -114,136 +120,136 @@ public class NodeSpec {
         this.currentRebootGeneration = currentRebootGeneration;
         this.wantedFirmwareCheck = Objects.requireNonNull(wantedFirmwareCheck);
         this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck);
-        this.minCpuCores = minCpuCores;
-        this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
-        this.minDiskAvailableGb = minDiskAvailableGb;
+        this.vcpus = vcpus;
+        this.memoryGb = memoryGb;
+        this.diskGb = diskGb;
         this.fastDisk = fastDisk;
         this.bandwidth = bandwidth;
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
-        this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
+        this.additionalIpAddresses = Objects.requireNonNull(additionalIpAddresses);
         this.reports = Objects.requireNonNull(reports);
         this.parentHostname = Objects.requireNonNull(parentHostname);
     }
 
-    public String getHostname() {
+    public String hostname() {
         return hostname;
     }
 
-    public NodeState getState() {
+    public NodeState state() {
         return state;
     }
 
-    public NodeType getNodeType() {
-        return nodeType;
+    public NodeType type() {
+        return type;
     }
 
-    public String getFlavor() {
+    public String flavor() {
         return flavor;
     }
 
-    public String getCanonicalFlavor() {
+    public String canonicalFlavor() {
         return canonicalFlavor;
     }
 
-    public Optional<DockerImage> getWantedDockerImage() {
+    public Optional<DockerImage> wantedDockerImage() {
         return wantedDockerImage;
     }
 
-    public Optional<DockerImage> getCurrentDockerImage() {
+    public Optional<DockerImage> currentDockerImage() {
         return currentDockerImage;
     }
 
-    public Optional<Version> getWantedVespaVersion() {
+    public Optional<Version> wantedVespaVersion() {
         return wantedVespaVersion;
     }
 
-    public Optional<Version> getVespaVersion() {
-        return vespaVersion;
+    public Optional<Version> currentVespaVersion() {
+        return currentVespaVersion;
     }
 
-    public Optional<Version> getCurrentOsVersion() {
+    public Optional<Version> currentOsVersion() {
         return currentOsVersion;
     }
 
-    public Optional<Version> getWantedOsVersion() {
+    public Optional<Version> wantedOsVersion() {
         return wantedOsVersion;
     }
 
-    public Optional<Long> getWantedRestartGeneration() {
+    public Optional<Long> wantedRestartGeneration() {
         return wantedRestartGeneration;
     }
 
-    public Optional<Long> getCurrentRestartGeneration() {
+    public Optional<Long> currentRestartGeneration() {
         return currentRestartGeneration;
     }
 
-    public long getWantedRebootGeneration() {
+    public long wantedRebootGeneration() {
         return wantedRebootGeneration;
     }
 
-    public long getCurrentRebootGeneration() {
+    public long currentRebootGeneration() {
         return currentRebootGeneration;
     }
 
-    public Optional<Instant> getWantedFirmwareCheck() {
+    public Optional<Instant> wantedFirmwareCheck() {
         return wantedFirmwareCheck;
     }
 
-    public Optional<Instant> getCurrentFirmwareCheck() {
+    public Optional<Instant> currentFirmwareCheck() {
         return currentFirmwareCheck;
     }
 
-    public Optional<String> getModelName() {
+    public Optional<String> modelName() {
         return modelName;
     }
 
-    public Optional<Boolean> getAllowedToBeDown() {
+    public Optional<Boolean> allowedToBeDown() {
         return allowedToBeDown;
     }
 
-    public Optional<Boolean> getWantToDeprovision() {
+    public Optional<Boolean> wantToDeprovision() {
         return wantToDeprovision;
     }
 
-    public Optional<NodeOwner> getOwner() {
+    public Optional<NodeOwner> owner() {
         return owner;
     }
 
-    public Optional<NodeMembership> getMembership() {
+    public Optional<NodeMembership> membership() {
         return membership;
     }
 
-    public double getMinCpuCores() {
-        return minCpuCores;
+    public double vcpus() {
+        return vcpus;
     }
 
-    public double getMinMainMemoryAvailableGb() {
-        return minMainMemoryAvailableGb;
+    public double memoryGb() {
+        return memoryGb;
     }
 
-    public double getMinDiskAvailableGb() {
-        return minDiskAvailableGb;
+    public double diskGb() {
+        return diskGb;
     }
 
     public boolean isFastDisk() {
         return fastDisk;
     }
 
-    public double getBandwidth() {
+    public double bandwidth() {
         return bandwidth;
     }
 
-    public Set<String> getIpAddresses() {
+    public Set<String> ipAddresses() {
         return ipAddresses;
     }
 
-    public Optional<String> getHardwareFailureDescription() {
-        return hardwareFailureDescription;
+    public Set<String> additionalIpAddresses() {
+        return additionalIpAddresses;
     }
 
-    public NodeReports getReports() { return reports; }
+    public NodeReports reports() { return reports; }
 
-    public Optional<String> getParentHostname() {
+    public Optional<String> parentHostname() {
         return parentHostname;
     }
 
@@ -258,11 +264,11 @@ public class NodeSpec {
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
                 Objects.equals(currentDockerImage, that.currentDockerImage) &&
                 Objects.equals(state, that.state) &&
-                Objects.equals(nodeType, that.nodeType) &&
+                Objects.equals(type, that.type) &&
                 Objects.equals(flavor, that.flavor) &&
                 Objects.equals(canonicalFlavor, that.canonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
-                Objects.equals(vespaVersion, that.vespaVersion) &&
+                Objects.equals(currentVespaVersion, that.currentVespaVersion) &&
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
                 Objects.equals(currentOsVersion, that.currentOsVersion) &&
                 Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
@@ -275,13 +281,13 @@ public class NodeSpec {
                 Objects.equals(currentRebootGeneration, that.currentRebootGeneration) &&
                 Objects.equals(wantedFirmwareCheck, that.wantedFirmwareCheck) &&
                 Objects.equals(currentFirmwareCheck, that.currentFirmwareCheck) &&
-                Objects.equals(minCpuCores, that.minCpuCores) &&
-                Objects.equals(minMainMemoryAvailableGb, that.minMainMemoryAvailableGb) &&
-                Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb) &&
+                Objects.equals(vcpus, that.vcpus) &&
+                Objects.equals(memoryGb, that.memoryGb) &&
+                Objects.equals(diskGb, that.diskGb) &&
                 Objects.equals(fastDisk, that.fastDisk) &&
                 Objects.equals(bandwidth, that.bandwidth) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(hardwareFailureDescription, that.hardwareFailureDescription) &&
+                Objects.equals(additionalIpAddresses, that.additionalIpAddresses) &&
                 Objects.equals(reports, that.reports) &&
                 Objects.equals(parentHostname, that.parentHostname);
     }
@@ -293,11 +299,11 @@ public class NodeSpec {
                 wantedDockerImage,
                 currentDockerImage,
                 state,
-                nodeType,
+                type,
                 flavor,
                 canonicalFlavor,
                 wantedVespaVersion,
-                vespaVersion,
+                currentVespaVersion,
                 wantedOsVersion,
                 currentOsVersion,
                 allowedToBeDown,
@@ -310,13 +316,13 @@ public class NodeSpec {
                 currentRebootGeneration,
                 wantedFirmwareCheck,
                 currentFirmwareCheck,
-                minCpuCores,
-                minMainMemoryAvailableGb,
-                minDiskAvailableGb,
+                vcpus,
+                memoryGb,
+                diskGb,
                 fastDisk,
                 bandwidth,
                 ipAddresses,
-                hardwareFailureDescription,
+                additionalIpAddresses,
                 reports,
                 parentHostname);
     }
@@ -328,30 +334,30 @@ public class NodeSpec {
                 + " wantedDockerImage=" + wantedDockerImage
                 + " currentDockerImage=" + currentDockerImage
                 + " state=" + state
-                + " nodeType=" + nodeType
+                + " type=" + type
                 + " flavor=" + flavor
                 + " canonicalFlavor=" + canonicalFlavor
                 + " wantedVespaVersion=" + wantedVespaVersion
-                + " vespaVersion=" + vespaVersion
+                + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
                 + " currentOsVersion=" + currentOsVersion
                 + " allowedToBeDown=" + allowedToBeDown
                 + " wantToDeprovision=" + wantToDeprovision
                 + " owner=" + owner
                 + " membership=" + membership
-                + " minCpuCores=" + minCpuCores
+                + " vcpus=" + vcpus
                 + " wantedRestartGeneration=" + wantedRestartGeneration
                 + " currentRestartGeneration=" + currentRestartGeneration
                 + " wantedRebootGeneration=" + wantedRebootGeneration
                 + " currentRebootGeneration=" + currentRebootGeneration
                 + " wantedFirmwareCheck=" + wantedFirmwareCheck
                 + " currentFirmwareCheck=" + currentFirmwareCheck
-                + " minMainMemoryAvailableGb=" + minMainMemoryAvailableGb
-                + " minDiskAvailableGb=" + minDiskAvailableGb
+                + " memoryGb=" + memoryGb
+                + " diskGb=" + diskGb
                 + " fastDisk=" + fastDisk
                 + " bandwidth=" + bandwidth
                 + " ipAddresses=" + ipAddresses
-                + " hardwareFailureDescription=" + hardwareFailureDescription
+                + " additionalIpAddresses=" + additionalIpAddresses
                 + " reports=" + reports
                 + " parentHostname=" + parentHostname
                 + " }";
@@ -359,14 +365,14 @@ public class NodeSpec {
 
     public static class Builder {
         private String hostname;
-        private Optional<DockerImage> wantedDockerImage = Optional.empty();
-        private Optional<DockerImage> currentDockerImage = Optional.empty();
         private NodeState state;
-        private NodeType nodeType;
+        private NodeType type;
         private String flavor;
         private String canonicalFlavor;
+        private Optional<DockerImage> wantedDockerImage = Optional.empty();
+        private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Optional<Version> wantedVespaVersion = Optional.empty();
-        private Optional<Version> vespaVersion = Optional.empty();
+        private Optional<Version> currentVespaVersion = Optional.empty();
         private Optional<Version> wantedOsVersion = Optional.empty();
         private Optional<Version> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
@@ -380,14 +386,13 @@ public class NodeSpec {
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private double minCpuCores;
-        private double minMainMemoryAvailableGb;
-        private double minDiskAvailableGb;
-        private boolean fastDisk = false;
+        private double vcpus;
+        private double memoryGb;
+        private double diskGb;
+        private boolean fastDisk;
         private double bandwidth;
-        private Set<String> ipAddresses = Collections.emptySet();
-        private Optional<String> hardwareDivergence = Optional.empty();
-        private Optional<String> hardwareFailureDescription = Optional.empty();
+        private Set<String> ipAddresses = Set.of();
+        private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
         private Optional<String> parentHostname = Optional.empty();
 
@@ -396,15 +401,16 @@ public class NodeSpec {
         public Builder(NodeSpec node) {
             hostname(node.hostname);
             state(node.state);
-            nodeType(node.nodeType);
+            type(node.type);
             flavor(node.flavor);
             canonicalFlavor(node.canonicalFlavor);
-            minCpuCores(node.minCpuCores);
-            minMainMemoryAvailableGb(node.minMainMemoryAvailableGb);
-            minDiskAvailableGb(node.minDiskAvailableGb);
+            vcpus(node.vcpus);
+            memoryGb(node.memoryGb);
+            diskGb(node.diskGb);
             fastDisk(node.fastDisk);
             bandwidth(node.bandwidth);
             ipAddresses(node.ipAddresses);
+            additionalIpAddresses(node.additionalIpAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
             reports(new NodeReports(node.reports));
@@ -412,7 +418,7 @@ public class NodeSpec {
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
-            node.vespaVersion.ifPresent(this::vespaVersion);
+            node.currentVespaVersion.ifPresent(this::currentVespaVersion);
             node.wantedOsVersion.ifPresent(this::wantedOsVersion);
             node.currentOsVersion.ifPresent(this::currentOsVersion);
             node.allowedToBeDown.ifPresent(this::allowedToBeDown);
@@ -423,7 +429,6 @@ public class NodeSpec {
             node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
             node.wantedFirmwareCheck.ifPresent(this::wantedFirmwareCheck);
             node.currentFirmwareCheck.ifPresent(this::currentFirmwareCheck);
-            node.hardwareFailureDescription.ifPresent(this::hardwareFailureDescription);
             node.parentHostname.ifPresent(this::parentHostname);
         }
 
@@ -447,8 +452,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder nodeType(NodeType nodeType) {
-            this.nodeType = nodeType;
+        public Builder type(NodeType nodeType) {
+            this.type = nodeType;
             return this;
         }
 
@@ -467,8 +472,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder vespaVersion(Version vespaVersion) {
-            this.vespaVersion = Optional.of(vespaVersion);
+        public Builder currentVespaVersion(Version vespaVersion) {
+            this.currentVespaVersion = Optional.of(vespaVersion);
             return this;
         }
 
@@ -532,18 +537,18 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder minCpuCores(double minCpuCores) {
-            this.minCpuCores = minCpuCores;
+        public Builder vcpus(double minCpuCores) {
+            this.vcpus = minCpuCores;
             return this;
         }
 
-        public Builder minMainMemoryAvailableGb(double minMainMemoryAvailableGb) {
-            this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
+        public Builder memoryGb(double minMainMemoryAvailableGb) {
+            this.memoryGb = minMainMemoryAvailableGb;
             return this;
         }
 
-        public Builder minDiskAvailableGb(double minDiskAvailableGb) {
-            this.minDiskAvailableGb = minDiskAvailableGb;
+        public Builder diskGb(double minDiskAvailableGb) {
+            this.diskGb = minDiskAvailableGb;
             return this;
         }
 
@@ -562,13 +567,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder hardwareDivergence(String hardwareDivergence) {
-            this.hardwareDivergence = Optional.of(hardwareDivergence);
-            return this;
-        }
-
-        public Builder hardwareFailureDescription(String hardwareFailureDescription) {
-            this.hardwareFailureDescription = Optional.of(hardwareFailureDescription);
+        public Builder additionalIpAddresses(Set<String> additionalIpAddresses) {
+            this.additionalIpAddresses = additionalIpAddresses;
             return this;
         }
 
@@ -595,138 +595,136 @@ public class NodeSpec {
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
-            attributes.getHardwareDivergence().ifPresent(this::hardwareDivergence);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
-            attributes.getHardwareFailureDescription().ifPresent(this::hardwareFailureDescription);
             attributes.getWantToDeprovision().ifPresent(this::wantToDeprovision);
             NodeReports.fromMap(attributes.getReports());
 
             return this;
         }
 
-        public String getHostname() {
+        public String hostname() {
             return hostname;
         }
 
-        public Optional<DockerImage> getWantedDockerImage() {
+        public Optional<DockerImage> wantedDockerImage() {
             return wantedDockerImage;
         }
 
-        public Optional<DockerImage> getCurrentDockerImage() {
+        public Optional<DockerImage> currentDockerImage() {
             return currentDockerImage;
         }
 
-        public NodeState getState() {
+        public NodeState state() {
             return state;
         }
 
-        public NodeType getNodeType() {
-            return nodeType;
+        public NodeType type() {
+            return type;
         }
 
-        public String getFlavor() {
+        public String flavor() {
             return flavor;
         }
 
-        public String getCanonicalFlavor() {
+        public String canonicalFlavor() {
             return canonicalFlavor;
         }
 
-        public Optional<Version> getWantedVespaVersion() {
+        public Optional<Version> wantedVespaVersion() {
             return wantedVespaVersion;
         }
 
-        public Optional<Version> getVespaVersion() {
-            return vespaVersion;
+        public Optional<Version> currentVespaVersion() {
+            return currentVespaVersion;
         }
 
-        public Optional<Version> getWantedOsVersion() {
+        public Optional<Version> wantedOsVersion() {
             return wantedOsVersion;
         }
 
-        public Optional<Version> getCurrentOsVersion() {
+        public Optional<Version> currentOsVersion() {
             return currentOsVersion;
         }
 
-        public Optional<Boolean> getAllowedToBeDown() {
+        public Optional<Boolean> allowedToBeDown() {
             return allowedToBeDown;
         }
 
-        public Optional<Boolean> getWantToDeprovision() {
+        public Optional<Boolean> wantToDeprovision() {
             return wantToDeprovision;
         }
 
-        public Optional<NodeOwner> getOwner() {
+        public Optional<NodeOwner> owner() {
             return owner;
         }
 
-        public Optional<NodeMembership> getMembership() {
+        public Optional<NodeMembership> membership() {
             return membership;
         }
 
-        public Optional<Long> getWantedRestartGeneration() {
+        public Optional<Long> wantedRestartGeneration() {
             return wantedRestartGeneration;
         }
 
-        public Optional<Long> getCurrentRestartGeneration() {
+        public Optional<Long> currentRestartGeneration() {
             return currentRestartGeneration;
         }
 
-        public long getWantedRebootGeneration() {
+        public long wantedRebootGeneration() {
             return wantedRebootGeneration;
         }
 
-        public long getCurrentRebootGeneration() {
+        public long currentRebootGeneration() {
             return currentRebootGeneration;
         }
 
-        public double getMinCpuCores() {
-            return minCpuCores;
+        public double vcpus() {
+            return vcpus;
         }
 
-        public double getMinMainMemoryAvailableGb() {
-            return minMainMemoryAvailableGb;
+        public double memoryGb() {
+            return memoryGb;
         }
 
-        public double getMinDiskAvailableGb() {
-            return minDiskAvailableGb;
+        public double diskGb() {
+            return diskGb;
         }
 
         public boolean isFastDisk() {
             return fastDisk;
         }
 
-        public double getBandwidth() {
+        public double bandwidth() {
             return bandwidth;
         }
 
-        public Set<String> getIpAddresses() {
+        public Set<String> ipAddresses() {
             return ipAddresses;
         }
 
-        public Optional<String> getHardwareFailureDescription() {
-            return hardwareFailureDescription;
+        public Set<String> additionalIpAddresses() {
+            return additionalIpAddresses;
         }
 
-        public NodeReports getReports() {
+        public NodeReports reports() {
             return reports;
         }
 
-        public Optional<String> getParentHostname() {
+        public Optional<String> parentHostname() {
             return parentHostname;
         }
 
         public NodeSpec build() {
-            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, nodeType,
+            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type,
                     flavor, canonicalFlavor,
-                    wantedVespaVersion, vespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
+                    wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
-                    minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
-                    fastDisk, bandwidth, ipAddresses, hardwareFailureDescription,
+                    vcpus, memoryGb, diskGb,
+                    fastDisk, bandwidth, ipAddresses, additionalIpAddresses,
                     reports, parentHostname);
         }
 

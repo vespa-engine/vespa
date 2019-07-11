@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -25,10 +24,7 @@ public class ApplicationInstanceGeneratorTest {
     private static final String configServer1 = "cfg1.yahoo.com";
     private static final String configServer2 = "cfg2.yahoo.com";
     private static final String configServer3 = "cfg3.yahoo.com";
-    private static final List<String> configServerList = Stream.of(
-            configServer1,
-            configServer2,
-            configServer3).collect(Collectors.toList());
+    private static final List<String> configServerList = List.of(configServer1, configServer2, configServer3);
     private static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
 
     private final ServiceStatusProvider statusProvider = mock(ServiceStatusProvider.class);
@@ -72,5 +68,4 @@ public class ApplicationInstanceGeneratorTest {
                         .hostName()
                         .toString()));
     }
-
 }

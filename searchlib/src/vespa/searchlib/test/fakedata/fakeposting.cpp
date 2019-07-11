@@ -49,4 +49,22 @@ FakePosting::l4SkipBitSize() const
     return 0;
 }
 
+bool
+FakePosting::has_interleaved_features() const
+{
+    return false;
+}
+
+bool
+FakePosting::enable_unpack_normal_features() const
+{
+    return true;
+}
+
+bool
+FakePosting::enable_unpack_interleaved_features() const
+{
+    return true;
+}
+
 }

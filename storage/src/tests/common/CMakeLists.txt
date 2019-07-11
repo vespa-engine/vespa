@@ -2,12 +2,27 @@
 vespa_add_library(storage_testcommon TEST
     SOURCES
     dummystoragelink.cpp
-    global_bucket_space_distribution_converter_test.cpp
-    metricstest.cpp
-    storagelinktest.cpp
+    message_sender_stub.cpp
     testhelper.cpp
     testnodestateupdater.cpp
     teststorageapp.cpp
     DEPENDS
     storage
+)
+
+vespa_add_executable(storage_common_gtest_runner_app TEST
+    SOURCES
+    global_bucket_space_distribution_converter_test.cpp
+    gtest_runner.cpp
+    metricstest.cpp
+    storagelinktest.cpp
+    DEPENDS
+    storage_testcommon
+    storage
+    gtest
+)
+
+vespa_add_test(
+    NAME storage_common_gtest_runner_app
+    COMMAND storage_common_gtest_runner_app
 )

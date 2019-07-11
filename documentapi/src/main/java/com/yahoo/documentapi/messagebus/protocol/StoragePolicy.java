@@ -144,12 +144,12 @@ public class StoragePolicy extends SlobrokPolicy {
             if (arr.isEmpty()) return null;
             if (distributor != null) {
                 if (arr.size() == 1) {
-                    return convertSlobrokNameToSessionName(arr.get(0).getSpec());
+                    return convertSlobrokNameToSessionName(arr.get(0).getSpecString());
                 } else {
                     log.log(LogLevel.WARNING, "Got " + arr.size() + " matches for a distributor.");
                 }
             } else {
-                return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpec());
+                return convertSlobrokNameToSessionName(arr.get(randomizer.nextInt(arr.size())).getSpecString());
             }
             return null;
         }
@@ -349,15 +349,24 @@ public class StoragePolicy extends SlobrokPolicy {
         private final int maxOldClusterVersionBeforeSendingRandom; // Reset cluster version protection
 
         DistributorSelectionLogic(Parameters params, SlobrokPolicy policy) {
-            this.hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
-            this.distribution = params.createDistribution(policy);
-            persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
-            maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
+            try {
+                hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
+                distribution = params.createDistribution(policy);
+                persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
+                maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
+            } catch (Throwable e) {
+                destroy();
+                throw e;
+            }
         }
 
         public void destroy() {
-            hostFetcher.close();
-            distribution.close();
+            if (hostFetcher != null) {
+                hostFetcher.close();
+            }
+            if (distribution != null) {
+                distribution.close();
+            }
         }
 
         String getTargetSpec(RoutingContext context, BucketId bucketId) {

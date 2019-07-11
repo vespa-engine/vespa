@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# Uses vespa-security-env to call curl with paths to credentials.
+# This script should be installed in libexec only. It is not public api.
+
+set -e
+
+eval $(vespa-security-env)
+
+CURL_PARAMETERS=("$@")
+
+if [ -n "${VESPA_TLS_ENABLED}" ]
+then
+  CURL_PARAMETERS=("${CURL_PARAMETERS[@]/http:/https:}")
+fi
+
+if [ -n "${VESPA_TLS_CA_CERT}" ]
+then
+  CURL_PARAMETERS=("--cacert" "${VESPA_TLS_CA_CERT}" "${CURL_PARAMETERS[@]}")
+fi
+
+if [[ -n "${VESPA_TLS_CERT}" && -n "${VESPA_TLS_PRIVATE_KEY}" ]]
+then
+  CURL_PARAMETERS=("--cert" "${VESPA_TLS_CERT}" "--key" "${VESPA_TLS_PRIVATE_KEY}" "${CURL_PARAMETERS[@]}")
+fi
+
+curl "${CURL_PARAMETERS[@]}"

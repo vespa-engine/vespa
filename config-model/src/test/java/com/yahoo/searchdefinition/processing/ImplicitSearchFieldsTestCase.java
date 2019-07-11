@@ -25,11 +25,9 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType docType = search.getDocument();
         assertNotNull(docType);
-        assertNotNull(docType.getField("rankfeatures"));
-        assertNotNull(docType.getField("summaryfeatures"));
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
-        assertEquals(4, docType.getFieldCount());
+        assertEquals(2, docType.getFieldCount());
     }
 
     @Test
@@ -39,12 +37,10 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType docType = search.getDocument();
         assertNotNull(docType);
-        assertNotNull(docType.getField("rankfeatures"));
-        assertNotNull(docType.getField("summaryfeatures"));
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
         assertNotNull(docType.getField("cox"));
-        assertEquals(5, docType.getFieldCount());
+        assertEquals(3, docType.getFieldCount());
     }
 
     @Test
@@ -54,13 +50,11 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType docType = search.getDocument();
         assertNotNull(docType);
-        assertNotNull(docType.getField("rankfeatures"));
-        assertNotNull(docType.getField("summaryfeatures"));
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
         assertNotNull(docType.getField("baz"));
         assertNotNull(docType.getField("cox"));
-        assertEquals(6, docType.getFieldCount());
+        assertEquals(4, docType.getFieldCount());
     }
 
     @Test
@@ -70,12 +64,10 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType docType = search.getDocument();
         assertNotNull(docType);
-        assertNotNull(docType.getField("rankfeatures"));
-        assertNotNull(docType.getField("summaryfeatures"));
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
         assertNotNull(docType.getField("baz"));
-        assertEquals(5, docType.getFieldCount());
+        assertEquals(3, docType.getFieldCount());
     }
 
     @Test
@@ -85,11 +77,9 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
 
         SDDocumentType docType = search.getDocument();
         assertNotNull(docType);
-        assertNotNull(docType.getField("rankfeatures"));
-        assertNotNull(docType.getField("summaryfeatures"));
         assertNotNull(docType.getField("foo"));
         assertNotNull(docType.getField("bar"));
-        assertEquals(4, docType.getFieldCount());
+        assertEquals(2, docType.getFieldCount());
     }
 
     @Test

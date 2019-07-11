@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -11,7 +9,12 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -450,6 +453,120 @@ public class DeploymentSpecTest {
         assertEquals(Optional.of("d-1-4-20"), spec.steps().get(0).zones().get(0).testerFlavor());
         assertEquals(Optional.empty(), spec.steps().get(1).zones().get(0).testerFlavor());
         assertEquals(Optional.of("d-2-8-50"), spec.steps().get(2).zones().get(0).testerFlavor());
+    }
+
+    @Test
+    public void noEndpoints() {
+        assertEquals(Collections.emptyList(), DeploymentSpec.fromXml("<deployment />").endpoints());
+    }
+
+    @Test
+    public void emptyEndpoints() {
+        final var spec = DeploymentSpec.fromXml("<deployment><endpoints/></deployment>");
+        assertEquals(Collections.emptyList(), spec.endpoints());
+    }
+
+    @Test
+    public void someEndpoints() {
+        final var spec = DeploymentSpec.fromXml("" +
+                "<deployment>" +
+                "  <prod>" +
+                "    <region active=\"true\">us-east</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint id=\"foo\" container-id=\"bar\">" +
+                "      <region>us-east</region>" +
+                "    </endpoint>" +
+                "    <endpoint id=\"nalle\" container-id=\"frosk\" />" +
+                "    <endpoint container-id=\"quux\" />" +
+                "  </endpoints>" +
+                "</deployment>");
+
+        assertEquals(
+                List.of("foo", "nalle", "default"),
+                spec.endpoints().stream().map(Endpoint::endpointId).collect(Collectors.toList())
+        );
+
+        assertEquals(
+                List.of("bar", "frosk", "quux"),
+                spec.endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
+        );
+
+        assertEquals(Set.of(RegionName.from("us-east")), spec.endpoints().get(0).regions());
+    }
+    @Test
+    public void invalidEndpoints() {
+        assertInvalid("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
+        assertInvalid("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
+        assertInvalid("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
+        assertInvalid("<endpoint id='foo.bar' container-id='qrs'/>");
+        assertInvalid("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
+        assertInvalid("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
+        assertInvalid("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
+        assertInvalid("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
+    }
+
+    @Test
+    public void validEndpoints() {
+        assertEquals(List.of("default"), endpointIds("<endpoint container-id='qrs'/>"));
+        assertEquals(List.of("default"), endpointIds("<endpoint id='' container-id='qrs'/>"));
+        assertEquals(List.of("f"), endpointIds("<endpoint id='f' container-id='qrs'/>"));
+        assertEquals(List.of("foo"), endpointIds("<endpoint id='foo' container-id='qrs'/>"));
+        assertEquals(List.of("foo-bar"), endpointIds("<endpoint id='foo-bar' container-id='qrs'/>"));
+        assertEquals(List.of("foo", "bar"), endpointIds("<endpoint id='foo' container-id='qrs'/><endpoint id='bar' container-id='qrs'/>"));
+        assertEquals(List.of("fooooooooooo"), endpointIds("<endpoint id='fooooooooooo' container-id='qrs'/>"));
+    }
+
+    @Test
+    public void endpointDefaultRegions() {
+        var spec = DeploymentSpec.fromXml("" +
+                "<deployment>" +
+                "  <prod>" +
+                "    <region active=\"true\">us-east</region>" +
+                "    <region active=\"true\">us-west</region>" +
+                "  </prod>" +
+                "  <endpoints>" +
+                "    <endpoint id=\"foo\" container-id=\"bar\">" +
+                "      <region>us-east</region>" +
+                "    </endpoint>" +
+                "    <endpoint id=\"nalle\" container-id=\"frosk\" />" +
+                "    <endpoint container-id=\"quux\" />" +
+                "  </endpoints>" +
+                "</deployment>");
+
+        assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
+        assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
+        assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
+    }
+
+    private static void assertInvalid(String endpointTag) {
+        try {
+            endpointIds(endpointTag);
+            fail("Expected exception for input '" + endpointTag + "'");
+        } catch (IllegalArgumentException ignored) {}
+    }
+
+    private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {
+        return spec.endpoints().stream()
+                .filter(endpoint -> endpoint.endpointId().equals(endpointId))
+                .flatMap(endpoint -> endpoint.regions().stream())
+                .map(RegionName::value)
+                .collect(Collectors.toSet());
+    }
+
+    private static List<String> endpointIds(String endpointTag) {
+        var xml = "<deployment>" +
+                  "  <prod>" +
+                  "    <region active=\"true\">us-east</region>" +
+                  "  </prod>" +
+                  "  <endpoints>" +
+                  endpointTag +
+                  "  </endpoints>" +
+                  "</deployment>";
+
+        return DeploymentSpec.fromXml(xml).endpoints().stream()
+                             .map(Endpoint::endpointId)
+                             .collect(Collectors.toList());
     }
 
 }

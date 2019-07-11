@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -73,7 +74,8 @@ public class TenantRepository {
     private final Curator curator;
 
     private final MetricUpdater metricUpdater;
-    private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+    private final ExecutorService zkCacheExecutor;
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
@@ -104,6 +106,8 @@ public class TenantRepository {
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
+        this.zkCacheExecutor = globalComponentRegistry.getZkCacheExecutor();
+        this.zkWatcherExecutor = globalComponentRegistry.getZkWatcherExecutor();
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
         curator.create(tenantsPath);
@@ -112,7 +116,7 @@ public class TenantRepository {
         curator.create(vespaPath);
 
         if (useZooKeeperWatchForTenantChanges) {
-            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, pathChildrenExecutor));
+            this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
             this.directoryCache.get().start();
             this.directoryCache.get().addListener(this::childEvent);
         } else {
@@ -147,20 +151,17 @@ public class TenantRepository {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 
-    private synchronized void updateTenants() {
+    /** Public for testing. */
+    public synchronized void updateTenants() {
         Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
         log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
-        checkForRemovedTenants(allTenants);
-        allTenants.stream().filter(tenantName -> ! tenants.containsKey(tenantName)).forEach(this::createTenant);
+        for (TenantName tenantName : Set.copyOf(tenants.keySet()))
+            if ( ! allTenants.contains(tenantName))
+                zkWatcherExecutor.execute(tenantName, () -> closeTenant(tenantName));
+        for (TenantName tenantName : allTenants)
+            if ( ! tenants.containsKey(tenantName))
+                zkWatcherExecutor.execute(tenantName, () -> createTenant(tenantName));
         metricUpdater.setTenants(tenants.size());
-    }
-
-    private void checkForRemovedTenants(Set<TenantName> newTenants) {
-        for (TenantName tenantName : ImmutableSet.copyOf(tenants.keySet())) {
-            if (!newTenants.contains(tenantName)) {
-                deleteTenant(tenantName);
-            }
-        }
     }
 
     private void bootstrapTenants() {
@@ -273,19 +274,25 @@ public class TenantRepository {
      * Removes the given tenant from ZooKeeper and filesystem. Assumes that tenant exists.
      *
      * @param name name of the tenant
-     * @return this TenantRepository instance
      */
-    public synchronized TenantRepository deleteTenant(TenantName name) {
+    public synchronized void deleteTenant(TenantName name) {
         if (name.equals(DEFAULT_TENANT))
             throw new IllegalArgumentException("Deleting 'default' tenant is not allowed");
-        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
-        Tenant tenant = tenants.remove(name);
-        if (tenant == null) {
+        if ( ! tenants.containsKey(name))
             throw new IllegalArgumentException("Deleting '" + name + "' failed, tenant does not exist");
-        }
+
+        log.log(LogLevel.INFO, "Deleting tenant '" + name + "'");
+        tenants.get(name).delete();
+    }
+
+    public synchronized void closeTenant(TenantName name) {
+        Tenant tenant = tenants.remove(name);
+        if (tenant == null)
+            throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");
+
+        log.log(LogLevel.INFO, "Closing tenant '" + name + "'");
         notifyRemovedTenant(name);
         tenant.close();
-        return this;
     }
 
     // For unit testing
@@ -353,9 +360,10 @@ public class TenantRepository {
     public void close() {
         directoryCache.ifPresent(Curator.DirectoryCache::close);
         try {
-            pathChildrenExecutor.shutdown();
+            zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
-            pathChildrenExecutor.awaitTermination(50, TimeUnit.SECONDS);
+            zkWatcherExecutor.shutdownAndWait();
+            zkCacheExecutor.awaitTermination(50, TimeUnit.SECONDS);
             checkForRemovedApplicationsService.awaitTermination(50, TimeUnit.SECONDS);
         }
         catch (InterruptedException e) {

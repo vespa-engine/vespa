@@ -8,8 +8,11 @@ namespace search::fef {
 
 TermFieldMatchData::TermFieldMatchData() :
     _docId(invalidId()),
-    _fieldId(FIELDID_MASK),
-    _sz(0)
+    _fieldId(ILLEGAL_FIELD_ID),
+    _flags(UNPACK_ALL_FEATURES_MASK),
+    _sz(0),
+    _numOccs(0),
+    _fieldLength(0)
 {
     memset(&_data, 0, sizeof(_data));
 }
@@ -17,7 +20,10 @@ TermFieldMatchData::TermFieldMatchData() :
 TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
     _docId(rhs._docId),
     _fieldId(rhs._fieldId),
-    _sz(0)
+    _flags(rhs._flags),
+    _sz(0),
+    _numOccs(0),
+    _fieldLength(0)
 {
     memset(&_data, 0, sizeof(_data));
     if (isRawScore()) {
@@ -62,11 +68,11 @@ TermFieldMatchData::populate_fixed() {
 TermFieldMatchData &
 TermFieldMatchData::setFieldId(uint32_t fieldId) {
     if (fieldId == IllegalFieldId) {
-        fieldId = FIELDID_MASK;
+        fieldId = ILLEGAL_FIELD_ID;
     } else {
-        assert(fieldId < FIELDID_MASK);
+        assert(fieldId < ILLEGAL_FIELD_ID);
     }
-    _fieldId = (_fieldId & ~FIELDID_MASK) | fieldId;
+    _fieldId = fieldId;
     return *this;
 }
 
@@ -86,7 +92,10 @@ TermFieldMatchData::swap(TermFieldMatchData &rhs)
 {
     sswap(&_docId, &rhs._docId);
     sswap(&_fieldId, &rhs._fieldId);
+    sswap(&_flags, &rhs._flags);
     sswap(&_sz, &rhs._sz);
+    sswap(&_numOccs, &rhs._numOccs);
+    sswap(&_fieldLength, &rhs._fieldLength);
     char tmp[sizeof(_data)];
     memcpy(tmp, &rhs._data, sizeof(_data));
     memcpy(&rhs._data, &_data, sizeof(_data));
@@ -125,7 +134,7 @@ TermFieldMatchData::allocateVector()
         n[0] = *getFixed();
         _data._positions._maxElementLength = getFixed()->getElementLen();
     }
-    _fieldId = _fieldId | 0x4000; // set allocated() flag
+    _flags |= MULTIPOS_FLAG; // set allocated() flag
     _data._positions._allocated = newSize;
     _data._positions._positions = n;
 }

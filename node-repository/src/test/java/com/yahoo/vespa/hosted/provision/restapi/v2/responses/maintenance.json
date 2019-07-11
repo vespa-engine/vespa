@@ -1,6 +1,9 @@
 {
   "jobs": [
     {
+      "name": "CapacityReportMaintainer"
+    },
+    {
       "name": "DirtyExpirer"
     },
     {
@@ -23,9 +26,6 @@
     },
     {
       "name": "NodeRebooter"
-    },
-    {
-      "name": "NodeRetirer"
     },
     {
       "name": "OperatorChangeApplicationMaintainer"

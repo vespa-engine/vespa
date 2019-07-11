@@ -11,6 +11,6 @@ import java.util.List;
  */
 public interface NodeIdentifier {
 
-    NodeIdentity identifyNode(List<X509Certificate> peerCertificateChain);
+    NodeIdentity identifyNode(List<X509Certificate> peerCertificateChain) throws NodeIdentifierException;
 
 }

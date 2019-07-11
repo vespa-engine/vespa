@@ -36,16 +36,22 @@ public class PomXmlGenerator {
             "    <version>1.0.0</version>\n" +
             "\n" +
             "    <properties>\n" +
-            "        <maven_version>4.12</maven_version>\n" +
+            "        <junit_version>5.4.2</junit_version>\n" +
             "        <surefire_version>2.22.0</surefire_version>\n" +
             "%PROPERTIES%" +
             "    </properties>\n" +
             "\n" +
             "    <dependencies>\n" +
             "        <dependency>\n" +
-            "            <groupId>junit</groupId>\n" +
-            "            <artifactId>junit</artifactId>\n" +
-            "            <version>${maven_version}</version>\n" +
+            "            <groupId>org.junit.vintage</groupId>\n" +
+            "            <artifactId>junit-vintage-engine</artifactId>\n" +
+            "            <version>${junit_version}</version>\n" +
+            "            <scope>test</scope>\n" +
+            "        </dependency>\n" +
+            "        <dependency>\n" +
+            "            <groupId>org.junit.jupiter</groupId>\n" +
+            "            <artifactId>junit-jupiter-engine</artifactId>\n" +
+            "            <version>${junit_version}</version>\n" +
             "            <scope>test</scope>\n" +
             "        </dependency>\n" +
             "%DEPENDENCIES%" +
@@ -68,6 +74,7 @@ public class PomXmlGenerator {
             "                    </excludes>\n" +
             "                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>\n" +
             "                    <redirectTestOutputToFile>false</redirectTestOutputToFile>\n" +
+            "                    <trimStackTrace>false</trimStackTrace>\n" +
             "                    <environmentVariables>\n" +
             "                        <LD_LIBRARY_PATH>" + Defaults.getDefaults().underVespaHome("lib64") + "</LD_LIBRARY_PATH>\n" +
             "                    </environmentVariables>\n" +

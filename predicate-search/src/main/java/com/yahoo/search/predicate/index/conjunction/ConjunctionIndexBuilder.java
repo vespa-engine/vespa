@@ -3,9 +3,9 @@ package com.yahoo.search.predicate.index.conjunction;
 
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.gs.collections.api.map.primitive.IntObjectMap;
-import com.gs.collections.impl.map.mutable.primitive.IntObjectHashMap;
-import com.gs.collections.impl.map.mutable.primitive.LongObjectHashMap;
+import org.eclipse.collections.api.map.primitive.IntObjectMap;
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
+import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 
 import java.util.ArrayList;
 import java.util.HashMap;

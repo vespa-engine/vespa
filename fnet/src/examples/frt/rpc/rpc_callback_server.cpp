@@ -60,11 +60,12 @@ MyApp::Main()
         return 1;
     }
     RPC rpc;
-    FRT_Supervisor orb;
-    rpc.Init(&orb);
-    orb.Listen(_argv[1]);
-    FNET_SignalShutDown ssd(*orb.GetTransport());
-    orb.Main();
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
+    rpc.Init(&supervisor);
+    supervisor.Listen(_argv[1]);
+    FNET_SignalShutDown ssd(*supervisor.GetTransport());
+    server.supervisor().GetTransport()->WaitFinished();
     return 0;
 }
 

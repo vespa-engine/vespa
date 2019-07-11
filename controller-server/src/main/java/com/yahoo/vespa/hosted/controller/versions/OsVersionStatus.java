@@ -7,6 +7,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -67,27 +68,25 @@ public class OsVersionStatus {
         controller.osVersions().forEach(osVersion -> versions.put(osVersion, new ArrayList<>()));
 
         for (SystemApplication application : SystemApplication.all()) {
-            if (application.nodeTypesWithUpgradableOs().isEmpty()) {
-                continue; // Avoid querying applications that do not contain nodes with upgradable OS
+            if (!application.isEligibleForOsUpgrades()) {
+                continue; // Avoid querying applications that are not eligible for OS upgrades
             }
-            for (ZoneId zone : zonesToUpgrade(controller)) {
-                controller.configServer().nodeRepository().list(zone, application.id()).stream()
+            for (ZoneApi zone : zonesToUpgrade(controller)) {
+                controller.configServer().nodeRepository().list(zone.getId(), application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
-                          .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.environment(), zone.region()))
-                          .forEach(node -> versions.compute(new OsVersion(node.version(), zone.cloud()), (ignored, nodes) -> {
-                              if (nodes == null) {
-                                  nodes = new ArrayList<>();
-                              }
-                              nodes.add(node);
-                              return nodes;
-                          }));
+                          .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.getEnvironment(), zone.getRegionName()))
+                          .forEach(node -> {
+                              var version = new OsVersion(node.version(), zone.getCloudName());
+                              versions.putIfAbsent(version, new ArrayList<>());
+                              versions.get(version).add(node);
+                          });
             }
         }
 
         return new OsVersionStatus(versions);
     }
 
-    private static List<ZoneId> zonesToUpgrade(Controller controller) {
+    private static List<ZoneApi> zonesToUpgrade(Controller controller) {
         return controller.zoneRegistry().osUpgradePolicies().stream()
                          .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
                          .flatMap(Collection::stream)

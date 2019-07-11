@@ -34,7 +34,7 @@ public class ClusteredConnectionTestCase {
         connections.add(connection0);
         connections.add(connection1);
         connections.add(connection2);
-        MyBackend myBackend=new MyBackend(new ComponentId("test"),connections);
+        MyBackend myBackend = new MyBackend(new ComponentId("test"), connections);
 
         Result r;
         r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
@@ -67,7 +67,7 @@ public class ClusteredConnectionTestCase {
         assertEquals("from:0",r.hits().get(0).getId().stringValue());
 
         connection0.setInService(false);
-        r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
+        r = new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertEquals("Failed calling connection '2' in searcher 'test' for query 'NULL': Connection failed",
                      r.hits().getError().getDetailedMessage());
 
@@ -134,7 +134,7 @@ public class ClusteredConnectionTestCase {
 
         private String id;
 
-        private boolean inService=true;
+        private boolean inService = true;
 
         public Connection(String id) {
             this.id=id;
@@ -142,12 +142,12 @@ public class ClusteredConnectionTestCase {
 
         /** This is used for both fill, pings and queries */
         public String getResponse() {
-            if (!inService) throw new RuntimeException("Connection failed");
+            if ( ! inService) throw new RuntimeException("Connection failed");
             return id;
         }
 
         public void setInService(boolean inservice) {
-            this.inService=inservice;
+            this.inService = inservice;
         }
 
         public String toString() {
@@ -164,25 +164,25 @@ public class ClusteredConnectionTestCase {
     private static class MyBackend extends ClusterSearcher<Connection> {
 
         public MyBackend(ComponentId componentId, List<Connection> connections) {
-            super(componentId,connections,false);
+            super(componentId,connections, false);
         }
 
         @Override
-        public Result search(Query query,Execution execution,Connection connection) {
-            Result result=new Result(query);
+        public Result search(Query query,Execution execution, Connection connection) {
+            Result result = new Result(query);
             result.hits().add(new Hit("from:" + connection.getResponse()));
             return result;
         }
 
         @Override
-        public void fill(Result result,String summary,Execution execution,Connection connection) {
+        public void fill(Result result,String summary, Execution execution, Connection connection) {
             result.hits().get(0).fields().put("filled",connection.getResponse());
         }
 
         @Override
         public Pong ping(Ping ping,Connection connection) {
-            Pong pong=new Pong();
-            if (connection.getResponse()==null)
+            Pong pong = new Pong();
+            if (connection.getResponse() == null)
                 pong.addError(ErrorMessage.createBackendCommunicationError("No ping response from '" + connection + "'"));
             return pong;
         }
@@ -196,11 +196,17 @@ public class ClusteredConnectionTestCase {
 
         public SimpleQuery(int hashValue) {
             this.hashValue = hashValue;
+            this.setTimeout(50);
         }
 
         @Override
         public int hashCode() {
             return hashValue;
+        }
+
+        @Override
+        public long getTimeout() {
+            return 5000;
         }
 
     }

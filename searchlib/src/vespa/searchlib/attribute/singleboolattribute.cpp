@@ -25,17 +25,28 @@ SingleBoolAttribute::~SingleBoolAttribute()
     getGenerationHolder().clearHoldLists();
 }
 
+void
+SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
+    if (_bv.capacity() < docIdLimit) {
+        const GrowStrategy & gs = this->getConfig().getGrowStrategy();
+        uint32_t newSize = docIdLimit + (docIdLimit * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+        bool incGen = _bv.reserve(newSize);
+        if (incGen) {
+            incGeneration();
+        }
+    }
+}
+
 bool
 SingleBoolAttribute::addDoc(DocId & doc) {
-    bool incGen = _bv.extend(getNumDocs() + 1);
+    DocId docIdLimit = getNumDocs()+1;
+    ensureRoom(docIdLimit);
+    bool incGen = _bv.extend(docIdLimit);
+    assert( ! incGen);
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
-    if (incGen) {
-        incGeneration();
-    } else {
-        removeAllOldGenerations();
-    }
+    removeAllOldGenerations();
     return true;
 }
 
@@ -78,12 +89,12 @@ SingleBoolAttribute::onCommit() {
 
 void
 SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
-    _bv.reserve(docIdLimit);
+    ensureRoom(docIdLimit);
 }
 
 void
 SingleBoolAttribute::onUpdateStat() {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.setAllocatedBytes(_bv.extraByteSize());
     usage.setUsedBytes(_bv.sizeBytes());
     usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());

@@ -38,10 +38,8 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/eval/tensor/types.h>
-#include <vespa/eval/tensor/tensor_builder.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/default_tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -53,10 +51,9 @@ using vespalib::Slime;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::slime::Cursor;
+using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorBuilder;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::compression::CompressionConfig;
 using namespace document;
 using std::string;
@@ -828,12 +825,13 @@ TEST("Require that predicate deserialization matches Java") {
 namespace
 {
 
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+Tensor::UP createTensor(const TensorSpec &spec) {
+    auto value = DefaultTensorEngine::ref().from_spec(spec);
+    Tensor *tensor = dynamic_cast<Tensor*>(value.get());
+    ASSERT_TRUE(tensor != nullptr);
+    value.release();
+    return Tensor::UP(tensor);
 }
-
 
 }
 
@@ -846,17 +844,18 @@ TEST("Require that tensors can be serialized")
     nbostream stream;
     serializeAndDeserialize(noTensorValue, stream);
     stream.clear();
-    emptyTensorValue = createTensor({}, {"x", "y"});
+    emptyTensorValue = createTensor(TensorSpec("tensor(x{},y{})"));
     serializeAndDeserialize(emptyTensorValue, stream);
     stream.clear();
-    twoCellsTwoDimsValue = createTensor({ {{{"y", "3"}}, 3},
-                                             {{{"x", "4"}, {"y", "5"}}, 7} },
-                                        {"x", "y"});
+    twoCellsTwoDimsValue = createTensor(TensorSpec("tensor(x{},y{})")
+                                        .add({{"x", ""}, {"y", "3"}}, 3)
+                                        .add({{"x", "4"}, {"y", "5"}}, 7));
     serializeAndDeserialize(twoCellsTwoDimsValue, stream);
     EXPECT_NOT_EQUAL(noTensorValue, emptyTensorValue);
     EXPECT_NOT_EQUAL(noTensorValue, twoCellsTwoDimsValue);
     EXPECT_NOT_EQUAL(emptyTensorValue, twoCellsTwoDimsValue);
 }
+
 
 
 const int tensor_doc_type_id = 321;
@@ -904,15 +903,15 @@ void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
     deserializeAndCheck(data_dir + name + "__java", value);
 }
 
+
 TEST("Require that tensor deserialization matches Java") {
     checkDeserialization("non_existing_tensor", std::unique_ptr<Tensor>());
-    checkDeserialization("empty_tensor", createTensor({}, {"dimX", "dimY"}));
+    checkDeserialization("empty_tensor", createTensor(TensorSpec("tensor(dimX{},dimY{})")));
     checkDeserialization("multi_cell_tensor",
-                         createTensor({ {{{"dimX", "a"}, {"dimY", "bb"}}, 2.0 },
-                                           {{{"dimX", "ccc"},
-                                                   {"dimY", "dddd"}}, 3.0},
-                                           {{{"dimX", "e"},{"dimY","ff"}}, 5.0} },
-                                      { "dimX", "dimY" }));
+                         createTensor(TensorSpec("tensor(dimX{},dimY{})")
+                                 .add({{"dimX", "a"}, {"dimY", "bb"}}, 2.0)
+                                 .add({{"dimX", "ccc"}, {"dimY", "dddd"}}, 3.0)
+                                 .add({{"dimX", "e"}, {"dimY", "ff"}}, 5.0)));
 }
 
 struct TensorDocFixture {
@@ -980,14 +979,14 @@ DeserializedTensorDoc::getTensor() const
 TEST("Require that wrong tensor type hides tensor")
 {
     TensorDocFixture f(tensor_doc_repo,
-                       createTensor({    {{{"dimX", "a"},{"dimY", "bb"}}, 2.0 },
-                                         {{{"dimX", "ccc"},{"dimY", "dddd"}}, 3.0},
-                                         {{{"dimX", "e"},{"dimY","ff"}}, 5.0} },
-                                    { "dimX", "dimY" }));
+                       createTensor(TensorSpec("tensor(dimX{},dimY{})")
+                                    .add({{"dimX", "a"}, {"dimY", "bb"}}, 2.0)
+                                    .add({{"dimX", "ccc"}, {"dimY", "dddd"}}, 3.0)
+                                    .add({{"dimX", "e"}, {"dimY", "ff"}}, 5.0)));
     TensorDocFixture f1(tensor_doc_repo1,
-                        createTensor({    {{{"dimX", "a"}}, 20.0 },
-                                          {{{"dimX", "ccc"}}, 30.0} },
-                                     { "dimX" }));
+                        createTensor(TensorSpec("tensor(dimX{})")
+                                .add({{"dimX", "a"}}, 20.0)
+                                .add({{"dimX", "ccc"}}, 30.0)));
     DeserializedTensorDoc doc;
     doc.setup(tensor_doc_repo, f._blob);
     EXPECT_TRUE(doc.getTensor() != nullptr);

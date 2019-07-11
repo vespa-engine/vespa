@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provisioning.FlavorsConfig;
 
 /**
  * Simplifies creation of a node-repository config containing flavors.
@@ -22,7 +22,6 @@ public class FlavorConfigBuilder {
     public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
-        flavor.description("Flavor-name-is-" + flavorName);
         flavor.minDiskAvailableGb(disk);
         flavor.minCpuCores(cpu);
         flavor.minMainMemoryAvailableGb(mem);

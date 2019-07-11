@@ -2,7 +2,15 @@
 
 #pragma once
 
-#include "field_index.h"
+#include "i_field_index_collection.h"
+#include "i_field_index.h"
+#include <memory>
+#include <vector>
+
+namespace search::index {
+    class IFieldLengthInspector;
+    class Schema;
+}
 
 namespace search::memoryindex {
 
@@ -15,27 +23,16 @@ class FieldInverter;
  * Provides functions to create a posting list iterator (used for searching)
  * for a given word in a given field.
  */
-class FieldIndexCollection {
-public:
-    using PostingList = FieldIndex::PostingList;
-
+class FieldIndexCollection : public IFieldIndexCollection {
 private:
     using GenerationHandler = vespalib::GenerationHandler;
 
-    std::vector<std::unique_ptr<FieldIndex>> _fieldIndexes;
+    std::vector<std::unique_ptr<IFieldIndex>> _fieldIndexes;
     uint32_t                _numFields;
 
 public:
-    FieldIndexCollection(const index::Schema &schema);
+    FieldIndexCollection(const index::Schema& schema, const index::IFieldLengthInspector& inspector);
     ~FieldIndexCollection();
-    PostingList::Iterator find(const vespalib::stringref word,
-                               uint32_t fieldId) const {
-        return _fieldIndexes[fieldId]->find(word);
-    }
-
-    PostingList::ConstIterator findFrozen(const vespalib::stringref word, uint32_t fieldId) const {
-        return _fieldIndexes[fieldId]->findFrozen(word);
-    }
 
     uint64_t getNumUniqueWords() const {
         uint64_t numUniqueWords = 0;
@@ -47,15 +44,19 @@ public:
 
     void dump(search::index::IndexBuilder & indexBuilder);
 
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
-    FieldIndex *getFieldIndex(uint32_t fieldId) const {
+    IFieldIndex *getFieldIndex(uint32_t fieldId) const {
         return _fieldIndexes[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<FieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
+    const std::vector<std::unique_ptr<IFieldIndex>> &getFieldIndexes() const { return _fieldIndexes; }
 
     uint32_t getNumFields() const { return _numFields; }
+
+    FieldIndexRemover &get_remover(uint32_t field_id) override;
+    IOrderedFieldIndexInserter &get_inserter(uint32_t field_id) override;
+    index::FieldLengthCalculator &get_calculator(uint32_t field_id) override;
 };
 
 }

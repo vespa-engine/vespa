@@ -5,7 +5,6 @@
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/dense/dense_dot_product_function.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
-#include <vespa/eval/tensor/dense/dense_tensor_builder.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/eval/eval/test/tensor_model.hpp>
 #include <vespa/eval/eval/test/eval_fixture.h>
@@ -103,7 +102,8 @@ EvalFixture::ParamRepo make_params() {
         .add("v04_y3", spec({y(3)}, MyVecSeq(10)))
         .add("v05_x5", spec({x(5)}, MyVecSeq(6.0)))
         .add("v06_x5", spec({x(5)}, MyVecSeq(7.0)))
-        .add("v07_x5f", spec({x(5)}, MyVecSeq(7.0)), "tensor<float>(x[5])")
+        .add("v07_x5f", spec(float_cells({x(5)}), MyVecSeq(7.0)))
+        .add("v08_x5f", spec(float_cells({x(5)}), MyVecSeq(6.0)))
         .add("m01_x3y3", spec({x(3),y(3)}, MyVecSeq(1.0)))
         .add("m02_x3y3", spec({x(3),y(3)}, MyVecSeq(2.0)));
 }
@@ -184,8 +184,9 @@ void verify_not_compatible(const vespalib::string &a, const vespalib::string &b)
 
 TEST("require that type compatibility test is appropriate") {
     TEST_DO(verify_compatible("tensor(x[5])", "tensor(x[5])"));
-    TEST_DO(verify_not_compatible("tensor(x[5])", "tensor<float>(x[5])"));
-    TEST_DO(verify_not_compatible("tensor<float>(x[5])", "tensor<float>(x[5])"));
+    TEST_DO(verify_compatible("tensor(x[5])", "tensor<float>(x[5])"));
+    TEST_DO(verify_compatible("tensor<float>(x[5])", "tensor(x[5])"));
+    TEST_DO(verify_compatible("tensor<float>(x[5])", "tensor<float>(x[5])"));
     TEST_DO(verify_not_compatible("tensor(x[5])", "tensor(x[6])"));
     TEST_DO(verify_not_compatible("tensor(x[5])", "tensor(y[5])"));
     TEST_DO(verify_compatible("tensor(x[3],y[7],z[9])", "tensor(x[3],y[7],z[9])"));
@@ -193,8 +194,10 @@ TEST("require that type compatibility test is appropriate") {
     TEST_DO(verify_not_compatible("tensor(x[9],y[7],z[5])", "tensor(x[5],y[7],z[9])"));
 }
 
-TEST("require that optimization is disabled for tensors with non-double cells") {
-    TEST_DO(assertNotOptimized("reduce(v05_x5*v07_x5f,sum)"));
+TEST("require that optimization also works for tensors with non-double cells") {
+    TEST_DO(assertOptimized("reduce(v05_x5*v07_x5f,sum)"));
+    TEST_DO(assertOptimized("reduce(v07_x5f*v05_x5,sum)"));
+    TEST_DO(assertOptimized("reduce(v07_x5f*v08_x5f,sum)"));
 }
 
 //-----------------------------------------------------------------------------

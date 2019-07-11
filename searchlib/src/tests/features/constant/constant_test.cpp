@@ -7,9 +7,8 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/tensor/default_tensor.h>
+#include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/eval/tensor/tensor_factory.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -22,20 +21,10 @@ using vespalib::eval::DoubleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
-using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
-using vespalib::tensor::TensorFactory;
 
 namespace
 {
-
-Tensor::UP createTensor(const TensorCells &cells,
-                        const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return TensorFactory::create(cells, dimensions, builder);
-}
 
 Tensor::UP make_tensor(const TensorSpec &spec) {
     auto tensor = DefaultTensorEngine::ref().from_spec(spec);
@@ -72,10 +61,9 @@ struct ExecFixture
         return extractDouble(docId);
     }
     void addTensor(const vespalib::string &name,
-                   const TensorCells &cells,
-                   const TensorDimensions &dimensions)
+                   const TensorSpec &spec)
     {
-        Tensor::UP tensor = createTensor(cells, dimensions);
+        Tensor::UP tensor = make_tensor(spec);
         ValueType type(tensor->type());
         test.getIndexEnv().addConstantValue(name,
                                             std::move(type),
@@ -100,10 +88,10 @@ TEST_F("require that existing tensor constant is detected",
        ExecFixture("constant(foo)"))
 {
     f.addTensor("foo",
-                {   {{{"x", "a"}}, 3},
-                    {{{"x", "b"}}, 5},
-                    {{{"x", "c"}}, 7} },
-                { "x" });
+                TensorSpec("tensor(x{})")
+                .add({{"x","a"}}, 3)
+                .add({{"x","b"}}, 5)
+                .add({{"x","c"}}, 7));
     EXPECT_TRUE(f.setup());
     auto expect = make_tensor(TensorSpec("tensor(x{})")
                               .add({{"x","b"}}, 5)

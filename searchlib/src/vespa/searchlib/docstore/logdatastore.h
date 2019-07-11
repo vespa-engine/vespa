@@ -6,9 +6,10 @@
 #include "lid_info.h"
 #include "writeablefilechunk.h"
 #include <vespa/vespalib/util/compressionconfig.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
 #include <set>
@@ -88,7 +89,7 @@ public:
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
 
-    ~LogDataStore();
+    ~LogDataStore() override;
 
     // Implements IDataStore API
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const override;
@@ -163,7 +164,7 @@ public:
     }
 
     DataStoreStorageStats getStorageStats() const override;
-    MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
     std::vector<DataStoreFileChunkStats> getFileChunkStats() const override;
 
     void compactLidSpace(uint32_t wantedDocLidLimit) override;
@@ -186,7 +187,7 @@ private:
     void compactWorst(double bloatLimit, double spreadLimit);
     void compactFile(FileId chunkId);
 
-    typedef attribute::RcuVector<uint64_t> LidInfoVector;
+    typedef vespalib::RcuVector<uint64_t> LidInfoVector;
     typedef std::vector<FileChunk::UP> FileChunkVector;
 
     void updateLidMap(uint32_t lastFileChunkDocIdLimit);
@@ -219,7 +220,7 @@ private:
     const FileChunk * getPrevActive(const LockGuard & guard) const {
         assert(guard.locks(_updateLock));
         (void) guard;
-        return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : NULL;
+        return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
     }
     void setActive(const LockGuard & guard, FileId fileId) {
         assert(guard.locks(_updateLock));

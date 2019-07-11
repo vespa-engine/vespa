@@ -17,10 +17,10 @@ public class DocumentApiApplicationTest {
     @Test
     public void application_with_document_api() throws IOException {
         String services =
-                "<jdisc version='1.0'>" +
+                "<container version='1.0'>" +
                 "    <http><server port=\"" + findRandomOpenPortOnAllLocalInterfaces() + "\" id=\"foobar\"/></http>" +
                 "    <document-api/>" +
-                "</jdisc>";
+                "</container>";
         try (Application application = Application.fromServicesXml(services, Networking.enable)) {
         }
     }

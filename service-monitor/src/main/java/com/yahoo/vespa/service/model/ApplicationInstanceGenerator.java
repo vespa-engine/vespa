@@ -53,8 +53,10 @@ public class ApplicationInstanceGenerator {
 
         for (HostInfo host : applicationInfo.getModel().getHosts()) {
             HostName hostName = new HostName(host.getHostname());
+
             for (ServiceInfo serviceInfo : host.getServices()) {
                 ServiceClusterKey serviceClusterKey = toServiceClusterKey(serviceInfo);
+
                 ServiceInstance serviceInstance =
                         toServiceInstance(
                                 applicationInfo.getApplicationId(),
@@ -63,9 +65,7 @@ public class ApplicationInstanceGenerator {
                                 hostName,
                                 serviceStatusProvider);
 
-                if (!groupedServiceInstances.containsKey(serviceClusterKey)) {
-                    groupedServiceInstances.put(serviceClusterKey, new HashSet<>());
-                }
+                groupedServiceInstances.putIfAbsent(serviceClusterKey, new HashSet<>());
                 groupedServiceInstances.get(serviceClusterKey).add(serviceInstance);
             }
         }

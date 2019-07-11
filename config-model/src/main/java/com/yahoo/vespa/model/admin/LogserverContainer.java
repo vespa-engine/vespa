@@ -15,6 +15,7 @@ public class LogserverContainer extends Container {
     public LogserverContainer(AbstractConfigProducer parent) {
         super(parent, "" + 0, 0);
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, ((LogserverContainerCluster) parent).getName(), true));
+        appendJvmOptions("-Xms32m -Xmx512m");
     }
 
     @Override

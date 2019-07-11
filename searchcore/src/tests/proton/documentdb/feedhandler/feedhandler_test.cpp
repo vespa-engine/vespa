@@ -456,6 +456,7 @@ struct FeedHandlerFixture
     DummyFileHeaderContext       _fileHeaderContext;
     TransLogServer               tls;
     vespalib::string             tlsSpec;
+    vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService     writeService;
     SchemaContext                schema;
     MyOwner                      owner;
@@ -471,7 +472,8 @@ struct FeedHandlerFixture
         : _fileHeaderContext(),
           tls("mytls", 9016, "mytlsdir", _fileHeaderContext, 0x10000),
           tlsSpec("tcp/localhost:9016"),
-          writeService(),
+          sharedExecutor(1, 0x10000),
+          writeService(sharedExecutor),
           schema(),
           owner(),
           _state(),

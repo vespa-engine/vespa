@@ -7,8 +7,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.29
+ * @author Einar M R Rosenvinge
  * @deprecated Do not use!
  */
 @Deprecated
@@ -18,9 +17,7 @@ public class DatatypeFactoryProvider implements Provider<DatatypeFactory> {
     @Override
     public DatatypeFactory get() {
         try {
-            return DatatypeFactory.newInstance(
-                    FACTORY_CLASS,
-                    this.getClass().getClassLoader());
+            return DatatypeFactory.newInstance(FACTORY_CLASS, this.getClass().getClassLoader());
         } catch (DatatypeConfigurationException e) {
             throw new IllegalStateException(e);
         }

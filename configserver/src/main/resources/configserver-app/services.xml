@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0" xmlns:preprocess="properties">
-  <jdisc id="configserver" jetty="true" version="1.0">
+  <container id="configserver" jetty="true" version="1.0">
     <config name="container.jdisc.config.health-monitor">
       <initialStatus>initializing</initialStatus>
     </config>
 
     <accesslog type="vespa" fileNamePattern="logs/vespa/configserver/access.log.%Y%m%d%H%M%S" compressOnRotation="true" symlinkName="access.log" />
-    <preprocess:include file='access-logging.xml' required='false' />
+    <accesslog type="json"  fileNamePattern="logs/vespa/configserver/access-json.log.%Y%m%d%H%M%S" symlinkName="access-json.log" compressOnRotation="true" />
 
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
@@ -38,6 +38,9 @@
     <component id="com.yahoo.vespa.config.server.application.HttpProxy" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.rpc.RpcRequestHandlerProvider" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.rpc.security.DummyNodeIdentifierProvider" bundle="configserver" />
+    <component id="com.yahoo.vespa.config.server.rpc.security.DefaultRpcAuthorizerProvider" bundle="configserver" />
 
     <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
 
@@ -47,14 +50,14 @@
 
     <preprocess:include file='config-models.xml' required='false' />
     <preprocess:include file='node-repository.xml' required='false' />
-    <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
+    <preprocess:include file='routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
 
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
-    <preprocess:include file='hosted-vespa/metrics-packets.xml' required='false' />
-    <preprocess:include file='controller/container.xml' required='false' />
+    <preprocess:include file='metrics-packets.xml' required='false' />
+    <preprocess:include file='container.xml' required='false' />
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.manager.UnionMonitorManager" bundle="service-monitor" />
@@ -153,8 +156,8 @@
 
     <http>
       <server port="19071" id="configserver" />
-      <preprocess:include file='hosted-vespa/http-server.xml' required='false' />
-      <preprocess:include file='controller/http.xml' required='false' />
+      <preprocess:include file='http-server.xml' required='false' />
+      <preprocess:include file='http.xml' required='false' />
     </http>
 
     <preprocess:include file='athenz-identity-provider.xml' required='false' />
@@ -164,5 +167,5 @@
     <preprocess:include file='configserver-components.xml' required='false' />
 
     <preprocess:include file='zookeeper-server-config.xml' required='false' />
-  </jdisc>
+  </container>
 </services>

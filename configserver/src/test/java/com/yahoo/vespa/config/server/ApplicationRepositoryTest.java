@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -21,6 +20,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
+import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -37,6 +37,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -46,17 +48,11 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -83,21 +79,22 @@ public class ApplicationRepositoryTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    @Rule
-    public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
-
     @Before
     public void setup() {
         Curator curator = new MockCurator();
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder()
                                                                 .curator(curator)
                                                                 .build());
+        tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
         orchestrator = new OrchestratorMock();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          provisioner,
+                                                          orchestrator,
+                                                          clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -151,7 +148,11 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogs() {
-        wireMock.stubFor(get(urlEqualTo("/logs")).willReturn(aResponse().withStatus(200)));
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          provisioner,
+                                                          orchestrator,
+                                                          new MockLogRetriever(),
+                                                          clock);
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.empty(), "");
         assertEquals(200, response.getStatus());
@@ -159,14 +160,24 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void getLogsForHostname() {
-        wireMock.stubFor(get(urlEqualTo("/logs")).willReturn(aResponse().withStatus(200)));
-        deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("localhost"), "");
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          provisioner,
+                                                          orchestrator,
+                                                          new MockLogRetriever(),
+                                                          clock);
+        ApplicationId applicationId = ApplicationId.from("hosted-vespa", "tenant-host", "default");
+        deployApp(testAppLogServerWithContainer, new PrepareParams.Builder().applicationId(applicationId).build());
+        HttpResponse response = applicationRepository.getLogs(applicationId, Optional.of("localhost"), "");
         assertEquals(200, response.getStatus());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void refuseToGetLogsFromHostnameNotInApplication() {
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          provisioner,
+                                                          orchestrator,
+                                                          new MockLogRetriever(),
+                                                          clock);
         deployApp(testAppLogServerWithContainer);
         HttpResponse response = applicationRepository.getLogs(applicationId(), Optional.of("host123.fake.yahoo.com"), "");
         assertEquals(200, response.getStatus());
@@ -273,8 +284,8 @@ public class ApplicationRepositoryTest {
             assertNull(tenant.getLocalSessionRepo().getSession(sessionId));
             assertNull(tenant.getRemoteSessionRepo().getSession(sessionId));
             assertTrue(provisioner.removed);
-            assertThat(provisioner.lastApplicationId.tenant(), is(tenant.getName()));
-            assertThat(provisioner.lastApplicationId, is(applicationId()));
+            assertEquals(tenant.getName(), provisioner.lastApplicationId.tenant());
+            assertEquals(applicationId(), provisioner.lastApplicationId);
 
             assertFalse(applicationRepository.delete(applicationId()));
         }
@@ -292,7 +303,7 @@ public class ApplicationRepositoryTest {
 
             // Delete app with id fooId, should not affect original app
             assertTrue(applicationRepository.delete(fooId));
-            assertThat(provisioner.lastApplicationId, is(fooId));
+            assertEquals(fooId, provisioner.lastApplicationId);
             assertNotNull(applicationRepository.getActiveSession(applicationId()));
 
             assertTrue(applicationRepository.delete(applicationId()));
@@ -332,7 +343,7 @@ public class ApplicationRepositoryTest {
 
         // All sessions except 3 should be removed after the call to deleteExpiredLocalSessions
         tester.applicationRepository().deleteExpiredLocalSessions();
-        final Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
+        Collection<LocalSession> sessions = tester.tenant().getLocalSessionRepo().listSessions();
         assertEquals(1, sessions.size());
         assertEquals(3, new ArrayList<>(sessions).get(0).getSessionId());
 
@@ -372,4 +383,28 @@ public class ApplicationRepositoryTest {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return applicationRepository.getMetadataFromSession(tenant, sessionId);
     }
+
+    private static class MockLogRetriever extends LogRetriever {
+
+        @Override
+        public HttpResponse getLogs(String logServerHostname) {
+            return new MockHttpResponse();
+        }
+
+        private static class MockHttpResponse extends HttpResponse {
+
+            private MockHttpResponse() {
+                super(200);
+            }
+
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("log line".getBytes(StandardCharsets.UTF_8));
+            }
+
+        }
+
+
+    }
+
 }

@@ -4,9 +4,9 @@
 
 #include "attributesaver.h"
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/datastore/unique_store.h>
-#include <vespa/searchlib/datastore/unique_store_saver.h>
-#include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/datastore/unique_store.h>
+#include <vespa/vespalib/datastore/unique_store_saver.h>
+#include <vespa/vespalib/util/rcuvector.h>
 #include "reference_attribute.h"
 #include "reference.h"
 

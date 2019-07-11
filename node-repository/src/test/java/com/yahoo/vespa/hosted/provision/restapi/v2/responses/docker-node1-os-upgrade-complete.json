@@ -9,10 +9,9 @@
   "canonicalFlavor": "large",
   "minDiskAvailableGb": 1600.0,
   "minMainMemoryAvailableGb": 32.0,
-  "description": "Flavor-name-is-large",
   "minCpuCores": 4.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 0.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",
@@ -62,12 +61,12 @@
     }
   ],
   "ipAddresses": [
-    "127.0.0.1",
-    "::1"
+    "127.0.100.1",
+    "::100:1"
   ],
   "additionalIpAddresses": [
-    "::2",
-    "::3",
-    "::4"
+    "::100:2",
+    "::100:3",
+    "::100:4"
   ]
 }

@@ -33,10 +33,10 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void gui_search_handler_is_always_included_when_search_is_specified() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <search />",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
 
@@ -59,13 +59,13 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void search_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <search>",
                 "    <binding>binding0</binding>",
                 "    <binding>binding1</binding>",
                 "  </search>",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
 
@@ -78,12 +78,12 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void search_handler_bindings_can_be_disabled() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <search>",
                 "    <binding/>",
                 "  </search>",
                 nodesXml,
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
 
@@ -109,12 +109,12 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
     private void createClusterWithOnlyDefaultChains() {
         Element containerElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <search/>",
                 "  <nodes>",
                 "    <node hostalias='mockhost' />",
                 "  </nodes>",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, containerElem);
     }
@@ -123,10 +123,10 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     public void manually_setting_up_search_handler_is_forbidden() {
         try {
             Element clusterElem = DomBuilderTest.parse(
-                    "<jdisc id='default' version='1.0'>",
+                    "<container id='default' version='1.0'>",
                     "  <handler id='com.yahoo.search.handler.SearchHandler' />",
                     nodesXml,
-                    " </jdisc>");
+                    " </container>");
 
 
             createModel(root, clusterElem);
@@ -145,14 +145,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='mockhost'/>" +
                 "  </admin>" +
-                "  <jdisc version='1.0' id='container'>"+
+                "  <container version='1.0' id='container'>"+
                 "      <search>" +
                 "        <chain id='mychain' inherits='vespa'/>" +
                 "      </search>" +
                 "      <nodes>"+
                 "        <node hostalias=\"mockhost\" />"+
                 "      </nodes>"+
-                "  </jdisc>"+
+                "  </container>"+
                 contentXml() +
                 "</services>";
 
@@ -171,14 +171,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='mockhost'/>" +
                 "  </admin>" +
-                "  <jdisc version='1.0' id='container'>"+
+                "  <container version='1.0' id='container'>"+
                 "      <search>" +
                 "        <chain id='mychain' inherits='vespa'/>" +
                 "      </search>" +
                 "      <nodes>"+
                 "        <node hostalias=\"mockhost\" />"+
                 "      </nodes>"+
-                "  </jdisc>"+
+                "  </container>"+
                 contentXml() +
                 "</services>";
 

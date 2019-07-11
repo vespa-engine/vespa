@@ -194,29 +194,28 @@ DistributorComponent::removeNodesFromDB(const document::Bucket &bucket,
     }
 }
 
-std::vector<uint16_t>
-DistributorComponent::enumerateDownNodes(
+void
+DistributorComponent::enumerateUnavailableNodes(
+        std::vector<uint16_t>& unavailableNodes,
         const lib::ClusterState& s,
-        const document::Bucket &bucket,
+        const document::Bucket& bucket,
         const std::vector<BucketCopy>& candidates) const
 {
-    std::vector<uint16_t> downNodes;
+    const auto* up_states = _distributor.getStorageNodeUpStates();
     for (uint32_t i = 0; i < candidates.size(); ++i) {
         const BucketCopy& copy(candidates[i]);
         const lib::NodeState& ns(
-                s.getNodeState(lib::Node(lib::NodeType::STORAGE,
-                                         copy.getNode())));
-        if (ns.getState() == lib::State::DOWN) {
+                s.getNodeState(lib::Node(lib::NodeType::STORAGE, copy.getNode())));
+        if (!ns.getState().oneOf(up_states)) {
             LOG(debug,
                 "Trying to add a bucket copy to %s whose node is marked as "
                 "down in the cluster state: %s. Ignoring it since no zombies "
                 "are allowed!",
                 bucket.toString().c_str(),
                 copy.toString().c_str());
-            downNodes.push_back(copy.getNode());
+            unavailableNodes.emplace_back(copy.getNode());
         }
     }
-    return downNodes;
 }
 
 void
@@ -236,8 +235,6 @@ DistributorComponent::updateBucketDatabase(
             "cluster state '%s' - ignoring!",
             bucket.toString().c_str(),
             ownership.getNonOwnedState().toString().c_str());
-        LOG_BUCKET_OPERATION_NO_LOCK(bucketId, "Ignoring database insert since "
-                                     "we do not own the bucket");
         return;
     }
 
@@ -258,22 +255,24 @@ DistributorComponent::updateBucketDatabase(
     }
 
     // Ensure that we're not trying to bring any zombie copies into the
-    // bucket database (i.e. copies on nodes that are actually down).
-    std::vector<uint16_t> downNodes(
-            enumerateDownNodes(bucketSpace.getClusterState(), bucket, changedNodes));
+    // bucket database (i.e. copies on nodes that are actually unavailable).
+    std::vector<uint16_t> unavailableNodes;
+    enumerateUnavailableNodes(unavailableNodes, bucketSpace.getClusterState(), bucket, changedNodes);
+    if (auto* pending_state = _distributor.pendingClusterStateOrNull(bucket.getBucketSpace())) {
+        enumerateUnavailableNodes(unavailableNodes, *pending_state, bucket, changedNodes);
+    }
     // Optimize for common case where we don't have to create a new
     // bucket copy vector
-    if (downNodes.empty()) {
+    if (unavailableNodes.empty()) {
         dbentry->addNodes(changedNodes, getIdealNodes(bucket));
     } else {
         std::vector<BucketCopy> upNodes;
         for (uint32_t i = 0; i < changedNodes.size(); ++i) {
             const BucketCopy& copy(changedNodes[i]);
-            if (std::find(downNodes.begin(), downNodes.end(),
-                          copy.getNode())
-                == downNodes.end())
+            if (std::find(unavailableNodes.begin(), unavailableNodes.end(), copy.getNode())
+                == unavailableNodes.end())
             {
-                upNodes.push_back(copy);
+                upNodes.emplace_back(copy);
             }
         }
         dbentry->addNodes(upNodes, getIdealNodes(bucket));

@@ -1,34 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <tests/distributor/messagesenderstub.h>
-#include <tests/common/teststorageapp.h>
-#include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/persistence/bucketownershipnotifier.h>
+#include <tests/common/message_sender_stub.h>
+#include <tests/common/teststorageapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-class BucketOwnershipNotifierTest : public CppUnit::TestFixture
-{
+struct BucketOwnershipNotifierTest : public Test {
     std::unique_ptr<TestServiceLayerApp> _app;
     lib::ClusterState _clusterState;
-public:
 
     BucketOwnershipNotifierTest()
         : _app(),
           _clusterState("distributor:2 storage:1")
     {}
 
-    void setUp() override;
-
-    CPPUNIT_TEST_SUITE(BucketOwnershipNotifierTest);
-    CPPUNIT_TEST(testSendNotifyBucketChangeIfOwningDistributorChanged);
-    CPPUNIT_TEST(testDoNotSendNotifyBucketChangeIfBucketOwnedByInitialSender);
-    CPPUNIT_TEST(testIgnoreIdealStateCalculationExceptions);
-    CPPUNIT_TEST(testGuardNotifyAlways);
-    CPPUNIT_TEST_SUITE_END();
+    void SetUp() override;
 
     bool ownsBucket(uint16_t distributorIndex,
                     const document::BucketId& bucket) const
@@ -56,23 +48,15 @@ public:
         return makeDocumentBucket(document::BucketId(0));
     }
 
-
-    void testSendNotifyBucketChangeIfOwningDistributorChanged();
-    void testDoNotSendNotifyBucketChangeIfBucketOwnedByInitialSender();
-    void testIgnoreIdealStateCalculationExceptions();
-    void testGuardNotifyAlways();
-
     void doTestNotification(const document::Bucket &bucket,
                             const api::BucketInfo& info,
                             const std::string& wantedSend);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketOwnershipNotifierTest);
-
 void
-BucketOwnershipNotifierTest::setUp()
+BucketOwnershipNotifierTest::SetUp()
 {
-    _app.reset(new TestServiceLayerApp);
+    _app = std::make_unique<TestServiceLayerApp>();
     _app->setDistribution(Redundancy(1), NodeCount(2));
     _app->setClusterState(_clusterState);
 }
@@ -89,15 +73,13 @@ BucketOwnershipNotifierTest::doTestNotification(const document::Bucket &bucket,
 
     notifier.notifyIfOwnershipChanged(bucket, 0, info);
 
-    CPPUNIT_ASSERT_EQUAL(wantedSend, sender.getCommands(true, true));
+    EXPECT_EQ(wantedSend, sender.getCommands(true, true));
 }
 
-void
-BucketOwnershipNotifierTest::testSendNotifyBucketChangeIfOwningDistributorChanged()
-{
+TEST_F(BucketOwnershipNotifierTest, send_notify_bucket_change_if_owning_distributor_changed) {
     api::BucketInfo info(0x1, 2, 3);
     document::Bucket bucket(getFirstNonOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
+    ASSERT_NE(bucket.getBucketId().getRawId(), 0ULL);
 
     std::ostringstream wanted;
     wanted << "NotifyBucketChangeCommand("
@@ -108,31 +90,25 @@ BucketOwnershipNotifierTest::testSendNotifyBucketChangeIfOwningDistributorChange
     doTestNotification(bucket, info, wanted.str());
 }
 
-void
-BucketOwnershipNotifierTest::testDoNotSendNotifyBucketChangeIfBucketOwnedByInitialSender()
-{
+TEST_F(BucketOwnershipNotifierTest, do_not_send_notify_bucket_change_if_bucket_owned_by_initial_sender) {
     api::BucketInfo info(0x1, 2, 3);
     document::Bucket bucket(getFirstOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
+    ASSERT_NE(bucket.getBucketId().getRawId(), 0ULL);
 
     doTestNotification(bucket, info, "");
 }
 
-void
-BucketOwnershipNotifierTest::testIgnoreIdealStateCalculationExceptions()
-{
+TEST_F(BucketOwnershipNotifierTest, ignore_ideal_state_calculation_exceptions) {
     api::BucketInfo info(0x1, 2, 3);
     document::Bucket bucket(getFirstNonOwnedBucket());
-    CPPUNIT_ASSERT(bucket.getBucketId().getRawId() != 0);
+    ASSERT_NE(bucket.getBucketId().getRawId(), 0ULL);
 
     _app->setClusterState(lib::ClusterState("distributor:0 storage:1"));
 
     doTestNotification(bucket, info, "");
 }
 
-void
-BucketOwnershipNotifierTest::testGuardNotifyAlways()
-{
+TEST_F(BucketOwnershipNotifierTest, guard_notify_always) {
     ServiceLayerComponent component(_app->getComponentRegister(), "dummy");
     MessageSenderStub sender;
     BucketOwnershipNotifier notifier(component, sender);
@@ -157,7 +133,7 @@ BucketOwnershipNotifierTest::testGuardNotifyAlways()
                << ") => 1";
     }
 
-    CPPUNIT_ASSERT_EQUAL(wanted.str(), sender.getCommands(true, true));
+    EXPECT_EQ(wanted.str(), sender.getCommands(true, true));
 }
 
 } // storage

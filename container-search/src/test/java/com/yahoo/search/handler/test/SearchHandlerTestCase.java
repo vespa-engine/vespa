@@ -36,6 +36,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -92,7 +93,7 @@ public class SearchHandlerTestCase {
     }
 
     @Test
-    public void testNullQuery() throws Exception {
+    public void testNullQuery() {
         assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                      "<result total-hit-count=\"0\">\n" +
                      "  <hit relevancy=\"1.0\">\n" +
@@ -125,10 +126,10 @@ public class SearchHandlerTestCase {
 
         // ...and check the resulting config
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue("Have a new instance of the search handler", searchHandler != newSearchHandler);
+        assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
         assertNotNull("Have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("hello"));
         assertNull("Don't have the new search chain", fetchSearchHandler(configurer).getSearchChainRegistry().getChain("classLoadingError"));
-        try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(searchHandler)) {
+        try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             assertJsonResult("http://localhost?query=abc", newDriver);
         }
     }

@@ -2,15 +2,20 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.RawConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.time.Duration;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
@@ -18,29 +23,30 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.9
+ * @author bjorncs
  */
 public class ConfigProxyRpcServerTest {
     private static final String hostname = "localhost";
     private static final int port = 12345;
     private static final String address = "tcp/" + hostname + ":" + port;
-    private ProxyServer proxyServer;
-    private ConfigProxyRpcServer rpcServer;
+    private TestServer server;
+    private TestClient client;
 
     @Before
-    public void setup() {
-        proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
-        rpcServer = new ConfigProxyRpcServer(proxyServer, new Supervisor(new Transport()), null);
+    public void setup() throws ListenFailedException {
+        server = new TestServer();
+        client = new TestClient(server.listenPort());
     }
 
     @After
     public void teardown() {
-        rpcServer.shutdown();
+        client.close();
+        server.close();
     }
 
     @Test
     public void basic() {
-        ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource(new MockClientUpdater()));
+        ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource());
         Spec spec = new Spec("localhost", 12345);
         ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, new Supervisor(new Transport()), spec);
         assertThat(server.getSpec(), is(spec));
@@ -52,7 +58,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodPing() {
         Request req = new Request("ping");
-        rpcServer.ping(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
@@ -65,7 +71,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodListCachedConfig() {
         Request req = new Request("listCachedConfig");
-        rpcServer.listCachedConfig(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         String[] ret = req.returnValues().get(0).asStringArray();
@@ -73,9 +79,9 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getMemoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfig");
-        rpcServer.listCachedConfig(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         ret = req.returnValues().get(0).asStringArray();
@@ -92,7 +98,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodListCachedConfigFull() {
         Request req = new Request("listCachedConfigFull");
-        rpcServer.listCachedConfigFull(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
@@ -100,9 +106,9 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        proxyServer.getMemoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfigFull");
-        rpcServer.listCachedConfigFull(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         ret = req.returnValues().get(0).asStringArray();
         assertThat(ret.length, is(1));
@@ -119,7 +125,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodListSourceConnections() {
         Request req = new Request("listSourceConnections");
-        rpcServer.listSourceConnections(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
@@ -135,7 +141,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodPrintStatistics() {
         Request req = new Request("printStatistics");
-        rpcServer.printStatistics(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("\n" +
@@ -149,7 +155,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodInvalidateCache() {
         Request req = new Request("invalidateCache");
-        rpcServer.invalidateCache(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
@@ -165,7 +171,7 @@ public class ConfigProxyRpcServerTest {
     @Test
     public void testRpcMethodGetModeAndSetMode() {
         Request req = new Request("getMode");
-        rpcServer.getMode(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("default"));
@@ -173,17 +179,17 @@ public class ConfigProxyRpcServerTest {
         req = new Request("setMode");
         String mode = "memorycache";
         req.parameters().add(new StringValue(mode));
-        rpcServer.setMode(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         String[] ret = req.returnValues().get(0).asStringArray();
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("0"));
         assertThat(ret[1], is("success"));
-        assertThat(proxyServer.getMode().name(), is(mode));
+        assertThat(server.proxyServer().getMode().name(), is(mode));
 
         req = new Request("getMode");
-        rpcServer.getMode(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is(mode));
@@ -192,14 +198,14 @@ public class ConfigProxyRpcServerTest {
         String oldMode = mode;
         mode = "invalid";
         req.parameters().add(new StringValue(mode));
-        rpcServer.setMode(req);
+        client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
         ret = req.returnValues().get(0).asStringArray();
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("1"));
         assertThat(ret[1], is("Could not set mode to '" + mode + "'. Legal modes are '" + Mode.modes() + "'"));
-        assertThat(proxyServer.getMode().name(), is(oldMode));
+        assertThat(server.proxyServer().getMode().name(), is(oldMode));
     }
 
     /**
@@ -211,17 +217,17 @@ public class ConfigProxyRpcServerTest {
         String spec1 = "tcp/a:19070";
         String spec2 = "tcp/b:19070";
         req.parameters().add(new StringValue(spec1 + "," + spec2));
-        rpcServer.updateSources(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("Updated config sources to: " + spec1 + "," + spec2));
 
 
-        proxyServer.setMode(Mode.ModeName.MEMORYCACHE.name());
+        server.proxyServer().setMode(Mode.ModeName.MEMORYCACHE.name());
 
         req = new Request("updateSources");
         req.parameters().add(new StringValue(spec1 + "," + spec2));
-        rpcServer.updateSources(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("Cannot update sources when in '" + Mode.ModeName.MEMORYCACHE.name().toLowerCase() + "' mode"));
@@ -245,10 +251,59 @@ public class ConfigProxyRpcServerTest {
         Request req = new Request("dumpCache");
         String path = "/tmp";
         req.parameters().add(new StringValue(path));
-        rpcServer.dumpCache(req);
+        client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         assertThat(req.returnValues().size(), is(1));
         assertThat(req.returnValues().get(0).asString(), is("success"));
     }
 
+    private static class TestServer implements AutoCloseable {
+
+        private static final Spec SPEC = new Spec(0);
+
+        private final ProxyServer proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
+        private final Supervisor supervisor = new Supervisor(new Transport());
+        private final ConfigProxyRpcServer rpcServer = new ConfigProxyRpcServer(proxyServer, supervisor, SPEC);
+        private final Acceptor acceptor;
+
+        TestServer() throws ListenFailedException {
+            acceptor = supervisor.listen(SPEC);
+        }
+
+        ProxyServer proxyServer() {
+            return proxyServer;
+        }
+
+        int listenPort() {
+            return acceptor.port();
+        }
+
+        @Override
+        public void close() {
+            acceptor.shutdown().join();
+            supervisor.transport().shutdown().join();
+            rpcServer.shutdown();
+        }
+    }
+
+    private static class TestClient implements AutoCloseable {
+
+        private final Supervisor supervisor;
+        private final Target target;
+
+        TestClient(int rpcPort) {
+            this.supervisor = new Supervisor(new Transport());
+            this.target = supervisor.connect(new Spec(rpcPort));
+        }
+
+        void invoke(Request request) {
+            target.invokeSync(request, Duration.ofMinutes(10).getSeconds());
+        }
+
+        @Override
+        public void close() {
+            target.close();
+            supervisor.transport().shutdown().join();
+        }
+    }
 }

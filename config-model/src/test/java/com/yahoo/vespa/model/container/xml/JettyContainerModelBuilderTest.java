@@ -1,16 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
@@ -21,6 +24,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -33,7 +37,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_overriding_connector_options_works() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>\n" +
+                "<container id='default' version='1.0'>\n" +
                 "  <http>\n" +
                 "    <server id='bananarama' port='4321'>\n" +
                 "      <config name='jdisc.http.connector'>\n" +
@@ -43,7 +47,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "    </server>\n" +
                 "  </http>\n" +
                 nodesXml +
-                "</jdisc>\n"
+                "</container>\n"
         );
         createModel(root, clusterElem);
         ConnectorConfig cfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/bananarama");
@@ -54,9 +58,9 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_enabling_jetty_works() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>" +
+                "<container id='default' version='1.0'>" +
                         nodesXml +
-                        "</jdisc>"
+                        "</container>"
         );
         createModel(root, clusterElem);
         assertJettyServerInConfig();
@@ -65,12 +69,12 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_enabling_jetty_works_for_custom_http_servers() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
                 nodesXml,
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
         assertJettyServerInConfig();
     }
@@ -78,9 +82,9 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verifyThatJettyHttpServerHasFilterBindingsProvider() throws Exception {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 nodesXml,
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
@@ -99,12 +103,12 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() throws Exception {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
+                "<container id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
                 nodesXml,
-                "</jdisc>" );
+                "</container>" );
         createModel(root, clusterElem);
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
@@ -123,7 +127,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void ssl_element_generates_connector_config_and_injects_provider_component() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0' jetty='true'>",
                 "    <http>",
                 "        <server port='9000' id='minimal'>",
                 "            <ssl>",
@@ -148,7 +152,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "    </http>",
                 nodesXml,
                 "",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
         ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/configured-ssl-provider@minimal");
@@ -174,13 +178,13 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
-        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredSslProvider.COMPONENT_CLASS));
+        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredFilebasedSslProvider.COMPONENT_CLASS));
     }
 
     @Test
     public void verify_tht_ssl_provider_configuration_configures_correct_config() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0' jetty='true'>",
                 "    <http>",
                 "        <server port='9000' id='ssl'>",
                 "            <ssl-provider class='com.yahoo.CustomSslProvider' bundle='mybundle'/>",
@@ -188,7 +192,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "    </http>",
                 nodesXml,
                 "",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
         ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl/ssl-provider@ssl");
@@ -204,7 +208,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_container_factory_sees_same_config(){
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0' jetty='true'>",
                 "    <http>",
                 "        <server port='9000' id='ssl'>",
                 "            <ssl>",
@@ -215,11 +219,42 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "    </http>",
                 nodesXml,
                 "",
-                "</jdisc>");
+                "</container>");
 
         createModel(root, clusterElem);
         ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
         assertTrue(sslProvider.ssl().enabled());
+    }
+
+    @Test
+    public void verify_that_container_setup_additional_tls4443(){
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0' jetty='true'>",
+                "    <http>",
+                "        <server port='9000' id='ssl'>",
+                "            <ssl>",
+                "                <private-key-file>/foo/key</private-key-file>",
+                "                <certificate-file>/foo/cert</certificate-file>",
+                "            </ssl>",
+                "        </server>",
+                "    </http>",
+                nodesXml,
+                "",
+                "</container>");
+
+        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        createModel(root, deployState, null, clusterElem);
+        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
+        assertTrue(sslProvider.ssl().enabled());
+        assertEquals("", sslProvider.ssl().certificate());
+        assertEquals("", sslProvider.ssl().privateKey());
+
+        ConnectorConfig providedTls = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/tls4443");
+        assertTrue(providedTls.ssl().enabled());
+        assertEquals("CERT", providedTls.ssl().certificate());
+        assertEquals("KEY", providedTls.ssl().privateKey());
+        assertEquals(4443, providedTls.listenPort());
+
     }
 
     private static void assertChildComponentExists(ConnectorFactory connectorFactory, String className) {

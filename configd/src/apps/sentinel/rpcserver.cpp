@@ -8,22 +8,18 @@ LOG_SETUP(".rpcserver");
 namespace config::sentinel {
 
 RpcServer::RpcServer(int portNumber, CommandQueue &cmdQ)
-    : _supervisor(),
+    : _server(),
       _rpcHooks(cmdQ),
       _port(portNumber)
 {
-    _rpcHooks.initRPC(&_supervisor);
-    if (_supervisor.Listen(portNumber)) {
+    _rpcHooks.initRPC(&_server.supervisor());
+    if (_server.supervisor().Listen(portNumber)) {
         LOG(config, "listening on port %d", portNumber);
-        _supervisor.Start();
     } else {
         LOG(error, "unable to listen to port %d", portNumber);
     }
 }
 
-RpcServer::~RpcServer()
-{
-    _supervisor.ShutDown(true);
-}
+RpcServer::~RpcServer() = default;
 
 } // namespace config::sentinel

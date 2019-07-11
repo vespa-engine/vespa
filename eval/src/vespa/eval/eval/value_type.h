@@ -16,7 +16,7 @@ class ValueType
 {
 public:
     enum class Type { ERROR, DOUBLE, TENSOR };
-    enum class CellType { FLOAT, DOUBLE };
+    enum class CellType : char { FLOAT, DOUBLE };
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
@@ -32,7 +32,6 @@ public:
         bool operator!=(const Dimension &rhs) const { return !(*this == rhs); }
         bool is_mapped() const { return (size == npos); }
         bool is_indexed() const { return (size != npos); }
-        bool is_bound() const { return ((size != npos) && (size != 0)); }
     };
 
 private:
@@ -85,4 +84,9 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
 
-}
+// utility template
+template <typename T> inline bool check_cell_type(ValueType::CellType type);
+template <> inline bool check_cell_type<double>(ValueType::CellType type) { return (type == ValueType::CellType::DOUBLE); }
+template <> inline bool check_cell_type<float>(ValueType::CellType type) { return (type == ValueType::CellType::FLOAT); }
+
+} // namespace

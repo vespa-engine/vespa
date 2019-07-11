@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postingstore.h"
-#include <vespa/searchlib/datastore/datastore.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
-
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 namespace search::attribute {
 
@@ -615,10 +614,10 @@ PostingStore<DataT>::clear(const EntryRef ref)
 
 
 template <typename DataT>
-MemoryUsage
+vespalib::MemoryUsage
 PostingStore<DataT>::getMemoryUsage() const
 {
-    MemoryUsage usage;
+    vespalib::MemoryUsage usage;
     usage.merge(_allocator.getMemoryUsage());
     usage.merge(_store.getMemoryUsage());
     uint64_t bvExtraBytes = _bvExtraBytes;

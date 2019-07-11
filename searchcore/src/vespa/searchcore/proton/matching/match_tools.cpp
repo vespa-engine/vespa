@@ -9,6 +9,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <vespa/searchcorespi/index/indexsearchable.h>
 
 using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
@@ -26,23 +27,17 @@ namespace proton::matching {
 
 namespace {
 
-bool contains_all(const HandleRecorder::HandleSet &old_set,
-                  const HandleRecorder::HandleSet &new_set)
+bool contains_all(const HandleRecorder::HandleMap &old_map,
+                  const HandleRecorder::HandleMap &new_map)
 {
-    for (TermFieldHandle handle: new_set) {
-        if (old_set.find(handle) == old_set.end()) {
+    for (const auto &handle: new_map) {
+        const auto old_itr = old_map.find(handle.first);
+        if (old_itr == old_map.end() ||
+            ((static_cast<int>(handle.second) & ~static_cast<int>(old_itr->second)) != 0)) {
             return false;
         }
     }
     return true;
-}
-
-void tag_match_data(const HandleRecorder::HandleSet &handles, MatchData &match_data) {
-    for (TermFieldHandle handle = 0; handle < match_data.getNumTermFields(); ++handle) {
-        if (handles.find(handle) == handles.end()) {
-            match_data.resolveTermField(handle)->tagAsNotNeeded();
-        }
-    }
 }
 
 DegradationParams
@@ -81,12 +76,12 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
         _rank_program->setup(*_match_data, _queryEnv, _featureOverrides);
     }
     bool can_reuse_search = (_search && !_search_has_changed &&
-                             contains_all(_used_handles, recorder.getHandles()));
+            contains_all(_used_handles, recorder.get_handles()));
     if (!can_reuse_search) {
-        tag_match_data(recorder.getHandles(), *_match_data);
+        recorder.tag_match_data(*_match_data);
         _match_data->set_termwise_limit(termwise_limit);
         _search = _query.createSearch(*_match_data);
-        _used_handles = recorder.getHandles();
+        _used_handles = recorder.get_handles();
         _search_has_changed = false;
     }
 }
@@ -164,7 +159,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _hardDoom(hardDoom),
       _query(),
       _match_limiter(),
-      _queryEnv(indexEnv, attributeContext, rankProperties),
+      _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),

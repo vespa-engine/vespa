@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  * @author ollivir
  */
 public class ComponentRegistryNode extends Node {
+
     private static ComponentId componentRegistryNamespace = ComponentId.fromString("ComponentRegistry");
 
     private final Class<?> componentClass;
@@ -36,7 +37,7 @@ public class ComponentRegistryNode extends Node {
     @Override
     protected Object newInstance() {
         ComponentRegistry<Object> registry = new ComponentRegistry<>();
-        componentsToInject.forEach(component -> registry.register(component.componentId(), component.newOrCachedInstance()));
+        componentsToInject.forEach(component -> registry.register(component.componentId(), component.component()));
 
         return registry;
     }
@@ -102,4 +103,5 @@ public class ComponentRegistryNode extends Node {
             return false;
         }
     }
+
 }

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/log/log.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
@@ -12,25 +11,15 @@
 LOG_SETUP(".singlebucketjointest");
 
 using document::test::makeDocumentBucket;
+using namespace ::testing;
 
 namespace storage {
 
-class SingleBucketJoinTest : public FileStorTestFixture
-{
-public:
-    void testPersistenceCanHandleSingleBucketJoin();
-
-    CPPUNIT_TEST_SUITE(SingleBucketJoinTest);
-    CPPUNIT_TEST(testPersistenceCanHandleSingleBucketJoin);
-    CPPUNIT_TEST_SUITE_END();
+struct SingleBucketJoinTest : FileStorTestFixture {
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(SingleBucketJoinTest);
-
-void
-SingleBucketJoinTest::testPersistenceCanHandleSingleBucketJoin()
-{
-    TestFileStorComponents c(*this, "testPersistenceCanHandleSingleBucketJoin");
+TEST_F(SingleBucketJoinTest, persistence_can_handle_single_bucket_join) {
+    TestFileStorComponents c(*this);
     document::BucketId targetBucket(16, 1);
     document::BucketId sourceBucket(17, 1);
 
@@ -47,7 +36,7 @@ SingleBucketJoinTest::testPersistenceCanHandleSingleBucketJoin()
     c.top.sendDown(cmd);
     // If single bucket join locking is not working properly, this
     // will hang forever.
-    expectOkReply<api::JoinBucketsReply>(c.top);
+    ASSERT_NO_FATAL_FAILURE(expectOkReply<api::JoinBucketsReply>(c.top));
 }
 
 } // namespace storage

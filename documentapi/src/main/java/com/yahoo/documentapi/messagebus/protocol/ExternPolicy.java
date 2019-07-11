@@ -105,7 +105,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
             recipients.clear();
             List<Mirror.Entry> arr = mirror.lookup(pattern);
             for (Mirror.Entry entry : arr) {
-                recipients.add(Hop.parse(entry.getSpec() + session));
+                recipients.add(Hop.parse(entry.getSpecString() + session));
             }
         }
     }

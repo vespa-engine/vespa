@@ -35,11 +35,11 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
- * XML rendering of search results. This is NOT the default (but it once was).
+ * XML rendering of search results.
  *
  * @author Tony Vaagenes
  */
-@SuppressWarnings({ "rawtypes", "deprecation" })
+@SuppressWarnings("rawtypes")
 public final class XmlRenderer extends AsynchronousSectionedRenderer<Result> {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";

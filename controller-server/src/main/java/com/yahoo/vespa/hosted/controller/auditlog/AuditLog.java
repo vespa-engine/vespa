@@ -109,6 +109,7 @@ public class AuditLog {
         public enum Method {
             POST,
             PATCH,
+            PUT,
             DELETE
         }
 

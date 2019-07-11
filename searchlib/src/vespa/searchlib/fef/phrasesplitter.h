@@ -113,6 +113,7 @@ public:
     const Properties & getProperties() const override { return _queryEnv.getProperties(); }
     const Location & getLocation() const override { return _queryEnv.getLocation(); }
     const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
+    double get_average_field_length(const vespalib::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
     const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
     void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
 };

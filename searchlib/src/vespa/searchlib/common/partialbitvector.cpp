@@ -29,6 +29,6 @@ PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end
     setBit(size());
 }
 
-PartialBitVector::~PartialBitVector() { }
+PartialBitVector::~PartialBitVector() = default;
 
 } // namespace search

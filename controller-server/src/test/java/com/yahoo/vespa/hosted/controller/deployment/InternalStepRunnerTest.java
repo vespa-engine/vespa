@@ -3,11 +3,15 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -20,9 +24,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -32,7 +38,9 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -46,6 +54,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTes
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -156,6 +165,10 @@ public class InternalStepRunnerTest {
     public void waitsForEndpointsAndTimesOut() {
         tester.newRun(JobType.systemTest);
 
+        // Tester fails to show up for staging tests, and the real deployment for system tests.
+        tester.setEndpoints(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.setEndpoints(appId, JobType.stagingTest.zone(tester.tester().controller().system()));
+
         tester.runner().run();
         tester.configServer().convergeServices(appId, JobType.stagingTest.zone(tester.tester().controller().system()));
         tester.runner().run();
@@ -165,14 +178,10 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(testerId.id(), JobType.stagingTest.zone(tester.tester().controller().system()));
         tester.runner().run();
 
-        // Tester fails to show up for system tests, and the real deployment for staging tests.
-        tester.setEndpoints(appId, JobType.systemTest.zone(tester.tester().controller().system()));
-        tester.setEndpoints(testerId.id(), JobType.stagingTest.zone(tester.tester().controller().system()));
-
         tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.startTests));
-        assertEquals(failed, tester.jobs().last(appId, JobType.stagingTest).get().steps().get(Step.startTests));
+        assertEquals(failed, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(failed, tester.jobs().last(appId, JobType.stagingTest).get().steps().get(Step.installTester));
     }
 
     @Test
@@ -180,6 +189,7 @@ public class InternalStepRunnerTest {
         tester.newRun(JobType.systemTest);
         tester.runner().run();
         tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.setEndpoints(appId, JobType.systemTest.zone(tester.tester().controller().system()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
 
@@ -201,6 +211,32 @@ public class InternalStepRunnerTest {
         tester.applications().deactivate(appId, JobType.systemTest.zone(tester.tester().controller().system()));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+    }
+
+    @Test
+    public void alternativeEndpointsAreDetected() {
+        tester.newRun(JobType.systemTest);
+        tester.runner().run();;
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.tester().controller().system()));
+        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.tester().controller().system()));
+        assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installTester));
+
+        tester.tester().controller().curator().writeRoutingPolicies(appId, Set.of(new RoutingPolicy(appId,
+                                                                                                    ClusterSpec.Id.from("default"),
+                                                                                                    JobType.systemTest.zone(tester.tester().controller().system()),
+                                                                                                    HostName.from("host"),
+                                                                                                    Optional.empty(),
+                                                                                                    emptySet())));
+        tester.tester().controller().curator().writeRoutingPolicies(testerId.id(), Set.of(new RoutingPolicy(testerId.id(),
+                                                                                                            ClusterSpec.Id.from("default"),
+                                                                                                            JobType.systemTest.zone(tester.tester().controller().system()),
+                                                                                                            HostName.from("host"),
+                                                                                                            Optional.empty(),
+                                                                                                            emptySet())));
+        tester.runner().run();;
+        assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(succeeded, tester.jobs().last(appId, JobType.systemTest).get().steps().get(Step.installTester));
     }
 
     @Test
@@ -249,7 +285,7 @@ public class InternalStepRunnerTest {
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(appId.serializedForm(), configObject.field("application").asString());
         assertEquals(JobType.systemTest.zone(tester.tester().controller().system()).value(), configObject.field("zone").asString());
-        assertEquals(tester.tester().controller().system().name(), configObject.field("system").asString());
+        assertEquals(tester.tester().controller().system().value(), configObject.field("system").asString());
         assertEquals(1, configObject.field("endpoints").children());
         assertEquals(1, configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).entries());
         configObject.field("endpoints").field(JobType.systemTest.zone(tester.tester().controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->
@@ -299,6 +335,7 @@ public class InternalStepRunnerTest {
 
         tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(appId, zone);
+        tester.setEndpoints(appId, zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
         assertEquals(otherPackage.hash(), tester.configServer().application(appId).get().applicationPackage().hash());
         
@@ -337,7 +374,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.copyVespaLogs,
-                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in zone test.us-east-1 in default ..."),
+                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Copying Vespa log from nodes of tenant.application in test.us-east-1 ..."),
                              new LogEntry(lastId + 3, 1554970337084L, info,
                                           "17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\n" +
                                           "Switching to the latest deployed set of configurations and components. Application switch number: 2"),

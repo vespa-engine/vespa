@@ -43,12 +43,12 @@ public class ControllerContainerTest {
     public void stopContainer() { container.close(); }
 
     private String controllerServicesXml() {
-        return "<jdisc version='1.0'>\n" +
+        return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>10</maxthreads>\n" +
                "  </config> \n" +
                "  <config name=\"cloud.config.configserver\">\n" +
-               "    <system>" + system().name() + "</system>\n" +
+               "    <system>" + system().value() + "</system>\n" +
                "  </config> \n" +
                "  <config name=\"vespa.hosted.rotation.config.rotations\">\n" +
                "    <rotations>\n" +
@@ -62,7 +62,6 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>\n" +
@@ -72,6 +71,7 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
@@ -91,6 +91,8 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationCertificateMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +
                "  </handler>\n" +
@@ -106,16 +108,12 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.cost.CostApiHandler'>\n" +
                "    <binding>http://*/cost/v1/*</binding>\n" +
                "  </handler>\n" +
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
-               "    <binding>http://*/zone/v1</binding>\n" +
-               "    <binding>http://*/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
-               "</jdisc>";
+               "</container>";
     }
 
     protected SystemName system() {
@@ -131,6 +129,10 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
                "    <binding>http://*/athenz/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
+               "    <binding>http://*/zone/v1</binding>\n" +
+               "    <binding>http://*/zone/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +

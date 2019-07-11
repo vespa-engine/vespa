@@ -14,7 +14,7 @@ import java.util.Map;
 public class LogWriterLRUCache extends LinkedHashMap<Integer, LogWriter> {
     private static final Logger log = Logger.getLogger(LogWriterLRUCache.class.getName());
 
-    final int maxEntries = 100;
+    final int maxEntries = 5;
 
     public LogWriterLRUCache(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, true);

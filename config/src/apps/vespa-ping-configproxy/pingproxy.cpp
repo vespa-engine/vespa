@@ -12,14 +12,14 @@ LOG_SETUP("vespa-ping-configproxy");
 class PingProxy : public FastOS_Application
 {
 private:
-    FRT_Supervisor *_supervisor;
+    std::unique_ptr<fnet::frt::StandaloneFRT> _server;
     FRT_Target     *_target;
 
     PingProxy(const PingProxy &);
     PingProxy &operator=(const PingProxy &);
 
 public:
-    PingProxy() : _supervisor(NULL), _target(NULL) {}
+    PingProxy() : _server(), _target(nullptr) {}
     virtual ~PingProxy();
     int usage();
     void initRPC(const char *spec);
@@ -30,8 +30,8 @@ public:
 
 PingProxy::~PingProxy()
 {
-    LOG_ASSERT(_supervisor == NULL);
-    LOG_ASSERT(_target == NULL);
+    LOG_ASSERT(!_server);
+    LOG_ASSERT(_target == nullptr);
 }
 
 
@@ -48,24 +48,19 @@ PingProxy::usage()
 void
 PingProxy::initRPC(const char *spec)
 {
-    _supervisor = new FRT_Supervisor();
-    _target     = _supervisor->GetTarget(spec);
-    _supervisor->Start();
+    _server = std::make_unique<fnet::frt::StandaloneFRT>();
+    _target     = _server->supervisor().GetTarget(spec);
 }
 
 
 void
 PingProxy::finiRPC()
 {
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
-        _target = NULL;
+        _target = nullptr;
     }
-    if (_supervisor != NULL) {
-        _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
-    }
+    _server.reset();
 }
 
 
@@ -80,7 +75,7 @@ PingProxy::Main()
     int clientTimeout = 5;
     int serverPort = 19090;
 
-    const char *optArg = NULL;
+    const char *optArg = nullptr;
     int optInd = 0;
     while ((c = GetOpt("w:s:p:dh", optArg, optInd)) != -1) {
         switch (c) {
@@ -123,7 +118,7 @@ PingProxy::Main()
     }
     initRPC(spec);
 
-    FRT_RPCRequest *req = _supervisor->AllocRPCRequest();
+    FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
     req->SetMethodName("ping");
 

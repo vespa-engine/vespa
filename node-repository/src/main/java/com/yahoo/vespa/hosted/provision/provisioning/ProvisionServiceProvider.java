@@ -15,4 +15,6 @@ public interface ProvisionServiceProvider {
     Optional<LoadBalancerService> getLoadBalancerService();
 
     Optional<HostProvisioner> getHostProvisioner();
+
+    HostResourcesCalculator getHostResourcesCalculator();
 }

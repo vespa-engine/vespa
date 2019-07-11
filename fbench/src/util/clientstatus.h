@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 
 /**
  * This is a helper struct that is used by the @ref Client class to

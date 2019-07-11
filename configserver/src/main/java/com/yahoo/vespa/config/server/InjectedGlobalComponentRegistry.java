@@ -3,9 +3,13 @@ package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -14,12 +18,15 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.time.Clock;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Registry containing all the "static"/"global" components in a config server in one place.
@@ -35,7 +42,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final SessionPreparer sessionPreparer;
     private final RpcServer rpcServer;
     private final ConfigserverConfig configserverConfig;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
     private final ConfigDefinitionRepo staticConfigDefinitionRepo;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
@@ -43,6 +49,9 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     private final Zone zone;
     private final ConfigServerDB configServerDB;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
+    private final StripedExecutor<TenantName> zkWatcherExecutor;
+    private final ExecutorService zkCacheExecutor;
 
     @SuppressWarnings("WeakerAccess")
     @Inject
@@ -60,7 +69,8 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
                                            HostProvisionerProvider hostProvisionerProvider,
                                            Zone zone,
                                            ConfigServerDB configServerDB,
-                                           FlagSource flagSource) {
+                                           FlagSource flagSource,
+                                           SecretStore secretStore) {
         this.curator = curator;
         this.configCurator = configCurator;
         this.metrics = metrics;
@@ -68,7 +78,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.sessionPreparer = sessionPreparer;
         this.rpcServer = rpcServer;
         this.configserverConfig = configserverConfig;
-        this.superModelGenerationCounter = superModelGenerationCounter;
         this.staticConfigDefinitionRepo = staticConfigDefinitionRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
@@ -76,6 +85,9 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
         this.zone = zone;
         this.configServerDB = configServerDB;
         this.flagSource = flagSource;
+        this.secretStore = secretStore;
+        this.zkWatcherExecutor = new StripedExecutor<>();
+        this.zkCacheExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
     }
 
     @Override
@@ -92,8 +104,6 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public TenantListener getTenantListener() { return rpcServer; }
     @Override
     public ReloadListener getReloadListener() { return rpcServer; }
-    @Override
-    public SuperModelGenerationCounter getSuperModelGenerationCounter() { return superModelGenerationCounter; }
     @Override
     public ConfigDefinitionRepo getStaticConfigDefinitionRepo() { return staticConfigDefinitionRepo; }
     @Override
@@ -120,5 +130,20 @@ public class InjectedGlobalComponentRegistry implements GlobalComponentRegistry 
     public ConfigServerDB getConfigServerDB() { return configServerDB; }
 
     @Override
+    public StripedExecutor<TenantName> getZkWatcherExecutor() {
+        return zkWatcherExecutor;
+    }
+
+    @Override
     public FlagSource getFlagSource() { return flagSource; }
+
+    @Override
+    public ExecutorService getZkCacheExecutor() {
+        return zkCacheExecutor;
+    }
+
+    @Override
+    public SecretStore getSecretStore() {
+        return secretStore;
+    }
 }

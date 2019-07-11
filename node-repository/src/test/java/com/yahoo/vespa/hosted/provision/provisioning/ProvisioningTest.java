@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -14,7 +13,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -156,7 +154,7 @@ public class ProvisioningTest {
         HostSpec host1 = state1.container0.iterator().next();
         assertFalse(host1.version().isPresent());
         Node node1 = tester.nodeRepository().getNode(host1.hostname()).get();
-        tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))));
+        tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))), () -> {});
 
         // redeploy
         SystemState state2 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1), tester);
@@ -240,7 +238,6 @@ public class ProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
 
         tester.makeReadyNodes(12, "d-1-1-1");
-        tester.makeReadyNodes(16, "d-2-2-2");
 
         NodeResources small = new NodeResources(1, 1, 1);
         NodeResources large = new NodeResources(2, 2, 2);
@@ -252,6 +249,8 @@ public class ProvisioningTest {
         // redeploy with reduced size (to cause us to have retired nodes before switching flavor)
         SystemState state2 = prepare(application1, 2, 2, 3, 3, small, tester);
         tester.activate(application1, state2.allHosts);
+
+        tester.makeReadyNodes(16, "d-2-2-2");
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);
@@ -288,31 +287,6 @@ public class ProvisioningTest {
             assertEquals("Node changed flavor in place", "dockerSmall", node.flavor().name());
         assertEquals("No nodes are retired",
                      0, tester.getNodes(application1, Node.State.active).retired().size());
-    }
-
-    @Test
-    public void application_deployment_multiple_flavors_default_per_type() {
-        ConfigserverConfig.Builder config = new ConfigserverConfig.Builder();
-        config.environment("prod");
-        config.region("us-east");
-        config.defaultFlavor("not-used");
-        config.defaultContainerFlavor("small");
-        config.defaultContentFlavor("large");
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .zone(new Zone(new ConfigserverConfig(config), new NodeFlavors(new FlavorsConfig.Builder().build()))).build();
-
-        ApplicationId application1 = tester.makeApplicationId();
-
-        tester.makeReadyNodes(10, "small");
-        tester.makeReadyNodes(9, "large");
-
-        // deploy
-        SystemState state1 = prepare(application1, 2, 3, 4, 5, null, tester);
-        tester.activate(application1, state1.allHosts);
-        assertEquals("'small' nodes are used for containers",
-                     2 + 3, tester.getNodes(application1, Node.State.active).flavor("small").size());
-        assertEquals("'large' nodes are used for content",
-                     4 + 5, tester.getNodes(application1, Node.State.active).flavor("large").size());
     }
 
     @Test
@@ -521,7 +495,7 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
-                                                  false, Collections.emptySet());
+                                                  false);
         tester.prepare(application, cluster, Capacity.fromNodeCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
@@ -816,8 +790,8 @@ public class ProvisioningTest {
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
 
         ApplicationId applicationId = tester.makeApplicationId();
-        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false, Collections.emptySet());
-        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false, Collections.emptySet());
+        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false);
+        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false);
 
         List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1,
                                                        NodeResources.fromLegacyName("large"));
@@ -854,10 +828,10 @@ public class ProvisioningTest {
                                 int content1Size, boolean required, NodeResources flavor, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
-        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false, Collections.emptySet());
-        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false, Collections.emptySet());
-        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false, Collections.emptySet());
-        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false, Collections.emptySet());
+        ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
+        ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), wantedVersion, false);
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
 
         Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, flavor, tester);
         Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, flavor, tester);
@@ -870,7 +844,7 @@ public class ProvisioningTest {
         allHosts.addAll(content0);
         allHosts.addAll(content1);
 
-        Function<Integer, Capacity> capacity = count -> Capacity.fromNodeCount(count, Optional.empty(), required, true);
+        Function<Integer, Capacity> capacity = count -> Capacity.fromCount(count, Optional.empty(), required, true);
         int expectedContainer0Size = tester.capacityPolicies().decideSize(capacity.apply(container0Size), containerCluster0.type());
         int expectedContainer1Size = tester.capacityPolicies().decideSize(capacity.apply(container1Size), containerCluster1.type());
         int expectedContent0Size = tester.capacityPolicies().decideSize(capacity.apply(content0Size), contentCluster0.type());

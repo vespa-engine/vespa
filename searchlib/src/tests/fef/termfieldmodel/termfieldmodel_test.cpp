@@ -50,7 +50,7 @@ void testSetup(State &state) {
     {
         int i = 1;
         for (SFR iter(state.term); iter.valid(); iter.next()) {
-            iter.get().setDocFreq(0.25 * i++);
+            iter.get().setDocFreq(25 * i++, 100);
         }
     }
 
@@ -256,12 +256,33 @@ TEST("require that TermFieldMatchData can be tagged as needed or not") {
     tfmd.setFieldId(123);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
+    EXPECT_TRUE(tfmd.needs_normal_features());
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.tagAsNotNeeded();
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(tfmd.isNotNeeded());
-    tfmd.tagAsNeeded();
+    EXPECT_TRUE(!tfmd.needs_normal_features());
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
+    tfmd.setNeedNormalFeatures(true);
     EXPECT_EQUAL(tfmd.getFieldId(),123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
+    EXPECT_TRUE(tfmd.needs_normal_features());
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
+    tfmd.setNeedInterleavedFeatures(true);
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(!tfmd.isNotNeeded());
+    EXPECT_TRUE(tfmd.needs_normal_features());
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
+    tfmd.setNeedNormalFeatures(false);
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(!tfmd.isNotNeeded());
+    EXPECT_TRUE(!tfmd.needs_normal_features());
+    EXPECT_TRUE(tfmd.needs_interleaved_features());
+    tfmd.setNeedInterleavedFeatures(false);
+    EXPECT_EQUAL(tfmd.getFieldId(),123u);
+    EXPECT_TRUE(tfmd.isNotNeeded());
+    EXPECT_TRUE(!tfmd.needs_normal_features());
+    EXPECT_TRUE(!tfmd.needs_interleaved_features());
 }
 
 TEST("require that MatchData soft_reset retains appropriate state") {    
@@ -280,7 +301,7 @@ TEST("require that MatchData soft_reset retains appropriate state") {
     auto *new_term = md->resolveTermField(7);
     EXPECT_EQUAL(new_term, old_term);
     EXPECT_EQUAL(md->get_termwise_limit(), 1.0);
-    EXPECT_TRUE(!new_term->isNotNeeded());
+    EXPECT_TRUE(new_term->isNotNeeded());
     EXPECT_EQUAL(new_term->getFieldId(), 7u);
     EXPECT_EQUAL(new_term->getWeight(), 21);
     EXPECT_EQUAL(new_term->getDocId(), TermFieldMatchData::invalidId());

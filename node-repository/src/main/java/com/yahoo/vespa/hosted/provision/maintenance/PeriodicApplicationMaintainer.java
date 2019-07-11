@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,21 +39,24 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected boolean canDeployNow(ApplicationId application) {
-        // Don't deploy if a regular deploy just happened
-        return getLastDeployTime(application).isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments));
+        return deployer().lastDeployTime(application)
+                // Don't deploy if a regular deploy just happened
+                .map(lastDeployTime -> lastDeployTime.isBefore(nodeRepository().clock().instant().minus(minTimeBetweenRedeployments)))
+                // We only know last deploy time for applications that were deployed on this config server,
+                // the rest will be deployed on another config server
+                .orElse(false);
     }
 
     // Returns the applications that need to be redeployed by this config server at this point in time.
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        if (waitInitially()) return Collections.emptySet();
+        if (waitInitially()) return Set.of();
 
         // Collect all deployment times before sorting as deployments may happen while we build the set, breaking
         // the comparable contract. Stale times are fine as the time is rechecked in ApplicationMaintainer#deployWithLock
         Map<ApplicationId, Instant> deploymentTimes = nodesNeedingMaintenance().stream()
                                                                                .map(node -> node.allocation().get().owner())
                                                                                .distinct()
-                                                                               .filter(this::shouldBeDeployedOnThisServer)
                                                                                .filter(this::canDeployNow)
                                                                                .collect(Collectors.toMap(Function.identity(), this::getLastDeployTime));
 
@@ -62,12 +64,6 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
                               .sorted(Map.Entry.comparingByValue())
                               .map(Map.Entry::getKey)
                               .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    // We only know last deploy time for applications that were deployed on this config server,
-    // the rest will be deployed on another config server
-    protected boolean shouldBeDeployedOnThisServer(ApplicationId application) {
-        return deployer().lastDeployTime(application).isPresent();
     }
 
     // TODO: Do not start deploying until some time has gone (ideally only until bootstrap of config server is finished)

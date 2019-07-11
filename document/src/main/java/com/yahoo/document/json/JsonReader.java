@@ -55,6 +55,7 @@ public class JsonReader {
 
     /**
      * Reads a single operation. The operation is not expected to be part of an array.
+     *
      * @param operationType the type of operation (update or put)
      * @param docIdString document ID.
      * @return the document

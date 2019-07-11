@@ -133,7 +133,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
 
 
 template <typename B>
-AddressSpace
+vespalib::AddressSpace
 EnumAttribute<B>::getEnumStoreAddressSpaceUsage() const
 {
     return _enumStore.getAddressSpaceUsage();

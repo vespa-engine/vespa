@@ -58,22 +58,10 @@ TensorDataType::isAssignableType(const ValueType &tensorType) const
 bool
 TensorDataType::isAssignableType(const ValueType &fieldTensorType, const ValueType &tensorType)
 {
-    const auto &dimensions = fieldTensorType.dimensions();
-    const auto &rhsDimensions = tensorType.dimensions();
-    if (!tensorType.is_tensor() || dimensions.size() != rhsDimensions.size()) {
+    if (fieldTensorType.is_error()) {
         return false;
     }
-    for (size_t i = 0; i < dimensions.size(); ++i) {
-        const auto &dim = dimensions[i];
-        const auto &rhsDim = rhsDimensions[i];
-        if ((dim.name != rhsDim.name) ||
-            (dim.is_indexed() != rhsDim.is_indexed()) ||
-            (rhsDim.is_indexed() && !rhsDim.is_bound()) || 
-            (dim.is_bound() && (dim.size != rhsDim.size))) {
-            return false;
-        }
-    }
-    return true;
+    return (fieldTensorType == tensorType);
 }
 
 } // document

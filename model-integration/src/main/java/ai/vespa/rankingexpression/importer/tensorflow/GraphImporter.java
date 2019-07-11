@@ -2,6 +2,8 @@
 
 package ai.vespa.rankingexpression.importer.tensorflow;
 
+import ai.vespa.rankingexpression.importer.operations.Softmax;
+import ai.vespa.rankingexpression.importer.operations.Sum;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
@@ -71,31 +73,47 @@ class GraphImporter {
             case "switch":      return new Switch(modelName, nodeName, inputs, nodePort);
 
             // math ops
+            case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
+            case "acos":        return new Map(modelName, nodeName, inputs, ScalarFunctions.acos());
             case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
             case "add_n":       return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
-            case "acos":        return new Map(modelName, nodeName, inputs, ScalarFunctions.acos());
+            case "asin":        return new Map(modelName, nodeName, inputs, ScalarFunctions.asin());
+            case "atan":        return new Map(modelName, nodeName, inputs, ScalarFunctions.atan());
+            case "ceil":        return new Map(modelName, nodeName, inputs, ScalarFunctions.ceil());
+            case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
             case "div":         return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
+            case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
             case "realdiv":     return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
             case "floor":       return new Map(modelName, nodeName, inputs, ScalarFunctions.floor());
+            case "log":         return new Map(modelName, nodeName, inputs, ScalarFunctions.log());
             case "matmul":      return new MatMul(modelName, nodeName, inputs);
             case "maximum":     return new Join(modelName, nodeName, inputs, ScalarFunctions.max());
             case "mean":        return new Mean(modelName, nodeName, inputs, attributes);
             case "reducemean":  return new Mean(modelName, nodeName, inputs, attributes);
             case "mul":         return new Join(modelName, nodeName, inputs, ScalarFunctions.multiply());
             case "multiply":    return new Join(modelName, nodeName, inputs, ScalarFunctions.multiply());
+            case "negate":      return new Map(modelName, nodeName, inputs, ScalarFunctions.neg());
+            case "reciprocal":  return new Map(modelName, nodeName, inputs, ScalarFunctions.reciprocal());
             case "rsqrt":       return new Map(modelName, nodeName, inputs, ScalarFunctions.rsqrt());
             case "select":      return new Select(modelName, nodeName, inputs);
             case "where3":      return new Select(modelName, nodeName, inputs);
             case "sigmoid":     return new Map(modelName, nodeName, inputs, ScalarFunctions.sigmoid());
+            case "sin":         return new Map(modelName, nodeName, inputs, ScalarFunctions.sin());
             case "squareddifference": return new Join(modelName, nodeName, inputs, ScalarFunctions.squareddifference());
             case "sub":         return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
             case "subtract":    return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
+            case "sum":         return new Sum(modelName, nodeName, inputs, attributes);
+            case "square":      return new Map(modelName, nodeName, inputs, ScalarFunctions.square());
+            case "sqrt":        return new Map(modelName, nodeName, inputs, ScalarFunctions.sqrt());
+            case "tan":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tan());
+            case "tanh":        return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());
 
             // nn ops
             case "biasadd":     return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
             case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu());
             case "relu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.relu());
             case "selu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.selu());
+            case "softmax":     return new Softmax(modelName, nodeName, inputs);
 
             // state ops
             case "variable":    return new Constant(modelName, nodeName, nodeType);

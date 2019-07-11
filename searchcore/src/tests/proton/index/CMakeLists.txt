@@ -8,6 +8,7 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     searchcore_flushengine
     searchcore_pcommon
     searchcore_util
+    gtest
 )
 vespa_add_executable(searchcore_fusionrunner_test_app TEST
     SOURCES
@@ -29,6 +30,7 @@ vespa_add_executable(searchcore_indexcollection_test_app TEST
     indexcollection_test.cpp
     DEPENDS
     searchcore_index
+    gtest
 )
 vespa_add_test(NAME searchcore_index_test COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/index_test.sh 
                DEPENDS searchcore_indexmanager_test_app searchcore_fusionrunner_test_app searchcore_diskindexcleaner_test_app searchcore_indexcollection_test_app)

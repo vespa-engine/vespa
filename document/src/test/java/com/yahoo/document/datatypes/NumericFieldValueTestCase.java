@@ -2,7 +2,7 @@
 package com.yahoo.document.datatypes;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author baldersheim

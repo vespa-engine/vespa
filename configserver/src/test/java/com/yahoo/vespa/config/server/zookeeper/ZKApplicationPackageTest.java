@@ -1,27 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.regex.Pattern;
-
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.component.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -30,7 +18,19 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.yahoo.io.IOUtils;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class ZKApplicationPackageTest {
 
@@ -77,7 +77,7 @@ public class ZKApplicationPackageTest {
         assertFalse(zkApp.getFileRegistries().containsKey(new Version(0, 0, 0)));
         assertThat(zkApp.getFileRegistries().get(goodVersion).fileSourceHost(), is("dummyfiles"));
         AllocatedHosts readInfo = zkApp.getAllocatedHosts().get();
-        assertThat(Utf8.toString(readInfo.toJson()), is(Utf8.toString(ALLOCATED_HOSTS.toJson())));
+        assertThat(Utf8.toString(toJson(readInfo)), is(Utf8.toString(toJson(ALLOCATED_HOSTS))));
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
         assertTrue(zkApp.getDeployment().isPresent());
@@ -90,7 +90,7 @@ public class ZKApplicationPackageTest {
         String metaData = "{\"deploy\":{\"user\":\"foo\",\"from\":\"bar\",\"timestamp\":1},\"application\":{\"name\":\"foo\",\"checksum\":\"abc\",\"generation\":4,\"previousActiveGeneration\":3}}";
         zk.putData("/0", ConfigCurator.META_ZK_PATH, metaData);
         zk.putData("/0/" + ZKApplicationPackage.fileRegistryNode + "/3.0.0", "dummyfiles");
-        zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, ALLOCATED_HOSTS.toJson());
+        zk.putData("/0/" + ZKApplicationPackage.allocatedHostsNode, toJson(ALLOCATED_HOSTS));
     }
 
     private static class MockNodeFlavors extends NodeFlavors{

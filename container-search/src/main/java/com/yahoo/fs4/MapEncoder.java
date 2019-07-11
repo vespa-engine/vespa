@@ -21,7 +21,9 @@ public class MapEncoder {
     // TODO: Time to refactor
 
     private static byte [] getUtf8(Object value) {
-        if (value instanceof Tensor) {
+        if (value == null) {
+            return Utf8.toBytes("");
+        } else if (value instanceof Tensor) {
             return TypedBinaryFormat.encode((Tensor)value);
         } else {
             return Utf8.toBytes(value.toString());
@@ -64,17 +66,13 @@ public class MapEncoder {
         buffer.putInt(utf8.length);
         buffer.put(utf8);
         buffer.putInt(map.size());
-        for (Map.Entry<String, ?> property : map.entrySet()) {
-            String key = property.getKey();
+        for (Map.Entry<String, ?> entry : map.entrySet()) {
+            String key = entry.getKey();
             utf8 = Utf8.toBytes(key);
             buffer.putInt(utf8.length);
             buffer.put(utf8);
-            Object value = property.getValue();
-            if (value == null) {
-                utf8 = Utf8.toBytes("");
-            } else {
-                utf8 = getUtf8(value);
-            }
+            Object value = entry.getValue();
+            utf8 = getUtf8(value);
             buffer.putInt(utf8.length);
             buffer.put(utf8);
         }

@@ -34,6 +34,8 @@ import static org.junit.Assert.assertFalse;
  */
 public class AclProvisioningTest {
 
+    private final NodeResources nodeResources = new NodeResources(2, 8, 50);
+
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
@@ -68,7 +70,7 @@ public class AclProvisioningTest {
         List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, "default");
+        tester.makeReadyNodes(10, nodeResources);
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes to an application
@@ -88,7 +90,7 @@ public class AclProvisioningTest {
         List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, "default");
+        tester.makeReadyNodes(10, nodeResources);
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
 
         // Allocate 2 nodes
@@ -167,7 +169,7 @@ public class AclProvisioningTest {
     @Test
     public void trusted_nodes_for_application_with_load_balancer() {
         // Populate repo
-        tester.makeReadyNodes(10, "default");
+        tester.makeReadyNodes(10, nodeResources);
 
         // Allocate 2 nodes
         List<Node> activeNodes = deploy(2);
@@ -193,12 +195,12 @@ public class AclProvisioningTest {
     }
 
     private List<Node> deploy(ApplicationId application, int nodeCount) {
-        return deploy(application, Capacity.fromNodeCount(nodeCount));
+        return deploy(application, Capacity.fromCount(nodeCount, nodeResources));
     }
 
     private List<Node> deploy(ApplicationId application, Capacity capacity) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false, Collections.emptySet());
+                                                  Version.fromString("6.42"), false);
         List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
         tester.activate(application, new HashSet<>(prepared));
         return tester.getNodes(application, Node.State.active).asList();

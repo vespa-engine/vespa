@@ -17,6 +17,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 
@@ -40,7 +41,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testControllerApi() {
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", new byte[0], Request.Method.GET), new File("root.json"));
 
-        // POST deactivation of a maintenance job
+        // POST deactivates a maintenance job
         tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
                                             "", Request.Method.POST),
                        "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}", 200);
@@ -48,11 +49,29 @@ public class ControllerApiTest extends ControllerContainerTest {
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", new byte[0], Request.Method.GET),
                               new File("maintenance.json"));
-        // DELETE deactivation of a maintenance job
+
+        // DELETE activates maintenance job
         tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
                                             "", Request.Method.DELETE),
                        "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
                               200);
+
+        // DELETE fails to activate unknown maintenance job
+        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/foo",
+                                                    "", Request.Method.DELETE),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'foo'\"}",
+                              404);
+
+        // DELETE clears inactive flag for maintenance job that has been removed from the code base
+        tester.controller().curator().writeInactiveJobs(Set.of("bar"));
+        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
+                                                    "", Request.Method.DELETE),
+                              "{\"message\":\"Re-activated job 'bar'\"}",
+                              200);
+        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
+                                                    "", Request.Method.DELETE),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'bar'\"}",
+                              404);
 
         assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
     }
@@ -61,7 +80,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testUpgraderApi() {
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
-                              "{\"upgradesPerMinute\":0.125,\"confidenceOverrides\":[]}",
+                              "{\"upgradesPerMinute\":100.0,\"confidenceOverrides\":[]}",
                               200);
 
         // Set invalid configuration

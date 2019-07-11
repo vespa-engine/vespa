@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config;
 
 import com.yahoo.jrt.Method;
+import com.yahoo.jrt.MethodHandler;
 import com.yahoo.jrt.Request;
 
 /**
@@ -12,10 +13,14 @@ public class JRTMethods {
     public static final String configV3getConfigMethodName = "config.v3.getConfig";
     private static final String configV3GetConfigRequestTypes = "s";
     private static final String configV3GetConfigResponseTypes = "sx";
-    public static Method createConfigV3GetConfigMethod(Object handler, String handlerMethod) {
-        return new Method(configV3getConfigMethodName, configV3GetConfigRequestTypes, configV3GetConfigResponseTypes,
-                handler, handlerMethod)
-                .methodDesc("get config v3")
+
+    public static Method createConfigV3GetConfigMethod(MethodHandler methodHandler) {
+        return addDescriptions(
+                new Method(configV3getConfigMethodName, configV3GetConfigRequestTypes, configV3GetConfigResponseTypes, methodHandler));
+    }
+
+    private static Method addDescriptions(Method method) {
+        return method.methodDesc("get config v3")
                 .paramDesc(0, "request", "config request")
                 .returnDesc(0, "response", "config response")
                 .returnDesc(1, "payload", "config response payload");

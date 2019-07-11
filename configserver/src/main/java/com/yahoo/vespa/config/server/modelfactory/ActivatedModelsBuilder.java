@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -12,6 +13,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
@@ -24,8 +26,10 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 
@@ -53,6 +57,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Curator curator;
     private final DeployLogger logger;
     private final FlagSource flagSource;
+    private final SecretStore secretStore;
 
     public ActivatedModelsBuilder(TenantName tenant,
                                   long appGeneration,
@@ -71,6 +76,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.curator = globalComponentRegistry.getCurator();
         this.logger = new SilentDeployLogger();
         this.flagSource = globalComponentRegistry.getFlagSource();
+        this.secretStore = globalComponentRegistry.getSecretStore();
     }
 
     @Override
@@ -127,9 +133,11 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                configserverConfig.hostedVespa(),
                                                zone(),
                                                new Rotations(curator, TenantRepository.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId),
+                                               ImmutableSet.copyOf(new ContainerEndpointsCache(TenantRepository.getTenantPath(tenant), curator).read(applicationId)),
                                                false, // We may be bootstrapping, but we only know and care during prepare
                                                false, // Always false, assume no one uses it when activating
-                                               flagSource);
+                                               flagSource,
+                                               new TlsSecretsKeys(curator, TenantRepository.getTenantPath(tenant), secretStore).readTlsSecretsKeyFromZookeeper(applicationId));
     }
 
 }

@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include "common.h"
 #include <memory>
 #include <vector>
+#include <vespa/eval/eval/value_type.h>
 
 namespace vespalib { class nbostream; }
 
 namespace vespalib::tensor {
 
-class DenseTensor;
 class DenseTensorView;
 
 /**
@@ -19,15 +18,14 @@ class DenseTensorView;
 class DenseBinaryFormat
 {
 public:
-    DenseBinaryFormat(SerializeFormat format) : _format(format) { }
-    void serialize(nbostream &stream, const DenseTensorView &tensor);
-    std::unique_ptr<DenseTensor> deserialize(nbostream &stream);
-    
+    using CellType = eval::ValueType::CellType;
+
+    static void serialize(nbostream &stream, const DenseTensorView &tensor);
+    static std::unique_ptr<DenseTensorView> deserialize(nbostream &stream, CellType cell_type);
+
     // This is a temporary method untill we get full support for typed tensors
     template <typename T>
-    void deserializeCellsOnly(nbostream &stream, std::vector<T> & cells);
-private:
-    SerializeFormat _format;
+    static void deserializeCellsOnly(nbostream &stream, std::vector<T> &cells, CellType cell_type);
 };
 
 }

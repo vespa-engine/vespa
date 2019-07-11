@@ -54,7 +54,7 @@ public class ContainerControllerTester {
 
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
-        CuratorDb curatorDb = new MockCuratorDb();
+        CuratorDb curatorDb = controller().curator();
         curatorDb.writeUpgradesPerMinute(100);
         upgrader = new Upgrader(controller(), Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
     }
@@ -72,11 +72,10 @@ public class ContainerControllerTester {
     public ContainerTester containerTester() { return containerTester; }
 
     public Application createApplication() {
-        return createApplication("domain1","tenant1",
-                                 "application1");
+        return createApplication("domain1","tenant1", "application1", "default");
     }
 
-    public Application createApplication(String athensDomain, String tenant, String application) {
+    public Application createApplication(String athensDomain, String tenant, String application, String instance) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
         AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
         AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
@@ -86,7 +85,7 @@ public class ContainerControllerTester {
                                                            Optional.of(new PropertyId("1234")));
         controller().tenants().create(tenantSpec, credentials);
 
-        ApplicationId app = ApplicationId.from(tenant, application, "default");
+        ApplicationId app = ApplicationId.from(tenant, application, instance);
         return controller().applications().createApplication(app, Optional.of(credentials));
     }
 

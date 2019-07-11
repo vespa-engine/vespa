@@ -185,7 +185,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>(true, generation, internalRedeploy, true, config));
     }
 
-    // Only used by {@link FileConfigSubscription}
+    /** Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription} */
     protected void setConfigIncGen(T config) {
         ConfigState<T> prev = this.config.get();
         this.config.set(new ConfigState<>(true, prev.getGeneration() + 1, prev.isInternalRedeploy(), true, config));

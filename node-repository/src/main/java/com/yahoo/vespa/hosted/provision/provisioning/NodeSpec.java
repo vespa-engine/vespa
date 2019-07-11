@@ -97,8 +97,14 @@ public interface NodeSpec {
                     return true;
             }
             else {
-                if (requestedNodeResources.equals(flavor.resources()))
-                    return true;
+                if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
+                    if (flavor.resources().satisfies(requestedNodeResources))
+                        return true;
+                }
+                else { // Other nodes must be matched exactly
+                    if (requestedNodeResources.equals(flavor.resources()))
+                        return true;
+                }
             }
             return requestedFlavorCanBeAchievedByResizing(flavor);
         }

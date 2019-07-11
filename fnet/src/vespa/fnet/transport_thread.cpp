@@ -140,10 +140,7 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
         context._value.IOC->Close();
         context._value.IOC->SubRef();
         break;
-    case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
-    case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_READ:
     case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
-    case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
     case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
     case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
         context._value.IOC->SubRef();
@@ -303,45 +300,12 @@ FNET_TransportThread::Add(FNET_IOComponent *comp, bool needRef)
 
 
 void
-FNET_TransportThread::EnableRead(FNET_IOComponent *comp, bool needRef)
-{
-    if (needRef) {
-        comp->AddRef();
-    }
-    PostEvent(&FNET_ControlPacket::IOCEnableRead,
-              FNET_Context(comp));
-}
-
-
-void
-FNET_TransportThread::DisableRead(FNET_IOComponent *comp, bool needRef)
-{
-    if (needRef) {
-        comp->AddRef();
-    }
-    PostEvent(&FNET_ControlPacket::IOCDisableRead,
-              FNET_Context(comp));
-}
-
-
-void
 FNET_TransportThread::EnableWrite(FNET_IOComponent *comp, bool needRef)
 {
     if (needRef) {
         comp->AddRef();
     }
     PostEvent(&FNET_ControlPacket::IOCEnableWrite,
-              FNET_Context(comp));
-}
-
-
-void
-FNET_TransportThread::DisableWrite(FNET_IOComponent *comp, bool needRef)
-{
-    if (needRef) {
-        comp->AddRef();
-    }
-    PostEvent(&FNET_ControlPacket::IOCDisableWrite,
               FNET_Context(comp));
 }
 
@@ -471,14 +435,6 @@ FNET_TransportThread::handle_wakeup()
         case FNET_ControlPacket::FNET_CMD_IOC_ADD:
             handle_add_cmd(context._value.IOC);
             break;
-        case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
-            context._value.IOC->EnableReadEvent(true);
-            context._value.IOC->SubRef();
-            break;
-        case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_READ:
-            context._value.IOC->EnableReadEvent(false);
-            context._value.IOC->SubRef();
-            break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
             context._value.IOC->EnableWriteEvent(true);
             if (context._value.IOC->HandleWriteEvent()) {
@@ -486,10 +442,6 @@ FNET_TransportThread::handle_wakeup()
             } else {
                 handle_close_cmd(context._value.IOC);
             }
-            break;
-        case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
-            context._value.IOC->EnableWriteEvent(false);
-            context._value.IOC->SubRef();
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_HANDSHAKE_ACT:
             if (context._value.IOC->handle_handshake_act()) {

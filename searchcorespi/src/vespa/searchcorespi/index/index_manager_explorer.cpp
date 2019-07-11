@@ -26,7 +26,7 @@ insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
 }
 
 void
-insertMemoryUsage(Cursor &object, const search::MemoryUsage &usage)
+insertMemoryUsage(Cursor &object, const vespalib::MemoryUsage &usage)
 {
     Cursor &memory = object.setObject("memoryUsage");
     memory.setLong("allocatedBytes", usage.allocatedBytes());

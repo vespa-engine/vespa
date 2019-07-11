@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -14,6 +15,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.service.duper.DuperModelManager.configServerApplication;
+import static com.yahoo.vespa.service.duper.DuperModelManager.controllerApplication;
+import static com.yahoo.vespa.service.duper.DuperModelManager.proxyHostApplication;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,12 +32,13 @@ public class DuperModelManagerTest {
     private final SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
     private final SuperModel superModel = mock(SuperModel.class);
     private final DuperModel duperModel = mock(DuperModel.class);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private DuperModelManager manager;
     private SuperModelListener superModelListener;
 
-    private void makeManager() {
-        manager = new DuperModelManager(true, superModelProvider, duperModel);
+    private void makeManager(boolean isController) {
+        manager = new DuperModelManager(true, isController, superModelProvider, duperModel, flagSource);
 
         when(superModelProvider.getSuperModel()).thenReturn(superModel);
         verify(duperModel, times(0)).add(any());
@@ -44,7 +50,7 @@ public class DuperModelManagerTest {
 
     @Test
     public void testSuperModelAffectsDuperModel() {
-        makeManager();
+        makeManager(false);
 
         verify(duperModel, times(0)).add(any());
         superModelListener.applicationActivated(superModel, mock(ApplicationInfo.class));
@@ -57,9 +63,9 @@ public class DuperModelManagerTest {
 
     @Test
     public void testInfraApplicationsAffectsDuperModel() {
-        makeManager();
+        makeManager(false);
 
-        ApplicationId id = manager.getProxyHostApplication().getApplicationId();
+        ApplicationId id = proxyHostApplication.getApplicationId();
         List<HostName> proxyHostHosts = Stream.of("proxyhost1", "proxyhost2").map(HostName::from).collect(Collectors.toList());
         verify(duperModel, times(0)).add(any());
         manager.infraApplicationActivated(id, proxyHostHosts);
@@ -73,18 +79,18 @@ public class DuperModelManagerTest {
 
     @Test
     public void testEnabledConfigServerInfraApplications() {
-        makeManager();
+        makeManager(false);
         testEnabledConfigServerLikeInfraApplication(
-                manager.getConfigServerApplication().getApplicationId(),
-                manager.getControllerApplication().getApplicationId());
+                configServerApplication.getApplicationId(),
+                controllerApplication.getApplicationId());
     }
 
     @Test
     public void testEnabledControllerInfraApplications() {
-        makeManager();
+        makeManager(true);
         testEnabledConfigServerLikeInfraApplication(
-                manager.getControllerApplication().getApplicationId(),
-                manager.getConfigServerApplication().getApplicationId());
+                controllerApplication.getApplicationId(),
+                configServerApplication.getApplicationId());
     }
 
     private void testEnabledConfigServerLikeInfraApplication(ApplicationId firstId, ApplicationId secondId) {
@@ -95,33 +101,24 @@ public class DuperModelManagerTest {
 
         // Adding the second config server like application will be ignored
         List<HostName> hostnames2 = Stream.of("node21", "node22").map(HostName::from).collect(Collectors.toList());
-        manager.infraApplicationActivated(secondId, hostnames2);
+        assertThrows(IllegalArgumentException.class, () -> manager.infraApplicationActivated(secondId, hostnames2));
         verify(duperModel, times(1)).add(any());
 
         // Removing the second config server like application cannot be removed since it wasn't added
         verify(duperModel, times(0)).remove(any());
-        manager.infraApplicationRemoved(secondId);
+        assertThrows(IllegalArgumentException.class, () -> manager.infraApplicationRemoved(secondId));
         verify(duperModel, times(0)).remove(any());
 
-        verify(duperModel, times(0)).remove(any());
         manager.infraApplicationRemoved(firstId);
         verify(duperModel, times(1)).remove(any());
-        when(duperModel.contains(firstId)).thenReturn(false);
     }
 
-    @Test
-    public void testSingleTenant() {
-        manager = new DuperModelManager(false, superModelProvider, duperModel);
-
-        when(superModelProvider.getSuperModel()).thenReturn(superModel);
-        verify(duperModel, times(0)).add(any());
-
-        List<HostName> hostnames = Stream.of("node1", "node2").map(HostName::from).collect(Collectors.toList());
-        manager.infraApplicationActivated(manager.getConfigServerApplication().getApplicationId(), hostnames);
-        verify(duperModel, times(0)).add(any());
-
-        verify(duperModel, times(0)).remove(any());
-        manager.infraApplicationRemoved(manager.getConfigServerApplication().getApplicationId());
-        verify(duperModel, times(0)).remove(any());
+    private static void assertThrows(Class<? extends Throwable> clazz, Runnable runnable) {
+        try {
+            runnable.run();
+            fail("Expected " + clazz);
+        } catch (Throwable e) {
+            if (!clazz.isInstance(e)) throw e;
+        }
     }
 }

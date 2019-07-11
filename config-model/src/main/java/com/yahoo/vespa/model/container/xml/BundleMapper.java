@@ -15,7 +15,20 @@ import java.util.Optional;
  */
 public class BundleMapper {
 
+    public enum JarSuffix {
+        JAR_WITH_DEPS("-jar-with-dependencies.jar"),
+        DEPLOY("-deploy.jar");
+
+        public final String suffix;
+
+        JarSuffix(String suffix) {
+            this.suffix = suffix;
+        }
+    }
+
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
+
+
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
     private static final Map<String, String> bundleFromClass;

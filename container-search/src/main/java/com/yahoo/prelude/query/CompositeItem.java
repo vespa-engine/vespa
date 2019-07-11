@@ -9,9 +9,11 @@ import com.yahoo.search.query.QueryTree;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 
 
 /**
@@ -162,15 +164,18 @@ public abstract class CompositeItem extends Item {
         return removed;
     }
 
-    /** Returns the number of direct ancestors of this item */
+    /** Returns the number of direct children of this item */
     public int getItemCount() {
         return subitems.size();
     }
 
-    /** Returns a modifiable list iterator */
+    /** Returns a modifiable list iterator of the immediate children of this */
     public ListIterator<Item> getItemIterator() {
         return new ListIteratorWrapper(this);
     }
+
+    /** Returns a read only list of the immediate children of this */
+    public List<Item> items() { return Collections.unmodifiableList(subitems); }
 
     public int encode(ByteBuffer buffer) {
         encodeThis(buffer);
@@ -219,7 +224,7 @@ public abstract class CompositeItem extends Item {
         copy.subitems = new java.util.ArrayList<>();
         for (Item subItem : subitems) {
             Item subItemCopy = subItem.clone();
-            copy.adding(subItemCopy);
+            subItemCopy.setParent(copy);
             copy.subitems.add(subItemCopy);
         }
         fixConnexity(copy);
@@ -373,6 +378,15 @@ public abstract class CompositeItem extends Item {
             terms += item.getTermCount();
         }
         return terms;
+    }
+
+    /**
+     * Will return its single child if itself can safely be omitted.
+     *
+     * @return a valid Item or empty Optional if it can not be done
+     */
+    public Optional<Item> extractSingleChild() {
+        return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
     }
 
 }

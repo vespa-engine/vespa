@@ -9,37 +9,35 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface RequestContext {
 
-    public List<Processing> getProcessings();
+    List<Processing> getProcessings();
 
-    public String getServiceName();
+    String getServiceName();
 
-    public URI getUri();
+    URI getUri();
 
-    public boolean isProcessable();
+    boolean isProcessable();
 
-    public int getApproxSize();
+    int getApproxSize();
 
-    public int getPriority();
+    int getPriority();
 
-    public void processingDone(List<Processing> processing);
+    void processingDone(List<Processing> processing);
 
-    public void processingFailed(ErrorCode error, String msg);
+    void processingFailed(ErrorCode error, String msg);
 
-    public void processingFailed(Exception exception);
+    void processingFailed(Exception exception);
 
-    /**
-     * Will check if the given timeout has expired
-     * @return true if the timeout has expired.
-     */
-    public default boolean hasExpired() { return false;}
+    /** Returns whether this request has timed out */
+    default boolean hasExpired() { return false;}
 
-    public void skip();
+    void skip();
 
-    public enum ErrorCode {
+    enum ErrorCode {
+
         //transient:
         ERROR_ABORTED(Response.Status.TEMPORARY_REDIRECT, DocumentProtocol.ERROR_ABORTED),
         ERROR_BUSY(Response.Status.TEMPORARY_REDIRECT, DocumentProtocol.ERROR_BUSY),
@@ -50,7 +48,7 @@ public interface RequestContext {
         private int discStatus;
         private int documentProtocolStatus;
 
-        private ErrorCode(int discStatus, int documentProtocolStatus) {
+        ErrorCode(int discStatus, int documentProtocolStatus) {
             this.discStatus = discStatus;
             this.documentProtocolStatus = documentProtocolStatus;
         }
@@ -63,4 +61,5 @@ public interface RequestContext {
             return documentProtocolStatus;
         }
     }
+
 }

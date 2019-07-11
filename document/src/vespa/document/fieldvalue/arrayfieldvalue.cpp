@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/log/log.h>
+#include <ostream>
 
 LOG_SETUP(".document.fieldvalue.array");
 

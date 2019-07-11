@@ -134,9 +134,13 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
 
 //-----------------------------------------------------------------------------
 
+namespace {
+
 using Context = fef::FeatureExecutor::Inputs;
 double resolve_input(void *ctx, size_t idx) { return ((const Context *)(ctx))->get_number(idx); }
 Context *make_ctx(const Context &inputs) { return const_cast<Context *>(&inputs); }
+
+}
 
 LazyCompiledRankingExpressionExecutor::LazyCompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
     : _ranking_function(compiled_function.get_lazy_function())
@@ -276,6 +280,14 @@ fef::Blueprint::UP
 RankingExpressionBlueprint::createInstance() const
 {
     return std::make_unique<RankingExpressionBlueprint>(_expression_replacer);
+}
+
+void
+RankingExpressionBlueprint::prepareSharedState(const fef::IQueryEnvironment & env, fef::IObjectStore & store) const
+{
+    if (_intrinsic_expression) {
+        return _intrinsic_expression->prepare_shared_state(env, store);
+    }
 }
 
 fef::FeatureExecutor &

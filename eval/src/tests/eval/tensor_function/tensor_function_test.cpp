@@ -15,13 +15,12 @@ using namespace vespalib::eval::tensor_function;
 struct EvalCtx {
     const TensorEngine &engine;
     Stash stash;
-    ErrorValue error;
     std::vector<Value::UP> tensors;
     std::vector<Value::CREF> params;
     InterpretedFunction::UP ifun;
     std::unique_ptr<InterpretedFunction::Context> ictx;
     EvalCtx(const TensorEngine &engine_in)
-        : engine(engine_in), stash(), error(), tensors(), params(), ifun(), ictx() {}
+        : engine(engine_in), stash(), tensors(), params(), ifun(), ictx() {}
     ~EvalCtx() {}
     size_t add_tensor(Value::UP tensor) {
         size_t id = params.size();

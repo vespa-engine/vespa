@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
+#include <vespa/vespalib/stllike/select.h>
 #include <vector>
 
 namespace vespalib {
@@ -29,7 +30,7 @@ struct LruParam
 {
     typedef LinkedValue<V> LV;
     typedef std::pair< K, LV > value_type;
-    typedef std::_Select1st< value_type > select_key;
+    typedef vespalib::Select1st< value_type > select_key;
     typedef K Key;
     typedef V Value;
     typedef H Hash;

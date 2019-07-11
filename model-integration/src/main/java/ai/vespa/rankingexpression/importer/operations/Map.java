@@ -34,4 +34,12 @@ public class Map extends IntermediateOperation {
         return new com.yahoo.tensor.functions.Map(input.get(), operator);
     }
 
+    @Override
+    public Map withInputs(List<IntermediateOperation> inputs) {
+        return new Map(modelName(), name(), inputs, operator);
+    }
+
+    @Override
+    public String operationName() { return "Map"; }
+
 }

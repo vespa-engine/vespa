@@ -7,8 +7,11 @@ import com.yahoo.tensor.TensorTypeParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -110,31 +113,38 @@ public class OrderedTensorType {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof OrderedTensorType)) {
-            return false;
-        }
-        OrderedTensorType other = (OrderedTensorType) obj;
-        if (dimensions.size() != dimensions.size()) {
-            return false;
-        }
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof OrderedTensorType)) return false;
+
         List<TensorType.Dimension> thisDimensions = this.dimensions();
-        List<TensorType.Dimension> otherDimensions = other.dimensions();
+        List<TensorType.Dimension> otherDimensions = ((OrderedTensorType)other).dimensions();
+        if (thisDimensions.size() != otherDimensions.size()) return false;
+
         for (int i = 0; i < thisDimensions.size(); ++i) {
-            if (!thisDimensions.get(i).equals(otherDimensions.get(i))) {
-                return false;
-            }
+            if ( ! thisDimensions.get(i).equals(otherDimensions.get(i))) return false;
         }
         return true;
     }
 
+    @Override
+    public int hashCode() {
+        return type.hashCode();
+    }
+
     public OrderedTensorType rename(DimensionRenamer renamer) {
         List<TensorType.Dimension> renamedDimensions = new ArrayList<>(dimensions.size());
+        Map<String, String> new2Old = new HashMap<>(); // Just to create meaningful error messages
         for (TensorType.Dimension dimension : dimensions) {
             String oldName = dimension.name();
             Optional<String> newName = renamer.dimensionNameOf(oldName);
-            if (!newName.isPresent())
-                return this; // presumably, already renamed
+            if ( newName.isEmpty()) return this; // presumably already renamed
+
+            if (new2Old.containsKey(newName.get()))
+                throw new IllegalArgumentException("Can not rename '" + oldName + "' to '" + newName.get() + "' in " + this +
+                                                   " as '" + new2Old.get(newName.get()) + "' should also be renamed to it");
+            new2Old.put(newName.get(), oldName);
+
             TensorType.Dimension.Type dimensionType = dimension.type();
             if (dimensionType == TensorType.Dimension.Type.indexedBound) {
                 renamedDimensions.add(TensorType.Dimension.indexed(newName.get(), dimension.size().get()));

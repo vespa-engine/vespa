@@ -306,6 +306,15 @@ public class ContainerTest extends ContainerTestBase {
         assertTrue(destructableEntity.deconstructed);
     }
 
+    @Test
+    public void providers_are_invoked_only_when_needed() {
+        writeBootstrapConfigs("id1", FailOnGetProvider.class);
+
+        Container container = newContainer(dirConfigSource);
+
+        ComponentGraph oldGraph = container.getNewComponentGraph();
+    }
+
     static class DestructableEntity {
         private boolean deconstructed = false;
     }
@@ -321,6 +330,18 @@ public class ContainerTest extends ContainerTestBase {
             assertFalse(instance.deconstructed);
             instance.deconstructed = true;
         }
+    }
+
+    public static class FailOnGetProvider implements Provider<Integer> {
+
+        public Integer get() {
+            fail("Should never be called.");
+            return null;
+        }
+
+        public void deconstruct() {
+        }
+
     }
 
     public static class ComponentTakingConfig extends AbstractComponent {

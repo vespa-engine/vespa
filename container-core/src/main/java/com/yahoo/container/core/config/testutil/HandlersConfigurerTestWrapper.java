@@ -119,6 +119,7 @@ public class HandlersConfigurerTestWrapper {
     }
 
     public void shutdown() {
+        configurer.shutdown(getTestDeconstructor());
         // TODO: Remove once tests use ConfigSet rather than dir:
         for (File f : createdFiles) {
             f.delete();

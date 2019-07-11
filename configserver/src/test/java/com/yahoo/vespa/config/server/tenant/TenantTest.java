@@ -38,7 +38,7 @@ public class TenantTest {
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         TenantName tenantName = TenantName.from(name);
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
-                .withApplicationRepo(TenantApplications.create(new MockCurator(), new MockReloadHandler(), tenantName));
+                .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenantName));
         tenantRepository.addTenant(tenantBuilder);
         return tenantRepository.getTenant(tenantName);
     }

@@ -287,7 +287,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications)",
+      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public java.util.Optional globalServiceId()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public java.util.Optional majorVersion()",
@@ -297,6 +297,7 @@
       "public java.util.List steps()",
       "public java.util.List zones()",
       "public com.yahoo.config.application.api.Notifications notifications()",
+      "public java.util.List endpoints()",
       "public java.lang.String xmlForm()",
       "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
@@ -312,6 +313,23 @@
     "fields": [
       "public static final com.yahoo.config.application.api.DeploymentSpec empty"
     ]
+  },
+  "com.yahoo.config.application.api.Endpoint": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.Optional, java.lang.String, java.util.Set)",
+      "public java.lang.String endpointId()",
+      "public java.lang.String containerId()",
+      "public java.util.Set regions()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public com.yahoo.config.application.api.Endpoint withRegions(java.util.Set)"
+    ],
+    "fields": []
   },
   "com.yahoo.config.application.api.FileRegistry$Entry": {
     "superClass": "java.lang.Object",
@@ -451,7 +469,8 @@
       "public static final enum com.yahoo.config.application.api.ValidationId globalDocumentChange",
       "public static final enum com.yahoo.config.application.api.ValidationId configModelVersionMismatch",
       "public static final enum com.yahoo.config.application.api.ValidationId skipOldConfigModels",
-      "public static final enum com.yahoo.config.application.api.ValidationId forceAutomaticTenantUpgradeTests"
+      "public static final enum com.yahoo.config.application.api.ValidationId forceAutomaticTenantUpgradeTests",
+      "public static final enum com.yahoo.config.application.api.ValidationId accessControl"
     ]
   },
   "com.yahoo.config.application.api.ValidationOverrides$Allow": {
@@ -463,6 +482,22 @@
     "methods": [
       "public void <init>(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.application.api.ValidationOverrides$AllowAllValidationOverrides": {
+    "superClass": "com.yahoo.config.application.api.ValidationOverrides",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.application.api.ValidationOverrides, com.yahoo.config.application.api.DeployLogger)",
+      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
+      "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
+      "public java.lang.String xmlForm()",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -487,7 +522,7 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
-      "public final void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
+      "public void invalid(com.yahoo.config.application.api.ValidationId, java.lang.String, java.time.Instant)",
       "public final boolean allows(java.lang.String, java.time.Instant)",
       "public boolean allows(com.yahoo.config.application.api.ValidationId, java.time.Instant)",
       "public java.lang.String xmlForm()",

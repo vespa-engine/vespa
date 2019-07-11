@@ -23,18 +23,18 @@ public:
     /**
      * Implements IThreadService
      */
-    virtual vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
+    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         ++_executeCnt;
         return _service.execute(std::move(task));
     }
-    virtual void run(vespalib::Runnable &runnable) override {
+    void run(vespalib::Runnable &runnable) override {
         _service.run(runnable);
     }
-    virtual vespalib::Syncable &sync() override {
+    vespalib::Syncable &sync() override {
         _service.sync();
         return *this;
     }
-    virtual bool isCurrentThread() const override {
+    bool isCurrentThread() const override {
         return _service.isCurrentThread();
     }
     size_t getNumThreads() const override { return _service.getNumThreads(); }

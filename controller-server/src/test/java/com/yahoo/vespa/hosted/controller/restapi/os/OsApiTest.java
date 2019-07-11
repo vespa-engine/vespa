@@ -5,6 +5,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -12,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Maintainer;
@@ -38,9 +40,9 @@ public class OsApiTest extends ControllerContainerTest {
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
     private static final CloudName cloud1 = CloudName.from("cloud1");
     private static final CloudName cloud2 = CloudName.from("cloud2");
-    private static final ZoneId zone1 = ZoneId.from("prod", "us-east-3", cloud1.value());
-    private static final ZoneId zone2 = ZoneId.from("prod", "us-west-1", cloud1.value());
-    private static final ZoneId zone3 = ZoneId.from("prod", "eu-west-1", cloud2.value());
+    private static final ZoneApi zone1 = ZoneApiMock.newBuilder().withId("prod.us-east-3").with(cloud1).build();
+    private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1).build();
+    private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2).build();
 
     private ContainerControllerTester tester;
     private List<OsUpgrader> osUpgraders;
@@ -79,12 +81,12 @@ public class OsApiTest extends ControllerContainerTest {
 
         // Status is updated after some zones are upgraded
         upgradeAndUpdateStatus();
-        completeUpgrade(zone1);
+        completeUpgrade(zone1.getId());
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-partially-upgraded.json");
 
         // All zones are upgraded
         upgradeAndUpdateStatus();
-        completeUpgrade(zone2, zone3);
+        completeUpgrade(zone2.getId(), zone3.getId());
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
         // Downgrade with force is permitted

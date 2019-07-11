@@ -485,7 +485,7 @@ public class DocumentUpdateJsonSerializerTest {
                         "    'update': 'DOCUMENT_ID',",
                         "    'fields': {",
                         "        'raw_field': {",
-                        "            'assign': 'RG9uJ3QgYmVsaWV2ZSBoaXMgbGllcw==\\r\\n'",
+                        "            'assign': 'RG9uJ3QgYmVsaWV2ZSBoaXMgbGllcw=='",
                         "        }",
                         "    }",
                         "}"

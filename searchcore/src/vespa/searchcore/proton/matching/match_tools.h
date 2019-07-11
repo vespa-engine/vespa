@@ -35,7 +35,7 @@ private:
     search::fef::MatchData::UP             _match_data;
     search::fef::RankProgram::UP           _rank_program;
     search::queryeval::SearchIterator::UP  _search;
-    HandleRecorder::HandleSet              _used_handles;
+    HandleRecorder::HandleMap              _used_handles;
     bool                                   _search_has_changed;
     void setup(search::fef::RankProgram::UP, double termwise_limit = 1.0);
 public:

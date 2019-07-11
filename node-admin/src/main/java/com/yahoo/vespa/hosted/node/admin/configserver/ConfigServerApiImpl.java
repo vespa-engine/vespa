@@ -7,7 +7,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -38,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
@@ -47,7 +47,7 @@ import java.util.Optional;
  * @author bjorncs
  */
 public class ConfigServerApiImpl implements ConfigServerApi {
-    private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerApiImpl.class);
+    private static final Logger logger = Logger.getLogger(ConfigServerApiImpl.class.getName());
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -106,7 +106,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 try {
                     return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed parse response from config server", e);
+                    throw new UncheckedIOException("Failed parse response from config server", e);
                 }
             } catch (HttpException e) {
                 if (!e.isRetryable()) throw e;
@@ -116,16 +116,18 @@ public class ConfigServerApiImpl implements ConfigServerApi {
                 if (configServers.size() == 1) break;
 
                 // Failure to communicate with a config server is not abnormal during upgrades
-                if (e.getMessage().contains("(Connection refused)")) {
-                    NODE_ADMIN_LOGGER.info("Connection refused to " + configServer + " (upgrading?), will try next");
+                if (ConnectionException.isKnownConnectionException(e)) {
+                    logger.info("Failed to connect to " + configServer + " (upgrading?), will try next: " + e.getMessage());
                 } else {
-                    NODE_ADMIN_LOGGER.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
+                    logger.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
                 }
             }
         }
 
-        throw new RuntimeException("All requests against the config servers ("
-                + configServers + ") failed, last as follows:", lastException);
+        String prefix = configServers.size() == 1 ?
+                "Request against " + configServers.get(0) + " failed: " :
+                "All requests against the config servers (" + configServers + ") failed, last as follows: ";
+        throw ConnectionException.handleException(prefix, lastException);
     }
 
     @Override

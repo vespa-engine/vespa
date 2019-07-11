@@ -4,14 +4,15 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -20,14 +21,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Represents IP addresses owned by a node.
+ * This handles IP address configuration and allocation.
  *
  * @author mpolden
  */
 public class IP {
 
     /** Comparator for sorting IP addresses by their natural order */
-    public static final Comparator<String> naturalOrder = (ip1, ip2) -> {
+    public static final Comparator<String> NATURAL_ORDER = (ip1, ip2) -> {
         byte[] address1 = InetAddresses.forString(ip1).getAddress();
         byte[] address2 = InetAddresses.forString(ip2).getAddress();
 
@@ -51,36 +52,127 @@ public class IP {
         return 0;
     };
 
-    /** A pool of available IP addresses */
-    public static class AddressPool {
+    /** IP configuration of a node */
+    public static class Config {
 
-        private final Node owner;
+        public static final Config EMPTY = new Config(Set.of(), Set.of());
+
+        private final Set<String> primary;
+        private final Pool pool;
+
+        /** DO NOT USE in non-test code. Public for serialization purposes. */
+        public Config(Set<String> primary, Set<String> pool) {
+            this.primary = ImmutableSet.copyOf(Objects.requireNonNull(primary, "primary must be non-null"));
+            this.pool = new Pool(Objects.requireNonNull(pool, "pool must be non-null"));
+        }
+
+        /** The primary addresses of this. These addresses are used when communicating with the node itself */
+        public Set<String> primary() {
+            return primary;
+        }
+
+        /** Returns the IP address pool available on a node */
+        public Pool pool() {
+            return pool;
+        }
+
+        /** Returns a copy of this with pool set to given value */
+        public Config with(Pool pool) {
+            return new Config(primary, pool.asSet());
+        }
+
+        /** Returns a copy of this with pool set to given value */
+        public Config with(Set<String> primary) {
+            return new Config(require(primary), pool.asSet());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Config config = (Config) o;
+            return primary.equals(config.primary) &&
+                   pool.equals(config.pool);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(primary, pool);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("ip config primary=%s pool=%s", primary, pool.asSet());
+        }
+
+        /** Validates and returns the given addresses */
+        public static Set<String> require(Set<String> addresses) {
+            try {
+                addresses.forEach(InetAddresses::forString);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Found one or more invalid addresses in " + addresses, e);
+            }
+            return addresses;
+        }
+
+        /**
+         * Verify IP config of given nodes
+         *
+         * @throws IllegalArgumentException if there are IP conflicts with existing nodes
+         */
+        public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
+            for (Node node : nodes) {
+                for (Node other : allNodes) {
+                    if (node.equals(other)) continue;
+                    Set<String> addresses = new HashSet<>(node.ipConfig().primary());
+                    Set<String> otherAddresses = new HashSet<>(other.ipConfig().primary());
+                    if (node.type().isDockerHost()) { // Addresses of a host can never overlap with any other nodes
+                        addresses.addAll(node.ipConfig().pool().asSet());
+                        otherAddresses.addAll(other.ipConfig().pool().asSet());
+                    }
+                    otherAddresses.retainAll(addresses);
+                    if (!otherAddresses.isEmpty())
+                        throw new IllegalArgumentException("Cannot assign " + addresses + " to " + node.hostname() +
+                                                           ": " + otherAddresses + " already assigned to " +
+                                                           other.hostname());
+                }
+            }
+            return nodes;
+        }
+
+        public static Node verify(Node node, LockedNodeList allNodes) {
+            return verify(List.of(node), allNodes).get(0);
+        }
+
+    }
+
+    /** A pool of IP addresses. Addresses in this are destined for use by Docker containers */
+    public static class Pool {
+
         private final Set<String> addresses;
 
-        public AddressPool(Node owner, Set<String> addresses) {
-            this.owner = Objects.requireNonNull(owner, "owner must be non-null");
+        private Pool(Set<String> addresses) {
             this.addresses = ImmutableSet.copyOf(Objects.requireNonNull(addresses, "addresses must be non-null"));
         }
 
         /**
          * Find a free allocation in this pool. Note that the allocation is not final until it is assigned to a node
          *
-         * @param nodes All nodes in the repository
+         * @param nodes A locked list of all nodes in the repository
          * @return An allocation from the pool, if any can be made
          */
-        public Optional<Allocation> findAllocation(NodeList nodes, NameResolver resolver) {
-            Set<String> unusedAddresses = findUnused(nodes);
-            Optional<Allocation> allocation = unusedAddresses.stream()
-                                                             .filter(IP::isV6)
-                                                             .findFirst()
-                                                             .map(addr -> Allocation.resolveFrom(addr, resolver));
+        public Optional<Allocation> findAllocation(LockedNodeList nodes, NameResolver resolver) {
+            var unusedAddresses = findUnused(nodes);
+            var allocation = unusedAddresses.stream()
+                                            .filter(IP::isV6)
+                                            .findFirst()
+                                            .map(addr -> Allocation.resolveFrom(addr, resolver));
             allocation.flatMap(Allocation::ipv4Address).ifPresent(ipv4Address -> {
-               if (!unusedAddresses.contains(ipv4Address)) {
-                   throw new IllegalArgumentException("Allocation resolved " + ipv4Address + " from hostname " +
-                                                      allocation.get().hostname +
-                                                      ", but that address is not available in the address pool of " +
-                                                      owner.hostname());
-               }
+                if (!unusedAddresses.contains(ipv4Address)) {
+                    throw new IllegalArgumentException("Allocation resolved " + ipv4Address + " from hostname " +
+                                                       allocation.get().hostname +
+                                                       ", but that address is not owned by this node");
+                }
             });
             return allocation;
         }
@@ -88,11 +180,12 @@ public class IP {
         /**
          * Finds all unused addresses in this pool
          *
-         * @param nodes All nodes in the repository
+         * @param nodes Locked list of all nodes in the repository
          */
-        public Set<String> findUnused(NodeList nodes) {
-            Set<String> unusedAddresses = new LinkedHashSet<>(addresses);
-            nodes.childrenOf(owner).asList().forEach(node -> unusedAddresses.removeAll(node.ipAddresses()));
+        public Set<String> findUnused(LockedNodeList nodes) {
+            var unusedAddresses = new LinkedHashSet<>(addresses);
+            nodes.filter(node -> node.ipConfig().primary().stream().anyMatch(addresses::contains))
+                 .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
         }
 
@@ -104,13 +197,35 @@ public class IP {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            AddressPool that = (AddressPool) o;
+            Pool that = (Pool) o;
             return Objects.equals(addresses, that.addresses);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(addresses);
+        }
+
+        public static Pool of(Set<String> pool) {
+            return new Pool(require(pool));
+        }
+
+        /** Validates and returns the given IP address pool */
+        public static Set<String> require(Set<String> pool) {
+            long ipv6AddrCount = pool.stream().filter(IP::isV6).count();
+            if (ipv6AddrCount == pool.size()) {
+                return pool; // IPv6-only pool is valid
+            }
+
+            long ipv4AddrCount = pool.stream().filter(IP::isV4).count();
+            if (ipv4AddrCount == ipv6AddrCount) {
+                return pool;
+            }
+
+            throw new IllegalArgumentException(String.format("Dual-stacked IP address list must have an " +
+                                                             "equal number of addresses of each version " +
+                                                             "[IPv6 address count = %d, IPv4 address count = %d]",
+                                                             ipv6AddrCount, ipv4AddrCount));
         }
 
     }
@@ -204,34 +319,6 @@ public class IP {
     /** Returns whether given string is an IPv6 address */
     public static boolean isV6(String ipAddress) {
         return InetAddresses.forString(ipAddress) instanceof Inet6Address;
-    }
-
-    /** Validates and returns the given set of IP addresses */
-    public static Set<String> requireAddresses(Set<String> addresses) {
-        try {
-            addresses.forEach(InetAddresses::forString);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("A node must have at least one valid IP address", e);
-        }
-        return addresses;
-    }
-
-    /** Validates and returns the given IP address pool */
-    public static Set<String> requireAddressPool(Set<String> addresses) {
-        long ipv6AddrCount = addresses.stream().filter(IP::isV6).count();
-        if (ipv6AddrCount == addresses.size()) {
-            return addresses; // IPv6-only pool is valid
-        }
-
-        long ipv4AddrCount = addresses.stream().filter(IP::isV4).count();
-        if (ipv4AddrCount == ipv6AddrCount) {
-            return addresses;
-        }
-
-        throw new IllegalArgumentException(String.format("Dual-stacked IP address list must have an " +
-                                                         "equal number of addresses of each version " +
-                                                         "[IPv6 address count = %d, IPv4 address count = %d]",
-                                                         ipv6AddrCount, ipv4AddrCount));
     }
 
 }

@@ -6,11 +6,15 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.JsonFormat;
+import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 
 import java.io.ByteArrayInputStream;
@@ -19,22 +23,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalLong;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static ai.vespa.hosted.api.Method.DELETE;
 import static ai.vespa.hosted.api.Method.GET;
 import static ai.vespa.hosted.api.Method.POST;
-import static java.net.http.HttpRequest.BodyPublishers.ofByteArray;
 import static java.net.http.HttpRequest.BodyPublishers.ofInputStream;
 import static java.net.http.HttpResponse.BodyHandlers.ofByteArray;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Talks to a remote controller over HTTP. Subclasses are responsible for adding authentication to the requests.
@@ -55,8 +65,18 @@ public abstract class ControllerHttpClient {
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
+    public static ControllerHttpClient withSignatureKey(URI endpoint, String privateKey, ApplicationId id) {
+        return new SigningControllerHttpClient(endpoint, privateKey, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
     public static ControllerHttpClient withSignatureKey(URI endpoint, Path privateKeyFile, ApplicationId id) {
         return new SigningControllerHttpClient(endpoint, privateKeyFile, id);
+    }
+
+    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
+    public static ControllerHttpClient withKeyAndCertificate(URI endpoint, String privateKey, String certificate) {
+        return new MutualTlsControllerHttpClient(endpoint, privateKey, certificate);
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
@@ -84,14 +104,14 @@ public abstract class ControllerHttpClient {
 
     /** Deactivates the deployment of the given application in the given zone. */
     public String deactivate(ApplicationId id, ZoneId zone) {
-        return asText(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
-                                                 .timeout(Duration.ofSeconds(10)),
-                                      DELETE)));
+        return asString(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+                                                .timeout(Duration.ofSeconds(10)),
+                                     DELETE)));
     }
 
-    /** Returns the default {@link Environment#dev} {@link ZoneId}, to use for development deployments. */
-    public ZoneId devZone() {
-        Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath())
+    /** Returns the default {@link ZoneId} for the given environment, if any. */
+    public ZoneId defaultZone(Environment environment) {
+        Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath(environment))
                                                                    .timeout(Duration.ofSeconds(10)),
                                                         GET)));
         return ZoneId.from("dev", rootObject.field("name").asString());
@@ -105,6 +125,24 @@ public abstract class ControllerHttpClient {
                 .field("compileVersion").asString();
     }
 
+    /** Returns the test config for functional and verification tests of the indicated Vespa deployment. */
+    public TestConfig testConfig(ApplicationId id, ZoneId zone) {
+        return TestConfig.fromJson(asBytes(send(request(HttpRequest.newBuilder(testConfigPath(id, zone)), GET))));
+    }
+
+    /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
+    public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run, long after) {
+        return toDeploymentLog(send(request(HttpRequest.newBuilder(runPath(id, zone, run, after))
+                                                       .timeout(Duration.ofSeconds(10)),
+                                            GET)));
+    }
+
+    /** Returns the sorted list of log entries from the deployment job of the given ids. */
+    public DeploymentLog deploymentLog(ApplicationId id, ZoneId zone, long run) {
+        return deploymentLog(id, zone, run, -1);
+    }
+
+    /** Returns an authenticated request from the given input. Override this for, e.g., request signing. */
     protected HttpRequest request(HttpRequest.Builder request, Method method, Supplier<InputStream> data) {
         return request.method(method.name(), ofInputStream(data)).build();
     }
@@ -146,15 +184,38 @@ public abstract class ControllerHttpClient {
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
         return concatenated(instancePath(id),
-                            "job", zone.environment().value() + "-" + zone.region().value());
+                            "deploy", jobNameOf(zone));
     }
 
-    private URI defaultRegionPath() {
-        return concatenated(endpoint, "zone", "v1", "environment", Environment.dev.value(), "default");
+    private URI jobPath(ApplicationId id, ZoneId zone) {
+        return concatenated(instancePath(id), "job", jobNameOf(zone));
+    }
+
+    private URI testConfigPath(ApplicationId id, ZoneId zone) {
+        return concatenated(jobPath(id, zone), "test-config");
+    }
+
+    private URI runPath(ApplicationId id, ZoneId zone, long run, long after) {
+        return withQuery(concatenated(jobPath(id, zone),
+                                      "run", Long.toString(run)),
+                         "after", Long.toString(after));
+    }
+
+    private URI defaultRegionPath(Environment environment) {
+        return concatenated(endpoint, "zone", "v1", "environment", environment.value(), "default");
     }
 
     private static URI concatenated(URI base, String... parts) {
-        return base.resolve(String.join("/", parts) + "/");
+        return base.resolve(Stream.of(parts).map(part -> URLEncoder.encode(part, UTF_8)).collect(joining("/")) + "/");
+    }
+
+    private static URI withQuery(URI base, String name, String value) {
+        return base.resolve(  "?" + (base.getRawQuery() != null ? base.getRawQuery() + "&" : "")
+                            + URLEncoder.encode(name, UTF_8) + "=" + URLEncoder.encode(value, UTF_8));
+    }
+
+    private static String jobNameOf(ZoneId zone) {
+        return zone.environment().value() + "-" + zone.region().value();
     }
 
     private HttpResponse<byte[]> send(HttpRequest request) {
@@ -174,20 +235,8 @@ public abstract class ControllerHttpClient {
     private static String metaToJson(Deployment deployment) {
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
-
-        if (deployment.repository().isPresent()) {
-            Cursor revisionObject = rootObject.setObject("sourceRevision");
-            deployment.repository().ifPresent(repository -> revisionObject.setString("repository", repository));
-            deployment.branch().ifPresent(branch -> revisionObject.setString("branch", branch));
-            deployment.commit().ifPresent(commit -> revisionObject.setString("commit", commit));
-            deployment.build().ifPresent(build -> rootObject.setLong("buildNumber", build));
-        }
-
         deployment.version().ifPresent(version -> rootObject.setString("vespaVersion", version));
-
-        if (deployment.ignoreValidationErrors()) rootObject.setBool("ignoreValidationErrors", true);
         rootObject.setBool("deployDirectly", true);
-
         return toJson(slime);
     }
 
@@ -207,13 +256,19 @@ public abstract class ControllerHttpClient {
     private static MultiPartStreamer toDataStream(Deployment deployment) {
         MultiPartStreamer streamer = new MultiPartStreamer();
         streamer.addJson("deployOptions", metaToJson(deployment));
-        deployment.applicationZip().ifPresent(zip -> streamer.addFile("applicationZip", zip));
+        streamer.addFile("applicationZip", deployment.applicationZip());
         return streamer;
     }
 
-    private static String asText(HttpResponse<byte[]> response) {
+    /** Returns the response body as a String, or throws if the status code is non-2XX. */
+    private static String asString(HttpResponse<byte[]> response) {
+        return new String(asBytes(response), UTF_8);
+    }
+
+    /** Returns the response body as a byte array, or throws if the status code is non-2XX. */
+    private static byte[] asBytes(HttpResponse<byte[]> response) {
         toInspector(response);
-        return new String(response.body(), UTF_8);
+        return response.body();
     }
 
     /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
@@ -235,7 +290,22 @@ public abstract class ControllerHttpClient {
     private static DeploymentResult toDeploymentResult(HttpResponse<byte[]> response) {
         Inspector rootObject = toInspector(response);
         return new DeploymentResult(rootObject.field("message").asString(),
-                                    URI.create(rootObject.field("location").asString()));
+                                    rootObject.field("run").asLong());
+    }
+
+    private static DeploymentLog toDeploymentLog(HttpResponse<byte[]> response) {
+        Inspector rootObject = toInspector(response);
+        List<DeploymentLog.Entry> entries = new ArrayList<>();
+        rootObject.field("log").traverse((ObjectTraverser) (__, entryArray) ->
+                entryArray.traverse((ArrayTraverser) (___, entryObject) -> {
+                    entries.add(new DeploymentLog.Entry(Instant.ofEpochMilli(entryObject.field("at").asLong()),
+                                                        entryObject.field("type").asString(),
+                                                        entryObject.field("message").asString()));
+                }));
+        return new DeploymentLog(entries,
+                                 rootObject.field("active").asBool(),
+                                 rootObject.field("lastId").valid() ? OptionalLong.of(rootObject.field("lastId").asLong())
+                                                                    : OptionalLong.empty());
     }
 
     private static Slime toSlime(byte[] data) {
@@ -259,9 +329,13 @@ public abstract class ControllerHttpClient {
 
         private final RequestSigner signer;
 
-        private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
+        private SigningControllerHttpClient(URI endpoint, String privateKey, ApplicationId id) {
             super(endpoint, HttpClient.newBuilder());
-            this.signer = new RequestSigner(unchecked(() -> Files.readString(privateKeyFile, UTF_8)), id.serializedForm());
+            this.signer = new RequestSigner(privateKey, id.serializedForm());
+        }
+
+        private SigningControllerHttpClient(URI endpoint, Path privateKeyFile, ApplicationId id) {
+            this(endpoint, unchecked(() -> Files.readString(privateKeyFile, UTF_8)), id);
         }
 
         @Override
@@ -277,7 +351,18 @@ public abstract class ControllerHttpClient {
 
         private MutualTlsControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
             super(endpoint,
-                  HttpClient.newBuilder().sslContext(new SslContextBuilder().withKeyStore(privateKeyFile, certificateFile).build()));
+                  HttpClient.newBuilder()
+                            .sslContext(new SslContextBuilder().withKeyStore(privateKeyFile,
+                                                                             certificateFile)
+                                                               .build()));
+        }
+
+        private MutualTlsControllerHttpClient(URI endpoint, String privateKey, String certificate) {
+            super(endpoint,
+                  HttpClient.newBuilder()
+                            .sslContext(new SslContextBuilder().withKeyStore(KeyUtils.fromPemEncodedPrivateKey(privateKey),
+                                                                             X509CertificateUtils.certificateListFromPem(certificate))
+                                                               .build()));
         }
 
     }

@@ -175,7 +175,7 @@ public:
     }
 
     static inline DataT bitVectorWeight();
-    MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage getMemoryUsage() const;
 
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;

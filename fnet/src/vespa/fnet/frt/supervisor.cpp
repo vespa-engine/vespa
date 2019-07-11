@@ -9,57 +9,25 @@
 #include <vespa/fnet/connector.h>
 #include <vespa/fastos/thread.h>
 
-FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
-                               FastOS_ThreadPool *threadPool)
+FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport)
     : _transport(transport),
-      _threadPool(threadPool),
-      _standAlone(false),
       _packetFactory(),
       _packetStreamer(&_packetFactory),
       _connector(nullptr),
       _reflectionManager(),
       _rpcHooks(&_reflectionManager),
       _connHooks(*this),
-      _methodMismatchHook(nullptr)
+      _methodMismatchHook()
 {
-    _rpcHooks.InitRPC(this);
-}
-
-
-FRT_Supervisor::FRT_Supervisor(vespalib::CryptoEngine::SP crypto,
-                               uint32_t threadStackSize,
-                               uint32_t maxThreads)
-    : _transport(nullptr),
-      _threadPool(nullptr),
-      _standAlone(true),
-      _packetFactory(),
-      _packetStreamer(&_packetFactory),
-      _connector(nullptr),
-      _reflectionManager(),
-      _rpcHooks(&_reflectionManager),
-      _connHooks(*this),
-      _methodMismatchHook(nullptr)
-{
-    _transport = new FNET_Transport(std::move(crypto), 1);
-    assert(_transport != nullptr);
-    if (threadStackSize > 0) {
-        _threadPool = new FastOS_ThreadPool(threadStackSize, maxThreads);
-        assert(_threadPool != nullptr);
-    }
     _rpcHooks.InitRPC(this);
 }
 
 
 FRT_Supervisor::~FRT_Supervisor()
 {
-    if (_standAlone) {
-        delete _transport;
-        delete _threadPool;
-    }
     if (_connector != nullptr) {
         _connector->SubRef();
     }
-    delete _methodMismatchHook;
 }
 
 FNET_Scheduler *
@@ -134,43 +102,35 @@ FRT_Supervisor::AllocRPCRequest(FRT_RPCRequest *tradein)
 
 
 void
-FRT_Supervisor::SetSessionInitHook(FRT_METHOD_PT  method,
-                                   FRT_Invokable *handler)
+FRT_Supervisor::SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
     _connHooks.SetSessionInitHook(method, handler);
 }
 
 
 void
-FRT_Supervisor::SetSessionDownHook(FRT_METHOD_PT  method,
-                                   FRT_Invokable *handler)
+FRT_Supervisor::SetSessionDownHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
     _connHooks.SetSessionDownHook(method, handler);
 }
 
 
 void
-FRT_Supervisor::SetSessionFiniHook(FRT_METHOD_PT  method,
-                                   FRT_Invokable *handler)
+FRT_Supervisor::SetSessionFiniHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
     _connHooks.SetSessionFiniHook(method, handler);
 }
 
 
 void
-FRT_Supervisor::SetMethodMismatchHook(FRT_METHOD_PT  method,
-                                      FRT_Invokable *handler)
+FRT_Supervisor::SetMethodMismatchHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
-    delete _methodMismatchHook;
-    _methodMismatchHook = new FRT_Method("frt.hook.methodMismatch", "*", "*",
-                                         method, handler);
-    assert(_methodMismatchHook != nullptr);
+    _methodMismatchHook = std::make_unique<FRT_Method>("frt.hook.methodMismatch", "*", "*", method, handler);
 }
 
 
 void
-FRT_Supervisor::InvokeVoid(FNET_Connection *conn,
-                           FRT_RPCRequest *req)
+FRT_Supervisor::InvokeVoid(FNET_Connection *conn, FRT_RPCRequest *req)
 {
     if (conn != nullptr) {
         FNET_Channel *ch = conn->OpenChannel();
@@ -183,11 +143,7 @@ FRT_Supervisor::InvokeVoid(FNET_Connection *conn,
 
 
 void
-FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler,
-                            FNET_Connection *conn,
-                            FRT_RPCRequest *req,
-                            double timeout,
-                            FRT_IRequestWait *waiter)
+FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_RPCRequest *req, double timeout, FRT_IRequestWait *waiter)
 {
     uint32_t chid;
     FNET_Packet *packet = req->CreateRequestPacket(true);
@@ -209,10 +165,7 @@ FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler,
 
 
 void
-FRT_Supervisor::InvokeSync(SchedulerPtr scheduler,
-                           FNET_Connection *conn,
-                           FRT_RPCRequest *req,
-                           double timeout)
+FRT_Supervisor::InvokeSync(SchedulerPtr scheduler, FNET_Connection *conn, FRT_RPCRequest *req, double timeout)
 {
     FRT_SingleReqWait waiter;
     InvokeAsync(scheduler, conn, req, timeout, &waiter);
@@ -250,7 +203,7 @@ FNET_IPacketHandler::HP_RetCode
 FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
 {
     uint32_t        pcode   = packet->GetPCODE() & 0xffff; // remove flags
-    FRT_RPCRequest *req     = (FRT_RPCRequest *) context._value.VOIDP;
+    auto *req     = (FRT_RPCRequest *) context._value.VOIDP;
     FRT_RPCInvoker *invoker = nullptr;
     bool            noReply = false;
 
@@ -265,9 +218,9 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
     if (req->IsError()) {
 
         if (req->GetErrorCode() != FRTE_RPC_BAD_REQUEST
-            && _methodMismatchHook != nullptr)
+            && _methodMismatchHook)
         {
-            invoker->ForceMethod(_methodMismatchHook);
+            invoker->ForceMethod(_methodMismatchHook.get());
             return (invoker->Invoke()) ?
                 FNET_FREE_CHANNEL : FNET_CLOSE_CHANNEL;
         }
@@ -280,40 +233,6 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
         return (invoker->Invoke()) ?
             FNET_FREE_CHANNEL : FNET_CLOSE_CHANNEL;
     }
-}
-
-
-bool
-FRT_Supervisor::Start()
-{
-    assert(_standAlone);
-    if (_threadPool == nullptr)
-        return false;
-    return _transport->Start(_threadPool);
-}
-
-
-void
-FRT_Supervisor::Main()
-{
-    assert(_standAlone);
-    _transport->Main();
-}
-
-
-void
-FRT_Supervisor::ShutDown(bool waitFinished)
-{
-    assert(_standAlone);
-    _transport->ShutDown(waitFinished);
-}
-
-
-void
-FRT_Supervisor::WaitFinished()
-{
-    assert(_standAlone);
-    _transport->WaitFinished();
 }
 
 //----------------------------------------------------
@@ -403,57 +322,38 @@ FRT_Supervisor::RPCHooks::RPC_GetMethodInfo(FRT_RPCRequest *req)
 
 FRT_Supervisor::ConnHooks::ConnHooks(FRT_Supervisor &parent)
     : _parent(parent),
-      _sessionInitHook(nullptr),
-      _sessionDownHook(nullptr),
-      _sessionFiniHook(nullptr)
+      _sessionInitHook(),
+      _sessionDownHook(),
+      _sessionFiniHook()
 {
 }
 
 
-FRT_Supervisor::ConnHooks::~ConnHooks()
+FRT_Supervisor::ConnHooks::~ConnHooks() = default;
+
+void
+FRT_Supervisor::ConnHooks::SetSessionInitHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
-    delete _sessionInitHook;
-    delete _sessionDownHook;
-    delete _sessionFiniHook;
+    _sessionInitHook = std::make_unique<FRT_Method>("frt.hook.sessionInit", "", "", method, handler);
 }
 
 
 void
-FRT_Supervisor::ConnHooks::SetSessionInitHook(FRT_METHOD_PT  method,
-                                              FRT_Invokable *handler)
+FRT_Supervisor::ConnHooks::SetSessionDownHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
-    delete _sessionInitHook;
-    _sessionInitHook = new FRT_Method("frt.hook.sessionInit", "", "",
-                                      method, handler);
-    assert(_sessionInitHook != nullptr);
+    _sessionDownHook = std::make_unique<FRT_Method>("frt.hook.sessionDown", "", "", method, handler);
 }
 
 
 void
-FRT_Supervisor::ConnHooks::SetSessionDownHook(FRT_METHOD_PT  method,
-                                              FRT_Invokable *handler)
+FRT_Supervisor::ConnHooks::SetSessionFiniHook(FRT_METHOD_PT  method, FRT_Invokable *handler)
 {
-    delete _sessionDownHook;
-    _sessionDownHook = new FRT_Method("frt.hook.sessionDown", "", "",
-                                      method, handler);
-    assert(_sessionDownHook != nullptr);
+    _sessionFiniHook = std::make_unique<FRT_Method>("frt.hook.sessionFini", "", "", method, handler);
 }
 
 
 void
-FRT_Supervisor::ConnHooks::SetSessionFiniHook(FRT_METHOD_PT  method,
-                                              FRT_Invokable *handler)
-{
-    delete _sessionFiniHook;
-    _sessionFiniHook = new FRT_Method("frt.hook.sessionFini", "", "",
-                                      method, handler);
-    assert(_sessionFiniHook != nullptr);
-}
-
-
-void
-FRT_Supervisor::ConnHooks::InvokeHook(FRT_Method *hook,
-                                      FNET_Connection *conn)
+FRT_Supervisor::ConnHooks::InvokeHook(FRT_Method *hook, FNET_Connection *conn)
 {
     FRT_RPCRequest *req = _parent.AllocRPCRequest();
     req->SetMethodName(hook->GetName());
@@ -466,8 +366,8 @@ FRT_Supervisor::ConnHooks::InitAdminChannel(FNET_Channel *channel)
 {
     FNET_Connection *conn = channel->GetConnection();
     conn->SetCleanupHandler(this);
-    if (_sessionInitHook != nullptr) {
-        InvokeHook(_sessionInitHook, conn);
+    if (_sessionInitHook) {
+        InvokeHook(_sessionInitHook.get(), conn);
     }
     channel->SetHandler(this);
     channel->SetContext(channel);
@@ -476,16 +376,15 @@ FRT_Supervisor::ConnHooks::InitAdminChannel(FNET_Channel *channel)
 
 
 FNET_IPacketHandler::HP_RetCode
-FRT_Supervisor::ConnHooks::HandlePacket(FNET_Packet *packet,
-                                        FNET_Context context)
+FRT_Supervisor::ConnHooks::HandlePacket(FNET_Packet *packet, FNET_Context context)
 {
     if (!packet->IsChannelLostCMD()) {
         packet->Free();
         return FNET_KEEP_CHANNEL;
     }
     FNET_Channel *ch = context._value.CHANNEL;
-    if (_sessionDownHook != nullptr) {
-        InvokeHook(_sessionDownHook, ch->GetConnection());
+    if (_sessionDownHook) {
+        InvokeHook(_sessionDownHook.get(), ch->GetConnection());
     }
     return FNET_FREE_CHANNEL;
 }
@@ -494,8 +393,8 @@ FRT_Supervisor::ConnHooks::HandlePacket(FNET_Packet *packet,
 void
 FRT_Supervisor::ConnHooks::Cleanup(FNET_Connection *conn)
 {
-    if (_sessionFiniHook != nullptr) {
-        InvokeHook(_sessionFiniHook, conn);
+    if (_sessionFiniHook) {
+        InvokeHook(_sessionFiniHook.get(), conn);
     }
 }
 
@@ -506,3 +405,28 @@ FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_Transport *transport)
 FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread *transport_thread)
     : ptr(transport_thread->GetScheduler())
 { }
+
+namespace fnet::frt {
+
+StandaloneFRT::StandaloneFRT()
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _transport(std::make_unique<FNET_Transport>()),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
+{
+    _transport->Start(_threadPool.get());
+}
+
+StandaloneFRT::StandaloneFRT(vespalib::CryptoEngine::SP crypto)
+    : _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+      _transport(std::make_unique<FNET_Transport>(std::move(crypto), 1)),
+      _supervisor(std::make_unique<FRT_Supervisor>(_transport.get()))
+{
+    _transport->Start(_threadPool.get());
+}
+
+StandaloneFRT::~StandaloneFRT()
+{
+    _transport->ShutDown(true);
+}
+
+}

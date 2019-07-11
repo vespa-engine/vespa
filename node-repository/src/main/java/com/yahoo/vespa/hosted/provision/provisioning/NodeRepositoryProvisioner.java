@@ -6,10 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -63,13 +62,14 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.nodeRepository = nodeRepository;
         this.capacityPolicies = new CapacityPolicies(zone, flavors);
         this.zone = zone;
+        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.preparer = new Preparer(nodeRepository,
-                zone.environment().equals(Environment.prod) ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
-                provisionServiceProvider.getHostProvisioner(),
-                Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource));
-        this.activator = new Activator(nodeRepository);
-        this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService ->
-                new LoadBalancerProvisioner(nodeRepository, lbService));
+                zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
+                                     provisionServiceProvider.getHostProvisioner(),
+                                     provisionServiceProvider.getHostResourcesCalculator(),
+                                     Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource),
+                                     loadBalancerProvisioner);
+        this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }
 
     /**
@@ -92,15 +92,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeSpec requestedNodes;
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity, cluster.type());
-
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            NodeResources flavor = capacityPolicies.decideNodeResources(requestedCapacity, cluster);
-            log.log(LogLevel.DEBUG, () -> "Decided flavor for requested tenant nodes: " + flavor);
+            NodeResources resources = capacityPolicies.decideNodeResources(requestedCapacity.nodeResources(), cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, flavor, exclusive, requestedCapacity.canFail());
+            requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
@@ -114,14 +112,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) {
         validate(hosts);
         activator.activate(application, hosts, transaction);
-        transaction.onCommitted(() -> {
-            try {
-                loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.provision(application));
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Failed to provision load balancer for application " +
-                                        application.toShortString(), e);
-            }
-        });
     }
 
     @Override
@@ -142,7 +132,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " - " + node.flavor());
             Allocation nodeAllocation = node.allocation().orElseThrow(IllegalStateException::new);
             hosts.add(new HostSpec(node.hostname(),
-                                   Collections.emptyList(),
+                                   List.of(),
                                    Optional.of(node.flavor()),
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),

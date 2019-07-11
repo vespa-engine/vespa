@@ -2,13 +2,16 @@
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
     active.cpp
+    address_space.cpp
     alloc.cpp
     approx.cpp
     array.cpp
+    assert.cpp
     backtrace.cpp
     barrier.cpp
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
+    bufferwriter.cpp
     box.cpp
     classname.cpp
     closuretask.cpp
@@ -31,6 +34,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     printable.cpp
     priority_queue.cpp
     random.cpp
+    rcuvector.cpp
     regexp.cpp
     runnable.cpp
     runnable_pair.cpp

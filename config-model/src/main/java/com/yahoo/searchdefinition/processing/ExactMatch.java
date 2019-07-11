@@ -28,12 +28,19 @@ public class ExactMatch extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
-            Matching.Type matching = field.getMatching().getType();
-            if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
-                implementExactMatch(field, search);
-            } else if (field.getMatching().getExactMatchTerminator() != null) {
-                warn(search, field, "exact-terminator requires 'exact' matching to have any effect.");
-            }
+            processField(field, search);
+        }
+    }
+
+    private void processField(SDField field, Search search) {
+        Matching.Type matching = field.getMatching().getType();
+        if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
+            implementExactMatch(field, search);
+        } else if (field.getMatching().getExactMatchTerminator() != null) {
+            warn(search, field, "exact-terminator requires 'exact' matching to have any effect.");
+        }
+        for (var structField : field.getStructFields()) {
+            processField(structField, search);
         }
     }
 

@@ -37,10 +37,6 @@ cloud string default="default"
 environment string default="prod"
 region string default="default"
 system string default="main"
-defaultFlavor string default="default"
-defaultAdminFlavor string default="default"
-defaultContainerFlavor string default="default"
-defaultContentFlavor string default="default"
 
 # RPC protocol
 maxgetconfigclients int default=1000000
@@ -52,9 +48,6 @@ payloadCompressionType enum { UNCOMPRESSED, LZ4 } default=LZ4
 loadBalancerAddress string default=""
 athenzDnsSuffix string default=""
 ztsUrl string default=""
-
-# Node admin
-nodeAdminInContainer bool default=false
 
 # Maintainers
 maintainerIntervalMinutes int default=30
@@ -71,3 +64,4 @@ sleepTimeWhenRedeployingFails long default=30
 buildMinimalSetOfConfigModels bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
 canReturnEmptySentinelConfig bool default=false
+serverNodeType enum {config, controller} default=config

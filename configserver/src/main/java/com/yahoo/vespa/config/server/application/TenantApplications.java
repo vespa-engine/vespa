@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -8,6 +9,8 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -20,9 +23,11 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -45,26 +50,27 @@ public class TenantApplications {
     private final Curator curator;
     private final Path applicationsPath;
     private final Path locksPath;
-    // One thread pool for all instances of this class
-    private static final ExecutorService pathChildrenExecutor =
-            Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(TenantApplications.class.getName()));
     private final Curator.DirectoryCache directoryCache;
     private final ReloadHandler reloadHandler;
     private final Map<ApplicationId, Lock> locks;
+    private final Executor zkWatcherExecutor;
 
-    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
+    private TenantApplications(Curator curator, ReloadHandler reloadHandler, TenantName tenant,
+                               ExecutorService zkCacheExecutor, StripedExecutor<TenantName> zkWatcherExecutor) {
         this.curator = curator;
         this.applicationsPath = TenantRepository.getApplicationsPath(tenant);
         this.locksPath = TenantRepository.getLocksPath(tenant);
         this.locks = new ConcurrentHashMap<>(2);
         this.reloadHandler = reloadHandler;
-        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, pathChildrenExecutor);
+        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
+        this.directoryCache = curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
         this.directoryCache.start();
         this.directoryCache.addListener(this::childEvent);
     }
 
-    public static TenantApplications create(Curator curator, ReloadHandler reloadHandler, TenantName tenant) {
-        return new TenantApplications(curator, reloadHandler, tenant);
+    public static TenantApplications create(GlobalComponentRegistry registry, ReloadHandler reloadHandler, TenantName tenant) {
+        return new TenantApplications(registry.getCurator(), reloadHandler, tenant,
+                                      registry.getZkCacheExecutor(), registry.getZkWatcherExecutor());
     }
 
     /**
@@ -85,10 +91,10 @@ public class TenantApplications {
     }
 
     /** Returns the id of the currently active session for the given application, if any. Throws on unknown applications. */
-    private OptionalLong activeSessionOf(ApplicationId id) {
+    public Optional<Long> activeSessionOf(ApplicationId id) {
         String data = curator.getData(applicationPath(id)).map(Utf8::toString)
-                             .orElseThrow(() -> new IllegalArgumentException("Unknown application '" + id + "'."));
-        return data.isEmpty() ? OptionalLong.empty() : OptionalLong.of(Long.parseLong(data));
+                             .orElseThrow(() -> new NotFoundException("No such application id: '" + id + "'"));
+        return data.isEmpty() ? Optional.empty() : Optional.of(Long.parseLong(data));
     }
 
     /**
@@ -152,23 +158,25 @@ public class TenantApplications {
     }
 
     private void childEvent(CuratorFramework client, PathChildrenCacheEvent event) {
-        switch (event.getType()) {
-            case CHILD_ADDED:
-                applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
-                break;
-            // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
-            case CHILD_REMOVED:
-                applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
-                break;
-            case CHILD_UPDATED:
-                // do nothing, application just got redeployed
-                break;
-            default:
-                break;
-        }
-        // We may have lost events and may need to remove applications.
-        // New applications are added when session is added, not here. See RemoteSessionRepo.
-        removeUnusedApplications();
+        zkWatcherExecutor.execute(() -> {
+            switch (event.getType()) {
+                case CHILD_ADDED:
+                    applicationAdded(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
+                    break;
+                // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
+                case CHILD_REMOVED:
+                    applicationRemoved(ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName()));
+                    break;
+                case CHILD_UPDATED:
+                    // do nothing, application just got redeployed
+                    break;
+                default:
+                    break;
+            }
+            // We may have lost events and may need to remove applications.
+            // New applications are added when session is added, not here. See RemoteSessionRepo.
+            removeUnusedApplications();
+        });
     }
 
     private void applicationRemoved(ApplicationId applicationId) {

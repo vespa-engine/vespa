@@ -5,14 +5,12 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +20,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Maintain info about hardware, hostnames and cluster specifications.
- * <p>
+ * Maintains information about hardware, hostnames and cluster specifications.
+ *
  * This is used to calculate cost metrics for the application api.
  *
  * @author smorgrav
@@ -33,26 +31,26 @@ public class ClusterInfoMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(ClusterInfoMaintainer.class.getName());
     
     private final Controller controller;
-    private final NodeRepositoryClientInterface nodeRepositoryClient;
+    private final NodeRepository nodeRepository;
 
     ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl,
-                          NodeRepositoryClientInterface nodeRepositoryClient) {
+                          NodeRepository nodeRepository) {
         super(controller, duration, jobControl);
         this.controller = controller;
-        this.nodeRepositoryClient = nodeRepositoryClient;
+        this.nodeRepository = nodeRepository;
     }
 
-    private static String clusterid(NodeRepositoryNode node) {
+    private static String clusterId(NodeRepositoryNode node) {
         return node.getMembership().clusterid;
     }
 
-    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes, ZoneId zone) {
+    private Map<ClusterSpec.Id, ClusterInfo> getClusterInfo(NodeList nodes) {
         Map<ClusterSpec.Id, ClusterInfo> infoMap = new HashMap<>();
 
         // Group nodes by clusterid
         Map<String, List<NodeRepositoryNode>> clusters = nodes.nodes().stream()
                 .filter(node -> node.getMembership() != null)
-                .collect(Collectors.groupingBy(ClusterInfoMaintainer::clusterid));
+                .collect(Collectors.groupingBy(ClusterInfoMaintainer::clusterId));
 
         // For each cluster - get info
         for (String id : clusters.keySet()) {
@@ -65,20 +63,11 @@ public class ClusterInfoMaintainer extends Maintainer {
             double cpu = 0;
             double mem = 0;
             double disk = 0;
-            // TODO: This code was never run. Reenable when flavours are available from a FlavorRegistry or something, or remove.
-            /*if (zone.nodeFlavors().isPresent()) {
-                Optional<Flavor> flavorOptional = zone.nodeFlavors().get().getFlavor(node.flavor);
-                if ((flavorOptional.isPresent())) {
-                    Flavor flavor = flavorOptional.get();
-                    cpu = flavor.getMinCpuCores();
-                    mem = flavor.getMinMainMemoryAvailableGb();
-                    disk = flavor.getMinMainMemoryAvailableGb();
-                }
-            }*/
 
             // Add to map
             List<String> hostnames = clusterNodes.stream().map(NodeRepositoryNode::getHostname).collect(Collectors.toList());
-            ClusterInfo inf = new ClusterInfo(node.getFlavor(), node.getCost(), cpu, mem, disk,
+            int cost = node.getCost() == null ? 0 : node.getCost(); // Cost is not guaranteed to be defined for all flavors
+            ClusterInfo inf = new ClusterInfo(node.getFlavor(), cost, cpu, mem, disk,
                                               ClusterSpec.Type.from(node.getMembership().clustertype), hostnames);
             infoMap.put(new ClusterSpec.Id(id), inf);
         }
@@ -92,16 +81,12 @@ public class ClusterInfoMaintainer extends Maintainer {
             for (Deployment deployment : application.deployments().values()) {
                 DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                 try {
-                    NodeList nodes = nodeRepositoryClient.listNodes(deploymentId.zoneId(),
-                                                                    deploymentId.applicationId().tenant().value(),
-                                                                    deploymentId.applicationId().application().value(),
-                                                                    deploymentId.applicationId().instance().value());
-                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes, deployment.zone());
+                    NodeList nodes = nodeRepository.listNodes(deploymentId.zoneId(), deploymentId.applicationId());
+                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes);
                     controller().applications().lockIfPresent(application.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
-                }
-                catch (IOException | IllegalArgumentException e) {
-                    log.log(Level.WARNING, "Failing getting cluster info of for " + deploymentId, e);
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Failing getting cluster information for " + deploymentId, e);
                 }
             }
         }

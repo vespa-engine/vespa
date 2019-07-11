@@ -1,22 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.MockReloadHandler;
-import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
+import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudgetTest;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -27,9 +29,11 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
+import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
-
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
@@ -42,6 +46,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -49,8 +54,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -70,7 +75,7 @@ public class SessionPreparerTest {
     private SessionPreparer preparer;
     private TestComponentRegistry componentRegistry;
     private MockFileDistributionFactory fileDistributionFactory;
-
+    private MockSecretStore secretStore = new MockSecretStore();
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -105,7 +110,8 @@ public class SessionPreparerTest {
                 componentRegistry.getStaticConfigDefinitionRepo(),
                 curator,
                 componentRegistry.getZone(),
-                flagSource);
+                flagSource,
+                secretStore);
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -170,6 +176,10 @@ public class SessionPreparerTest {
         assertThat(zkc.readApplicationId(), is(origId));
     }
 
+    private List<ContainerEndpoint> readContainerEndpoints(ApplicationId application) {
+        return new ContainerEndpointsCache(tenantPath, curator).read(application);
+    }
+
     private Set<Rotation> readRotationsFromZK(ApplicationId applicationId) {
         return new Rotations(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
     }
@@ -205,6 +215,85 @@ public class SessionPreparerTest {
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
     }
 
+    @Test
+    public void require_that_rotations_are_written_as_container_endpoints() throws Exception {
+        var rotations = "app1.tenant1.global.vespa.example.com,rotation-042.vespa.global.routing";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        var expected = List.of(new ContainerEndpoint("qrs",
+                                                     List.of("app1.tenant1.global.vespa.example.com",
+                                                             "rotation-042.vespa.global.routing")));
+        assertEquals(expected, readContainerEndpoints(applicationId));
+    }
+
+    @Test
+    public void require_that_container_endpoints_are_written() throws Exception {
+        var endpoints = "[\n" +
+                        "  {\n" +
+                        "    \"clusterId\": \"foo\",\n" +
+                        "    \"names\": [\n" +
+                        "      \"foo.app1.tenant1.global.vespa.example.com\",\n" +
+                        "      \"rotation-042.vespa.global.routing\"\n" +
+                        "    ]\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"clusterId\": \"bar\",\n" +
+                        "    \"names\": [\n" +
+                        "      \"bar.app1.tenant1.global.vespa.example.com\",\n" +
+                        "      \"rotation-043.vespa.global.routing\"\n" +
+                        "    ]\n" +
+                        "  }\n" +
+                        "]";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId)
+                                                .containerEndpoints(endpoints)
+                                                .build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        var expected = List.of(new ContainerEndpoint("foo",
+                                                     List.of("foo.app1.tenant1.global.vespa.example.com",
+                                                             "rotation-042.vespa.global.routing")),
+                               new ContainerEndpoint("bar",
+                                                     List.of("bar.app1.tenant1.global.vespa.example.com",
+                                                             "rotation-043.vespa.global.routing")));
+        assertEquals(expected, readContainerEndpoints(applicationId));
+    }
+
+    @Test
+    public void require_that_tlssecretkey_is_written() throws IOException {
+        var tlskey = "vespa.tlskeys.tenant1--app1";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
+        secretStore.put(tlskey+"-cert", "CERT");
+        secretStore.put(tlskey+"-key", "KEY");
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        // Read from zk and verify cert and key are available
+        Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
+        assertTrue(tlsSecrets.isPresent());
+        assertEquals("KEY", tlsSecrets.get().key());
+        assertEquals("CERT", tlsSecrets.get().certificate());
+    }
+
+    @Test(expected = CertificateNotReadyException.class)
+    public void require_that_tlssecretkey_is_missing_when_not_in_secretstore() throws IOException {
+        var tlskey = "vespa.tlskeys.tenant1--app1";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+    }
+
+    @Test(expected = CertificateNotReadyException.class)
+    public void require_that_tlssecretkey_is_missing_when_certificate_not_in_secretstore() throws IOException {
+        var tlskey = "vespa.tlskeys.tenant1--app1";
+        var applicationId = applicationId("test");
+        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
+        secretStore.put(tlskey+"-key", "KEY");
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+    }
+
     private void prepare(File app) throws IOException {
         prepare(app, new PrepareParams.Builder().build());
     }
@@ -217,9 +306,8 @@ public class SessionPreparerTest {
         return new SessionContext(app,
                                   new SessionZooKeeperClient(curator, sessionsPath),
                                   app.getAppDir(),
-                                  TenantApplications.create(curator, new MockReloadHandler(), TenantName.from("tenant")),
+                                  TenantApplications.create(componentRegistry, new MockReloadHandler(), TenantName.from("tenant")),
                                   new HostRegistry<>(),
-                                  new SuperModelGenerationCounter(curator),
                                   flagSource);
     }
 

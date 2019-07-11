@@ -16,12 +16,14 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -30,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -39,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +51,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Serializes {@link Application} to/from slime.
@@ -54,6 +60,13 @@ import java.util.TreeMap;
  * @author bratseth
  */
 public class ApplicationSerializer {
+
+    // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
+    //          (and rewrite all nodes on startup), changes to the serialized format must be made
+    //          such that what is serialized on version N+1 can be read by version N:
+    //          - ADDING FIELDS: Always ok
+    //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
+    //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     // Application fields
     private final String idField = "id";
@@ -71,8 +84,14 @@ public class ApplicationSerializer {
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String pemDeployKeyField = "pemDeployKey";
-    private final String rotationField = "rotation";
+    private final String assignedRotationsField = "assignedRotations";
+    private final String assignedRotationEndpointField = "endpointId";
+    private final String assignedRotationClusterField = "clusterId";
+    private final String assignedRotationRotationField = "rotationId";
+    private final String rotationsField = "endpoints";
+    private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
+    private final String applicationCertificateField = "applicationCertificate";
 
     // Deployment fields
     private final String zoneField = "zone";
@@ -164,8 +183,11 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
-        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
+        application.legacyRotation().ifPresent(rotation -> root.setString(deprecatedRotationField, rotation.asString()));
+        rotationsToSlime(application.assignedRotations(), root, rotationsField);
+        assignedRotationsToSlime(application.assignedRotations(), root, assignedRotationsField);
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
+        application.applicationCertificate().ifPresent(cert -> root.setString(applicationCertificateField, cert.secretsKeyNamePrefix()));
         return slime;
     }
 
@@ -336,6 +358,21 @@ public class ApplicationSerializer {
         return clusterMetricsList;
     }
 
+    private void rotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
+        final var rotationsArray = parent.setArray(fieldName);
+        rotations.forEach(rot -> rotationsArray.addString(rot.rotationId().asString()));
+    }
+
+    private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
+        final var rotationsArray = parent.setArray(fieldName);
+        for (var rotation : rotations) {
+            final var object = rotationsArray.addObject();
+            object.setString(assignedRotationEndpointField, rotation.endpointId().id());
+            object.setString(assignedRotationRotationField, rotation.rotationId().asString());
+            object.setString(assignedRotationClusterField, rotation.clusterId().value());
+        }
+    }
+
     // ------------------ Deserialization
 
     public Application fromSlime(Slime slime) {
@@ -355,12 +392,13 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
-        Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
+        List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
+        Optional<ApplicationCertificate> applicationCertificate = optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, rotation, rotationStatus);
+                               pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -541,7 +579,57 @@ public class ApplicationSerializer {
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 
-    private Optional<RotationId> rotationFromSlime(Inspector field) {
+    private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, Inspector root) {
+        final var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
+
+        // Add the legacy rotation field to the set - this needs to be first
+        // TODO: Remove when we retire the rotations field
+        final var legacyRotation = legacyRotationFromSlime(root.field(deprecatedRotationField));
+        if (legacyRotation.isPresent() && deploymentSpec.globalServiceId().isPresent()) {
+            final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
+            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
+            assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), legacyRotation.get(), regions));
+        }
+
+        // Now add the same entries from "stupid" list of rotations
+        // TODO: Remove when we retire the rotations field
+        final var rotations = rotationListFromSlime(root.field(rotationsField));
+        for (var rotation : rotations) {
+            final var regions = deploymentSpec.zones().stream().flatMap(zone -> zone.region().stream()).collect(Collectors.toSet());
+            if (deploymentSpec.globalServiceId().isPresent()) {
+                final var clusterId = new ClusterSpec.Id(deploymentSpec.globalServiceId().get());
+                assignedRotations.putIfAbsent(EndpointId.default_(), new AssignedRotation(clusterId, EndpointId.default_(), rotation, regions));
+            }
+        }
+
+        // Last - add the actual entries we want.  Do _not_ remove this during clean-up
+        root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
+            final var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
+            final var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
+            final var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
+            final var regions = deploymentSpec.endpoints().stream()
+                    .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
+                    .flatMap(endpoint -> endpoint.regions().stream())
+                    .collect(Collectors.toSet());
+            assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
+        });
+
+        return List.copyOf(assignedRotations.values());
+    }
+
+    private List<RotationId> rotationListFromSlime(Inspector field) {
+        final var rotations = new ArrayList<RotationId>();
+
+        field.traverse((ArrayTraverser) (idx, inspector) -> {
+            final var rotation = new RotationId(inspector.asString());
+            rotations.add(rotation);
+        });
+
+        return rotations;
+    }
+
+    // TODO: Remove after June 2019 once the 'rotation' field is gone from storage
+    private Optional<RotationId> legacyRotationFromSlime(Inspector field) {
         return field.valid() ? optionalString(field).map(RotationId::new) : Optional.empty();
     }
 

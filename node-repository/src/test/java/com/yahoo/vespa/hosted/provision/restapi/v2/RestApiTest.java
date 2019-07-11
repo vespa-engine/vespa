@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test of the REST APIs provided by the node repository.
@@ -103,9 +102,9 @@ public class RestApiTest {
 
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "," + // test with only 1 ip address
-                                    asNodeJson("host9.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
-                                    asHostJson("parent2.yahoo.com", "large-variant", "127.0.0.1", "::1") + "," +
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.8.1") + "," + // test with only 1 ip address
+                                    asNodeJson("host9.yahoo.com", "large-variant", "127.0.9.1", "::9:1") + "," +
+                                    asHostJson("parent2.yahoo.com", "large-variant", "127.0.127.1", "::127:1") + "," +
                                     asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com", "::11") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
@@ -117,7 +116,7 @@ public class RestApiTest {
 
         // POST duplicate node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.8") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
 
@@ -163,23 +162,23 @@ public class RestApiTest {
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
         // or, PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-101-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-container-1 to failed\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-container-1"),
+                       "{\"message\":\"Moved test-node-pool-101-2 to failed\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2"),
                                            "\"state\":\"failed\"");
         // ... and deallocate it such that it moves to dirty and is recycled
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-node-pool-101-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-container-1 to dirty\"}");
+                       "{\"message\":\"Moved test-node-pool-101-2 to dirty\"}");
 
         // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-container-1",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-node-pool-101-2",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved test-container-1 to ready\"}");
+                "{\"message\":\"Moved test-node-pool-101-2 to ready\"}");
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-container-1",  new byte[0], Request.Method.GET),
-                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-container-1'\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",  new byte[0], Request.Method.GET),
+                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-101-2'\"}");
 
         // Put a host in failed and make sure it's children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
@@ -224,6 +223,14 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                         Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"modelName\": null}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertPartialResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "modelName", false);
         container.handleRequest((new Request("http://localhost:8080/nodes/v2/upgrade/tenant", Utf8.toBytes("{\"dockerImage\": \"docker.domain.tld/my/image\"}"), Request.Method.PATCH)));
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
@@ -258,7 +265,7 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.0.1", "::1") + "]").
+                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.254.254", "::254:254") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -270,7 +277,31 @@ public class RestApiTest {
                 ("[" + asNodeJson("host-with-ip.yahoo.com", "default", "foo") + "]").
                         getBytes(StandardCharsets.UTF_8),
                 Request.Method.POST);
-        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have at least one valid IP address: 'foo' is not an IP string literal.\"}");
+        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Found one or more invalid addresses in [foo]: 'foo' is not an IP string literal.\"}");
+
+        // Attempt to POST tenant node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asNodeJson("tenant-node-foo.yahoo.com", "default", "127.0.1.1") + "]",
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.1.1] to tenant-node-foo.yahoo.com: [127.0.1.1] already assigned to host1.yahoo.com\"}");
+
+        // Attempt to PATCH existing tenant node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+                                   "{\"ipAddresses\": [\"127.0.2.1\"]}",
+                                   Request.Method.PATCH), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [127.0.2.1] to test-node-pool-101-2: [127.0.2.1] already assigned to host2.yahoo.com\"}");
+
+        // Attempt to POST host node with already assigned IP
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asHostJson("host200.yahoo.com", "default", "127.0.2.1") + "]",
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.2.1] to host200.yahoo.com: [127.0.2.1] already assigned to host2.yahoo.com\"}");
+
+        // Attempt to PATCH host node with IP in the pool of another node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   "{\"ipAddresses\": [\"::104:3\"]}",
+                                   Request.Method.PATCH), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [::100:4, ::100:3, ::100:2, ::104:3] to dockerhost1.yahoo.com: [::104:3] already assigned to dockerhost5.yahoo.com\"}");
     }
 
     @Test
@@ -328,20 +359,10 @@ public class RestApiTest {
     }
 
     @Test
-    public void setting_node_to_ready_will_reset_certain_fields() throws Exception {
-        final String hostname = "host55.yahoo.com";
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
-                        new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved " + hostname + " to ready\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/" + hostname), "node55-after-changes.json");
-    }
-
-    @Test
     public void acl_request_by_tenant_node() throws Exception {
         String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson(hostname, "default") + "]").
-                                getBytes(StandardCharsets.UTF_8),
+                                   ("[" + asNodeJson(hostname, "default", "127.0.222.1") + "]").getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/" + hostname,
@@ -381,7 +402,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        400,
-                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set failed node host1.yahoo.com allocated to tenant1.application1.instance1 as 'container/id1/0/0' ready. It is not provisioned or dirty.\"}");
+                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host1.yahoo.com available for new allocation, must be in state dirty, but was in failed\"}");
 
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host1.yahoo.com",
@@ -397,7 +418,7 @@ public class RestApiTest {
                        "{\"message\":\"Moved host2.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can not set parked node host2.yahoo.com allocated to tenant2.application2.instance2 as 'content/id2/0/0' ready. It is not provisioned or dirty.\"}");
+                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot make host2.yahoo.com available for new allocation, must be in state dirty, but was in parked\"}");
         // (... while dirty then ready works (the ready move will be initiated by node maintenance))
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -406,10 +427,10 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved host2.yahoo.com to ready\"}");
 
-        // Attempt to DELETE a node which is not put in a deletable state first
+        // Attempt to DELETE a node which has been removed
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
-                       400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to delete host2.yahoo.com: Node host2.yahoo.com can only be removed from following states: provisioned, failed, parked\"}");
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'host2.yahoo.com'\"}");
 
         // Attempt to DELETE allocated node
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -426,17 +447,23 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"flavor\": 1}"), Request.Method.PATCH),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'flavor': Expected a STRING value, got a LONG\"}");
 
-        // Attempt to set unallocated node active
+        // Attempt to set nonexisting node to active
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
-                                   new byte[0], Request.Method.PUT), 400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com active. It has no allocation.\"}");
+                                   new byte[0], Request.Method.PUT), 404,
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move host2.yahoo.com to active: Node not found\"}");
 
         // Attempt to POST duplicate nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.0.1", "::1") + "," +
-                                    asNodeJson("host8.yahoo.com", "large-variant", "127.0.0.1", "::1") + "]").getBytes(StandardCharsets.UTF_8),
+                                   ("[" + asNodeJson("host8.yahoo.com", "default", "127.0.254.1", "::254:1") + "," +
+                                    asNodeJson("host8.yahoo.com", "large-variant", "127.0.253.1", "::253:1") + "]").getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
+
+        // Attempt to PATCH field not relevant for child node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+                                   Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'modelName': A child node cannot have model name set\"}");
     }
 
     @Test
@@ -486,13 +513,6 @@ public class RestApiTest {
 
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
         assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
-    }
-
-    @Test
-    public void test_disallow_setting_currentDockerImage_for_non_docker_node() throws IOException {
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com",
-                        Utf8.toBytes("{\"currentDockerImage\": \"ignored-image-name:4443/vespa/ci:6.45.0\"}"), Request.Method.PATCH),
-                400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'currentDockerImage': Docker image can only be set for docker containers\"}");
     }
 
     @Test
@@ -626,19 +646,12 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
                 "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
-        // Setting empty version fails
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"version\": null}"),
-                                   Request.Method.PATCH),
-                       400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
-
         // Setting version for unsupported node type fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/tenant",
                                    Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                                    Request.Method.PATCH),
                        400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set version for type tenant\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Target version for type tenant is not allowed\"}");
 
         // Omitting version field fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -665,6 +678,22 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
                 "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
 
+        // Setting empty version without force fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": null}"),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade version without setting 'force'. Current target version: 6.123.1, attempted to set target version: 0.0.0\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                        Utf8.toBytes("{\"version\": null, \"force\": true}"),
+                        Request.Method.PATCH),
+                "{\"message\":\"Set version to 0.0.0 for nodes of type confighost\"}");
+
+        // Verify version has been removed
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
+                "{\"versions\":{\"config\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{},\"dockerImages\":{}}");
+
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                                    Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
@@ -677,7 +706,7 @@ public class RestApiTest {
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
+                       "{\"versions\":{\"config\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"},\"dockerImages\":{}}");
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -802,7 +831,7 @@ public class RestApiTest {
     @Test
     public void test_load_balancers() throws Exception {
         assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
-        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers.json");
+        assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers-single.json");
         assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
     }
 
@@ -863,9 +892,13 @@ public class RestApiTest {
     }
 
     private void assertResponseContains(Request request, String responseSnippet) throws IOException {
+        assertPartialResponse(request, responseSnippet, true);
+    }
+
+    private void assertPartialResponse(Request request, String responseSnippet, boolean match) throws IOException {
         String response = container.handleRequest(request).getBodyAsString();
-        assertTrue(String.format("Expected response to contain: %s\nResponse: %s", responseSnippet, response),
-                response.contains(responseSnippet));
+        assertEquals(String.format("Expected response to " + (match ? " " : "not ") + "contain: %s\nResponse: %s",
+                                   responseSnippet, response), match, response.contains(responseSnippet));
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {

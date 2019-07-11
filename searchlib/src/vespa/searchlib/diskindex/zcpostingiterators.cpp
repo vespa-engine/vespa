@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zcpostingiterators.h"
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
 namespace search::diskindex {
 
 using search::fef::TermFieldMatchDataArray;
+using search::fef::TermFieldMatchData;
 using search::bitcompression::FeatureDecodeContext;
 using search::bitcompression::FeatureEncodeContext;
 using queryeval::RankedSearchIteratorBase;
@@ -34,22 +36,39 @@ ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid)
 
 
 template <bool bigEndian>
-Zc4RareWordPostingIterator<bigEndian>::
-Zc4RareWordPostingIterator(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features)
+ZcRareWordPostingIteratorBase<bigEndian>::
+ZcRareWordPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+                              bool decode_normal_features, bool decode_interleaved_features,
+                              bool unpack_normal_features, bool unpack_interleaved_features)
     : ZcIteratorBase(matchData, start, docIdLimit),
       _decodeContext(nullptr),
       _residue(0),
       _prevDocId(0),
       _numDocs(0),
-      _decode_cheap_features(decode_cheap_features),
+      _decode_normal_features(decode_normal_features),
+      _decode_interleaved_features(decode_interleaved_features),
+      _unpack_normal_features(unpack_normal_features),
+      _unpack_interleaved_features(unpack_interleaved_features),
       _field_length(0),
       _num_occs(0)
 { }
 
 
-template <bool bigEndian>
+template <bool bigEndian, bool dynamic_k>
+ZcRareWordPostingIterator<bigEndian, dynamic_k>::
+ZcRareWordPostingIterator(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+                          bool decode_normal_features, bool decode_interleaved_features,
+                          bool unpack_normal_features, bool unpack_interleaved_features)
+    : ZcRareWordPostingIteratorBase<bigEndian>(matchData, start, docIdLimit,
+                                               decode_normal_features, decode_interleaved_features,
+                                               unpack_normal_features, unpack_interleaved_features),
+      _doc_id_k_param()
+{
+}
+
+template <bool bigEndian, bool dynamic_k>
 void
-Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
+ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
 {
     typedef FeatureEncodeContext<bigEndian> EC;
     uint32_t length;
@@ -63,13 +82,13 @@ Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
         if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
         }
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DELTA_DOCID, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, _doc_id_k_param.get_doc_id_k(), EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
         printf("Decode docId=%d\n",
                oDocId);
 #endif
-        if (_decode_cheap_features) {
+        if (_decode_interleaved_features) {
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
             _field_length = static_cast<uint32_t>(val64) + 1;
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
@@ -77,19 +96,21 @@ Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
         }
     }
     while (__builtin_expect(oDocId < docId, true)) {
-        UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-        _decodeContext->skipFeatures(1);
-        UC64_DECODECONTEXT_LOAD(o, _decodeContext->_);
-        if (__builtin_expect(--_residue == 0, false)) {
-            goto atbreak;
+        if (_decode_normal_features) {
+            UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
+            _decodeContext->skipFeatures(1);
+            UC64_DECODECONTEXT_LOAD(o, _decodeContext->_);
+            if (__builtin_expect(--_residue == 0, false)) {
+                goto atbreak;
+            }
         }
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DELTA_DOCID, EC);
+        UC64_DECODEEXPGOLOMB_NS(o, _doc_id_k_param.get_doc_id_k(), EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
         printf("Decode docId=%d\n",
                oDocId);
 #endif
-        if (_decode_cheap_features) {
+        if (_decode_interleaved_features) {
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
             _field_length = static_cast<uint32_t>(val64) + 1;
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
@@ -107,25 +128,39 @@ Zc4RareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
 
 template <bool bigEndian>
 void
-Zc4RareWordPostingIterator<bigEndian>::doUnpack(uint32_t docId)
+ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
 {
     if (!_matchData.valid() || getUnpacked()) {
         return;
     }
     assert(docId == getDocId());
-    _decodeContext->unpackFeatures(_matchData, docId);
+    if (_decode_normal_features) {
+        if (_unpack_normal_features) {
+            _decodeContext->unpackFeatures(_matchData, docId);
+        } else {
+            _decodeContext->skipFeatures(1);
+            _matchData[0]->reset(docId);
+        }
+    } else {
+        _matchData[0]->reset(docId);
+    }
+    if (_decode_interleaved_features && _unpack_interleaved_features) {
+        TermFieldMatchData *tfmd = _matchData[0];
+        tfmd->setFieldLength(_field_length);
+        tfmd->setNumOccs(_num_occs);
+    }
     setUnpacked();
 }
 
 template <bool bigEndian>
-void Zc4RareWordPostingIterator<bigEndian>::rewind(Position start)
+void ZcRareWordPostingIteratorBase<bigEndian>::rewind(Position start)
 {
     _decodeContext->setPosition(start);
 }
 
-template <bool bigEndian>
+template <bool bigEndian, bool dynamic_k>
 void
-Zc4RareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
+ZcRareWordPostingIterator<bigEndian, dynamic_k>::readWordStart(uint32_t docIdLimit)
 {
     (void) docIdLimit;
     typedef FeatureEncodeContext<bigEndian> EC;
@@ -136,9 +171,10 @@ Zc4RareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
 
     _numDocs = static_cast<uint32_t>(val64) + 1;
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_DELTA_DOCID, EC);
+    _doc_id_k_param.setup(_numDocs, docIdLimit);
+    UC64_DECODEEXPGOLOMB_NS(o, _doc_id_k_param.get_doc_id_k(), EC);
     uint32_t docId = static_cast<uint32_t>(val64) + 1;
-    if (_decode_cheap_features) {
+    if (_decode_interleaved_features) {
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
         _field_length = static_cast<uint32_t>(val64) + 1;
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
@@ -151,102 +187,9 @@ Zc4RareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
     clearUnpacked();
 }
 
-
-template <bool bigEndian>
-ZcRareWordPostingIterator<bigEndian>::
-ZcRareWordPostingIterator(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features)
-    : Zc4RareWordPostingIterator<bigEndian>(matchData, start, docIdLimit, decode_cheap_features),
-      _docIdK(0)
-{
-}
-
-
-template <bool bigEndian>
-void
-ZcRareWordPostingIterator<bigEndian>::doSeek(uint32_t docId)
-{
-    typedef FeatureEncodeContext<bigEndian> EC;
-    uint32_t length;
-    uint64_t val64;
-
-    uint32_t oDocId = getDocId();
-
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
-    if (getUnpacked()) {
-        clearUnpacked();
-        if (__builtin_expect(--_residue == 0, false)) {
-            goto atbreak;
-        }
-        UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
-        oDocId += 1 + static_cast<uint32_t>(val64);
-#if DEBUG_ZCPOSTING_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
-#endif
-        if (_decode_cheap_features) {
-            UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
-            _field_length = static_cast<uint32_t>(val64) + 1;
-            UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
-            _num_occs = static_cast<uint32_t>(val64) + 1;
-        }
-    }
-    while (__builtin_expect(oDocId < docId, true)) {
-        UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-        _decodeContext->skipFeatures(1);
-        UC64_DECODECONTEXT_LOAD(o, _decodeContext->_);
-        if (__builtin_expect(--_residue == 0, false)) {
-            goto atbreak;
-        }
-        UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
-        oDocId += 1 + static_cast<uint32_t>(val64);
-#if DEBUG_ZCPOSTING_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
-#endif
-        if (_decode_cheap_features) {
-            UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
-            _field_length = static_cast<uint32_t>(val64) + 1;
-            UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
-            _num_occs = static_cast<uint32_t>(val64) + 1;
-        }
-    }
-    UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-    setDocId(oDocId);
-    return;
- atbreak:
-    setAtEnd();   // Mark end of data
-    return;
-}
-
-
-template <bool bigEndian>
-void
-ZcRareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
-{
-    typedef FeatureEncodeContext<bigEndian> EC;
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
-    uint32_t length;
-    uint64_t val64;
-
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
-    _numDocs = static_cast<uint32_t>(val64) + 1;
-    _docIdK = EC::calcDocIdK(_numDocs, docIdLimit);
-    UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
-    uint32_t docId = static_cast<uint32_t>(val64) + 1;
-    if (_decode_cheap_features) {
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
-        _field_length = static_cast<uint32_t>(val64) + 1;
-        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
-        _num_occs = static_cast<uint32_t>(val64) + 1;
-    }
-    UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
-
-    setDocId(docId);
-    _residue = _numDocs;
-    clearUnpacked();
-}
-
-ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit, bool decode_cheap_features)
+ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit,
+                                             bool decode_normal_features, bool decode_interleaved_features,
+                                             bool unpack_normal_features, bool unpack_interleaved_features)
     : ZcIteratorBase(matchData, start, docIdLimit),
       _valI(nullptr),
       _valIBase(nullptr),
@@ -258,7 +201,10 @@ ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matc
       _chunk(),
       _featuresSize(0),
       _hasMore(false),
-      _decode_cheap_features(decode_cheap_features),
+      _decode_normal_features(decode_normal_features),
+      _decode_interleaved_features(decode_interleaved_features),
+      _unpack_normal_features(unpack_normal_features),
+      _unpack_interleaved_features(unpack_interleaved_features),
       _chunkNo(0),
       _field_length(0),
       _num_occs(0)
@@ -271,8 +217,12 @@ ZcPostingIterator(uint32_t minChunkDocs,
                   bool dynamicK,
                   const PostingListCounts &counts,
                   const search::fef::TermFieldMatchDataArray &matchData,
-                  Position start, uint32_t docIdLimit, bool decode_cheap_features)
-    : ZcPostingIteratorBase(matchData, start, docIdLimit, decode_cheap_features),
+                  Position start, uint32_t docIdLimit,
+                  bool decode_normal_features, bool decode_interleaved_features,
+                  bool unpack_normal_features, bool unpack_interleaved_features)
+    : ZcPostingIteratorBase(matchData, start, docIdLimit,
+                            decode_normal_features, decode_interleaved_features,
+                            unpack_normal_features, unpack_interleaved_features),
       _decodeContext(nullptr),
       _minChunkDocs(minChunkDocs),
       _docIdK(0),
@@ -333,8 +283,10 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_L4SKIPSIZE, EC);
         l4SkipSize = val64;
     }
-    UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
-    _featuresSize = val64;
+    if (_decode_normal_features) {
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FEATURESSIZE, EC);
+        _featuresSize = val64;
+    }
     if (_dynamicK) {
         UC64_DECODEEXPGOLOMB_NS(o, _docIdK, EC);
     } else {
@@ -411,7 +363,7 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
     }
     do {
         lastL4SkipDocId = _l4._skipDocId;
-        _l4.decodeSkipEntry();
+        _l4.decodeSkipEntry(_decode_normal_features);
         _l4.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L4Decode docId %d, docIdPos %d,"
@@ -464,7 +416,7 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
     }
     do {
         lastL3SkipDocId = _l3._skipDocId;
-        _l3.decodeSkipEntry();
+        _l3.decodeSkipEntry(_decode_normal_features);
         _l3.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L3Decode docId %d, docIdPos %d,"
@@ -511,7 +463,7 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
     }
     do {
         lastL2SkipDocId = _l2._skipDocId;
-        _l2.decodeSkipEntry();
+        _l2.decodeSkipEntry(_decode_normal_features);
         _l2.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L2Decode docId %d, docIdPos %d, l1SkipPos %d, nextDocId %d\n",
@@ -551,7 +503,7 @@ ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
     }
     do {
         lastL1SkipDocId = _l1._skipDocId;
-        _l1.decodeSkipEntry();
+        _l1.decodeSkipEntry(_decode_normal_features);
         _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L1Decode docId %d, docIdPos %d, L1SkipPos %d, nextDocId %d\n",
@@ -606,15 +558,15 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
         printf("Decode docId=%d\n",
                oDocId);
 #endif
-        if (_decode_cheap_features) {
-            ZCDECODE(oCompr, field_length =);
-            ZCDECODE(oCompr, num_occs =);
+        if (_decode_interleaved_features) {
+            ZCDECODE(oCompr, field_length = 1 +);
+            ZCDECODE(oCompr, num_occs = 1 +);
         }
         incNeedUnpack();
     }
     _valI = oCompr;
     setDocId(oDocId);
-    if (_decode_cheap_features) {
+    if (_decode_interleaved_features) {
         _field_length = field_length;
         _num_occs = num_occs;
     }
@@ -629,17 +581,26 @@ ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
     if (!_matchData.valid() || getUnpacked()) {
         return;
     }
-    if (_featureSeekPos != 0) {
-        // Handle deferred feature position seek now.
-        featureSeek(_featureSeekPos);
-        _featureSeekPos = 0;
-    }
     assert(docId == getDocId());
-    uint32_t needUnpack = getNeedUnpack();
-    if (needUnpack > 1) {
-        _decodeContext->skipFeatures(needUnpack - 1);
+    if (_decode_normal_features && _unpack_normal_features) {
+        if (_featureSeekPos != 0) {
+            // Handle deferred feature position seek now.
+            featureSeek(_featureSeekPos);
+            _featureSeekPos = 0;
+        }
+        uint32_t needUnpack = getNeedUnpack();
+        if (needUnpack > 1) {
+            _decodeContext->skipFeatures(needUnpack - 1);
+        }
+        _decodeContext->unpackFeatures(_matchData, docId);
+    } else {
+        _matchData[0]->reset(docId);
     }
-    _decodeContext->unpackFeatures(_matchData, docId);
+    if (_decode_interleaved_features && _unpack_interleaved_features) {
+        TermFieldMatchData *tfmd = _matchData[0];
+        tfmd->setFieldLength(_field_length);
+        tfmd->setNumOccs(_num_occs);
+    }
     setUnpacked();
 }
 
@@ -652,14 +613,12 @@ void ZcPostingIterator<bigEndian>::rewind(Position start)
     _chunkNo = 0;
 }
 
-
-template class Zc4RareWordPostingIterator<true>;
-template class Zc4RareWordPostingIterator<false>;
+template class ZcRareWordPostingIterator<false, false>;
+template class ZcRareWordPostingIterator<false, true>;
+template class ZcRareWordPostingIterator<true, false>;
+template class ZcRareWordPostingIterator<true, true>;
 
 template class ZcPostingIterator<true>;
 template class ZcPostingIterator<false>;
-
-template class ZcRareWordPostingIterator<true>;
-template class ZcRareWordPostingIterator<false>;
 
 }

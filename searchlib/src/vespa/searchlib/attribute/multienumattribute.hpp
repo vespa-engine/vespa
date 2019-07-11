@@ -183,7 +183,7 @@ void
 MultiValueEnumAttribute<B, M>::onUpdateStat()
 {
     // update statistics
-    MemoryUsage total;
+    vespalib::MemoryUsage total;
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
     total.merge(this->_mvMapping.updateStat());

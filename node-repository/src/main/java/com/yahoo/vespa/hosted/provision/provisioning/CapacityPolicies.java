@@ -41,30 +41,54 @@ public class CapacityPolicies {
         }
     }
 
-    public NodeResources decideNodeResources(Capacity requestedCapacity, ClusterSpec cluster) {
-        Optional<NodeResources> requestedResources = requestedCapacity.nodeResources();
+    public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+        NodeResources resources = specifiedOrDefaultNodeResources(requestedResources, cluster);
+
+        if (resources.allocateByLegacyName()) return resources; // Modification not possible
+
+        // Allow slow disks in zones which are not performance sensitive
+        if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
+            resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+
+        // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
+        if (zone.environment() == Environment.dev)
+            resources = resources.withVcpu(0.1);
+
+        return resources;
+    }
+
+    private NodeResources specifiedOrDefaultNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
         if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
             return requestedResources.get();
 
-        NodeResources defaultResources = NodeResources.fromLegacyName(zone.defaultFlavor(cluster.type()));
         if (requestedResources.isEmpty())
-            return defaultResources;
+            return defaultNodeResources(cluster.type());
 
         // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
         if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get() : defaultResources;
+            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get()
+                                                                               : defaultNodeResources(cluster.type());
         else {
             switch (zone.environment()) {
-                case dev: case test: case staging: return defaultResources;
+                case dev: case test: case staging: return defaultNodeResources(cluster.type());
                 default:
-                    // Check existence of the legacy specified flavor
-                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get());
+                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
                     // Return this spec containing the legacy flavor name, not the flavor's capacity object
                     // which describes the flavors capacity, as the point of legacy allocation is to match
                     // by name, not by resources
                     return requestedResources.get();
             }
         }
+    }
+
+    private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
+        if (clusterType == ClusterSpec.Type.admin)
+            return new NodeResources(0.5, 3, 50);
+
+        if (zone.system().isCd() && zone.environment().isTest())
+            new NodeResources(4, 4, 50);
+
+        return new NodeResources(1.5, 8, 50);
     }
 
     /**

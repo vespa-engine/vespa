@@ -22,19 +22,17 @@ public class SessionContext {
     private final File serverDBSessionDir;
     private final TenantApplications applicationRepo;
     private final HostValidator<ApplicationId> hostRegistry;
-    private final SuperModelGenerationCounter superModelGenerationCounter;
     private final FlagSource flagSource;
 
     public SessionContext(ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient,
                           File serverDBSessionDir, TenantApplications applicationRepo,
-                          HostValidator<ApplicationId> hostRegistry, SuperModelGenerationCounter superModelGenerationCounter,
+                          HostValidator<ApplicationId> hostRegistry,
                           FlagSource flagSource) {
         this.applicationPackage = applicationPackage;
         this.sessionZooKeeperClient = sessionZooKeeperClient;
         this.serverDBSessionDir = serverDBSessionDir;
         this.applicationRepo = applicationRepo;
         this.hostRegistry = hostRegistry;
-        this.superModelGenerationCounter = superModelGenerationCounter;
         this.flagSource = flagSource;
     }
 
@@ -55,10 +53,6 @@ public class SessionContext {
     }
     
     public HostValidator<ApplicationId> getHostValidator() { return hostRegistry; }
-
-    public SuperModelGenerationCounter getSuperModelGenerationCounter() {
-        return superModelGenerationCounter;
-    }
 
     public FlagSource getFlagSource() {
         return flagSource;

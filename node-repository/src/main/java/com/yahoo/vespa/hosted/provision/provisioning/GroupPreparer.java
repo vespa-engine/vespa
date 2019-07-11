@@ -3,14 +3,13 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.util.List;
@@ -26,12 +25,14 @@ public class GroupPreparer {
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
-                         BooleanFlag dynamicProvisioningEnabledFlag) {
+                         HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabledFlag) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
+        this.hostResourcesCalculator = hostResourcesCalculator;
         this.dynamicProvisioningEnabledFlag = dynamicProvisioningEnabledFlag;
     }
 
@@ -63,15 +64,16 @@ public class GroupPreparer {
             try (Mutex allocationLock = nodeRepository.lockAllocation()) {
 
                 // Create a prioritized set of nodes
-                NodeList nodeList = nodeRepository.list();
-                NodePrioritizer prioritizer = new NodePrioritizer(
-                        nodeList, application, cluster, requestedNodes, spareCount, nodeRepository.nameResolver(),
-                        nodeRepository.getAvailableFlavors());
+                LockedNodeList nodeList = nodeRepository.list(allocationLock);
+                NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
+                                                                  spareCount, nodeRepository.nameResolver(),
+                                                                  nodeRepository.getAvailableFlavors(),
+                                                                  hostResourcesCalculator);
 
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(allocationLock, dynamicProvisioningEnabled);
+                prioritizer.addNewDockerNodes(dynamicProvisioningEnabled);
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,
@@ -82,7 +84,8 @@ public class GroupPreparer {
                 if (dynamicProvisioningEnabled) {
                     List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
                             .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
-                                                                                 deficit.getFlavor()))
+                                                                                 deficit.getFlavor(),
+                                                                                 application))
                             .orElseGet(List::of);
 
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
@@ -112,7 +115,7 @@ public class GroupPreparer {
 
                 // Carry out and return allocation
                 nodeRepository.reserve(allocation.reservableNodes());
-                nodeRepository.addDockerNodes(allocation.newNodes(), allocationLock);
+                nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
                 surplusActiveNodes.removeAll(allocation.surplusNodes());
                 return allocation.finalNodes(surplusActiveNodes);
             }
@@ -129,4 +132,5 @@ public class GroupPreparer {
         else
             return ".";
     }
+
 }

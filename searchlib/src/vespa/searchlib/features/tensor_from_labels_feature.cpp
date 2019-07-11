@@ -8,7 +8,6 @@
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <vespa/log/log.h>
@@ -18,8 +17,8 @@ using namespace search::fef;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
-using vespalib::tensor::DefaultTensor;
-using vespalib::tensor::TensorBuilder;
+using vespalib::tensor::DirectSparseTensorBuilder;
+using vespalib::tensor::SparseTensorAddressBuilder;
 using vespalib::eval::ValueType;
 using search::fef::FeatureType;
 
@@ -87,19 +86,21 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
                     const vespalib::string &dimension, vespalib::Stash &stash)
 {
+    ValueType type = ValueType::tensor_type({{dimension}});
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         std::vector<vespalib::string> vector;
         ArrayParser::parse(prop.get(), vector);
-        DefaultTensor::builder tensorBuilder;
-        TensorBuilder::Dimension dimensionEnum = tensorBuilder.define_dimension(dimension);
+        DirectSparseTensorBuilder tensorBuilder(type);
+        SparseTensorAddressBuilder address;
         for (const auto &elem : vector) {
-            tensorBuilder.add_label(dimensionEnum, elem);
-            tensorBuilder.add_cell(1.0);
+            address.clear();
+            address.add(elem);
+            tensorBuilder.insertCell(address, 1.0, [](double, double v){ return v; });
         }
         return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+    return ConstantTensorExecutor::createEmpty(type, stash);
 }
 
 }

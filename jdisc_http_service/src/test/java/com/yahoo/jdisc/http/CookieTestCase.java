@@ -113,7 +113,7 @@ public class CookieTestCase {
     @Test
     public void requireThatSetCookieCanBeEncoded() {
         assertEncodeSetCookie(
-                Collections.singletonList("foo.name=foo.value;Path=path;Domain=domain;Secure;HttpOnly"),
+                Collections.singletonList("foo.name=foo.value; Path=path; Domain=domain; Secure; HttpOnly"),
                 Collections.singletonList(newSetCookie("foo")));
     }
 

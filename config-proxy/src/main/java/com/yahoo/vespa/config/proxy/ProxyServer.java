@@ -9,12 +9,10 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
-import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
-import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownload;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
@@ -37,6 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class ProxyServer implements Runnable {
 
     private static final int DEFAULT_RPC_PORT = 19090;
+    private static final int JRT_TRANSPORT_THREADS = 4;
     static final String DEFAULT_PROXY_CONFIG_SOURCES = "tcp/localhost:19070";
 
     final static Logger log = Logger.getLogger(ProxyServer.class.getName());
@@ -44,8 +43,7 @@ public class ProxyServer implements Runnable {
 
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, new DaemonThreadFactory());
-    private final Supervisor supervisor = new Supervisor(new Transport());
-    private final ClientUpdater clientUpdater;
+    private final Supervisor supervisor = new Supervisor(new Transport(JRT_TRANSPORT_THREADS));
     private ScheduledFuture<?> delayedResponseScheduler;
 
     private final ConfigProxyRpcServer rpcServer;
@@ -60,6 +58,7 @@ public class ProxyServer implements Runnable {
     private static final double timingValuesRatio = 0.8;
     private final static TimingValues defaultTimingValues;
     private final boolean delayedResponseHandling;
+    private final FileDistributionAndUrlDownload fileDistributionAndUrlDownload;
 
     private volatile Mode mode = new Mode(DEFAULT);
 
@@ -85,10 +84,8 @@ public class ProxyServer implements Runnable {
         this.delayedResponseHandling = delayedResponseHandling;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        clientUpdater = new ClientUpdater(rpcServer, statistics, delayedResponses);
-        this.configClient = createClient(clientUpdater, delayedResponses, source, timingValues, memoryCache, configClient);
-        new FileDistributionRpcServer(supervisor, new FileDownloader(new JRTConnectionPool(source)));
-        new UrlDownloadRpcServer(supervisor);
+        this.configClient = createClient(rpcServer, statistics, delayedResponses, source, timingValues, memoryCache, configClient);
+        this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
@@ -100,7 +97,7 @@ public class ProxyServer implements Runnable {
                                         MemoryCache memoryCache,
                                         ConfigProxyStatistics statistics) {
         final boolean delayedResponseHandling = false;
-        return new ProxyServer(null, new DelayedResponses(statistics),
+        return new ProxyServer(null, new DelayedResponses(),
                                source, statistics, defaultTimingValues(), delayedResponseHandling,
                                memoryCache, configSourceClient);
     }
@@ -158,11 +155,12 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    private ConfigSourceClient createClient(ClientUpdater clientUpdater, DelayedResponses delayedResponses,
+    private ConfigSourceClient createClient(RpcServer rpcServer, ConfigProxyStatistics statistics,
+                                            DelayedResponses delayedResponses,
                                             ConfigSourceSet source, TimingValues timingValues,
                                             MemoryCache memoryCache, ConfigSourceClient client) {
         return (client == null)
-                ? new RpcConfigSourceClient(source, clientUpdater, memoryCache, timingValues, delayedResponses)
+                ? new RpcConfigSourceClient(rpcServer, source, statistics, memoryCache, timingValues, delayedResponses)
                 : client;
     }
 
@@ -171,7 +169,7 @@ public class ProxyServer implements Runnable {
     }
 
     private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient(configSource, clientUpdater, memoryCache, timingValues, delayedResponses);
+        return new RpcConfigSourceClient(rpcServer, configSource, statistics, memoryCache, timingValues, delayedResponses);
     }
 
     private void setupSignalHandler() {
@@ -211,7 +209,7 @@ public class ProxyServer implements Runnable {
         t.start();
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        DelayedResponses delayedResponses = new DelayedResponses(statistics);
+        DelayedResponses delayedResponses = new DelayedResponses();
         ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources, statistics,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
         // catch termination and interrupt signal
@@ -266,6 +264,7 @@ public class ProxyServer implements Runnable {
         if (statistics != null) {
             statistics.stop();
         }
+        fileDistributionAndUrlDownload.close();
     }
 
     MemoryCache getMemoryCache() {

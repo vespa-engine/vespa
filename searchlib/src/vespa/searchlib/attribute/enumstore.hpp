@@ -6,15 +6,15 @@
 #include "enumcomparator.h"
 
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
-#include <vespa/searchlib/btree/btreebuilder.hpp>
-#include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/bufferwriter.h>
 
 namespace search {
 

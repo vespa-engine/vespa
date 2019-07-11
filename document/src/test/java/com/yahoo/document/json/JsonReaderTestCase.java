@@ -52,8 +52,8 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.text.Utf8;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,8 +64,9 @@ import org.mockito.internal.matchers.Contains;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -603,10 +604,24 @@ public class JsonReaderTestCase {
 
     @Test
     public void testRaw() throws IOException {
-        String stuff = new String(new JsonStringEncoder().quoteAsString(new Base64().encodeToString(Utf8.toBytes("smoketest"))));
+        String base64 = new String(new JsonStringEncoder().quoteAsString(
+                Base64.getEncoder().encodeToString(Utf8.toBytes("smoketest"))));
+        String s = fieldStringFromBase64RawContent(base64);
+        assertEquals("smoketest", s);
+    }
+
+    @Test
+    public void can_read_legacy_chunked_base64_raw_field_encoding() throws IOException {
+        String expected = "this is a string with an impressive length. it's long enough to reach the end of the line, wow!";
+        String base64withDelims = "dGhpcyBpcyBhIHN0cmluZyB3aXRoIGFuIGltcHJlc3NpdmUgbGVuZ3RoLiBpdCdzIGxvbmcgZW5v\\r\\n" +
+                "dWdoIHRvIHJlYWNoIHRoZSBlbmQgb2YgdGhlIGxpbmUsIHdvdyE=\\r\\n";
+        assertEquals(expected, fieldStringFromBase64RawContent(base64withDelims));
+    }
+
+    private String fieldStringFromBase64RawContent(String base64data) throws IOException {
         JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testraw::whee',",
                         "  'fields': {",
-                        "    'actualraw': '" + stuff + "' }}"));
+                        "    'actualraw': '" + base64data + "' }}"));
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
@@ -615,8 +630,7 @@ public class JsonReaderTestCase {
         FieldValue f = doc.getFieldValue(doc.getField("actualraw"));
         assertSame(Raw.class, f.getClass());
         Raw s = (Raw) f;
-        ByteBuffer b = s.getByteBuffer();
-        assertEquals("smoketest", Utf8.toString(b));
+        return Utf8.toString(s.getByteBuffer());
     }
 
     @Test
@@ -1282,6 +1296,24 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testParsingOfDenseTensorOnDenseForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson("{",
+                                                                        "  'values': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]",
+                                                                        "}"), "dense_tensor"), "dense_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+    }
+
+    @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
         assertSparseTensorField("{{x:a,y:b}:2.0}",
                                 createPutWithSparseTensor(inputJson("{",
@@ -1677,11 +1709,14 @@ public class JsonReaderTestCase {
         return assertTensorField(expectedTensor, put, "sparse_tensor");
     }
     private static Tensor assertTensorField(String expectedTensor, DocumentPut put, String tensorFieldName) {
-        final Document doc = put.getDocument();
+        return assertTensorField(Tensor.from(expectedTensor), put, tensorFieldName);
+    }
+    private static Tensor assertTensorField(Tensor expectedTensor, DocumentPut put, String tensorFieldName) {
+        Document doc = put.getDocument();
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
         TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField(tensorFieldName));
-        assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
+        assertEquals(expectedTensor, fieldValue.getTensor().get());
         return fieldValue.getTensor().get();
     }
 

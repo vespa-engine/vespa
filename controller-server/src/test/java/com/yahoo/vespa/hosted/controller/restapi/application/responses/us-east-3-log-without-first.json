@@ -12,7 +12,7 @@
       {
         "at": 1000,
         "type": "debug",
-        "message": "Deactivating tester of tenant.application in zone prod.us-east-3 in default ..."
+        "message": "Deactivating tester of tenant.application in prod.us-east-3 ..."
       }
     ]
   },

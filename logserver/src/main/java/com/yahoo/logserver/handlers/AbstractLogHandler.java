@@ -45,9 +45,8 @@ public abstract class AbstractLogHandler implements LogHandler {
      * @param messages List of LogMessage instances.
      */
     public final void handle(List<LogMessage> messages) {
-        Iterator<LogMessage> it = messages.iterator();
-        while (it.hasNext()) {
-            handle(it.next());
+        for (LogMessage l : messages) {
+            handle(l);
         }
     }
 

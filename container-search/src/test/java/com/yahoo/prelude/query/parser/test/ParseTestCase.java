@@ -2091,7 +2091,7 @@ public class ParseTestCase {
         index2.setExact(true, "()/aa*::*&");
         sd.addIndex(index2);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:/,%&#", "testexact1:/,%&#", Query.Type.ALL);
@@ -2109,7 +2109,7 @@ public class ParseTestCase {
         index1.setExact(true, "*!*");
         sd.addIndex(index1);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_*!**!!",Query.Type.ALL);
@@ -2124,7 +2124,7 @@ public class ParseTestCase {
         index1.setExact(true, "*");
         sd.addIndex(index1);
 
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(sd));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_**!!",Query.Type.ALL);

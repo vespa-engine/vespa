@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -72,6 +74,8 @@ public class JobController {
     private final TesterCloud cloud;
     private final Badges badges;
 
+    private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
+
     public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
         this.controller = controller;
         this.curator = controller.curator();
@@ -82,6 +86,7 @@ public class JobController {
 
     public TesterCloud cloud() { return cloud; }
     public int historyLength() { return historyLength; }
+    public void setRunner(Consumer<Run> runner) { this.runner.set(runner); }
 
     /** Rewrite all job data with the newest format. */
     public void updateStorage() {
@@ -317,12 +322,16 @@ public class JobController {
                                          ApplicationVersion.unknown,
                                          Optional.empty(),
                                          Optional.empty()));
+
+            runner.get().accept(last(id, type).get());
         });
     }
 
     /** Aborts a run and waits for it complete. */
     private void abortAndWait(RunId id) {
         abort(id);
+        runner.get().accept(last(id.application(), id.type()).get());
+
         while ( ! last(id.application(), id.type()).get().hasEnded()) {
             try {
                 Thread.sleep(100);
@@ -399,9 +408,19 @@ public class JobController {
 
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
-        ApplicationId tester = id.tester().id();
-        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
-                         .flatMap(uris -> uris.stream().findAny());
+        DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
+        return controller.applications().getDeploymentEndpoints(testerId)
+                         .stream().findAny()
+                         .or(() -> controller.applications().routingPolicies().get(testerId).stream()
+                                             .findAny()
+                                             .map(policy -> policy.endpointIn(controller.system()).url()));
+    }
+
+    /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */
+    public Set<ZoneId> testedZoneAndProductionZones(ApplicationId id, JobType type) {
+        return Stream.concat(Stream.of(type.zone(controller.system())),
+                             controller.applications().require(id).productionDeployments().keySet().stream())
+                     .collect(Collectors.toSet());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.

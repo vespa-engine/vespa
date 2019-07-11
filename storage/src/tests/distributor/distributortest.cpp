@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
@@ -15,6 +14,8 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
@@ -22,87 +23,13 @@ using document::FixedBucketSpaces;
 using document::BucketSpace;
 using document::Bucket;
 using document::BucketId;
+using namespace ::testing;
 
-namespace storage {
+namespace storage::distributor {
 
-namespace distributor {
+struct DistributorTest : Test, DistributorTestUtil {
+    DistributorTest();
 
-class Distributor_Test : public CppUnit::TestFixture,
-                         public DistributorTestUtil
-{
-    CPPUNIT_TEST_SUITE(Distributor_Test);
-    CPPUNIT_TEST(testOperationGeneration);
-    CPPUNIT_TEST(testOperationsGeneratedAndStartedWithoutDuplicates);
-    CPPUNIT_TEST(testRecoveryModeOnClusterStateChange);
-    CPPUNIT_TEST(testOperationsAreThrottled);
-    CPPUNIT_TEST_IGNORED(testRecoveryModeEntryResetsScanner);
-    CPPUNIT_TEST_IGNORED(testReprioritizeBucketOnMaintenanceReply);
-    CPPUNIT_TEST(testHandleUnknownMaintenanceReply);
-    CPPUNIT_TEST(testContainsTimeStatement);
-    CPPUNIT_TEST(testUpdateBucketDatabase);
-    CPPUNIT_TEST(testTickProcessesStatusRequests);
-    CPPUNIT_TEST(testMetricUpdateHookUpdatesPendingMaintenanceMetrics);
-    CPPUNIT_TEST(testPriorityConfigIsPropagatedToDistributorConfiguration);
-    CPPUNIT_TEST(testNoDbResurrectionForBucketNotOwnedInPendingState);
-    CPPUNIT_TEST(testAddedDbBucketsWithoutGcTimestampImplicitlyGetCurrentTime);
-    CPPUNIT_TEST(mergeStatsAreAccumulatedDuringDatabaseIteration);
-    CPPUNIT_TEST(statsGeneratedForPreemptedOperations);
-    CPPUNIT_TEST(hostInfoReporterConfigIsPropagatedToReporter);
-    CPPUNIT_TEST(replicaCountingModeIsConfiguredToTrustedByDefault);
-    CPPUNIT_TEST(replicaCountingModeConfigIsPropagatedToMetricUpdater);
-    CPPUNIT_TEST(bucketActivationIsEnabledByDefault);
-    CPPUNIT_TEST(bucketActivationConfigIsPropagatedToDistributorConfiguration);
-    CPPUNIT_TEST(max_clock_skew_config_is_propagated_to_distributor_config);
-    CPPUNIT_TEST(configured_safe_time_point_rejection_works_end_to_end);
-    CPPUNIT_TEST(sequencing_config_is_propagated_to_distributor_config);
-    CPPUNIT_TEST(merge_busy_inhibit_duration_config_is_propagated_to_distributor_config);
-    CPPUNIT_TEST(merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker);
-    CPPUNIT_TEST(external_client_requests_are_handled_individually_in_priority_order);
-    CPPUNIT_TEST(internal_messages_are_started_in_fifo_order_batch);
-    CPPUNIT_TEST(closing_aborts_priority_queued_client_requests);
-    CPPUNIT_TEST(entering_recovery_mode_resets_bucket_space_stats);
-    CPPUNIT_TEST(leaving_recovery_mode_immediately_sends_getnodestate_replies);
-    CPPUNIT_TEST(pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies);
-    CPPUNIT_TEST(pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    Distributor_Test();
-
-protected:
-    void testOperationGeneration();
-    void testOperationsGeneratedAndStartedWithoutDuplicates();
-    void testRecoveryModeOnClusterStateChange();
-    void testOperationsAreThrottled();
-    void testRecoveryModeEntryResetsScanner();
-    void testReprioritizeBucketOnMaintenanceReply();
-    void testHandleUnknownMaintenanceReply();
-    void testContainsTimeStatement();
-    void testUpdateBucketDatabase();
-    void testTickProcessesStatusRequests();
-    void testMetricUpdateHookUpdatesPendingMaintenanceMetrics();
-    void testPriorityConfigIsPropagatedToDistributorConfiguration();
-    void testNoDbResurrectionForBucketNotOwnedInPendingState();
-    void testAddedDbBucketsWithoutGcTimestampImplicitlyGetCurrentTime();
-    void mergeStatsAreAccumulatedDuringDatabaseIteration();
-    void statsGeneratedForPreemptedOperations();
-    void hostInfoReporterConfigIsPropagatedToReporter();
-    void replicaCountingModeIsConfiguredToTrustedByDefault();
-    void replicaCountingModeConfigIsPropagatedToMetricUpdater();
-    void bucketActivationIsEnabledByDefault();
-    void bucketActivationConfigIsPropagatedToDistributorConfiguration();
-    void max_clock_skew_config_is_propagated_to_distributor_config();
-    void configured_safe_time_point_rejection_works_end_to_end();
-    void sequencing_config_is_propagated_to_distributor_config();
-    void merge_busy_inhibit_duration_config_is_propagated_to_distributor_config();
-    void merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker();
-    void external_client_requests_are_handled_individually_in_priority_order();
-    void internal_messages_are_started_in_fifo_order_batch();
-    void closing_aborts_priority_queued_client_requests();
-    void entering_recovery_mode_resets_bucket_space_stats();
-    void leaving_recovery_mode_immediately_sends_getnodestate_replies();
-    void pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies();
-    void pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies();
     // TODO handle edge case for window between getnodestate reply already
     // sent and new request not yet received
 
@@ -110,17 +37,15 @@ protected:
                                 const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats);
     std::vector<document::BucketSpace> _bucketSpaces;
 
-public:
-    void setUp() override {
+    void SetUp() override {
         createLinks();
         _bucketSpaces = getBucketSpaces();
     };
 
-    void tearDown() override {
+    void TearDown() override {
         close();
     }
 
-private:
     // Simple type aliases to make interfacing with certain utility functions
     // easier. Note that this is only for readability and does not provide any
     // added type safety.
@@ -139,10 +64,9 @@ private:
                 .getMinimumReplicaCountingMode();
     }
 
-    std::string testOp(api::StorageMessage* msg)
+    std::string testOp(std::shared_ptr<api::StorageMessage> msg)
     {
-        api::StorageMessage::SP msgPtr(msg);
-        _distributor->handleMessage(msgPtr);
+        _distributor->handleMessage(msg);
 
         std::string tmp = _sender.getCommands();
         _sender.clear();
@@ -211,6 +135,38 @@ private:
         return _node->getNodeStateUpdater().explicit_node_state_reply_send_invocations();
     }
 
+    StatusReporterDelegate& distributor_status_delegate() {
+        return _distributor->_distributorStatusDelegate;
+    }
+
+    framework::TickingThreadPool& distributor_thread_pool() {
+        return _distributor->_threadPool;
+    }
+
+    const std::vector<std::shared_ptr<Distributor::Status>>& distributor_status_todos() {
+        return _distributor->_statusToDo;
+    }
+
+    Distributor::MetricUpdateHook distributor_metric_update_hook() {
+        return _distributor->_metricUpdateHook;
+    }
+
+    SimpleMaintenanceScanner::PendingMaintenanceStats& distributor_maintenance_stats() {
+        return _distributor->_maintenanceStats;
+    }
+
+    BucketSpacesStatsProvider::PerNodeBucketSpacesStats distributor_bucket_spaces_stats() {
+        return _distributor->getBucketSpacesStats();
+    }
+
+    DistributorHostInfoReporter& distributor_host_info_reporter() {
+        return _distributor->_hostInfoReporter;
+    }
+
+    bool distributor_handle_message(const std::shared_ptr<api::StorageMessage>& msg) {
+        return _distributor->handleMessage(msg);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -222,39 +178,32 @@ private:
     void do_test_pending_merge_getnodestate_reply_edge(BucketSpace space);
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(Distributor_Test);
-
-Distributor_Test::Distributor_Test()
-    : CppUnit::TestFixture(),
-    DistributorTestUtil(),
-    _bucketSpaces()
+DistributorTest::DistributorTest()
+    : Test(),
+      DistributorTestUtil(),
+      _bucketSpaces()
 {
 }
 
-void
-Distributor_Test::testOperationGeneration()
-{
+TEST_F(DistributorTest, operation_generation) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     document::BucketId bid;
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Remove"),
-                         testOp(new api::RemoveCommand(
-                                        makeDocumentBucket(bid),
-                                        document::DocumentId("userdoc:m:1:foo"),
-                                        api::Timestamp(1234))));
+    EXPECT_EQ("Remove", testOp(std::make_shared<api::RemoveCommand>(
+            makeDocumentBucket(bid),
+            document::DocumentId("userdoc:m:1:foo"),
+            api::Timestamp(1234))));
 
-    api::CreateVisitorCommand* cmd = new api::CreateVisitorCommand(makeBucketSpace(), "foo", "bar", "");
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "foo", "bar", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 1));
     cmd->addBucketToBeVisited(document::BucketId());
 
-    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create"), testOp(cmd));
+    EXPECT_EQ("Visitor Create", testOp(cmd));
 }
 
-void
-Distributor_Test::testOperationsGeneratedAndStartedWithoutDuplicates()
-{
+TEST_F(DistributorTest, operations_generated_and_started_without_duplicates) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     for (uint32_t i = 0; i < 6; ++i) {
@@ -263,36 +212,32 @@ Distributor_Test::testOperationsGeneratedAndStartedWithoutDuplicates()
 
     tickDistributorNTimes(20);
 
-    CPPUNIT_ASSERT(!tick());
+    ASSERT_FALSE(tick());
 
-    CPPUNIT_ASSERT_EQUAL(6, (int)_sender.commands.size());
+    ASSERT_EQ(6, _sender.commands().size());
 }
 
-void
-Distributor_Test::testRecoveryModeOnClusterStateChange()
-{
+TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
     setupDistributor(Redundancy(1), NodeCount(2),
                      "storage:1 .0.s:d distributor:1");
     enableDistributorClusterState("storage:1 distributor:1");
 
-    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
     for (uint32_t i = 0; i < 3; ++i) {
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
     }
     for (int i = 0; i < 3; ++i) {
         tick();
-        CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+        EXPECT_TRUE(_distributor->isInRecoveryMode());
     }
     tick();
-    CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
+    EXPECT_FALSE(_distributor->isInRecoveryMode());
 
     enableDistributorClusterState("storage:2 distributor:1");
-    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
 }
 
-void
-Distributor_Test::testOperationsAreThrottled()
-{
+TEST_F(DistributorTest, operations_are_throttled) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     getConfig().setMinPendingMaintenanceOps(1);
     getConfig().setMaxPendingMaintenanceOps(1);
@@ -301,32 +246,16 @@ Distributor_Test::testOperationsAreThrottled()
         addNodesToBucketDB(document::BucketId(16, i), "0=1");
     }
     tickDistributorNTimes(20);
-    CPPUNIT_ASSERT_EQUAL(1, (int)_sender.commands.size());
+    ASSERT_EQ(1, _sender.commands().size());
 }
 
-void
-Distributor_Test::testRecoveryModeEntryResetsScanner()
-{
-    CPPUNIT_FAIL("TODO: refactor so this can be mocked and tested easily");
-}
-
-void
-Distributor_Test::testReprioritizeBucketOnMaintenanceReply()
-{
-    CPPUNIT_FAIL("TODO: refactor so this can be mocked and tested easily");
-}
-
-void
-Distributor_Test::testHandleUnknownMaintenanceReply()
-{
+TEST_F(DistributorTest, handle_unknown_maintenance_reply) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     {
-        api::SplitBucketCommand::SP cmd(
-                new api::SplitBucketCommand(makeDocumentBucket(document::BucketId(16, 1234))));
-        api::SplitBucketReply::SP reply(new api::SplitBucketReply(*cmd));
-
-        CPPUNIT_ASSERT(_distributor->handleReply(reply));
+        auto cmd = std::make_shared<api::SplitBucketCommand>(makeDocumentBucket(document::BucketId(16, 1234)));
+        auto reply = std::make_shared<api::SplitBucketReply>(*cmd);
+        ASSERT_TRUE(_distributor->handleReply(reply));
     }
 
     {
@@ -335,94 +264,74 @@ Distributor_Test::testHandleUnknownMaintenanceReply()
         auto cmd = std::make_shared<api::RemoveLocationCommand>(
                 "false", makeDocumentBucket(document::BucketId(30, 1234)));
         auto reply = std::shared_ptr<api::StorageReply>(cmd->makeReply());
-        CPPUNIT_ASSERT(_distributor->handleReply(reply));
+        ASSERT_TRUE(_distributor->handleReply(reply));
     }
 }
 
-void
-Distributor_Test::testContainsTimeStatement()
-{
+TEST_F(DistributorTest, contains_time_statement) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
-    CPPUNIT_ASSERT_EQUAL(false, getConfig().containsTimeStatement(""));
-    CPPUNIT_ASSERT_EQUAL(false, getConfig().containsTimeStatement("testdoctype1"));
-    CPPUNIT_ASSERT_EQUAL(false, getConfig().containsTimeStatement("testdoctype1.headerfield > 42"));
-    CPPUNIT_ASSERT_EQUAL(true, getConfig().containsTimeStatement("testdoctype1.headerfield > now()"));
-    CPPUNIT_ASSERT_EQUAL(true, getConfig().containsTimeStatement("testdoctype1.headerfield > now() - 3600"));
-    CPPUNIT_ASSERT_EQUAL(true, getConfig().containsTimeStatement("testdoctype1.headerfield == now() - 3600"));
+    EXPECT_FALSE(getConfig().containsTimeStatement(""));
+    EXPECT_FALSE(getConfig().containsTimeStatement("testdoctype1"));
+    EXPECT_FALSE(getConfig().containsTimeStatement("testdoctype1.headerfield > 42"));
+    EXPECT_TRUE(getConfig().containsTimeStatement("testdoctype1.headerfield > now()"));
+    EXPECT_TRUE(getConfig().containsTimeStatement("testdoctype1.headerfield > now() - 3600"));
+    EXPECT_TRUE(getConfig().containsTimeStatement("testdoctype1.headerfield == now() - 3600"));
 }
 
-void
-Distributor_Test::testUpdateBucketDatabase()
-{
+TEST_F(DistributorTest, update_bucket_database) {
     enableDistributorClusterState("distributor:1 storage:3");
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456,1:456,2:789", "2:r"));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+              "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)",
+              updateBucketDB("0:456,1:456,2:789", "2:r"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
-                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456,1:456", "2:456"));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+              "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+              "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)",
+              updateBucketDB("0:456,1:456", "2:456"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=false,active=false,ready=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
-                    "node(idx=1,crc=0x34a,docs=421/421,bytes=210/210,trusted=false,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:842,2:333"));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=false,active=false,ready=false), "
+              "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
+              "node(idx=1,crc=0x34a,docs=421/421,bytes=210/210,trusted=false,active=false,ready=false)",
+              updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:842,2:333"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
-                    "node(idx=1,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:789,2:333"));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false), "
+              "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false), "
+              "node(idx=1,crc=0x315,docs=394/394,bytes=197/197,trusted=true,active=false,ready=false)",
+              updateBucketDB("0:456:t,1:456:t,2:123", "0:789,1:789,2:333"));
 
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                        "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=true,active=false,ready=false)"),
-            updateBucketDB("0:456:t,1:456:t", "0:r,1:r,2:333"));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=true,active=false,ready=false)",
+              updateBucketDB("0:456:t,1:456:t", "0:r,1:r,2:333"));
 
     // Copies are in sync so should still be trusted even if explicitly reset.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
-                    "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
-                    "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456,1:456", "2:456", ResetTrusted(true)));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+              "node(idx=2,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false), "
+              "node(idx=1,crc=0x1c8,docs=228/228,bytes=114/114,trusted=true,active=false,ready=false)",
+              updateBucketDB("0:456,1:456", "2:456", ResetTrusted(true)));
 
     // When resetting, first inserted copy should not end up as implicitly trusted.
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("BucketId(0x4000000000000001) : "
-                    "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=false,active=false,ready=false), "
-                    "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false)"
-                    ),
-            updateBucketDB("0:456",
-                           "2:333",
-                           ResetTrusted(true)));
+    EXPECT_EQ("BucketId(0x4000000000000001) : "
+              "node(idx=0,crc=0x1c8,docs=228/228,bytes=114/114,trusted=false,active=false,ready=false), "
+              "node(idx=2,crc=0x14d,docs=166/166,bytes=83/83,trusted=false,active=false,ready=false)",
+              updateBucketDB("0:456", "2:333", ResetTrusted(true)));
 }
 
 namespace {
 
 using namespace framework::defaultimplementation;
 
-class StatusRequestThread : public framework::Runnable
-{
+class StatusRequestThread : public framework::Runnable {
     StatusReporterDelegate& _reporter;
     std::string _result;
 public:
-    StatusRequestThread(StatusReporterDelegate& reporter)
+    explicit StatusRequestThread(StatusReporterDelegate& reporter)
         : _reporter(reporter)
     {}
     void run(framework::ThreadHandle&) override {
@@ -439,16 +348,14 @@ public:
 
 }
 
-void
-Distributor_Test::testTickProcessesStatusRequests()
-{
+TEST_F(DistributorTest, tick_processes_status_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
     // Must go via delegate since reportStatus is now just a rendering
     // function and not a request enqueuer (see Distributor::handleStatusRequest).
-    StatusRequestThread thread(_distributor->_distributorStatusDelegate);
+    StatusRequestThread thread(distributor_status_delegate());
     FakeClock clock;
     ThreadPoolImpl pool(clock);
     
@@ -461,20 +368,20 @@ Distributor_Test::testTickProcessesStatusRequests()
     while (true) {
         FastOS_Thread::Sleep(1);
         framework::TickingLockGuard guard(
-            _distributor->_threadPool.freezeCriticalTicks());
-        if (!_distributor->_statusToDo.empty()) break;
+            distributor_thread_pool().freezeCriticalTicks());
+        if (!distributor_status_todos().empty()) {
+            break;
+        }
         
     }
-    CPPUNIT_ASSERT(tick());
+    ASSERT_TRUE(tick());
 
-    tp->interruptAndJoin(0);
+    tp->interruptAndJoin(nullptr);
 
-    CPPUNIT_ASSERT_CONTAIN("BucketId(0x4000000000000001)", thread.getResult());
+    EXPECT_THAT(thread.getResult(), HasSubstr("BucketId(0x4000000000000001)"));
 }
 
-void
-Distributor_Test::testMetricUpdateHookUpdatesPendingMaintenanceMetrics()
-{
+TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // To ensure we count all operations, not just those fitting within the
     // pending window.
@@ -494,53 +401,33 @@ Distributor_Test::testMetricUpdateHookUpdatesPendingMaintenanceMetrics()
 
     // By this point, no hook has been called so the metrics have not been
     // set.
-    typedef MaintenanceOperation MO;
+    using MO = MaintenanceOperation;
     {
         const IdealStateMetricSet& metrics(getIdealStateManager().getMetrics());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0),
-                             metrics.operations[MO::MERGE_BUCKET]
-                                ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0), metrics.operations[MO::SPLIT_BUCKET]
-                                         ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0),
-                             metrics.operations[MO::SET_BUCKET_STATE]
-                                ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0), metrics.operations[MO::DELETE_BUCKET]
-                                            ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0), metrics.operations[MO::JOIN_BUCKET]
-                                            ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0),
-                             metrics.operations[MO::GARBAGE_COLLECTION]
-                                ->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::MERGE_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::SPLIT_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::SET_BUCKET_STATE]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::DELETE_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::JOIN_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::GARBAGE_COLLECTION]->pending.getLast());
     }
 
     // Force trigger update hook
     vespalib::Monitor l;
-    _distributor->_metricUpdateHook.updateMetrics(vespalib::MonitorGuard(l));
+    distributor_metric_update_hook().updateMetrics(vespalib::MonitorGuard(l));
     // Metrics should now be updated to the last complete working state
     {
         const IdealStateMetricSet& metrics(getIdealStateManager().getMetrics());
-        CPPUNIT_ASSERT_EQUAL(int64_t(1),
-                             metrics.operations[MO::MERGE_BUCKET]
-                                ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(1), metrics.operations[MO::SPLIT_BUCKET]
-                                         ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(1),
-                             metrics.operations[MO::SET_BUCKET_STATE]
-                                ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0), metrics.operations[MO::DELETE_BUCKET]
-                                            ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0), metrics.operations[MO::JOIN_BUCKET]
-                                            ->pending.getLast());
-        CPPUNIT_ASSERT_EQUAL(int64_t(0),
-                             metrics.operations[MO::GARBAGE_COLLECTION]
-                                ->pending.getLast());
+        EXPECT_EQ(1, metrics.operations[MO::MERGE_BUCKET]->pending.getLast());
+        EXPECT_EQ(1, metrics.operations[MO::SPLIT_BUCKET]->pending.getLast());
+        EXPECT_EQ(1, metrics.operations[MO::SET_BUCKET_STATE]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::DELETE_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::JOIN_BUCKET]->pending.getLast());
+        EXPECT_EQ(0, metrics.operations[MO::GARBAGE_COLLECTION]->pending.getLast());
     }
 }
 
-void
-Distributor_Test::testPriorityConfigIsPropagatedToDistributorConfiguration()
-{
+TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -560,24 +447,21 @@ Distributor_Test::testPriorityConfigIsPropagatedToDistributorConfiguration()
 
     getConfig().configure(builder);
 
-    const DistributorConfiguration::MaintenancePriorities& mp(
-            getConfig().getMaintenancePriorities());
-    CPPUNIT_ASSERT_EQUAL(1, static_cast<int>(mp.mergeMoveToIdealNode));
-    CPPUNIT_ASSERT_EQUAL(2, static_cast<int>(mp.mergeOutOfSyncCopies));
-    CPPUNIT_ASSERT_EQUAL(3, static_cast<int>(mp.mergeTooFewCopies));
-    CPPUNIT_ASSERT_EQUAL(4, static_cast<int>(mp.activateNoExistingActive));
-    CPPUNIT_ASSERT_EQUAL(5, static_cast<int>(mp.activateWithExistingActive));
-    CPPUNIT_ASSERT_EQUAL(6, static_cast<int>(mp.deleteBucketCopy));
-    CPPUNIT_ASSERT_EQUAL(7, static_cast<int>(mp.joinBuckets));
-    CPPUNIT_ASSERT_EQUAL(8, static_cast<int>(mp.splitDistributionBits));
-    CPPUNIT_ASSERT_EQUAL(9, static_cast<int>(mp.splitLargeBucket));
-    CPPUNIT_ASSERT_EQUAL(10, static_cast<int>(mp.splitInconsistentBucket));
-    CPPUNIT_ASSERT_EQUAL(11, static_cast<int>(mp.garbageCollection));
+    const auto& mp = getConfig().getMaintenancePriorities();
+    EXPECT_EQ(1, static_cast<int>(mp.mergeMoveToIdealNode));
+    EXPECT_EQ(2, static_cast<int>(mp.mergeOutOfSyncCopies));
+    EXPECT_EQ(3, static_cast<int>(mp.mergeTooFewCopies));
+    EXPECT_EQ(4, static_cast<int>(mp.activateNoExistingActive));
+    EXPECT_EQ(5, static_cast<int>(mp.activateWithExistingActive));
+    EXPECT_EQ(6, static_cast<int>(mp.deleteBucketCopy));
+    EXPECT_EQ(7, static_cast<int>(mp.joinBuckets));
+    EXPECT_EQ(8, static_cast<int>(mp.splitDistributionBits));
+    EXPECT_EQ(9, static_cast<int>(mp.splitLargeBucket));
+    EXPECT_EQ(10, static_cast<int>(mp.splitInconsistentBucket));
+    EXPECT_EQ(11, static_cast<int>(mp.garbageCollection));
 }
 
-void
-Distributor_Test::testNoDbResurrectionForBucketNotOwnedInPendingState()
-{
+TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     lib::ClusterState newState("storage:10 distributor:10");
     auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
@@ -587,24 +471,20 @@ Distributor_Test::testNoDbResurrectionForBucketNotOwnedInPendingState()
     getBucketDBUpdater().onSetSystemState(stateCmd);
 
     document::BucketId nonOwnedBucket(16, 3);
-    CPPUNIT_ASSERT(!getBucketDBUpdater()
-                   .checkOwnershipInPendingState(makeDocumentBucket(nonOwnedBucket)).isOwned());
-    CPPUNIT_ASSERT(!getBucketDBUpdater().getDistributorComponent()
-                   .checkOwnershipInPendingAndCurrentState(makeDocumentBucket(nonOwnedBucket))
-                   .isOwned());
+    EXPECT_FALSE(getBucketDBUpdater().checkOwnershipInPendingState(makeDocumentBucket(nonOwnedBucket)).isOwned());
+    EXPECT_FALSE(getBucketDBUpdater().getDistributorComponent()
+                     .checkOwnershipInPendingAndCurrentState(makeDocumentBucket(nonOwnedBucket))
+                     .isOwned());
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
     getExternalOperationHandler().updateBucketDatabase(makeDocumentBucket(nonOwnedBucket), copies,
                                     DatabaseUpdate::CREATE_IF_NONEXISTING);
 
-    CPPUNIT_ASSERT_EQUAL(std::string("NONEXISTING"),
-                         dumpBucket(nonOwnedBucket));
+    EXPECT_EQ("NONEXISTING", dumpBucket(nonOwnedBucket));
 }
 
-void
-Distributor_Test::testAddedDbBucketsWithoutGcTimestampImplicitlyGetCurrentTime()
-{
+TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     getClock().setAbsoluteTimeInSeconds(101234);
     document::BucketId bucket(16, 7654);
@@ -614,13 +494,10 @@ Distributor_Test::testAddedDbBucketsWithoutGcTimestampImplicitlyGetCurrentTime()
     getExternalOperationHandler().updateBucketDatabase(makeDocumentBucket(bucket), copies,
                                     DatabaseUpdate::CREATE_IF_NONEXISTING);
     BucketDatabase::Entry e(getBucket(bucket));
-    CPPUNIT_ASSERT_EQUAL(uint32_t(101234), e->getLastGarbageCollectionTime());
+    EXPECT_EQ(101234, e->getLastGarbageCollectionTime());
 }
 
-
-void
-Distributor_Test::mergeStatsAreAccumulatedDuringDatabaseIteration()
-{
+TEST_F(DistributorTest, merge_stats_are_accumulated_during_database_iteration) {
     setupDistributor(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
     // Copies out of sync. Not possible for distributor to _reliably_ tell
     // which direction(s) data will flow, so for simplicity assume that we
@@ -642,46 +519,47 @@ Distributor_Test::mergeStatsAreAccumulatedDuringDatabaseIteration()
     // added to existing.
     tickDistributorNTimes(50);
 
-    const auto& stats(_distributor->_maintenanceStats);
+    const auto& stats = distributor_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingOut = 2;
         wanted.total = 3;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
+        EXPECT_EQ(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.movingOut = 1;
         wanted.total = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.copyingIn = 2;
         wanted.total = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(2, makeBucketSpace()));
+        EXPECT_EQ(wanted, stats.perNodeStats.forNode(2, makeBucketSpace()));
     }
-    auto bucketStats = _distributor->getBucketSpacesStats();
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(3), bucketStats.size());
+    auto bucketStats = distributor_bucket_spaces_stats();
+    ASSERT_EQ(3, bucketStats.size());
     assertBucketSpaceStats(1, 3, 0, "default", bucketStats);
     assertBucketSpaceStats(0, 1, 1, "default", bucketStats);
     assertBucketSpaceStats(3, 1, 2, "default", bucketStats);
 }
 
 void
-Distributor_Test::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node, const vespalib::string &bucketSpace,
-                                         const BucketSpacesStatsProvider::PerNodeBucketSpacesStats &stats)
+DistributorTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucketTotal, uint16_t node,
+                                        const vespalib::string& bucketSpace,
+                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats)
 {
     auto nodeItr = stats.find(node);
-    CPPUNIT_ASSERT(nodeItr != stats.end());
-    CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), nodeItr->second.size());
+    ASSERT_TRUE(nodeItr != stats.end());
+    ASSERT_EQ(1, nodeItr->second.size());
     auto bucketSpaceItr = nodeItr->second.find(bucketSpace);
-    CPPUNIT_ASSERT(bucketSpaceItr != nodeItr->second.end());
-    CPPUNIT_ASSERT(bucketSpaceItr->second.valid());
-    CPPUNIT_ASSERT_EQUAL(expBucketTotal, bucketSpaceItr->second.bucketsTotal());
-    CPPUNIT_ASSERT_EQUAL(expBucketPending, bucketSpaceItr->second.bucketsPending());
+    ASSERT_TRUE(bucketSpaceItr != nodeItr->second.end());
+    ASSERT_TRUE(bucketSpaceItr->second.valid());
+    ASSERT_EQ(expBucketTotal, bucketSpaceItr->second.bucketsTotal());
+    ASSERT_EQ(expBucketPending, bucketSpaceItr->second.bucketsPending());
 }
 
 /**
@@ -690,9 +568,7 @@ Distributor_Test::assertBucketSpaceStats(size_t expBucketPending, size_t expBuck
  * their state checkers at all, we won't get any statistics from any other
  * operations for the bucket.
  */
-void
-Distributor_Test::statsGeneratedForPreemptedOperations()
-{
+TEST_F(DistributorTest, stats_generated_for_preempted_operations) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // For this test it suffices to have a single bucket with multiple aspects
     // wrong about it. In this case, let a bucket be both out of sync _and_
@@ -701,63 +577,53 @@ Distributor_Test::statsGeneratedForPreemptedOperations()
     // by activation, we'll see no merge stats at all.
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1,1=2/2/2");
     tickDistributorNTimes(50);
-    const auto& stats(_distributor->_maintenanceStats);
+    const auto& stats = distributor_maintenance_stats();
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.total = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
+        EXPECT_EQ(wanted, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     {
         NodeMaintenanceStats wanted;
         wanted.syncing = 1;
         wanted.total = 1;
-        CPPUNIT_ASSERT_EQUAL(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
+        EXPECT_EQ(wanted, stats.perNodeStats.forNode(1, makeBucketSpace()));
     }
 }
 
-void
-Distributor_Test::hostInfoReporterConfigIsPropagatedToReporter()
-{
+TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     // Default is enabled=true.
-    CPPUNIT_ASSERT(_distributor->_hostInfoReporter.isReportingEnabled());
+    EXPECT_TRUE(distributor_host_info_reporter().isReportingEnabled());
 
     ConfigBuilder builder;
     builder.enableHostInfoReporting = false;
     configureDistributor(builder);
 
-    CPPUNIT_ASSERT(!_distributor->_hostInfoReporter.isReportingEnabled());
+    EXPECT_FALSE(distributor_host_info_reporter().isReportingEnabled());
 }
 
-void
-Distributor_Test::replicaCountingModeIsConfiguredToTrustedByDefault()
-{
+TEST_F(DistributorTest, replica_counting_mode_is_configured_to_trusted_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    CPPUNIT_ASSERT_EQUAL(ConfigBuilder::TRUSTED, currentReplicaCountingMode());
+    EXPECT_EQ(ConfigBuilder::TRUSTED, currentReplicaCountingMode());
 }
 
-void
-Distributor_Test::replicaCountingModeConfigIsPropagatedToMetricUpdater()
-{
+TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
     builder.minimumReplicaCountingMode = ConfigBuilder::ANY;
     configureDistributor(builder);
-    CPPUNIT_ASSERT_EQUAL(ConfigBuilder::ANY, currentReplicaCountingMode());
+    EXPECT_EQ(ConfigBuilder::ANY, currentReplicaCountingMode());
 }
 
-void
-Distributor_Test::bucketActivationIsEnabledByDefault()
-{
+TEST_F(DistributorTest, bucket_activation_is_enabled_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    CPPUNIT_ASSERT(getConfig().isBucketActivationDisabled() == false);
+    EXPECT_FALSE(getConfig().isBucketActivationDisabled());
 }
 
-void
-Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
-{
+TEST_F(DistributorTest, bucket_activation_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
@@ -766,11 +632,11 @@ Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
     builder.disableBucketActivation = true;
     getConfig().configure(builder);
 
-    CPPUNIT_ASSERT(getConfig().isBucketActivationDisabled());
+    EXPECT_TRUE(getConfig().isBucketActivationDisabled());
 }
 
 void
-Distributor_Test::configureMaxClusterClockSkew(int seconds) {
+DistributorTest::configureMaxClusterClockSkew(int seconds) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -779,12 +645,11 @@ Distributor_Test::configureMaxClusterClockSkew(int seconds) {
     _distributor->enableNextConfig();
 }
 
-void
-Distributor_Test::max_clock_skew_config_is_propagated_to_distributor_config() {
+TEST_F(DistributorTest, max_clock_skew_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configureMaxClusterClockSkew(5);
-    CPPUNIT_ASSERT(getConfig().getMaxClusterClockSkew() == std::chrono::seconds(5));
+    EXPECT_EQ(getConfig().getMaxClusterClockSkew(), std::chrono::seconds(5));
 }
 
 namespace {
@@ -798,19 +663,18 @@ auto makeDummyRemoveCommand() {
 
 }
 
-void Distributor_Test::sendDownClusterStateCommand() {
+void DistributorTest::sendDownClusterStateCommand() {
     lib::ClusterState newState("bits:1 storage:1 distributor:1");
     auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
     _distributor->handleMessage(stateCmd);
 }
 
-void Distributor_Test::replyToSingleRequestBucketInfoCommandWith1Bucket() {
-    CPPUNIT_ASSERT_EQUAL(_bucketSpaces.size(), _sender.commands.size());
-    for (uint32_t i = 0; i < _sender.commands.size(); ++i) {
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::REQUESTBUCKETINFO,
-                             _sender.commands[i]->getType());
+void DistributorTest::replyToSingleRequestBucketInfoCommandWith1Bucket() {
+    ASSERT_EQ(_bucketSpaces.size(), _sender.commands().size());
+    for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
+        ASSERT_EQ(api::MessageType::REQUESTBUCKETINFO, _sender.command(i)->getType());
         auto& bucketReq(static_cast<api::RequestBucketInfoCommand&>
-                        (*_sender.commands[i]));
+                        (*_sender.command(i)));
         auto bucketReply = bucketReq.makeReply();
         if (bucketReq.getBucketSpace() == FixedBucketSpaces::default_space()) {
             // Make sure we have a bucket to route our remove op to, or we'd get
@@ -822,52 +686,49 @@ void Distributor_Test::replyToSingleRequestBucketInfoCommandWith1Bucket() {
         }
         _distributor->handleMessage(std::move(bucketReply));
     }
-    _sender.commands.clear();
+    _sender.commands().clear();
 }
 
-void Distributor_Test::sendDownDummyRemoveCommand() {
+void DistributorTest::sendDownDummyRemoveCommand() {
     _distributor->handleMessage(makeDummyRemoveCommand());
 }
 
-void Distributor_Test::assertSingleBouncedRemoveReplyPresent() {
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size()); // Rejected remove
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE_REPLY,
-                         _sender.replies[0]->getType());
-    auto& reply(static_cast<api::RemoveReply&>(*_sender.replies[0]));
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::STALE_TIMESTAMP,
-                         reply.getResult().getResult());
-    _sender.replies.clear();
+void DistributorTest::assertSingleBouncedRemoveReplyPresent() {
+    ASSERT_EQ(1, _sender.replies().size()); // Rejected remove
+    ASSERT_EQ(api::MessageType::REMOVE_REPLY, _sender.reply(0)->getType());
+    auto& reply(static_cast<api::RemoveReply&>(*_sender.reply(0)));
+    ASSERT_EQ(api::ReturnCode::STALE_TIMESTAMP, reply.getResult().getResult());
+    _sender.replies().clear();
 }
 
-void Distributor_Test::assertNoMessageBounced() {
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+void DistributorTest::assertNoMessageBounced() {
+    ASSERT_EQ(0, _sender.replies().size());
 }
 
 // TODO refactor this to set proper highest timestamp as part of bucket info
 // reply once we have the "highest timestamp across all owned buckets" feature
 // in place.
-void
-Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
+TEST_F(DistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "bits:1 storage:1 distributor:2");
     getClock().setAbsoluteTimeInSeconds(1000);
     configureMaxClusterClockSkew(10);
 
     sendDownClusterStateCommand();
-    replyToSingleRequestBucketInfoCommandWith1Bucket();
+    ASSERT_NO_FATAL_FAILURE(replyToSingleRequestBucketInfoCommandWith1Bucket());
     // SetSystemStateCommand sent down chain at this point.
     sendDownDummyRemoveCommand();
-    assertSingleBouncedRemoveReplyPresent();
+    ASSERT_NO_FATAL_FAILURE(assertSingleBouncedRemoveReplyPresent());
 
     // Increment time to first whole second of clock + 10 seconds of skew.
     // Should now not get any feed rejections.
     getClock().setAbsoluteTimeInSeconds(1011);
 
     sendDownDummyRemoveCommand();
-    assertNoMessageBounced();
+    ASSERT_NO_FATAL_FAILURE(assertNoMessageBounced());
 }
 
-void Distributor_Test::configure_mutation_sequencing(bool enabled) {
+void DistributorTest::configure_mutation_sequencing(bool enabled) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -876,23 +737,23 @@ void Distributor_Test::configure_mutation_sequencing(bool enabled) {
     _distributor->enableNextConfig();
 }
 
-void Distributor_Test::sequencing_config_is_propagated_to_distributor_config() {
+TEST_F(DistributorTest, sequencing_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     // Should be enabled by default
-    CPPUNIT_ASSERT(getConfig().getSequenceMutatingOperations());
+    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
 
     // Explicitly disabled.
     configure_mutation_sequencing(false);
-    CPPUNIT_ASSERT(!getConfig().getSequenceMutatingOperations());
+    EXPECT_FALSE(getConfig().getSequenceMutatingOperations());
 
     // Explicitly enabled.
     configure_mutation_sequencing(true);
-    CPPUNIT_ASSERT(getConfig().getSequenceMutatingOperations());
+    EXPECT_TRUE(getConfig().getSequenceMutatingOperations());
 }
 
 void
-Distributor_Test::configure_merge_busy_inhibit_duration(int seconds) {
+DistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
     using namespace vespa::config::content::core;
 
     ConfigBuilder builder;
@@ -901,39 +762,39 @@ Distributor_Test::configure_merge_busy_inhibit_duration(int seconds) {
     _distributor->enableNextConfig();
 }
 
-void Distributor_Test::merge_busy_inhibit_duration_config_is_propagated_to_distributor_config() {
+TEST_F(DistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
     configure_merge_busy_inhibit_duration(7);
-    CPPUNIT_ASSERT(getConfig().getInhibitMergesOnBusyNodeDuration() == std::chrono::seconds(7));
+    EXPECT_EQ(getConfig().getInhibitMergesOnBusyNodeDuration(), std::chrono::seconds(7));
 }
 
-void Distributor_Test::merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker() {
+TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
 
     configure_merge_busy_inhibit_duration(100);
     auto cmd = makeDummyRemoveCommand(); // Remove is for bucket 1
-    _distributor->handleMessage(cmd);
+    distributor_handle_message(cmd);
 
     // Should send to content node 0
-    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
-    CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE, _sender.commands[0]->getType());
-    auto& fwd_cmd = dynamic_cast<api::RemoveCommand&>(*_sender.commands[0]);
+    ASSERT_EQ(1, _sender.commands().size());
+    ASSERT_EQ(api::MessageType::REMOVE, _sender.command(0)->getType());
+    auto& fwd_cmd = dynamic_cast<api::RemoveCommand&>(*_sender.command(0));
     auto reply = fwd_cmd.makeReply();
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY));
     _distributor->handleReply(std::shared_ptr<api::StorageReply>(std::move(reply)));
 
     auto& node_info = _distributor->getPendingMessageTracker().getNodeInfo();
 
-    CPPUNIT_ASSERT(node_info.isBusy(0));
+    EXPECT_TRUE(node_info.isBusy(0));
     getClock().addSecondsToTime(99);
-    CPPUNIT_ASSERT(node_info.isBusy(0));
+    EXPECT_TRUE(node_info.isBusy(0));
     getClock().addSecondsToTime(2);
-    CPPUNIT_ASSERT(!node_info.isBusy(0));
+    EXPECT_FALSE(node_info.isBusy(0));
 }
 
-void Distributor_Test::external_client_requests_are_handled_individually_in_priority_order() {
+TEST_F(DistributorTest, external_client_requests_are_handled_individually_in_priority_order) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
 
@@ -950,18 +811,18 @@ void Distributor_Test::external_client_requests_are_handled_individually_in_prio
     // For each tick, a priority-order client request is processed and sent off.
     for (size_t i = 1; i <= priorities.size(); ++i) {
         tickDistributorNTimes(1);
-        CPPUNIT_ASSERT_EQUAL(size_t(i), _sender.commands.size());
+        ASSERT_EQ(i, _sender.commands().size());
     }
 
     std::vector<int> expected({0, 10, 40, 50, 255});
     std::vector<int> actual;
-    for (auto& msg : _sender.commands) {
+    for (auto& msg : _sender.commands()) {
         actual.emplace_back(static_cast<int>(msg->getPriority()));
     }
-    CPPUNIT_ASSERT_EQUAL(expected, actual);
+    EXPECT_THAT(actual, ContainerEq(expected));
 }
 
-void Distributor_Test::internal_messages_are_started_in_fifo_order_batch() {
+TEST_F(DistributorTest, internal_messages_are_started_in_fifo_order_batch) {
     // To test internal request ordering, we use NotifyBucketChangeCommand
     // for the reason that it explicitly updates the bucket database for
     // each individual invocation.
@@ -980,16 +841,16 @@ void Distributor_Test::internal_messages_are_started_in_fifo_order_batch() {
 
     // Doing a single tick should process all internal requests in one batch
     tickDistributorNTimes(1);
-    CPPUNIT_ASSERT_EQUAL(size_t(5), _sender.replies.size());
+    ASSERT_EQ(5, _sender.replies().size());
 
     // The bucket info for priority 1 (last FIFO-order change command received, but
     // highest priority) should be the end-state of the bucket database, _not_ that
     // of lowest priority 255.
     BucketDatabase::Entry e(getBucket(bucket));
-    CPPUNIT_ASSERT_EQUAL(api::BucketInfo(1, 1, 1), e.getBucketInfo().getNode(0)->getBucketInfo());
+    EXPECT_EQ(api::BucketInfo(1, 1, 1), e.getBucketInfo().getNode(0)->getBucketInfo());
 }
 
-void Distributor_Test::closing_aborts_priority_queued_client_requests() {
+TEST_F(DistributorTest, closing_aborts_priority_queued_client_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
     addNodesToBucketDB(bucket, "0=1/1/1/t");
@@ -1003,10 +864,9 @@ void Distributor_Test::closing_aborts_priority_queued_client_requests() {
     tickDistributorNTimes(1);
     // Closing should trigger 1 abort via startet GetOperation and 9 aborts from pri queue
     _distributor->close();
-    CPPUNIT_ASSERT_EQUAL(size_t(10), _sender.replies.size());
-    for (auto& msg : _sender.replies) {
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode::ABORTED,
-                             dynamic_cast<api::StorageReply&>(*msg).getResult().getResult());
+    ASSERT_EQ(10, _sender.replies().size());
+    for (auto& msg : _sender.replies()) {
+        EXPECT_EQ(api::ReturnCode::ABORTED, dynamic_cast<api::StorageReply&>(*msg).getResult().getResult());
     }
 }
 
@@ -1016,19 +876,19 @@ void assert_invalid_stats_for_all_spaces(
         const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
         uint16_t node_index) {
     auto stats_iter = stats.find(node_index);
-    CPPUNIT_ASSERT(stats_iter != stats.cend());
-    CPPUNIT_ASSERT_EQUAL(size_t(2), stats_iter->second.size());
+    ASSERT_TRUE(stats_iter != stats.cend());
+    ASSERT_EQ(2, stats_iter->second.size());
     auto space_iter = stats_iter->second.find(document::FixedBucketSpaces::default_space_name());
-    CPPUNIT_ASSERT(space_iter != stats_iter->second.cend());
-    CPPUNIT_ASSERT(!space_iter->second.valid());
+    ASSERT_TRUE(space_iter != stats_iter->second.cend());
+    ASSERT_FALSE(space_iter->second.valid());
     space_iter = stats_iter->second.find(document::FixedBucketSpaces::global_space_name());
-    CPPUNIT_ASSERT(space_iter != stats_iter->second.cend());
-    CPPUNIT_ASSERT(!space_iter->second.valid());
+    ASSERT_TRUE(space_iter != stats_iter->second.cend());
+    ASSERT_FALSE(space_iter->second.valid());
 }
 
 }
 
-void Distributor_Test::entering_recovery_mode_resets_bucket_space_stats() {
+TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
@@ -1038,80 +898,80 @@ void Distributor_Test::entering_recovery_mode_resets_bucket_space_stats() {
     tickDistributorNTimes(5); // 1/3rds into second round through database
 
     enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
-    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
     // Bucket space stats should now be invalid per space per node, pending stats
     // from state version 2. Exposing stats from version 1 risks reporting stale
     // information back to the cluster controller.
-    const auto stats = _distributor->getBucketSpacesStats();
-    CPPUNIT_ASSERT_EQUAL(size_t(2), stats.size());
+    const auto stats = distributor_bucket_spaces_stats();
+    ASSERT_EQ(2, stats.size());
 
     assert_invalid_stats_for_all_spaces(stats, 0);
     assert_invalid_stats_for_all_spaces(stats, 2);
 }
 
-void Distributor_Test::leaving_recovery_mode_immediately_sends_getnodestate_replies() {
+TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     // Should not send explicit replies during init stage
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    ASSERT_EQ(0, explicit_node_state_reply_send_invocations());
     // Add a couple of buckets so we have something to iterate over
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
 
     enableDistributorClusterState("version:2 distributor:1 storage:3 .1.s:d");
-    CPPUNIT_ASSERT(_distributor->isInRecoveryMode());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_EQ(0, explicit_node_state_reply_send_invocations());
     tickDistributorNTimes(1); // DB round not yet complete
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(0, explicit_node_state_reply_send_invocations());
     tickDistributorNTimes(2); // DB round complete after 2nd bucket + "scan done" discovery tick
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
-    CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
+    EXPECT_FALSE(_distributor->isInRecoveryMode());
     // Now out of recovery mode, subsequent round completions should not send replies
     tickDistributorNTimes(10);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
 }
 
-void Distributor_Test::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
+void DistributorTest::do_test_pending_merge_getnodestate_reply_edge(BucketSpace space) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
+    EXPECT_TRUE(_distributor->isInRecoveryMode());
     // 2 buckets with missing replicas triggering merge pending stats
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a");
     addNodesToBucketDB(Bucket(space, BucketId(16, 2)), "0=1/1/1/t/a");
     tickDistributorNTimes(3);
-    CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
+    EXPECT_FALSE(_distributor->isInRecoveryMode());
     const auto space_name = FixedBucketSpaces::to_string(space);
     assertBucketSpaceStats(2, 0, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    // First completed scan sends off merge stats et al to cluster controller
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
 
     // Edge not triggered when 1 bucket with missing replica left
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a,1=1/1/1/t");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(1, 1, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(1, explicit_node_state_reply_send_invocations());
 
     // Edge triggered when no more buckets with requiring merge
     addNodesToBucketDB(Bucket(space, BucketId(16, 2)), "0=1/1/1/t/a,1=1/1/1/t");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(0, 2, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
 
     // Should only send when edge happens, not in subsequent DB iterations
     tickDistributorNTimes(10);
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
 
     // Going back to merges pending should _not_ send a getnodestate reply (at least for now)
     addNodesToBucketDB(Bucket(space, BucketId(16, 1)), "0=1/1/1/t/a");
     tickDistributorNTimes(3);
     assertBucketSpaceStats(1, 1, 1, space_name, _distributor->getBucketSpacesStats());
-    CPPUNIT_ASSERT_EQUAL(size_t(1), explicit_node_state_reply_send_invocations());
+    EXPECT_EQ(2, explicit_node_state_reply_send_invocations());
 }
 
-void Distributor_Test::pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies() {
+TEST_F(DistributorTest, pending_to_no_pending_default_merges_edge_immediately_sends_getnodestate_replies) {
     do_test_pending_merge_getnodestate_reply_edge(FixedBucketSpaces::default_space());
 }
 
-void Distributor_Test::pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies() {
+TEST_F(DistributorTest, pending_to_no_pending_global_merges_edge_immediately_sends_getnodestate_replies) {
     do_test_pending_merge_getnodestate_reply_edge(FixedBucketSpaces::global_space());
-}
-
 }
 
 }

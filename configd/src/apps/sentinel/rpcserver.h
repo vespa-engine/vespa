@@ -13,7 +13,7 @@ namespace config::sentinel {
 class RpcServer
 {
 private:
-    FRT_Supervisor _supervisor;
+    fnet::frt::StandaloneFRT _server;
     RPCHooks _rpcHooks;
     int _port;
 

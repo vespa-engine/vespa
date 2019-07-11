@@ -2,7 +2,7 @@
 package com.yahoo.jrt;
 
 
-import java.util.Iterator;
+import java.util.Collection;
 
 
 class MandatoryMethods {
@@ -14,21 +14,19 @@ class MandatoryMethods {
         //---------------------------------------------------------------------
         Method m;
         //---------------------------------------------------------------------
-        m = new Method("frt.rpc.ping", "", "", this, "ping");
+        m = new Method("frt.rpc.ping", "", "", this::ping);
         m.methodDesc("Method that may be used to "
                      + "check if the server is online");
         parent.addMethod(m);
         //---------------------------------------------------------------------
-        m = new Method("frt.rpc.getMethodList", "", "SSS", this,
-                       "getMethodList");
+        m = new Method("frt.rpc.getMethodList", "", "SSS", this::getMethodList);
         m.methodDesc("Obtain a list of all available methods");
         m.returnDesc(0, "names",  "Method names");
         m.returnDesc(1, "params", "Method parameter types");
         m.returnDesc(2, "return", "Method return types");
         parent.addMethod(m);
         //---------------------------------------------------------------------
-        m = new Method("frt.rpc.getMethodInfo", "s", "sssSSSS", this,
-                       "getMethodInfo");
+        m = new Method("frt.rpc.getMethodInfo", "s", "sssSSSS", this::getMethodInfo);
         m.methodDesc("Obtain detailed information about a single method");
         m.paramDesc (0, "methodName",  "The method we want information about");
         m.returnDesc(0, "desc",        "Description of what the method does");
@@ -42,20 +40,19 @@ class MandatoryMethods {
         //---------------------------------------------------------------------
     }
 
-    public void ping(Request req) {
+    private void ping(Request req) {
         // no code needed :)
     }
 
-    public void getMethodList(Request req) {
-        int cnt = parent.methodMap().size();
+    private void getMethodList(Request req) {
+        Collection<Method> methods = parent.methodMap().values();
+        int cnt = methods.size();
         String[] ret0_names  = new String[cnt];
         String[] ret1_params = new String[cnt];
         String[] ret2_return = new String[cnt];
 
         int i = 0;
-        Iterator<Method> itr = parent.methodMap().values().iterator();
-        while (itr.hasNext()) {
-            Method m = itr.next();
+        for (Method m: methods) {
             ret0_names[i]  = m.name();
             ret1_params[i] = m.paramTypes();
             ret2_return[i] = m.returnTypes();
@@ -66,7 +63,7 @@ class MandatoryMethods {
         req.returnValues().add(new StringArray(ret2_return));
     }
 
-    public void getMethodInfo(Request req) {
+    private void getMethodInfo(Request req) {
         Method method = parent.methodMap().get(req.parameters().get(0).asString());
         if (method == null) {
             req.setError(ErrorCode.METHOD_FAILED, "No Such Method");

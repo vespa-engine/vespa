@@ -1,15 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.jrt.tool.RpcInvoker;
+import org.junit.After;
+import org.junit.Before;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-
-import com.yahoo.jrt.tool.RpcInvoker;
-import org.junit.After;
-import org.junit.Before;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,12 +28,12 @@ public class InvokeSyncTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("concat", "ss", "s", this, "rpc_concat")
+        server.addMethod(new Method("concat", "ss", "s", this::rpc_concat)
                          .methodDesc("Concatenate 2 strings")
                          .paramDesc(0, "str1", "a string")
                          .paramDesc(1, "str2", "another string")
                          .returnDesc(0, "ret", "str1 followed by str2"));
-        server.addMethod(new Method("alltypes", "bhilfds", "s", this, "rpc_alltypes")
+        server.addMethod(new Method("alltypes", "bhilfds", "s", this::rpc_alltypes)
                           .methodDesc("Method taking all types of params"));
     }
 
@@ -46,14 +46,14 @@ public class InvokeSyncTest {
         server.transport().shutdown().join();
     }
 
-    public void rpc_concat(Request req) {
+    private void rpc_concat(Request req) {
         req.returnValues().add(new StringValue(req.parameters()
                                                .get(0).asString() +
                                                req.parameters()
                                                .get(1).asString()));
     }
 
-    public void rpc_alltypes(Request req) {
+    private void rpc_alltypes(Request req) {
         req.returnValues().add(new StringValue("This was alltypes. The string param was: "+req.parameters().get(6).asString()));
     }
     

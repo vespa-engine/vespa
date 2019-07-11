@@ -1,73 +1,43 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/visiting/memory_bounded_trace.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+using namespace ::testing;
 
 namespace storage {
 
-class MemoryBoundedTraceTest : public CppUnit::TestFixture
-{
-    CPPUNIT_TEST_SUITE(MemoryBoundedTraceTest);
-    CPPUNIT_TEST(noMemoryReportedUsedWhenEmpty);
-    CPPUNIT_TEST(memoryUsedIsStringLengthForLeafNode);
-    CPPUNIT_TEST(memoryUsedIsAccumulatedRecursivelyForNonLeafNodes);
-    CPPUNIT_TEST(traceNodesCanBeMovedAndImplicitlyCleared);
-    CPPUNIT_TEST(movedTraceTreeIsMarkedAsStrict);
-    CPPUNIT_TEST(canNotAddMoreNodesWhenMemoryUsedExceedsUpperBound);
-    CPPUNIT_TEST(movedTreeIncludesStatsNodeWhenNodesOmitted);
-    CPPUNIT_TEST_SUITE_END();
-
-public:
-    void noMemoryReportedUsedWhenEmpty();
-    void memoryUsedIsStringLengthForLeafNode();
-    void memoryUsedIsAccumulatedRecursivelyForNonLeafNodes();
-    void traceNodesCanBeMovedAndImplicitlyCleared();
-    void movedTraceTreeIsMarkedAsStrict();
-    void canNotAddMoreNodesWhenMemoryUsedExceedsUpperBound();
-    void movedTreeIncludesStatsNodeWhenNodesOmitted();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(MemoryBoundedTraceTest);
-
-void
-MemoryBoundedTraceTest::noMemoryReportedUsedWhenEmpty()
-{
+TEST(MemoryBoundedTraceTest, no_memory_reported_used_when_empty) {
     MemoryBoundedTrace trace(100);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), trace.getApproxMemoryUsed());
+    EXPECT_EQ(0, trace.getApproxMemoryUsed());
 }
 
-void
-MemoryBoundedTraceTest::memoryUsedIsStringLengthForLeafNode()
-{
+TEST(MemoryBoundedTraceTest, memory_used_is_string_length_for_leaf_node) {
     MemoryBoundedTrace trace(100);
-    CPPUNIT_ASSERT(trace.add(mbus::TraceNode("hello world", 0)));
-    CPPUNIT_ASSERT_EQUAL(size_t(11), trace.getApproxMemoryUsed());
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_EQ(11, trace.getApproxMemoryUsed());
 }
 
-void
-MemoryBoundedTraceTest::memoryUsedIsAccumulatedRecursivelyForNonLeafNodes()
-{
+TEST(MemoryBoundedTraceTest, memory_used_is_accumulated_recursively_for_non_leaf_nodes) {
     MemoryBoundedTrace trace(100);
     mbus::TraceNode innerNode;
     innerNode.addChild("hello world");
     innerNode.addChild("goodbye moon");
-    CPPUNIT_ASSERT(trace.add(innerNode));
-    CPPUNIT_ASSERT_EQUAL(size_t(23), trace.getApproxMemoryUsed());
+    EXPECT_TRUE(trace.add(innerNode));
+    EXPECT_EQ(23, trace.getApproxMemoryUsed());
 }
 
-void
-MemoryBoundedTraceTest::traceNodesCanBeMovedAndImplicitlyCleared()
-{
+TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
     MemoryBoundedTrace trace(100);
-    CPPUNIT_ASSERT(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
     mbus::TraceNode target;
     trace.moveTraceTo(target);
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1), target.getNumChildren());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), trace.getApproxMemoryUsed());
+    EXPECT_EQ(1, target.getNumChildren());
+    EXPECT_EQ(0, trace.getApproxMemoryUsed());
     
     mbus::TraceNode emptinessCheck;
     trace.moveTraceTo(emptinessCheck);
-    CPPUNIT_ASSERT_EQUAL(uint32_t(0), emptinessCheck.getNumChildren());
+    EXPECT_EQ(0, emptinessCheck.getNumChildren());
 }
 
 /**
@@ -77,54 +47,46 @@ MemoryBoundedTraceTest::traceNodesCanBeMovedAndImplicitlyCleared()
  * best of my knowledge, since the internal backing data structure is an
  * ordered vector anyhow.
  */
-void
-MemoryBoundedTraceTest::movedTraceTreeIsMarkedAsStrict()
-{
+TEST(MemoryBoundedTraceTest, moved_trace_tree_is_marked_as_strict) {
     MemoryBoundedTrace trace(100);
-    CPPUNIT_ASSERT(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
     mbus::TraceNode target;
     trace.moveTraceTo(target);
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1), target.getNumChildren());
-    CPPUNIT_ASSERT(target.getChild(0).isStrict());
+    EXPECT_EQ(1, target.getNumChildren());
+    EXPECT_TRUE(target.getChild(0).isStrict());
 }
 
-void
-MemoryBoundedTraceTest::canNotAddMoreNodesWhenMemoryUsedExceedsUpperBound()
-{
+TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upper_bound) {
     // Note: we allow one complete node tree to exceed the bounds, but as soon
     // as the bound is exceeded no further nodes can be added.
     MemoryBoundedTrace trace(10);
-    CPPUNIT_ASSERT(trace.add(mbus::TraceNode("hello world", 0)));
-    CPPUNIT_ASSERT_EQUAL(size_t(11), trace.getApproxMemoryUsed());
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
-    CPPUNIT_ASSERT(!trace.add(mbus::TraceNode("the quick red fox runs across "
-                                              "the freeway", 0)));
-    CPPUNIT_ASSERT_EQUAL(size_t(11), trace.getApproxMemoryUsed());
+    EXPECT_FALSE(trace.add(mbus::TraceNode("the quick red fox runs across "
+                                           "the freeway", 0)));
+    EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
     mbus::TraceNode target;
     trace.moveTraceTo(target);
     // Twice nested node (root -> added trace tree -> leaf with txt).
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1), target.getNumChildren());
-    CPPUNIT_ASSERT(target.getChild(0).getNumChildren() >= 1);
-    CPPUNIT_ASSERT_EQUAL(vespalib::string("hello world"),
-                         target.getChild(0).getChild(0).getNote());
+    EXPECT_EQ(1, target.getNumChildren());
+    EXPECT_GE(target.getChild(0).getNumChildren(), 1);
+    EXPECT_EQ("hello world", target.getChild(0).getChild(0).getNote());
 }
 
-void
-MemoryBoundedTraceTest::movedTreeIncludesStatsNodeWhenNodesOmitted()
-{
+TEST(MemoryBoundedTraceTest, moved_tree_includes_stats_node_when_nodes_omitted) {
     MemoryBoundedTrace trace(5);
-    CPPUNIT_ASSERT(trace.add(mbus::TraceNode("abcdef", 0)));
-    CPPUNIT_ASSERT(!trace.add(mbus::TraceNode("ghijkjlmn", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("abcdef", 0)));
+    EXPECT_FALSE(trace.add(mbus::TraceNode("ghijkjlmn", 0)));
 
     mbus::TraceNode target;
     trace.moveTraceTo(target);
-    CPPUNIT_ASSERT_EQUAL(uint32_t(1), target.getNumChildren());
-    CPPUNIT_ASSERT_EQUAL(uint32_t(2), target.getChild(0).getNumChildren());
+    EXPECT_EQ(1, target.getNumChildren());
+    EXPECT_EQ(2, target.getChild(0).getNumChildren());
     vespalib::string expected("Trace too large; omitted 1 subsequent trace "
                               "trees containing a total of 9 bytes");
-    CPPUNIT_ASSERT_EQUAL(expected, target.getChild(0).getChild(1).getNote());
+    EXPECT_EQ(expected, target.getChild(0).getChild(1).getNote());
 }
 
 } // storage
-

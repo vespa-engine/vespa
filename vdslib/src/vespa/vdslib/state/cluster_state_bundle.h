@@ -33,6 +33,12 @@ public:
     ClusterStateBundle(const ClusterState& baselineClusterState,
                        BucketSpaceStateMapping derivedBucketSpaceStates,
                        bool deferredActivation);
+
+    ClusterStateBundle(const ClusterStateBundle&);
+    ClusterStateBundle& operator=(const ClusterStateBundle&);
+    ClusterStateBundle(ClusterStateBundle&&);
+    ClusterStateBundle& operator=(ClusterStateBundle&&);
+
     ~ClusterStateBundle();
     const std::shared_ptr<const ClusterState> &getBaselineClusterState() const;
     const std::shared_ptr<const ClusterState> &getDerivedClusterState(document::BucketSpace bucketSpace) const;

@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -9,8 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
  * This represents a system-level application in hosted Vespa. All infrastructure nodes in a hosted Vespa zones are
@@ -21,25 +21,18 @@ import java.util.stream.Collectors;
 public enum SystemApplication {
 
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
+    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
-    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config, configServerHost),
-    zone(ApplicationId.from("hosted-vespa", "routing", "default"), Set.of(NodeType.proxy, NodeType.host),
-         configServerHost, proxyHost, configServer);
+    proxy(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer),
+    tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host);
 
     private final ApplicationId id;
-    private final Set<NodeType> nodeTypes;
+    private final NodeType nodeType;
     private final List<SystemApplication> dependencies;
 
     SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... dependencies) {
-        this(id, Set.of(nodeType), dependencies);
-    }
-
-    SystemApplication(ApplicationId id, Set<NodeType> nodeTypes, SystemApplication... dependencies) {
-        if (nodeTypes.isEmpty()) {
-            throw new IllegalArgumentException("Node types must be non-empty");
-        }
         this.id = id;
-        this.nodeTypes = Set.copyOf(nodeTypes);
+        this.nodeType = nodeType;
         this.dependencies = List.of(dependencies);
     }
 
@@ -47,9 +40,9 @@ public enum SystemApplication {
         return id;
     }
 
-    /** The node type(s) that are implicitly allocated to this */
-    public Set<NodeType> nodeTypes() {
-        return nodeTypes;
+    /** The node type that is implicitly allocated to this */
+    public NodeType nodeType() {
+        return nodeType;
     }
 
     /** Returns the system applications that should upgrade before this */
@@ -57,22 +50,22 @@ public enum SystemApplication {
 
     /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
-        return this == zone;
+        return this == proxy;
     }
 
     /** Returns whether config for this application has converged in given zone */
-    public boolean configConvergedIn(ZoneId zone, Controller controller) {
+    public boolean configConvergedIn(ZoneId zone, Controller controller, Optional<Version> version) {
         if (!hasApplicationPackage()) {
             return true;
         }
-        return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
+        return controller.configServer().serviceConvergence(new DeploymentId(id(), zone), version)
                          .map(ServiceConvergence::converged)
                          .orElse(false);
     }
 
     /** Returns the node types of this that should receive OS upgrades */
-    public Set<NodeType> nodeTypesWithUpgradableOs() {
-        return nodeTypes().stream().filter(NodeType::isDockerHost).collect(Collectors.toSet());
+    public boolean isEligibleForOsUpgrades() {
+        return nodeType.isDockerHost();
     }
 
     /** All known system applications */
@@ -82,7 +75,7 @@ public enum SystemApplication {
 
     @Override
     public String toString() {
-        return String.format("system application %s of type %s", id, nodeTypes);
+        return String.format("system application %s of type %s", id, nodeType);
     }
 
 }

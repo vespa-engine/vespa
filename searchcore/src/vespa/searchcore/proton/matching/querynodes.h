@@ -40,13 +40,14 @@ public:
             return FieldSpec(field_name, getFieldId(),
                              getHandle(), filter_field);
         }
-        search::fef::TermFieldHandle getHandle() const override;
+        using SimpleTermFieldData::getHandle;
+        search::fef::TermFieldHandle getHandle(search::fef::MatchDataDetails requested_details) const override;
     };
 
 private:
     std::vector<FieldEntry> _fields;
 
-    void setDocumentFrequency(double docFreq);
+    void propagate_document_frequency(uint32_t matching_count_doc, uint32_t total_doc_count);
 
 protected:
     void resolve(const ViewResolver &resolver,

@@ -21,8 +21,7 @@ import static org.junit.Assert.*;
 public class ProxyServerTest {
 
     private final MemoryCache memoryCache = new MemoryCache();
-    private MockClientUpdater clientUpdater = new MockClientUpdater();
-    private final MockConfigSource source = new MockConfigSource(clientUpdater);
+    private final MockConfigSource source = new MockConfigSource();
     private MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
     private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
     private ProxyServer proxy;
@@ -224,25 +223,6 @@ public class ProxyServerTest {
         RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
         assertEquals(previousGeneration + 1, res2.getGeneration());
         assertTrue(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
-    }
-
-    @Test
-    public void testReconfigurationAsClient() {
-        long generation = 1;
-        RawConfig fooConfig = ConfigTester.fooConfig;
-        source.put(fooConfig.getKey(), fooConfig);
-
-        clientUpdater.waitForConfigGeneration(fooConfig.getKey(), generation);
-        assertThat(clientUpdater.getLastConfig(), is(fooConfig));
-
-        // Update payload in config
-        generation++;
-        final ConfigPayload payload = ConfigTester.createConfigPayload("bar", "value2");
-        RawConfig fooConfig2 = createConfigWithNextConfigGeneration(fooConfig, 0, Payload.from(payload));
-        source.put(fooConfig2.getKey(), fooConfig2);
-
-        clientUpdater.waitForConfigGeneration(fooConfig2.getKey(), generation);
-        assertFalse(clientUpdater.getLastConfig().equals(fooConfig));
     }
 
     @Test

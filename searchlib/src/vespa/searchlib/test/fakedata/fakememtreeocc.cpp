@@ -2,14 +2,14 @@
 
 #include "fakememtreeocc.h"
 #include "fpfactory.h"
-#include <vespa/searchlib/btree/btreeiterator.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
-#include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreenodestore.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fakememtreeocc");
@@ -129,10 +129,10 @@ search::queryeval::SearchIterator *
 FakeMemTreeOcc::
 createIterator(const fef::TermFieldMatchDataArray &matchData) const
 {
-    return new search::memoryindex::PostingIterator(_tree.begin(_allocator),
+    return memoryindex::make_search_iterator<false>(_tree.begin(_allocator),
                                                     _mgr._featureStore,
                                                     _packedIndex,
-                                                    matchData);
+                                                    matchData).release();
 }
 
 
@@ -261,13 +261,13 @@ FakeMemTreeOccMgr::flush()
         lastWord = wordIdx;
         if (i->getRemove()) {
             if (itr.valid() && itr.getKey() == docId) {
-                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData()));
+                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData().get_features()));
                 _featureSizes[wordIdx] -= RefType::align((bits + 7) / 8) * 8;
                 tree.remove(itr);
             }
         } else {
             if (!itr.valid() || docId < itr.getKey()) {
-                tree.insert(itr, docId, i->getFeatureRef().ref());
+                tree.insert(itr, docId, PostingListEntryType(i->getFeatureRef(), 0, 1));
             }
         }
     }

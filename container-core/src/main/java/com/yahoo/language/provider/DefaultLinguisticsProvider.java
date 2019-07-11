@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.provider;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
-import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.opennlp.OpenNlpLinguistics;
 
 /**
  * Provides the default linguistics implementation if no linguistics component has been explicitly configured
@@ -12,16 +14,17 @@ import com.yahoo.language.Linguistics;
  *
  * @author bratseth
  */
+@SuppressWarnings("unused") // Injected
 public class DefaultLinguisticsProvider implements Provider<Linguistics> {
 
-    private final Linguistics linguistics;
+    // Use lazy initialization to avoid expensive (memory-wise) instantiation f
+    private volatile Supplier<Linguistics> linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
 
-    @SuppressWarnings("deprecation")
     @Inject
-    public DefaultLinguisticsProvider() { linguistics = new OpenNlpLinguistics(); }
+    public DefaultLinguisticsProvider() { }
 
     @Override
-    public Linguistics get() { return linguistics; }
+    public Linguistics get() { return linguisticsSupplier.get(); }
 
     @Override
     public void deconstruct() {}

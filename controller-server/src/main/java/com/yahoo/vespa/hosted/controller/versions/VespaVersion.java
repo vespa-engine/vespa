@@ -27,12 +27,13 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private final Instant committedAt;
     private final boolean isControllerVersion;
     private final boolean isSystemVersion;
+    private final boolean isReleased;
     private final DeploymentStatistics statistics;
     private final ImmutableSet<HostName> systemApplicationHostnames;
     private final Confidence confidence;
 
     public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
-                        boolean isControllerVersion, boolean isSystemVersion,
+                        boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
                         Collection<HostName> systemApplicationHostnames,
                         Confidence confidence) {
         this.statistics = statistics;
@@ -40,6 +41,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         this.committedAt = committedAt;
         this.isControllerVersion = isControllerVersion;
         this.isSystemVersion = isSystemVersion;
+        this.isReleased = isReleased;
         this.systemApplicationHostnames = ImmutableSet.copyOf(systemApplicationHostnames);
         this.confidence = confidence;
     }
@@ -101,6 +103,9 @@ public class VespaVersion implements Comparable<VespaVersion> {
      * all config servers are not yet upgraded to the version of the controllers.
      */
     public boolean isSystemVersion() { return isSystemVersion; }
+
+    /** Returns whether the artifacts of this release are available in the configured maven repository. */
+    public boolean isReleased() { return isReleased; }
 
     /** Returns the hosts allocated to system applications (across all zones) which are currently of this version */
     public Set<HostName> systemApplicationHostnames() { return systemApplicationHostnames; }

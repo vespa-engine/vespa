@@ -14,22 +14,26 @@ import com.yahoo.log.LogLevel;
  *
  * @author Bjorn Borud
  */
-public class LogWriter extends Writer {
+public class LogWriter {
     private static final Logger log = Logger.getLogger(LogWriter.class.getName());
 
     private long bytesWritten = 0;
-    private int generation = 0;
+    private int generation;
     private int maxSize = 20 * (1024 * 1024);
     private final int resumeLimit = 95;
     private final int resumeLimitSize = (maxSize * resumeLimit / 100);
     private File currentFile;
     private Writer writer;
     private final String prefix;
+    private final FilesArchived archive;
 
-    public LogWriter(String prefix, int maxSize) throws IOException {
+    public LogWriter(String prefix, int maxSize, FilesArchived archive) throws IOException {
         this.prefix = prefix;
         this.maxSize = maxSize;
+        this.archive = archive;
+        this.generation = archive.highestGen(prefix);
         writer = nextWriter();
+        archive.maintenance();
     }
 
     /**
@@ -42,11 +46,7 @@ public class LogWriter extends Writer {
      * </UL>
      */
     private Writer nextWriter() throws IOException {
-
-        if (writer != null) {
-            writer.close();
-        }
-
+        close();
         int maxAttempts = 1000;
         while (maxAttempts-- > 0) {
             String name = prefix + "-" + generation++;
@@ -96,22 +96,10 @@ public class LogWriter extends Writer {
         throw new RuntimeException("Unable to create next log file");
     }
 
-    /**
-     * Note that this method should not be used directly since
-     * that would circumvent rotation when it grows past its
-     * maximum size.  use the one that takes String instead.
-     * <p>
-     * <em>
-     * (This is a class which is only used internally anyway)
-     * </em>
-     */
-    public void write(char[] cbuff, int offset, int len) throws IOException {
-        throw new RuntimeException("This method should not be used");
-    }
-
     public void write(String str) throws IOException {
         if (writer == null) {
             writer = nextWriter();
+            archive.maintenance();
         }
 
         bytesWritten += str.length();
@@ -122,19 +110,20 @@ public class LogWriter extends Writer {
                              + currentFile.getAbsolutePath()
                              + "' full, rotating");
             writer = nextWriter();
+            archive.maintenance();
         }
     }
 
 
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         if (writer != null) {
             writer.flush();
         }
     }
 
-    public void close() throws IOException {
-        flush();
+    public synchronized void close() throws IOException {
         if (writer != null) {
+            writer.flush();
             writer.close();
             writer = null;
         }

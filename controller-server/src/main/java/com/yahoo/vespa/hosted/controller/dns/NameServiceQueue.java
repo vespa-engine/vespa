@@ -72,8 +72,9 @@ public class NameServiceQueue {
         if (requests.isEmpty()) return this;
 
         var queue = new NameServiceQueue(requests);
-        for (var i = 0; i < n && !queue.requests.isEmpty(); i++) {
+        for (int i = 0; i < n && !queue.requests.isEmpty(); i++) {
             var request = queue.requests.peek();
+            log.log(LogLevel.INFO, "Dispatching name service request: " + request);
             try {
                 request.dispatchTo(nameService);
                 queue.requests.poll();
@@ -97,11 +98,13 @@ public class NameServiceQueue {
 
     /** Priority of a request added to this */
     public enum Priority {
+
         /** Default priority. Request will be delivered in FIFO order */
         normal,
 
-        /**Request is queued before others. Useful for code that needs to act on effects of a request */
+        /** Request is queued first. Useful for code that needs to act on effects of a request */
         high
+
     }
 
 }

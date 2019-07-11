@@ -9,16 +9,16 @@ public:
 
   void GetReq(FRT_RPCRequest **req, FRT_Supervisor *supervisor)
   {
-    if ((*req) != NULL)
+    if ((*req) != nullptr)
       (*req)->SubRef();
     (*req) = supervisor->AllocRPCRequest();
   }
 
   void FreeReqs(FRT_RPCRequest *r1, FRT_RPCRequest *r2)
   {
-    if (r1 != NULL)
+    if (r1 != nullptr)
       r1->SubRef();
-    if (r2 != NULL)
+    if (r2 != nullptr)
       r2->SubRef();
   }
 
@@ -72,11 +72,11 @@ public:
     }
 
     bool verbose = (_argc > 2 && strcmp(_argv[2], "verbose") == 0);
-    FRT_Supervisor supervisor;
+    fnet::frt::StandaloneFRT server;
+    FRT_Supervisor & supervisor = server.supervisor();
     FRT_Target     *target = supervisor.GetTarget(_argv[1]);
-    FRT_RPCRequest *m_list = NULL;
-    FRT_RPCRequest *info   = NULL;
-    supervisor.Start();
+    FRT_RPCRequest *m_list = nullptr;
+    FRT_RPCRequest *info   = nullptr;
 
     for (int i = 0; i < 50; i++) {
         GetReq(&info, &supervisor);
@@ -93,7 +93,6 @@ public:
         fprintf(stderr, "Error talking to %s\n", _argv[1]);
         info->Print();
         FreeReqs(m_list, info);
-        supervisor.ShutDown(true);
         return 1;
     }
 
@@ -131,7 +130,6 @@ public:
     }
     FreeReqs(m_list, info);
     target->SubRef();
-    supervisor.ShutDown(true);
     return 0;
   }
 };

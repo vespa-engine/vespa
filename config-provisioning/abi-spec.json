@@ -8,8 +8,6 @@
     "methods": [
       "public static com.yahoo.config.provision.AllocatedHosts withHosts(java.util.Set)",
       "public java.util.Set getHosts()",
-      "public byte[] toJson()",
-      "public static com.yahoo.config.provision.AllocatedHosts fromJson(byte[], java.util.Optional)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -141,10 +139,22 @@
       "public com.yahoo.config.provision.NodeType type()",
       "public java.lang.String toString()",
       "public static com.yahoo.config.provision.Capacity fromNodeCount(int)",
+      "public static com.yahoo.config.provision.Capacity fromCount(int, com.yahoo.config.provision.NodeResources)",
       "public static com.yahoo.config.provision.Capacity fromCount(int, com.yahoo.config.provision.NodeResources, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromNodeCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromRequiredNodeType(com.yahoo.config.provision.NodeType)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.CertificateNotReadyException": {
+    "superClass": "com.yahoo.config.provision.TransientException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
     ],
     "fields": []
   },
@@ -259,13 +269,10 @@
       "public com.yahoo.component.Version vespaVersion()",
       "public java.util.Optional group()",
       "public boolean isExclusive()",
-      "public java.util.Set rotations()",
       "public com.yahoo.config.provision.ClusterSpec with(java.util.Optional)",
       "public com.yahoo.config.provision.ClusterSpec exclusive(boolean)",
       "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean)",
-      "public static com.yahoo.config.provision.ClusterSpec request(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.component.Version, boolean, java.util.Set)",
       "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean)",
-      "public static com.yahoo.config.provision.ClusterSpec from(com.yahoo.config.provision.ClusterSpec$Type, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ClusterSpec$Group, com.yahoo.component.Version, boolean, java.util.Set)",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -384,25 +391,21 @@
       "public java.lang.String name()",
       "public int cost()",
       "public boolean isStock()",
+      "public boolean isConfigured()",
+      "public com.yahoo.config.provision.NodeResources resources()",
       "public double getMinMainMemoryAvailableGb()",
       "public double getMinDiskAvailableGb()",
       "public boolean hasFastDisk()",
       "public double getBandwidth()",
       "public double getMinCpuCores()",
-      "public java.lang.String getDescription()",
       "public boolean isRetired()",
       "public com.yahoo.config.provision.Flavor$Type getType()",
       "public boolean isDocker()",
-      "public int getIdealHeadroom()",
       "public java.lang.String canonicalName()",
       "public boolean isCanonical()",
       "public java.util.List replaces()",
       "public boolean satisfies(com.yahoo.config.provision.Flavor)",
-      "public boolean hasAtLeast(com.yahoo.config.provision.NodeResources)",
       "public void freeze()",
-      "public boolean isLargerThan(com.yahoo.config.provision.Flavor)",
-      "public boolean isConfigured()",
-      "public com.yahoo.config.provision.NodeResources resources()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
@@ -501,7 +504,7 @@
     ],
     "methods": [
       "public abstract java.util.Optional getDeployment(com.yahoo.config.provision.ApplicationId)",
-      "public abstract java.util.List getSupportedInfraApplications()"
+      "public abstract java.util.Map getSupportedInfraDeployments()"
     ],
     "fields": []
   },
@@ -536,7 +539,9 @@
     "methods": [
       "public void <init>(int, java.lang.String, java.lang.String, java.lang.String)",
       "public java.lang.String key()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields": [
       "public final int port",
@@ -554,20 +559,9 @@
     "methods": [
       "public void <init>(java.util.Collection)",
       "public java.util.Collection allocations()",
-      "public int size()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.config.provision.NetworkPortsSerializer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public static void toSlime(com.yahoo.config.provision.NetworkPorts, com.yahoo.slime.Cursor)",
-      "public static java.util.Optional fromSlime(com.yahoo.slime.Inspector)"
+      "public int size()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)"
     ],
     "fields": []
   },
@@ -586,6 +580,24 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.NodeResources$DiskSpeed": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed[] values()",
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed fast",
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed slow",
+      "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed any"
+    ]
+  },
   "com.yahoo.config.provision.NodeResources": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -594,14 +606,21 @@
     ],
     "methods": [
       "public void <init>(double, double, double)",
+      "public void <init>(double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public double vcpu()",
       "public double memoryGb()",
       "public double diskGb()",
+      "public com.yahoo.config.provision.NodeResources$DiskSpeed diskSpeed()",
+      "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public com.yahoo.config.provision.NodeResources withVcpu(double)",
+      "public com.yahoo.config.provision.NodeResources subtract(com.yahoo.config.provision.NodeResources)",
+      "public com.yahoo.config.provision.NodeResources add(com.yahoo.config.provision.NodeResources)",
       "public boolean allocateByLegacyName()",
       "public java.util.Optional legacyName()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
+      "public boolean satisfies(com.yahoo.config.provision.NodeResources)",
       "public static com.yahoo.config.provision.NodeResources fromLegacyName(java.lang.String)"
     ],
     "fields": []
@@ -644,7 +663,7 @@
     "fields": []
   },
   "com.yahoo.config.provision.ParentHostUnavailableException": {
-    "superClass": "java.lang.RuntimeException",
+    "superClass": "com.yahoo.config.provision.TransientException",
     "interfaces": [],
     "attributes": [
       "public"
@@ -750,14 +769,18 @@
       "public static com.yahoo.config.provision.SystemName valueOf(java.lang.String)",
       "public static com.yahoo.config.provision.SystemName defaultSystem()",
       "public static com.yahoo.config.provision.SystemName from(java.lang.String)",
-      "public static java.util.Set all()"
+      "public java.lang.String value()",
+      "public boolean isPublic()",
+      "public boolean isCd()",
+      "public static java.util.Set all()",
+      "public static java.util.Set allOf(java.util.function.Predicate)"
     ],
     "fields": [
-      "public static final enum com.yahoo.config.provision.SystemName dev",
       "public static final enum com.yahoo.config.provision.SystemName cd",
       "public static final enum com.yahoo.config.provision.SystemName main",
       "public static final enum com.yahoo.config.provision.SystemName Public",
-      "public static final enum com.yahoo.config.provision.SystemName vaas"
+      "public static final enum com.yahoo.config.provision.SystemName PublicCd",
+      "public static final enum com.yahoo.config.provision.SystemName dev"
     ]
   },
   "com.yahoo.config.provision.TenantName": {
@@ -780,6 +803,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.TransientException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.Zone": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -791,12 +827,10 @@
       "public void <init>(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public void <init>(com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public void <init>(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
-      "public void <init>(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.SystemName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName, com.yahoo.config.provision.NodeFlavors)",
       "public com.yahoo.config.provision.CloudName cloud()",
       "public com.yahoo.config.provision.SystemName system()",
       "public com.yahoo.config.provision.Environment environment()",
       "public com.yahoo.config.provision.RegionName region()",
-      "public java.lang.String defaultFlavor(com.yahoo.config.provision.ClusterSpec$Type)",
       "public java.util.Optional nodeFlavors()",
       "public static com.yahoo.config.provision.Zone defaultZone()",
       "public java.lang.String toString()",

@@ -4,11 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
@@ -82,7 +81,7 @@ public class DockerTester implements AutoCloseable {
         NodeSpec hostSpec = new NodeSpec.Builder()
                 .hostname(HOST_HOSTNAME.value())
                 .state(NodeState.active)
-                .nodeType(NodeType.host)
+                .type(NodeType.host)
                 .flavor("default")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
@@ -92,11 +91,11 @@ public class DockerTester implements AutoCloseable {
         FileSystem fileSystem = TestFileSystem.create();
         DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, ipAddresses);
 
-        MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        Metrics metrics = new Metrics();
         NodeAgentFactory nodeAgentFactory = contextSupplier -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, dockerOperations, storageMaintainer, flagSource,
                 Optional.empty(), Optional.empty(), Optional.empty());
-        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, mr, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
+        nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, Clock.systemUTC(), Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,
@@ -133,7 +132,7 @@ public class DockerTester implements AutoCloseable {
     }
 
     <T> T inOrder(T t) {
-        return inOrder.verify(t, timeout(1000));
+        return inOrder.verify(t, timeout(5000));
     }
 
     @Override

@@ -297,7 +297,7 @@ TOKEN :
 | < MUTABLE: "mutable" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
-| < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < COMPRESSION: "compression" >
@@ -331,7 +331,7 @@ TOKEN :
 | < LOWERBOUND: "lower-bound" >
 | < UPPERBOUND: "upper-bound" >
 | < DENSEPOSTINGLISTTHRESHOLD: "dense-posting-list-threshold" >
-| < EXPERIMENTALPOSTINGLISTFORMAT: "experimental-posting-list-format" >
+| < ENABLE_BM25: "enable-bm25" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
@@ -1782,7 +1782,7 @@ Object indexBody(IndexOperation index) :
       | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
       | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
       | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
-      | <EXPERIMENTALPOSTINGLISTFORMAT>                                { index.setExperimentalPostingListFormat(true); }
+      | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
     )
     { return null; }
 }

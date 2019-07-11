@@ -176,7 +176,7 @@ public class StressTester {
 
         RpcServer(String host, int port, StressTester tester) {
             this.tester = tester;
-            setUp(this);
+            setUp();
             spec = new Spec(host, port);
         }
 
@@ -194,7 +194,7 @@ public class StressTester {
             supervisor.transport().shutdown().join();
         }
 
-        public final void start(Request request) {
+        private void start(Request request) {
             debug("start: Got " + request);
             int ret = 1;
             int clients = request.parameters().get(0).asInt32();
@@ -210,7 +210,7 @@ public class StressTester {
             request.returnValues().add(new Int32Value(ret));
         }
 
-        public final void verify(Request request) {
+        private void verify(Request request) {
             debug("verify: Got " + request);
             long generation = request.parameters().get(0).asInt64();
             String verificationFile = request.parameters().get(1).asString();
@@ -235,7 +235,7 @@ public class StressTester {
             request.returnValues().add(new StringValue(errorMessage));
         }
 
-        public final void stop(Request request) {
+        private void stop(Request request) {
             debug("stop: Got " + request);
             int ret = 1;
             try {
@@ -250,26 +250,20 @@ public class StressTester {
 
         /**
          * Set up RPC method handlers.
-         *
-         * @param handler a MethodHandler that will handle the RPC methods
          */
-
-        protected void setUp(Object handler) {
-            supervisor.addMethod(new Method("start", "i", "i",
-                    handler, "start")
+        protected void setUp() {
+            supervisor.addMethod(new Method("start", "i", "i", this::start)
                     .methodDesc("start")
                     .paramDesc(0, "clients", "number of clients")
                     .returnDesc(0, "ret code", "return code, 0 is OK"));
-            supervisor.addMethod(new Method("verify", "lsl", "is",
-                    handler, "verify")
+            supervisor.addMethod(new Method("verify", "lsl", "is", this::verify)
                     .methodDesc("verify")
                     .paramDesc(0, "generation", "config generation")
                     .paramDesc(1, "verification file", "name of verification file")
                     .paramDesc(2, "timeout", "timeout when verifying")
                     .returnDesc(0, "ret code", "return code, 0 is OK")
                     .returnDesc(1, "error message", "error message, if non zero return code"));
-            supervisor.addMethod(new Method("stop", "", "i",
-                    handler, "stop")
+            supervisor.addMethod(new Method("stop", "", "i", this::stop)
                     .methodDesc("stop")
                     .returnDesc(0, "ret code", "return code, 0 is OK"));
         }

@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.config.provision.zone.UpgradePolicy;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.yolean.Exceptions;
 
@@ -42,9 +42,9 @@ public abstract class InfrastructureUpgrader extends Maintainer {
 
     /** Deploy a list of system applications until they converge on the given version */
     private void upgradeAll(Version target, List<SystemApplication> applications) {
-        for (List<ZoneId> zones : upgradePolicy.asList()) {
+        for (List<ZoneApi> zones : upgradePolicy.asList()) {
             boolean converged = true;
-            for (ZoneId zone : zones) {
+            for (ZoneApi zone : zones) {
                 try {
                     converged &= upgradeAll(target, applications, zone);
                 } catch (UnreachableNodeRepositoryException e) {
@@ -62,39 +62,44 @@ public abstract class InfrastructureUpgrader extends Maintainer {
     }
 
     /** Returns whether all applications have converged to the target version in zone */
-    private boolean upgradeAll(Version target, List<SystemApplication> applications, ZoneId zone) {
+    private boolean upgradeAll(Version target, List<SystemApplication> applications, ZoneApi zone) {
         boolean converged = true;
         for (SystemApplication application : applications) {
             if (convergedOn(target, application.dependencies(), zone)) {
-                upgrade(target, application, zone);
+                boolean currentAppConverged = convergedOn(target, application, zone);
+                // In dynamically provisioned zones there may be no tenant hosts at the time of upgrade, so we
+                // should always set the target version.
+                if (application == SystemApplication.tenantHost || !currentAppConverged) {
+                    upgrade(target, application, zone);
+                }
+                converged &= currentAppConverged;
             }
-            converged &= convergedOn(target, application, zone);
         }
         return converged;
     }
 
-    private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneId zone) {
+    private boolean convergedOn(Version target, List<SystemApplication> applications, ZoneApi zone) {
         return applications.stream().allMatch(application -> convergedOn(target, application, zone));
     }
 
     /** Upgrade component to target version. Implementation should be idempotent */
-    protected abstract void upgrade(Version target, SystemApplication application, ZoneId zone);
+    protected abstract void upgrade(Version target, SystemApplication application, ZoneApi zone);
 
     /** Returns whether application has converged to target version in zone */
-    protected abstract boolean convergedOn(Version target, SystemApplication application, ZoneId zone);
+    protected abstract boolean convergedOn(Version target, SystemApplication application, ZoneApi zone);
 
     /** Returns the target version for the component upgraded by this, if any */
     protected abstract Optional<Version> targetVersion();
 
     /** Returns whether the upgrader should require given node to upgrade */
-    protected abstract boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone);
+    protected abstract boolean requireUpgradeOf(Node node, SystemApplication application, ZoneApi zone);
 
     /** Find the minimum value of a version field in a zone */
-    protected final Optional<Version> minVersion(ZoneId zone, SystemApplication application, Function<Node, Version> versionField) {
+    protected final Optional<Version> minVersion(ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
         try {
             return controller().configServer()
                                .nodeRepository()
-                               .list(zone, application.id())
+                               .list(zone.getId(), application.id())
                                .stream()
                                .filter(node -> requireUpgradeOf(node, application, zone))
                                .map(versionField)

@@ -1,11 +1,11 @@
 {
-  "url": "http://localhost:8080/nodes/v2/node/test-container-1",
-  "id": "test-container-1",
+  "url": "http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+  "id": "test-node-pool-101-2",
   "state": "active",
   "type": "tenant",
-  "hostname": "test-container-1",
-  "parentHostname": "dockerhost3.yahoo.com",
-  "openStackId": "fake-test-container-1",
+  "hostname": "test-node-pool-101-2",
+  "parentHostname": "dockerhost2.yahoo.com",
+  "openStackId": "fake-test-node-pool-101-2",
   "flavor": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb]",
   "canonicalFlavor": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb]",
   "minDiskAvailableGb": 100.0,
@@ -50,7 +50,7 @@
     }
   ],
   "ipAddresses": [
-    "::2"
+    "::101:2"
   ],
   "additionalIpAddresses": []
 }

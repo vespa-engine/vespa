@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config/helper/configgetter.h>
-#include <cppunit/extensions/HelperMacros.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
@@ -16,13 +17,10 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -35,6 +33,7 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using namespace ::testing;
 
 namespace storage {
 
@@ -57,41 +56,8 @@ std::ostream& operator<<(std::ostream& out, const TestBucketInfo& info) {
 class ConcurrentOperationFixture;
 struct TestParams;
 
-struct BucketManagerTest : public CppUnit::TestFixture {
+struct BucketManagerTest : public Test {
 public:
-    CPPUNIT_TEST_SUITE(BucketManagerTest);
-    CPPUNIT_TEST(testRequestBucketInfoWithList);
-    CPPUNIT_TEST(testDistributionBitGenerationEmpty);
-    CPPUNIT_TEST(testDistributionBitChangeOnCreateBucket);
-    CPPUNIT_TEST(testMinUsedBitsFromComponentIsHonored);
-    CPPUNIT_TEST(testRemoveLastModifiedOK);
-    CPPUNIT_TEST(testRemoveLastModifiedFailed);
-    CPPUNIT_TEST(testSwallowNotifyBucketChangeReply);
-    CPPUNIT_TEST(testMetricsGeneration);
-    CPPUNIT_TEST(metrics_are_tracked_per_bucket_space);
-    CPPUNIT_TEST(testSplitReplyOrderedAfterBucketReply);
-    CPPUNIT_TEST(testJoinReplyOrderedAfterBucketReply);
-    CPPUNIT_TEST(testDeleteReplyOrderedAfterBucketReply);
-    CPPUNIT_TEST(testOnlyEnqueueWhenProcessingRequest);
-    CPPUNIT_TEST(testOrderRepliesAfterBucketSpecificRequest);
-    CPPUNIT_TEST(testQueuedRepliesOnlyDispatchedWhenAllProcessingDone);
-    CPPUNIT_TEST(testMutationRepliesForSplitBucketAreEnqueued);
-    CPPUNIT_TEST(testMutationRepliesForDeletedBucketAreEnqueued);
-    CPPUNIT_TEST(testMutationRepliesForJoinedBucketAreEnqueued);
-    CPPUNIT_TEST(testConflictingPutRepliesAreEnqueued);
-    CPPUNIT_TEST(testConflictingUpdateRepliesAreEnqueued);
-    CPPUNIT_TEST(testRemappedMutationIsCheckedAgainstOriginalBucket);
-    CPPUNIT_TEST(testBucketConflictSetIsClearedBetweenBlockingRequests);
-    CPPUNIT_TEST(testConflictSetOnlyClearedAfterAllBucketRequestsDone);
-    CPPUNIT_TEST(testRejectRequestWithMismatchingDistributionHash);
-    CPPUNIT_TEST(testDbNotIteratedWhenAllRequestsRejected);
-    CPPUNIT_TEST(fall_back_to_legacy_global_distribution_hash_on_mismatch);
-
-    // FIXME(vekterli): test is not deterministic and enjoys failing
-    // sporadically when running under Valgrind. See bug 5932891.
-    CPPUNIT_TEST_IGNORED(testRequestBucketInfoWithState);
-    CPPUNIT_TEST_SUITE_END();
-
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
     BucketManager *_manager;
@@ -101,12 +67,13 @@ public:
     uint32_t _emptyBuckets;
     document::Document::SP _document;
 
+    ~BucketManagerTest();
+
     void setupTestEnvironment(bool fakePersistenceLayer = true,
                               bool noDelete = false);
     void addBucketsToDB(uint32_t count);
     bool wasBlockedDueToLastModified(api::StorageMessage* msg,
                                      uint64_t lastModified);
-    bool wasBlockedDueToLastModified(api::StorageMessage::SP msg);
     void insertSingleBucket(const document::BucketId& bucket,
                             const api::BucketInfo& info);
     void waitUntilRequestsAreProcessing(size_t nRequests = 1);
@@ -127,53 +94,30 @@ public:
     void assertRequestWithBadHashIsRejected(
             ConcurrentOperationFixture& fixture);
 
-
-    void testRequestBucketInfoWithState();
-    void testRequestBucketInfoWithList();
-    void testDistributionBitGenerationEmpty();
-    void testDistributionBitChangeOnCreateBucket();
-    void testMinUsedBitsFromComponentIsHonored();
-
-    void testRemoveLastModifiedOK();
-    void testRemoveLastModifiedFailed();
-
-    void testSwallowNotifyBucketChangeReply();
-    void testMetricsGeneration();
-    void metrics_are_tracked_per_bucket_space();
-    void testSplitReplyOrderedAfterBucketReply();
-    void testJoinReplyOrderedAfterBucketReply();
-    void testDeleteReplyOrderedAfterBucketReply();
-    void testOnlyEnqueueWhenProcessingRequest();
-    void testOrderRepliesAfterBucketSpecificRequest();
-    void testQueuedRepliesOnlyDispatchedWhenAllProcessingDone();
-    void testMutationRepliesForSplitBucketAreEnqueued();
-    void testMutationRepliesForDeletedBucketAreEnqueued();
-    void testMutationRepliesForJoinedBucketAreEnqueued();
-    void testConflictingPutRepliesAreEnqueued();
-    void testConflictingUpdateRepliesAreEnqueued();
-    void testRemappedMutationIsCheckedAgainstOriginalBucket();
-    void testBucketConflictSetIsClearedBetweenBlockingRequests();
-    void testConflictSetOnlyClearedAfterAllBucketRequestsDone();
-    void testRejectRequestWithMismatchingDistributionHash();
-    void testDbNotIteratedWhenAllRequestsRejected();
-    void fall_back_to_legacy_global_distribution_hash_on_mismatch();
-
-public:
-    static constexpr uint32_t DIR_SPREAD = 3;
-    static constexpr uint32_t MESSAGE_WAIT_TIME = 60*2;
-
-
-    void setUp() override {
-        _emptyBuckets = 0;
+protected:
+    void update_min_used_bits() {
+        _manager->updateMinUsedBits();
+    }
+    void trigger_metric_manager_update() {
+        vespalib::Monitor l;
+        _manager->updateMetrics(BucketManager::MetricLockGuard(l));
     }
 
-    void tearDown() override {
+    const BucketManagerMetrics& bucket_manager_metrics() const {
+        return *_manager->_metrics;
+    }
+
+public:
+    static constexpr uint32_t MESSAGE_WAIT_TIME = 60*2;
+
+    void SetUp() override {
+        _emptyBuckets = 0;
     }
 
     friend class ConcurrentOperationFixture;
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(BucketManagerTest);
+BucketManagerTest::~BucketManagerTest() = default;
 
 #define ASSERT_DUMMYLINK_REPLY_COUNT(link, count) \
     if (link->getNumReplies() != count) { \
@@ -183,7 +127,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketManagerTest);
         for (uint32_t i=0; i<link->getNumReplies(); ++i) { \
             ost << link->getReply(i)->getType() << "\n"; \
         } \
-        CPPUNIT_FAIL(ost.str()); \
+        FAIL() << ost.str(); \
     }
 
 std::string getMkDirDisk(const std::string & rootFolder, int disk) {
@@ -203,34 +147,34 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     assert(system(getMkDirDisk(rootFolder, 0).c_str()) == 0);
     assert(system(getMkDirDisk(rootFolder, 1).c_str()) == 0);
 
-    std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo(
+    auto repo = std::make_shared<const DocumentTypeRepo>(
                 *ConfigGetter<DocumenttypesConfig>::getConfig(
-                    "config-doctypes", FileSpec(TEST_PATH("config-doctypes.cfg")))));
-    _top.reset(new DummyStorageLink);
-    _node.reset(new TestServiceLayerApp(
-                DiskCount(2), NodeIndex(0), config.getConfigId()));
+                    "config-doctypes", FileSpec("../config-doctypes.cfg")));
+    _top = std::make_unique<DummyStorageLink>();
+    _node = std::make_unique<TestServiceLayerApp>(
+                DiskCount(2), NodeIndex(0), config.getConfigId());
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
-        // Set up the 3 links
-    StorageLink::UP manager(new BucketManager("", _node->getComponentRegister()));
-    _manager = (BucketManager*) manager.get();
+    // Set up the 3 links
+    auto manager = std::make_unique<BucketManager>("", _node->getComponentRegister());
+    _manager = manager.get();
     _top->push_back(std::move(manager));
     if (fakePersistenceLayer) {
-        StorageLink::UP bottom(new DummyStorageLink);
-        _bottom = (DummyStorageLink*) bottom.get();
+        auto bottom = std::make_unique<DummyStorageLink>();
+        _bottom = bottom.get();
         _top->push_back(std::move(bottom));
     } else {
-        StorageLink::UP bottom(new FileStorManager(
+        auto bottom = std::make_unique<FileStorManager>(
                     config.getConfigId(), _node->getPartitions(),
-                    _node->getPersistenceProvider(), _node->getComponentRegister()));
-        _filestorManager = (FileStorManager*) bottom.get();
+                    _node->getPersistenceProvider(), _node->getComponentRegister());
+        _filestorManager = bottom.get();
         _top->push_back(std::move(bottom));
     }
-        // Generate a doc to use for testing..
+    // Generate a doc to use for testing..
     const DocumentType &type(*_node->getTypeRepo()
                              ->getDocumentType("text/html"));
-    _document.reset(new document::Document(type, document::DocumentId(
-                            document::DocIdString("test", "ntnu"))));
+    _document = std::make_shared<document::Document>(
+            type, document::DocumentId(document::DocIdString("test", "ntnu")));
 }
 
 void BucketManagerTest::addBucketsToDB(uint32_t count)
@@ -241,7 +185,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
     while (_bucketInfo.size() < count) {
         document::BucketId id(16, randomizer.nextUint32());
         id = id.stripUnused();
-        if (_bucketInfo.size() == 0) {
+        if (_bucketInfo.empty()) {
             id = _node->getBucketIdFactory().getBucketId(
                     _document->getId()).stripUnused();
         }
@@ -256,20 +200,18 @@ void BucketManagerTest::addBucketsToDB(uint32_t count)
 
     // Make sure we have at least one empty bucket
     TestBucketInfo& info = (++_bucketInfo.begin())->second;
-    CPPUNIT_ASSERT(info.size != 0);
+    assert(info.size != 0);
     info.size = 0;
     info.count = 0;
     info.crc = 0;
     ++_emptyBuckets;
-    for (std::map<document::BucketId, TestBucketInfo>::iterator it
-            = _bucketInfo.begin(); it != _bucketInfo.end(); ++it)
-    {
+    for (const auto& bi : _bucketInfo) {
         bucketdb::StorageBucketInfo entry;
-        entry.disk = it->second.partition;
-        entry.setBucketInfo(api::BucketInfo(it->second.crc,
-                                           it->second.count,
-                                           it->second.size));
-        _node->getStorageBucketDatabase().insert(it->first, entry, "foo");
+        entry.disk = bi.second.partition;
+        entry.setBucketInfo(api::BucketInfo(bi.second.crc,
+                                            bi.second.count,
+                                            bi.second.size));
+        _node->getStorageBucketDatabase().insert(bi.first, entry, "foo");
     }
 }
 
@@ -293,27 +235,25 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
 
     _top->sendDown(api::StorageMessage::SP(msg));
     if (_top->getNumReplies() == 1) {
-        CPPUNIT_ASSERT_EQUAL(0, (int)_bottom->getNumCommands());
-        CPPUNIT_ASSERT(!static_cast<api::StorageReply&>(
-                               *_top->getReply(0)).getResult().success());
+        assert(_bottom->getNumCommands() == 0);
+        assert(!dynamic_cast<api::StorageReply&>(*_top->getReply(0)).getResult().success());
         return true;
     } else {
-        CPPUNIT_ASSERT_EQUAL(0, (int)_top->getNumReplies());
+        assert(_top->getNumReplies() == 0);
 
         // Check that bucket database now has the operation's timestamp as last modified.
         {
             StorBucketDatabase::WrappedEntry entry(
                     _node->getStorageBucketDatabase().get(id, "foo"));
-            CPPUNIT_ASSERT_EQUAL(lastModified, entry->info.getLastModified());
+            assert(entry->info.getLastModified() == lastModified);
         }
 
         return false;
     }
 }
 
-void BucketManagerTest::testRemoveLastModifiedOK()
-{
-    CPPUNIT_ASSERT(!wasBlockedDueToLastModified(
+TEST_F(BucketManagerTest, remove_last_modified_ok) {
+    EXPECT_FALSE(wasBlockedDueToLastModified(
                            new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
                                    document::DocumentId("userdoc:m:1:foo"),
                                    api::Timestamp(1235)),
@@ -321,45 +261,37 @@ void BucketManagerTest::testRemoveLastModifiedOK()
 }
 
 
-void BucketManagerTest::testRemoveLastModifiedFailed()
-{
-    CPPUNIT_ASSERT(wasBlockedDueToLastModified(
+TEST_F(BucketManagerTest, remove_last_modified_failed) {
+    EXPECT_TRUE(wasBlockedDueToLastModified(
                            new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
                                    document::DocumentId("userdoc:m:1:foo"),
                                    api::Timestamp(1233)),
                            1233));
 }
 
-void BucketManagerTest::testDistributionBitGenerationEmpty()
-{
-    TestName("BucketManagerTest::testDistributionBitGenerationEmpty()");
+TEST_F(BucketManagerTest, distribution_bit_generation_empty) {
     setupTestEnvironment();
     _manager->doneInit();
-    vespalib::Monitor l;
-    _manager->updateMetrics(BucketManager::MetricLockGuard(l));
-    CPPUNIT_ASSERT_EQUAL(58u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
+    trigger_metric_manager_update();
+    EXPECT_EQ(58u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
 
-void BucketManagerTest::testDistributionBitChangeOnCreateBucket()
-{
-    TestName("BucketManagerTest::testDistributionBitChangeOnCreateBucket()");
+TEST_F(BucketManagerTest, distribution_bit_change_on_create_bucket){
     setupTestEnvironment();
     addBucketsToDB(30);
     _top->open();
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _manager->doneInit();
-    _manager->updateMinUsedBits();
-    CPPUNIT_ASSERT_EQUAL(16u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
+    update_min_used_bits();
+    EXPECT_EQ(16u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 
     std::shared_ptr<api::CreateBucketCommand> cmd(
             new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(4, 5678))));
     _top->sendDown(cmd);
-    CPPUNIT_ASSERT_EQUAL(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
+    EXPECT_EQ(4u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
 
-void BucketManagerTest::testMinUsedBitsFromComponentIsHonored()
-{
-    TestName("BucketManagerTest::testMinUsedBitsFromComponentIsHonored()");
+TEST_F(BucketManagerTest, Min_Used_Bits_From_Component_Is_Honored) {
     setupTestEnvironment();
     // Let these differ in order to test state update behavior.
     _node->getComponentRegister().getMinUsedBitsTracker().setMinUsedBits(10);
@@ -377,40 +309,21 @@ void BucketManagerTest::testMinUsedBitsFromComponentIsHonored()
     std::shared_ptr<api::CreateBucketCommand> cmd(
             new api::CreateBucketCommand(makeDocumentBucket(document::BucketId(12, 5678))));
     _top->sendDown(cmd);
-    CPPUNIT_ASSERT_EQUAL(13u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
+    EXPECT_EQ(13u, _node->getStateUpdater().getReportedNodeState()->getMinUsedBits());
 }
 
-void BucketManagerTest::testRequestBucketInfoWithState()
-{
-    TestName("BucketManagerTest::testRequestBucketInfoWithState()");
-        // Test prior to building bucket cache
+// FIXME: non-deterministic test
+TEST_F(BucketManagerTest, IGNORED_request_bucket_info_with_state) {
+    // Test prior to building bucket cache
     setupTestEnvironment();
     addBucketsToDB(30);
-     /* Currently this is just queued up
-    {
-        std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-                new api::RequestBucketInfoCommand(
-                    0, lib::ClusterState("distributor:3 .2.s:d storage:1")));
-        _top->sendDown(cmd);
-        _top->waitForMessages(1, 5);
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, _top->getNumReplies());
-        std::shared_ptr<api::RequestBucketInfoReply> reply(
-                std::dynamic_pointer_cast<api::RequestBucketInfoReply>(
-                    _top->getReply(0)));
-        _top->reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::NOT_READY),
-                             reply->getResult());
-    } */
+
     std::vector<lib::ClusterState> states;
-    states.push_back(lib::ClusterState("version:0"));
-    states.push_back(lib::ClusterState("version:1 distributor:1 storage:1"));
-    states.push_back(lib::ClusterState(
-                "version:2 distributor:3 .1.s:i .2.s:d storage:4"));
-    states.push_back(lib::ClusterState(
-                "version:3 distributor:3 .1.s:i .2.s:d storage:4 .3.s:d"));
-    states.push_back(lib::ClusterState(
-                "version:4 distributor:3 .1.s:i .2.s:d storage:4"));
+    states.emplace_back("version:0");
+    states.emplace_back("version:1 distributor:1 storage:1");
+    states.emplace_back("version:2 distributor:3 .1.s:i .2.s:d storage:4");
+    states.emplace_back("version:3 distributor:3 .1.s:i .2.s:d storage:4 .3.s:d");
+    states.emplace_back("version:4 distributor:3 .1.s:i .2.s:d storage:4");
 
     _node->setClusterState(states.back());
     for (uint32_t i=0; i<states.size(); ++i) {
@@ -419,11 +332,11 @@ void BucketManagerTest::testRequestBucketInfoWithState()
         _manager->onDown(cmd);
     }
 
-        // Send a request bucket info command that will be outdated and failed.
+    // Send a request bucket info command that will be outdated and failed.
     std::shared_ptr<api::RequestBucketInfoCommand> cmd1(
             new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[1]));
-        // Send two request bucket info commands that will be processed together
-        // when the bucket manager is idle, as states are equivalent
+    // Send two request bucket info commands that will be processed together
+    // when the bucket manager is idle, as states are equivalent
     std::shared_ptr<api::RequestBucketInfoCommand> cmd2(
             new api::RequestBucketInfoCommand(makeBucketSpace(), 0, states[2]));
     std::shared_ptr<api::RequestBucketInfoCommand> cmd3(
@@ -457,104 +370,29 @@ void BucketManagerTest::testRequestBucketInfoWithState()
         std::shared_ptr<api::RequestBucketInfoReply> reply3(
                 replies[cmd3->getMsgId()]);
         _top->reset();
-        CPPUNIT_ASSERT(reply1.get());
-        CPPUNIT_ASSERT(reply2.get());
-        CPPUNIT_ASSERT(reply3.get());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::REJECTED,
+        ASSERT_TRUE(reply1.get());
+        ASSERT_TRUE(reply2.get());
+        ASSERT_TRUE(reply3.get());
+        EXPECT_EQ(api::ReturnCode(api::ReturnCode::REJECTED,
                 "Ignoring bucket info request for cluster state version 1 as "
                 "versions from version 2 differs from this state."),
                              reply1->getResult());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::REJECTED,
+        EXPECT_EQ(api::ReturnCode(api::ReturnCode::REJECTED,
                 "There is already a newer bucket info request for "
                 "this node from distributor 0"),
                              reply2->getResult());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
+        EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK),
                              reply3->getResult());
         api::RequestBucketInfoReply::Entry entry;
 
-        CPPUNIT_ASSERT_EQUAL((size_t) 18, reply3->getBucketInfo().size());
+        ASSERT_EQ(18u, reply3->getBucketInfo().size());
         entry = api::RequestBucketInfoReply::Entry(
                 document::BucketId(16, 0xe8c8), api::BucketInfo(0x79d04f78, 11153, 1851385240u));
-        CPPUNIT_ASSERT_EQUAL(entry, reply3->getBucketInfo()[0]);
+        EXPECT_EQ(entry, reply3->getBucketInfo()[0]);
     }
 }
 
-namespace {
-    struct PopenWrapper {
-        FILE* _file;
-        std::vector<char> _buffer;
-        uint32_t _index;
-        uint32_t _size;
-        bool _eof;
-
-        PopenWrapper(const std::string& cmd)
-            : _buffer(65536, '\0'), _index(0), _size(0), _eof(false)
-        {
-            _file = popen(cmd.c_str(), "r");
-            if (_file == 0) {
-                throw vespalib::Exception("Failed to run '" + cmd
-                        + "' in popen: " + strerror(errno), VESPA_STRLOC);
-            }
-        }
-
-        const char* getNextLine() {
-            if (_eof && _size == 0) return 0;
-                // Check if we have a newline waiting
-            char* newline = strchr(&_buffer[_index], '\n');
-                // If not try to get one
-            if (_eof) {
-                newline = &_buffer[_index + _size];
-            } else if (newline == 0) {
-                    // If we index is passed half the buffer, reposition
-                if (_index > _buffer.size() / 2) {
-                    memcpy(&_buffer[0], &_buffer[_index], _size);
-                    _index = 0;
-                }
-                    // Verify we have space to write to
-                if (_index + _size >= _buffer.size()) {
-                    throw vespalib::Exception("No newline could be find in "
-                            "half the buffer size. Wrapper not designed to "
-                            "handle that long lines (1)", VESPA_STRLOC);
-                }
-                    // Fill up buffer
-                size_t bytesRead = fread(&_buffer[_index + _size],
-                                         1, _buffer.size() - _index - _size - 1,
-                                         _file);
-                if (bytesRead == 0) {
-                    if (!feof(_file)) {
-                        throw vespalib::Exception("Failed to run fgets: "
-                                + std::string(strerror(errno)), VESPA_STRLOC);
-                    } else {
-                        _eof = true;
-                    }
-                } else {
-                    _size += bytesRead;
-                }
-                newline = strchr(&_buffer[_index], '\n');
-                if (newline == 0) {
-                    if (_eof) {
-                        if (_size == 0) return 0;
-                    } else {
-                        throw vespalib::Exception("No newline could be find in "
-                                "half the buffer size. Wrapper not designed to "
-                                "handle that long lines (2)", VESPA_STRLOC);
-                    }
-                }
-            }
-            *newline = '\0';
-            ++newline;
-            const char* line = &_buffer[_index];
-            uint32_t strlen = (newline - line);
-            _index += strlen;
-            _size -= strlen;
-            return line;
-        }
-    };
-}
-
-void BucketManagerTest::testRequestBucketInfoWithList()
-{
-    TestName("BucketManagerTest::testRequestBucketInfoWithList()");
+TEST_F(BucketManagerTest, request_bucket_info_with_list) {
     setupTestEnvironment();
     addBucketsToDB(30);
     _top->open();
@@ -562,39 +400,26 @@ void BucketManagerTest::testRequestBucketInfoWithList()
     _top->doneInit();
     {
         std::vector<document::BucketId> bids;
-        bids.push_back(document::BucketId(16, 0xe8c8));
+        bids.emplace_back(16, 0xe8c8);
 
-        std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-                new api::RequestBucketInfoCommand(makeBucketSpace(), bids));
+        auto cmd = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(), bids);
 
         _top->sendDown(cmd);
         _top->waitForMessages(1, 5);
         ASSERT_DUMMYLINK_REPLY_COUNT(_top, 1);
-        std::shared_ptr<api::RequestBucketInfoReply> reply(
-                std::dynamic_pointer_cast<api::RequestBucketInfoReply>(
-                    _top->getReply(0)));
+        auto reply = std::dynamic_pointer_cast<api::RequestBucketInfoReply>(_top->getReply(0));
         _top->reset();
-        CPPUNIT_ASSERT(reply.get());
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                             reply->getResult());
-        if (reply->getBucketInfo().size() > 1) {
-            std::cerr << "Too many replies found\n";
-            for (uint32_t i=0; i<reply->getBucketInfo().size(); ++i) {
-                std::cerr << reply->getBucketInfo()[i] << "\n";
-            }
-        }
-        CPPUNIT_ASSERT_EQUAL((size_t) 1, reply->getBucketInfo().size());
+        ASSERT_TRUE(reply.get());
+        EXPECT_EQ(api::ReturnCode(api::ReturnCode::OK), reply->getResult());
+        ASSERT_EQ(1u, reply->getBucketInfo().size());
         api::RequestBucketInfoReply::Entry entry(
                 document::BucketId(16, 0xe8c8),
                 api::BucketInfo(0x79d04f78, 11153, 1851385240u));
-        CPPUNIT_ASSERT_EQUAL(entry, reply->getBucketInfo()[0]);
+        EXPECT_EQ(entry, reply->getBucketInfo()[0]);
     }
 }
 
-void
-BucketManagerTest::testSwallowNotifyBucketChangeReply()
-{
-    TestName("BucketManagerTest::testSwallowNotifyBucketChangeReply()");
+TEST_F(BucketManagerTest, swallow_notify_bucket_change_reply) {
     setupTestEnvironment();
     addBucketsToDB(30);
     _top->open();
@@ -603,17 +428,14 @@ BucketManagerTest::testSwallowNotifyBucketChangeReply()
 
     api::NotifyBucketChangeCommand cmd(makeDocumentBucket(document::BucketId(1, 16)),
                                        api::BucketInfo());
-    std::shared_ptr<api::NotifyBucketChangeReply> reply(
-            new api::NotifyBucketChangeReply(cmd));
+    auto reply = std::make_shared<api::NotifyBucketChangeReply>(cmd);
 
     _top->sendDown(reply);
     // Should not leave the bucket manager.
-    CPPUNIT_ASSERT_EQUAL(0, (int)_bottom->getNumCommands());    
+    EXPECT_EQ(0u, _bottom->getNumCommands());
 }
 
-void
-BucketManagerTest::testMetricsGeneration()
-{
+TEST_F(BucketManagerTest, metrics_generation) {
     setupTestEnvironment();
     _top->open();
     // Add 3 buckets; 2 ready, 1 active. 300 docs total, 600 bytes total.
@@ -633,19 +455,18 @@ BucketManagerTest::testMetricsGeneration()
      }
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _top->doneInit();
-    vespalib::Monitor l;
-    _manager->updateMetrics(BucketManager::MetricLockGuard(l));
+    trigger_metric_manager_update();
 
-    CPPUNIT_ASSERT_EQUAL(size_t(2), _manager->_metrics->disks.size());
-    const DataStoredMetrics& m(*_manager->_metrics->disks[0]);
-    CPPUNIT_ASSERT_EQUAL(int64_t(3), m.buckets.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(300), m.docs.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(600), m.bytes.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1), m.active.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(2), m.ready.getLast());
+    ASSERT_EQ(2u, bucket_manager_metrics().disks.size());
+    const DataStoredMetrics& m(*bucket_manager_metrics().disks[0]);
+    EXPECT_EQ(3, m.buckets.getLast());
+    EXPECT_EQ(300, m.docs.getLast());
+    EXPECT_EQ(600, m.bytes.getLast());
+    EXPECT_EQ(1, m.active.getLast());
+    EXPECT_EQ(2, m.ready.getLast());
 }
 
-void BucketManagerTest::metrics_are_tracked_per_bucket_space() {
+TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
     setupTestEnvironment();
     _top->open();
     auto& repo = _node->getComponentRegister().getBucketSpaceRepo();
@@ -669,25 +490,24 @@ void BucketManagerTest::metrics_are_tracked_per_bucket_space() {
     }
     _node->getDoneInitializeHandler().notifyDoneInitializing();
     _top->doneInit();
-    vespalib::Monitor l;
-    _manager->updateMetrics(BucketManager::MetricLockGuard(l));
+    trigger_metric_manager_update();
 
-    auto& spaces = _manager->_metrics->bucket_spaces;
+    auto& spaces = bucket_manager_metrics().bucket_spaces;
     auto default_m = spaces.find(document::FixedBucketSpaces::default_space());
-    CPPUNIT_ASSERT(default_m != spaces.end());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1),   default_m->second->buckets_total.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(100), default_m->second->docs.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(200), default_m->second->bytes.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0),   default_m->second->active_buckets.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1),   default_m->second->ready_buckets.getLast());
+    ASSERT_TRUE(default_m != spaces.end());
+    EXPECT_EQ(1,   default_m->second->buckets_total.getLast());
+    EXPECT_EQ(100, default_m->second->docs.getLast());
+    EXPECT_EQ(200, default_m->second->bytes.getLast());
+    EXPECT_EQ(0,   default_m->second->active_buckets.getLast());
+    EXPECT_EQ(1,   default_m->second->ready_buckets.getLast());
 
     auto global_m = spaces.find(document::FixedBucketSpaces::global_space());
-    CPPUNIT_ASSERT(global_m != spaces.end());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1),   global_m->second->buckets_total.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(150), global_m->second->docs.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(300), global_m->second->bytes.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(1),   global_m->second->active_buckets.getLast());
-    CPPUNIT_ASSERT_EQUAL(int64_t(0),   global_m->second->ready_buckets.getLast());
+    ASSERT_TRUE(global_m != spaces.end());
+    EXPECT_EQ(1,   global_m->second->buckets_total.getLast());
+    EXPECT_EQ(150, global_m->second->docs.getLast());
+    EXPECT_EQ(300, global_m->second->bytes.getLast());
+    EXPECT_EQ(1,   global_m->second->active_buckets.getLast());
+    EXPECT_EQ(0,   global_m->second->ready_buckets.getLast());
 }
 
 void
@@ -725,7 +545,7 @@ struct WithBuckets {
 
 class ConcurrentOperationFixture {
 public:
-    ConcurrentOperationFixture(BucketManagerTest& self)
+    explicit ConcurrentOperationFixture(BucketManagerTest& self)
         : _self(self),
           _state("distributor:1 storage:1")
     {
@@ -835,21 +655,20 @@ public:
     {
         const size_t nTotal = nBucketReplies + 1;
         auto replies = awaitAndGetReplies(nTotal);
-        CPPUNIT_ASSERT_EQUAL(nTotal, replies.size());
+        ASSERT_EQ(nTotal, replies.size());
         for (size_t i = 0; i < nBucketReplies; ++i) {
-            CPPUNIT_ASSERT_EQUAL(api::MessageType::REQUESTBUCKETINFO_REPLY,
-                                 replies[i]->getType());
+            ASSERT_EQ(api::MessageType::REQUESTBUCKETINFO_REPLY, replies[i]->getType());
         }
-        CPPUNIT_ASSERT_EQUAL(msgType, replies[nBucketReplies]->getType());
+        ASSERT_EQ(msgType, replies[nBucketReplies]->getType());
     }
 
     void assertReplyOrdering(
             const std::vector<const api::MessageType*>& replyTypes)
     {
         auto replies = awaitAndGetReplies(replyTypes.size());
-        CPPUNIT_ASSERT_EQUAL(replyTypes.size(), replies.size());
+        ASSERT_EQ(replyTypes.size(), replies.size());
         for (size_t i = 0; i < replyTypes.size(); ++i) {
-            CPPUNIT_ASSERT_EQUAL(*replyTypes[i], replies[i]->getType());
+            ASSERT_EQ(*replyTypes[i], replies[i]->getType());
         }
     }
 
@@ -901,9 +720,7 @@ private:
     lib::ClusterState _state;
 };
 
-void
-BucketManagerTest::testSplitReplyOrderedAfterBucketReply()
-{
+TEST_F(BucketManagerTest, split_reply_ordered_after_bucket_reply) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     document::BucketId bucketB(17, 1);
@@ -924,9 +741,7 @@ BucketManagerTest::testSplitReplyOrderedAfterBucketReply()
             1, api::MessageType::SPLITBUCKET_REPLY);
 }
 
-void
-BucketManagerTest::testJoinReplyOrderedAfterBucketReply()
-{
+TEST_F(BucketManagerTest, join_reply_ordered_after_bucket_reply) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     document::BucketId bucketB(17, 1 << 16);
@@ -949,9 +764,7 @@ BucketManagerTest::testJoinReplyOrderedAfterBucketReply()
 // Technically, deletes being ordered after bucket info replies won't help
 // correctness since buckets are removed from the distributor DB upon _sending_
 // the delete and not receiving it.
-void
-BucketManagerTest::testDeleteReplyOrderedAfterBucketReply()
-{
+TEST_F(BucketManagerTest, delete_reply_ordered_after_bucket_reply) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     document::BucketId bucketB(17, 1);
@@ -970,9 +783,7 @@ BucketManagerTest::testDeleteReplyOrderedAfterBucketReply()
             1, api::MessageType::DELETEBUCKET_REPLY);
 }
 
-void
-BucketManagerTest::testOnlyEnqueueWhenProcessingRequest()
-{
+TEST_F(BucketManagerTest, only_enqueue_when_processing_request) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     fixture.setUp(WithBuckets()
@@ -990,9 +801,7 @@ BucketManagerTest::testOnlyEnqueueWhenProcessingRequest()
 // differently than full bucket info fetches and are not delegated to the
 // worker thread. We still require that any split/joins etc are ordered after
 // this reply if their reply is sent up concurrently.
-void
-BucketManagerTest::testOrderRepliesAfterBucketSpecificRequest()
-{
+TEST_F(BucketManagerTest, order_replies_after_bucket_specific_request) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     fixture.setUp(WithBuckets()
@@ -1025,14 +834,12 @@ BucketManagerTest::testOrderRepliesAfterBucketSpecificRequest()
             1, api::MessageType::SPLITBUCKET_REPLY);
 }
 
-// Test is similar to testOrderRepliesAfterBucketSpecificRequest, but has
+// Test is similar to order_replies_after_bucket_specific_request, but has
 // two concurrent bucket info request processing instances going on; one in
 // the worker thread and one in the message chain itself. Since we only have
 // one queue, we must wait with dispatching replies until _all_ processing
 // has ceased.
-void
-BucketManagerTest::testQueuedRepliesOnlyDispatchedWhenAllProcessingDone()
-{
+TEST_F(BucketManagerTest, queued_replies_only_dispatched_when_all_processing_done) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     fixture.setUp(WithBuckets()
@@ -1085,9 +892,9 @@ struct TestParams {
     BUILDER_PARAM(std::vector<const api::MessageType*>, expectedOrdering);
 };
 
-TestParams::TestParams() { }
+TestParams::TestParams() = default;
 TestParams::TestParams(const TestParams &) = default;
-TestParams::~TestParams() {}
+TestParams::~TestParams() = default;
 
 void
 BucketManagerTest::doTestMutationOrdering(
@@ -1140,9 +947,7 @@ BucketManagerTest::doTestConflictingReplyIsEnqueued(
     doTestMutationOrdering(fixture, params);
 }
 
-void
-BucketManagerTest::testMutationRepliesForSplitBucketAreEnqueued()
-{
+TEST_F(BucketManagerTest, mutation_replies_for_split_bucket_are_enqueued) {
     document::BucketId bucket(17, 0);
     doTestConflictingReplyIsEnqueued(
             bucket,
@@ -1150,9 +955,7 @@ BucketManagerTest::testMutationRepliesForSplitBucketAreEnqueued()
             api::MessageType::SPLITBUCKET_REPLY);
 }
 
-void
-BucketManagerTest::testMutationRepliesForDeletedBucketAreEnqueued()
-{
+TEST_F(BucketManagerTest, mutation_replies_for_deleted_bucket_are_enqueued) {
     document::BucketId bucket(17, 0);
     doTestConflictingReplyIsEnqueued(
             bucket,
@@ -1160,9 +963,7 @@ BucketManagerTest::testMutationRepliesForDeletedBucketAreEnqueued()
             api::MessageType::DELETEBUCKET_REPLY);
 }
 
-void
-BucketManagerTest::testMutationRepliesForJoinedBucketAreEnqueued()
-{
+TEST_F(BucketManagerTest, mutation_replies_for_joined_bucket_are_enqueued) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(17, 0);
     document::BucketId bucketB(17, 1 << 16);
@@ -1183,9 +984,7 @@ BucketManagerTest::testMutationRepliesForJoinedBucketAreEnqueued()
     doTestMutationOrdering(fixture, params);
 }
 
-void
-BucketManagerTest::testConflictingPutRepliesAreEnqueued()
-{
+TEST_F(BucketManagerTest, conflicting_put_replies_are_enqueued) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucket(17, 0);
 
@@ -1200,9 +999,7 @@ BucketManagerTest::testConflictingPutRepliesAreEnqueued()
     doTestMutationOrdering(fixture, params);
 }
 
-void
-BucketManagerTest::testConflictingUpdateRepliesAreEnqueued()
-{
+TEST_F(BucketManagerTest, conflicting_update_replies_are_enqueued) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucket(17, 0);
 
@@ -1223,9 +1020,7 @@ BucketManagerTest::testConflictingUpdateRepliesAreEnqueued()
  * resulting from the operation. We have to make sure remapped operations are
  * enqueued as well.
  */
-void
-BucketManagerTest::testRemappedMutationIsCheckedAgainstOriginalBucket()
-{
+TEST_F(BucketManagerTest, remapped_mutation_is_checked_against_original_bucket) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucket(17, 0);
     document::BucketId remappedToBucket(18, 0);
@@ -1263,9 +1058,7 @@ BucketManagerTest::scheduleBucketInfoRequestWithConcurrentOps(
     guard.unlock();
 }
 
-void
-BucketManagerTest::testBucketConflictSetIsClearedBetweenBlockingRequests()
-{
+TEST_F(BucketManagerTest, bucket_conflict_set_is_cleared_between_blocking_requests) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId firstConflictBucket(17, 0);
     document::BucketId secondConflictBucket(18, 0);
@@ -1308,9 +1101,7 @@ BucketManagerTest::sendSingleBucketInfoRequest(const document::BucketId& id)
     _top->sendDown(infoCmd);
 }
 
-void
-BucketManagerTest::testConflictSetOnlyClearedAfterAllBucketRequestsDone()
-{
+TEST_F(BucketManagerTest, conflict_set_only_cleared_after_all_bucket_requests_done) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucketA(16, 0);
     document::BucketId bucketB(16, 1);
@@ -1371,22 +1162,17 @@ BucketManagerTest::assertRequestWithBadHashIsRejected(
     _top->sendDown(infoCmd);
     auto replies = fixture.awaitAndGetReplies(1);
     auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::REJECTED,
-                         reply.getResult().getResult());
+    ASSERT_EQ(api::ReturnCode::REJECTED, reply.getResult().getResult());
 }
 
-void
-BucketManagerTest::testRejectRequestWithMismatchingDistributionHash()
-{
+TEST_F(BucketManagerTest, reject_request_with_mismatching_distribution_hash) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucket(17, 0);
     fixture.setUp(WithBuckets().add(bucket, api::BucketInfo(50, 100, 200)));
     assertRequestWithBadHashIsRejected(fixture);
 }
 
-void
-BucketManagerTest::testDbNotIteratedWhenAllRequestsRejected()
-{
+TEST_F(BucketManagerTest, db_not_iterated_when_all_requests_rejected) {
     ConcurrentOperationFixture fixture(*this);
     document::BucketId bucket(17, 0);
     fixture.setUp(WithBuckets().add(bucket, api::BucketInfo(50, 100, 200)));
@@ -1405,7 +1191,7 @@ BucketManagerTest::testDbNotIteratedWhenAllRequestsRejected()
 }
 
 // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-void BucketManagerTest::fall_back_to_legacy_global_distribution_hash_on_mismatch() {
+TEST_F(BucketManagerTest, fall_back_to_legacy_global_distribution_hash_on_mismatch) {
     ConcurrentOperationFixture f(*this);
 
     f.set_grouped_distribution_configs();
@@ -1416,7 +1202,7 @@ void BucketManagerTest::fall_back_to_legacy_global_distribution_hash_on_mismatch
     _top->sendDown(infoCmd);
     auto replies = f.awaitAndGetReplies(1);
     auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::OK, reply.getResult().getResult()); // _not_ REJECTED
+    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult()); // _not_ REJECTED
 }
 
 } // storage

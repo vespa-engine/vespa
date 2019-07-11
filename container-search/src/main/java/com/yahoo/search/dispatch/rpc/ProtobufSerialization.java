@@ -5,6 +5,8 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.yahoo.data.access.simple.Value;
+import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.io.GrowableByteBuffer;
@@ -23,6 +25,7 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 
 import java.nio.ByteBuffer;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
+
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
     public static byte[] serializeSearchRequest(Query query, String serverId) {
@@ -87,7 +91,7 @@ public class ProtobufSerialization {
         }
 
         var featureMap = ranking.getFeatures().asMap();
-        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
@@ -101,8 +105,10 @@ public class ProtobufSerialization {
         }
     }
 
-    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query, String serverId, String summaryClass,
-            boolean includeQueryData) {
+    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
+                                                                                  String serverId,
+                                                                                  String summaryClass,
+                                                                                  boolean includeQueryData) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
                 .setTimeout((int) query.getTimeLeft())
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
@@ -143,10 +149,14 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
 
         builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
-        builder.setGeoLocation(ranking.getLocation().toString());
-        MapConverter.convertMapStrings(featureMap, builder::addFeatureOverrides);
+        if (ranking.getLocation() != null) {
+            builder.setGeoLocation(ranking.getLocation().toString());
+        }
+        MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
-        MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
+        if (query.getPresentation().getHighlight() != null) {
+            MapConverter.convertStringMultiMap(query.getPresentation().getHighlight().getHighlightTerms(), builder::addHighlightTerms);
+        }
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
@@ -161,8 +171,12 @@ public class ProtobufSerialization {
         return result;
     }
 
-    private static Result convertToResult(Query query, SearchProtocol.SearchReply protobuf, DocumentDatabase documentDatabase, int partId,
-            int distKey, String source) {
+    private static Result convertToResult(Query query,
+                                          SearchProtocol.SearchReply protobuf,
+                                          DocumentDatabase documentDatabase,
+                                          int partId,
+                                          int distKey,
+                                          String source) {
         var result = new Result(query);
 
         result.setTotalHitCount(protobuf.getTotalHitCount());
@@ -210,7 +224,12 @@ public class ProtobufSerialization {
         if(sorting != null) {
             result.hits().setSorted(true);
         }
-
+        var slimeTrace = protobuf.getSlimeTrace();
+        if (slimeTrace != null && !slimeTrace.isEmpty()) {
+            var traces = new Value.ArrayValue();
+            traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
+            query.trace(traces, query.getTraceLevel());
+        }
         return result;
     }
 
@@ -265,12 +284,14 @@ public class ProtobufSerialization {
         }
     }
 
-    private static void mergeRankProperties(Ranking ranking, Consumer<StringProperty.Builder> stringProperties,
-            Consumer<TensorProperty.Builder> tensorProperties) {
+    private static void mergeRankProperties(Ranking ranking,
+                                            Consumer<StringProperty.Builder> stringProperties,
+                                            Consumer<TensorProperty.Builder> tensorProperties) {
         MapConverter.convertMultiMap(ranking.getProperties().asMap(), propB -> {
             if (!GetDocSumsPacket.sessionIdKey.equals(propB.getName())) {
                 stringProperties.accept(propB);
             }
         }, tensorProperties);
     }
+
 }

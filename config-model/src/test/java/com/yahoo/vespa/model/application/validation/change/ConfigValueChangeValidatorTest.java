@@ -58,10 +58,10 @@ public class ConfigValueChangeValidatorTest {
                 createVespaModel(createQrStartConfigSegment(true, 2096)),
                 createVespaModel(createQrStartConfigSegment(false, 2096))
         );
-        assertEquals(2, changes.size());
+        assertEquals(3, changes.size());
         assertComponentsEquals(changes, "default/container.0", 0);
         assertComponentsEquals(changes, "admin/cluster-controllers/0", 1);
-        //assertComponentsEquals(changes, "admin/metrics/0", 2);
+        assertComponentsEquals(changes, "admin/metrics/localhost", 2);
     }
 
     @Test
@@ -182,12 +182,12 @@ public class ConfigValueChangeValidatorTest {
                         "    <admin version='2.0'>\n" +
                         "      <adminserver hostalias='node1'/>\n" +
                         "    </admin>\n" +
-                        "    <jdisc id='default' version='1.0'>\n" +
+                        "    <container id='default' version='1.0'>\n" +
                         "       <search/>\n" +
                         "       <nodes>\n" +
                         "           <node hostalias='node1'/>\n" +
                         "       </nodes>\n" +
-                        "   </jdisc>\n" +
+                        "   </container>\n" +
                         "   <content id='basicsearch' version='1.0'>\n" +
                         "       <redundancy>1</redundancy>\n" +
                         createDocumentsSegment(docTypes) + "\n" +

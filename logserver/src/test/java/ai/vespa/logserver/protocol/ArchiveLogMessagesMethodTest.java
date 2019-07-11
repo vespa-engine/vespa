@@ -57,7 +57,7 @@ public class ArchiveLogMessagesMethodTest {
 
         TestClient(int logserverPort) {
             this.supervisor = new Supervisor(new Transport());
-            this.target = supervisor.connectSync(new Spec(logserverPort));
+            this.target = supervisor.connect(new Spec(logserverPort));
         }
 
         void logMessages(List<LogMessage> messages) {

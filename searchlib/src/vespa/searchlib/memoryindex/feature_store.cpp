@@ -2,7 +2,7 @@
 
 #include "feature_store.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
 
 namespace search::memoryindex {
 

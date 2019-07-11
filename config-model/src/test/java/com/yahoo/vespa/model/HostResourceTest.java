@@ -9,12 +9,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.admin;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
 import static com.yahoo.config.provision.ClusterSpec.Type.content;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -92,7 +90,7 @@ public class HostResourceTest {
     }
 
     private static ClusterSpec clusterSpec(ClusterSpec.Type type, String id) {
-        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false, Collections.emptySet());
+        return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
     }
 
     private HostResource mockHostResource(MockRoot root) {

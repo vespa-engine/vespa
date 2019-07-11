@@ -11,19 +11,12 @@ import java.util.concurrent.DelayQueue;
 class DelayedResponses {
 
     private final DelayQueue<DelayedResponse> delayedResponses = new DelayQueue<>();
-    private final ConfigProxyStatistics statistics;
-
-    DelayedResponses(ConfigProxyStatistics statistics) {
-        this.statistics = statistics;
-    }
 
     void add(DelayedResponse response) {
         delayedResponses.add(response);
-        statistics.delayedResponses(delayedResponses.size());
     }
 
     boolean remove(DelayedResponse response) {
-        statistics.decDelayedResponses();
         return delayedResponses.remove(response);
     }
 

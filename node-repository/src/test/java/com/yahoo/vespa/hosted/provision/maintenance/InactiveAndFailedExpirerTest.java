@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
@@ -27,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -42,17 +42,20 @@ import static org.mockito.Mockito.mock;
  */
 public class InactiveAndFailedExpirerTest {
 
-    private final ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"),
-            InstanceName.from("fuz"));
+    private final NodeResources nodeResources = new NodeResources(2, 8, 50);
+
+    private final ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"),
+                                                                   ApplicationName.from("bar"),
+                                                                   InstanceName.from("fuz"));
 
     @Test
     public void inactive_and_failed_times_out() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        List<Node> nodes = tester.makeReadyNodes(2, "default");
+        List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate then deallocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
@@ -86,14 +89,14 @@ public class InactiveAndFailedExpirerTest {
     @Test
     public void reboot_generation_is_increased_when_node_moves_to_dirty() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        List<Node> nodes = tester.makeReadyNodes(2, "default");
+        List<Node> nodes = tester.makeReadyNodes(2, nodeResources);
 
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"),
-                                                  false, Collections.emptySet());
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+                                                  false);
+        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(applicationId, new HashSet<>(preparedNodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
@@ -119,16 +122,18 @@ public class InactiveAndFailedExpirerTest {
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                                                  Version.fromString("6.42"), false, Collections.emptySet());
-        tester.makeReadyNodes(5, "default");
+                                                  Version.fromString("6.42"), false);
+        tester.makeReadyNodes(5, nodeResources);
 
         // Allocate two nodes
         {
-            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+            List<HostSpec> hostSpecs = tester.prepare(applicationId,
+                                                      cluster,
+                                                      Capacity.fromCount(2, nodeResources),
+                                                      1);
             tester.activate(applicationId, new HashSet<>(hostSpecs));
             assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         }
-
 
         // Flag one node for retirement and redeploy
         {
@@ -146,9 +151,9 @@ public class InactiveAndFailedExpirerTest {
                 Collections.singletonMap(
                         applicationId,
                         new MockDeployer.ApplicationContext(applicationId, cluster,
-                                                            Capacity.fromNodeCount(2,
-                                                                                   Optional.of("default"),
-                                                                                   false, true),
+                                                            Capacity.fromCount(2,
+                                                                               nodeResources,
+                                                                               false, true),
                                                             1)
                 )
         );
@@ -172,9 +177,9 @@ public class InactiveAndFailedExpirerTest {
 
         // Allocate then deallocate a node
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyNodes(1, "default");
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false, Collections.emptySet());
-        List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.makeReadyNodes(1, nodeResources);
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+        List<HostSpec> preparedNodes = tester.prepare(testerId, cluster, Capacity.fromCount(2, nodeResources), 1);
         tester.activate(testerId, new HashSet<>(preparedNodes));
         assertEquals(1, tester.getNodes(testerId, Node.State.active).size());
         tester.deactivate(testerId);

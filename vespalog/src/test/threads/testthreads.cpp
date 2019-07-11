@@ -3,6 +3,7 @@
 #include <vespa/fastos/time.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
+#include <array>
 #include <iostream>
 #include <thread>
 #include <chrono>

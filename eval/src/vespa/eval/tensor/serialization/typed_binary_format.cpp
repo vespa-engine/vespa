@@ -4,7 +4,6 @@
 #include "sparse_binary_format.h"
 #include "dense_binary_format.h"
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/dense/dense_tensor.h>
 #include <vespa/eval/eval/simple_tensor.h>
@@ -17,6 +16,8 @@
 LOG_SETUP(".eval.tensor.serialization.typed_binary_format");
 
 using vespalib::nbostream;
+using vespalib::eval::ValueType;
+using CellType = vespalib::eval::ValueType::CellType;
 
 namespace vespalib::tensor {
 
@@ -25,54 +26,59 @@ namespace  {
 constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
 constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
 constexpr uint32_t MIXED_BINARY_FORMAT_TYPE = 3u;
-constexpr uint32_t SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5u; //Future
+constexpr uint32_t SPARSE_BINARY_FORMAT_WITH_CELLTYPE = 5u;
 constexpr uint32_t DENSE_BINARY_FORMAT_WITH_CELLTYPE = 6u;
-constexpr uint32_t MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7u; //Future
+constexpr uint32_t MIXED_BINARY_FORMAT_WITH_CELLTYPE = 7u;
 
 constexpr uint32_t DOUBLE_VALUE_TYPE = 0;
 constexpr uint32_t FLOAT_VALUE_TYPE = 1;
 
-uint32_t
-format2Encoding(SerializeFormat format) {
-    switch (format) {
-        case SerializeFormat::DOUBLE:
-            return DOUBLE_VALUE_TYPE;
-        case SerializeFormat::FLOAT:
-            return FLOAT_VALUE_TYPE;
+uint32_t cell_type_to_encoding(CellType cell_type) {
+    switch (cell_type) {
+    case CellType::DOUBLE:
+        return DOUBLE_VALUE_TYPE;
+    case CellType::FLOAT:
+        return FLOAT_VALUE_TYPE;
     }
     abort();
 }
 
-SerializeFormat
-encoding2Format(uint32_t serializedType) {
-    switch (serializedType) {
-        case DOUBLE_VALUE_TYPE:
-            return SerializeFormat::DOUBLE;
-        case FLOAT_VALUE_TYPE:
-            return  SerializeFormat::FLOAT;
-        default:
-            throw IllegalArgumentException(make_string("Received unknown tensor value type = %u. Only 0(double), or 1(float) are legal.", serializedType));
+CellType
+encoding_to_cell_type(uint32_t cell_encoding) {
+    switch (cell_encoding) {
+    case DOUBLE_VALUE_TYPE:
+        return CellType::DOUBLE;
+    case FLOAT_VALUE_TYPE:
+        return CellType::FLOAT;
+    default:
+        throw IllegalArgumentException(make_string("Received unknown tensor value type = %u. Only 0(double), or 1(float) are legal.", cell_encoding));
     }
 }
 
 }
 
 void
-TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor, SerializeFormat format)
+TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
+    auto cell_type = tensor.type().cell_type();
+    bool default_cell_type = (cell_type == CellType::DOUBLE);
     if (auto denseTensor = dynamic_cast<const DenseTensorView *>(&tensor)) {
-        if (format != SerializeFormat::DOUBLE) {
-            stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_WITH_CELLTYPE);
-            stream.putInt1_4Bytes(format2Encoding(format));
-            DenseBinaryFormat(format).serialize(stream, *denseTensor);
-        } else {
+        if (default_cell_type) {
             stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
-            DenseBinaryFormat(SerializeFormat::DOUBLE).serialize(stream, *denseTensor);
+        } else {
+            stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_WITH_CELLTYPE);
+            stream.putInt1_4Bytes(cell_type_to_encoding(cell_type));
         }
+        DenseBinaryFormat::serialize(stream, *denseTensor);
     } else if (auto wrapped = dynamic_cast<const WrappedSimpleTensor *>(&tensor)) {
         eval::SimpleTensor::encode(wrapped->get(), stream);
     } else {
-        stream.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
+        if (default_cell_type) {
+            stream.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
+        } else {
+            stream.putInt1_4Bytes(SPARSE_BINARY_FORMAT_WITH_CELLTYPE);
+            stream.putInt1_4Bytes(cell_type_to_encoding(cell_type));
+        }
         SparseBinaryFormat::serialize(stream, tensor);
     }
 }
@@ -81,41 +87,46 @@ TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor, SerializeF
 std::unique_ptr<Tensor>
 TypedBinaryFormat::deserialize(nbostream &stream)
 {
+    auto cell_type = CellType::DOUBLE;
     auto read_pos = stream.rp();
     auto formatId = stream.getInt1_4Bytes();
-    if (formatId == SPARSE_BINARY_FORMAT_TYPE) {
-        DefaultTensor::builder builder;
-        SparseBinaryFormat::deserialize(stream, builder);
-        return builder.build();
-    }
-    if (formatId == DENSE_BINARY_FORMAT_TYPE) {
-        return DenseBinaryFormat(SerializeFormat::DOUBLE).deserialize(stream);
-    }
-    if (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) {
-        return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserialize(stream);
-    }
-    if (formatId == MIXED_BINARY_FORMAT_TYPE) {
+    switch (formatId) {
+    case SPARSE_BINARY_FORMAT_WITH_CELLTYPE:
+        cell_type = encoding_to_cell_type(stream.getInt1_4Bytes());
+        [[fallthrough]];
+    case SPARSE_BINARY_FORMAT_TYPE:
+        return SparseBinaryFormat::deserialize(stream, cell_type);
+    case DENSE_BINARY_FORMAT_WITH_CELLTYPE:
+        cell_type = encoding_to_cell_type(stream.getInt1_4Bytes());
+        [[fallthrough]];
+    case DENSE_BINARY_FORMAT_TYPE:
+        return DenseBinaryFormat::deserialize(stream, cell_type);
+    case MIXED_BINARY_FORMAT_TYPE:
+    case MIXED_BINARY_FORMAT_WITH_CELLTYPE:
         stream.adjustReadPos(read_pos - stream.rp());
         return std::make_unique<WrappedSimpleTensor>(eval::SimpleTensor::decode(stream));
+    default:
+        throw IllegalArgumentException(make_string("Received unknown tensor format type = %du.", formatId));
     }
-    abort();
 }
 
 template <typename T>
 void
-TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> & cells)
+TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<T> &cells)
 {
+    auto cell_type = CellType::DOUBLE;
     auto formatId = stream.getInt1_4Bytes();
-    if (formatId == DENSE_BINARY_FORMAT_TYPE) {
-        return DenseBinaryFormat(SerializeFormat::DOUBLE).deserializeCellsOnly(stream, cells);
-    }
-    if (formatId == DENSE_BINARY_FORMAT_WITH_CELLTYPE) {
-        return DenseBinaryFormat(encoding2Format(stream.getInt1_4Bytes())).deserializeCellsOnly(stream, cells);
+    switch (formatId) {
+    case DENSE_BINARY_FORMAT_WITH_CELLTYPE:
+        cell_type = encoding_to_cell_type(stream.getInt1_4Bytes());
+        [[fallthrough]];
+    case DENSE_BINARY_FORMAT_TYPE:
+        return DenseBinaryFormat::deserializeCellsOnly(stream, cells, cell_type);
     }
     abort();
 }
 
-template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<double> & cells);
-template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<float> & cells);
+template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<double> &cells);
+template void TypedBinaryFormat::deserializeCellsOnlyFromDenseTensors(nbostream &stream, std::vector<float> &cells);
     
 }

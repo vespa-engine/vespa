@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -32,7 +33,7 @@ public class OsVersionStatusUpdaterTest {
                                                                           new JobControl(new MockCuratorDb()));
         // Add all zones to upgrade policy
         UpgradePolicy upgradePolicy = UpgradePolicy.create();
-        for (ZoneId zone : tester.zoneRegistry().zones().controllerUpgraded().ids()) {
+        for (ZoneApi zone : tester.zoneRegistry().zones().controllerUpgraded().zones()) {
             upgradePolicy = upgradePolicy.upgrade(zone);
         }
         tester.zoneRegistry().setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);

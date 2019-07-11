@@ -1,0 +1,21 @@
+{
+  "1": {
+    "id": 1,
+    "status": "success",
+    "start": 102000,
+    "end": 102000,
+    "wantedPlatform": "7.1",
+    "wantedApplication": {
+      "hash": "unknown"
+    },
+    "steps": {
+      "deployReal": "succeeded",
+      "installReal": "succeeded"
+    },
+    "tasks": {
+      "deploy": "succeeded",
+      "install": "succeeded"
+    },
+    "log": "https://some.url:43/root/run/1"
+  }
+}

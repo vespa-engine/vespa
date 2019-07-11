@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <algorithm>
 
@@ -14,8 +13,7 @@ LOG_SETUP("document_remover_test");
 using namespace search;
 using namespace search::memoryindex;
 
-struct WordFieldPair
-{
+struct WordFieldPair {
     vespalib::string _word;
     uint32_t _fieldId;
     WordFieldPair(vespalib::stringref word, uint32_t fieldId)
@@ -29,7 +27,7 @@ struct WordFieldPair
     }
 };
 
-typedef std::vector<WordFieldPair> WordFieldVector;
+using WordFieldVector = std::vector<WordFieldPair>;
 
 std::ostream &
 operator<<(std::ostream &os, const WordFieldPair &val)
@@ -38,13 +36,12 @@ operator<<(std::ostream &os, const WordFieldPair &val)
     return os;
 }
 
-struct MockRemoveListener : public IFieldIndexRemoveListener
-{
+struct MockRemoveListener : public IFieldIndexRemoveListener {
     WordFieldVector _words;
     uint32_t _expDocId;
     uint32_t _fieldId;
     virtual void remove(const vespalib::stringref word, uint32_t docId) override {
-        EXPECT_EQUAL(_expDocId, docId);
+        EXPECT_EQ(_expDocId, docId);
         _words.emplace_back(word, _fieldId);
     }
     void reset(uint32_t expDocId) {
@@ -60,13 +57,13 @@ struct MockRemoveListener : public IFieldIndexRemoveListener
     void setFieldId(uint32_t fieldId) { _fieldId = fieldId; }
 };
 
-struct Fixture
-{
+struct FieldIndexRemoverTest : public ::testing::Test {
     MockRemoveListener _listener;
     std::vector<std::unique_ptr<WordStore>> _wordStores;
     std::vector<std::map<vespalib::string, datastore::EntryRef>> _wordToRefMaps;
     std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
-    Fixture()
+
+    FieldIndexRemoverTest()
         : _listener(),
           _wordStores(),
           _wordToRefMaps(),
@@ -91,7 +88,7 @@ struct Fixture
         }
         return itr->second;
     }
-    Fixture &insert(const vespalib::string &word, uint32_t fieldId, uint32_t docId) {
+    FieldIndexRemoverTest &insert(const vespalib::string &word, uint32_t fieldId, uint32_t docId) {
         assert(fieldId < _wordStores.size());
         _removers[fieldId]->insert(getWordRef(word, fieldId), docId);
         return *this;
@@ -113,32 +110,31 @@ struct Fixture
     }
 };
 
-TEST_F("require that {word,fieldId} pairs for multiple doc ids can be inserted", Fixture)
+TEST_F(FieldIndexRemoverTest, word_field_id_pairs_for_multiple_doc_ids_can_be_inserted)
 {
-    f.insert("a", 1, 10).insert("a", 1, 20).insert("a", 1, 30);
-    f.insert("a", 2, 10).insert("a", 2, 20);
-    f.insert("b", 1, 20).insert("b", 1, 30);
-    f.insert("b", 2, 10).insert("b", 2, 30);
-    f.insert("c", 1, 10);
-    f.insert("c", 2, 20);
-    f.insert("c", 3, 30);
-    f.flush();
+    insert("a", 1, 10).insert("a", 1, 20).insert("a", 1, 30);
+    insert("a", 2, 10).insert("a", 2, 20);
+    insert("b", 1, 20).insert("b", 1, 30);
+    insert("b", 2, 10).insert("b", 2, 30);
+    insert("c", 1, 10);
+    insert("c", 2, 20);
+    insert("c", 3, 30);
+    flush();
 
-    EXPECT_EQUAL("[{a,1},{a,2},{b,2},{c,1}]", f.remove(10));
-    EXPECT_EQUAL("[{a,1},{a,2},{b,1},{c,2}]", f.remove(20));
-    EXPECT_EQUAL("[{a,1},{b,1},{b,2},{c,3}]", f.remove(30));
+    EXPECT_EQ("[{a,1},{a,2},{b,2},{c,1}]", remove(10));
+    EXPECT_EQ("[{a,1},{a,2},{b,1},{c,2}]", remove(20));
+    EXPECT_EQ("[{a,1},{b,1},{b,2},{c,3}]", remove(30));
 }
 
-TEST_F("require that we can insert after flush", Fixture)
+TEST_F(FieldIndexRemoverTest, we_can_insert_after_flush)
 {
-    f.insert("a", 1, 10).insert("b", 1, 10);
-    f.flush();
-    f.insert("b", 1, 20).insert("b", 2, 20);
-    f.flush();
+    insert("a", 1, 10).insert("b", 1, 10);
+    flush();
+    insert("b", 1, 20).insert("b", 2, 20);
+    flush();
 
-    EXPECT_EQUAL("[{a,1},{b,1}]", f.remove(10));
-    EXPECT_EQUAL("[{b,1},{b,2}]", f.remove(20));
+    EXPECT_EQ("[{a,1},{b,1}]", remove(10));
+    EXPECT_EQ("[{b,1},{b,2}]", remove(20));
 }
 
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

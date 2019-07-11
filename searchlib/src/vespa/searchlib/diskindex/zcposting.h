@@ -72,7 +72,8 @@ public:
     void writeDocIdAndFeatures(const DocIdAndFeatures &features) override;
     void flushWord() override;
 
-    bool open(const vespalib::string &name, const TuneFileSeqWrite &tuneFileWrite,
+    bool open(const vespalib::string &name,
+              const TuneFileSeqWrite &tuneFileWrite,
               const search::common::FileHeaderContext &fileHeaderContext) override;
 
     bool close() override;

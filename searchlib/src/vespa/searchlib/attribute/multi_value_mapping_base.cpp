@@ -13,8 +13,8 @@ constexpr size_t DEAD_ARRAYS_SLACK = 0x10000u;
 
 }
 
-MultiValueMappingBase::MultiValueMappingBase(const GrowStrategy &gs,
-                                               vespalib::GenerationHolder &genHolder)
+MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
+                                             vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
       _totalValues(0u),
       _cachedArrayStoreMemoryUsage(),
@@ -63,19 +63,19 @@ MultiValueMappingBase::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::functi
     }
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 MultiValueMappingBase::getMemoryUsage() const
 {
-    MemoryUsage retval = getArrayStoreMemoryUsage();
+    vespalib::MemoryUsage retval = getArrayStoreMemoryUsage();
     retval.merge(_indices.getMemoryUsage());
     return retval;
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 MultiValueMappingBase::updateStat()
 {
     _cachedArrayStoreAddressSpaceUsage = getAddressSpaceUsage();
-    MemoryUsage retval = getArrayStoreMemoryUsage();
+    vespalib::MemoryUsage retval = getArrayStoreMemoryUsage();
     _cachedArrayStoreMemoryUsage = retval;
     retval.merge(_indices.getMemoryUsage());
     return retval;

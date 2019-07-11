@@ -19,7 +19,7 @@ public class Logserver extends AbstractService {
     public Logserver(AbstractConfigProducer parent) {
         super(parent, "logserver");
         portsMeta.on(0).tag("logtp").tag("rpc");
-        portsMeta.on(1).tag("logtp").tag("legacy");
+        portsMeta.on(1).tag("unused");
         portsMeta.on(2).tag("unused");
         portsMeta.on(3).tag("unused");
         setProp("clustertype", "admin");
@@ -39,8 +39,6 @@ public class Logserver extends AbstractService {
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
         sb.append("-Dlogserver.rpcListenPort=").append(getRelativePort(0));
-        sb.append(" ");
-        sb.append("-Dlogserver.listenport=").append(getRelativePort(1));
         sb.append(" ");
         sb.append("-Dlogserver.logarchive.dir=" + logArchiveDir);
         return sb.toString();
@@ -71,7 +69,7 @@ public class Logserver extends AbstractService {
 
     @Override
     public String[] getPortSuffixes() {
-        return new String[]{ "rpc", "legacy", "unused/1", "unused/2" };
+        return new String[]{ "rpc", "unused/1", "unused/2", "unused/3" };
     }
 
 }

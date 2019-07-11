@@ -19,11 +19,11 @@ Source0:        vespa-%{version}.tar.gz
 %if 0%{?centos}
 BuildRequires: epel-release
 BuildRequires: centos-release-scl
-BuildRequires: devtoolset-7-gcc-c++
-BuildRequires: devtoolset-7-libatomic-devel
-BuildRequires: devtoolset-7-binutils
+BuildRequires: devtoolset-8-gcc-c++
+BuildRequires: devtoolset-8-libatomic-devel
+BuildRequires: devtoolset-8-binutils
 BuildRequires: rh-maven35
-%define _devtoolset_enable /opt/rh/devtoolset-7/enable
+%define _devtoolset_enable /opt/rh/devtoolset-8/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 %endif
 %if 0%{?fedora}
@@ -42,17 +42,6 @@ BuildRequires: vespa-protobuf-devel >= 3.7.0-4
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
-%if 0%{?fc27}
-BuildRequires: llvm-devel >= 5.0.2
-BuildRequires: boost-devel >= 1.64
-BuildRequires: vespa-gtest >= 1.8.1-1
-%endif
-%if 0%{?fc28}
-BuildRequires: llvm-devel >= 6.0.1
-BuildRequires: boost-devel >= 1.66
-BuildRequires: gtest-devel
-BuildRequires: gmock-devel
-%endif
 %if 0%{?fc29}
 BuildRequires: llvm-devel >= 7.0.0
 BuildRequires: boost-devel >= 1.66
@@ -81,7 +70,6 @@ BuildRequires: java-11-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
-BuildRequires: vespa-cppunit-devel >= 1.12.1-6
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
@@ -125,14 +113,6 @@ Requires: vespa-protobuf >= 3.7.0-4
 %endif
 %if 0%{?fedora}
 Requires: vespa-protobuf >= 3.7.0-4
-%if 0%{?fc27}
-Requires: llvm-libs >= 5.0.2
-%define _vespa_llvm_version 5.0
-%endif
-%if 0%{?fc28}
-Requires: llvm-libs >= 6.0.1
-%define _vespa_llvm_version 6.0
-%endif
 %if 0%{?fc29}
 Requires: llvm-libs >= 7.0.0
 %define _vespa_llvm_version 7

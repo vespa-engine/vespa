@@ -221,7 +221,7 @@ public class RangeQueryOptimizerTestCase {
         sd.addIndex(singleValue1);
         sd.addIndex(singleValue2);
         sd.addIndex(multiValue);
-        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        return new IndexFacts(new IndexModel(sd));
     }
 
 }

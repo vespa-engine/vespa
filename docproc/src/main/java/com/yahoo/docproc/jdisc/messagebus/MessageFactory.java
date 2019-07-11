@@ -2,16 +2,24 @@
 package com.yahoo.docproc.jdisc.messagebus;
 
 import com.yahoo.docproc.Processing;
-import com.yahoo.document.*;
+import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.TestAndSetMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
 
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 class MessageFactory {
 
@@ -27,26 +35,26 @@ class MessageFactory {
     }
 
     public DocumentMessage fromDocumentOperation(Processing processing, DocumentOperation documentOperation) {
-        DocumentMessage msg = newMessage(documentOperation);
-        msg.setLoadType(loadType);
-        msg.setPriority(priority);
-        msg.setRoute(requestMsg.getRoute());
-        msg.setTimeReceivedNow();
-        msg.setTimeRemaining(requestMsg.getTimeRemainingNow());
-        msg.getTrace().setLevel(requestMsg.getTrace().getLevel());
+        DocumentMessage message = newMessage(documentOperation);
+        message.setLoadType(loadType);
+        message.setPriority(priority);
+        message.setRoute(requestMsg.getRoute());
+        message.setTimeReceivedNow();
+        message.setTimeRemaining(requestMsg.getTimeRemainingNow());
+        message.getTrace().setLevel(requestMsg.getTrace().getLevel());
         if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Created '" + msg.getClass().getName() +
-                                    "', route = '" + msg.getRoute() +
-                                    "', priority = '" + msg.getPriority().name() +
-                                    "', load type = '" + msg.getLoadType() +
-                                    "', trace level = '" + msg.getTrace().getLevel() +
-                                    "', time remaining = '" + msg.getTimeRemaining() + "'.");
+            log.log(LogLevel.DEBUG, "Created '" + message.getClass().getName() +
+                                    "', route = '" + message.getRoute() +
+                                    "', priority = '" + message.getPriority().name() +
+                                    "', load type = '" + message.getLoadType() +
+                                    "', trace level = '" + message.getTrace().getLevel() +
+                                    "', time remaining = '" + message.getTimeRemaining() + "'.");
         }
-        return msg;
+        return message;
     }
 
     private static DocumentMessage newMessage(DocumentOperation documentOperation) {
-        final TestAndSetMessage message;
+        TestAndSetMessage message;
 
         if (documentOperation instanceof DocumentPut) {
             message = new PutDocumentMessage(((DocumentPut)documentOperation));

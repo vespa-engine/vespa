@@ -41,7 +41,7 @@ public final class JDisc implements AutoCloseable {
     @SuppressWarnings("unused")
     private final StandaloneContainerApplication application;
 
-    private final Container container = Container.get();  // TODO: This is indeed temporary ... *3 years later* Indeed.
+    private final Container container = Container.get();  // TODO: This is indeed temporary ... *3 years later* indeed.
 
     private final Path path;
     private final boolean deletePathWhenClosing;
@@ -55,7 +55,7 @@ public final class JDisc implements AutoCloseable {
         application = (StandaloneContainerApplication) testDriver.application();
     }
 
-    private Module bindings(final Path path, final ConfigModelRepo configModelRepo, final Networking networking) {
+    private Module bindings(Path path, ConfigModelRepo configModelRepo, Networking networking) {
         return new AbstractModule() {
             @Override
             protected void configure() {

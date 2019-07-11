@@ -11,6 +11,7 @@
 #include "stringbucketresultnode.h"
 #include "rawbucketresultnode.h"
 #include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/stllike/identity.h>
 #include <algorithm>
 
 namespace search::expression {
@@ -214,7 +215,7 @@ struct GetString {
 };
 
 template <typename B>
-class NumericResultNodeVectorT : public ResultNodeVectorT<B, cmpT<ResultNode>, std::_Identity<ResultNode> >
+class NumericResultNodeVectorT : public ResultNodeVectorT<B, cmpT<ResultNode>, vespalib::Identity>
 {
 public:
     ResultNode & flattenMultiply(ResultNode & r) const override {
@@ -366,7 +367,7 @@ public:
     const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }
 };
 
-class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
+class StringResultNodeVector : public ResultNodeVectorT<StringResultNode, cmpT<ResultNode>, vespalib::Identity>
 {
 public:
     StringResultNodeVector() { }
@@ -375,7 +376,7 @@ public:
     const StringBucketResultNode& getNullBucket() const override { return StringBucketResultNode::getNull(); }
 };
 
-class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, std::_Identity<ResultNode> >
+class RawResultNodeVector : public ResultNodeVectorT<RawResultNode, cmpT<ResultNode>, vespalib::Identity>
 {
 public:
     RawResultNodeVector() { }

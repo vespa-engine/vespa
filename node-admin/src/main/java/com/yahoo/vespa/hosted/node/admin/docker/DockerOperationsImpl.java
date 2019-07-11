@@ -15,12 +15,14 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembers
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,12 +42,16 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String MANAGER_NAME = "node-admin";
 
-    private static final String IPV6_NPT_PREFIX = "fd00::";
-    private static final String IPV4_NPT_PREFIX = "172.17.0.0";
+    private static final InetAddress IPV6_NPT_PREFIX = InetAddresses.forString("fd00::");
+    private static final InetAddress IPV4_NPT_PREFIX = InetAddresses.forString("172.17.0.0");
 
     private final Docker docker;
     private final ProcessExecuter processExecuter;
     private final IPAddresses ipAddresses;
+
+    public DockerOperationsImpl(Docker docker) {
+        this(docker, new ProcessExecuter(), new IPAddressesImpl());
+    }
 
     public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
         this.docker = docker;
@@ -58,13 +64,13 @@ public class DockerOperationsImpl implements DockerOperations {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
-        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().getHostname()).orElseThrow(
-                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().getHostname() +
-                        ". Missing an AAAA DNS entry?"));
+        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().hostname()).orElseThrow(
+                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().hostname() +
+                                           ". Missing an AAAA DNS entry?"));
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
-                context.node().getWantedDockerImage().get(), context.containerName())
-                .withHostName(context.node().getHostname())
+                context.node().wantedDockerImage().get(), context.containerName())
+                .withHostName(context.node().hostname())
                 .withResources(containerResources)
                 .withManagedBy(MANAGER_NAME)
                 .withUlimit("nofile", 262_144, 262_144)
@@ -76,19 +82,13 @@ public class DockerOperationsImpl implements DockerOperations {
                 //
                 // From experience our Vespa processes require a high limit, say 400k. For all other processes,
                 // we would like to use a much lower limit, say 32k.
-                //
-                // Unfortunately, the Vespa processes runs as the yahoo user which is also used by many non-Vespa
-                // processes. This means all yahoo users must use the high limit. For instance, yinst would start
-                // many yahoo processes along with root processes and other processes. It's non-trivial to get this
-                // exactly right. Instead and for now, we just set a high limit here which will apply to all processes
-                // in the container, unless explicitly modified.
                 .withUlimit("nproc", 409_600, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN")  // Needed for perf
                 .withAddCapability("SYS_NICE");  // Needed for set_mempolicy to work
 
-        if (context.node().getMembership().map(NodeMembership::getClusterType).map("content"::equalsIgnoreCase).orElse(false)) {
+        if (context.node().membership().map(NodeMembership::clusterType).map("content"::equalsIgnoreCase).orElse(false)) {
             command.withSecurityOpts("seccomp=unconfined");
         }
 
@@ -96,30 +96,18 @@ public class DockerOperationsImpl implements DockerOperations {
         command.withNetworkMode(networking.getDockerNetworkMode());
 
         if (networking == DockerNetworking.NPT) {
-            InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
-            InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
+            InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, IPV6_NPT_PREFIX, 8);
             command.withIpAddress(ipV6Local);
 
             // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().getHostname())
-                    .map(ipV4Address -> {
-                        InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
-                        return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
-                    });
+            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname())
+                    .map(ipV4Address -> IPAddresses.prefixTranslate(ipV4Address, IPV4_NPT_PREFIX, 2));
             ipV4Local.ifPresent(command::withIpAddress);
 
-            addEtcHosts(containerData, context.node().getHostname(), ipV4Local, ipV6Local);
+            addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
         }
 
         addMounts(context, command);
-
-        // TODO: Enforce disk constraints
-        long minMainMemoryAvailableMb = (long) (context.node().getMinMainMemoryAvailableGb() * 1024);
-        if (minMainMemoryAvailableMb > 0) {
-            // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
-            // only has this much physical memory (overrides total memory reported by `free -m`).
-            command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-        }
 
         logger.info("Creating new container with args: " + command);
         command.create();
@@ -272,47 +260,31 @@ public class DockerOperationsImpl implements DockerOperations {
 
         // Paths unique to each container
         List<Path> paths = new ArrayList<>(List.of(
-                Paths.get("/etc/vespa/flags"),
-                Paths.get("/etc/yamas-agent"),
-                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
-                context.pathInNodeUnderVespaHome("logs/jdisc_core"),
-                context.pathInNodeUnderVespaHome("logs/langdetect"),
-                context.pathInNodeUnderVespaHome("logs/nginx"),
+                Paths.get("/etc/vespa/flags"), // local file db, to use flags before connection to cfg is established
+                Paths.get("/etc/yamas-agent"), // metrics check configuration
+                Paths.get("/opt/splunkforwarder/var/log"),  // VESPA-14917, thin pool leakage
+                Paths.get("/var/log"),                      // VESPA-14917, thin pool leakage
+                Paths.get("/var/spool/postfix/maildrop"),   // VESPA-14917, thin pool leakage
+                context.pathInNodeUnderVespaHome("logs/daemontools_y"), // TODO: related to ykeykey?
                 context.pathInNodeUnderVespaHome("logs/vespa"),
                 context.pathInNodeUnderVespaHome("logs/yca"),
-                context.pathInNodeUnderVespaHome("logs/yck"),
-                context.pathInNodeUnderVespaHome("logs/yell"),
-                context.pathInNodeUnderVespaHome("logs/ykeykey"),
-                context.pathInNodeUnderVespaHome("logs/ykeykeyd"),
-                context.pathInNodeUnderVespaHome("logs/yms_agent"),
+                context.pathInNodeUnderVespaHome("logs/ykeykeyd"), // TODO: should only be needed for proxy?
                 context.pathInNodeUnderVespaHome("logs/ysar"),
-                context.pathInNodeUnderVespaHome("logs/ystatus"),
-                context.pathInNodeUnderVespaHome("logs/zpu"),
                 context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/cache"),
-                context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/crash"), // core dumps
                 context.pathInNodeUnderVespaHome("var/container-data"),
-                context.pathInNodeUnderVespaHome("var/db/jdisc"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
-                context.pathInNodeUnderVespaHome("var/jdisc_core"),
-                context.pathInNodeUnderVespaHome("var/maven"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when vespa-routing is no more
-                context.pathInNodeUnderVespaHome("var/run"),
-                context.pathInNodeUnderVespaHome("var/scoreboards"),
-                context.pathInNodeUnderVespaHome("var/service"),
-                context.pathInNodeUnderVespaHome("var/share"),
-                context.pathInNodeUnderVespaHome("var/spool"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
-                context.pathInNodeUnderVespaHome("var/ycore++"),
-                context.pathInNodeUnderVespaHome("var/yinst/tmp"),
-                context.pathInNodeUnderVespaHome("var/zookeeper")
+                context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
         ));
 
-        if (context.nodeType() == NodeType.proxy)
+        if (context.nodeType() == NodeType.proxy) {
+            paths.add(context.pathInNodeUnderVespaHome("logs/nginx"));
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
-        if (context.nodeType() == NodeType.tenant)
+        } else if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
 
         paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
@@ -324,6 +296,16 @@ public class DockerOperationsImpl implements DockerOperations {
 
         if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
+    }
+
+    @Override
+    public boolean noManagedContainersRunning() {
+        return docker.noManagedContainersRunning(MANAGER_NAME);
+    }
+
+    @Override
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return docker.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */

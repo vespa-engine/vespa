@@ -100,12 +100,11 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
       _handle(),
       _has_available(false),
       _need_new_forwarder(true),
-      _supervisor()
+      _server()
 {
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfig(0);
     configure(_handle->getConfig());
-    _supervisor.Start();
 
     LOG(debug, "got logServer %s", _logserver_host.c_str());
     LOG(debug, "got handle %p", _handle.get());
@@ -113,7 +112,6 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
 
 ConfigSubscriber::~ConfigSubscriber()
 {
-    _supervisor.ShutDown(true);
     LOG(debug, "forget logServer %s", _logserver_host.c_str());
     LOG(debug, "done ~ConfSub()");
 }
@@ -123,7 +121,7 @@ ConfigSubscriber::make_forwarder(Metrics& metrics)
 {
     std::unique_ptr<Forwarder> result;
     if (_use_logserver) {
-        result = std::make_unique<RpcForwarder>(metrics, _forward_filter, _supervisor, _logserver_host,
+        result = std::make_unique<RpcForwarder>(metrics, _forward_filter, _server.supervisor(), _logserver_host,
                                                 _logserver_rpc_port, 60.0, 100);
     } else {
         result = std::make_unique<EmptyForwarder>(metrics);

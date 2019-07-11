@@ -24,11 +24,11 @@ private:
     const search::TuneFileIndexing _tuneFileIndexing;
 
 public:
-    MemoryIndexWrapper(const search::index::Schema &schema,
-                       const search::common::FileHeaderContext &fileHeaderContext,
-                       const search::TuneFileIndexing &tuneFileIndexing,
-                       searchcorespi::index::IThreadingService &
-                       threadingService,
+    MemoryIndexWrapper(const search::index::Schema& schema,
+                       const search::index::IFieldLengthInspector& inspector,
+                       const search::common::FileHeaderContext& fileHeaderContext,
+                       const search::TuneFileIndexing& tuneFileIndexing,
+                       searchcorespi::index::IThreadingService& threadingService,
                        SerialNum serialNum);
 
     /**
@@ -60,6 +60,11 @@ public:
     void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
 
     /**
+     * Implements IFieldLengthInspector
+     */
+    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override;
+
+    /**
      * Implements proton::IMemoryIndex
      */
     bool hasReceivedDocumentInsert() const override {
@@ -68,7 +73,7 @@ public:
     search::index::Schema::SP getPrunedSchema() const override {
         return _index.getPrunedSchema();
     }
-    search::MemoryUsage getMemoryUsage() const override {
+    vespalib::MemoryUsage getMemoryUsage() const override {
         return _index.getMemoryUsage();
     }
     void insertDocument(uint32_t lid, const document::Document &doc) override {

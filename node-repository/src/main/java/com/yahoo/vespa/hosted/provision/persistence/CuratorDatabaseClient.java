@@ -62,7 +62,6 @@ public class CuratorDatabaseClient {
     private static final Path root = Path.fromString("/provision/v1");
     private static final Path lockRoot = root.append("locks");
     private static final Path loadBalancersRoot = root.append("loadBalancers");
-    private static final Path flagsRoot = root.append("flags");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
@@ -75,7 +74,6 @@ public class CuratorDatabaseClient {
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
         this.nodeSerializer = new NodeSerializer(flavors);
         this.zone = zone;
-        curator.delete(flagsRoot); // TODO: Remove after 7.42 has been released
         this.curatorDatabase = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
@@ -107,7 +105,7 @@ public class CuratorDatabaseClient {
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
-                throw new IllegalArgumentException(node + " is not in the " + node.state() + " state");
+                throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
             node = node.with(node.history().recordStateTransition(null, expectedState, Agent.system, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
@@ -118,15 +116,6 @@ public class CuratorDatabaseClient {
             log.log(LogLevel.INFO, "Added " + node);
 
         return nodes;
-    }
-
-    /**
-     * Adds a set of nodes in the initial, provisioned state.
-     *
-     * @return the given nodes for convenience.
-     */
-    public List<Node> addNodes(List<Node> nodes) {
-        return addNodesInState(nodes, Node.State.provisioned);
     }
 
     /**
@@ -211,7 +200,7 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.id(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
+            Node newNode = new Node(node.id(), node.ipConfig(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,
@@ -482,23 +471,28 @@ public class CuratorDatabaseClient {
 
 
     // Load balancers
-    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
+    public List<LoadBalancerId> readLoadBalancerIds() {
         return curatorDatabase.getChildren(loadBalancersRoot).stream()
                               .map(LoadBalancerId::fromSerializedForm)
-                              .map(this::readLoadBalancer)
-                              .filter(Optional::isPresent)
-                              .map(Optional::get)
-                              .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
-                                                         Collections::unmodifiableMap));
+                              .collect(Collectors.toUnmodifiableList());
     }
 
-    private Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
+    public Map<LoadBalancerId, LoadBalancer> readLoadBalancers() {
+        return readLoadBalancerIds().stream()
+                                    .map(this::readLoadBalancer)
+                                    .filter(Optional::isPresent)
+                                    .map(Optional::get)
+                                    .collect(collectingAndThen(toMap(LoadBalancer::id, Function.identity()),
+                                                           Collections::unmodifiableMap));
+    }
+
+    public Optional<LoadBalancer> readLoadBalancer(LoadBalancerId id) {
         return read(loadBalancerPath(id), LoadBalancerSerializer::fromJson);
     }
 
     public void writeLoadBalancer(LoadBalancer loadBalancer) {
         NestedTransaction transaction = new NestedTransaction();
-        writeLoadBalancers(Collections.singletonList(loadBalancer), transaction);
+        writeLoadBalancers(List.of(loadBalancer), transaction);
         transaction.commit();
     }
 

@@ -210,7 +210,7 @@ public:
     /*
      * Return the memory usage for document store.
      */
-    virtual MemoryUsage getMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
 
     /*
      * Return detailed stats about underlying files for data store.

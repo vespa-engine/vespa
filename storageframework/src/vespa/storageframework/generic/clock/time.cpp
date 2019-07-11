@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <vector>
 #include <cassert>
+#include <sstream>
 
 namespace storage {
 namespace framework {

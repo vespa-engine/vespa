@@ -68,4 +68,5 @@ public abstract class CompositeTaggableItem extends CompositeItem implements Tag
     public boolean hasUniqueID() {
         return super.hasUniqueID();
     }
+
 }

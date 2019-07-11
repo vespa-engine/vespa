@@ -4,8 +4,7 @@
 
 #include "itermfielddata.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * Information about a single field that is being searched for a term
@@ -17,7 +16,8 @@ class SimpleTermFieldData : public ITermFieldData
 {
 private:
     uint32_t        _fieldId;
-    double          _docFreq;
+    uint32_t        _matching_doc_count;
+    uint32_t        _total_doc_count;
     TermFieldHandle _handle;
 
 public:
@@ -33,45 +33,30 @@ public:
      **/
     SimpleTermFieldData(uint32_t fieldId);
 
-    /**
-     * Obtain the field id.
-     *
-     * @return field id
-     **/
     uint32_t getFieldId() const override final { return _fieldId; }
 
-    /**
-     * Obtain the document frequency.
-     *
-     * @return document frequency
-     **/
-    double getDocFreq() const override final { return _docFreq; }
+    uint32_t get_matching_doc_count() const override { return _matching_doc_count; }
 
-    /**
-     * Obtain the match handle for this field.
-     *
-     * @return match handle
-     **/
-    TermFieldHandle getHandle() const override {
+    uint32_t get_total_doc_count() const override { return _total_doc_count; }
+
+    using ITermFieldData::getHandle;
+
+    TermFieldHandle getHandle(MatchDataDetails requestedDetails) const override {
+        (void) requestedDetails;
         return _handle;
     }
 
     /**
      * Sets the document frequency.
-     *
-     * @return this object (for chaining)
-     * @param docFreq document frequency
      **/
-    SimpleTermFieldData &setDocFreq(double docFreq) {
-        _docFreq = docFreq;
+    SimpleTermFieldData &setDocFreq(uint32_t matching_doc_count, uint32_t total_doc_count) {
+        _matching_doc_count = matching_doc_count;
+        _total_doc_count = total_doc_count;
         return *this;
     }
 
     /**
      * Sets the match handle for this field.
-     *
-     * @return this object (for chaining)
-     * @param handle match handle
      **/
     SimpleTermFieldData &setHandle(TermFieldHandle handle) {
         _handle = handle;
@@ -79,6 +64,5 @@ public:
     }
 };
 
-} // namespace fef
-} // namespace search
+}
 

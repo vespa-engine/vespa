@@ -1,0 +1,31 @@
+{
+  "lastVersions": {},
+  "deploying": {},
+  "deployments": [],
+  "jobs": {},
+  "devJobs": {
+    "dev-us-east-1": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "unknown"
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded"
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded"
+          },
+          "log": "https://some.url:43/root/dev-us-east-1/run/1"
+        }
+      ]
+    }
+  }
+}

@@ -9,6 +9,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ConcatV2 extends IntermediateOperation {
 
@@ -89,7 +90,7 @@ public class ConcatV2 extends IntermediateOperation {
             OrderedTensorType b = inputs.get(i).type().get();
             String bDim = b.dimensions().get(concatDimensionIndex).name();
             String aDim = a.dimensions().get(concatDimensionIndex).name();
-            renamer.addConstraint(aDim, bDim, DimensionRenamer::equals, this);
+            renamer.addConstraint(aDim, bDim, DimensionRenamer.Constraint.equal(false), this);
         }
     }
 
@@ -98,5 +99,13 @@ public class ConcatV2 extends IntermediateOperation {
         super.renameDimensions(renamer);
         concatDimensionName = renamer.dimensionNameOf(concatDimensionName).orElse(concatDimensionName);
    }
+
+    @Override
+    public ConcatV2 withInputs(List<IntermediateOperation> inputs) {
+        return new ConcatV2(modelName(), name(), inputs);
+    }
+
+    @Override
+    public String operationName() { return "ConcatV2"; }
 
 }

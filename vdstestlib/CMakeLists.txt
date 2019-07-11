@@ -5,10 +5,9 @@ vespa_define_module(
     vespalib
 
     TESTS
-    src/tests/cppunit
     src/tests/dirconfig
 
     LIBS
     src/vespa/vdstestlib
-    src/vespa/vdstestlib/cppunit
+    src/vespa/vdstestlib/config
 )

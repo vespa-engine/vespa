@@ -96,11 +96,11 @@
         <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
+        <module>metrics-proxy</module>
         <module>model-evaluation</module>
         <module>model-integration</module>
         <module>node-repository</module>
         <module>node-admin</module>
-        <module>node-maintainer</module>
         <module>orchestrator-restapi</module>
         <module>orchestrator</module>
         <module>parent</module>
@@ -111,6 +111,7 @@
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
+        <module>security-tools</module>
         <module>security-utils</module>
         <module>serviceview</module>
         <module>service-monitor</module>
@@ -119,6 +120,7 @@
         <module>standalone-container</module>
         <module>statistics</module>
         <module>storage</module>
+        <module>tenant-auth</module>
         <module>tenant-base</module>
         <module>tenant-cd</module>
         <module>testutil</module>

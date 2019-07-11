@@ -6,10 +6,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-
+import com.yahoo.config.model.api.ContainerEndpoint;
 import org.junit.Test;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -17,6 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -25,6 +29,15 @@ import static org.junit.Assert.assertTrue;
  * @author hmusum
  */
 public class PrepareParamsTest {
+
+    private static final String rotation = "rotation-042.vespa.a02.yahoodns.net";
+    private static final String vespaVersion = "6.37.49";
+    private static final String request = "http://foo:19071/application/v2/tenant/foo/application/bar?" +
+                                          PrepareParams.DRY_RUN_PARAM_NAME + "=true&" +
+                                          PrepareParams.VERBOSE_PARAM_NAME+ "=true&" +
+                                          PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
+                                          PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
+                                          PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
 
     @Test
     public void testCorrectParsing() {
@@ -38,15 +51,6 @@ public class PrepareParamsTest {
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertThat(prepareParams.rotations().size(), is(0));
     }
-
-    private static final String rotation = "rotation-042.vespa.a02.yahoodns.net";
-    private static final String vespaVersion = "6.37.49";
-    private static final String request = "http://foo:19071/application/v2/tenant/foo/application/bar?" +
-            PrepareParams.DRY_RUN_PARAM_NAME + "=true&" +
-            PrepareParams.VERBOSE_PARAM_NAME+ "=true&" +
-            PrepareParams.IGNORE_VALIDATION_PARAM_NAME + "=false&" +
-            PrepareParams.APPLICATION_NAME_PARAM_NAME + "=baz&" +
-            PrepareParams.VESPA_VERSION_PARAM_NAME + "=" + vespaVersion;
    
     @Test
     public void testCorrectParsingWithRotation() {
@@ -77,6 +81,31 @@ public class PrepareParamsTest {
         assertThat(rotations, containsInAnyOrder(new Rotation(rotation), new Rotation(rotationTwo)));
     }
 
+    @Test
+    public void testCorrectParsingWithContainerEndpoints() {
+        var endpoints = List.of(new ContainerEndpoint("qrs1",
+                                                      List.of("c1.example.com",
+                                                              "c2.example.com")),
+                                new ContainerEndpoint("qrs2",
+                                                      List.of("c3.example.com",
+                                                              "c4.example.com")));
+        var param = "[\n" +
+                    "  {\n" +
+                    "    \"clusterId\": \"qrs1\",\n" +
+                    "    \"names\": [\"c1.example.com\", \"c2.example.com\"]\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"clusterId\": \"qrs2\",\n" +
+                    "    \"names\": [\"c3.example.com\", \"c4.example.com\"]\n" +
+                    "  }\n" +
+                    "]";
+
+        var encoded = URLEncoder.encode(param, StandardCharsets.UTF_8);
+        var prepareParams = createParams(request + "&" + PrepareParams.CONTAINER_ENDPOINTS_PARAM_NAME +
+                                                   "=" + encoded, TenantName.from("foo"));
+        assertEquals(endpoints, prepareParams.containerEndpoints());
+    }
+
     // Create PrepareParams from a request (based on uri and tenant name)
     private static PrepareParams createParams(String uri, TenantName tenantName) {
         return PrepareParams.fromHttpRequest(
@@ -84,4 +113,5 @@ public class PrepareParamsTest {
                 tenantName,
                 Duration.ofSeconds(60));
     }
+
 }

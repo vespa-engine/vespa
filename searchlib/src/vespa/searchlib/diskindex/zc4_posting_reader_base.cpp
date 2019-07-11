@@ -11,20 +11,18 @@ using index::DocIdAndFeatures;
 using bitcompression::FeatureEncodeContext;
 using bitcompression::DecodeContext64Base;
 
-Zc4PostingReaderBase::NoSkip::NoSkip()
+Zc4PostingReaderBase::NoSkipBase::NoSkipBase()
     : _zc_buf(),
       _doc_id(0),
-      _field_length(1),
-      _num_occs(1),
       _doc_id_pos(0),
       _features_pos(0)
 {
 }
 
-Zc4PostingReaderBase::NoSkip::~NoSkip() = default;
+Zc4PostingReaderBase::NoSkipBase::~NoSkipBase() = default;
 
 void
-Zc4PostingReaderBase::NoSkip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id)
+Zc4PostingReaderBase::NoSkipBase::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id)
 {
     _doc_id_pos = 0;
     _features_pos = 0;
@@ -37,22 +35,31 @@ Zc4PostingReaderBase::NoSkip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::NoSkip::read(bool decode_cheap_features)
+Zc4PostingReaderBase::NoSkipBase::check_end(uint32_t last_doc_id)
+{
+    assert(_doc_id == last_doc_id);
+    assert(_zc_buf._valI == _zc_buf._valE);
+}
+
+Zc4PostingReaderBase::NoSkip::NoSkip()
+    : NoSkipBase(),
+      _field_length(1),
+      _num_occs(1)
+{
+}
+
+Zc4PostingReaderBase::NoSkip::~NoSkip() = default;
+
+void
+Zc4PostingReaderBase::NoSkip::read(bool decode_interleaved_features)
 {
     assert(_zc_buf._valI < _zc_buf._valE);
     _doc_id += (_zc_buf.decode()+ 1);
-    if (decode_cheap_features) {
+    if (decode_interleaved_features) {
         _field_length = _zc_buf.decode() + 1;
         _num_occs = _zc_buf.decode() + 1;
     }
     _doc_id_pos = _zc_buf.pos();
-}
-
-void
-Zc4PostingReaderBase::NoSkip::check_end(uint32_t last_doc_id)
-{
-    assert(_doc_id == last_doc_id);
-    assert(_zc_buf._valI == _zc_buf._valE);
 }
 
 void
@@ -63,7 +70,7 @@ Zc4PostingReaderBase::NoSkip::check_not_end(uint32_t last_doc_id)
 }
 
 Zc4PostingReaderBase::L1Skip::L1Skip()
-    : NoSkip(),
+    : NoSkipBase(),
       _l1_skip_pos(0)
 {
 }
@@ -71,7 +78,7 @@ Zc4PostingReaderBase::L1Skip::L1Skip()
 void
 Zc4PostingReaderBase::L1Skip::setup(DecodeContext &decode_context, uint32_t size, uint32_t doc_id, uint32_t last_doc_id)
 {
-    NoSkip::setup(decode_context, size, doc_id);
+    NoSkipBase::setup(decode_context, size, doc_id);
     _l1_skip_pos = 0;
     if (size != 0) {
         next_skip_entry();
@@ -81,7 +88,7 @@ Zc4PostingReaderBase::L1Skip::setup(DecodeContext &decode_context, uint32_t size
 }
 
 void
-Zc4PostingReaderBase::L1Skip::check(const NoSkip &no_skip, bool top_level, bool decode_features)
+Zc4PostingReaderBase::L1Skip::check(const NoSkipBase &no_skip, bool top_level, bool decode_features)
 {
     assert(_doc_id == no_skip.get_doc_id());
     _doc_id_pos += (_zc_buf.decode() + 1);
@@ -212,7 +219,7 @@ Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base &decode_contex
         }
         _l1_skip.next_skip_entry();
     }
-    _no_skip.read(_posting_params._encode_cheap_features);
+    _no_skip.read(_posting_params._encode_interleaved_features);
     if (_residue == 1) {
         _no_skip.check_end(_last_doc_id);
         _l1_skip.check_end(_last_doc_id);

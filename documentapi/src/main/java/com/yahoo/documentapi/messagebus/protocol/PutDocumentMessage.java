@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
@@ -28,7 +27,8 @@ public class PutDocumentMessage extends TestAndSetMessage {
 
     /**
      * Constructs a new message from a byte buffer.
-     *  @param decoder The decoder to use for deserialization.
+     *
+     * @param decoder The decoder to use for deserialization.
      * @param buffer  A byte buffer that contains a serialized message.
      */
     public PutDocumentMessage(LazyDecoder decoder, DocumentDeserializer buffer) {
@@ -36,11 +36,7 @@ public class PutDocumentMessage extends TestAndSetMessage {
         this.buffer = buffer;
     }
 
-    /**
-     * Constructs a new document put message.
-     *
-     * @param put Document put operation
-     */
+    /** Constructs a new document put message */
     public PutDocumentMessage(DocumentPut put) {
         this.put = put;
     }
@@ -64,40 +60,26 @@ public class PutDocumentMessage extends TestAndSetMessage {
         }
     }
 
-    /**
-     * Returns the document put operation
-     */
+    /** Returns the document put operation */
     public DocumentPut getDocumentPut() {
         deserialize();
         return put;
     }
 
-    /**
-     * Sets the document to put.
-     *
-     * @param put Put document operation
-     */
+    /** Sets the document to put */
     public void setDocumentPut(DocumentPut put) {
         buffer = null;
         decoder = null;
         this.put = put;
     }
 
-    /**
-     * Returns the timestamp of the document to put.
-     *
-     * @return The document timestamp.
-     */
+    /** Returns the timestamp of the document to put */
     public long getTimestamp() {
         deserialize();
         return time;
     }
 
-    /**
-     * Sets the timestamp of the document to put.
-     *
-     * @param time The timestamp to set.
-     */
+    /** Sets the timestamp of the document to put */
     public void setTimestamp(long time) {
         buffer = null;
         decoder = null;
@@ -108,7 +90,7 @@ public class PutDocumentMessage extends TestAndSetMessage {
      * Returns the raw serialized buffer. This buffer is stored as the message is received from accross the network, and
      * deserialized from as soon as a member is requested. This method will return null if the buffer has been decoded.
      *
-     * @return The buffer containing the serialized data for this message, or null.
+     * @return the buffer containing the serialized data for this message, or null
      */
     ByteBuffer getSerializedBuffer() {
         return buffer != null ? buffer.getBuf().getByteBuffer() : null; // TODO: very dirty. Must make interface.
@@ -153,4 +135,5 @@ public class PutDocumentMessage extends TestAndSetMessage {
     public void setCondition(TestAndSetCondition condition) {
         put.setCondition(condition);
     }
+
 }

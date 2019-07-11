@@ -24,10 +24,8 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author bjorncs
@@ -55,8 +53,7 @@ public class SiaIdentityProviderTest {
                         new AthenzService("domain", "service-name"),
                         keyFile,
                         certificateFile,
-                        trustStoreFile,
-                        mock(ScheduledExecutorService.class));
+                        trustStoreFile);
 
         assertNotNull(provider.getIdentitySslContext());
     }

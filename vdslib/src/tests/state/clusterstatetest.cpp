@@ -1,79 +1,37 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <cmath>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exception.h>
+#include <cmath>
+#include <gmock/gmock.h>
 
 using vespalib::string;
+using ::testing::ContainsRegex;
 
-namespace storage {
-namespace lib {
-
-struct ClusterStateTest : public CppUnit::TestFixture {
-
-    void testBasicFunctionality();
-    void testErrorBehaviour();
-    void testBackwardsCompability();
-    void testDetailed();
-    void testParseFailure();
-    void testParseFailureGroups();
-
-    void testDiff();
-
-    CPPUNIT_TEST_SUITE(ClusterStateTest);
-    CPPUNIT_TEST(testBasicFunctionality);
-    CPPUNIT_TEST(testErrorBehaviour);
-    CPPUNIT_TEST(testBackwardsCompability);
-    CPPUNIT_TEST(testDetailed);
-
-        // Ideal state tests.
-    CPPUNIT_TEST(testParseFailure);
-    CPPUNIT_TEST(testParseFailureGroups);
-    CPPUNIT_TEST(testDiff);
-    CPPUNIT_TEST_SUITE_END();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(ClusterStateTest);
-
-void
-ClusterStateTest::testDiff() {
-    ClusterState state1("distributor:9 storage:4");
-    ClusterState state2("distributor:7 storage:6");
-    ClusterState state3("distributor:9 storage:2");
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("storage [4: d to u, 5: d to u] "
-                        "distributor [7: u to d, 8: u to d]"),
-            state1.getTextualDifference(state2));
-    CPPUNIT_ASSERT_EQUAL(
-            std::string("storage [2: u to d, 3: u to d, 4: u to d, 5: u to d] "
-                        "distributor [7: d to u, 8: d to u]"),
-            state2.getTextualDifference(state3));
-}
-
+namespace storage::lib {
 
 #define VERIFY3(source, result, type, typestr) { \
     vespalib::asciistream ost; \
-    try{ \
+    try { \
         state->serialize(ost, type); \
     } catch (std::exception& e) { \
-        CPPUNIT_FAIL("Failed to serialize system state " \
+        FAIL() << ("Failed to serialize system state " \
                 + state->toString(true) + " in " + std::string(typestr) \
                 + " format: " + std::string(e.what())); \
     } \
-    CPPUNIT_ASSERT_EQUAL_MSG(vespalib::string(state->toString(true)), \
-            vespalib::string(typestr) + " \"" + vespalib::string(result) + "\"", \
-            vespalib::string(typestr) + " \"" + ost.str() + "\""); \
+    EXPECT_EQ(vespalib::string(typestr) + " \"" + vespalib::string(result) + "\"", \
+              vespalib::string(typestr) + " \"" + ost.str() + "\"") << state->toString(true); \
 }
 
 #define VERIFY2(serialized, result, testOld, testNew) { \
     std::unique_ptr<ClusterState> state; \
-    try{ \
+    try { \
         state.reset(new ClusterState(serialized)); \
     } catch (std::exception& e) { \
-        CPPUNIT_FAIL("Failed to parse '" + std::string(serialized) \
+        FAIL() << ("Failed to parse '" + std::string(serialized) \
                      + "': " + e.what()); \
     } \
     if (testOld) VERIFY3(serialized, result, true, "Old") \
@@ -90,15 +48,14 @@ ClusterStateTest::testDiff() {
 #define VERIFY_FAIL(serialized, error) { \
     try{ \
         ClusterState state(serialized); \
-        CPPUNIT_FAIL("Parsing the state '" + std::string(serialized) \
+        FAIL() << ("Parsing the state '" + std::string(serialized) \
                      + "' is supposed to fail."); \
     } catch (vespalib::Exception& e) { \
-        CPPUNIT_ASSERT_MATCH_REGEX(error, e.getMessage()); \
+        EXPECT_THAT(e.getMessage(), ContainsRegex(error)); \
     } \
 }
 
-void
-ClusterStateTest::testBasicFunctionality()
+TEST(ClusterStateTest, test_basic_functionality)
 {
     // Version is default and should not be written
     VERIFYNEW("version:0", "");
@@ -144,31 +101,30 @@ ClusterStateTest::testBasicFunctionality()
     {
         ClusterState state("storage:5 .4.s:d .4.m:Foo\\x20bar");
         const NodeState& ns(state.getNodeState(Node(NodeType::STORAGE, 4)));
-        CPPUNIT_ASSERT_EQUAL(string("Foo bar"), ns.getDescription());
+        EXPECT_EQ(string("Foo bar"), ns.getDescription());
     }
 
     ClusterState state;
     state.setClusterState(State::UP);
     state.setNodeState(Node(NodeType::DISTRIBUTOR, 3),
                        NodeState(NodeType::DISTRIBUTOR, State::UP));
-    CPPUNIT_ASSERT_EQUAL(std::string("distributor:4 .0.s:d .1.s:d .2.s:d"),
-                         state.toString(false));
+    EXPECT_EQ(std::string("distributor:4 .0.s:d .1.s:d .2.s:d"),
+              state.toString(false));
     state.setNodeState(Node(NodeType::DISTRIBUTOR, 1),
                        NodeState(NodeType::DISTRIBUTOR, State::UP));
-    CPPUNIT_ASSERT_EQUAL(std::string("distributor:4 .0.s:d .2.s:d"),
-                         state.toString(false));
+    EXPECT_EQ(std::string("distributor:4 .0.s:d .2.s:d"),
+              state.toString(false));
     state.setNodeState(Node(NodeType::DISTRIBUTOR, 3),
                        NodeState(NodeType::DISTRIBUTOR, State::DOWN));
-    CPPUNIT_ASSERT_EQUAL(std::string("distributor:2 .0.s:d"),
-                         state.toString(false));
+    EXPECT_EQ(std::string("distributor:2 .0.s:d"),
+              state.toString(false));
     state.setNodeState(Node(NodeType::DISTRIBUTOR, 4),
                        NodeState(NodeType::DISTRIBUTOR, State::UP));
-    CPPUNIT_ASSERT_EQUAL(std::string("distributor:5 .0.s:d .2.s:d .3.s:d"),
-                         state.toString(false));
+    EXPECT_EQ(std::string("distributor:5 .0.s:d .2.s:d .3.s:d"),
+              state.toString(false));
 }
 
-void
-ClusterStateTest::testErrorBehaviour()
+TEST(ClusterStateTest, test_error_behaviour)
 {
     // Keys with invalid values
 
@@ -215,8 +171,7 @@ ClusterStateTest::testErrorBehaviour()
               "distributor:4 .2.s:s storage:10 .3.s:s .3.d:4");
 }
 
-void
-ClusterStateTest::testBackwardsCompability()
+TEST(ClusterStateTest, test_backwards_compability)
 {
     // 4.1 and older nodes do not support some features, and the java parser
     // do not allow unknown elements as it was supposed to do, thus we should
@@ -243,8 +198,7 @@ ClusterStateTest::testBackwardsCompability()
 
 }
 
-void
-ClusterStateTest::testDetailed()
+TEST(ClusterStateTest, test_detailed)
 {
     ClusterState state(
             "version:314 cluster:i "
@@ -252,35 +206,35 @@ ClusterStateTest::testDetailed()
             "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 .5.r:4"
             " .6.m:bar\\tfoo .7.s:m .8.d:10 .8.d.4.c:0.6 .8.d.4.m:small"
     );
-    CPPUNIT_ASSERT_EQUAL(314u, state.getVersion());
-    CPPUNIT_ASSERT_EQUAL(State::INITIALIZING, state.getClusterState());
-    CPPUNIT_ASSERT_EQUAL(uint16_t(8),state.getNodeCount(NodeType::DISTRIBUTOR));
-    CPPUNIT_ASSERT_EQUAL(uint16_t(10),state.getNodeCount(NodeType::STORAGE));
+    EXPECT_EQ(314u, state.getVersion());
+    EXPECT_EQ(State::INITIALIZING, state.getClusterState());
+    EXPECT_EQ(uint16_t(8), state.getNodeCount(NodeType::DISTRIBUTOR));
+    EXPECT_EQ(uint16_t(10), state.getNodeCount(NodeType::STORAGE));
 
     // Testing distributor node states
     for (uint16_t i = 0; i <= 20; ++i) {
         const NodeState& ns(state.getNodeState(Node(NodeType::DISTRIBUTOR, i)));
             // Test node states
         if (i == 1 || i == 3) {
-            CPPUNIT_ASSERT_EQUAL(State::INITIALIZING, ns.getState());
+            EXPECT_EQ(State::INITIALIZING, ns.getState());
         } else if (i == 5 || i >= 8) {
-            CPPUNIT_ASSERT_EQUAL(State::DOWN, ns.getState());
+            EXPECT_EQ(State::DOWN, ns.getState());
         } else {
-            CPPUNIT_ASSERT_EQUAL(State::UP, ns.getState());
+            EXPECT_EQ(State::UP, ns.getState());
         }
             // Test initialize progress
         if (i == 1) {
-            CPPUNIT_ASSERT_EQUAL(vespalib::Double(0.0), ns.getInitProgress());
+            EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         } else if (i == 3) {
-            CPPUNIT_ASSERT_EQUAL(vespalib::Double(0.5), ns.getInitProgress());
+            EXPECT_EQ(vespalib::Double(0.5), ns.getInitProgress());
         } else {
-            CPPUNIT_ASSERT_EQUAL(vespalib::Double(0.0), ns.getInitProgress());
+            EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         }
             // Test message
         if (i == 7) {
-            CPPUNIT_ASSERT_EQUAL(string("foo bar"), ns.getDescription());
+            EXPECT_EQ(string("foo bar"), ns.getDescription());
         } else {
-            CPPUNIT_ASSERT_EQUAL(string(""), ns.getDescription());
+            EXPECT_EQ(string(""), ns.getDescription());
         }
     }
 
@@ -289,42 +243,41 @@ ClusterStateTest::testDetailed()
         const NodeState& ns(state.getNodeState(Node(NodeType::STORAGE, i)));
             // Test node states
         if (i == 4 || i >= 10) {
-            CPPUNIT_ASSERT_EQUAL(State::DOWN, ns.getState());
+            EXPECT_EQ(State::DOWN, ns.getState());
         } else if (i == 7) {
-            CPPUNIT_ASSERT_EQUAL(State::MAINTENANCE, ns.getState());
+            EXPECT_EQ(State::MAINTENANCE, ns.getState());
         } else {
-            CPPUNIT_ASSERT_EQUAL(State::UP, ns.getState());
+            EXPECT_EQ(State::UP, ns.getState());
         }
             // Test disk states
         if (i == 2) {
-            CPPUNIT_ASSERT_EQUAL(uint16_t(16), ns.getDiskCount());
+            EXPECT_EQ(uint16_t(16), ns.getDiskCount());
         } else if (i == 8) {
-            CPPUNIT_ASSERT_EQUAL(uint16_t(10), ns.getDiskCount());
+            EXPECT_EQ(uint16_t(10), ns.getDiskCount());
         } else {
-            CPPUNIT_ASSERT_EQUAL(uint16_t(0), ns.getDiskCount());
+            EXPECT_EQ(uint16_t(0), ns.getDiskCount());
         }
         if (i == 2) {
             for (uint16_t j = 0; j < 16; ++j) {
                 if (j == 3) {
-                    CPPUNIT_ASSERT_EQUAL(State::DOWN,
-                                         ns.getDiskState(j).getState());
+                    EXPECT_EQ(State::DOWN,
+                              ns.getDiskState(j).getState());
                 } else {
-                    CPPUNIT_ASSERT_EQUAL(State::UP,
-                                         ns.getDiskState(j).getState());
+                    EXPECT_EQ(State::UP,
+                              ns.getDiskState(j).getState());
                 }
             }
         } else if (i == 8) {
             for (uint16_t j = 0; j < 10; ++j) {
                 if (j == 4) {
-                    CPPUNIT_ASSERT_DOUBLES_EQUAL(
-                            0.6, ns.getDiskState(j).getCapacity().getValue(), 0.0001);
-                    CPPUNIT_ASSERT_EQUAL(
+                    EXPECT_DOUBLE_EQ(0.6, ns.getDiskState(j).getCapacity().getValue());
+                    EXPECT_EQ(
                             string("small"),
                             ns.getDiskState(j).getDescription());
                 } else {
-                    CPPUNIT_ASSERT_DOUBLES_EQUAL(
-                            1.0, ns.getDiskState(j).getCapacity().getValue(), 0.0001);
-                    CPPUNIT_ASSERT_EQUAL(
+                    EXPECT_DOUBLE_EQ(
+                            1.0, ns.getDiskState(j).getCapacity().getValue());
+                    EXPECT_EQ(
                             string(""),
                             ns.getDiskState(j).getDescription());
                 }
@@ -332,57 +285,36 @@ ClusterStateTest::testDetailed()
         }
             // Test message
         if (i == 6) {
-            CPPUNIT_ASSERT_EQUAL(string("bar\tfoo"), ns.getDescription());
+            EXPECT_EQ(string("bar\tfoo"), ns.getDescription());
         } else {
-            CPPUNIT_ASSERT_EQUAL(string(""), ns.getDescription());
+            EXPECT_EQ(string(""), ns.getDescription());
         }
             // Test reliability
         if (i == 5) {
-            CPPUNIT_ASSERT_EQUAL(uint16_t(4), ns.getReliability());
+            EXPECT_EQ(uint16_t(4), ns.getReliability());
         } else {
-            CPPUNIT_ASSERT_EQUAL(uint16_t(1), ns.getReliability());
+            EXPECT_EQ(uint16_t(1), ns.getReliability());
         }
             // Test capacity
         if (i == 5) {
-            CPPUNIT_ASSERT_EQUAL(vespalib::Double(1.3), ns.getCapacity());
+            EXPECT_EQ(vespalib::Double(1.3), ns.getCapacity());
         } else {
-            CPPUNIT_ASSERT_EQUAL(vespalib::Double(1.0), ns.getCapacity());
+            EXPECT_EQ(vespalib::Double(1.0), ns.getCapacity());
         }
     }
 
 }
 
-void
-ClusterStateTest::testParseFailure()
+TEST(ClusterStateTest, test_parse_failure)
 {
-    try {
-        ClusterState state("storage");
-        CPPUNIT_ASSERT(false);
-    } catch (vespalib::Exception& e) {
-    }
-
-    try {
-        ClusterState state("");
-    } catch (vespalib::Exception& e) {
-        CPPUNIT_ASSERT(false);
-    }
-
-    try {
-        ClusterState state(".her:tull");
-        CPPUNIT_ASSERT(false);
-    } catch (vespalib::Exception& e) {
-    }
+    EXPECT_THROW(ClusterState state("storage"), vespalib::Exception);
+    EXPECT_NO_THROW(ClusterState state(""));
+    EXPECT_THROW(ClusterState state(".her:tull"), vespalib::Exception);
 }
 
-void
-ClusterStateTest::testParseFailureGroups()
+TEST(ClusterStateTest, test_parse_failure_groups)
 {
-    try {
-        ClusterState state(")");
-        CPPUNIT_ASSERT(false);
-    } catch (vespalib::Exception& e) {
-    }
+    EXPECT_THROW(ClusterState state(")"), vespalib::Exception);
 }
 
-} // lib
-} // storage
+}

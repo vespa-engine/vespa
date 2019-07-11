@@ -37,9 +37,11 @@ IndexManager::MaintainerOperations::MaintainerOperations(const FileHeaderContext
 }
 
 IMemoryIndex::SP
-IndexManager::MaintainerOperations::createMemoryIndex(const Schema &schema, SerialNum serialNum)
+IndexManager::MaintainerOperations::createMemoryIndex(const Schema& schema,
+                                                      const IFieldLengthInspector& inspector,
+                                                      SerialNum serialNum)
 {
-    return std::make_shared<MemoryIndexWrapper>(schema, _fileHeaderContext, _tuneFileIndexing,
+    return std::make_shared<MemoryIndexWrapper>(schema, inspector, _fileHeaderContext, _tuneFileIndexing,
                                                 _threadingService, serialNum);
 }
 
@@ -66,7 +68,7 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
     const bool dynamic_k_doc_pos_occ_format = false;
     return Fusion::merge(schema, outputDir, sources, selectorArray, dynamic_k_doc_pos_occ_format,
-                         _tuneFileIndexing, fileHeaderContext);
+                         _tuneFileIndexing, fileHeaderContext, _threadingService.shared());
 }
 
 

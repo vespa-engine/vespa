@@ -13,6 +13,7 @@ public final class Base64DecodeExpression extends Expression {
     public Base64DecodeExpression() {
         super(DataType.STRING);
     }
+
     @Override
     protected void doExecute(ExecutionContext ctx) {
         String input = String.valueOf(ctx.getValue());

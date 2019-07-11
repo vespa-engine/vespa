@@ -1,20 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
-#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/string.h>
 #include <iostream>
 #include <map>
 
 using namespace search;
 using namespace search::datastore;
 using namespace search::memoryindex;
+using vespalib::MemoryUsage;
 
-typedef CompactWordsStore::Builder Builder;
-typedef CompactWordsStore::Iterator Iterator;
-typedef Builder::WordRefVector WordRefVector;
+using Builder = CompactWordsStore::Builder;
+using Iterator = CompactWordsStore::Iterator;
+using WordRefVector = Builder::WordRefVector;
 
 const EntryRef w1(1);
 const EntryRef w2(2);
@@ -51,54 +52,52 @@ toStr(Iterator itr)
     return oss.str();
 }
 
-struct SingleFixture
-{
-    CompactWordsStore _store;
-    SingleFixture() : _store() {
-        _store.insert(Builder(d1).insert(w1).insert(w2).insert(w3));
+struct SingleDocumentTest : public ::testing::Test {
+    CompactWordsStore store;
+    SingleDocumentTest() : store() {
+        store.insert(Builder(d1).insert(w1).insert(w2).insert(w3));
     }
 };
 
-struct MultiFixture
-{
-    CompactWordsStore _store;
-    MultiFixture() : _store() {
-        _store.insert(Builder(d1).insert(w1));
-        _store.insert(Builder(d2).insert(w2));
-        _store.insert(Builder(d3).insert(w3));
+struct MultiDocumentTest : public ::testing::Test {
+    CompactWordsStore store;
+    MultiDocumentTest() : store() {
+        store.insert(Builder(d1).insert(w1));
+        store.insert(Builder(d2).insert(w2));
+        store.insert(Builder(d3).insert(w3));
     }
 };
 
 
-TEST_F("require that fields and words can be added for a document", SingleFixture)
+TEST_F(SingleDocumentTest, fields_and_words_can_be_added_for_a_document)
 {
-    EXPECT_EQUAL("[1,2,3]", toStr(f._store.get(d1)));
+    EXPECT_EQ("[1,2,3]", toStr(store.get(d1)));
 }
 
-TEST_F("require that multiple documents can be added", MultiFixture)
+TEST_F(MultiDocumentTest, multiple_documents_can_be_added)
 {
-    EXPECT_EQUAL("[1]", toStr(f._store.get(d1)));
-    EXPECT_EQUAL("[2]", toStr(f._store.get(d2)));
-    EXPECT_EQUAL("[3]", toStr(f._store.get(d3)));
-    EXPECT_FALSE(f._store.get(d4).valid());
+    EXPECT_EQ("[1]", toStr(store.get(d1)));
+    EXPECT_EQ("[2]", toStr(store.get(d2)));
+    EXPECT_EQ("[3]", toStr(store.get(d3)));
+    EXPECT_FALSE(store.get(d4).valid());
 }
 
-TEST_F("require that documents can be removed", MultiFixture)
+TEST_F(MultiDocumentTest, documents_can_be_removed)
 {
-    f._store.remove(d2);
-    EXPECT_TRUE(f._store.get(d1).valid());
-    EXPECT_FALSE(f._store.get(d2).valid());
-    EXPECT_TRUE(f._store.get(d3).valid());
+    store.remove(d2);
+    EXPECT_TRUE(store.get(d1).valid());
+    EXPECT_FALSE(store.get(d2).valid());
+    EXPECT_TRUE(store.get(d3).valid());
 }
 
-TEST_F("require that documents can be removed and re-inserted", MultiFixture)
+TEST_F(MultiDocumentTest, documents_can_be_removed_and_reinserted)
 {
-    f._store.remove(d2);
-    f._store.insert(Builder(d2).insert(w4));
-    EXPECT_EQUAL("[4]", toStr(f._store.get(d2)));
+    store.remove(d2);
+    store.insert(Builder(d2).insert(w4));
+    EXPECT_EQ("[4]", toStr(store.get(d2)));
 }
 
-TEST("require that a lot of words can be inserted, retrieved and removed")
+TEST(CompactWordStoreTest, multiple_words_can_be_inserted_retrieved_and_removed)
 {
     CompactWordsStore store;
     for (uint32_t docId = 0; docId < 50; ++docId) {
@@ -112,10 +111,10 @@ TEST("require that a lot of words can be inserted, retrieved and removed")
     }
     for (uint32_t docId = 0; docId < 50; ++docId) {
         WordRefVector words = build(store.get(docId));
-        EXPECT_EQUAL(20000u, words.size());
+        EXPECT_EQ(20000u, words.size());
         uint32_t wordRef = 0;
         for (auto word : words) {
-            EXPECT_EQUAL(wordRef++, word.ref());
+            EXPECT_EQ(wordRef++, word.ref());
         }
         store.remove(docId);
         MemoryUsage usage = store.getMemoryUsage();
@@ -123,7 +122,7 @@ TEST("require that a lot of words can be inserted, retrieved and removed")
     }
 }
 
-TEST("require that initial memory usage is reported")
+TEST(CompactWordStoreTest, initial_memory_usage_is_reported)
 {
     CompactWordsStore store;
     CompactWordsStore::DocumentWordsMap docs;
@@ -133,24 +132,24 @@ TEST("require that initial memory usage is reported")
     initExp.incUsedBytes(docs.getMemoryUsed());
     initExp.merge(internalStore.getMemoryUsage());
     MemoryUsage init = store.getMemoryUsage();
-    EXPECT_EQUAL(initExp.allocatedBytes(), init.allocatedBytes());
-    EXPECT_EQUAL(initExp.usedBytes(), init.usedBytes());
-    EXPECT_GREATER(init.allocatedBytes(), init.usedBytes());
-    EXPECT_GREATER(init.allocatedBytes(), 0u);
-    EXPECT_GREATER(init.usedBytes(), 0u);
+    EXPECT_EQ(initExp.allocatedBytes(), init.allocatedBytes());
+    EXPECT_EQ(initExp.usedBytes(), init.usedBytes());
+    EXPECT_GT(init.allocatedBytes(), init.usedBytes());
+    EXPECT_GT(init.allocatedBytes(), 0u);
+    EXPECT_GT(init.usedBytes(), 0u);
 }
 
-TEST("require that memory usage is updated after insert")
+TEST(CompactWordStoreTest, memory_usage_is_updated_after_insert)
 {
     CompactWordsStore store;
     MemoryUsage init = store.getMemoryUsage();
 
     store.insert(Builder(d1).insert(w1));
     MemoryUsage after = store.getMemoryUsage();
-    EXPECT_GREATER_EQUAL(after.allocatedBytes(), init.allocatedBytes());
-    EXPECT_GREATER(after.usedBytes(), init.usedBytes());
+    EXPECT_GE(after.allocatedBytes(), init.allocatedBytes());
+    EXPECT_GT(after.usedBytes(), init.usedBytes());
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()
 
-TEST_MAIN() { TEST_RUN_ALL(); }
 

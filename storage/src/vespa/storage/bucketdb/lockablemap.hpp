@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <thread>
 #include <chrono>
+#include <ostream>
 
 namespace storage {
 
@@ -549,7 +550,7 @@ LockableMap<Map>::getAllContaining(const BucketId& bucket,
 template<typename Map>
 void
 LockableMap<Map>::addAndLockResults(
-        const std::vector<BucketId::Type> keys,
+        const std::vector<BucketId::Type>& keys,
         const char* clientId,
         std::map<BucketId, WrappedEntry>& results,
         std::unique_lock<std::mutex> &guard)

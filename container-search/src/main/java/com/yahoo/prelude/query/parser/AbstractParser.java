@@ -87,21 +87,17 @@ public abstract class AbstractParser implements CustomParser {
         }
 
         /**
-         * Returns whether we are in a mode which allows explicit anchoring
-         * markers, ^ and $
-         *
-         * @return True if we are doing explicit anchoring.
+         * Returns whether we are in a mode which allows explicit anchoring markers, ^ and $
          */
-        public boolean explicitAnchoring() {
-            return site;
-        }
+        public boolean explicitAnchoring() { return site; }
+
     }
 
     /**
-     * <p>Creates a new instance of this class, storing the given {@link ParserEnvironment} for parse-time access to the
-     * environment.</p>
+     * Creates a new instance of this class, storing the given {@link ParserEnvironment} for parse-time access to the
+     * environment.
      *
-     * @param environment The environment settings to attach to the Parser.
+     * @param environment the environment settings to attach to the Parser
      */
     protected AbstractParser(ParserEnvironment environment) {
         this.environment = ParserEnvironment.fromParserEnvironment(environment);

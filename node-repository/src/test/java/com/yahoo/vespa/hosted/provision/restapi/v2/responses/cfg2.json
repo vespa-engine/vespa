@@ -9,7 +9,6 @@
   "canonicalFlavor": "default",
   "minDiskAvailableGb": 400.0,
   "minMainMemoryAvailableGb": 16.0,
-  "description": "Flavor-name-is-default",
   "minCpuCores": 2.0,
   "fastDisk": true,
   "bandwidth":0.0,
@@ -32,6 +31,9 @@
       "agent": "system"
     }
   ],
-  "ipAddresses": ["127.0.1.2"],
+  "ipAddresses": [
+    "127.0.202.1",
+    "::202:1"
+  ],
   "additionalIpAddresses": []
 }

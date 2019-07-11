@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
 namespace vespalib { namespace tensor { class Tensor; } }
@@ -55,7 +55,7 @@ public:
         _store.clearHoldLists();
     }
 
-    MemoryUsage
+    vespalib::MemoryUsage
     getMemoryUsage() const
     {
         return _store.getMemoryUsage();

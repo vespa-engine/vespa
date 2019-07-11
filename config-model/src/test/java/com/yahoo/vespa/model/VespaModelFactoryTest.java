@@ -96,9 +96,9 @@ public class VespaModelFactoryTest {
                         "    <admin version='2.0'>\n" +
                         "        <adminserver hostalias='proxy1' />\n" +
                         "    </admin>" +
-                        "    <jdisc id='" + routingClusterName + "' version='1.0'>\n" +
+                        "    <container id='" + routingClusterName + "' version='1.0'>\n" +
                         "        <nodes type='proxy'/>\n" +
-                        "    </jdisc>\n" +
+                        "    </container>\n" +
                         "</services>";
 
         HostProvisioner provisionerToOverride = new HostProvisioner() {
@@ -109,7 +109,7 @@ public class VespaModelFactoryTest {
                                     ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
                                                                             new ClusterSpec.Id(routingClusterName),
                                                                             ClusterSpec.Group.from(0),
-                                                                            Version.fromString("6.42"), false, Collections.emptySet()),
+                                                                            Version.fromString("6.42"), false),
                                                            0));
             }
 
@@ -120,7 +120,7 @@ public class VespaModelFactoryTest {
                                                               ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
                                                                                                       new ClusterSpec.Id(routingClusterName),
                                                                                                       ClusterSpec.Group.from(0),
-                                                                                                      Version.fromString("6.42"), false, Collections.emptySet()),
+                                                                                                      Version.fromString("6.42"), false),
                                                                                      0)));
             }
         };

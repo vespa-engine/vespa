@@ -32,7 +32,7 @@ public:
     if (b < a)
       return false;
 
-    if ((b - a) > (2 * FNET_Scheduler::SLOT_TICK))
+    if ((b - a) > (3 * FNET_Scheduler::SLOT_TICK))
       return false;
 
     return true;

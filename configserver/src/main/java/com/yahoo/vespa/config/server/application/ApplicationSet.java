@@ -92,4 +92,8 @@ public final class ApplicationSet {
         return generation;
     }
 
+    List<Application> getAllApplications() {
+        return new ArrayList<>(applications.values());
+    }
+
 }

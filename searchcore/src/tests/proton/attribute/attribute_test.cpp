@@ -7,9 +7,8 @@
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/tensor/default_tensor.h>
 #include <vespa/eval/tensor/tensor.h>
-#include <vespa/eval/tensor/tensor_factory.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/eval/tensor/types.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
@@ -45,7 +44,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
@@ -75,9 +74,9 @@ using search::tensor::TensorAttribute;
 using search::test::DirectoryHandler;
 using std::string;
 using vespalib::eval::ValueType;
+using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
-using vespalib::tensor::TensorCells;
-using vespalib::tensor::TensorDimensions;
+using vespalib::tensor::DefaultTensorEngine;
 
 using AVConfig = search::attribute::Config;
 using AVBasicType = search::attribute::BasicType;
@@ -612,12 +611,10 @@ TEST_F("require that filter attribute manager can return flushed serial number",
 
 namespace {
 
-Tensor::UP
-createTensor(const TensorCells &cells, const TensorDimensions &dimensions) {
-    vespalib::tensor::DefaultTensor::builder builder;
-    return vespalib::tensor::TensorFactory::create(cells, dimensions, builder);
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().from_spec(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
-
 
 AttributeVector::SP
 createTensorAttribute(Fixture &f) {
@@ -650,8 +647,8 @@ TEST_F("Test that we can use attribute writer to write to tensor attribute",
     AttributeVector::SP a1 = createTensorAttribute(f);
     Schema s = createTensorSchema();
     DocBuilder builder(s);
-    auto tensor = createTensor({ {{{"x", "4"}, {"y", "5"}}, 7} },
-                               {"x", "y"});
+    auto tensor = make_tensor(TensorSpec("tensor(x{},y{})")
+                              .add({{"x", "4"}, {"y", "5"}}, 7));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
     f.put(1, *doc, 1);
     EXPECT_EQUAL(2u, a1->getNumDocs());
@@ -668,8 +665,8 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     AttributeVector::SP a1 = createTensorAttribute(f);
     Schema s = createTensorSchema();
     DocBuilder builder(s);
-    auto tensor = createTensor({ {{{"x", "6"}, {"y", "7"}}, 9} },
-                               {"x", "y"});
+    auto tensor = make_tensor(TensorSpec("tensor(x{},y{})")
+                              .add({{"x", "6"}, {"y", "7"}}, 9));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
     f.put(1, *doc, 1);
     EXPECT_EQUAL(2u, a1->getNumDocs());
@@ -682,8 +679,8 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
 
     const document::DocumentType &dt(builder.getDocumentType());
     DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
-    auto new_tensor = createTensor({ {{{"x", "8"}, {"y", "9"}}, 11} },
-                                   {"x", "y"});
+    auto new_tensor = make_tensor(TensorSpec("tensor(x{},y{})")
+                                  .add({{"x", "8"}, {"y", "9"}}, 11));
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue new_value(xySparseTensorDataType);
     new_value = new_tensor->clone();

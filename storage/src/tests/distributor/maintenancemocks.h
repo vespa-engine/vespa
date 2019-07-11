@@ -11,8 +11,7 @@
 
 using document::test::makeBucketSpace;
 
-namespace storage {
-namespace distributor {
+namespace storage::distributor {
 
 class MockMaintenancePriorityGenerator
     : public MaintenancePriorityGenerator
@@ -116,5 +115,3 @@ public:
 };
 
 }
-}
-

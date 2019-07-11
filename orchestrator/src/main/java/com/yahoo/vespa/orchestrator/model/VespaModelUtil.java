@@ -32,11 +32,10 @@ import static com.yahoo.collections.CollectionUtil.first;
 public class VespaModelUtil {
     private static final Logger log = Logger.getLogger(VespaModelUtil.class.getName());
 
-    public static final ApplicationId ZONE_APPLICATION_ID =
-            ApplicationId.from("hosted-vespa", "routing", "default");
+    public static final ApplicationId TENANT_HOST_APPLICATION_ID =
+            ApplicationId.from("hosted-vespa", "tenant-host", "default");
 
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
-    public static final ClusterId NODE_ADMIN_CLUSTER_ID = new ClusterId("node-admin");
 
     public static final ServiceType SLOBROK_SERVICE_TYPE = new ServiceType("slobrok");
     public static final ServiceType CLUSTER_CONTROLLER_SERVICE_TYPE = new ServiceType("container-clustercontroller");

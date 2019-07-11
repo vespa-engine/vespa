@@ -6,3 +6,4 @@
 .deps
 .libs
 Makefile
+storage_distributor_gtest_runner_app

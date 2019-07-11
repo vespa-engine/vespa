@@ -4,6 +4,7 @@
 #include "zcposocc.h"
 #include "extposocc.h"
 #include "pagedict4file.h"
+#include "field_length_scanner.h"
 #include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
@@ -14,10 +15,14 @@ LOG_SETUP(".diskindex.fieldreader");
 namespace {
 
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
+vespalib::string interleaved_features("interleaved_features");
+
+uint16_t cap_u16(uint32_t val) { return std::min(val, static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())); }
 
 }
 
 using vespalib::getLastErrorString;
+using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::SchemaUtil;
 using search::bitcompression::PosOccFieldParams;
@@ -110,38 +115,26 @@ FieldReader::open(const vespalib::string &prefix,
 {
     vespalib::string name = prefix + "posocc.dat.compressed";
     FastOS_StatInfo statInfo;
-    bool statres;
 
-    bool dynamicKPosOccFormat = false;  // Will autodetect anyway
-    statres = FastOS_File::Stat(name.c_str(), &statInfo);
+    bool statres = FastOS_File::Stat(name.c_str(), &statInfo);
     if (!statres) {
-        LOG(error,
-            "Could not stat compressed posocc file %s: %s",
-            name.c_str(), getLastErrorString().c_str());
+        LOG(error, "Could not stat compressed posocc file %s: %s", name.c_str(), getLastErrorString().c_str());
         return false;
     }
 
     _dictFile = std::make_unique<PageDict4FileSeqRead>();
     PostingListParams featureParams;
-    _oldposoccfile.reset(makePosOccRead(name,
-                                        _dictFile.get(),
-                                        dynamicKPosOccFormat,
-                                        featureParams,
-                                        tuneFileRead));
+    _oldposoccfile = makePosOccRead(name, _dictFile.get(), featureParams, tuneFileRead);
     vespalib::string cname = prefix + "dictionary";
 
     if (!_dictFile->open(cname, tuneFileRead)) {
-        LOG(error,
-            "Could not open posocc count file %s for read",
-            cname.c_str());
+        LOG(error, "Could not open posocc count file %s for read", cname.c_str());
         return false;
     }
 
     // open posocc.dat
-    if (!_oldposoccfile->open(name, tuneFileRead)) {
-        LOG(error,
-            "Could not open posocc file %s for read",
-            name.c_str());
+    if (!_oldposoccfile || !_oldposoccfile->open(name, tuneFileRead)) {
+        LOG(error, "Could not open posocc file %s for read", name.c_str());
         return false;
     }
     _oldWordNum = noWordNum();
@@ -160,8 +153,7 @@ FieldReader::close()
     if (_oldposoccfile) {
         bool closeRes = _oldposoccfile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for read");
+            LOG(error, "Could not close posocc file for read");
             ret = false;
         }
         _oldposoccfile.reset();
@@ -169,8 +161,7 @@ FieldReader::close()
     if (_dictFile) {
         bool closeRes = _dictFile->close();
         if (!closeRes) {
-            LOG(error,
-                "Could not close posocc file for read");
+            LOG(error, "Could not close posocc file for read");
             ret = false;
         }
         _dictFile.reset();
@@ -193,20 +184,30 @@ FieldReader::getFeatureParams(PostingListParams &params)
     _oldposoccfile->getFeatureParams(params);
 }
 
+const FieldLengthInfo &
+FieldReader::get_field_length_info() const
+{
+    return _oldposoccfile->get_field_length_info();
+}
 
 std::unique_ptr<FieldReader>
 FieldReader::allocFieldReader(const SchemaUtil::IndexIterator &index,
-                              const Schema &oldSchema)
+                              const Schema &oldSchema,
+                              std::shared_ptr<FieldLengthScanner> field_length_scanner)
 {
     assert(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
-        return std::make_unique<FieldReader>();      // The common case
+        if (!index.use_interleaved_features() ||
+            index.has_matching_use_interleaved_features(oldSchema)) {
+            return std::make_unique<FieldReader>();      // The common case
+        }
     }
     if (!index.hasOldFields(oldSchema)) {
         return std::make_unique<FieldReaderEmpty>(index); // drop data
     }
     // field exists in old schema with different collection type setting
-    return std::make_unique<FieldReaderStripInfo>(index);   // degraded
+    // or old field is missing wanted interleaved features.
+    return std::make_unique<FieldReaderStripInfo>(index, field_length_scanner);   // degraded
 }
 
 
@@ -236,9 +237,12 @@ FieldReaderEmpty::getFeatureParams(PostingListParams &params)
 }
 
 
-FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index)
+FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner> field_length_scanner)
     : _hasElements(false),
-      _hasElementWeights(false)
+      _hasElementWeights(false),
+      _want_interleaved_features(index.use_interleaved_features()),
+      _regenerate_interleaved_features(false),
+      _field_length_scanner(std::move(field_length_scanner))
 {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
@@ -255,6 +259,47 @@ FieldReaderStripInfo::allowRawFeatures()
     return false;
 }
 
+bool
+FieldReaderStripInfo::open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
+{
+    if (!FieldReader::open(prefix, tuneFileRead)) {
+        return false;
+    }
+    if (_want_interleaved_features) {
+        PostingListParams params;
+        bool decode_interleaved_features = false;
+        _oldposoccfile->getParams(params);
+        params.get(interleaved_features, decode_interleaved_features);
+        if (!decode_interleaved_features) {
+            _regenerate_interleaved_features = true;
+        }
+        if (!_hasElements) {
+            _regenerate_interleaved_features = true;
+        }
+    }
+    if (_regenerate_interleaved_features && _hasElements && _field_length_scanner) {
+        scan_element_lengths();
+        close();
+        if (!FieldReader::open(prefix, tuneFileRead)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void
+FieldReaderStripInfo::scan_element_lengths()
+{
+    for (;;) {
+        FieldReader::read();
+        if (_wordNum == noWordNumHigh()) {
+            break;
+        }
+        DocIdAndFeatures &features = _docIdAndFeatures;
+        assert(!features.has_raw_data());
+        _field_length_scanner->scan_features(features);
+    }
+}
 
 void
 FieldReaderStripInfo::read()
@@ -290,6 +335,22 @@ FieldReaderStripInfo::read()
             }
         }
         break;
+    }
+    if (_regenerate_interleaved_features) {
+        // Regenerate interleaved featues from normal features.
+        uint32_t field_length = 0;
+        uint32_t num_occs = 0;
+        DocIdAndFeatures &features = _docIdAndFeatures;
+        for (const auto &element : features.elements()) {
+            field_length += element.getElementLen();
+            num_occs += element.getNumOccs();
+        }
+        if (_hasElements && _field_length_scanner) {
+            field_length = _field_length_scanner->get_field_length(features.doc_id());
+        }
+        // cap interleaved features to 16 bits each, to match memory index
+        features.set_field_length(cap_u16(field_length));
+        features.set_num_occs(cap_u16(num_occs));
     }
 }
 

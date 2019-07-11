@@ -2,8 +2,8 @@
 
 #include "reference_mappings.h"
 #include "reference.h"
-#include <vespa/searchlib/datastore/datastore.hpp>
-#include <vespa/searchlib/btree/btreestore.hpp>
+#include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 
 namespace search::attribute {
 
@@ -140,10 +140,10 @@ ReferenceMappings::shrink(uint32_t docIdLimit)
     _targetLids.shrink(docIdLimit);
 }
 
-MemoryUsage
+vespalib::MemoryUsage
 ReferenceMappings::getMemoryUsage()
 {
-    MemoryUsage usage = _reverseMapping.getMemoryUsage();
+    vespalib::MemoryUsage usage = _reverseMapping.getMemoryUsage();
     usage.merge(_reverseMappingIndices.getMemoryUsage());
     usage.merge(_targetLids.getMemoryUsage());
     return usage;

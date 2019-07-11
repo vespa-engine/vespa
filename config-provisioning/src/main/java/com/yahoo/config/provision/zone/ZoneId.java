@@ -4,6 +4,7 @@ package com.yahoo.config.provision.zone;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 
 import java.util.Objects;
 
@@ -19,16 +20,10 @@ public class ZoneId {
 
     private final Environment environment;
     private final RegionName region;
-    private final CloudName cloud;
-
-    private ZoneId(Environment environment, RegionName region, CloudName cloud) {
-        this.environment = Objects.requireNonNull(environment, "environment must be non-null");
-        this.region = Objects.requireNonNull(region, "region must be non-null");
-        this.cloud = Objects.requireNonNull(cloud, "cloud must be non-null");
-    }
 
     private ZoneId(Environment environment, RegionName region) {
-        this(environment, region, CloudName.defaultName());
+        this.environment = Objects.requireNonNull(environment, "environment must be non-null");
+        this.region = Objects.requireNonNull(region, "region must be non-null");
     }
 
     public static ZoneId from(Environment environment, RegionName region) {
@@ -42,15 +37,20 @@ public class ZoneId {
     /** Create from a serialised ZoneId. Inverse of {@code ZoneId.value()}. */
     public static ZoneId from(String value) {
         String[] parts = value.split("\\.");
-        return from(parts[0], parts[1]);
+        switch (parts.length) {
+            case 2:
+                return from(parts[0], parts[1]);
+            case 4:
+                // Deprecated: parts[0] == cloud, parts[1] == system
+                // TODO: Figure out whether this can be removed
+                return from(parts[2], parts[3]);
+            default:
+                throw new IllegalArgumentException("Cannot deserialize zone id '" + value + "'");
+        }
     }
 
-    public static ZoneId from(Environment environment, RegionName region, CloudName cloud) {
-        return new ZoneId(environment, region, cloud);
-    }
-
-    public static ZoneId from(String environment, String region, String cloud) {
-        return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud));
+    public static ZoneId defaultId() {
+        return new ZoneId(Environment.defaultEnvironment(), RegionName.defaultName());
     }
 
     public Environment environment() {
@@ -61,10 +61,6 @@ public class ZoneId {
         return region;
     }
 
-    public CloudName cloud() {
-        return cloud;
-    }
-
     /** Returns the serialised value of this. Inverse of {@code ZoneId.from(String value)}. */
     public String value() {
         return environment + "." + region;
@@ -72,7 +68,7 @@ public class ZoneId {
 
     @Override
     public String toString() {
-        return "zone " + value() + " in " + cloud;
+        return value();
     }
 
     @Override

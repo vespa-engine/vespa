@@ -43,6 +43,7 @@ import static com.yahoo.container.di.componentgraph.core.Exceptions.removeStackT
  */
 @NotThreadSafe
 public class ComponentGraph {
+
     private static final Logger log = Logger.getLogger(ComponentGraph.class.getName());
 
     private long generation;
@@ -107,7 +108,7 @@ public class ComponentGraph {
     @SuppressWarnings("unchecked")
     public <T> T getInstance(Key<T> key) {
         // TODO: Combine exception handling with lookupGlobalComponent.
-        Object ob = lookupGlobalComponent(key).map(Node::newOrCachedInstance)
+        Object ob = lookupGlobalComponent(key).map(Node::component)
                 .orElseThrow(() -> new IllegalStateException(String.format("No global component with key '%s'  ", key)));
         return (T) ob;
     }
@@ -162,8 +163,8 @@ public class ComponentGraph {
         }
     }
 
-    public Collection<?> allComponentsAndProviders() {
-        return nodes().stream().map(node -> node.instance().get()).collect(Collectors.toList());
+    public Collection<?> allConstructedComponentsAndProviders() {
+        return nodes().stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
     }
 
     private void completeComponentRegistryNode(ComponentRegistryNode registry) {
@@ -243,7 +244,7 @@ public class ComponentGraph {
     }
 
     private Optional<GuiceNode> matchingGuiceNode(Key<?> key, Object instance) {
-        return matchingNodes(nodes(), GuiceNode.class, key).stream().filter(node -> node.newOrCachedInstance() == instance). // TODO: assert that there is only one (after filter)
+        return matchingNodes(nodes(), GuiceNode.class, key).stream().filter(node -> node.component() == instance). // TODO: assert that there is only one (after filter)
                 findFirst();
     }
 
