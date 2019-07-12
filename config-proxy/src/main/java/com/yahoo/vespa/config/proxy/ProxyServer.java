@@ -38,7 +38,7 @@ public class ProxyServer implements Runnable {
     private static final int JRT_TRANSPORT_THREADS = 4;
     static final String DEFAULT_PROXY_CONFIG_SOURCES = "tcp/localhost:19070";
 
-    final static Logger log = Logger.getLogger(ProxyServer.class.getName());
+    private final static Logger log = Logger.getLogger(ProxyServer.class.getName());
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
 
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
@@ -52,7 +52,6 @@ public class ProxyServer implements Runnable {
 
     private volatile ConfigSourceClient configClient;
 
-    private final ConfigProxyStatistics statistics;
     private final TimingValues timingValues;
     private final MemoryCache memoryCache;
     private static final double timingValuesRatio = 0.8;
@@ -72,33 +71,29 @@ public class ProxyServer implements Runnable {
         defaultTimingValues = tv;
     }
 
-    private ProxyServer(Spec spec, DelayedResponses delayedResponses, ConfigSourceSet source,
-                        ConfigProxyStatistics statistics, TimingValues timingValues,
-                        boolean delayedResponseHandling, MemoryCache memoryCache,
-                        ConfigSourceClient configClient) {
+    private ProxyServer(Spec spec, DelayedResponses delayedResponses, ConfigSourceSet source, TimingValues timingValues,
+                        boolean delayedResponseHandling, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.delayedResponses = delayedResponses;
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
-        this.statistics = statistics;
         this.timingValues = timingValues;
         this.delayedResponseHandling = delayedResponseHandling;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
-        this.configClient = createClient(rpcServer, statistics, delayedResponses, source, timingValues, memoryCache, configClient);
+        this.configClient = createClient(rpcServer, delayedResponses, source, timingValues, memoryCache, configClient);
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source) {
-        return createTestServer(source, null, new MemoryCache(), new ConfigProxyStatistics());
+        return createTestServer(source, null, new MemoryCache());
     }
 
     static ProxyServer createTestServer(ConfigSourceSet source,
                                         ConfigSourceClient configSourceClient,
-                                        MemoryCache memoryCache,
-                                        ConfigProxyStatistics statistics) {
+                                        MemoryCache memoryCache) {
         final boolean delayedResponseHandling = false;
         return new ProxyServer(null, new DelayedResponses(),
-                               source, statistics, defaultTimingValues(), delayedResponseHandling,
+                               source, defaultTimingValues(), delayedResponseHandling,
                                memoryCache, configSourceClient);
     }
 
@@ -120,7 +115,6 @@ public class ProxyServer implements Runnable {
     }
 
     RawConfig resolveConfig(JRTServerConfigRequest req) {
-        statistics.incProcessedRequests();
         // Calling getConfig() will either return with an answer immediately or
         // create a background thread that retrieves config from the server and
         // calls updateSubscribers when new config is returned from the config source.
@@ -155,12 +149,11 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    private ConfigSourceClient createClient(RpcServer rpcServer, ConfigProxyStatistics statistics,
-                                            DelayedResponses delayedResponses,
+    private ConfigSourceClient createClient(RpcServer rpcServer, DelayedResponses delayedResponses,
                                             ConfigSourceSet source, TimingValues timingValues,
                                             MemoryCache memoryCache, ConfigSourceClient client) {
         return (client == null)
-                ? new RpcConfigSourceClient(rpcServer, source, statistics, memoryCache, timingValues, delayedResponses)
+                ? new RpcConfigSourceClient(rpcServer, source, memoryCache, timingValues, delayedResponses)
                 : client;
     }
 
@@ -169,7 +162,7 @@ public class ProxyServer implements Runnable {
     }
 
     private RpcConfigSourceClient createRpcClient() {
-        return new RpcConfigSourceClient(rpcServer, configSource, statistics, memoryCache, timingValues, delayedResponses);
+        return new RpcConfigSourceClient(rpcServer, configSource, memoryCache, timingValues, delayedResponses);
     }
 
     private void setupSignalHandler() {
@@ -202,15 +195,10 @@ public class ProxyServer implements Runnable {
             port = Integer.parseInt(args[0]);
         }
         Event.started("configproxy");
-        ConfigProxyStatistics statistics = new ConfigProxyStatistics(properties.eventInterval);
-        Thread t = new Thread(statistics);
-        t.setName("Metrics generator");
-        t.setDaemon(true);
-        t.start();
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
         DelayedResponses delayedResponses = new DelayedResponses();
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources, statistics,
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
@@ -221,18 +209,14 @@ public class ProxyServer implements Runnable {
     }
 
     static Properties getSystemProperties() {
-        // Read system properties
-        long eventInterval = Long.getLong("eventinterval", ConfigProxyStatistics.defaultEventInterval);
         final String[] inputConfigSources = System.getProperty("proxyconfigsources", DEFAULT_PROXY_CONFIG_SOURCES).split(",");
-        return new Properties(eventInterval, inputConfigSources);
+        return new Properties(inputConfigSources);
     }
 
     static class Properties {
-        final long eventInterval;
         final String[] configSources;
 
-        Properties(long eventInterval, String[] configSources) {
-            this.eventInterval = eventInterval;
+        Properties(String[] configSources) {
             this.configSources = configSources;
         }
     }
@@ -243,10 +227,6 @@ public class ProxyServer implements Runnable {
 
     TimingValues getTimingValues() {
         return timingValues;
-    }
-
-    ConfigProxyStatistics getStatistics() {
-        return statistics;
     }
 
     // Cancels all config instances and flushes the cache. When this method returns,
@@ -261,9 +241,6 @@ public class ProxyServer implements Runnable {
         if (rpcServer != null) rpcServer.shutdown();
         if (delayedResponseScheduler != null) delayedResponseScheduler.cancel(true);
         flush();
-        if (statistics != null) {
-            statistics.stop();
-        }
         fileDistributionAndUrlDownload.close();
     }
 
