@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.vespa.configserver.flags.db.BootstrapFlagSource;
 import com.yahoo.vespa.configserver.flags.db.ZooKeeperFlagSource;
 import com.yahoo.vespa.flags.OrderedFlagSource;
-import com.yahoo.vespa.flags.persistence.FlagsDb;
 
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
