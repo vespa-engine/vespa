@@ -1,17 +1,19 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.flags.http;
+package com.yahoo.vespa.config.server.http.flags;
 
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.Path;
+import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.HttpHandler;
+import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
-import com.yahoo.vespa.flags.persistence.FlagsDb;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.UncheckedIOException;
@@ -23,8 +25,7 @@ import java.util.Objects;
  *
  * @author hakonhall
  */
-public class FlagsHandler extends LoggingRequestHandler {
-
+public class FlagsHandler extends HttpHandler {
     private final FlagsDb flagsDb;
 
     @Inject
@@ -34,44 +35,28 @@ public class FlagsHandler extends LoggingRequestHandler {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
-        try {
-            switch (request.getMethod()) {
-                case GET: return handleGET(request);
-                case DELETE: return handleDELETE(request);
-                case PUT: return handlePUT(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
-            }
-        }
-        catch (IllegalArgumentException e) {
-            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
-        }
-        catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
-        }
-    }
-
-    private HttpResponse handleGET(HttpRequest request) {
+    protected HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/flags/v1")) return new V1Response(flagsV1Uri(request), "data", "defined");
         if (path.matches("/flags/v1/data")) return getFlagDataList(request);
         if (path.matches("/flags/v1/data/{flagId}")) return getFlagData(findFlagId(request, path));
         if (path.matches("/flags/v1/defined")) return new DefinedFlags(Flags.getAllFlags());
         if (path.matches("/flags/v1/defined/{flagId}")) return getDefinedFlag(findFlagId(request, path));
-        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
-    private HttpResponse handlePUT(HttpRequest request) {
+    @Override
+    protected HttpResponse handlePUT(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/flags/v1/data/{flagId}")) return putFlagData(request, findFlagId(request, path));
-        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
-    private HttpResponse handleDELETE(HttpRequest request) {
+    @Override
+    protected HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/flags/v1/data/{flagId}")) return deleteFlagData(findFlagId(request, path));
-        return ErrorResponse.notFoundError("Nothing at path '" + path + "'");
+        throw new NotFoundException("Nothing at path '" + path + "'");
     }
 
     private String flagsV1Uri(HttpRequest request) {
@@ -81,11 +66,9 @@ public class FlagsHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse getDefinedFlag(FlagId flagId) {
-        var definedFlag = Flags.getFlag(flagId).map(DefinedFlag::new);
-        if (definedFlag.isPresent()) {
-            return definedFlag.get();
-        }
-        return ErrorResponse.notFoundError("Flag " + flagId + " not defined");
+        FlagDefinition definition = Flags.getFlag(flagId)
+                .orElseThrow(() -> new NotFoundException("Flag " + flagId + " not defined"));
+        return new DefinedFlag(definition);
     }
 
     private HttpResponse getFlagDataList(HttpRequest request) {
@@ -94,11 +77,8 @@ public class FlagsHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse getFlagData(FlagId flagId) {
-        var data = flagsDb.getValue(flagId).map(FlagDataResponse::new);
-        if (data.isPresent()) {
-            return data.get();
-        }
-        return ErrorResponse.notFoundError("Flag " + flagId + " not set");
+        FlagData data = flagsDb.getValue(flagId).orElseThrow(() -> new NotFoundException("Flag " + flagId + " not set"));
+        return new FlagDataResponse(data);
     }
 
     private HttpResponse putFlagData(HttpRequest request, FlagId flagId) {
@@ -106,7 +86,7 @@ public class FlagsHandler extends LoggingRequestHandler {
         try {
             data = FlagData.deserialize(request.getData());
         } catch (UncheckedIOException e) {
-            return ErrorResponse.badRequest("Failed to deserialize request data: " + Exceptions.toMessageString(e));
+            return HttpErrorResponse.badRequest("Failed to deserialize request data: " + Exceptions.toMessageString(e));
         }
 
         if (!isForce(request)) {
@@ -125,14 +105,16 @@ public class FlagsHandler extends LoggingRequestHandler {
 
     private FlagId findFlagId(HttpRequest request, Path path) {
         FlagId flagId = new FlagId(path.get("flagId"));
-        if (!isForce(request) && Flags.getFlag(flagId).isEmpty()) {
-            throw new IllegalArgumentException("There is no flag '" + flagId + "' (use ?force=true to override)");
+
+        if (!isForce(request)) {
+            Flags.getFlag(flagId).orElseThrow(() ->
+                    new NotFoundException("There is no flag '" + flagId + "' (use ?force=true to override)"));
         }
+
         return flagId;
     }
 
     private boolean isForce(HttpRequest request) {
         return Objects.equals(request.getProperty("force"), "true");
     }
-
 }

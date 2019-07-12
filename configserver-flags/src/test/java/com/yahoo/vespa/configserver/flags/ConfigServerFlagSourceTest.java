@@ -7,7 +7,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.RawFlag;
-import com.yahoo.vespa.flags.persistence.FlagsDb;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.After;
 import org.junit.Before;

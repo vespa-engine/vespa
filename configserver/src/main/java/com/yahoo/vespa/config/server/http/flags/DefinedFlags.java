@@ -1,10 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.flags.http;
+package com.yahoo.vespa.config.server.http.flags;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
+import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.flags.FlagDefinition;
 
 import java.io.IOException;
@@ -17,7 +18,8 @@ import java.util.List;
  */
 public class DefinedFlags extends HttpResponse {
     private static ObjectMapper mapper = new ObjectMapper();
-    private static final Comparator<FlagDefinition> sortByFlagId = Comparator.comparing(flagDefinition -> flagDefinition.getUnboundFlag().id());
+    private static final Comparator<FlagDefinition> sortByFlagId =
+            (left, right) -> left.getUnboundFlag().id().compareTo(right.getUnboundFlag().id());
 
     private final List<FlagDefinition> flags;
 
@@ -38,6 +40,6 @@ public class DefinedFlags extends HttpResponse {
 
     @Override
     public String getContentType() {
-        return "application/json";
+        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 }

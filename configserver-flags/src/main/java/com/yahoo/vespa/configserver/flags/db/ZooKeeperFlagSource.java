@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.configserver.flags.db;
 
-import com.yahoo.vespa.flags.persistence.FlagsDb;
+import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.FlagSource;

@@ -54,7 +54,7 @@
     <preprocess:include file='model-integration.xml' required='true' />
 
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
-    <component id="com.yahoo.vespa.flags.persistence.FlagsDb" bundle="flags"/>
+    <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
     <preprocess:include file='metrics-packets.xml' required='false' />
     <preprocess:include file='container.xml' required='false' />
@@ -91,6 +91,10 @@
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.status.StatusHandler' bundle='configserver'>
       <binding>http://*/status</binding>
+    </handler>
+    <handler id='com.yahoo.vespa.config.server.http.flags.FlagsHandler' bundle='configserver'>
+      <binding>http://*/flags/v1</binding>
+      <binding>http://*/flags/v1/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.TenantHandler' bundle='configserver'>
       <binding>http://*/application/v2/tenant/</binding>
