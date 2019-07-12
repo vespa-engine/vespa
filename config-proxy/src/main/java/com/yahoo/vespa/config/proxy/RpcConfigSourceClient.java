@@ -38,7 +38,6 @@ class RpcConfigSourceClient implements ConfigSourceClient {
     private final HashMap<ConfigCacheKey, Subscriber> activeSubscribers = new HashMap<>();
     private final Object activeSubscribersLock = new Object();
     private final MemoryCache memoryCache;
-    private final ConfigProxyStatistics statistics;
     private final DelayedResponses delayedResponses;
     private final TimingValues timingValues;
 
@@ -48,13 +47,11 @@ class RpcConfigSourceClient implements ConfigSourceClient {
 
     RpcConfigSourceClient(RpcServer rpcServer,
                           ConfigSourceSet configSourceSet,
-                          ConfigProxyStatistics statistics,
                           MemoryCache memoryCache,
                           TimingValues timingValues,
                           DelayedResponses delayedResponses) {
         this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
-        this.statistics = statistics;
         this.memoryCache = memoryCache;
         this.delayedResponses = delayedResponses;
         this.timingValues = timingValues;
@@ -122,7 +119,6 @@ class RpcConfigSourceClient implements ConfigSourceClient {
         // happens at the same time
         DelayedResponse delayedResponse = new DelayedResponse(request);
         delayedResponses.add(delayedResponse);
-        statistics.delayedResponses(delayedResponses.size());
 
         final ConfigCacheKey configCacheKey = new ConfigCacheKey(input.getKey(), input.getDefMd5());
         RawConfig cachedConfig = memoryCache.get(configCacheKey);
@@ -139,7 +135,6 @@ class RpcConfigSourceClient implements ConfigSourceClient {
                     // unless another thread already did it
                     ret = cachedConfig;
                 }
-                statistics.decDelayedResponses();
             }
             if (!cachedConfig.isError() && cachedConfig.getGeneration() > 0) {
                 needToGetConfig = false;
@@ -220,7 +215,6 @@ class RpcConfigSourceClient implements ConfigSourceClient {
      */
     public void updateSubscribers(RawConfig config) {
         log.log(LogLevel.DEBUG, () -> "Config updated for " + config.getKey() + "," + config.getGeneration());
-        if (config.isError()) { statistics.incErrorCount(); }
         DelayQueue<DelayedResponse> responseDelayQueue = delayedResponses.responses();
         log.log(LogLevel.SPAM, () -> "Delayed response queue: " + responseDelayQueue);
         if (responseDelayQueue.size() == 0) {

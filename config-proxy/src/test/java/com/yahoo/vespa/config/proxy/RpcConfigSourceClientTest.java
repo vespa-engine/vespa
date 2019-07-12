@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 public class RpcConfigSourceClientTest {
 
     private MockRpcServer rpcServer;
-    private ConfigProxyStatistics statistics;
     private DelayedResponses delayedResponses;
     private RpcConfigSourceClient rpcConfigSourceClient;
 
@@ -29,10 +28,9 @@ public class RpcConfigSourceClientTest {
     @Before
     public void setup() {
         rpcServer = new MockRpcServer();
-        statistics = new ConfigProxyStatistics();
         delayedResponses = new DelayedResponses();
         rpcConfigSourceClient =
-                new RpcConfigSourceClient(rpcServer, new MockConfigSource(), statistics,
+                new RpcConfigSourceClient(rpcServer, new MockConfigSource(),
                                           new MemoryCache(), ProxyServer.defaultTimingValues(), delayedResponses);
     }
 
@@ -57,7 +55,6 @@ public class RpcConfigSourceClientTest {
     public void errorResponse() {
         configUpdatedSendResponse(ProxyServerTest.errorConfig);
         assertSentResponses(0);
-        assertEquals(1, statistics.errors());
     }
 
     @Test

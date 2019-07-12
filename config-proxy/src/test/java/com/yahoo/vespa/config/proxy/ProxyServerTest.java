@@ -23,7 +23,6 @@ public class ProxyServerTest {
     private final MemoryCache memoryCache = new MemoryCache();
     private final MockConfigSource source = new MockConfigSource();
     private MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
-    private final ConfigProxyStatistics statistics = new ConfigProxyStatistics();
     private ProxyServer proxy;
 
     static final RawConfig fooConfig = ConfigTester.fooConfig;
@@ -42,7 +41,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source, client, memoryCache, statistics);
+        proxy = ProxyServer.createTestServer(source, client, memoryCache);
     }
 
     @After
@@ -64,27 +63,6 @@ public class ProxyServerTest {
         assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
         assertEquals(1, memoryCache.size());
         assertThat(memoryCache.get(new ConfigCacheKey(fooConfig.getKey(), fooConfig.getDefMd5())), is(res));
-
-
-        assertEquals(1, statistics.processedRequests());
-        assertEquals(0, statistics.rpcRequests());
-        assertEquals(0, statistics.errors());
-        assertEquals(0, statistics.delayedResponses());
-
-        statistics.incProcessedRequests();
-        statistics.incRpcRequests();
-        statistics.incErrorCount();
-        statistics.delayedResponses(1);
-
-        assertEquals(2, statistics.processedRequests());
-        assertEquals(1, statistics.rpcRequests());
-        assertEquals(1, statistics.errors());
-        assertEquals(1, statistics.delayedResponses());
-
-        statistics.decDelayedResponses();
-        assertEquals(0, statistics.delayedResponses());
-
-        assertEquals(ConfigProxyStatistics.defaultEventInterval, statistics.getEventInterval().longValue());
     }
 
     /**
@@ -228,7 +206,6 @@ public class ProxyServerTest {
     @Test
     public void testReadingSystemProperties() {
         ProxyServer.Properties properties = ProxyServer.getSystemProperties();
-        assertThat(properties.eventInterval, is(ConfigProxyStatistics.defaultEventInterval));
         assertThat(properties.configSources.length, is(1));
         assertThat(properties.configSources[0], is(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES));
     }
