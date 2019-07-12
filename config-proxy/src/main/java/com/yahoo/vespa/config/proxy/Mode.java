@@ -31,9 +31,6 @@ class Mode {
 
     Mode(String modeString) {
         switch (modeString.toLowerCase()) {
-            case "" :
-                mode = ModeName.DEFAULT;
-                break;
             case "default" :
                 mode = ModeName.DEFAULT;
                 break;
@@ -41,7 +38,7 @@ class Mode {
                 mode = ModeName.MEMORYCACHE;
                 break;
             default:
-                throw new IllegalArgumentException("Unrecognized mode'" + modeString + "' supplied");
+                throw new IllegalArgumentException("Unrecognized mode '" + modeString + "' supplied");
         }
     }
 
