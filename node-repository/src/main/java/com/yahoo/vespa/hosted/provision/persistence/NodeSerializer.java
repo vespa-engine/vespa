@@ -385,7 +385,6 @@ public class NodeSerializer {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
             case "operator" : return Agent.operator;
-            case "NodeRetirer" : return Agent.system; // TODO: Remove after 7.67
             case "NodeFailer" : return Agent.NodeFailer;
         }
         throw new IllegalArgumentException("Unknown node event agent '" + eventAgentField.asString() + "'");
@@ -395,7 +394,6 @@ public class NodeSerializer {
             case application : return "application";
             case system : return "system";
             case operator : return "operator";
-            case NodeRetirer : return "system"; // TODO: Remove after 7.67
             case NodeFailer : return "NodeFailer";
         }
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
