@@ -2,31 +2,30 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.RotationName;
 
 import java.util.Objects;
 
 /**
- * Unique identifier for a global routing table entry (application x rotation name).
+ * Unique identifier for a global routing table entry (application x endpoint ID).
  *
  * @author mpolden
  */
 public class RoutingId {
 
     private final ApplicationId application;
-    private final RotationName rotation;
+    private final EndpointId endpointId;
 
-    public RoutingId(ApplicationId application, RotationName rotation) {
+    public RoutingId(ApplicationId application, EndpointId endpointId) {
         this.application = Objects.requireNonNull(application, "application must be non-null");
-        this.rotation = Objects.requireNonNull(rotation, "rotation must be non-null");
+        this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
     }
 
     public ApplicationId application() {
         return application;
     }
 
-    public RotationName rotation() {
-        return rotation;
+    public EndpointId endpointId() {
+        return endpointId;
     }
 
     @Override
@@ -35,12 +34,12 @@ public class RoutingId {
         if (o == null || getClass() != o.getClass()) return false;
         RoutingId that = (RoutingId) o;
         return application.equals(that.application) &&
-               rotation.equals(that.rotation);
+               endpointId.equals(that.endpointId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(application, rotation);
+        return Objects.hash(application, endpointId);
     }
 
 }

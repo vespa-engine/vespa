@@ -4,11 +4,10 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 
 import java.util.Collections;
@@ -39,36 +38,36 @@ public class RoutingPolicySerializer {
     private static final String rotationsField = "rotations";
 
     public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        Cursor policyArray = root.setArray(routingPoliciesField);
+        var slime = new Slime();
+        var root = slime.setObject();
+        var policyArray = root.setArray(routingPoliciesField);
         routingPolicies.forEach(policy -> {
-            Cursor policyObject = policyArray.addObject();
+            var policyObject = policyArray.addObject();
             policyObject.setString(clusterField, policy.cluster().value());
             policyObject.setString(zoneField, policy.zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
-            Cursor rotationArray = policyObject.setArray(rotationsField);
-            policy.rotations().forEach(rotation -> {
-                rotationArray.addString(rotation.value());
+            var rotationArray = policyObject.setArray(rotationsField);
+            policy.endpoints().forEach(endpointId -> {
+                rotationArray.addString(endpointId.id());
             });
         });
         return slime;
     }
 
     public Set<RoutingPolicy> fromSlime(ApplicationId owner, Slime slime) {
-        Set<RoutingPolicy> policies = new LinkedHashSet<>();
-        Cursor root = slime.get();
-        Cursor field = root.field(routingPoliciesField);
+        var policies = new LinkedHashSet<RoutingPolicy>();
+        var root = slime.get();
+        var field = root.field(routingPoliciesField);
         field.traverse((ArrayTraverser) (i, inspect) -> {
-            Set<RotationName> rotations = new LinkedHashSet<>();
-            inspect.field(rotationsField).traverse((ArrayTraverser) (j, rotation) -> rotations.add(RotationName.from(rotation.asString())));
+            var endpointIds = new LinkedHashSet<EndpointId>();
+            inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
             policies.add(new RoutingPolicy(owner,
                                            ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                            ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            Serializers.optionalField(inspect.field(dnsZoneField), Function.identity()),
-                                           rotations));
+                                           endpointIds));
         });
         return Collections.unmodifiableSet(policies);
     }

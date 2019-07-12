@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Objects;
 
 /**
@@ -8,7 +10,8 @@ import java.util.Objects;
  *
  * @author ogronnesby
  */
-public class EndpointId {
+public class EndpointId implements Comparable<EndpointId> {
+
     private static final EndpointId DEFAULT = new EndpointId("default");
 
     private final String id;
@@ -50,4 +53,10 @@ public class EndpointId {
     public static EndpointId default_() { return DEFAULT; }
 
     public static EndpointId of(String id) { return new EndpointId(id); }
+
+    @Override
+    public int compareTo(@NotNull EndpointId o) {
+        return id.compareTo(o.id);
+    }
+
 }

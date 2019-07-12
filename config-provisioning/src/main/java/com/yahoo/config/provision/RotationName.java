@@ -8,6 +8,7 @@ import java.util.Objects;
  *
  * @author mpolden
  */
+// TODO(mpolden): Remove this once all usages have been replaced
 public class RotationName implements Comparable<RotationName> {
 
     private final String name;

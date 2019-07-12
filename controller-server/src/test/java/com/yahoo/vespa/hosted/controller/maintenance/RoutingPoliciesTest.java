@@ -105,7 +105,7 @@ public class RoutingPoliciesTest {
         Set<RoutingPolicy> policies = tester.controller().curator().readRoutingPolicies(app1.id());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
-                   policies.stream().allMatch(policy -> policy.rotations().isEmpty()));
+                   policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
         assertEquals("Rotations for " + app2 + " are not removed", 2, records3.get().size());
     }
 

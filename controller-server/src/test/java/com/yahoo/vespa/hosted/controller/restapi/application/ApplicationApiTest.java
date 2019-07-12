@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
@@ -44,6 +43,7 @@ import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -1380,7 +1380,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                  ClusterSpec.Id.from("default"),
                                                  ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
                                                  HostName.from("lb-0-canonical-name"),
-                                                 Optional.of("dns-zone-1"), Set.of(RotationName.from("c0")));
+                                                 Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")));
         tester.controller().curator().writeRoutingPolicies(app.id(), Set.of(policy));
 
         // GET application

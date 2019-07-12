@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -216,7 +215,6 @@ public class Endpoint {
 
         private ZoneId zone;
         private ClusterSpec.Id cluster;
-        private RotationName rotation;
         private EndpointId endpointId;
         private Port port;
         private boolean legacy = false;
@@ -228,7 +226,7 @@ public class Endpoint {
 
         /** Sets the cluster and zone target of this  */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
-            if (rotation != null || endpointId != null) {
+            if (endpointId != null) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
@@ -236,18 +234,9 @@ public class Endpoint {
             return this;
         }
 
-        /** Sets the rotation target of this */
-        public EndpointBuilder target(RotationName rotation) {
-            if ((cluster != null && zone != null) || endpointId != null) {
-                throw new IllegalArgumentException("Cannot set multiple target types");
-            }
-            this.rotation = rotation;
-            return this;
-        }
-
         /** Sets the endpoint ID as defines in deployments.xml */
         public EndpointBuilder named(EndpointId endpointId) {
-            if (rotation != null || cluster != null || zone != null) {
+            if (cluster != null || zone != null) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.endpointId = endpointId;
@@ -277,8 +266,6 @@ public class Endpoint {
             String name;
             if (cluster != null && zone != null) {
                 name = cluster.value();
-            } else if (rotation != null) {
-                name = rotation.value();
             } else if (endpointId != null) {
                 name = endpointId.id();
             } else {

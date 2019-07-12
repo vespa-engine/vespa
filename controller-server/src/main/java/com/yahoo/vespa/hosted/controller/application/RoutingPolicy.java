@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
@@ -27,17 +26,17 @@ public class RoutingPolicy {
     private final ZoneId zone;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
-    private final Set<RotationName> rotations;
+    private final Set<EndpointId> endpoints;
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(ApplicationId owner, ClusterSpec.Id cluster, ZoneId zone, HostName canonicalName,
-                         Optional<String> dnsZone, Set<RotationName> rotations) {
+                         Optional<String> dnsZone, Set<EndpointId> endpoints) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
-        this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
+        this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
     }
 
     /** The application owning this */
@@ -65,9 +64,9 @@ public class RoutingPolicy {
         return dnsZone;
     }
 
-    /** The rotations in this policy */
-    public Set<RotationName> rotations() {
-        return rotations;
+    /** The endpoints of this policy */
+    public Set<EndpointId> endpoints() {
+        return endpoints;
     }
 
     /** Returns the endpoint of this */
@@ -77,7 +76,7 @@ public class RoutingPolicy {
 
     /** Returns rotation endpoints of this */
     public EndpointList rotationEndpointsIn(SystemName system) {
-        return EndpointList.of(rotations.stream().map(rotation -> endpointOf(owner, rotation, system)));
+        return EndpointList.of(endpoints.stream().map(endpointId -> endpointOf(owner, endpointId, system)));
     }
 
     @Override
@@ -95,14 +94,14 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, rotations,
+        return String.format("%s [rotations: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
                              dnsZone.map(z -> ", DNS zone: " + z).orElse(""), cluster, owner.toShortString(),
                              zone.value());
     }
 
     /** Returns the endpoint of given rotation */
-    public static Endpoint endpointOf(ApplicationId application, RotationName rotation, SystemName system) {
-        return Endpoint.of(application).target(rotation).on(Port.tls()).directRouting().in(system);
+    public static Endpoint endpointOf(ApplicationId application, EndpointId endpointId, SystemName system) {
+        return Endpoint.of(application).named(endpointId).on(Port.tls()).directRouting().in(system);
     }
 
 }
