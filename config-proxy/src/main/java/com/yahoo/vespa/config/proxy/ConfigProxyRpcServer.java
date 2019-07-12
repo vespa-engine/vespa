@@ -133,7 +133,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
         dispatchRpcRequest(req, () -> {
             JRTServerConfigRequest request = JRTServerConfigRequestV3.createFromRequest(req);
             if (isProtocolVersionSupported(request)) {
-                proxyServer.getStatistics().incRpcRequests();
                 req.target().addWatcher(this);
                 getConfigImpl(request);
                 return;
