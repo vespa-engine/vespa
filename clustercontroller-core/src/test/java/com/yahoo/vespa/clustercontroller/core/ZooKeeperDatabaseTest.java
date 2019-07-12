@@ -1,9 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vespa.clustercontroller.core.database.CasWriteFailed;
 import com.yahoo.vespa.clustercontroller.core.database.Database;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabase;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -13,6 +16,9 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class ZooKeeperDatabaseTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private static class Fixture implements AutoCloseable {
         final ZooKeeperTestServer zkServer;
@@ -53,13 +59,38 @@ public class ZooKeeperDatabaseTest {
     public void can_store_and_load_cluster_state_bundle_from_database() throws Exception {
         try (Fixture f = new Fixture()) {
             f.createDatabase();
-            ClusterStateBundle bundleToStore = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
-                    StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
-                    StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
+            f.db().retrieveLastPublishedStateBundle(); // Must be called once prior to prime last known znode version
+            ClusterStateBundle bundleToStore = dummyBundle();
             f.db().storeLastPublishedStateBundle(bundleToStore);
 
             ClusterStateBundle bundleReceived = f.db().retrieveLastPublishedStateBundle();
             assertThat(bundleReceived, equalTo(bundleToStore));
+        }
+    }
+
+    private static ClusterStateBundle dummyBundle() {
+        return ClusterStateBundleUtil.makeBundle("distributor:2 storage:2",
+                StateMapping.of("default", "distributor:2 storage:2 .0.s:d"),
+                StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
+    }
+
+    @Test
+    public void storing_cluster_state_bundle_with_mismatching_expected_znode_version_throws_exception() throws Exception {
+        expectedException.expect(CasWriteFailed.class);
+        expectedException.expectMessage("version mismatch in cluster state bundle znode (expected -2)");
+        try (Fixture f = new Fixture()) {
+            f.createDatabase();
+            f.db().storeLastPublishedStateBundle(dummyBundle());
+        }
+    }
+
+    @Test
+    public void storing_cluster_state_version_with_mismatching_expected_znode_version_throws_exception() throws Exception {
+        expectedException.expect(CasWriteFailed.class);
+        expectedException.expectMessage("version mismatch in cluster state version znode (expected -2)");
+        try (Fixture f = new Fixture()) {
+            f.createDatabase();
+            f.db().storeLatestSystemStateVersion(12345);
         }
     }
 

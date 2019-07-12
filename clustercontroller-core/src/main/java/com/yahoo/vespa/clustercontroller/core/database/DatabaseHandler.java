@@ -105,8 +105,7 @@ public class DatabaseHandler {
     }
 
     public void shutdown(FleetController fleetController) {
-        reset();
-        fleetController.lostDatabaseConnection();
+        relinquishDatabaseConnectivity(fleetController);
     }
 
     public boolean isClosed() { return database == null || database.isClosed(); }
@@ -232,68 +231,85 @@ public class DatabaseHandler {
             didWork = true;
             connect(context.getCluster(), currentTime);
         }
-        synchronized (databaseMonitor) {
-            if (database == null || database.isClosed()) {
-                return didWork;
+        try {
+            synchronized (databaseMonitor) {
+                if (database == null || database.isClosed()) {
+                    return didWork;
+                }
+                didWork |= performZooKeeperWrites();
             }
-            if (pendingStore.masterVote != null) {
-                didWork = true;
-                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store master vote "
+        } catch (CasWriteFailed e) {
+            log.log(LogLevel.WARNING, String.format("CaS write to ZooKeeper failed, another controller " +
+                    "has likely taken over ownership: %s", e.getMessage()));
+            // Clear DB and master election state. This shall trigger a full re-fetch of all
+            // version and election-related metadata.
+            relinquishDatabaseConnectivity(context.getFleetController());
+        }
+        return didWork;
+    }
+
+    private void relinquishDatabaseConnectivity(FleetController fleetController) {
+        reset();
+        fleetController.lostDatabaseConnection();
+    }
+
+    private boolean performZooKeeperWrites() throws InterruptedException {
+        boolean didWork = false;
+        if (pendingStore.masterVote != null) {
+            didWork = true;
+            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store master vote "
+                    + pendingStore.masterVote + " into zookeeper.");
+            if (database.storeMasterVote(pendingStore.masterVote)) {
+                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Managed to store master vote "
                         + pendingStore.masterVote + " into zookeeper.");
-                if (database.storeMasterVote(pendingStore.masterVote)) {
-                    log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Managed to store master vote "
-                            + pendingStore.masterVote + " into zookeeper.");
-                    currentlyStored.masterVote = pendingStore.masterVote;
-                    pendingStore.masterVote = null;
-                } else {
-                    log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store master vote");
-                    return didWork;
-                }
+                currentlyStored.masterVote = pendingStore.masterVote;
+                pendingStore.masterVote = null;
+            } else {
+                log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failed to store master vote");
+                return true;
             }
-            if (pendingStore.lastSystemStateVersion != null) {
-                didWork = true;
-                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex
-                        + ": Attempting to store last system state version " + pendingStore.lastSystemStateVersion
-                        + " into zookeeper.");
-                // TODO guard version write with a CaS predicated on the version we last read/wrote.
-                // TODO Drop leadership status if there is a mismatch, as it implies we're racing with another leader.
-                if (database.storeLatestSystemStateVersion(pendingStore.lastSystemStateVersion)) {
-                    currentlyStored.lastSystemStateVersion = pendingStore.lastSystemStateVersion;
-                    pendingStore.lastSystemStateVersion = null;
-                } else {
-                    return didWork;
-                }
+        }
+        if (pendingStore.lastSystemStateVersion != null) {
+            didWork = true;
+            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex
+                    + ": Attempting to store last system state version " + pendingStore.lastSystemStateVersion
+                    + " into zookeeper.");
+            if (database.storeLatestSystemStateVersion(pendingStore.lastSystemStateVersion)) {
+                currentlyStored.lastSystemStateVersion = pendingStore.lastSystemStateVersion;
+                pendingStore.lastSystemStateVersion = null;
+            } else {
+                return true;
             }
-            if (pendingStore.startTimestamps != null) {
-                didWork = true;
-                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store "
-                        + pendingStore.startTimestamps.size() + " start timestamps into zookeeper.");
-                if (database.storeStartTimestamps(pendingStore.startTimestamps)) {
-                    currentlyStored.startTimestamps = pendingStore.startTimestamps;
-                    pendingStore.startTimestamps = null;
-                } else {
-                    return didWork;
-                }
+        }
+        if (pendingStore.startTimestamps != null) {
+            didWork = true;
+            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store "
+                    + pendingStore.startTimestamps.size() + " start timestamps into zookeeper.");
+            if (database.storeStartTimestamps(pendingStore.startTimestamps)) {
+                currentlyStored.startTimestamps = pendingStore.startTimestamps;
+                pendingStore.startTimestamps = null;
+            } else {
+                return true;
             }
-            if (pendingStore.wantedStates != null) {
-                didWork = true;
-                log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store "
-                        + pendingStore.wantedStates.size() + " wanted states into zookeeper.");
-                if (database.storeWantedStates(pendingStore.wantedStates)) {
-                    currentlyStored.wantedStates = pendingStore.wantedStates;
-                    pendingStore.wantedStates = null;
-                } else {
-                    return didWork;
-                }
+        }
+        if (pendingStore.wantedStates != null) {
+            didWork = true;
+            log.log(LogLevel.DEBUG, "Fleetcontroller " + nodeIndex + ": Attempting to store "
+                    + pendingStore.wantedStates.size() + " wanted states into zookeeper.");
+            if (database.storeWantedStates(pendingStore.wantedStates)) {
+                currentlyStored.wantedStates = pendingStore.wantedStates;
+                pendingStore.wantedStates = null;
+            } else {
+                return true;
             }
-            if (pendingStore.clusterStateBundle != null) {
-                didWork = true;
-                if (database.storeLastPublishedStateBundle(pendingStore.clusterStateBundle)) {
-                    currentlyStored.clusterStateBundle = pendingStore.clusterStateBundle;
-                    pendingStore.clusterStateBundle = null;
-                } else {
-                    return true;
-                }
+        }
+        if (pendingStore.clusterStateBundle != null) {
+            didWork = true;
+            if (database.storeLastPublishedStateBundle(pendingStore.clusterStateBundle)) {
+                currentlyStored.clusterStateBundle = pendingStore.clusterStateBundle;
+                pendingStore.clusterStateBundle = null;
+            } else {
+                return true;
             }
         }
         return didWork;

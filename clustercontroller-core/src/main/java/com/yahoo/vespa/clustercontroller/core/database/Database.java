@@ -46,7 +46,12 @@ public abstract class Database {
      * store the version in the database, such that if another fleetcontroller takes over as master it will use a
      * higher version system state.
      *
+     * Precondition: retrieveLatestSystemStateVersion() MUST have been called at least once prior to calling
+     *               this method.
+     *
      * @return True if request succeeded. False if not.
+     * @throws CasWriteFailed if the expected version of the znode did not match what was actually stored in the DB.
+     *                        In this case, the write has NOT been applied.
      */
     public abstract boolean storeLatestSystemStateVersion(int version) throws InterruptedException;
 
@@ -84,6 +89,17 @@ public abstract class Database {
      */
     public abstract Map<Node, Long> retrieveStartTimestamps() throws InterruptedException;
 
+    /**
+     * Stores the last published cluster state bundle synchronously into ZooKeeper.
+     *
+     * Precondition: retrieveLastPublishedStateBundle() MUST have been called at least once prior to calling
+     *               this method.
+     *
+     * @return true if the write is known to have been successful, false otherwise. If false is returned, the
+     *         write may or may not have taken place.
+     * @throws CasWriteFailed if the expected version of the znode did not match what was actually stored in the DB.
+     *                        In this case, the write has NOT been applied.
+     */
     public abstract boolean storeLastPublishedStateBundle(ClusterStateBundle stateBundle) throws InterruptedException;
 
     public abstract ClusterStateBundle retrieveLastPublishedStateBundle() throws InterruptedException;
