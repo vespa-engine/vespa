@@ -63,13 +63,18 @@ FBench::~FBench()
 bool
 FBench::init_crypto_engine(const std::string &ca_certs_file_name,
                            const std::string &cert_chain_file_name,
-                           const std::string &private_key_file_name)
+                           const std::string &private_key_file_name,
+                           bool allow_default_tls)
 {
     if (ca_certs_file_name.empty() &&
         cert_chain_file_name.empty() &&
         private_key_file_name.empty())
     {
-        _crypto_engine = std::make_shared<vespalib::NullCryptoEngine>();
+        if (allow_default_tls) {
+            _crypto_engine = vespalib::CryptoEngine::get_default();
+        } else {
+            _crypto_engine = std::make_shared<vespalib::NullCryptoEngine>();
+        }
         return true;
     }
     if (ca_certs_file_name.empty()) {
@@ -297,7 +302,8 @@ FBench::Usage()
     printf(" -z       : use single query file to be distributed between clients.\n");
     printf(" -T <str> : CA certificate file to verify peer against.\n");
     printf(" -C <str> : client certificate file name.\n");
-    printf(" -K <str> : client private key file name.\n\n");
+    printf(" -K <str> : client private key file name.\n");
+    printf(" -D       : use TLS configuration from environment if T/C/K is not used\n\n");
     printf(" <hostname> : the host you want to benchmark.\n");
     printf(" <port>     : the port to use when contacting the host.\n\n");
     printf("Several hostnames and ports can be listed\n");
@@ -332,6 +338,7 @@ FBench::Main(int argc, char *argv[])
     std::string ca_certs_file_name; // -T
     std::string cert_chain_file_name; // -C
     std::string private_key_file_name; // -K
+    bool allow_default_tls = false; // -D
 
     int  restartLimit = -1;
     bool keepAlive    = true;
@@ -351,7 +358,7 @@ FBench::Main(int argc, char *argv[])
 
     idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "H:A:T:C:K:a:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
+    while((opt = GetOpt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
         switch(opt) {
         case 'A':
             authority = arg;
@@ -371,6 +378,9 @@ FBench::Main(int argc, char *argv[])
             break;
         case 'K':
             private_key_file_name = std::string(arg);
+            break;
+        case 'D':
+            allow_default_tls = true;
             break;
         case 'a':
             queryStringToAppend = std::string(arg);
@@ -443,7 +453,7 @@ FBench::Main(int argc, char *argv[])
         return -1;
     }
 
-    if (!init_crypto_engine(ca_certs_file_name, cert_chain_file_name, private_key_file_name)) {
+    if (!init_crypto_engine(ca_certs_file_name, cert_chain_file_name, private_key_file_name, allow_default_tls)) {
         fprintf(stderr, "failed to initialize crypto engine\n");
         return -1;
     }
