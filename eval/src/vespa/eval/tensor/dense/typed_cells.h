@@ -12,25 +12,6 @@ namespace vespalib::tensor {
 
 using CellType = vespalib::eval::ValueType::CellType;
 
-
-template<typename LCT, typename RCT> struct OutputCellType;
-template<> struct OutputCellType<double, double> {
-    typedef double output_type;
-    static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-};
-template<> struct OutputCellType<float, double> {
-    typedef double output_type;
-    static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-};
-template<> struct OutputCellType<double, float> {
-    typedef double output_type;
-    static constexpr CellType output_cell_type() { return CellType::DOUBLE; };
-};
-template<> struct OutputCellType<float, float> {
-    typedef float output_type;
-    static constexpr CellType output_cell_type() { return CellType::FLOAT; };
-};
-
 struct TypedCells {
     const void *data;
     CellType type;
@@ -67,7 +48,7 @@ struct TypedCells {
 };
 
 template <typename TGT, typename... Args>
-auto dispatch_0(CellType ct, Args &&...args) {
+decltype(auto) dispatch_0(CellType ct, Args &&...args) {
     switch (ct) {
         case CellType::DOUBLE: return TGT::template call<double>(std::forward<Args>(args)...);
         case CellType::FLOAT:  return TGT::template call<float>(std::forward<Args>(args)...);
@@ -76,7 +57,7 @@ auto dispatch_0(CellType ct, Args &&...args) {
 }
 
 template <typename TGT, typename... Args>
-auto dispatch_1(const TypedCells &a, Args &&...args) {
+decltype(auto) dispatch_1(const TypedCells &a, Args &&...args) {
     switch (a.type) {
         case CellType::DOUBLE: return TGT::call(a.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT:  return TGT::call(a.unsafe_typify<float>(),  std::forward<Args>(args)...);
@@ -85,7 +66,7 @@ auto dispatch_1(const TypedCells &a, Args &&...args) {
 }
 
 template <typename TGT, typename A1, typename... Args>
-auto dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
+decltype(auto) dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
     switch (b.type) {
         case CellType::DOUBLE: return dispatch_1<TGT>(std::forward<A1>(a), b.unsafe_typify<double>(), std::forward<Args>(args)...);
         case CellType::FLOAT:  return dispatch_1<TGT>(std::forward<A1>(a), b.unsafe_typify<float>(),  std::forward<Args>(args)...);
@@ -94,7 +75,7 @@ auto dispatch_2(A1 &&a, const TypedCells &b, Args &&...args) {
 }
 
 template <typename T, typename... Args>
-auto select_1(CellType a_type) {
+decltype(auto) select_1(CellType a_type) {
     switch(a_type) {
     case CellType::DOUBLE: return T::template get_fun<double, Args...>();
     case CellType::FLOAT:  return T::template get_fun<float, Args...>();
@@ -103,7 +84,7 @@ auto select_1(CellType a_type) {
 }
 
 template <typename T>
-auto select_2(CellType a_type, CellType b_type) {
+decltype(auto) select_2(CellType a_type, CellType b_type) {
     switch(b_type) {
     case CellType::DOUBLE: return select_1<T, double>(a_type);
     case CellType::FLOAT:  return select_1<T, float>(a_type);

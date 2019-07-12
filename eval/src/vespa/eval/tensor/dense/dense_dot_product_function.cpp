@@ -18,12 +18,6 @@ using namespace eval::operation;
 
 namespace {
 
-template <typename T>
-ConstArrayRef<T> getCellsRef(const eval::Value &value) {
-    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return denseTensor.cellsRef().typify<T>();
-}
-
 template <typename LCT, typename RCT>
 struct HWSupport {
     static double call(hwaccelrated::IAccelrated *, const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs) {
@@ -48,8 +42,8 @@ template <> struct HWSupport<double, double> {
 template <typename LCT, typename RCT>
 void my_dot_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     auto *hw = (hwaccelrated::IAccelrated *)(param);
-    auto lhs = getCellsRef<LCT>(state.peek(1));
-    auto rhs = getCellsRef<RCT>(state.peek(0));
+    auto lhs = DenseTensorView::typify_cells<LCT>(state.peek(1));
+    auto rhs = DenseTensorView::typify_cells<RCT>(state.peek(0));
     double result = HWSupport<LCT,RCT>::call(hw, lhs, rhs);
     state.pop_pop_push(state.stash.create<eval::DoubleValue>(result));
 }

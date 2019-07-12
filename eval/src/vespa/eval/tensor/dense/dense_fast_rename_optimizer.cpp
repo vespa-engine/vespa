@@ -17,15 +17,10 @@ using namespace eval::tensor_function;
 
 namespace {
 
-bool is_concrete_dense_stable_rename(const ValueType &from_type, const ValueType &to_type,
-                                     const std::vector<vespalib::string> &from,
-                                     const std::vector<vespalib::string> &to)
+bool is_dense_stable_rename(const ValueType &from_type, const ValueType &to_type,
+                            const std::vector<vespalib::string> &from,
+                            const std::vector<vespalib::string> &to)
 {
-    if (from_type.cell_type() != ValueType::CellType::DOUBLE ||
-        to_type.cell_type() != ValueType::CellType::DOUBLE)
-    {
-        return false; // non-double cell types not supported
-    }
     if (!from_type.is_dense() ||
         !to_type.is_dense() ||
         (from.size() != to.size()))
@@ -51,7 +46,8 @@ DenseFastRenameOptimizer::optimize(const eval::TensorFunction &expr, Stash &stas
     if (auto rename = as<Rename>(expr)) {
         const ValueType &from_type = rename->child().result_type();
         const ValueType &to_type = expr.result_type();
-        if (is_concrete_dense_stable_rename(from_type, to_type, rename->from(), rename->to())) {
+        if (is_dense_stable_rename(from_type, to_type, rename->from(), rename->to())) {
+            assert(to_type.cell_type() == from_type.cell_type());
             return DenseReplaceTypeFunction::create_compact(to_type, rename->child(), stash);
         }
     }

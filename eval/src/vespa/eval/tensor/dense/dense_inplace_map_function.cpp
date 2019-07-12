@@ -16,24 +16,19 @@ using namespace eval::tensor_function;
 
 namespace {
 
-ArrayRef<double> getMutableCells(const eval::Value &value) {
-    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return unconstify(denseTensor.cellsRef().typify<double>());
-}
-
+template <typename CT>
 void my_inplace_map_op(eval::InterpretedFunction::State &state, uint64_t param) {
     map_fun_t function = (map_fun_t)param;
-    for (double &cell: getMutableCells(state.peek(0))) {
+    ArrayRef<CT> cells = unconstify(DenseTensorView::typify_cells<CT>(state.peek(0)));
+    for (CT &cell: cells) {
         cell = function(cell);
     }
 }
 
-bool isConcreteDenseTensor(const ValueType &type) {
-    if (type.cell_type() != ValueType::CellType::DOUBLE) {
-        return false; // non-double cell types not supported
-    }
-    return type.is_dense();
-}
+struct MyInplaceMapOp {
+    template <typename CT>
+    static auto get_fun() { return my_inplace_map_op<CT>; }
+};
 
 } // namespace vespalib::tensor::<unnamed>
 
@@ -51,14 +46,16 @@ DenseInplaceMapFunction::~DenseInplaceMapFunction()
 eval::InterpretedFunction::Instruction
 DenseInplaceMapFunction::compile_self(Stash &) const
 {
-    return eval::InterpretedFunction::Instruction(my_inplace_map_op, (uint64_t)function());
+    auto op = select_1<MyInplaceMapOp>(result_type().cell_type());
+    return eval::InterpretedFunction::Instruction(op, (uint64_t)function());
 }
 
 const TensorFunction &
 DenseInplaceMapFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
     if (auto map = as<Map>(expr)) {
-        if (map->child().result_is_mutable() && isConcreteDenseTensor(map->result_type())) {
+        if (map->child().result_is_mutable() && map->result_type().is_dense()) {
+            assert(map->result_type().cell_type() == map->child().result_type().cell_type());
             return stash.create<DenseInplaceMapFunction>(map->result_type(), map->child(), map->function());
         }
     }

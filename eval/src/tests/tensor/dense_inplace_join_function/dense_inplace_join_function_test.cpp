@@ -144,10 +144,15 @@ TEST("require that inplace join can be debug dumped") {
     fprintf(stderr, "%s\n", info[0]->as_string().c_str());
 }
 
-TEST("require that optimization is disabled for tensors with non-double cells") {
-    TEST_DO(verify_not_optimized("mut_x5_A-mut_x5f_D"));
-    TEST_DO(verify_not_optimized("mut_x5f_D-mut_x5_A"));
-    TEST_DO(verify_not_optimized("mut_x5f_D-mut_x5f_E"));
+TEST("require that optimization works with float cells") {
+    TEST_DO(verify_p0_optimized("mut_x5f_D-mut_x5f_E", 1));
+}
+
+TEST("require that overwritten value must have same cell type as result") {
+    TEST_DO(verify_p0_optimized("mut_x5_A-mut_x5f_D", 1));
+    TEST_DO(verify_p1_optimized("mut_x5f_D-mut_x5_A", 1));
+    TEST_DO(verify_not_optimized("con_x5_A-mut_x5f_D"));
+    TEST_DO(verify_not_optimized("mut_x5f_D-con_x5_A"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

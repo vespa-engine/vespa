@@ -21,21 +21,36 @@ using namespace eval::operation;
 
 namespace {
 
-XWInput getCellsRef(const eval::Value &value) {
-    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    TypedCells ref = denseTensor.cellsRef();
-    assert(ref.type == CellType::DOUBLE);
-    return ref.typify<double>();
-}
+template <typename LCT, typename RCT>
+struct HWSupport {
+    static double call(hwaccelrated::IAccelrated *, const LCT *lhs, const RCT *rhs, size_t len) {
+        double result = 0.0;
+        for (size_t i = 0; i < len; ++i) {
+            result += (lhs[i] * rhs[i]);
+        }
+        return result;
+    }
+};
+template <> struct HWSupport<float, float> {
+    static double call(hwaccelrated::IAccelrated *hw, const float *lhs, const float *rhs, size_t len) {
+        return hw->dotProduct(lhs, rhs, len);
+    }
+};
+template <> struct HWSupport<double, double> {
+    static double call(hwaccelrated::IAccelrated *hw, const double *lhs, const double *rhs, size_t len) {
+        return hw->dotProduct(lhs, rhs, len);
+    }
+};
 
+template <typename LCT, typename RCT, typename OCT>
 void multiDotProduct(const DenseXWProductFunction::Self &self,
-                     const XWInput &vectorCells, const XWInput &matrixCells, XWOutput &result)
+                     const ConstArrayRef<LCT> &vectorCells, const ConstArrayRef<RCT> &matrixCells, ArrayRef<OCT> &result)
 {
-    double *out = result.begin();
-    const double *matrixP = matrixCells.cbegin();
-    const double * const vectorP = vectorCells.cbegin();
+    OCT *out = result.begin();
+    const RCT *matrixP = matrixCells.cbegin();
+    const LCT * const vectorP = vectorCells.cbegin();
     for (size_t row = 0; row < self._resultSize; ++row) {
-        double cell = self._hwAccelerator->dotProduct(vectorP, matrixP, self._vectorSize);
+        double cell = HWSupport<LCT,RCT>::call(self._hwAccelerator.get(), vectorP, matrixP, self._vectorSize);
         *out++ = cell;
         matrixP += self._vectorSize;
     }
@@ -43,12 +58,13 @@ void multiDotProduct(const DenseXWProductFunction::Self &self,
     assert(matrixP == matrixCells.cend());
 }
 
+template <typename LCT, typename RCT, typename OCT>
 void transposedProduct(const DenseXWProductFunction::Self &self,
-                       const XWInput &vectorCells, const XWInput &matrixCells, XWOutput &result)
+                       const ConstArrayRef<LCT> &vectorCells, const ConstArrayRef<RCT> &matrixCells, ArrayRef<OCT> &result)
 {
-    double *out = result.begin();
-    const double * const matrixP = matrixCells.cbegin();
-    const double * const vectorP = vectorCells.cbegin();
+    OCT *out = result.begin();
+    const RCT * const matrixP = matrixCells.cbegin();
+    const LCT * const vectorP = vectorCells.cbegin();
     for (size_t row = 0; row < self._resultSize; ++row) {
         double cell = 0;
         for (size_t col = 0; col < self._vectorSize; ++col) {
@@ -59,41 +75,54 @@ void transposedProduct(const DenseXWProductFunction::Self &self,
     assert(out == result.end());
 }
 
-template <bool commonDimensionInnermost>
+template <typename LCT, typename RCT, bool commonDimensionInnermost>
 void my_xw_product_op(eval::InterpretedFunction::State &state, uint64_t param) {
     DenseXWProductFunction::Self *self = (DenseXWProductFunction::Self *)(param);
 
-    XWInput vectorCells = getCellsRef(state.peek(1));
-    XWInput matrixCells = getCellsRef(state.peek(0));
-
-    ArrayRef<double> outputCells = state.stash.create_array<double>(self->_resultSize);
+    using OCT = typename eval::UnifyCellTypes<LCT,RCT>::type;
+    auto vectorCells = DenseTensorView::typify_cells<LCT>(state.peek(1));
+    auto matrixCells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    auto outputCells = state.stash.create_array<OCT>(self->_resultSize);
 
     if (commonDimensionInnermost) {
         multiDotProduct(*self, vectorCells, matrixCells, outputCells);
     } else {
         transposedProduct(*self, vectorCells, matrixCells, outputCells);
     }
+
     state.pop_pop_push(state.stash.create<DenseTensorView>(self->_resultType, TypedCells(outputCells)));
 }
 
-bool isConcreteDenseTensor(const ValueType &type, size_t d) {
-    if (type.cell_type() != ValueType::CellType::DOUBLE) {
-        return false; // non-double cell types not supported
+template <bool common_inner>
+struct MyXWProductOp {
+    template <typename LCT, typename RCT>
+    static auto get_fun() { return my_xw_product_op<LCT,RCT,common_inner>; }
+};
+
+eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool common_innermost) {
+    if (common_innermost) {
+        return select_2<MyXWProductOp<true> >(lct, rct);
+    } else {
+        return select_2<MyXWProductOp<false> >(lct, rct);
     }
+}
+
+bool isDenseTensor(const ValueType &type, size_t d) {
     return (type.is_dense() && (type.dimensions().size() == d));
 }
 
 bool isDenseXWProduct(const ValueType &res, const ValueType &vec, const ValueType &mat) {
-    if (isConcreteDenseTensor(res, 1) &&
-        isConcreteDenseTensor(vec, 1) &&
-        isConcreteDenseTensor(mat, 2))
+    if (isDenseTensor(res, 1) &&
+        isDenseTensor(vec, 1) &&
+        isDenseTensor(mat, 2))
     {
         size_t res_idx = mat.dimension_index(res.dimensions()[0].name);
         size_t vec_idx = mat.dimension_index(vec.dimensions()[0].name);
         size_t npos = ValueType::Dimension::npos;
         if ((res_idx != npos) && (vec_idx != npos) && (res_idx != vec_idx)) {
-            return ((mat.dimensions()[res_idx].size == res.dimensions()[0].size) &&
-                    (mat.dimensions()[vec_idx].size == vec.dimensions()[0].size));
+            assert(mat.dimensions()[res_idx].size == res.dimensions()[0].size);
+            assert(mat.dimensions()[vec_idx].size == vec.dimensions()[0].size);
+            return true;
         }
     }
     return false;
@@ -134,7 +163,8 @@ eval::InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vectorSize, _resultSize);
-    auto op = _commonDimensionInnermost ? my_xw_product_op<true> : my_xw_product_op<false>;
+    auto op = my_select(lhs().result_type().cell_type(),
+                        rhs().result_type().cell_type(), _commonDimensionInnermost);
     return eval::InterpretedFunction::Instruction(op, (uint64_t)(&self));
 }
 
@@ -150,22 +180,22 @@ DenseXWProductFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 const TensorFunction &
 DenseXWProductFunction::optimize(const eval::TensorFunction &expr, Stash &stash)
 {
-        const Reduce *reduce = as<Reduce>(expr);
-        if (reduce && (reduce->aggr() == Aggr::SUM)) {
-            const ValueType &result_type = reduce->result_type();
-            const Join *join = as<Join>(reduce->child());
-            if (join && (join->function() == Mul::f)) {
-                const TensorFunction &lhs = join->lhs();
-                const TensorFunction &rhs = join->rhs();
-                if (isDenseXWProduct(result_type, lhs.result_type(), rhs.result_type())) {
-                    return createDenseXWProduct(result_type, lhs, rhs, stash);
-                }
-                if (isDenseXWProduct(result_type, rhs.result_type(), lhs.result_type())) {
-                    return createDenseXWProduct(result_type, rhs, lhs, stash);
-                }
+    const Reduce *reduce = as<Reduce>(expr);
+    if (reduce && (reduce->aggr() == Aggr::SUM)) {
+        const ValueType &result_type = reduce->result_type();
+        const Join *join = as<Join>(reduce->child());
+        if (join && (join->function() == Mul::f)) {
+            const TensorFunction &lhs = join->lhs();
+            const TensorFunction &rhs = join->rhs();
+            if (isDenseXWProduct(result_type, lhs.result_type(), rhs.result_type())) {
+                return createDenseXWProduct(result_type, lhs, rhs, stash);
+            }
+            if (isDenseXWProduct(result_type, rhs.result_type(), lhs.result_type())) {
+                return createDenseXWProduct(result_type, rhs, lhs, stash);
             }
         }
-        return expr;
+    }
+    return expr;
 }
 
 } // namespace vespalib::tensor

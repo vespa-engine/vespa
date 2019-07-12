@@ -72,8 +72,8 @@ TEST("require that chained optimized renames are compacted into a single operati
     TEST_DO(verify_optimized("rename(rename(x5,x,y),y,z)"));
 }
 
-TEST("require that optimization is disabled for tensors with non-double cells") {
-    TEST_DO(verify_not_optimized("rename(x5f,x,y)"));
+TEST("require that optimization works for float cells") {
+    TEST_DO(verify_optimized("rename(x5f,x,y)"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

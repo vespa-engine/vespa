@@ -37,6 +37,7 @@ using eval::TensorFunction;
 using eval::TensorSpec;
 using eval::Value;
 using eval::ValueType;
+using CellType = eval::ValueType::CellType;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
@@ -355,8 +356,7 @@ DefaultTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespali
 size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     if (type.is_double()) {
         return 1;
-    } else if ((type.cell_type() == ValueType::CellType::DOUBLE) &&
-               (type.dimensions().size() == 1) &&
+    } else if ((type.dimensions().size() == 1) &&
                (type.dimensions()[0].is_indexed()) &&
                (type.dimensions()[0].name == dimension))
     {
@@ -366,32 +366,41 @@ size_t vector_size(const ValueType &type, const vespalib::string &dimension) {
     }
 }
 
+template <typename OCT>
 struct CallAppendVector {
     template <typename CT>
-    static void call(const ConstArrayRef<CT> &arr, double *&pos) {
-        for (CT cell : arr) { *pos++ = cell; }
+    static void call(const ConstArrayRef<CT> &arr, OCT *&pos) {
+        for (CT cell: arr) { *pos++ = cell; }
     }
 };
 
-void append_vector(double *&pos, const Value &value) {
+template <typename OCT>
+void append_vector(OCT *&pos, const Value &value) {
     if (auto tensor = value.as_tensor()) {
         const DenseTensorView *view = static_cast<const DenseTensorView *>(tensor);
-        TypedCells cellsRef = view->cellsRef();
-        dispatch_1<CallAppendVector>(cellsRef, pos);
+        dispatch_1<CallAppendVector<OCT> >(view->cellsRef(), pos);
     } else {
         *pos++ = value.as_double();
     }
 }
 
+template <typename OCT>
 const Value &concat_vectors(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
-    ArrayRef<double> cells = stash.create_array<double>(vector_size);
-    double *pos = cells.begin();
-    append_vector(pos, a);
-    append_vector(pos, b);
+    ArrayRef<OCT> cells = stash.create_array<OCT>(vector_size);
+    OCT *pos = cells.begin();
+    append_vector<OCT>(pos, a);
+    append_vector<OCT>(pos, b);
     assert(pos == cells.end());
-    const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}));
+    const ValueType &type = stash.create<ValueType>(ValueType::tensor_type({ValueType::Dimension(dimension, vector_size)}, ValueType::unify_cell_types(a.type(), b.type())));
     return stash.create<DenseTensorView>(type, TypedCells(cells));
 }
+
+struct CallConcatVectors {
+    template <typename OCT>
+    static const Value &call(const Value &a, const Value &b, const vespalib::string &dimension, size_t vector_size, Stash &stash) {
+        return concat_vectors<OCT>(a, b, dimension, vector_size, stash);
+    }
+};
 
 const Value &
 DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const
@@ -399,7 +408,8 @@ DefaultTensorEngine::concat(const Value &a, const Value &b, const vespalib::stri
     size_t a_size = vector_size(a.type(), dimension);
     size_t b_size = vector_size(b.type(), dimension);
     if ((a_size > 0) && (b_size > 0)) {
-        return concat_vectors(a, b, dimension, a_size + b_size, stash);
+        CellType result_cell_type = ValueType::unify_cell_types(a.type(), b.type());
+        return dispatch_0<CallConcatVectors>(result_cell_type, a, b, dimension, (a_size + b_size), stash);
     }
     return to_default(simple_engine().concat(to_simple(a, stash), to_simple(b, stash), dimension, stash), stash);
 }

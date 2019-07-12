@@ -8,9 +8,6 @@
 
 namespace vespalib::tensor {
 
-using XWInput = ConstArrayRef<double>;
-using XWOutput = ArrayRef<double>;
-
 /**
  * Tensor function for product of one 1-dimensional and one 2-dimensional dense tensor.
  */

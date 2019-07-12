@@ -43,7 +43,7 @@ struct CallGenericJoin {
          DenseDimensionCombiner & combiner,
          Function &&func)
     {
-        using OCT = typename OutputCellType<LCT, RCT>::output_type;
+        using OCT = typename eval::UnifyCellTypes<LCT, RCT>::type;
         TypedDenseTensorBuilder<OCT> builder(combiner.result_type);
         return generic_join(combiner, builder, lhsArr, rhsArr, std::move(func));
     }

@@ -78,8 +78,8 @@ TEST("require that inappropriate tensor types cannot be optimized") {
     TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,z)"));
 }
 
-TEST("require that optimization is disabled for tensors with non-double cells") {
-    TEST_DO(verify_not_optimized("reduce(x1y5z1f,avg,x)"));
+TEST("require that optimization works for float cells") {
+    TEST_DO(verify_optimized("reduce(x1y5z1f,avg,x)"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
