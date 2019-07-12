@@ -78,6 +78,14 @@ public class ProxyServerTest {
             assertThat(proxy.getMode().name(), is(mode));
         }
 
+        // Try setting an invalid mode
+        try {
+            proxy.setMode("invalid");
+            assert (false);
+        } catch (IllegalArgumentException e) {
+            assertEquals("Unrecognized mode 'invalid' supplied", e.getMessage());
+        }
+
         // Also switch to DEFAULT mode, as that is not covered above
         proxy.setMode("default");
         assertTrue(proxy.getMode().isDefault());

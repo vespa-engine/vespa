@@ -28,7 +28,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A proxy server that handles RPC config requests. The proxy can run in two modes:
  * 'default' and 'memorycache', where the last one will not get config from an upstream
- * config source, but will serve config only from memory cache.
+ * config source, but will serve config from memory cache only.
  *
  * @author hmusum
  */
@@ -71,9 +71,9 @@ public class ProxyServer implements Runnable {
         defaultTimingValues = tv;
     }
 
-    private ProxyServer(Spec spec, DelayedResponses delayedResponses, ConfigSourceSet source, TimingValues timingValues,
+    private ProxyServer(Spec spec, ConfigSourceSet source, TimingValues timingValues,
                         boolean delayedResponseHandling, MemoryCache memoryCache, ConfigSourceClient configClient) {
-        this.delayedResponses = delayedResponses;
+        this.delayedResponses = new DelayedResponses();
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
         this.timingValues = timingValues;
@@ -92,8 +92,7 @@ public class ProxyServer implements Runnable {
                                         ConfigSourceClient configSourceClient,
                                         MemoryCache memoryCache) {
         final boolean delayedResponseHandling = false;
-        return new ProxyServer(null, new DelayedResponses(),
-                               source, defaultTimingValues(), delayedResponseHandling,
+        return new ProxyServer(null, source, defaultTimingValues(), delayedResponseHandling,
                                memoryCache, configSourceClient);
     }
 
@@ -197,8 +196,7 @@ public class ProxyServer implements Runnable {
         Event.started("configproxy");
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        DelayedResponses delayedResponses = new DelayedResponses();
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), delayedResponses, configSources,
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources,
                                                   defaultTimingValues(), true, new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
