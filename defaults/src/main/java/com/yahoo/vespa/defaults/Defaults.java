@@ -114,11 +114,11 @@ public class Defaults {
     public String vespaHostname() { return vespaHost; }
 
     /**
-     * Returns the path where a Vespa application can store arbitrary files. This should only be used for temporary
-     * files as there are no availability guarantees for files stored here. The application must be able to recreate
+     * Returns the path where a Vespa application can store arbitrary files on the node. This path 
+     * is persistent during the lifetime of this node. The application must be able to recreate
      * required files on its own (e.g. by downloading them from a remote source) if missing.
      *
-     * @return the temporary storage path
+     * @return the local application storage path
      */
     public String temporaryApplicationStorage() { return temporaryApplicationStorage; }
 
