@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.configserver.flags.db;
+package com.yahoo.vespa.flags.persistence;
 
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FetchVector;
@@ -23,11 +23,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author hakonhall
  */
-public class FlagsDbImplTest {
+public class FlagsDbTest {
     @Test
     public void test() {
         MockCurator curator = new MockCurator();
-        FlagsDbImpl db = new FlagsDbImpl(curator);
+        FlagsDb db = new FlagsDb(curator);
 
         Condition condition1 = new Condition(Condition.Type.WHITELIST, FetchVector.Dimension.HOSTNAME, "host1");
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
@@ -39,8 +39,8 @@ public class FlagsDbImplTest {
         assertTrue(dataCopy.isPresent());
 
         assertEquals("{\"id\":\"id\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\"," +
-                "\"values\":[\"host1\"]}],\"value\":13}],\"attributes\":{\"zone\":\"zone-a\"}}",
-                dataCopy.get().serializeToJson());
+                     "\"values\":[\"host1\"]}],\"value\":13}],\"attributes\":{\"zone\":\"zone-a\"}}",
+                     dataCopy.get().serializeToJson());
 
         FlagId flagId2 = new FlagId("id2");
         FlagData data2 = new FlagData(flagId2, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
