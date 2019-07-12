@@ -1,12 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -17,43 +15,26 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 
 /**
+ * Client for reaching out to nodes in an application instance and get their
+ * metrics.
+ *
  * @author olaa
+ * @author ogronnesby
  */
 public class MetricsRetriever {
+    private final HttpClient httpClient = HttpClientBuilder.create().build();
 
-    private static final Logger logger = Logger.getLogger(MetricsRetriever.class.getName());
-    HttpClient httpClient = HttpClientBuilder.create().build();
-
-    public MetricsResponse retrieveAllMetrics(Map<ApplicationId, Collection<ClusterInfo>> applicationClusters) {
-        Map<ApplicationId, Map<ClusterInfo, MetricsAggregator>> allMetrics = applicationClusters.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> getMetricsByCluster(e.getValue())));
-        return new MetricsResponse(200, allMetrics);
-    }
-
-    private Map<ClusterInfo, MetricsAggregator> getMetricsByCluster(Collection<ClusterInfo> clusters) {
-        return clusters.stream()
-                .collect(LinkedHashMap::new,
-                        (map, item) -> map.put(item, getClusterMetrics(item.getHostnames())),
-                        Map::putAll
-                );
-    }
-
-    private MetricsAggregator getClusterMetrics(List<URI> hosts) {
-        MetricsAggregator clusterMetrics = new MetricsAggregator();
-        hosts.stream()
-            .forEach(host -> getHostMetrics(host, clusterMetrics));
-        return clusterMetrics;
+    /**
+     * Call the metrics API on each host in the cluster and aggregate the metrics
+     * into a single value.
+     */
+    public MetricsAggregator requestMetricsForCluster(ClusterInfo clusterInfo) {
+        var aggregator = new MetricsAggregator();
+        clusterInfo.getHostnames().forEach(host -> getHostMetrics(host, aggregator));
+        return aggregator;
     }
 
     private void getHostMetrics(URI hostURI, MetricsAggregator metrics) {

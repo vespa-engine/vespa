@@ -42,8 +42,10 @@ import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
+import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.metrics.ClusterInfo;
+import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
 import com.yahoo.vespa.config.server.metrics.MetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -74,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -641,10 +644,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Metrics ------------------------------------------------------------------------
 
-    public HttpResponse getMetrics() {
-        MetricsRetriever metricsRetriever = new MetricsRetriever();
-        Map<ApplicationId, Collection<ClusterInfo>> applicationClusters = getApplicationClusters();
-        return metricsRetriever.retrieveAllMetrics(applicationClusters);
+    public HttpResponse getMetrics(ApplicationId applicationId) {
+        var metricsRetriever = new MetricsRetriever();
+        var clusters = getClustersOfApplication(applicationId);
+        var clusterMetrics = new LinkedHashMap<ClusterInfo, MetricsAggregator>();
+
+        clusters.forEach(cluster -> {
+            var metrics = metricsRetriever.requestMetricsForCluster(cluster);
+            clusterMetrics.put(cluster, metrics);
+        });
+
+        return new MetricsResponse(200, Map.of(applicationId, clusterMetrics));
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
@@ -776,18 +786,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
         return port;
-    }
-
-    /** Finds all hosts, grouping them by application ID and cluster name */
-    private  Map<ApplicationId, Collection<ClusterInfo>> getApplicationClusters() {
-        Map<ApplicationId, Collection<ClusterInfo>> applicationHosts = new HashMap<>();
-        tenantRepository.getAllTenants().stream()
-                .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
-                .forEach(applicationId ->{
-                            applicationHosts.put(applicationId, getClustersOfApplication(applicationId));
-                        }
-                );
-        return applicationHosts;
     }
 
     /** Finds the hosts of an application, grouped by cluster name */
