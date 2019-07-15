@@ -109,6 +109,15 @@ public class DockerOperationsImpl implements DockerOperations {
 
         addMounts(context, command);
 
+        // TODO: Enforce disk constraints
+        long minMainMemoryAvailableMb = (long) (context.node().memoryGb() * 1024);
+        if (minMainMemoryAvailableMb > 0) {
+            // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
+            // only has this much physical memory (overrides total memory reported by `free -m`).
+            // TODO: Remove after all tenants are running > 7.67
+            command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
+        }
+
         logger.info("Creating new container with args: " + command);
         command.create();
     }
