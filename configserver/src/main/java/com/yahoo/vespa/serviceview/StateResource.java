@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
+import ai.vespa.util.http.VespaClientBuilderFactory;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ConfigClient;
@@ -14,7 +15,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static java.util.Collections.singletonList;
-
 
 /**
  * A web service to discover and proxy Vespa service state info.
@@ -42,6 +40,7 @@ public class StateResource implements StateClient {
     private static final String USER_AGENT = "service-view-config-server-client";
     private static final String SINGLE_API_LINK = "url";
 
+    private final VespaClientBuilderFactory clientBuilderFactory;
     private final int restApiPort;
     private final String host;
     private final UriInfo uriInfo;
@@ -58,6 +57,7 @@ public class StateResource implements StateClient {
     }
 
     public StateResource(@Component ConfigServerLocation configServer, @Context UriInfo ui) {
+        this.clientBuilderFactory = configServer.clientBuilderFactory;
         this.restApiPort = configServer.restApiPort;
         this.host = "localhost";
         this.uriInfo = ui;
@@ -278,11 +278,9 @@ public class StateResource implements StateClient {
         newUri.append(link.getRawPath());
     }
 
-    private static Client client() {
-        return ClientBuilder.newBuilder()
-                            .register((ClientRequestFilter) ctx -> ctx.getHeaders().put(HttpHeaders.USER_AGENT,
-                                                                                        singletonList(USER_AGENT)))
+    private Client client() {
+        return clientBuilderFactory.newBuilder()
+                            .register((ClientRequestFilter) ctx -> ctx.getHeaders().put(HttpHeaders.USER_AGENT, List.of(USER_AGENT)))
                             .build();
     }
-
 }
