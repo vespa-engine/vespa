@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,22 +28,23 @@ import java.util.stream.IntStream;
 /**
  * @author mgimle
  */
-public class CapacityReportMaintainerTester {
+public class CapacityCheckerTester {
     public static final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
 
     // Components with state
     public final ManualClock clock = new ManualClock();
     public final NodeRepository nodeRepository;
+    public CapacityChecker capacityChecker;
 
-    CapacityReportMaintainerTester() {
+    CapacityCheckerTester() {
         Curator curator = new MockCurator();
         NodeFlavors f = new NodeFlavors(new FlavorConfigBuilder().build());
         nodeRepository = new NodeRepository(f, curator, clock, zone, new MockNameResolver().mockAnyLookup(),
                                             DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
     }
 
-    CapacityReportMaintainer makeCapacityReportMaintainer() {
-        return new CapacityReportMaintainer(nodeRepository, new MetricsReporterTest.TestMetric(), Duration.ofDays(1));
+    private void updateCapacityChecker() {
+        this.capacityChecker = new CapacityChecker(this.nodeRepository);
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
@@ -167,8 +167,8 @@ public class CapacityReportMaintainerTester {
         nodes.addAll(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps));
 
         nodeRepository.addNodes(nodes);
+        updateCapacityChecker();
     }
-
 
     NodeResources containingNodeResources(List<NodeResources> resources, NodeResources excessCapacity) {
         NodeResources usedByChildren = resources.stream()
@@ -278,6 +278,7 @@ public class CapacityReportMaintainerTester {
         }
 
         nodeRepository.addNodes(nodes);
+        updateCapacityChecker();
     }
 
     void cleanRepository() {

@@ -8,20 +8,19 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+
 import static org.junit.Assert.fail;
 import static org.junit.Assert.*;
 
 /**
  * @author mgimle
  */
-public class CapacityReportMaintainerTest {
-    private CapacityReportMaintainerTester tester;
-    private CapacityReportMaintainer capacityReporter;
+public class CapacityCheckerTest {
+    private CapacityCheckerTester tester;
 
     @Before
     public void setup() {
-        tester = new CapacityReportMaintainerTester();
-        capacityReporter = tester.makeCapacityReportMaintainer();
+        tester = new CapacityCheckerTester();
     }
 
     @Test
@@ -30,8 +29,11 @@ public class CapacityReportMaintainerTest {
 
         tester.cleanRepository();
         tester.restoreNodeRepositoryFromJsonFile(Paths.get(path));
-        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         if (failurePath.isPresent()) {
+//            System.out.println( tester.capacityChecker.allocationHistory );
+//            System.out.println( failurePath.get().failureReason );
+            System.out.println("Worst case host loss : " + failurePath.get().hostsCausingFailure.size());
             assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
         } else fail();
     }
@@ -41,7 +43,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(7, 4,
                10, new NodeResources(-1, 10, 100), 10,
                 0, new NodeResources(1, 10, 100), 10);
-        int overcommittedHosts = capacityReporter.countOvercommittedHosts();
+        int overcommittedHosts = tester.capacityChecker.findOvercommittedHosts().size();
         assertEquals(tester.nodeRepository.getNodes(NodeType.host).size(), overcommittedHosts);
     }
 
@@ -50,14 +52,14 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 1,
                 0, new NodeResources(1, 10, 100), 10,
                 0, new NodeResources(1, 10, 100), 10);
-        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertFalse("Computing worst case host loss with no hosts should return an empty optional.", failurePath.isPresent());
 
         // Odd edge case that should never be able to occur in prod
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1000, 10000), 100,
                 1, new NodeResources(10, 1000, 10000), 100);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         assertTrue("Computing worst case host loss if all hosts have to be removed should result in an non-empty failureReason with empty nodes.",
                 failurePath.get().failureReason.tenant.isEmpty() && failurePath.get().failureReason.host.isEmpty());
@@ -66,7 +68,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(3, 30,
                 10, new NodeResources(0, 0, 10000), 1000,
                 0, new NodeResources(0, 0, 0), 0);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -81,7 +83,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1000, 10000), 1,
                 10, new NodeResources(10, 1000, 10000), 1);
-        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -96,7 +98,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(1, 100, 1000), 100,
                 10, new NodeResources(0, 100, 1000), 100);
-        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -107,7 +109,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 1, 1000), 100,
                 10, new NodeResources(10, 0, 1000), 100);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -118,7 +120,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 10,
                 10, new NodeResources(10, 100, 10), 100,
                 10, new NodeResources(10, 100, 0), 100);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -130,7 +132,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 10, List.of(new NodeResources(1, 10, 100)),
                 10, new NodeResources(0, 0, 0), 100,
                 10, new NodeResources(10, 1000, 10000, NodeResources.DiskSpeed.slow), 100);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -146,7 +148,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 1,
                 10, new NodeResources(1, 100, 1000), 100,
                 10, new NodeResources(10, 1000, 10000), 100);
-        var failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
@@ -157,7 +159,7 @@ public class CapacityReportMaintainerTest {
         tester.createNodes(1, 2,
                 10, new NodeResources(10, 100, 1000), 1,
                 0, new NodeResources(0, 0, 0), 0);
-        failurePath = capacityReporter.worstCaseHostLossLeadingToFailure();
+        failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
             var failureReasons = failurePath.get().failureReason.failureReasons;
