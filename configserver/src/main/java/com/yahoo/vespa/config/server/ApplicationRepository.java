@@ -644,7 +644,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Metrics ------------------------------------------------------------------------
 
-    public HttpResponse getMetrics(ApplicationId applicationId) {
+    public MetricsResponse getMetrics(ApplicationId applicationId) {
         var metricsRetriever = new MetricsRetriever();
         var clusters = getClustersOfApplication(applicationId);
         var clusterMetrics = new LinkedHashMap<ClusterInfo, MetricsAggregator>();

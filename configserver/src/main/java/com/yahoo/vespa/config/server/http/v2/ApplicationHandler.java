@@ -105,7 +105,7 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isMetricsRequest(request)) {
-            return applicationRepository.getMetrics();
+            return applicationRepository.getMetrics(applicationId);
         }
 
         if (isIsSuspendedRequest(request)) {

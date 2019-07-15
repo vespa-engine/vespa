@@ -66,14 +66,17 @@ public class MetricsRetriever {
             Inspector values = m.field("values");
             switch (serviceName) {
                 case "container":
-                    metrics.addContainerQueryLatencyCount(values.field("query_latency.count").asDouble());
-                    metrics.addContainerQueryLatencySum(values.field("query_latency.sum").asDouble());
-                    metrics.addFeedLatencyCount(values.field("feed_latency.count").asDouble());
-                    metrics.addFeedLatencySum(values.field("feed_latency.sum").asDouble());
+                    metrics.addContainerLatency(
+                            values.field("query_latency.sum").asDouble(),
+                            values.field("query_latency.count").asDouble());
+                    metrics.addFeedLatency(
+                            values.field("feed_latency.sum").asDouble(),
+                            values.field("feed_latency.count").asDouble());
                     break;
                 case "qrserver":
-                    metrics.addQrQueryLatencyCount(values.field("query_latency.count").asDouble());
-                    metrics.addQrQueryLatencySum(values.field("query_latency.sum").asDouble());
+                    metrics.addQrLatency(
+                            values.field("query_latency.sum").asDouble(),
+                            values.field("query_latency.count").asDouble());
                     break;
                 case "distributor":
                     metrics.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());

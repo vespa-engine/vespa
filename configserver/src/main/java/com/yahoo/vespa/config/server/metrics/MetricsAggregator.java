@@ -6,85 +6,81 @@ import java.util.Optional;
 
 /**
  * @author olaa
+ * @author ogronnesby
  */
 public class MetricsAggregator {
 
-    double feedLatencySum;
-    double feedLatencyCount;
-    double qrQueryLatencySum;
-    double qrQueryLatencyCount;
-    double containerQueryLatencySum;
-    double containerQueryLatencyCount;
-    double documentCount;
-    Instant timestamp;
+    private LatencyMetrics feed;
+    private LatencyMetrics qr;
+    private LatencyMetrics container;
+    private Double documentCount;
+    private Instant timestamp;
 
-    public void addFeedLatencySum(double feedLatencySum) {
-        this.feedLatencySum += feedLatencySum;
+    public MetricsAggregator addFeedLatency(double sum, double count) {
+        this.feed = combineLatency(this.feed, sum, count);
+        return this;
     }
 
-    public void addFeedLatencyCount(double feedLatencyCount) {
-        this.feedLatencyCount += feedLatencyCount;
+    public MetricsAggregator addQrLatency(double sum, double count) {
+        this.qr = combineLatency(this.qr, sum, count);
+        return this;
     }
 
-    public void addQrQueryLatencyCount(double qrQueryLatencyCount) {
-        this.qrQueryLatencyCount += qrQueryLatencyCount;
+    public MetricsAggregator addContainerLatency(double sum, double count) {
+        this.container = combineLatency(this.container, sum, count);
+        return this;
     }
 
-    public void addQrQueryLatencySum(double qrQueryLatencySum) {
-        this.qrQueryLatencySum += qrQueryLatencySum;
+    public MetricsAggregator addDocumentCount(double count) {
+        this.documentCount = (this.documentCount == null ? 0.0 : this.documentCount) + count;
+        return this;
     }
 
-    public void addContainerQueryLatencyCount(double containerQueryLatencyCount) {
-        this.containerQueryLatencyCount += containerQueryLatencyCount;
-    }
-
-    public void addContainerQueryLatencySum(double containerQueryLatencySum) {
-        this.containerQueryLatencySum += containerQueryLatencySum;
-    }
-
-    public void addDocumentCount(double documentCount) {
-        this.documentCount += documentCount;
+    public MetricsAggregator setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+        return this;
     }
 
     public Optional<Double> aggregateFeedLatency() {
-        if (isZero(feedLatencySum) || isZero(feedLatencyCount)) return Optional.empty();
-        return Optional.of(feedLatencySum / feedLatencyCount);
+        return Optional.ofNullable(feed).map(m -> m.latencySum / m.latencyCount);
+
     }
 
     public Optional<Double> aggregateFeedRate() {
-        if (isZero(feedLatencyCount)) return Optional.empty();
-        return Optional.of(feedLatencyCount / 60);
+        return Optional.ofNullable(feed).map(m -> m.latencyCount / 60);
     }
 
     public Optional<Double> aggregateQueryLatency() {
-        if (isZero(containerQueryLatencyCount, containerQueryLatencySum) && isZero(qrQueryLatencyCount, qrQueryLatencySum)) return Optional.empty();
-        return Optional.of((containerQueryLatencySum + qrQueryLatencySum) / (containerQueryLatencyCount + qrQueryLatencyCount));
+        if (container == null && qr == null) return Optional.empty();
+        var c = Optional.ofNullable(container).orElseGet(LatencyMetrics::new);
+        var q = Optional.ofNullable(qr).orElseGet(LatencyMetrics::new);
+        return Optional.of((c.latencySum + q.latencySum) / (c.latencyCount + q.latencyCount));
     }
 
     public Optional<Double> aggregateQueryRate() {
-        if (isZero(containerQueryLatencyCount) && isZero(qrQueryLatencyCount)) return Optional.empty();
-        return Optional.of((containerQueryLatencyCount + qrQueryLatencyCount) / 60);
+        if (container == null && qr == null) return Optional.empty();
+        var c = Optional.ofNullable(container).orElseGet(LatencyMetrics::new);
+        var q = Optional.ofNullable(qr).orElseGet(LatencyMetrics::new);
+        return Optional.of((c.latencyCount + q.latencyCount) / 60);
     }
 
     public Optional<Double> aggregateDocumentCount() {
-        if (isZero(documentCount)) return Optional.empty();
-        return Optional.of(documentCount);
-    }
-
-    public void setTimestamp(Instant timestamp) {
-        this.timestamp = timestamp;
+        return Optional.ofNullable(documentCount);
     }
 
     public Instant getTimestamp() {
         return timestamp;
     }
 
-    private boolean isZero(double... values) {
-        boolean isZero = false;
-        for (double value : values) {
-            isZero |= Math.abs(value) < 0.001;
-        }
-        return isZero;
+    private LatencyMetrics combineLatency(LatencyMetrics metricsOrNull, double sum, double count) {
+        var metrics = Optional.ofNullable(metricsOrNull).orElseGet(LatencyMetrics::new);
+        metrics.latencyCount += count;
+        metrics.latencySum += sum;
+        return metrics;
     }
 
+    private static class LatencyMetrics {
+        double latencySum;
+        double latencyCount;
+    }
 }

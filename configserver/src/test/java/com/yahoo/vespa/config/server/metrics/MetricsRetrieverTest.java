@@ -1,19 +1,17 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
+import junit.framework.AssertionFailedError;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -33,14 +31,12 @@ public class MetricsRetrieverTest {
 
     @Test
     public void testMetricAggregation() throws IOException {
-        MetricsRetriever metricsRetriever = new MetricsRetriever();
+        var metricsRetriever = new MetricsRetriever();
 
-        ApplicationId applicationId = ApplicationId.from("tenant", "app", "default");
-
-        List<ClusterInfo> clusters = List.of(new ClusterInfo("cluster1", ClusterInfo.ClusterType.content, List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"))),
-                new ClusterInfo("cluster2", ClusterInfo.ClusterType.container, List.of(URI.create("http://localhost:8080/3"))));
-
-        Map<ApplicationId, Collection<ClusterInfo>> applications = Map.of(applicationId, clusters);
+        var clusters = List.of(
+                new ClusterInfo("cluster1", ClusterInfo.ClusterType.content, List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"))),
+                new ClusterInfo("cluster2", ClusterInfo.ClusterType.container, List.of(URI.create("http://localhost:8080/3")))
+        );
 
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
@@ -57,36 +53,21 @@ public class MetricsRetrieverTest {
                         .withStatus(200)
                         .withBody(containerMetrics())));
 
-        MetricsResponse metricsResponse = metricsRetriever.retrieveAllMetrics(applications);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        metricsResponse.render(bos);
-        String expectedResponse = "[\n" +
-                " {\n" +
-                "  \"applicationId\": \"tenant:app:default\",\n" +
-                "  \"clusters\": [\n" +
-                "   {\n" +
-                "    \"clusterId\": \"cluster1\",\n" +
-                "    \"clusterType\": \"content\",\n" +
-                "    \"metrics\": {\n" +
-                "     \"documentCount\": 6000.0\n" +
-                "    }\n" +
-                "   },\n" +
-                "   {\n" +
-                "    \"clusterId\": \"cluster2\",\n" +
-                "    \"clusterType\": \"container\",\n" +
-                "    \"metrics\": {\n" +
-                "     \"queriesPerSecond\": 1.4333333333333333,\n" +
-                "     \"feedPerSecond\": 0.7166666666666667,\n" +
-                "     \"queryLatency\": 93.02325581395348,\n" +
-                "     \"feedLatency\": 69.76744186046511\n" +
-                "    }\n" +
-                "   }\n" +
-                "  ]\n" +
-                " }\n" +
-                "]\n";
-        assertEquals(expectedResponse, bos.toString());
-        wireMock.stop();
+        compareAggregators(
+                new MetricsAggregator().addDocumentCount(6000.0),
+                metricsRetriever.requestMetricsForCluster(clusters.get(0))
+        );
 
+        compareAggregators(
+                new MetricsAggregator()
+                        .addContainerLatency(3000, 43)
+                        .addContainerLatency(2000, 0)
+                        .addQrLatency(3000, 43)
+                        .addFeedLatency(3000, 43),
+                metricsRetriever.requestMetricsForCluster(clusters.get(1))
+        );
+
+        wireMock.stop();
     }
 
     private String containerMetrics() throws IOException {
@@ -95,5 +76,24 @@ public class MetricsRetrieverTest {
 
     private String contentMetrics() throws IOException {
         return Files.readString(Path.of("src/test/resources/metrics/content_metrics"));
+    }
+
+    // Same tolerance value as used internally in MetricsAggregator.isZero
+    private static final double metricsTolerance = 0.001;
+
+    private void compareAggregators(MetricsAggregator expected, MetricsAggregator actual) {
+        BiConsumer<Double, Double> assertDoubles = (a, b) -> assertEquals(a.doubleValue(), b.doubleValue(), metricsTolerance);
+
+        compareOptionals(expected.aggregateDocumentCount(), actual.aggregateDocumentCount(), assertDoubles);
+        compareOptionals(expected.aggregateQueryRate(), actual.aggregateQueryRate(), assertDoubles);
+        compareOptionals(expected.aggregateFeedRate(), actual.aggregateFeedRate(), assertDoubles);
+        compareOptionals(expected.aggregateQueryLatency(), actual.aggregateQueryLatency(), assertDoubles);
+        compareOptionals(expected.aggregateFeedLatency(), actual.aggregateFeedLatency(), assertDoubles);
+    }
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static <T> void compareOptionals(Optional<T> a, Optional<T> b, BiConsumer<T, T> comparer) {
+        if (a.isPresent() != b.isPresent()) throw new AssertionFailedError("Both optionals are not present: " + a + ", " + b);
+        a.ifPresent(x -> b.ifPresent(y -> comparer.accept(x, y)));
     }
 }
