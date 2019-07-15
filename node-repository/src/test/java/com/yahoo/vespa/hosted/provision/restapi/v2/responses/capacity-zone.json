@@ -1,0 +1,46 @@
+{
+  "totalHosts": 5,
+  "couldLoseHosts": 4,
+  "failedTenantParent": "dockerhost1.yahoo.com",
+  "failedTenant": "host4.yahoo.com",
+  "failedTenantResources": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb]",
+  "failedTenantAllocation": "allocated to tenant3.application3.instance3 as 'content/id3/0/0'",
+  "hostCandidateRejectionReasons": {
+    "singularReasonFailures": {
+      "insufficientVcpu": 0,
+      "insufficientMemoryGb": 0,
+      "insufficientDiskGb": 0,
+      "incompatibleDiskSpeed": 0,
+      "insufficientAvailableIps": 0,
+      "violatesParentHostPolicy": 1
+    },
+    "totalFailures": {
+      "insufficientVcpu": 0,
+      "insufficientMemoryGb": 0,
+      "insufficientDiskGb": 0,
+      "incompatibleDiskSpeed": 0,
+      "insufficientAvailableIps": 0,
+      "violatesParentHostPolicy": 1
+    }
+  },
+  "details": {
+    "hostsToRemove": [
+      "dockerhost2.yahoo.com",
+      "dockerhost1.yahoo.com",
+      "dockerhost4.yahoo.com",
+      "dockerhost3.yahoo.com"
+    ],
+    "removalPossible": false,
+    "history": [
+      {
+        "tenant": "test-node-pool-101-2",
+        "newParent": "dockerhost5.yahoo.com",
+        "eligibleParents": 1
+      },
+      {
+        "tenant": "host4.yahoo.com",
+        "eligibleParents": 0
+      }
+    ]
+  }
+}
