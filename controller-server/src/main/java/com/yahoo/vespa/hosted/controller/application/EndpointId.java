@@ -16,7 +16,7 @@ public class EndpointId implements Comparable<EndpointId> {
 
     private final String id;
 
-    public EndpointId(String id) {
+    private EndpointId(String id) {
         this.id = requireNotEmpty(id);
     }
 

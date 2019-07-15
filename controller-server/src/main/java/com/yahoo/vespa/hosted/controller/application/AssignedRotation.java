@@ -72,7 +72,7 @@ public class AssignedRotation {
     public static AssignedRotation fromStrings(String clusterId, String endpointId, String rotationId, Collection<String> regions) {
         return new AssignedRotation(
                 new ClusterSpec.Id(clusterId),
-                new EndpointId(endpointId),
+                EndpointId.of(endpointId),
                 new RotationId(rotationId),
                 regions.stream().map(RegionName::from).collect(Collectors.toSet())
         );
