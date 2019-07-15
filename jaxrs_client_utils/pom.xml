@@ -16,6 +16,7 @@
   <packaging>container-plugin</packaging>
   <name>${project.artifactId}</name>
   <dependencies>
+    <!-- provided -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
@@ -25,6 +26,12 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>application-model</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -44,6 +51,8 @@
       <artifactId>jersey-proxy-client</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <!-- test -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jaxrs_utils</artifactId>
