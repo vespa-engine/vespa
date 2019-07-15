@@ -34,36 +34,47 @@ public class HostCapacityResponse extends HttpResponse {
         Cursor root = slime.setObject();
 
         if (hostsJson != null) {
-            ObjectMapper om = new ObjectMapper();
-            String[] hostsArray;
-            try {
-                hostsArray = om.readValue(hostsJson, String[].class);
-            } catch (Exception e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-            List<String> hostNames = Arrays.asList(hostsArray);
-            List<Node> hosts;
-            try {
-                hosts = capacityChecker.nodesFromHostnames(hostNames);
-            } catch (IllegalArgumentException e) {
-                throw new NotFoundException(e.getMessage());
-            }
-            var failure = capacityChecker.findHostRemovalFailure(hosts);
-            if (failure.isPresent() && failure.get().failureReason.failureReasons.size() == 0) {
-                root.setBool("removalPossible", false);
-                error(root, "Removing all hosts is trivially impossible.");
-            } else {
-                if (json) hostLossPossibleToSlime(root, failure, hosts);
-                else      hostLossPossibleToText(failure, hosts);
-            }
+            List<Node> hosts = parseHostList(hostsJson);
+            hostRemovalResponse(root, hosts);
         } else {
-            var failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
-            if (failurePath.isPresent()) {
-                if (json) zoneFailurePathToSlime(root, failurePath.get());
-                else      zoneFailurePathToText(failurePath.get());
-            } else {
-                error(root, "Node repository contained no hosts.");
-            }
+            zoneFailureReponse(root);
+        }
+    }
+
+    private List<Node> parseHostList(String hosts) {
+        ObjectMapper om = new ObjectMapper();
+        String[] hostsArray;
+        try {
+            hostsArray = om.readValue(hosts, String[].class);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+        List<String> hostNames = Arrays.asList(hostsArray);
+        try {
+            return capacityChecker.nodesFromHostnames(hostNames);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(e.getMessage());
+        }
+    }
+
+    private void hostRemovalResponse(Cursor root, List<Node> hosts) {
+        var failure = capacityChecker.findHostRemovalFailure(hosts);
+        if (failure.isPresent() && failure.get().failureReason.allocationFailures.size() == 0) {
+            root.setBool("removalPossible", false);
+            error(root, "Removing all hosts is trivially impossible.");
+        } else {
+            if (json) hostLossPossibleToSlime(root, failure, hosts);
+            else      hostLossPossibleToText(failure, hosts);
+        }
+    }
+
+    private void zoneFailureReponse(Cursor root) {
+        var failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
+        if (failurePath.isPresent()) {
+            if (json) zoneFailurePathToSlime(root, failurePath.get());
+            else      zoneFailurePathToText(failurePath.get());
+        } else {
+            error(root, "Node repository contained no hosts.");
         }
     }
 
@@ -101,11 +112,7 @@ public class HostCapacityResponse extends HttpResponse {
         var hosts = root.setArray("hostsToRemove");
         hostsToRemove.forEach(h -> hosts.addString(h.hostname()));
         CapacityChecker.AllocationHistory history = capacityChecker.allocationHistory;
-        if (failure.isEmpty()) {
-            root.setBool("removalPossible", true);
-        } else {
-            root.setBool("removalPossible", false);
-        }
+        root.setBool("removalPossible", failure.isEmpty());
         var arr = root.setArray("history");
         for (var entry : history.historyEntries) {
             var object = arr.addObject();
@@ -117,7 +124,7 @@ public class HostCapacityResponse extends HttpResponse {
         }
     }
 
-    public void zoneFailurePathToSlime(Cursor object, CapacityChecker.HostFailurePath failurePath) {
+    private void zoneFailurePathToSlime(Cursor object, CapacityChecker.HostFailurePath failurePath) {
         object.setLong("totalHosts", capacityChecker.getHosts().size());
         object.setLong("couldLoseHosts", failurePath.hostsCausingFailure.size());
         failurePath.failureReason.host.ifPresent(host ->
@@ -131,9 +138,9 @@ public class HostCapacityResponse extends HttpResponse {
             );
             var explanation = object.setObject("hostCandidateRejectionReasons");
             allocationFailureReasonListToSlime(explanation.setObject("singularReasonFailures"),
-                    failurePath.failureReason.failureReasons.singularReasonFailures());
+                    failurePath.failureReason.allocationFailures.singularReasonFailures());
             allocationFailureReasonListToSlime(explanation.setObject("totalFailures"),
-                    failurePath.failureReason.failureReasons);
+                    failurePath.failureReason.allocationFailures);
         });
         var details = object.setObject("details");
         hostLossPossibleToSlime(details, Optional.of(failurePath), failurePath.hostsCausingFailure);

@@ -30,12 +30,8 @@ public class CapacityCheckerTest {
         tester.cleanRepository();
         tester.restoreNodeRepositoryFromJsonFile(Paths.get(path));
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
-        if (failurePath.isPresent()) {
-//            System.out.println( tester.capacityChecker.allocationHistory );
-//            System.out.println( failurePath.get().failureReason );
-            System.out.println("Worst case host loss : " + failurePath.get().hostsCausingFailure.size());
-            assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
-        } else fail();
+        assertTrue(failurePath.isPresent());
+        assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
     }
 
     @Test
@@ -71,7 +67,7 @@ public class CapacityCheckerTest {
         failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("When there are multiple lacking resources, all failures are multipleReasonFailures",
                     failureReasons.size(), failureReasons.multipleReasonFailures().size());
             assertEquals(0, failureReasons.singularReasonFailures().size());
@@ -86,7 +82,7 @@ public class CapacityCheckerTest {
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("All failures should be due to hosts having a lack of available ip addresses.",
                     failureReasons.singularReasonFailures().insufficientAvailableIps(), failureReasons.size());
         } else fail();
@@ -101,7 +97,7 @@ public class CapacityCheckerTest {
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("All failures should be due to hosts lacking cpu cores.",
                     failureReasons.singularReasonFailures().insufficientVcpu(), failureReasons.size());
         } else fail();
@@ -112,7 +108,7 @@ public class CapacityCheckerTest {
         failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("All failures should be due to hosts lacking memory.",
                     failureReasons.singularReasonFailures().insufficientMemoryGb(), failureReasons.size());
         } else fail();
@@ -123,7 +119,7 @@ public class CapacityCheckerTest {
         failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("All failures should be due to hosts lacking disk space.",
                     failureReasons.singularReasonFailures().insufficientDiskGb(), failureReasons.size());
         } else fail();
@@ -135,7 +131,7 @@ public class CapacityCheckerTest {
         failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("All empty hosts should be invalid due to having incompatible disk speed.",
                     failureReasons.singularReasonFailures().incompatibleDiskSpeed(), emptyHostsWithSlowDisk);
         } else fail();
@@ -151,7 +147,7 @@ public class CapacityCheckerTest {
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertEquals("With only one type of tenant, all failures should be due to violation of the parent host policy.",
                     failureReasons.singularReasonFailures().violatesParentHostPolicy(), failureReasons.size());
         } else fail();
@@ -162,7 +158,7 @@ public class CapacityCheckerTest {
         failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
         if (failurePath.get().failureReason.tenant.isPresent()) {
-            var failureReasons = failurePath.get().failureReason.failureReasons;
+            var failureReasons = failurePath.get().failureReason.allocationFailures;
             assertNotEquals("Fewer distinct children than hosts should result in some parent host policy violations.",
                     failureReasons.size(), failureReasons.singularReasonFailures().violatesParentHostPolicy());
             assertNotEquals(0, failureReasons.singularReasonFailures().violatesParentHostPolicy());

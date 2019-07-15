@@ -45,10 +45,8 @@ public class CapacityChecker {
                 .map(h -> nodeMap.get(h))
                 .collect(Collectors.toList());
         if (nodes.size() != hostnames.size()) {
-            List<String> notFoundNodes = hostnames.stream()
-                    .filter(h -> !nodes.stream()
-                            .map(Node::hostname).collect(Collectors.toSet()).contains(h))
-                    .collect(Collectors.toList());
+            Set<String> notFoundNodes = new HashSet<>(hostnames);
+            notFoundNodes.removeAll(nodes.stream().map(Node::hostname).collect(Collectors.toList()));
             throw new IllegalArgumentException(String.format("Host(s) not found: [ %s ]",
                     String.join(", ", notFoundNodes)));
         }
@@ -329,7 +327,7 @@ public class CapacityChecker {
     public static class HostRemovalFailure {
         public Optional<Node> host;
         public Optional<Node> tenant;
-        public AllocationFailureReasonList failureReasons;
+        public AllocationFailureReasonList allocationFailures;
 
         public static HostRemovalFailure none() {
             return new HostRemovalFailure(
@@ -345,10 +343,10 @@ public class CapacityChecker {
                     failureReasons);
         }
 
-        private HostRemovalFailure(Optional<Node> host, Optional<Node> tenant, AllocationFailureReasonList failureReasons) {
+        private HostRemovalFailure(Optional<Node> host, Optional<Node> tenant, AllocationFailureReasonList allocationFailures) {
             this.host = host;
             this.tenant = tenant;
-            this.failureReasons = failureReasons;
+            this.allocationFailures = allocationFailures;
         }
 
         @Override
@@ -361,8 +359,8 @@ public class CapacityChecker {
                     "\n\t\tTotal Reasons:    %s",
                     this.host.get().hostname(),
                     this.tenant.get().hostname(),
-                    this.failureReasons.singularReasonFailures().toString(),
-                    this.failureReasons.toString()
+                    this.allocationFailures.singularReasonFailures().toString(),
+                    this.allocationFailures.toString()
             );
         }
     }
