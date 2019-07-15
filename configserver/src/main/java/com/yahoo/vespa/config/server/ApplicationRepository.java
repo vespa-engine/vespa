@@ -654,7 +654,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             clusterMetrics.put(cluster, metrics);
         });
 
-        return new MetricsResponse(200, Map.of(applicationId, clusterMetrics));
+        return new MetricsResponse(200, applicationId, clusterMetrics);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------

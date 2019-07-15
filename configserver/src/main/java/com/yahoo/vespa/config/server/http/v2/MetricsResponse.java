@@ -21,27 +21,26 @@ public class MetricsResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
-    public MetricsResponse(int status, Map<ApplicationId, Map<ClusterInfo, MetricsAggregator>> aggregatedMetrics) {
+    public MetricsResponse(int status, ApplicationId applicationId, Map<ClusterInfo, MetricsAggregator> aggregatedMetrics) {
         super(status);
 
-        Cursor array = slime.setArray();
-        for (Map.Entry<ApplicationId, Map<ClusterInfo, MetricsAggregator>> entry : aggregatedMetrics.entrySet()) {
-            Cursor object = array.addObject();
-            object.setString("applicationId", entry.getKey().serializedForm());
-            Cursor clusterArray = object.setArray("clusters");
-            for (Map.Entry<ClusterInfo, MetricsAggregator> clusterMetrics : entry.getValue().entrySet()) {
-                Cursor clusterCursor = clusterArray.addObject();
-                MetricsAggregator metrics = clusterMetrics.getValue();
-                clusterCursor.setString("clusterId", clusterMetrics.getKey().getClusterId());
-                clusterCursor.setString("clusterType", clusterMetrics.getKey().getClusterType().name());
-                Cursor metricsCursor = clusterCursor.setObject("metrics");
-                metrics.aggregateQueryRate().ifPresent(queryrate -> metricsCursor.setDouble("queriesPerSecond", queryrate));
-                metrics.aggregateFeedRate().ifPresent(feedRate -> metricsCursor.setDouble("feedPerSecond", feedRate));
-                metrics.aggregateDocumentCount().ifPresent(documentCount -> metricsCursor.setDouble("documentCount", documentCount));
-                metrics.aggregateQueryLatency().ifPresent(queryLatency -> metricsCursor.setDouble("queryLatency",queryLatency));
-                metrics.aggregateFeedLatency().ifPresent(feedLatency -> metricsCursor.setDouble("feedLatency", feedLatency));
-//                clusterCursor.setLong("timestamp", metrics.getTimestamp().getEpochSecond());
-            }
+        Cursor application = slime.setObject();
+        application.setString("applicationId", applicationId.serializedForm());
+
+        Cursor clusters = application.setArray("clusters");
+
+        for (var entry : aggregatedMetrics.entrySet()) {
+            Cursor cluster = clusters.addObject();
+            cluster.setString("clusterId", entry.getKey().getClusterId());
+            cluster.setString("clusterType", entry.getKey().getClusterType().name());
+
+            MetricsAggregator aggregator = entry.getValue();
+            Cursor metrics = cluster.setObject("metrics");
+            aggregator.aggregateQueryRate().ifPresent(queryrate -> metrics.setDouble("queriesPerSecond", queryrate));
+            aggregator.aggregateFeedRate().ifPresent(feedRate -> metrics.setDouble("feedPerSecond", feedRate));
+            aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
+            aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
+            aggregator.aggregateFeedLatency().ifPresent(feedLatency -> metrics.setDouble("feedLatency", feedLatency));
         }
     }
 
