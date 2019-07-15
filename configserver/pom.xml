@@ -185,6 +185,12 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jaxrs_client_utils</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope> <!-- TODO Should ideally be provided, but this bundle is not installed as part of configserver. Orchestrator bundle has the same issue -->
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>

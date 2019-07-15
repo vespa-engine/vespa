@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
+import ai.vespa.util.http.VespaClientBuilderFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
@@ -17,8 +18,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     );
 
     private final StateApiFactory stateApiFactory;
+    private final VespaClientBuilderFactory clientBuilderFactory = new VespaClientBuilderFactory();
 
     @Inject
     public ConfigConvergenceChecker() {
@@ -95,6 +98,11 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         } catch (Exception e) {
             return ServiceResponse.createErrorResponse(requestUrl, hostAndPortToCheck, wantedGeneration, e.getMessage());
         }
+    }
+
+    @Override
+    public void deconstruct() {
+        clientBuilderFactory.close();
     }
 
     @Path(statePath)
@@ -152,8 +160,11 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return false;
     }
 
-    private static Client createClient(Duration timeout) {
-        return ClientBuilder.newBuilder()
+    private Client createClient(Duration timeout) {
+        return clientBuilderFactory.newBuilder()
+                            .register(
+                                    (ClientRequestFilter) ctx ->
+                                            ctx.getHeaders().put(HttpHeaders.USER_AGENT, List.of("config-convergence-checker")))
                             .property(ClientProperties.CONNECT_TIMEOUT, (int) timeout.toMillis())
                             .property(ClientProperties.READ_TIMEOUT, (int) timeout.toMillis())
                             .build();
