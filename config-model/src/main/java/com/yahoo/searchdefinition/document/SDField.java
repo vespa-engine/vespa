@@ -463,31 +463,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                     }
                 }
             }.visit(indexingScript);
-        } else {
-            if (!getDataType().equals(PositionDataType.INSTANCE) &&
-                !getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)) &&
-                hasAttributeExpression(exp))
-            {
-                throw new IllegalArgumentException("For field '" + getName() + "': Setting attribute on a field that has struct or map sub-type(s) is not supported");
-            }
         }
         for (SDField structField : getStructFields()) {
             structField.setIndexingScript(exp);
         }
-    }
-
-    private static boolean hasAttributeExpression(ScriptExpression exp) {
-        var visitor = new ExpressionVisitor() {
-            boolean result = false;
-            @Override
-            protected void doVisit(Expression exp) {
-                if (exp instanceof AttributeExpression) {
-                    result = true;
-                }
-            }
-        };
-        visitor.visit(exp);
-        return visitor.result;
     }
 
     @Override
