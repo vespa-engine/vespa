@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -134,12 +136,24 @@ public class JobControllerApiHandlerHelperTest {
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root")), "dev-overview.json");
     }
 
+    @Test
+    public void testResponsesWithDirectDeployment() {
+        var tester = new InternalDeploymentTester();
+        tester.clock().setInstant(Instant.EPOCH);
+        var region = "us-west-1";
+        var applicationPackage = new ApplicationPackageBuilder().region(region).build();
+        // Deploy directly to production zone, like integration tests.
+        tester.tester().controller().applications().deploy(tester.app().id(), ZoneId.from("prod", region),
+                                                           Optional.of(applicationPackage),
+                                                           new DeployOptions(true, Optional.empty(),
+                                                                             false, false));
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root/")),
+                       "jobs-direct-deployment.json");
+    }
+
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-
-        System.err.println(baos);
-
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());
@@ -148,7 +162,7 @@ public class JobControllerApiHandlerHelperTest {
     private void assertResponse(HttpResponse response, String fileName) {
         try {
             Path path = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/").resolve(fileName);
-            String expected = new String(Files.readAllBytes(path));
+            String expected = Files.readString(path);
             compare(response, expected);
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -131,18 +131,21 @@ public class Versions {
             return change.platform().get();
 
         return max(change.platform(), deployment.map(Deployment::version))
-                .orElse(application.oldestDeployedPlatform()
-                                   .orElse(defaultVersion));
+                .orElseGet(() -> application.oldestDeployedPlatform().orElse(defaultVersion));
     }
 
     private static ApplicationVersion targetApplication(Application application, Change change,
                                                         Optional<Deployment> deployment) {
         return max(change.application(), deployment.map(Deployment::applicationVersion))
-                .orElse(application.oldestDeployedApplication()
-                                   .orElse(application.deploymentJobs().jobStatus().get(JobType.component)
-                                                      .lastSuccess()
-                                                      .get()
-                                                      .application()));
+                .orElseGet(() -> defaultApplicationVersion(application));
+    }
+
+    private static ApplicationVersion defaultApplicationVersion(Application application) {
+        return application.oldestDeployedApplication()
+                          .orElseGet(() -> Optional.ofNullable(application.deploymentJobs().jobStatus().get(JobType.component))
+                                                   .flatMap(JobStatus::lastSuccess)
+                                                   .map(JobStatus.JobRun::application)
+                                                   .orElse(ApplicationVersion.unknown));
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {

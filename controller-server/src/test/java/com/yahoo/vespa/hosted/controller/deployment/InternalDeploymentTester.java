@@ -34,6 +34,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class InternalDeploymentTester {
@@ -171,7 +172,7 @@ public class InternalDeploymentTester {
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
-        assertFalse(run.status() == aborted);
+        assertNotSame(aborted, run.status());
 
         ZoneId zone = type.zone(tester.controller().system());
         DeploymentId deployment = new DeploymentId(appId, zone);
