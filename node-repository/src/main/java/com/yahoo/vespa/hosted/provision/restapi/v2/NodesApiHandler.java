@@ -102,6 +102,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
         if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
+        if (path.startsWith("/nodes/v2/capacity/")) return new HostCapacityResponse(nodeRepository, request);
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -818,6 +819,30 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/firmware", new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Cancelled outstanding requests for firmware checks\"}");
     }
+
+    @Test
+    public void test_capacity() throws Exception {
+        assertFile(new Request("http://localhost:8080/nodes/v2/capacity/?json=true"), "capacity-zone.json");
+
+        List<String> hostsToRemove = List.of(
+                "%22dockerhost1.yahoo.com%22",
+                "%22dockerhost2.yahoo.com%22",
+                "%22dockerhost3.yahoo.com%22",
+                "%22dockerhost4.yahoo.com%22"
+        );
+        String requestUriTemplate =
+                "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=[%s]"
+                        .replaceAll("\\[", "%%5B")
+                        .replaceAll("]", "%%5D");
+
+        assertFile(new Request(String.format(requestUriTemplate,
+                String.join(",", hostsToRemove.subList(0, 3)))),
+                "capacity-hostremoval-possible.json");
+        assertFile(new Request(String.format(requestUriTemplate,
+                String.join(",", hostsToRemove))),
+                "capacity-hostremoval-impossible.json");
+    }
+
 
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test

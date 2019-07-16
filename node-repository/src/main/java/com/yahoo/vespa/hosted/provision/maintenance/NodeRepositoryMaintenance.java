@@ -82,7 +82,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
         hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), hostProvisioner, flagSource));
-        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("alert_interval").orElse(defaults.nodeAlerterInterval));
+        capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("capacity_report_interval").orElse(defaults.capacityReportInterval));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -143,7 +143,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration dirtyExpiry;
         private final Duration provisionedExpiry;
         private final Duration rebootInterval;
-        private final Duration nodeAlerterInterval;
+        private final Duration capacityReportInterval;
         private final Duration metricsInterval;
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
@@ -162,7 +162,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
             rebootInterval = Duration.ofDays(30);
-            nodeAlerterInterval = Duration.ofHours(1);
+            capacityReportInterval = Duration.ofHours(1);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
