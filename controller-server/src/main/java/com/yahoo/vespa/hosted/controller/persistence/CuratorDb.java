@@ -106,10 +106,6 @@ public class CuratorDb {
     CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
-
-        // TODO: Remove after 7.60
-        curator.delete(root.append("openStackServerPool"));
-        curator.delete(root.append("vespaServerPool"));
     }
 
     /** Returns all hosts configured to be part of this ZooKeeper cluster */
