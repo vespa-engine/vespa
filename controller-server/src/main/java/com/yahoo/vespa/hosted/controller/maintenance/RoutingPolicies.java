@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -12,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.RoutingId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
@@ -89,7 +91,7 @@ public class RoutingPolicies {
 
         // Create DNS record for each routing ID
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Endpoint endpoint = RoutingPolicy.endpointOf(routeEntry.getKey().application(), routeEntry.getKey().rotation(),
+            Endpoint endpoint = RoutingPolicy.endpointOf(routeEntry.getKey().application(), routeEntry.getKey().endpointId(),
                                                          controller.system());
             Set<AliasTarget> targets = routeEntry.getValue()
                                                  .stream()
@@ -117,9 +119,14 @@ public class RoutingPolicies {
 
     /** Create a policy for given load balancer and register a CNAME for it */
     private RoutingPolicy createPolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
+        // TODO(mpolden): Remove rotations from LoadBalancer. Use endpoints from deployment spec instead
+        Set<EndpointId> endpoints = loadBalancer.rotations().stream()
+                                                .map(RotationName::value)
+                                                .map(EndpointId::of)
+                                                .collect(Collectors.toSet());
         RoutingPolicy routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
                                                         loadBalancer.hostname(), loadBalancer.dnsZone(),
-                                                        loadBalancer.rotations());
+                                                        endpoints);
         RecordName name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
         RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
         controller.nameServiceForwarder().createCname(name, data, Priority.normal);
@@ -151,7 +158,7 @@ public class RoutingPolicies {
         var activeRoutingIds = routingIdsFrom(loadBalancers.list);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            Endpoint endpoint = RoutingPolicy.endpointOf(id.application(), id.rotation(), controller.system());
+            Endpoint endpoint = RoutingPolicy.endpointOf(id.application(), id.endpointId(), controller.system());
             controller.nameServiceForwarder().removeRecords(Record.Type.ALIAS, RecordName.from(endpoint.dnsName()), Priority.normal);
         }
     }
@@ -161,7 +168,7 @@ public class RoutingPolicies {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
         for (var loadBalancer : loadBalancers) {
             for (var rotation : loadBalancer.rotations()) {
-                routingIds.add(new RoutingId(loadBalancer.application(), rotation));
+                routingIds.add(new RoutingId(loadBalancer.application(), EndpointId.of(rotation.value())));
             }
         }
         return Collections.unmodifiableSet(routingIds);
@@ -171,7 +178,7 @@ public class RoutingPolicies {
     private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Set<RoutingPolicy> routingPolicies) {
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
         for (var policy : routingPolicies) {
-            for (var rotation : policy.rotations()) {
+            for (var rotation : policy.endpoints()) {
                 var id = new RoutingId(policy.owner(), rotation);
                 routingTable.putIfAbsent(id, new ArrayList<>());
                 routingTable.get(id).add(policy);

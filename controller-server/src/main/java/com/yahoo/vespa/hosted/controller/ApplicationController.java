@@ -279,7 +279,7 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
-    // TODO jvenstad: Split this, and choose between deployDirectly and deploy in handler, excluding internally built from the latter.
+    // TODO(jvenstad): Split this, and choose between deployDirectly and deploy in handler, excluding internally built from the latter.
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  Optional<ApplicationVersion> applicationVersionFromDeployer,
@@ -333,11 +333,12 @@ public class ApplicationController {
                     validateRun(application.get(), zone, platformVersion, applicationVersion);
                 }
 
-                // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
+                // TODO(jvenstad): Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
                 verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
-
                 // Assign global rotation
+                // TODO(ogronnesby): Remove feature flag and replace calls to withRotationLegacy with withRotation
+                // TODO(mpolden): Remove all handling of legacy endpoints once withRotationLegacy disappears
                 if (useMultipleEndpoints.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm()).value()) {
                     application = withRotation(application, zone);
 
@@ -373,7 +374,7 @@ public class ApplicationController {
                 if (   ! preferOldestVersion
                     && ! application.get().deploymentJobs().deployedInternally()
                     && ! zone.environment().isManuallyDeployed())
-                    // TODO jvenstad: Store only on submissions
+                    // TODO(jvenstad): Store only on submissions
                     storeWithUpdatedConfig(application, applicationPackage);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
@@ -495,21 +496,16 @@ public class ApplicationController {
     }
 
     private List<AssignedRotation> createDefaultGlobalIdRotation(Application application, Rotation rotation) {
-        // This is guaranteed by .withRotationLegacy, but add this to make inspections accept the use of .get() below
-        assert application.deploymentSpec().globalServiceId().isPresent();
-
-        final Set<RegionName> regions = application.deploymentSpec().zones().stream()
-                .filter(zone -> zone.environment().isProduction())
-                .flatMap(zone -> zone.region().stream())
-                .collect(Collectors.toSet());
-
-        final var assignment = new AssignedRotation(
+        Set<RegionName> regions = application.deploymentSpec().zones().stream()
+                                             .filter(zone -> zone.environment().isProduction())
+                                             .flatMap(zone -> zone.region().stream())
+                                             .collect(Collectors.toSet());
+        var assignment = new AssignedRotation(
                 ClusterSpec.Id.from(application.deploymentSpec().globalServiceId().get()),
                 EndpointId.default_(),
                 rotation.id(),
                 regions
         );
-
         return List.of(assignment);
     }
 
@@ -517,7 +513,7 @@ public class ApplicationController {
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
         if (zone.environment() == Environment.prod) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
-                final var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
+                var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
                 application = application.with(rotations);
                 store(application); // store assigned rotation even if deployment fails
                 registerAssignedRotationCnames(application.get());
@@ -528,16 +524,12 @@ public class ApplicationController {
 
     private void registerAssignedRotationCnames(Application application) {
         application.assignedRotations().forEach(assignedRotation -> {
-            final var endpoints = application
-                    .endpointsIn(controller.system(), assignedRotation.endpointId())
-                    .scope(Endpoint.Scope.global);
-
-            final var maybeRotation = rotationRepository.getRotation(assignedRotation.rotationId());
-
+            var endpoints = application.endpointsIn(controller.system(), assignedRotation.endpointId())
+                                       .scope(Endpoint.Scope.global);
+            var maybeRotation = rotationRepository.getRotation(assignedRotation.rotationId());
             maybeRotation.ifPresent(rotation -> {
-                endpoints.main().ifPresent(mainEndpoint -> {
-                    registerCname(mainEndpoint.dnsName(), rotation.name());
-                });
+                // For rotations assigned using <endpoints/> syntax, we only register the non-legacy name in DNS.
+                endpoints.main().ifPresent(mainEndpoint -> registerCname(mainEndpoint.dnsName(), rotation.name()));
             });
         });
     }
@@ -545,7 +537,7 @@ public class ApplicationController {
     private LockedApplication withApplicationCertificate(LockedApplication application) {
         ApplicationId applicationId = application.get().id();
 
-        // TODO: Verify that the application is deploying to a zone where certificate provisioning is enabled
+        // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
         boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         if (provisionCertificate) {
             application = application.withApplicationCertificate(
@@ -640,7 +632,7 @@ public class ApplicationController {
                 .orElse(id.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", id.toString());
 
-        // TODO jvenstad: Swap to use routingPolicies first, when this is ready.
+        // TODO(jvenstad): Swap to use routingPolicies first, when this is ready.
         try {
             var endpoints = routingGenerator.clusterEndpoints(id);
             if ( ! endpoints.isEmpty())
@@ -699,12 +691,12 @@ public class ApplicationController {
             applicationStore.removeAll(TesterId.of(id));
 
             application.get().assignedRotations().forEach(assignedRotation -> {
-                final var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
+                var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
                 endpoints.asList().stream()
-                        .map(Endpoint::dnsName)
-                        .forEach(name -> {
-                            controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
-                        });
+                         .map(Endpoint::dnsName)
+                         .forEach(name -> {
+                             controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
+                         });
             });
 
             log.info("Deleted " + application);

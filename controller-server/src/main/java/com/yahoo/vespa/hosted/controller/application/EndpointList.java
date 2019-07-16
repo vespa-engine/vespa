@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 
