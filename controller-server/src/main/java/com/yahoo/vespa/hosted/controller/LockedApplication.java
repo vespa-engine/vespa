@@ -162,8 +162,7 @@ public class LockedApplication {
                                                   previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
-                                                  previousDeployment.activity(),
-                                                  previousDeployment.clusterMetrics());
+                                                  previousDeployment.activity());
         return with(newDeployment);
     }
 
@@ -273,12 +272,6 @@ public class LockedApplication {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);
-    }
-
-    public LockedApplication with(ZoneId zoneId, List<ClusterMetrics> clusterMetrics) {
-        Deployment deployment = deployments.get(zoneId);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterMetrics(clusterMetrics));
     }
 
     public LockedApplication withApplicationCertificate(Optional<ApplicationCertificate> applicationCertificate) {

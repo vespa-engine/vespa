@@ -88,7 +88,7 @@ public class ApplicationSerializerTest {
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
-                                                                 OptionalDouble.of(200), OptionalDouble.of(10)), Collections.emptyList()));
+                                                                 OptionalDouble.of(200), OptionalDouble.of(10))));
 
         OptionalLong projectId = OptionalLong.of(123L);
         List<JobStatus> statusList = new ArrayList<>();

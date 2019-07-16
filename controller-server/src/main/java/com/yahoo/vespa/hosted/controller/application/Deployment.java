@@ -31,18 +31,16 @@ public class Deployment {
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
-    private final List<ClusterMetrics> clusterMetrics;
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
         this(zone, applicationVersion, version, deployTime, Collections.emptyMap(), Collections.emptyMap(),
-             DeploymentMetrics.none, DeploymentActivity.none, Collections.emptyList());
+             DeploymentMetrics.none, DeploymentActivity.none);
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
                       Map<Id, ClusterUtilization> clusterUtilization, Map<Id, ClusterInfo> clusterInfo,
                       DeploymentMetrics metrics,
-                      DeploymentActivity activity,
-                      List<ClusterMetrics> clusterMetrics) {
+                      DeploymentActivity activity) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
@@ -51,7 +49,6 @@ public class Deployment {
         this.clusterInfo = ImmutableMap.copyOf(Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null"));
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
-        this.clusterMetrics = Objects.requireNonNull(clusterMetrics, "cluster metrics cannot be null");
     }
 
     /** Returns the zone this was deployed to */
@@ -84,33 +81,24 @@ public class Deployment {
         return clusterUtilization;
     }
 
-    public List<ClusterMetrics> clusterMetrics() {
-        return clusterMetrics;
-    }
-
     public Deployment recordActivityAt(Instant instant) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity.recordAt(instant, metrics), clusterMetrics);
+                              activity.recordAt(instant, metrics));
     }
 
     public Deployment withClusterUtils(Map<Id, ClusterUtilization> clusterUtilization) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity, clusterMetrics);
+                              activity);
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, newClusterInfo, metrics,
-                              activity, clusterMetrics);
+                              activity);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
         return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                              activity, clusterMetrics);
-    }
-
-    public Deployment withClusterMetrics(List<ClusterMetrics> newClusterMetrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
-                activity, newClusterMetrics);
+                              activity);
     }
 
     /**
