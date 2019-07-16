@@ -90,6 +90,7 @@ Requires: perl-Getopt-Long
 Requires: perl-IO-Socket-IP
 Requires: perl-JSON
 Requires: perl-libwww-perl
+Requires: perl-LWP-Protocol-https
 Requires: perl-Net-INET6Glue
 Requires: perl-Pod-Usage
 Requires: perl-URI
