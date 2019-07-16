@@ -107,11 +107,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             // The union of packages in the bundle's project and its compile scoped jars.
             PackageTally pluginPackageTally = projectPackageTally.combine(includedJarPackageTally);
 
-            // TODO: isn't 'definedPackages' the same as pluginPackageTally.definedPackages()?
-            Set<String> definedPackages = new HashSet<>(projectPackageTally.definedPackages());
-            definedPackages.addAll(includedJarPackageTally.definedPackages());
-
-            warnIfPackagesDefinedOverlapsGlobalPackages(definedPackages, publicPackagesFromProvidedJars.globals);
+            warnIfPackagesDefinedOverlapsGlobalPackages(pluginPackageTally.definedPackages(), publicPackagesFromProvidedJars.globals);
 
             if (getLog().isDebugEnabled()) {
                 getLog().debug("Referenced packages = " + pluginPackageTally.referencedPackages());
@@ -132,7 +128,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                     artifactSet.getJarArtifactsToInclude(), manualImports, calculatedImports.values(), pluginPackageTally));
 
         } catch (Exception e) {
-            throw new MojoExecutionException("Failed generating osgi manifest.", e);
+            throw new MojoExecutionException("Failed generating osgi manifest", e);
         }
     }
 
