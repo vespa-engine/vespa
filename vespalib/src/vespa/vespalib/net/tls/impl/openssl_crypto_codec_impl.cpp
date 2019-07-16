@@ -163,7 +163,7 @@ void log_ssl_error(const char* source, const SocketAddress& peer_address, int ss
     // Buffer the emitted log messages on the peer's IP address. This prevents a single misbehaving
     // client from flooding our logs, while at the same time ensuring that logs for other clients
     // aren't lost.
-    LOGBT(error, peer_address.ip_address(),
+    LOGBT(warning, peer_address.ip_address(),
           "%s (with peer '%s') returned unexpected error: %s (%s)",
           source, peer_address.spec().c_str(),
           ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
