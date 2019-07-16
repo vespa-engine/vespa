@@ -15,6 +15,9 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 /**
+ * "Public package" in this context means a package that is either exported or declared as "Global-Package"
+ * in a bundle's manifest.
+ *
  * @author Tony Vaagenes
  * @author ollivir
  */
