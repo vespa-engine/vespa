@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class ClusterMetrics {
     }
 
     public Map<String, Double> getMetrics() {
-        return metrics;
+        return Collections.unmodifiableMap(metrics);
     }
 
     public void addMetric(String name, double value) {
