@@ -3,5 +3,3 @@
 package com.yahoo.vespa.configserver.flags;
 
 import com.yahoo.osgi.annotation.ExportPackage;
-
-/** The node repository controls and allocates the nodes available in a hosted Vespa zone */

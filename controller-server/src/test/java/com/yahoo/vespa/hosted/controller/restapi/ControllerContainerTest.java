@@ -60,6 +60,8 @@ public class ControllerContainerTest {
                "    </rotations>\n" +
                "  </config>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
+               "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
+               "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
@@ -111,6 +113,10 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
+               "    <binding>http://*/flags/v1</binding>\n" +
+               "    <binding>http://*/flags/v1/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
                "</container>";

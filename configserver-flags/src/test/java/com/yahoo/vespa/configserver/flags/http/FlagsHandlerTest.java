@@ -1,25 +1,27 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.http.flags;
+package com.yahoo.vespa.configserver.flags.http;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.configserver.flags.db.FlagsDbImpl;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.UnboundBooleanFlag;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +39,7 @@ public class FlagsHandlerTest {
 
     private static final String FLAGS_V1_URL = "https://foo.com:4443/flags/v1";
 
-    private final FlagsDbImpl flagsDb = new FlagsDbImpl(new MockCurator());
+    private final FlagsDb flagsDb = new FlagsDbImpl(new MockCurator());
     private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testOnlyContext(), flagsDb);
 
     @Test
@@ -161,7 +163,7 @@ public class FlagsHandlerTest {
 
     @Test
     public void testForcing() {
-        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef"), "", 404),
+        assertThat(handle(Method.PUT, "/data/" + new FlagId("undef"), "", 400),
                 containsString("There is no flag 'undef'"));
 
         assertThat(handle(Method.PUT, "/data/" + new FlagId("undef") + "?force=true", "", 400),
@@ -191,7 +193,9 @@ public class FlagsHandlerTest {
         HttpResponse response = handler.handle(request);
         assertEquals(expectedStatus, response.getStatus());
         assertEquals("application/json", response.getContentType());
-        return uncheck(() -> SessionHandlerTest.getRenderedString(response));
+        var outputStream = new ByteArrayOutputStream();
+        Exceptions.uncheck(() -> response.render(outputStream));
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 
     private InputStream makeInputStream(String content) {
