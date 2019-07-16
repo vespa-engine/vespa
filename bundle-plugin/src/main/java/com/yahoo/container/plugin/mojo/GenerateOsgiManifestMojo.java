@@ -41,6 +41,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.publicPackagesAggregated;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 import static com.yahoo.container.plugin.util.IO.withFileOutputStream;
 import static com.yahoo.container.plugin.util.JarFiles.withInputStream;
@@ -95,13 +96,18 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
 
-            AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = AnalyzeBundle.publicPackagesAggregated(
+            // Packages from Export-Package and Global-Package headers in provided scoped jars
+            AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = publicPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
+
+            // Packages defined in compile scoped jars
             PackageTally includedJarPackageTally = definedPackages(artifactSet.getJarArtifactsToInclude());
 
             PackageTally projectPackageTally = analyzeProjectClasses();
+            // The union of packages in the bundle's project and its compile scoped jars.
             PackageTally pluginPackageTally = projectPackageTally.combine(includedJarPackageTally);
 
+            // TODO: isn't 'definedPackages' the same as pluginPackageTally.definedPackages()?
             Set<String> definedPackages = new HashSet<>(projectPackageTally.definedPackages());
             definedPackages.addAll(includedJarPackageTally.definedPackages());
 
