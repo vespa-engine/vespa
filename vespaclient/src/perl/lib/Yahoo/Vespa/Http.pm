@@ -97,6 +97,15 @@ sub setHttpExecutor { # (Function)
 sub initialize { # ()
     %LEGAL_TYPES = map { $_ => 1 } ( 'GET', 'POST', 'PUT', 'DELETE');
     $BROWSER = LWP::UserAgent->new;
+    if (defined $ENV{'VESPA_TLS_CA_CERT'}) {
+        $BROWSER->ssl_opts( SSL_ca_file => $ENV{'VESPA_TLS_CA_CERT'} );
+    }
+    if (defined $ENV{'VESPA_TLS_CERT'}) {
+        $BROWSER->ssl_opts( SSL_cert_file => $ENV{'VESPA_TLS_CERT'} );
+    }
+    if (defined $ENV{'VESPA_TLS_PRIVATE_KEY'}) {
+        $BROWSER->ssl_opts( SSL_key_file => $ENV{'VESPA_TLS_PRIVATE_KEY'} );
+    }
     $BROWSER->agent('Vespa-perl-script');
     $EXECUTE = \&execute;
 }
@@ -146,7 +155,8 @@ sub execute { # (Type, Host, Port, Path, Params, Content, Headers) -> Response
 }
 sub buildUri { # (Host, Port, Path) -> UriString
     my ($host, $port, $path) = @_;
-    my $uri = "http:";
+    my $tls_enabled = $ENV{'VESPA_TLS_ENABLED'};
+    my $uri = (defined $tls_enabled and $tls_enabled eq '1') ? "https:" : "http:";
     if (defined $host) {
         $uri .= '//' . $host;
         if (defined $port) {
