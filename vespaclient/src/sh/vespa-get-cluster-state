@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+eval $(vespa-security-env)
+
+$VESPA_HOME/libexec/vespa/GetClusterState.pl "$@"
