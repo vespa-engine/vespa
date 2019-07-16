@@ -135,7 +135,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundStringFlag CONFIGSERVER_RPC_AUTHORIZER = defineStringFlag(
-            "configserver-rpc-authorizer", "log-only",
+            "configserver-rpc-authorizer", "enforce",
             "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
             "Takes effect on restart of configserver");
 
