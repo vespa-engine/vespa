@@ -90,7 +90,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     @Parameter(alias = "X-Jersey-Binding")
     private String jerseyBinding = null;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         try {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
@@ -133,7 +133,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     private static void warnIfPackagesDefinedOverlapsGlobalPackages(Set<String> internalPackages, List<String> globalPackages)
             throws MojoExecutionException {
         Set<String> overlap = Sets.intersection(internalPackages, new HashSet<>(globalPackages));
-        if (overlap.isEmpty() == false) {
+        if (! overlap.isEmpty()) {
             throw new MojoExecutionException(
                     "The following packages are both global and included in the bundle:\n   " + String.join("\n   ", overlap));
         }
@@ -173,7 +173,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 Pair.of("WebInfUrl", webInfUrl), //
                 Pair.of("Import-Package", importPackage), //
                 Pair.of("Export-Package", exportPackage))) {
-            if (element.getValue() != null && element.getValue().isEmpty() == false) {
+            if (element.getValue() != null && ! element.getValue().isEmpty()) {
                 ret.put(element.getKey(), element.getValue());
             }
         }
@@ -232,7 +232,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     }
 
     private void warnOnUnsupportedArtifacts(Collection<Artifact> nonJarArtifacts) {
-        List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> "pom".equals(a.getType()) == false)
+        List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> ! a.getType().equals("pom"))
                 .collect(Collectors.toList());
 
         unsupportedArtifacts.forEach(artifact -> getLog()
@@ -258,7 +258,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         List<ClassFileMetaData> analyzedClasses = new ArrayList<>();
         for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
             JarEntry entry = entries.nextElement();
-            if (entry.isDirectory() == false && entry.getName().endsWith(".class")) {
+            if (! entry.isDirectory() && entry.getName().endsWith(".class")) {
                 analyzedClasses.add(analyzeClass(jarFile, entry));
             }
         }
@@ -305,10 +305,10 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     }
 
     private static Optional<String> emptyToNone(String str) {
-        return Optional.ofNullable(str).map(String::trim).filter(s -> s.isEmpty() == false);
+        return Optional.ofNullable(str).map(String::trim).filter(s -> ! s.isEmpty());
     }
 
     private static boolean isClassToAnalyze(String name) {
-        return name.endsWith(".class") && name.endsWith("module-info.class") == false;
+        return name.endsWith(".class") && ! name.endsWith("module-info.class");
     }
 }
