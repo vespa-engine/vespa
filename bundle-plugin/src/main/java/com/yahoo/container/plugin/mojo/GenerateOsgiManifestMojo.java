@@ -308,7 +308,4 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         return Optional.ofNullable(str).map(String::trim).filter(s -> ! s.isEmpty());
     }
 
-    private static boolean isClassToAnalyze(String name) {
-        return name.endsWith(".class") && ! name.endsWith("module-info.class");
-    }
 }
