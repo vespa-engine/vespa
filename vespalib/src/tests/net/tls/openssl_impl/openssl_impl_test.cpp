@@ -97,7 +97,7 @@ struct Fixture {
     static std::unique_ptr<CryptoCodec> create_openssl_codec(
             const std::shared_ptr<TlsContext>& ctx, CryptoCodec::Mode mode) {
         auto ctx_impl = std::dynamic_pointer_cast<impl::OpenSslTlsContextImpl>(ctx);
-        return std::make_unique<impl::OpenSslCryptoCodecImpl>(std::move(ctx_impl), mode);
+        return std::make_unique<impl::OpenSslCryptoCodecImpl>(std::move(ctx_impl), SocketAddress(), mode);
     }
 
     EncodeResult do_encode(CryptoCodec& codec, Output& buffer, vespalib::stringref plaintext) {

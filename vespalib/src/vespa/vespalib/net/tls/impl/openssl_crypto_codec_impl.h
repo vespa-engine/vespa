@@ -2,6 +2,7 @@
 #pragma once
 
 #include "openssl_typedefs.h"
+#include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
 #include <memory>
@@ -45,6 +46,7 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     // The context maintains shared verification callback state, so it must be
     // kept alive explictly for at least as long as any codecs.
     std::shared_ptr<OpenSslTlsContextImpl> _ctx;
+    SocketAddress _peer_address;
     SslPtr _ssl;
     ::BIO* _input_bio;  // Owned by _ssl
     ::BIO* _output_bio; // Owned by _ssl
@@ -52,7 +54,7 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     std::optional<DeferredHandshakeParams> _deferred_handshake_params;
     std::optional<HandshakeResult> _deferred_handshake_result;
 public:
-    OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode);
+    OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, const SocketAddress& peer_address, Mode mode);
     ~OpenSslCryptoCodecImpl() override;
 
     /*
@@ -85,6 +87,8 @@ public:
     DecodeResult decode(const char* ciphertext, size_t ciphertext_size,
                         char* plaintext, size_t plaintext_size) noexcept override;
     EncodeResult half_close(char* ciphertext, size_t ciphertext_size) noexcept override;
+
+    const SocketAddress& peer_address() const noexcept { return _peer_address; }
 private:
     HandshakeResult do_handshake_and_consume_peer_input_bytes() noexcept;
     DecodeResult drain_and_produce_plaintext_from_ssl(char* plaintext, size_t plaintext_size) noexcept;

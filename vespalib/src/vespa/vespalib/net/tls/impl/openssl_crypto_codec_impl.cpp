@@ -17,7 +17,7 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vespalib.net.tls.openssl_crypto_codec_impl");
 
 #if (OPENSSL_VERSION_NUMBER < 0x10000000L)
@@ -159,15 +159,23 @@ vespalib::string ssl_error_from_stack() {
     return vespalib::string(buf);
 }
 
-void log_ssl_error(const char* source, int ssl_error) {
-    LOG(error, "%s returned unexpected error: %s (%s)",
-        source, ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
+void log_ssl_error(const char* source, const SocketAddress& peer_address, int ssl_error) {
+    // Buffer the emitted log messages on the peer's IP address. This prevents a single misbehaving
+    // client from flooding our logs, while at the same time ensuring that logs for other clients
+    // aren't lost.
+    LOGBT(error, peer_address.ip_address(),
+          "%s (with peer '%s') returned unexpected error: %s (%s)",
+          source, peer_address.spec().c_str(),
+          ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
 }
 
 } // anon ns
 
-OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode)
+OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,
+                                               const SocketAddress& peer_address,
+                                               Mode mode)
     : _ctx(std::move(ctx)),
+      _peer_address(peer_address),
       _ssl(::SSL_new(_ctx->native_context())),
       _mode(mode),
       _deferred_handshake_params(),
@@ -213,6 +221,10 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
         ::SSL_set_connect_state(_ssl.get());
     } else {
         ::SSL_set_accept_state(_ssl.get());
+    }
+    // Store self-reference that can be fished out of SSL object during certificate verification callbacks
+    if (SSL_set_app_data(_ssl.get(), this) != 1) {
+        throw CryptoException("SSL_set_app_data() failed");
     }
 }
 
@@ -302,7 +314,7 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
         ConnectionStatistics::get(_mode == Mode::Server).inc_tls_connections();
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {
-        log_ssl_error("SSL_do_handshake()", ssl_result);
+        log_ssl_error("SSL_do_handshake()", _peer_address, ssl_result);
         ConnectionStatistics::get(_mode == Mode::Server).inc_failed_tls_handshakes();
         return handshake_failed();
     }
@@ -327,7 +339,7 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
         // SSL_write encodes plaintext to ciphertext and writes to _output_bio
         const int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
         if (consumed < 0) {
-            log_ssl_error("SSL_write()", ::SSL_get_error(_ssl.get(), consumed));
+            log_ssl_error("SSL_write()", _peer_address, ::SSL_get_error(_ssl.get(), consumed));
             ConnectionStatistics::get(_mode == Mode::Server).inc_broken_tls_connections();
             return encode_failed(); // TODO explicitly detect and log TLS renegotiation error (SSL_ERROR_WANT_READ)?
         } else if (consumed != to_consume) {
@@ -391,7 +403,7 @@ DecodeResult OpenSslCryptoCodecImpl::remap_ssl_read_failure_to_decode_result(int
         LOG(debug, "SSL_read() returned SSL_ERROR_ZERO_RETURN; connection has been shut down normally by the peer");
         return decode_peer_has_closed();
     default:
-        log_ssl_error("SSL_read()", ssl_error);
+        log_ssl_error("SSL_read()", _peer_address, ssl_error);
         ConnectionStatistics::get(_mode == Mode::Server).inc_broken_tls_connections();
         return decode_failed();
     }
@@ -403,7 +415,7 @@ EncodeResult OpenSslCryptoCodecImpl::half_close(char* ciphertext, size_t ciphert
     const int pending_before = BIO_pending(_output_bio);
     int ssl_result = ::SSL_shutdown(_ssl.get());
     if (ssl_result < 0) {
-        log_ssl_error("SSL_shutdown()", ::SSL_get_error(_ssl.get(), ssl_result));
+        log_ssl_error("SSL_shutdown()", _peer_address, ::SSL_get_error(_ssl.get(), ssl_result));
         return encode_failed();
     }
     const int pending_after = BIO_pending(_output_bio);
