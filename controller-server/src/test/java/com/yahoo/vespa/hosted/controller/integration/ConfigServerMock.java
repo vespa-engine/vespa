@@ -332,8 +332,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public Map<ApplicationId, List<ClusterMetrics>> getMetrics(ZoneId zoneId) {
-        return null;
+    public List<ClusterMetrics> getMetrics(DeploymentId deployment) {
+        return List.of();
     }
 
     // Returns a canned example response
