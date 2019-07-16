@@ -109,8 +109,9 @@ public class ImportPackageTest {
                 is("com.yahoo.exported;version=\"[1.2.3,2)\""));
     }
 
-    private static Set<Import> calculateImports(Set<String> referencedPackages, Set<String> implementedPackages,
-            Map<String, Export> exportedPackages) {
+    private static Set<Import> calculateImports(Set<String> referencedPackages,
+                                                Set<String> implementedPackages,
+                                                Map<String, Export> exportedPackages) {
         return new HashSet<>(ImportPackages.calculateImports(referencedPackages, implementedPackages, exportedPackages).values());
     }
 

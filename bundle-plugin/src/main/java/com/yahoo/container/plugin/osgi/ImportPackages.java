@@ -74,8 +74,9 @@ public class ImportPackages {
         }
     }
 
-    public static Map<String, Import> calculateImports(Set<String> referencedPackages, Set<String> implementedPackages,
-            Map<String, ExportPackages.Export> exportedPackages) {
+    public static Map<String, Import> calculateImports(Set<String> referencedPackages,
+                                                       Set<String> implementedPackages,
+                                                       Map<String, ExportPackages.Export> exportedPackages) {
         Map<String, Import> ret = new HashMap<>();
         for (String undefinedPackage : Sets.difference(referencedPackages, implementedPackages)) {
             ExportPackages.Export export = exportedPackages.get(undefinedPackage);

@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.publicPackagesAggregated;
+import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
+import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 import static com.yahoo.container.plugin.util.IO.withFileOutputStream;
 import static com.yahoo.container.plugin.util.JarFiles.withInputStream;
@@ -114,8 +116,9 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
             }
 
-            Map<String, Import> calculatedImports = ImportPackages.calculateImports(includedPackages.referencedPackages(),
-                    includedPackages.definedPackages(), ExportPackages.exportsByPackageName(publicPackagesFromProvidedJars.exports));
+            Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
+                                                                     includedPackages.definedPackages(),
+                                                                     exportsByPackageName(publicPackagesFromProvidedJars.exports));
 
             Map<String, Optional<String>> manualImports = emptyToNone(importPackage).map(GenerateOsgiManifestMojo::getManualImports)
                     .orElseGet(HashMap::new);
