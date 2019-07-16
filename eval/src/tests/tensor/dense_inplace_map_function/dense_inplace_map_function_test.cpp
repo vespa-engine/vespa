@@ -72,8 +72,8 @@ TEST("require that mapped tensors are not optimized") {
     TEST_DO(verify_not_optimized("map(_x_m,f(x)(x+10))"));
 }
 
-TEST("require that optimization is disabled for tensors with non-double cells") {
-    TEST_DO(verify_not_optimized("map(_x5f,f(x)(x+10))"));
+TEST("require that optimization works for float cells") {
+    TEST_DO(verify_optimized("map(_x5f,f(x)(x+10))", 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

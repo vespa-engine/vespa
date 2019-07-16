@@ -17,35 +17,45 @@ using namespace eval::tensor_function;
 
 namespace {
 
-TypedCells getCellsRef(const eval::Value &value) {
-    const DenseTensorView &denseTensor = static_cast<const DenseTensorView &>(value);
-    return denseTensor.cellsRef();
-}
-
-template <bool write_left>
-void my_inplace_join_op(eval::InterpretedFunction::State &state, uint64_t param) {
+template <typename LCT, typename RCT>
+void my_inplace_join_left_op(eval::InterpretedFunction::State &state, uint64_t param) {
     join_fun_t function = (join_fun_t)param;
-    ConstArrayRef<double> lhs_cells = getCellsRef(state.peek(1)).typify<double>();
-    ConstArrayRef<double> rhs_cells = getCellsRef(state.peek(0)).typify<double>();
-    auto dst_cells = unconstify(write_left ? lhs_cells : rhs_cells);
-    for (size_t i = 0; i < dst_cells.size(); ++i) {
-        dst_cells[i] = function(lhs_cells[i], rhs_cells[i]);
+    auto lhs_cells = unconstify(DenseTensorView::typify_cells<LCT>(state.peek(1)));
+    auto rhs_cells = DenseTensorView::typify_cells<RCT>(state.peek(0));
+    for (size_t i = 0; i < lhs_cells.size(); ++i) {
+        lhs_cells[i] = function(lhs_cells[i], rhs_cells[i]);
     }
-    if (write_left) {
-        state.stack.pop_back();
-    } else {
-        const Value &result = state.stack.back();
-        state.pop_pop_push(result);
-    }
+    state.stack.pop_back();
 }
 
-bool sameShapeConcreteDenseTensors(const ValueType &a, const ValueType &b) {
-    if (a.cell_type() != ValueType::CellType::DOUBLE ||
-        b.cell_type() != ValueType::CellType::DOUBLE)
-    {
-        return false; // non-double cell types not supported
+template <typename LCT, typename RCT>
+void my_inplace_join_right_op(eval::InterpretedFunction::State &state, uint64_t param) {
+    join_fun_t function = (join_fun_t)param;
+    auto lhs_cells = DenseTensorView::typify_cells<LCT>(state.peek(1));
+    auto rhs_cells = unconstify(DenseTensorView::typify_cells<RCT>(state.peek(0)));
+    for (size_t i = 0; i < rhs_cells.size(); ++i) {
+        rhs_cells[i] = function(lhs_cells[i], rhs_cells[i]);
     }
-    return (a.is_dense() && (a == b));
+    const Value &result = state.stack.back();
+    state.pop_pop_push(result);
+}
+
+struct MyInplaceJoinLeftOp {
+    template <typename LCT, typename RCT>
+    static auto get_fun() { return my_inplace_join_left_op<LCT,RCT>; }
+};
+
+struct MyInplaceJoinRightOp {
+    template <typename LCT, typename RCT>
+    static auto get_fun() { return my_inplace_join_right_op<LCT,RCT>; }
+};
+
+eval::InterpretedFunction::op_function my_select(CellType lct, CellType rct, bool write_left) {
+    if (write_left) {
+        return select_2<MyInplaceJoinLeftOp>(lct, rct);
+    } else {
+        return select_2<MyInplaceJoinRightOp>(lct, rct);
+    }
 }
 
 } // namespace vespalib::tensor::<unnamed>
@@ -68,7 +78,8 @@ DenseInplaceJoinFunction::~DenseInplaceJoinFunction()
 eval::InterpretedFunction::Instruction
 DenseInplaceJoinFunction::compile_self(Stash &) const
 {
-    auto op = _write_left ? my_inplace_join_op<true> : my_inplace_join_op<false>;
+    auto op = my_select(lhs().result_type().cell_type(),
+                        rhs().result_type().cell_type(), _write_left);
     return eval::InterpretedFunction::Instruction(op, (uint64_t)function());
 }
 
@@ -85,11 +96,17 @@ DenseInplaceJoinFunction::optimize(const eval::TensorFunction &expr, Stash &stas
     if (auto join = as<Join>(expr)) {
         const TensorFunction &lhs = join->lhs();
         const TensorFunction &rhs = join->rhs();
-        if ((lhs.result_is_mutable() || rhs.result_is_mutable()) &&
-            sameShapeConcreteDenseTensors(lhs.result_type(), rhs.result_type()))
+        if (lhs.result_type().is_dense() &&
+            (lhs.result_type().dimensions() == rhs.result_type().dimensions()))
         {
-            return stash.create<DenseInplaceJoinFunction>(join->result_type(), lhs, rhs,
-                    join->function(), lhs.result_is_mutable());
+            if (lhs.result_is_mutable() && (lhs.result_type() == expr.result_type())) {
+                return stash.create<DenseInplaceJoinFunction>(join->result_type(), lhs, rhs,
+                        join->function(), /* write left: */ true);
+            }
+            if (rhs.result_is_mutable() && (rhs.result_type() == expr.result_type())) {
+                return stash.create<DenseInplaceJoinFunction>(join->result_type(), lhs, rhs,
+                        join->function(), /* write left: */ false);
+            }
         }
     }
     return expr;

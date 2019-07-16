@@ -14,13 +14,6 @@ using namespace eval::tensor_function;
 
 namespace {
 
-bool is_concrete_dense_tensor(const ValueType &type) {
-    if (type.cell_type() != ValueType::CellType::DOUBLE) {
-        return false; // non-double cell types not supported
-    }
-    return type.is_dense();
-}
-
 bool is_ident_aggr(Aggr aggr) {
     return ((aggr == Aggr::AVG)  ||
             (aggr == Aggr::PROD) ||
@@ -47,11 +40,12 @@ DenseRemoveDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash 
 {
     if (auto reduce = as<Reduce>(expr)) {
         const TensorFunction &child = reduce->child();
-        if (is_concrete_dense_tensor(expr.result_type()) &&
-            is_concrete_dense_tensor(child.result_type()) &&
+        if (expr.result_type().is_dense() &&
+            child.result_type().is_dense() &&
             is_ident_aggr(reduce->aggr()) &&
             is_trivial_dim_list(child.result_type(), reduce->dimensions()))
         {
+            assert(expr.result_type().cell_type() == child.result_type().cell_type());
             return DenseReplaceTypeFunction::create_compact(expr.result_type(), child, stash);
         }
     }

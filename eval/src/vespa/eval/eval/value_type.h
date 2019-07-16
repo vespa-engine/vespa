@@ -78,15 +78,27 @@ public:
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
+    static CellType unify_cell_types(const ValueType &a, const ValueType &b);
     static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
     static ValueType either(const ValueType &one, const ValueType &other);
 };
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);
 
-// utility template
-template <typename T> inline bool check_cell_type(ValueType::CellType type);
+// utility templates
+
+template <typename CT> inline bool check_cell_type(ValueType::CellType type);
 template <> inline bool check_cell_type<double>(ValueType::CellType type) { return (type == ValueType::CellType::DOUBLE); }
 template <> inline bool check_cell_type<float>(ValueType::CellType type) { return (type == ValueType::CellType::FLOAT); }
+
+template <typename LCT, typename RCT> struct UnifyCellTypes{};
+template <> struct UnifyCellTypes<double, double> { using type = double; };
+template <> struct UnifyCellTypes<double, float>  { using type = double; };
+template <> struct UnifyCellTypes<float,  double> { using type = double; };
+template <> struct UnifyCellTypes<float,  float>  { using type = float; };
+
+template <typename CT> inline ValueType::CellType get_cell_type();
+template <> inline ValueType::CellType get_cell_type<double>() { return ValueType::CellType::DOUBLE; }
+template <> inline ValueType::CellType get_cell_type<float>() { return ValueType::CellType::FLOAT; }
 
 } // namespace

@@ -19,21 +19,8 @@ using namespace eval::operation;
 
 namespace {
 
-bool is_concrete_dense_tensor(const ValueType &type) {
-    if (type.cell_type() != ValueType::CellType::DOUBLE) {
-        return false; // non-double cell types not supported
-    }
-    return type.is_dense();
-}
-
-bool not_overlapping(const ValueType &a, const ValueType &b) {
-    size_t npos = ValueType::Dimension::npos;
-    for (const auto &dim: b.dimensions()) {
-        if (a.dimension_index(dim.name) != npos) {
-            return false;
-        }
-    }
-    return true;
+bool same_cell_type(const TensorFunction &a, const TensorFunction &b) {
+    return (a.result_type().cell_type() == b.result_type().cell_type());
 }
 
 bool is_unit_constant(const TensorFunction &node) {
@@ -57,15 +44,14 @@ DenseAddDimensionOptimizer::optimize(const eval::TensorFunction &expr, Stash &st
         const TensorFunction &lhs = join->lhs();
         const TensorFunction &rhs = join->rhs();
         if ((join->function() == Mul::f) &&
-            is_concrete_dense_tensor(lhs.result_type()) &&
-            is_concrete_dense_tensor(rhs.result_type()) &&
-            not_overlapping(lhs.result_type(), rhs.result_type()))
+            lhs.result_type().is_dense() &&
+            rhs.result_type().is_dense())
         {
-            if (is_unit_constant(lhs)) {
+            if (is_unit_constant(lhs) && same_cell_type(rhs, expr)) {
                 return DenseReplaceTypeFunction::create_compact(expr.result_type(), rhs, stash);
             }
-            if (is_unit_constant(rhs)) {
-                return DenseReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
+            if (is_unit_constant(rhs) && same_cell_type(lhs, expr)) {
+                 return DenseReplaceTypeFunction::create_compact(expr.result_type(), lhs, stash);
             }
         }
     }

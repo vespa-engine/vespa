@@ -12,21 +12,27 @@ using CellType = ValueType::CellType;
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 
-CellType unify(CellType a, CellType b) {
-    if (a == b) {
-        return a;
-    } else {
-        return CellType::DOUBLE;
-    }
+template <typename A, typename B>
+CellType unify() {
+    using type = typename UnifyCellTypes<A,B>::type;
+    return get_cell_type<type>();
 }
 
-CellType unify_cell_type(const ValueType &a, const ValueType &b) {
-    if (a.is_double()) {
-        return b.cell_type();
-    } else if (b.is_double()) {
-        return a.cell_type();
+template <typename A>
+CellType unify(CellType b) {
+    switch (b) {
+    case CellType::DOUBLE: return unify<A,double>();
+    case CellType::FLOAT: return unify<A,float>();
     }
-    return unify(a.cell_type(), b.cell_type());
+    abort();
+}
+
+CellType unify(CellType a, CellType b) {
+    switch (a) {
+    case CellType::DOUBLE: return unify<double>(b);
+    case CellType::FLOAT: return unify<float>(b);
+    }
+    abort();
 }
 
 size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
@@ -265,6 +271,16 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
     return tensor_type(std::move(result.dimensions), unify(lhs._cell_type, rhs._cell_type));
 }
 
+CellType
+ValueType::unify_cell_types(const ValueType &a, const ValueType &b) {
+    if (a.is_double()) {
+        return b.cell_type();
+    } else if (b.is_double()) {
+        return a.cell_type();
+    }
+    return unify(a.cell_type(), b.cell_type());
+}
+
 ValueType
 ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension)
 {
@@ -278,7 +294,7 @@ ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::st
     if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
     }
-    return tensor_type(std::move(result.dimensions), unify_cell_type(lhs, rhs));
+    return tensor_type(std::move(result.dimensions), unify_cell_types(lhs, rhs));
 }
 
 ValueType
