@@ -17,7 +17,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -101,23 +100,22 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
 
             // Packages defined in compile scoped jars
-            PackageTally includedJarPackageTally = definedPackages(artifactSet.getJarArtifactsToInclude());
+            PackageTally compileJarPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
 
-            PackageTally projectPackageTally = analyzeProjectClasses();
-            // The union of packages in the bundle's project and its compile scoped jars.
-            PackageTally pluginPackageTally = projectPackageTally.combine(includedJarPackageTally);
+            // The union of packages in the project and compile scoped jars
+            PackageTally includedPackages = projectClassesTally().combine(compileJarPackages);
 
-            warnIfPackagesDefinedOverlapsGlobalPackages(pluginPackageTally.definedPackages(), publicPackagesFromProvidedJars.globals);
+            warnIfPackagesDefinedOverlapsGlobalPackages(includedPackages.definedPackages(), publicPackagesFromProvidedJars.globals);
 
             if (getLog().isDebugEnabled()) {
-                getLog().debug("Referenced packages = " + pluginPackageTally.referencedPackages());
-                getLog().debug("Defined packages = " + pluginPackageTally.definedPackages());
+                getLog().debug("Referenced packages = " + includedPackages.referencedPackages());
+                getLog().debug("Defined packages = " + includedPackages.definedPackages());
                 getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
                         .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
             }
 
-            Map<String, Import> calculatedImports = ImportPackages.calculateImports(pluginPackageTally.referencedPackages(),
-                    pluginPackageTally.definedPackages(), ExportPackages.exportsByPackageName(publicPackagesFromProvidedJars.exports));
+            Map<String, Import> calculatedImports = ImportPackages.calculateImports(includedPackages.referencedPackages(),
+                    includedPackages.definedPackages(), ExportPackages.exportsByPackageName(publicPackagesFromProvidedJars.exports));
 
             Map<String, Optional<String>> manualImports = emptyToNone(importPackage).map(GenerateOsgiManifestMojo::getManualImports)
                     .orElseGet(HashMap::new);
@@ -125,7 +123,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 calculatedImports.remove(packageName);
             }
             createManifestFile(new File(project.getBuild().getOutputDirectory()), manifestContent(project,
-                    artifactSet.getJarArtifactsToInclude(), manualImports, calculatedImports.values(), pluginPackageTally));
+                    artifactSet.getJarArtifactsToInclude(), manualImports, calculatedImports.values(), includedPackages));
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
@@ -242,7 +240,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private PackageTally analyzeProjectClasses() {
+    private PackageTally projectClassesTally() {
         File outputDirectory = new File(project.getBuild().getOutputDirectory());
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory).filter(file -> file.getName().endsWith(".class"))
