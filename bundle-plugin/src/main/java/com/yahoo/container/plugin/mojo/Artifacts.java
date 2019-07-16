@@ -12,8 +12,8 @@ import java.util.List;
  * @author Tony Vaagenes
  * @author ollivir
  */
-public class Artifacts {
-    public static class ArtifactSet {
+class Artifacts {
+    static class ArtifactSet {
         private final List<Artifact> jarArtifactsToInclude;
         private final List<Artifact> jarArtifactsProvided;
         private final List<Artifact> nonJarArtifacts;
@@ -24,20 +24,20 @@ public class Artifacts {
             this.nonJarArtifacts = nonJarArtifacts;
         }
 
-        public List<Artifact> getJarArtifactsToInclude() {
+        List<Artifact> getJarArtifactsToInclude() {
             return jarArtifactsToInclude;
         }
 
-        public List<Artifact> getJarArtifactsProvided() {
+        List<Artifact> getJarArtifactsProvided() {
             return jarArtifactsProvided;
         }
 
-        public List<Artifact> getNonJarArtifacts() {
+        List<Artifact> getNonJarArtifacts() {
             return nonJarArtifacts;
         }
     }
 
-    public static ArtifactSet getArtifacts(MavenProject project) {
+    static ArtifactSet getArtifacts(MavenProject project) {
 
         List<Artifact> jarArtifactsToInclude = new ArrayList<>();
         List<Artifact> jarArtifactsProvided = new ArrayList<>();
@@ -63,7 +63,7 @@ public class Artifacts {
         return new ArtifactSet(jarArtifactsToInclude, jarArtifactsProvided, nonJarArtifactsToInclude);
     }
 
-    public static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
+    static Collection<Artifact> getArtifactsToInclude(MavenProject project) {
         return getArtifacts(project).getJarArtifactsToInclude();
     }
 }
