@@ -40,5 +40,17 @@ public class ClusterInfo {
         hostnames.add(host);
     }
 
-    public enum ClusterType {content, container};
+    public enum ClusterType {
+        content,
+        container;
+
+        public static boolean isValidType(String enumString) {
+            try {
+                valueOf(enumString);
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }
+    };
 }
