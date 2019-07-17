@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.concurrent.InThreadExecutorService;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -16,7 +14,6 @@ import com.yahoo.vespa.curator.Curator;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,23 +37,20 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
     private final Clock clock;
     private final Curator curator;
     private final Executor zkWatcherExecutor;
+    private final TenantFileSystemDirs tenantFileSystemDirs;
 
-    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry registry, TenantFileSystemDirs tenantFileSystemDirs, LocalSessionLoader loader) {
-        this(registry.getClock(), registry.getCurator(), registry.getConfigserverConfig().sessionLifetime(),
-             command -> registry.getZkWatcherExecutor().execute(tenantName, command));
-        loadSessions(tenantFileSystemDirs.sessionsPath(), loader);
+    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry, LocalSessionLoader loader) {
+        this(tenantName, componentRegistry);
+        loadSessions(loader);
     }
 
     // Constructor public only for testing
-    public LocalSessionRepo(Clock clock, Curator curator) {
-        this(clock, curator, Duration.ofDays(1).toMillis(), Runnable::run);
-    }
-
-    private LocalSessionRepo(Clock clock, Curator curator, long sessionLifetime, Executor zkWatcherExecutor) {
-        this.clock = clock;
-        this.curator = curator;
-        this.sessionLifetime = sessionLifetime;
-        this.zkWatcherExecutor = zkWatcherExecutor;
+    public LocalSessionRepo(TenantName tenantName, GlobalComponentRegistry componentRegistry) {
+        this.clock = componentRegistry.getClock();
+        this.curator = componentRegistry.getCurator();
+        this.sessionLifetime = componentRegistry.getConfigserverConfig().sessionLifetime();
+        this.zkWatcherExecutor = command -> componentRegistry.getZkWatcherExecutor().execute(tenantName, command);
+        this.tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenantName);
     }
 
     @Override
@@ -68,17 +62,17 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         sessionStateWatchers.put(sessionId, new LocalSessionStateWatcher(fileCache, session, this, zkWatcherExecutor));
     }
 
-    private void loadSessions(File applicationsDir, LocalSessionLoader loader) {
-        File[] applications = applicationsDir.listFiles(sessionApplicationsFilter);
-        if (applications == null) {
+    private void loadSessions(LocalSessionLoader loader) {
+        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
+        if (sessions == null) {
             return;
         }
-        for (File application : applications) {
+        for (File session : sessions) {
             try {
-                addSession(loader.loadSession(Long.parseLong(application.getName())));
+                addSession(loader.loadSession(Long.parseLong(session.getName())));
             } catch (IllegalArgumentException e) {
-                log.log(LogLevel.WARNING, "Could not load application '" +
-                        application.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
+                log.log(LogLevel.WARNING, "Could not load session '" +
+                        session.getAbsolutePath() + "':" + e.getMessage() + ", skipping it.");
             }
         }
     }
@@ -118,7 +112,12 @@ public class LocalSessionRepo extends SessionRepo<LocalSession> {
         transaction.commit();
     }
 
-    public void deleteAllSessions() {
+    public void close() {
+        deleteAllSessions();
+        tenantFileSystemDirs.delete();
+    }
+
+    private void deleteAllSessions() {
         List<LocalSession> sessions = new ArrayList<>(listSessions());
         for (LocalSession session : sessions) {
             deleteSession(session);

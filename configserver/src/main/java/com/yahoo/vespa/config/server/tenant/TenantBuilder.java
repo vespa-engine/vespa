@@ -33,7 +33,6 @@ public class TenantBuilder {
     private TenantRequestHandler reloadHandler;
     private RequestHandler requestHandler;
     private RemoteSessionFactory remoteSessionFactory;
-    private TenantFileSystemDirs tenantFileSystemDirs;
     private HostValidator<ApplicationId> hostValidator;
 
     private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant) {
@@ -81,7 +80,6 @@ public class TenantBuilder {
         createApplicationRepo();
         createRemoteSessionFactory();
         createRemoteSessionRepo();
-        createServerDbDirs();
         createSessionFactory();
         createLocalSessionRepo();
         return new Tenant(tenant,
@@ -92,20 +90,18 @@ public class TenantBuilder {
                           requestHandler,
                           reloadHandler,
                           applicationRepo,
-                          componentRegistry.getCurator(),
-                          tenantFileSystemDirs);
+                          componentRegistry.getCurator());
     }
 
 	private void createLocalSessionRepo() {
         if (localSessionRepo == null) {
-            localSessionRepo = new LocalSessionRepo(tenant, componentRegistry, tenantFileSystemDirs, localSessionLoader);
+            localSessionRepo = new LocalSessionRepo(tenant, componentRegistry, localSessionLoader);
         }
     }
 
     private void createSessionFactory() {
         if (sessionFactory == null || localSessionLoader == null) {
-            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, applicationRepo,
-                                                             tenantFileSystemDirs, hostValidator, tenant);
+            SessionFactoryImpl impl = new SessionFactoryImpl(componentRegistry, applicationRepo, hostValidator, tenant);
             if (sessionFactory == null) {
                 sessionFactory = impl;
             }
@@ -152,12 +148,6 @@ public class TenantBuilder {
                                                       tenant,
                                                       applicationRepo);
 
-        }
-    }
-
-    private void createServerDbDirs() {
-        if (tenantFileSystemDirs == null) {
-            tenantFileSystemDirs = new TenantFileSystemDirs(componentRegistry.getConfigServerDB(), tenant);
         }
     }
 

@@ -63,10 +63,9 @@ import static org.junit.Assert.assertThat;
 public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private static final TenantName tenant = TenantName.from("test");
 
-    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
+    private Curator curator = new MockCurator();
+    private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
     private final Clock clock = componentRegistry.getClock();
-
-    private Curator curator;
     private LocalSessionRepo localRepo;
 
     private String preparedMessage = " prepared.\"}";
@@ -76,8 +75,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setupRepo() {
-        curator = new MockCurator();
-        localRepo = new LocalSessionRepo(clock, curator);
+        localRepo = new LocalSessionRepo(tenant, componentRegistry);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
@@ -244,9 +242,9 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     @Test
     public void require_that_preparing_with_multiple_tenants_work() throws Exception {
-        // Need different repo for 'test2' tenant
-        LocalSessionRepo localRepoDefault = new LocalSessionRepo(clock, curator);
         final TenantName defaultTenant = TenantName.from("test2");
+        // Need different repo for 'test2' tenant
+        LocalSessionRepo localRepoDefault = new LocalSessionRepo(defaultTenant, componentRegistry);
         TenantBuilder defaultTenantBuilder = TenantBuilder.create(componentRegistry, defaultTenant)
                 .withLocalSessionRepo(localRepoDefault)
                 .withRemoteSessionRepo(new RemoteSessionRepo(defaultTenant))
