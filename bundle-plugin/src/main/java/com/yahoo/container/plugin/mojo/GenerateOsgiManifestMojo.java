@@ -100,6 +100,9 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = publicPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
 
+            // Packages from Export-Package headers in provided scoped jars
+            Set<String> exportedPackagesFromProvidedDeps = publicPackagesFromProvidedJars.exportedPackageNames();
+
             // Packaged defined in this project's code
             PackageTally projectPackages = getProjectClassesTally();
 
@@ -110,16 +113,16 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             PackageTally includedPackages = projectPackages.combine(compileJarsPackages);
 
             warnIfPackagesDefinedOverlapsGlobalPackages(includedPackages.definedPackages(), publicPackagesFromProvidedJars.globals);
-
             logDebugPackageSets(publicPackagesFromProvidedJars, includedPackages);
 
             if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
-                // jdisc_core being provided, guarantees that log output does not contain its exported packages
-                logMissingPackages(publicPackagesFromProvidedJars.exports, projectPackages, compileJarsPackages, includedPackages);
+                // jdisc_core being provided guarantees that log output does not contain its exported packages
+                logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
             } else {
                 getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
                                       "generated 'Import-Package' OSGi header may be missing important packages.");
             }
+            logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -138,6 +141,20 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
+     * An artifact can only be represented once, either in compile or provided scope. So if the project
+     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
+     * artifact as provided via container-dev and hence can't detect the duplicate packages.
+     */
+    private void logUnnecessaryPackages(PackageTally compileJarsPackages, Set<String> exportedPackagesFromProvidedDeps) {
+        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        if (! unnecessaryPackages.isEmpty()) {
+            getLog().info("Compile scoped jars contain the following packages that are most likely " +
+                                  "available from jdisc runtime: " + unnecessaryPackages);
+        }
+    }
+
     private void logDebugPackageSets(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally includedPackages) {
         if (getLog().isDebugEnabled()) {
             getLog().debug("Referenced packages = " + includedPackages.referencedPackages());
@@ -151,17 +168,12 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         return providedArtifacts.stream().anyMatch(artifact -> artifact.getArtifactId().equals("jdisc_core"));
     }
 
-    private void logMissingPackages(List<Export> exportedPackagesFromProvidedJars,
+    private void logMissingPackages(Set<String> exportedPackagesFromProvidedJars,
                                     PackageTally projectPackages,
                                     PackageTally compileJarPackages,
                                     PackageTally includedPackages) {
-        Set<String> exportedPackagesFromProvidedDeps = exportedPackagesFromProvidedJars
-                .stream()
-                .map(Export::getPackageNames)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
 
-        Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedJars);
 
         Set<String> missingProjectPackages = projectPackages.referencedPackagesMissingFrom(definedAndExportedPackages);
         if (! missingProjectPackages.isEmpty()) {

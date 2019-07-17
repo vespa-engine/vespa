@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
@@ -26,10 +27,18 @@ public class AnalyzeBundle {
         public final List<Export> exports;
         public final List<String> globals;
 
-        public PublicPackages(List<Export> exports, List<String> globals) {
+        PublicPackages(List<Export> exports, List<String> globals) {
             this.exports = exports;
             this.globals = globals;
         }
+
+        public Set<String> exportedPackageNames() {
+            return exports.stream()
+                    .map(Export::getPackageNames)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+        }
+
     }
 
     public static PublicPackages publicPackagesAggregated(Collection<File> jarFiles) {

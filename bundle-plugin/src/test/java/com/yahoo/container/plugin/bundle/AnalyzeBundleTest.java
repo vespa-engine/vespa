@@ -11,8 +11,10 @@ import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.throwableMessage;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -28,6 +30,7 @@ import static org.junit.Assert.assertThat;
  */
 public class AnalyzeBundleTest {
     private final List<ExportPackages.Export> exports;
+    private final Set<String> exportedPackageNames;
     private final Map<String, ExportPackages.Export> exportsByPackageName;
 
     File jarDir = new File("src/test/resources/jar");
@@ -37,6 +40,7 @@ public class AnalyzeBundleTest {
         File simple = new File(jarDir, "simple1.jar");
         PublicPackages pp = AnalyzeBundle.publicPackagesAggregated(Arrays.asList(notOsgi, simple));
         this.exports = pp.exports;
+        this.exportedPackageNames = pp.exportedPackageNames();
         this.exportsByPackageName = ExportPackages.exportsByPackageName(exports);
     }
 
@@ -53,6 +57,11 @@ public class AnalyzeBundleTest {
     public void require_that_exports_are_retrieved_from_manifest_in_jars() {
         assertThat(exportsByPackageName.keySet().size(), is(1));
         assertThat(exportsByPackageName.keySet(), hasItem("com.yahoo.sample.exported.package"));
+    }
+
+    @Test
+    public void exported_class_names_can_be_retrieved() {
+        assertThat(exportedPackageNames, is(new HashSet<>(exports.get(0).getPackageNames())));
     }
 
     @Rule
