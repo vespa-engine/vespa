@@ -649,11 +649,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         var clusters = getClustersOfApplication(applicationId);
         var clusterMetrics = new LinkedHashMap<ClusterInfo, MetricsAggregator>();
 
-        clusters.stream()
-                .filter(cluster -> !cluster.getClusterType().equals(ClusterInfo.ClusterType.admin))
-                .forEach(cluster -> {
-                    var metrics = metricsRetriever.requestMetricsForCluster(cluster);
-                    clusterMetrics.put(cluster, metrics);
+        clusters.forEach(cluster -> {
+            var metrics = metricsRetriever.requestMetricsForCluster(cluster);
+            clusterMetrics.put(cluster, metrics);
         });
 
         return new MetricsResponse(200, applicationId, clusterMetrics);
@@ -802,6 +800,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                     .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find services " + METRICS_PROXY_CONTAINER.serviceName.toString()));
                             String clusterName = serviceInfo.getProperty("clusterid").orElse("");
                             String clusterTypeString = serviceInfo.getProperty("clustertype").orElse("");
+                            if (!ClusterInfo.ClusterType.isValidType(clusterTypeString)) return;
                             ClusterInfo.ClusterType clusterType = ClusterInfo.ClusterType.valueOf(clusterTypeString);
                             URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics/v1/values");
                             clusterHosts.computeIfAbsent(clusterName, l -> new ArrayList<URI>()).add(host);
