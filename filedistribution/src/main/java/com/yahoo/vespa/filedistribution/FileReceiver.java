@@ -193,19 +193,25 @@ public class FileReceiver {
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already). Delete temp file/dir in that case, to avoid filling the disk.
-            log.log(LogLevel.DEBUG, () -> "File '" + destination.getAbsolutePath() + "' already exists, continuing: " + e.getMessage());
-            try {
-                if (tempFile.isDirectory())
-                    IOUtils.recursiveDeleteDir(tempFile);
-                else
-                    Files.delete(tempFile.toPath());
-            } catch (IOException ioe) {
-                log.log(LogLevel.WARNING, "Failed deleting file/dir " + tempFile);
-            }
+            log.log(LogLevel.INFO, "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
+                    "', '" + destination.getAbsolutePath() + "' already exists");
+            deleteFileOrDirectory(tempFile);
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(LogLevel.ERROR, message, e);
             throw new RuntimeException(message, e);
+        }
+    }
+
+    private static void deleteFileOrDirectory(File path) {
+        if ( ! path.exists()) return;
+        try {
+            if (path.isDirectory())
+                IOUtils.recursiveDeleteDir(path);
+            else
+                Files.delete(path.toPath());
+        } catch (IOException ioe) {
+            log.log(LogLevel.WARNING, "Failed deleting file/dir " + path);
         }
     }
 
