@@ -40,5 +40,5 @@ public class ClusterInfo {
         hostnames.add(host);
     }
 
-    public enum ClusterType {content, container};
+    public enum ClusterType {content, container, admin};
 }

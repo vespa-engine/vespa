@@ -649,9 +649,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         var clusters = getClustersOfApplication(applicationId);
         var clusterMetrics = new LinkedHashMap<ClusterInfo, MetricsAggregator>();
 
-        clusters.forEach(cluster -> {
-            var metrics = metricsRetriever.requestMetricsForCluster(cluster);
-            clusterMetrics.put(cluster, metrics);
+        clusters.stream()
+                .filter(cluster -> !cluster.getClusterType().equals(ClusterInfo.ClusterType.admin))
+                .forEach(cluster -> {
+                    var metrics = metricsRetriever.requestMetricsForCluster(cluster);
+                    clusterMetrics.put(cluster, metrics);
         });
 
         return new MetricsResponse(200, applicationId, clusterMetrics);
