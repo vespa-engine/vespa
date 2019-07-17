@@ -6,7 +6,6 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ReloadHandler;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -22,13 +21,11 @@ import java.util.Optional;
  *
  * @author vegardh
  * @author Ulf Lilleengen
- * @since 5.1.26
  */
 public class Tenant implements TenantHandlerProvider {
 
     static final String SESSIONS = "sessions";
     static final String APPLICATIONS = "applications";
-    static final String LOCKS = "locks";
 
     private final TenantName name;
     private final RemoteSessionRepo remoteSessionRepo;
@@ -38,7 +35,6 @@ public class Tenant implements TenantHandlerProvider {
     private final TenantApplications applicationRepo;
     private final RequestHandler requestHandler;
     private final ReloadHandler reloadHandler;
-    private final TenantFileSystemDirs tenantFileSystemDirs;
     private final Curator curator;
 
     Tenant(TenantName name,
@@ -49,8 +45,7 @@ public class Tenant implements TenantHandlerProvider {
            RequestHandler requestHandler,
            ReloadHandler reloadHandler,
            TenantApplications applicationRepo,
-           Curator curator,
-           TenantFileSystemDirs tenantFileSystemDirs) {
+           Curator curator) {
         this.name = name;
         this.path = path;
         this.requestHandler = requestHandler;
@@ -59,7 +54,6 @@ public class Tenant implements TenantHandlerProvider {
         this.sessionFactory = sessionFactory;
         this.localSessionRepo = localSessionRepo;
         this.applicationRepo = applicationRepo;
-        this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.curator = curator;
     }
 
@@ -147,10 +141,9 @@ public class Tenant implements TenantHandlerProvider {
      * Called by watchers as a reaction to {@link #delete()}.
      */
     void close() {
-        tenantFileSystemDirs.delete();          // Deletes all local files.
         remoteSessionRepo.close();              // Closes watchers and clears memory.
         applicationRepo.close();                // Closes watchers.
-        localSessionRepo.deleteAllSessions();   // Closes watchers, clears memory, and deletes some local files and ZK session state.
+        localSessionRepo.close();               // Closes watchers, clears memory, and deletes local files and ZK session state.
     }
 
     /** Deletes the tenant tree from ZooKeeper (application and session status for the tenant) and triggers {@link #close()}. */

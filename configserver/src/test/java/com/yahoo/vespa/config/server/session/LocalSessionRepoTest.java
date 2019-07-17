@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.test.ManualClock;
 import com.yahoo.config.provision.TenantName;
@@ -8,7 +9,6 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -46,21 +48,28 @@ public class LocalSessionRepoTest {
     }
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
-        TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
+        File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
         if (createInitialSessions) {
-            IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "1"));
-            IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "2"));
-            IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.sessionsPath(), "3"));
+            Path sessionsPath = Paths.get(configserverDbDir.getAbsolutePath(), "tenants", tenantName.value(), "sessions");
+            IOUtils.copyDirectory(testApp, sessionsPath.resolve("1").toFile());
+            IOUtils.copyDirectory(testApp, sessionsPath.resolve("2").toFile());
+            IOUtils.copyDirectory(testApp, sessionsPath.resolve("3").toFile());
         }
         clock = new ManualClock(Instant.ofEpochSecond(1));
-        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(new MockCurator())
-                                                                                             .clock(clock)
-                                                                                             .build();
+        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder()
+                .curator(new MockCurator())
+                .clock(clock)
+                .configServerConfig(new ConfigserverConfig.Builder()
+                                            .configServerDBDir(configserverDbDir.getAbsolutePath())
+                                            .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                            .sessionLifetime(5)
+                                            .build())
+                .build();
         LocalSessionLoader loader = new SessionFactoryImpl(globalComponentRegistry,
                                                            TenantApplications.create(globalComponentRegistry, new MockReloadHandler(), tenantName),
-                                                           tenantFileSystemDirs, new HostRegistry<>(),
+                                                           new HostRegistry<>(),
                                                            tenantName);
-        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, tenantFileSystemDirs, loader);
+        repo = new LocalSessionRepo(tenantName, globalComponentRegistry, loader);
     }
 
     @Test
@@ -97,7 +106,7 @@ public class LocalSessionRepoTest {
 
     @Test
     public void require_that_all_sessions_are_deleted() {
-        repo.deleteAllSessions();
+        repo.close();
         assertNull(repo.getSession(1l));
         assertNull(repo.getSession(2l));
         assertNull(repo.getSession(3l));
