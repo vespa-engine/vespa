@@ -156,23 +156,17 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
         Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedDeps);
 
-        Set<String> missingProjectPackages = missingPackages(projectPackages, definedAndExportedPackages);
+        Set<String> missingProjectPackages = projectPackages.referencedPackagesMissingFrom(definedAndExportedPackages);
         if (! missingProjectPackages.isEmpty()) {
             getLog().warn("Packages unavailable runtime are referenced from project classes " +
                                   "(annotations can usually be ignored): " + missingProjectPackages);
         }
 
-        Set<String> missingCompilePackages = missingPackages(compileJarPackages, definedAndExportedPackages);
+        Set<String> missingCompilePackages = compileJarPackages.referencedPackagesMissingFrom(definedAndExportedPackages);
         if (! missingCompilePackages.isEmpty()) {
             getLog().info("Packages unavailable runtime are referenced from compile scoped jars " +
                                   "(annotations can usually be ignored): " + missingCompilePackages);
         }
-    }
-
-    private static Set<String> missingPackages(PackageTally projectPackages, Set<String> definedAndExportedPackages) {
-        return Sets.difference(projectPackages.referencedPackages(), definedAndExportedPackages).stream()
-                .filter(pkg -> !pkg.startsWith("java."))
-                .collect(Collectors.toSet());
     }
 
     private static void warnIfPackagesDefinedOverlapsGlobalPackages(Set<String> internalPackages, List<String> globalPackages)

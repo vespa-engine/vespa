@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
@@ -38,6 +39,18 @@ public class PackageTally {
             v.ifPresent(annotation -> ret.put(k, annotation));
         });
         return ret;
+    }
+
+    /**
+     * Returns the set of packages that is referenced from this tally, but not included in the given set of available packages.
+     *
+     * @param definedAndExportedPackages Set of available packages (usually all packages defined in the generated bundle's project + all exported packages of dependencies)
+     * @return The set of missing packages, that may cause problem when the bundle is deployed in an OSGi container runtime.
+     */
+    public Set<String> referencedPackagesMissingFrom(Set<String> definedAndExportedPackages) {
+        return Sets.difference(referencedPackages(), definedAndExportedPackages).stream()
+                .filter(pkg -> !pkg.startsWith("java."))
+                .collect(Collectors.toSet());
     }
 
     /**
