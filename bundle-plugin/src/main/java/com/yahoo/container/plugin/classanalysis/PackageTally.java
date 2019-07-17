@@ -19,7 +19,7 @@ public class PackageTally {
     private final Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap;
     private final Set<String> referencedPackagesUnfiltered;
 
-    public PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
+    private PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
         this.definedPackagesMap = definedPackagesMap;
         this.referencedPackagesUnfiltered = referencedPackagesUnfiltered;
     }
