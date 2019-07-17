@@ -118,8 +118,13 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
             }
 
-            // TODO: skip if jdisc_core is not in class path?
-            logMissingPackages(publicPackagesFromProvidedJars, projectPackages, compileJarsPackages, includedPackages);
+            if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
+                // If jdisc_core is not provided, log output may contain packages that _are_ available runtime.
+                logMissingPackages(publicPackagesFromProvidedJars, projectPackages, compileJarsPackages, includedPackages);
+            } else {
+                getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
+                                      "generated 'Import-Package' OSGi header may be missing important packages.");
+            }
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -138,33 +143,36 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         }
     }
 
+    private boolean hasJdiscCoreProvided(List<Artifact> providedArtifacts) {
+        return providedArtifacts.stream().anyMatch(artifact -> artifact.getArtifactId().equals("jdisc_core"));
+    }
+
     private void logMissingPackages(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally projectPackages, PackageTally compileJarPackages, PackageTally includedPackages) {
         Set<String> exportedPackagesFromProvidedDeps = publicPackagesFromProvidedJars.exports
                 .stream()
                 .map(Export::getPackageNames)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
-        getLog().debug("Exported packages of provided deps: " + exportedPackagesFromProvidedDeps);
-
 
         Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedDeps);
-        Set<String> missingProjectPackages = Sets.difference(projectPackages.referencedPackages(), definedAndExportedPackages).stream()
-                .filter(pkg -> ! pkg.startsWith("java."))
-                .collect(Collectors.toSet());
 
+        Set<String> missingProjectPackages = missingPackages(projectPackages, definedAndExportedPackages);
         if (! missingProjectPackages.isEmpty()) {
-            getLog().warn("Packages unavailable runtime are referenced from project classes (annotations can usually be ignored): "
-                                  + missingProjectPackages);
+            getLog().warn("Packages unavailable runtime are referenced from project classes " +
+                                  "(annotations can usually be ignored): " + missingProjectPackages);
         }
 
-        Set<String> missingCompilePackages = Sets.difference(compileJarPackages.referencedPackages(), definedAndExportedPackages).stream()
-                .filter(pkg -> ! pkg.startsWith("java."))
-                .collect(Collectors.toSet());
-
+        Set<String> missingCompilePackages = missingPackages(compileJarPackages, definedAndExportedPackages);
         if (! missingCompilePackages.isEmpty()) {
-            getLog().info("Packages referenced from compile scoped jars, but not available runtime: "
-                                  + missingCompilePackages);
+            getLog().info("Packages unavailable runtime are referenced from compile scoped jars " +
+                                  "(annotations can usually be ignored): " + missingCompilePackages);
         }
+    }
+
+    private static Set<String> missingPackages(PackageTally projectPackages, Set<String> definedAndExportedPackages) {
+        return Sets.difference(projectPackages.referencedPackages(), definedAndExportedPackages).stream()
+                .filter(pkg -> !pkg.startsWith("java."))
+                .collect(Collectors.toSet());
     }
 
     private static void warnIfPackagesDefinedOverlapsGlobalPackages(Set<String> internalPackages, List<String> globalPackages)
