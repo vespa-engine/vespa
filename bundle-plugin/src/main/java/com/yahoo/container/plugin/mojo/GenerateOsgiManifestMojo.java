@@ -111,12 +111,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
             warnIfPackagesDefinedOverlapsGlobalPackages(includedPackages.definedPackages(), publicPackagesFromProvidedJars.globals);
 
-            if (getLog().isDebugEnabled()) {
-                getLog().debug("Referenced packages = " + includedPackages.referencedPackages());
-                getLog().debug("Defined packages = " + includedPackages.definedPackages());
-                getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
-                        .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
-            }
+            logDebugPackageSets(publicPackagesFromProvidedJars, includedPackages);
 
             if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
                 // If jdisc_core is not provided, log output may contain packages that _are_ available runtime.
@@ -140,6 +135,15 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
+        }
+    }
+
+    private void logDebugPackageSets(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally includedPackages) {
+        if (getLog().isDebugEnabled()) {
+            getLog().debug("Referenced packages = " + includedPackages.referencedPackages());
+            getLog().debug("Defined packages = " + includedPackages.definedPackages());
+            getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
+                    .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
         }
     }
 
