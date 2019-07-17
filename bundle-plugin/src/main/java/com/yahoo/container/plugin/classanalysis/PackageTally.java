@@ -50,6 +50,7 @@ public class PackageTally {
     public Set<String> referencedPackagesMissingFrom(Set<String> definedAndExportedPackages) {
         return Sets.difference(referencedPackages(), definedAndExportedPackages).stream()
                 .filter(pkg -> !pkg.startsWith("java."))
+                .filter(pkg -> !pkg.equals(com.yahoo.api.annotations.PublicApi.class.getPackageName()))
                 .collect(Collectors.toSet());
     }
 
