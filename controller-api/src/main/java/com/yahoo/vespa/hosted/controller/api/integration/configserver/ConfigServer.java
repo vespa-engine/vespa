@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
@@ -43,6 +44,8 @@ public interface ConfigServer {
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
+
+    List<ClusterMetrics> getMetrics(DeploymentId deployment);
 
     List<String> getContentClusters(DeploymentId deployment);
 

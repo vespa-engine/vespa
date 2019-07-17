@@ -1,0 +1,16 @@
+{
+  "services": [
+        {
+        "name":"distributor",
+        "timestamp": 1557306075,
+        "metrics": [
+            {
+             "values": {
+                  "vds.distributor.docsstored.average": 3000
+
+              }
+            }
+          ]
+      }
+  ]
+}

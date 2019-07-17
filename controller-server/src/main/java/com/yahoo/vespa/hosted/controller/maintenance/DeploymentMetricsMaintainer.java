@@ -41,8 +41,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     private final ApplicationController applications;
 
     public DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
-        super(controller, duration, jobControl, DeploymentMetricsMaintainer.class.getSimpleName(),
-              SystemName.allOf(Predicate.not(SystemName::isPublic)));
+        super(controller, duration, jobControl, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
     }
 
@@ -122,5 +121,4 @@ public class DeploymentMetricsMaintainer extends Maintainer {
             default: throw new IllegalArgumentException("Unknown API value for rotation status: " + status);
         }
     }
-
 }

@@ -1,0 +1,41 @@
+{
+  "services": [
+      {
+        "name":"container",
+        "timestamp": 1557306075,
+        "metrics": [
+            {
+              "values": {
+                  "queries.rate": 23.0,
+                  "query_latency.sum": 2000,
+                  "document.count": 300000,
+                  "feed.rate": 23.0,
+                  "write_latency.sum": 2000
+              }
+            },
+            {
+             "values": {
+                  "query_latency.count": 43.0,
+                  "query_latency.sum": 3000,
+                  "feed_latency.count": 43.0,
+                  "feed_latency.sum": 3000
+
+              }
+            }
+          ]
+      },
+
+      {
+      "name":"qrserver",
+      "timestamp": 1557306075,
+      "metrics": [
+          {
+           "values": {
+                "query_latency.count": 43.0,
+                "query_latency.sum": 3000
+            }
+          }
+        ]
+    }
+  ]
+}

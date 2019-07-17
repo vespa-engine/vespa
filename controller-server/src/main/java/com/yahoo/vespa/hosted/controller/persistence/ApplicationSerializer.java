@@ -109,6 +109,7 @@ public class ApplicationSerializer {
     private final String lastWrittenField = "lastWritten";
     private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
     private final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private final String clusterMetricsField = "clusterMetrics";
 
     // DeploymentJobs fields
     private final String projectIdField = "projectId";

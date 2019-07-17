@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -278,7 +277,6 @@ public class LockedApplication {
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);
     }
-
 
     /** Don't expose non-leaf sub-objects. */
     private LockedApplication with(Deployment deployment) {
