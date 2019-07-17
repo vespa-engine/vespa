@@ -122,6 +122,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
                                       "generated 'Import-Package' OSGi header may be missing important packages.");
             }
+            logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
             logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
@@ -138,20 +139,6 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
-        }
-    }
-
-    /**
-     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
-     * An artifact can only be represented once, either in compile or provided scope. So if the project
-     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
-     * artifact as provided via container-dev and hence can't detect the duplicate packages.
-     */
-    private void logUnnecessaryPackages(PackageTally compileJarsPackages, Set<String> exportedPackagesFromProvidedDeps) {
-        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
-        if (! unnecessaryPackages.isEmpty()) {
-            getLog().info("Compile scoped jars contain the following packages that are most likely " +
-                                  "available from jdisc runtime: " + unnecessaryPackages);
         }
     }
 
@@ -185,6 +172,30 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         if (! missingCompilePackages.isEmpty()) {
             getLog().info("Packages unavailable runtime are referenced from compile scoped jars " +
                                   "(annotations can usually be ignored): " + missingCompilePackages);
+        }
+    }
+
+    private void logOverlappingPackages(PackageTally projectPackages,
+                                        Set<String> exportedPackagesFromProvidedDeps) {
+        Set<String> overlappingProjectPackages = Sets.intersection(projectPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        if (! overlappingProjectPackages.isEmpty()) {
+            getLog().warn("Project classes use the following packages that are already defined in provided scoped dependencies: "
+                                  + overlappingProjectPackages);
+        }
+    }
+
+    /*
+     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
+     * An artifact can only be represented once, either in compile or provided scope. So if the project
+     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
+     * artifact as provided via container-dev and hence can't detect the duplicate packages.
+     */
+    private void logUnnecessaryPackages(PackageTally compileJarsPackages,
+                                        Set<String> exportedPackagesFromProvidedDeps) {
+        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        if (! unnecessaryPackages.isEmpty()) {
+            getLog().info("Compile scoped jars contain the following packages that are most likely " +
+                                  "available from jdisc runtime: " + unnecessaryPackages);
         }
     }
 
