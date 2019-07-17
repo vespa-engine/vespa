@@ -7,7 +7,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -168,7 +167,7 @@ public class VersionStatus {
 
                 boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
-                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
+                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() + " has not converged");
                 }
                 for (Node node : eligibleForUpgradeApplicationNodes) {
                     // Only use current node version if config has converged
