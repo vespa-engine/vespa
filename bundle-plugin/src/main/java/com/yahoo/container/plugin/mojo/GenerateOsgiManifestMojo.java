@@ -114,8 +114,8 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             logDebugPackageSets(publicPackagesFromProvidedJars, includedPackages);
 
             if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
-                // If jdisc_core is not provided, log output may contain packages that _are_ available runtime.
-                logMissingPackages(publicPackagesFromProvidedJars, projectPackages, compileJarsPackages, includedPackages);
+                // jdisc_core being provided, guarantees that log output does not contain its exported packages
+                logMissingPackages(publicPackagesFromProvidedJars.exports, projectPackages, compileJarsPackages, includedPackages);
             } else {
                 getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
                                       "generated 'Import-Package' OSGi header may be missing important packages.");
@@ -151,8 +151,11 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         return providedArtifacts.stream().anyMatch(artifact -> artifact.getArtifactId().equals("jdisc_core"));
     }
 
-    private void logMissingPackages(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally projectPackages, PackageTally compileJarPackages, PackageTally includedPackages) {
-        Set<String> exportedPackagesFromProvidedDeps = publicPackagesFromProvidedJars.exports
+    private void logMissingPackages(List<Export> exportedPackagesFromProvidedJars,
+                                    PackageTally projectPackages,
+                                    PackageTally compileJarPackages,
+                                    PackageTally includedPackages) {
+        Set<String> exportedPackagesFromProvidedDeps = exportedPackagesFromProvidedJars
                 .stream()
                 .map(Export::getPackageNames)
                 .flatMap(Collection::stream)
