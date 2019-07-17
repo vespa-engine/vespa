@@ -10,7 +10,6 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackageParser;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
-import com.yahoo.container.plugin.osgi.ImportPackages;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import com.yahoo.container.plugin.util.Strings;
 import org.apache.commons.lang3.tuple.Pair;
@@ -101,11 +100,14 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = publicPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
 
+            // Packaged defined in this project's code
+            PackageTally projectPackages = getProjectClassesTally();
+
             // Packages defined in compile scoped jars
-            PackageTally compileJarPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
+            PackageTally compileJarsPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
 
             // The union of packages in the project and compile scoped jars
-            PackageTally includedPackages = projectClassesTally().combine(compileJarPackages);
+            PackageTally includedPackages = projectPackages.combine(compileJarsPackages);
 
             warnIfPackagesDefinedOverlapsGlobalPackages(includedPackages.definedPackages(), publicPackagesFromProvidedJars.globals);
 
@@ -115,6 +117,9 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
                         .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
             }
+
+            // TODO: skip if jdisc_core is not in class path?
+            logMissingPackages(publicPackagesFromProvidedJars, projectPackages, compileJarsPackages, includedPackages);
 
             Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
                                                                      includedPackages.definedPackages(),
@@ -130,6 +135,35 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed generating osgi manifest", e);
+        }
+    }
+
+    private void logMissingPackages(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally projectPackages, PackageTally compileJarPackages, PackageTally includedPackages) {
+        Set<String> exportedPackagesFromProvidedDeps = publicPackagesFromProvidedJars.exports
+                .stream()
+                .map(Export::getPackageNames)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        getLog().debug("Exported packages of provided deps: " + exportedPackagesFromProvidedDeps);
+
+
+        Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        Set<String> missingProjectPackages = Sets.difference(projectPackages.referencedPackages(), definedAndExportedPackages).stream()
+                .filter(pkg -> ! pkg.startsWith("java."))
+                .collect(Collectors.toSet());
+
+        if (! missingProjectPackages.isEmpty()) {
+            getLog().warn("Packages unavailable runtime are referenced from project classes (annotations can usually be ignored): "
+                                  + missingProjectPackages);
+        }
+
+        Set<String> missingCompilePackages = Sets.difference(compileJarPackages.referencedPackages(), definedAndExportedPackages).stream()
+                .filter(pkg -> ! pkg.startsWith("java."))
+                .collect(Collectors.toSet());
+
+        if (! missingCompilePackages.isEmpty()) {
+            getLog().info("Packages referenced from compile scoped jars, but not available runtime: "
+                                  + missingCompilePackages);
         }
     }
 
@@ -243,7 +277,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private PackageTally projectClassesTally() {
+    private PackageTally getProjectClassesTally() {
         File outputDirectory = new File(project.getBuild().getOutputDirectory());
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory).filter(file -> file.getName().endsWith(".class"))
