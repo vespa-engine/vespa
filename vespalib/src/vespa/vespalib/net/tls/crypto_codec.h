@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/net/socket_address.h>
 #include <memory>
 
 namespace vespalib::net::tls {
@@ -178,7 +179,9 @@ public:
      *
      * Throws CryptoException if resources cannot be allocated for the codec.
      */
-    static std::unique_ptr<CryptoCodec> create_default_codec(std::shared_ptr<TlsContext> ctx, Mode mode);
+    static std::unique_ptr<CryptoCodec> create_default_codec(std::shared_ptr<TlsContext> ctx,
+                                                             const SocketAddress& peer_address,
+                                                             Mode mode);
 };
 
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "openssl_typedefs.h"
+#include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/tls/tls_context.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/certificate_verification_callback.h>
@@ -46,7 +47,7 @@ private:
     void set_ssl_ctx_self_reference();
     void set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers);
 
-    bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx);
+    bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx, const SocketAddress& peer_address);
 
     static int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx);
 };
