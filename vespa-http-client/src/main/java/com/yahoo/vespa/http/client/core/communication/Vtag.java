@@ -3,5 +3,5 @@
 package com.yahoo.vespa.http.client.core.communication;
 
 class Vtag {
-    static final String currentVersion = "7.0.0";
+    static final String currentVersion = "7.1.0";
 }
