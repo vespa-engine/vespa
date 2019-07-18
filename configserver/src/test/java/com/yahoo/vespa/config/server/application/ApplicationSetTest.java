@@ -20,18 +20,14 @@ import static org.junit.Assert.assertEquals;
  */
 public class ApplicationSetTest {
 
-    ApplicationSet applicationSet;
-    List<Version> vespaVersions = new ArrayList<>();
-    List<Application> applications = new ArrayList<>();
+    private ApplicationSet applicationSet;
+    private List<Version> vespaVersions = new ArrayList<>();
+    private List<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {
-        vespaVersions.add(Version.fromString("1.2.3"));
-        vespaVersions.add(Version.fromString("1.2.4"));
-        vespaVersions.add(Version.fromString("1.2.5"));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(0), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(1), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(2), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
+        vespaVersions.addAll(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")));
+        applications.addAll(List.of(createApplication(vespaVersions.get(0)), createApplication(vespaVersions.get(1)), createApplication(vespaVersions.get(2))));
     }
 
     @Test
@@ -54,4 +50,7 @@ public class ApplicationSetTest {
         applicationSet.getForVersionOrLatest(Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
+    private Application createApplication(Version version) {
+        return new Application(new ModelStub(), null, 0, false, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
+    }
 }

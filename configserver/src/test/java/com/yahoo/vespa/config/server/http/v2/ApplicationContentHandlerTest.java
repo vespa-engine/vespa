@@ -53,17 +53,17 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName1));
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenantName2));
 
-        session2 = new MockSession(2l, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
+        session2 = new MockSession(2, FilesApplicationPackage.fromFile(new File("src/test/apps/content")));
         Tenant tenant1 = tenantRepository.getTenant(tenantName1);
         tenant1.getLocalSessionRepo().addSession(session2);
         tenant1.getApplicationRepo().createApplication(idTenant1);
-        tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2l).commit();
+        tenant1.getApplicationRepo().createPutTransaction(idTenant1, 2).commit();
 
-        MockSession session3 = new MockSession(3l, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
+        MockSession session3 = new MockSession(3, FilesApplicationPackage.fromFile(new File("src/test/apps/content2")));
         Tenant tenant2 = tenantRepository.getTenant(tenantName2);
         tenant2.getLocalSessionRepo().addSession(session3);
         tenant2.getApplicationRepo().createApplication(idTenant2);
-        tenant2.getApplicationRepo().createPutTransaction(idTenant2, 3l).commit();
+        tenant2.getApplicationRepo().createPutTransaction(idTenant2, 3).commit();
 
         handler = new ApplicationHandler(ApplicationHandler.testOnlyContext(),
                                          Zone.defaultZone(),

@@ -5,10 +5,10 @@ import com.yahoo.vespa.config.GenerationCounter;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.
  */
 public class MemoryGenerationCounter implements GenerationCounter {
-    long value;
+    private long value;
+
     @Override
     public long increment() {
         return ++value;

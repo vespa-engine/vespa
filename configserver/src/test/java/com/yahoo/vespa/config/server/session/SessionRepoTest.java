@@ -12,7 +12,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
- * @since 5.1.14
  */
 public class SessionRepoTest {
     @Test
@@ -20,7 +19,7 @@ public class SessionRepoTest {
         SessionRepo<TestSession> sessionRepo = new SessionRepo<>();
         assertNull(sessionRepo.getSession(1L));
         sessionRepo.addSession(new TestSession(1));
-        assertThat(sessionRepo.getSession(1L).getSessionId(), is(1l));
+        assertThat(sessionRepo.getSession(1L).getSessionId(), is(1L));
     }
 
     @Test(expected = IllegalArgumentException.class)

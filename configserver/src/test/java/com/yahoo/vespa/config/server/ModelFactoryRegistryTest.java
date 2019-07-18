@@ -67,7 +67,7 @@ public class ModelFactoryRegistryTest {
 
     @Test(expected = UnknownVespaVersionException.class)
     public void testThatUnknownVersionGivesError() {
-        ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(new TestFactory(new Version(1, 2, 3))));
+        ModelFactoryRegistry registry = new ModelFactoryRegistry(List.of(new TestFactory(new Version(1, 2, 3))));
         registry.getFactory(new Version(3, 2, 1));
     }
 
@@ -75,7 +75,7 @@ public class ModelFactoryRegistryTest {
 
         private final Version version;
 
-        public TestFactory(Version version) {
+        TestFactory(Version version) {
             this.version = version;
         }
 

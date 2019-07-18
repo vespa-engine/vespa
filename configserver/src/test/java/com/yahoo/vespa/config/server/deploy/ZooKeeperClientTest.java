@@ -80,7 +80,7 @@ public class ZooKeeperClientTest {
     }
 
     @Test
-    public void testInitZooKeeper() throws IOException {
+    public void testInitZooKeeper() {
         ConfigCurator zk = ConfigCurator.create(new MockCurator());
         BaseDeployLogger logger = new BaseDeployLogger();
         long generation = 1L;
@@ -88,8 +88,8 @@ public class ZooKeeperClientTest {
         zooKeeperClient.setupZooKeeper();
         String appPath = "/";
         assertThat(zk.getChildren(appPath).size(), is(1));
-        assertTrue(zk.exists("/" + String.valueOf(generation)));
-        String currentAppPath = appPath + String.valueOf(generation);
+        assertTrue(zk.exists("/" + generation));
+        String currentAppPath = appPath + generation;
         assertTrue(zk.exists(currentAppPath, ConfigCurator.DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", "")));
         assertThat(zk.getChildren(currentAppPath).size(), is(4));
     }
@@ -140,9 +140,9 @@ public class ZooKeeperClientTest {
         assertTrue(metaData.isInternalRedeploy());
         assertThat(metaData.getDeployedByUser(), is("foo"));
         assertThat(metaData.getDeployPath(), is("/bar/baz"));
-        assertThat(metaData.getDeployTimestamp(), is(1345l));
-        assertThat(metaData.getGeneration(), is(3l));
-        assertThat(metaData.getPreviousActiveGeneration(), is(2l));
+        assertThat(metaData.getDeployTimestamp(), is(1345L));
+        assertThat(metaData.getGeneration(), is(3L));
+        assertThat(metaData.getPreviousActiveGeneration(), is(2L));
     }
 
     @Test

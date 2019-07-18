@@ -184,12 +184,10 @@ public class ConfigConvergenceCheckerTest {
                                                                                 .withBody("response too slow")));
         HttpResponse response = checker.checkService(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
         // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
-        assertResponse((responseBody) -> {
-            assertTrue("Response matches", responseBody.startsWith(
-                    "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                    "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
-                                          responseBody.endsWith("\"}"));
-        }, 404, response);
+        assertResponse((responseBody) -> assertTrue("Response matches", responseBody.startsWith(
+                "{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
+                "\",\"wantedGeneration\":3,\"error\":\"java.net.SocketTimeoutException") &&
+                                      responseBody.endsWith("\"}")), 404, response);
     }
 
     private URI testServer() {

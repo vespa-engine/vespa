@@ -27,7 +27,6 @@ import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
-import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
@@ -135,24 +134,24 @@ public class TenantRequestHandlerTest {
                 new TestModelFactory(new Version(3, 2, 1))));
     }
 
-    public <T extends ConfigInstance> T resolve(Class<T> clazz,
-                                                TenantRequestHandler tenantRequestHandler,
-                                                ApplicationId appId,
-                                                Version vespaVersion,
-                                                String configId) {
+    private <T extends ConfigInstance> T resolve(Class<T> clazz,
+                                                 TenantRequestHandler tenantRequestHandler,
+                                                 ApplicationId appId,
+                                                 Version vespaVersion,
+                                                 String configId) {
         ConfigResponse response = getConfigResponse(clazz, tenantRequestHandler, appId, vespaVersion, configId);
         return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
     }
 
-    public <T extends ConfigInstance> ConfigResponse getConfigResponse(Class<T> clazz,
-                                                                       TenantRequestHandler tenantRequestHandler,
-                                                                       ApplicationId appId,
-                                                                       Version vespaVersion,
-                                                                       String configId) {
+    private <T extends ConfigInstance> ConfigResponse getConfigResponse(Class<T> clazz,
+                                                                        TenantRequestHandler tenantRequestHandler,
+                                                                        ApplicationId appId,
+                                                                        Version vespaVersion,
+                                                                        String configId) {
         return tenantRequestHandler.resolveConfig(appId, new GetConfigRequest() {
             @Override
             public ConfigKey<T> getConfigKey() {
-                return new ConfigKey<T>(clazz, configId);
+                return new ConfigKey<>(clazz, configId);
             }
 
             @Override
@@ -183,7 +182,7 @@ public class TenantRequestHandlerTest {
         // Using only payload list for this simple test
     	SimpletypesConfig config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertThat(config.intval(), is(1337));
-        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1l));
+        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1L));
 
         server.reloadConfig(reloadConfig(1L));
         ConfigResponse configResponse = getConfigResponse(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
@@ -191,7 +190,7 @@ public class TenantRequestHandlerTest {
         config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion, "");
         assertThat(config.intval(), is(1337));
         assertThat(listener.reloaded.get(), is(2));
-        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1l));
+        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(1L));
         assertThat(listener.tenantHosts.size(), is(1));
         assertThat(server.resolveApplicationId("mytesthost"), is(applicationId));
 
@@ -204,7 +203,7 @@ public class TenantRequestHandlerTest {
         config = resolve(SimpletypesConfig.class, server, defaultApp(), vespaVersion,"");
         assertThat(config.intval(), is(1330));
         assertThat(listener.reloaded.get(), is(1));
-        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(2l));
+        assertThat(server.getApplicationGeneration(applicationId, Optional.of(vespaVersion)), is(2L));
     }
 
     @Test
@@ -284,7 +283,7 @@ public class TenantRequestHandlerTest {
     }
 
     public static class MockReloadListener implements ReloadListener {
-        public AtomicInteger reloaded = new AtomicInteger(0);
+        AtomicInteger reloaded = new AtomicInteger(0);
         AtomicInteger removed = new AtomicInteger(0);
         Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
 

@@ -20,7 +20,7 @@ public class InitializedCounterTest {
         configCurator.createNode("/sessions/2");
 
         InitializedCounter counter = new InitializedCounter(configCurator, "/counter", "/sessions");
-        assertThat(counter.counter.get(), is(2l));
+        assertThat(counter.counter.get(), is(2L));
     }
 
 }

@@ -45,7 +45,6 @@ public class InjectedGlobalComponentRegistryTest {
     private SessionPreparer sessionPreparer;
     private ConfigserverConfig configserverConfig;
     private RpcServer rpcServer;
-    private SuperModelGenerationCounter generationCounter;
     private ConfigDefinitionRepo defRepo;
     private PermanentApplicationPackage permanentApplicationPackage;
     private HostRegistries hostRegistries;
@@ -68,8 +67,10 @@ public class InjectedGlobalComponentRegistryTest {
                         .configDefinitionsDir(temporaryFolder.newFolder("configdefinitions").getAbsolutePath()));
         sessionPreparer = new SessionTest.MockSessionPreparer();
         rpcServer = new RpcServer(configserverConfig, null, Metrics.createTestMetrics(),
-                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(), new FileServer(temporaryFolder.newFolder("filereferences")), new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
-        generationCounter = new SuperModelGenerationCounter(curator);
+                                  new HostRegistries(), new ConfigRequestHostLivenessTracker(),
+                                  new FileServer(temporaryFolder.newFolder("filereferences")),
+                                  new NoopRpcAuthorizer(), new RpcRequestHandlerProvider());
+        SuperModelGenerationCounter generationCounter = new SuperModelGenerationCounter(curator);
         defRepo = new StaticConfigDefinitionRepo();
         permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         hostRegistries = new HostRegistries();

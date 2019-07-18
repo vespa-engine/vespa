@@ -15,7 +15,7 @@ public abstract class MockConfigChangeAction implements ConfigChangeAction {
     private final String message;
     private final List<ServiceInfo> services;
 
-    protected MockConfigChangeAction(String message, List<ServiceInfo> services) {
+    MockConfigChangeAction(String message, List<ServiceInfo> services) {
         this.message = message;
         this.services = services;
     }

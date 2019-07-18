@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.configchange;
 
+import com.yahoo.config.model.api.ServiceInfo;
 import org.junit.Test;
 
 import java.util.List;
@@ -13,7 +14,6 @@ import static com.yahoo.vespa.config.server.configchange.Utils.*;
 
 /**
  * @author geirst
- * @since 5.44
  */
 public class RefeedActionsTest {
 
@@ -21,7 +21,7 @@ public class RefeedActionsTest {
         StringBuilder builder = new StringBuilder();
         builder.append(entry.getDocumentType() + "." + entry.getClusterName() + ":");
         builder.append(entry.getServices().stream().
-                map(service -> service.getServiceName()).
+                map(ServiceInfo::getServiceName).
                 sorted().
                 collect(Collectors.joining(",", "[", "]")));
         builder.append(entry.getMessages().stream().

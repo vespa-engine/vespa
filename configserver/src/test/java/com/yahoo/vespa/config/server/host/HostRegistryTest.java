@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.host;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -20,12 +19,12 @@ public class HostRegistryTest {
     public void old_hosts_are_removed() {
         HostRegistry<String> reg = new HostRegistry<>();
         assertNull(reg.getKeyForHost("foo.com"));
-        reg.update("fookey", Arrays.asList("foo.com", "bar.com", "baz.com"));
+        reg.update("fookey", List.of("foo.com", "bar.com", "baz.com"));
         assertGetKey(reg, "foo.com", "fookey");
         assertGetKey(reg, "bar.com", "fookey");
         assertGetKey(reg, "baz.com", "fookey");
         assertThat(reg.getAllHosts().size(), is(3));
-        reg.update("fookey", Arrays.asList("bar.com", "baz.com"));
+        reg.update("fookey", List.of("bar.com", "baz.com"));
         assertNull(reg.getKeyForHost("foo.com"));
         assertGetKey(reg, "bar.com", "fookey");
         assertGetKey(reg, "baz.com", "fookey");
@@ -41,8 +40,8 @@ public class HostRegistryTest {
     @Test
     public void multiple_keys_are_handled() {
         HostRegistry<String> reg = new HostRegistry<>();
-        reg.update("fookey", Arrays.asList("foo.com", "bar.com"));
-        reg.update("barkey", Arrays.asList("baz.com", "quux.com"));
+        reg.update("fookey", List.of("foo.com", "bar.com"));
+        reg.update("barkey", List.of("baz.com", "quux.com"));
         assertGetKey(reg, "foo.com", "fookey");
         assertGetKey(reg, "bar.com", "fookey");
         assertGetKey(reg, "baz.com", "barkey");
@@ -52,22 +51,22 @@ public class HostRegistryTest {
     @Test(expected = IllegalArgumentException.class)
     public void keys_cannot_overlap() {
         HostRegistry<String> reg = new HostRegistry<>();
-        reg.update("fookey", Arrays.asList("foo.com", "bar.com"));
-        reg.update("barkey", Arrays.asList("bar.com", "baz.com"));
+        reg.update("fookey", List.of("foo.com", "bar.com"));
+        reg.update("barkey", List.of("bar.com", "baz.com"));
     }
 
     @Test
     public void all_hosts_are_returned() {
         HostRegistry<String> reg = new HostRegistry<>();
-        reg.update("fookey", Arrays.asList("foo.com", "bar.com"));
-        reg.update("barkey", Arrays.asList("baz.com", "quux.com"));
+        reg.update("fookey", List.of("foo.com", "bar.com"));
+        reg.update("barkey", List.of("baz.com", "quux.com"));
         assertThat(reg.getAllHosts().size(), is(4));
     }
 
     @Test
     public void ensure_that_collection_is_copied() {
         HostRegistry<String> reg = new HostRegistry<>();
-        List<String> hosts = new ArrayList<>(Arrays.asList("foo.com", "bar.com", "baz.com"));
+        List<String> hosts = new ArrayList<>(List.of("foo.com", "bar.com", "baz.com"));
         reg.update("fookey", hosts);
         assertThat(reg.getHostsForKey("fookey").size(), is(3));
         hosts.remove(2);
@@ -77,10 +76,10 @@ public class HostRegistryTest {
     @Test
     public void ensure_that_underlying_hosts_do_not_change() {
         HostRegistry<String> reg = new HostRegistry<>();
-        reg.update("fookey", new ArrayList<>(Arrays.asList("foo.com", "bar.com", "baz.com")));
+        reg.update("fookey", List.of("foo.com", "bar.com", "baz.com"));
         Collection<String> hosts = reg.getAllHosts();
         assertThat(hosts.size(), is(3));
-        reg.update("fookey", new ArrayList<>(Arrays.asList("foo.com")));
+        reg.update("fookey", List.of("foo.com"));
         assertThat(hosts.size(), is(3));
     }
 

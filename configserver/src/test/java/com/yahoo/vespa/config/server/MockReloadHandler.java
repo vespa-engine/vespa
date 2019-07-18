@@ -8,16 +8,13 @@ import java.util.Set;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1.24
  */
 public class MockReloadHandler implements ReloadHandler {
 
-    public ApplicationSet current = null;
     public volatile ApplicationId lastRemoved = null;
 
     @Override
     public void reloadConfig(ApplicationSet application) {
-        this.current = application;
     }
 
     @Override

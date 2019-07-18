@@ -49,8 +49,8 @@ public class RemoteSessionRepoTest {
         this.remoteSessionRepo = tenant.getRemoteSessionRepo();
         curator.create(TenantRepository.getTenantPath(tenantName).append("/applications"));
         curator.create(TenantRepository.getSessionsPath(tenantName));
-        createSession(1l, false);
-        createSession(2l, false);
+        createSession(1L, false);
+        createSession(2L, false);
     }
 
     private void createSession(long sessionId, boolean wait) {
@@ -69,14 +69,14 @@ public class RemoteSessionRepoTest {
 
     @Test
     public void testInitialize() {
-        assertSessionExists(1l);
-        assertSessionExists(2l);
+        assertSessionExists(1L);
+        assertSessionExists(2L);
     }
 
     @Test
     public void testCreateSession() {
-        createSession(3l, true);
-        assertSessionExists(3l);
+        createSession(3L, true);
+        assertSessionExists(3L);
     }
 
     @Test

@@ -36,7 +36,6 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.MockSessionZKClient;
 import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionTest;
@@ -57,7 +56,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -81,7 +79,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private Curator curator;
-    private RemoteSessionRepo remoteSessionRepo;
     private LocalSessionRepo localRepo;
     private TenantApplications applicationRepo;
     private MockProvisioner hostProvisioner;
@@ -95,7 +92,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Before
     public void setup() {
-        remoteSessionRepo = new RemoteSessionRepo(tenantName);
         curator = new MockCurator();
         modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         componentRegistry = new TestComponentRegistry.Builder()
@@ -110,7 +106,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
                 .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
-                .withRemoteSessionRepo(remoteSessionRepo)
                 .withApplicationRepo(applicationRepo);
         tenantRepository.addTenant(tenantBuilder);
         handler = createHandler();
@@ -118,15 +113,15 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Test
     public void testThatPreviousSessionIsDeactivated() throws Exception {
-        RemoteSession firstSession = activateAndAssertOK(90l, 0l);
-        activateAndAssertOK(91l, 90l);
+        RemoteSession firstSession = activateAndAssertOK(90, 0);
+        activateAndAssertOK(91, 90);
         assertThat(firstSession.getStatus(), Is.is(Session.Status.DEACTIVATE));
     }
 
     @Test
     public void testForceActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90l, 0l);
-        activateAndAssertOK(92l, 89l, "?force=true");
+        activateAndAssertOK(90, 0);
+        activateAndAssertOK(92, 89, "?force=true");
     }
 
     @Test
@@ -138,9 +133,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Test
     public void testActivationWithBarrierTimeout() throws Exception {
         // Needed so we can test that previous active session is still active after a failed activation
-        activateAndAssertOK(90l, 0l);
+        activateAndAssertOK(90, 0);
         ((MockCurator) curator).timeoutBarrierOnEnter(true);
-        ActivateRequest activateRequest = new ActivateRequest(91l, 90l, "", Clock.systemUTC()).invoke();
+        ActivateRequest activateRequest = new ActivateRequest(91, 90, "").invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         assertThat(actResponse.getStatus(), Is.is(INTERNAL_SERVER_ERROR));
     }
@@ -153,7 +148,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         activateAndAssertOK(sessionId, 1);
 
         sessionId++;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 1, "", componentRegistry.getClock()).invoke();
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, 1, "").invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         String message = getRenderedString(actResponse);
         assertThat(message, actResponse.getStatus(), Is.is(CONFLICT));
@@ -164,7 +159,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Test
     public void testAlreadyActivatedSession() throws Exception {
         activateAndAssertOK(1, 0);
-        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1l));
+        HttpResponse response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, 1L));
         String message = getRenderedString(response);
         assertThat(message, response.getStatus(), Is.is(BAD_REQUEST));
         assertThat(message, containsString("Session 1 is already active"));
@@ -177,8 +172,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     @Test
     public void testActivationWithActivationInBetween() throws Exception {
-        activateAndAssertOK(90l, 0l);
-        activateAndAssertError(92l, 89l, componentRegistry.getClock(),
+        activateAndAssertOK(90, 0);
+        activateAndAssertError(92, 89,
                                Response.Status.CONFLICT, HttpErrorResponse.errorCodes.ACTIVATION_CONFLICT,
                                "tenant:" + tenantName + " app:default:default Cannot activate session 92 because the currently active session (90) has changed since session 92 was created (was 89 at creation time)");
     }
@@ -186,9 +181,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     @Test
     public void testActivationOfUnpreparedSession() throws Exception {
         // Needed so we can test that previous active session is still active after a failed activation
-        RemoteSession firstSession = activateAndAssertOK(90l, 0l);
+        RemoteSession firstSession = activateAndAssertOK(90, 0);
         long sessionId = 91L;
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0l, Session.Status.NEW, "", componentRegistry.getClock()).invoke();
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, 0, Session.Status.NEW, "").invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
         assertThat(actResponse.getStatus(), is(Response.Status.BAD_REQUEST));
@@ -209,7 +204,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     public void require_that_handler_gives_error_when_provisioner_activated_fails() throws Exception {
         hostProvisioner = new FailingMockProvisioner();
         hostProvisioner.activated = false;
-        activateAndAssertError(1, 0, componentRegistry.getClock(), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
+        activateAndAssertError(1, 0, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Cannot activate application");
         assertFalse(hostProvisioner.activated);
     }
 
@@ -219,9 +214,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                                   TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
         zkC.write(Collections.singletonMap(modelFactory.version(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
-        RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, zkClient);
-        remoteSessionRepo.addSession(session);
-        return session;
+        return new RemoteSession(tenantName, sessionId, componentRegistry, zkClient);
     }
 
     private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
@@ -235,7 +228,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     }
 
     private ActivateRequest activateAndAssertOKPut(long sessionId, long previousSessionId, String subPath) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath, componentRegistry.getClock());
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, subPath);
         activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         String message = getRenderedString(actResponse);
@@ -246,9 +239,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         return activateRequest;
     }
 
-    private void activateAndAssertErrorPut(long sessionId, long previousSessionId, Clock clock,
+    private void activateAndAssertErrorPut(long sessionId, long previousSessionId,
                                            int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
-        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "", clock);
+        ActivateRequest activateRequest = new ActivateRequest(sessionId, previousSessionId, "");
         activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         RemoteSession session = activateRequest.getSession();
@@ -275,24 +268,22 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         private DeployData deployData;
         private ApplicationMetaData metaData;
         private String subPath;
-        private Clock clock;
 
-        ActivateRequest(long sessionId, long previousSessionId, String subPath, Clock clock) {
-            this(sessionId, previousSessionId, Session.Status.PREPARE, subPath, clock);
+        ActivateRequest(long sessionId, long previousSessionId, String subPath) {
+            this(sessionId, previousSessionId, Session.Status.PREPARE, subPath);
         }
 
-        ActivateRequest(long sessionId, long previousSessionId, Session.Status initialStatus, String subPath, Clock clock) {
+        ActivateRequest(long sessionId, long previousSessionId, Session.Status initialStatus, String subPath) {
             this.sessionId = sessionId;
             this.initialStatus = initialStatus;
             this.deployData = new DeployData("foo",
                                              "bar",
                                              appName,
-                                             0l,
+                                             0L,
                                              false,
                                              sessionId,
                                              previousSessionId);
             this.subPath = subPath;
-            this.clock = clock;
         }
 
         public RemoteSession getSession() {
@@ -352,9 +343,9 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         assertThat(hostProvisioner.lastHosts.size(), is(1));
     }
 
-    private void activateAndAssertError(long sessionId, long previousSessionId, Clock clock, int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
+    private void activateAndAssertError(long sessionId, long previousSessionId, int statusCode, HttpErrorResponse.errorCodes errorCode, String expectedError) throws Exception {
         hostProvisioner.activated = false;
-        activateAndAssertErrorPut(sessionId, previousSessionId, clock, statusCode, errorCode, expectedError);
+        activateAndAssertErrorPut(sessionId, previousSessionId, statusCode, errorCode, expectedError);
         assertFalse(hostProvisioner.activated);
     }
 

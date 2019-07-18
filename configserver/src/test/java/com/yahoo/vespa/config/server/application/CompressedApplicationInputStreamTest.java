@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -22,6 +21,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -30,13 +30,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class CompressedApplicationInputStreamTest {
 
-    static void writeFileToTar(ArchiveOutputStream taos, File file) throws IOException {
+    private static void writeFileToTar(ArchiveOutputStream taos, File file) throws IOException {
         taos.putArchiveEntry(taos.createArchiveEntry(file, file.getName()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();
     }
 
-    public static File createArchiveFile(ArchiveOutputStream taos, File outFile) throws IOException {
+    private static File createArchiveFile(ArchiveOutputStream taos, File outFile) throws IOException {
         File app = new File("src/test/resources/deploy/validapp");
         writeFileToTar(taos, new File(app, "services.xml"));
         writeFileToTar(taos, new File(app, "hosts.xml"));
@@ -51,14 +51,15 @@ public class CompressedApplicationInputStreamTest {
         return createArchiveFile(archiveOutputStream, outFile);
     }
 
-    public static File createZipFile() throws IOException {
+    private static File createZipFile() throws IOException {
         File outFile = File.createTempFile("testapp", ".tar.gz");
         ArchiveOutputStream archiveOutputStream = new ZipArchiveOutputStream(new FileOutputStream(outFile));
         return createArchiveFile(archiveOutputStream, outFile);
     }
 
-    void assertTestApp(File outApp) {
+    private void assertTestApp(File outApp) {
         String [] files = outApp.list();
+        assertNotNull(files);
         assertThat(files.length, is(3));
         assertThat(Arrays.asList(files), containsInAnyOrder(ImmutableList.of(is("hosts.xml"), is("services.xml"), is("deployment.xml"))));
     }

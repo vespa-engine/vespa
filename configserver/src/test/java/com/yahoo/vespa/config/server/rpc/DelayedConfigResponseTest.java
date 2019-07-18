@@ -17,11 +17,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -52,7 +54,7 @@ public class DelayedConfigResponseTest {
         assertThat(responses.size(), is(2));
         assertTrue(req.isDelayedResponse());
         List<DelayedConfigResponses.DelayedConfigResponse> it = responses.allDelayedResponses();
-        assertTrue(!it.isEmpty());
+        assertFalse(it.isEmpty());
     }
 
     @Test
@@ -74,7 +76,7 @@ public class DelayedConfigResponseTest {
         assertThat(responses.toString(), is("DelayedConfigResponses. Average Size=0"));
         JRTServerConfigRequest req = createRequest("foo", "md5", "myid", "mymd5", 3, 100, "bar");
         responses.delayResponse(req, GetConfigContext.testContext(ApplicationId.defaultId()));
-        rpc.waitUntilSet(5000);
+        rpc.waitUntilSet(Duration.ofSeconds(5));
         assertThat(rpc.latestRequest, is(req));
     }
 

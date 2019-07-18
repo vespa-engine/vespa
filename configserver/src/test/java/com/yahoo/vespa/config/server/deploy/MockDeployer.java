@@ -13,8 +13,6 @@ import java.util.Optional;
  */
 public class MockDeployer implements com.yahoo.config.provision.Deployer {
 
-    public ApplicationId lastDeployed;
-
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId application) {
         return deployFromLocalActive(application, Duration.ofSeconds(60));
@@ -27,7 +25,6 @@ public class MockDeployer implements com.yahoo.config.provision.Deployer {
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
-        lastDeployed = application;
         return Optional.empty();
     }
 

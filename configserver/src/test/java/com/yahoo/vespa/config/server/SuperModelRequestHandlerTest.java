@@ -57,14 +57,14 @@ public class SuperModelRequestHandlerTest {
 
         assertNotNull(controller.getHandler());
         long gen = counter.get();
-        controller.reloadConfig(createApp(foo, 3l));
+        controller.reloadConfig(createApp(foo, 3L));
         assertNotNull(controller.getHandler());
         assertThat(controller.getHandler().getGeneration(), is(gen + 1));
-        controller.reloadConfig(createApp(foo, 4l));
+        controller.reloadConfig(createApp(foo, 4L));
         assertThat(controller.getHandler().getGeneration(), is(gen + 2));
         // Test that a new app is used when there already exist an application with the same id
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration(), is(4l));
-        controller.reloadConfig(createApp(bar, 2l));
+        assertThat(controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration(), is(4L));
+        controller.reloadConfig(createApp(bar, 2L));
         assertThat(controller.getHandler().getGeneration(), is(gen + 3));
     }
 
@@ -75,9 +75,9 @@ public class SuperModelRequestHandlerTest {
         ApplicationId baz = applicationId("b", "baz");
 
         long gen = counter.get();
-        controller.reloadConfig(createApp(foo, 3l));
-        controller.reloadConfig(createApp(bar, 30l));
-        controller.reloadConfig(createApp(baz, 9l));
+        controller.reloadConfig(createApp(foo, 3L));
+        controller.reloadConfig(createApp(bar, 30L));
+        controller.reloadConfig(createApp(baz, 9L));
         assertThat(controller.getHandler().getGeneration(), is(gen + 3));
         assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(3));
         assertEquals(Arrays.asList(foo, bar, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));

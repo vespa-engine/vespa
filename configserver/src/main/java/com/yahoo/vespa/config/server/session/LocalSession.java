@@ -36,7 +36,7 @@ import java.util.Optional;
 // TODO: Separate the "application store" and "session" aspects - the latter belongs in the HTTP layer   -bratseth
 public class LocalSession extends Session implements Comparable<LocalSession> {
 
-    private final ApplicationPackage applicationPackage;
+    protected final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
     private final SessionPreparer sessionPreparer;
     private final SessionContext sessionContext;
@@ -47,7 +47,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
      *
      * @param sessionId The session id for this session.
      */
-    // TODO tenant in SessionContext?
     public LocalSession(TenantName tenant, long sessionId, SessionPreparer sessionPreparer, SessionContext sessionContext) {
         super(tenant, sessionId, sessionContext.getSessionZooKeeperClient());
         this.serverDB = sessionContext.getServerDBSessionDir();
@@ -211,7 +210,7 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
         private final String pathToDelete;
         
-        public DeleteOperation(String pathToDelete) {
+        DeleteOperation(String pathToDelete) {
             this.pathToDelete = pathToDelete;
         }
         

@@ -46,7 +46,7 @@ public class HttpHandlerTest {
 
     private static class HttpTestHandler extends HttpHandler {
         private RuntimeException exception;
-        public HttpTestHandler(RuntimeException exception) {
+        HttpTestHandler(RuntimeException exception) {
             super(HttpHandler.testOnlyContext());
             this.exception = exception;
         }

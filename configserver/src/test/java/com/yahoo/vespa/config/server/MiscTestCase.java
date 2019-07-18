@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import static org.junit.Assert.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.ArrayList;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class MiscTestCase {
 
     private static List<String> file2lines(File file) throws IOException {
         List<String> lines = new ArrayList<>();
-        LineNumberReader in = new LineNumberReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+        LineNumberReader in = new LineNumberReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
         String line;
         while ((line = in.readLine()) != null) {
             lines.add(line);

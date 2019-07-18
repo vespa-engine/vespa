@@ -55,7 +55,7 @@ public class ApplicationTest {
         ServerCache cache = new ServerCache();
         Version vespaVersion = new Version(1, 2, 3);
         Application app = new Application(new ModelStub(), cache, 1337L, false, vespaVersion, MetricUpdater.createTestUpdater(), appId);
-        assertThat(app.getApplicationGeneration(), is(1337l));
+        assertThat(app.getApplicationGeneration(), is(1337L));
         assertNotNull(app.getModel());
         assertThat(app.getCache(), is(cache));
         assertThat(app.getId().application().value(), is("foobar"));
@@ -107,7 +107,7 @@ public class ApplicationTest {
 
     @Test
     public void require_that_known_config_defs_are_found() {
-        handler.resolveConfig(createSimpleConfigRequest(emptySchema));
+        handler.resolveConfig(createSimpleConfigRequest());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class ApplicationTest {
     @Test
     public void require_that_non_existent_fields_in_schema_is_skipped() {
         // Ask for config without schema and check that we get correct default value back
-        List<String> payload = handler.resolveConfig(createSimpleConfigRequest(emptySchema)).getLegacyPayload();
+        List<String> payload = handler.resolveConfig(createSimpleConfigRequest()).getLegacyPayload();
         assertThat(payload.get(0), is("boolval false"));
         // Ask for config with wrong schema
         String[] schema = new String[1];
@@ -138,19 +138,18 @@ public class ApplicationTest {
         assertTrue(response == cached_response);
     }
 
-    private static GetConfigRequest createRequest(String name, String namespace, String defMd5, String[] schema, String configId) {
+    private static GetConfigRequest createRequest(String name, String namespace, String defMd5, String[] schema) {
         Request request = JRTClientConfigRequestV3.
-                createWithParams(new ConfigKey<>(name, configId, namespace, defMd5, null), DefContent.fromArray(schema),
+                createWithParams(new ConfigKey<>(name, "admin/model", namespace, defMd5, null), DefContent.fromArray(schema),
                                  "fromHost", "", 0, 100, Trace.createDummy(), CompressionType.UNCOMPRESSED,
                                  Optional.empty()).getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);
     }
 
-    private static GetConfigRequest createRequest(String name, String namespace, String defMd5, String[] schema) {
-        return createRequest(name, namespace, defMd5, schema, "admin/model");
-    }
-
-    private static GetConfigRequest createSimpleConfigRequest(String[] schema) {
-        return createRequest(SimpletypesConfig.CONFIG_DEF_NAME, SimpletypesConfig.CONFIG_DEF_NAMESPACE, SimpletypesConfig.CONFIG_DEF_MD5, schema);
+    private static GetConfigRequest createSimpleConfigRequest() {
+        return createRequest(SimpletypesConfig.CONFIG_DEF_NAME,
+                             SimpletypesConfig.CONFIG_DEF_NAMESPACE,
+                             SimpletypesConfig.CONFIG_DEF_MD5,
+                             ApplicationTest.emptySchema);
     }
 }
