@@ -42,14 +42,7 @@ public class HostCapacityResponse extends HttpResponse {
     }
 
     private List<Node> parseHostList(String hosts) {
-        ObjectMapper om = new ObjectMapper();
-        String[] hostsArray;
-        try {
-            hostsArray = om.readValue(hosts, String[].class);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-        List<String> hostNames = Arrays.asList(hostsArray);
+        List<String> hostNames = Arrays.asList(hosts.split(","));
         try {
             return capacityChecker.nodesFromHostnames(hostNames);
         } catch (IllegalArgumentException e) {
