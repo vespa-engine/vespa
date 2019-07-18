@@ -802,7 +802,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                             String clusterTypeString = serviceInfo.getProperty("clustertype").orElse("");
                             if (!ClusterInfo.ClusterType.isValidType(clusterTypeString)) return;
                             ClusterInfo.ClusterType clusterType = ClusterInfo.ClusterType.valueOf(clusterTypeString);
-                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics/v1/values");
+                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics/v1/values?consumer=Vespa");
                             clusterHosts.computeIfAbsent(clusterName, l -> new ArrayList<URI>()).add(host);
                             clusters.computeIfAbsent(clusterName, c -> new ClusterInfo(clusterName, clusterType)).addHost(host);
                         }
