@@ -17,14 +17,8 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeader;
 
 import java.io.ByteArrayInputStream;
@@ -400,25 +394,26 @@ class ApacheGatewayConnection implements GatewayConnection {
         }
 
         public HttpClient createClient() {
-            HttpClientBuilder clientBuilder = HttpClientBuilder.create();
-            if (useSsl && connectionParams.getSslContext() != null) {
-                Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-                        .register("https", new SSLConnectionSocketFactory(
-                                connectionParams.getSslContext(), connectionParams.getHostnameVerifier()))
-                        .register("http", PlainConnectionSocketFactory.INSTANCE)
-                        .build();
-                PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-                clientBuilder.setConnectionManager(connMgr);
-
+            HttpClientBuilder clientBuilder;
+            if (connectionParams.useTlsConfigFromEnvironment()) {
+                // Note: connection settings are confgured in createVespaTlsAwareClientBuilder.
+                clientBuilder = createVespaTlsAwareClientBuilder();
+            } else {
+                clientBuilder = HttpClientBuilder.create();
+                if (useSsl && connectionParams.getSslContext() != null) {
+                    clientBuilder.setSslcontext(connectionParams.getSslContext());
+                    clientBuilder.setSSLHostnameVerifier(connectionParams.getHostnameVerifier());
+                }
+                clientBuilder.setMaxConnPerRoute(1);
+                clientBuilder.setMaxConnTotal(1);
+                clientBuilder.setConnectionTimeToLive(15, TimeUnit.SECONDS);
             }
+
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
-            clientBuilder.setMaxConnPerRoute(1);
-            clientBuilder.setMaxConnTotal(1);
             clientBuilder.disableContentCompression();
             // Try to disable the disabling to see if system tests become stable again.
             // clientBuilder.disableAutomaticRetries();
-            clientBuilder.setConnectionTimeToLive(15, TimeUnit.SECONDS);
             {
                 RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
                 requestConfigBuilder.setSocketTimeout(0);
@@ -435,6 +430,19 @@ class ApacheGatewayConnection implements GatewayConnection {
                             + (useSsl ? " using ssl " : " not using ssl")
             );
             return clientBuilder.build();
+        }
+
+        // TODO Remove use of reflection once vespa-http-client only targets JDK11
+        // The VespaTlsAwareClientBuilder class refers to classes in security-utils / http-utils that targets JDK11+.
+        // We cannot use VespaTlsAwareClientBuilder because the classloader might load it even when the createHttpClientBuilder is not invoked.
+        private HttpClientBuilder createVespaTlsAwareClientBuilder() {
+            try {
+                Class<?> builderClass =
+                        Class.forName("com.yahoo.vespa.http.client.core.communication.VespaTlsAwareClientBuilder");
+                return (HttpClientBuilder) builderClass.getMethod("createHttpClientBuilder").invoke(null);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
