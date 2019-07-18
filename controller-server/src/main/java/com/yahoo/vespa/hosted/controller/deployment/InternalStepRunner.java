@@ -125,7 +125,7 @@ public class InternalStepRunner implements StepRunner {
             }
         }
         catch (UncheckedIOException e) {
-            logger.log(INFO, "IO exception running " + id + ": " + Exceptions.toMessageString(e));
+            logger.logWithInternalException(INFO, "IO exception running " + id + ": " + Exceptions.toMessageString(e), e);
             return Optional.empty();
         }
         catch (RuntimeException e) {
@@ -382,7 +382,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> startTests(RunId id, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
-        if ( ! deployment.isPresent()) {
+        if (deployment.isEmpty()) {
             logger.log(INFO, "Deployment expired before tests could start.");
             return Optional.of(aborted);
         }
@@ -709,6 +709,12 @@ public class InternalStepRunner implements StepRunner {
 
         private void log(Level level, String message) {
             log(level, message, null);
+        }
+
+        // Print stack trace in our logs, but don't expose it to end users
+        private void logWithInternalException(Level level, String message, Throwable thrown) {
+            logger.log(level, id + " at " + step + ": " + message, thrown);
+            controller.jobController().log(id, step, level, message);
         }
 
         private void log(Level level, String message, Throwable thrown) {
