@@ -12,7 +12,6 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class HttpErrorResponseTest {
     @Test
@@ -29,7 +28,7 @@ public class HttpErrorResponseTest {
     }
 
     @Test
-    public void testThatHttpErrorResponseHasJsonContentType() throws IOException {
+    public void testThatHttpErrorResponseHasJsonContentType() {
         HttpErrorResponse response = HttpErrorResponse.badRequest("Error doing something");
         assertThat(response.getContentType(), is("application/json"));
     }

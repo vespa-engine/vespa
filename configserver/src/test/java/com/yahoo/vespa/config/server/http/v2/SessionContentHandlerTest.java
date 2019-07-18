@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Clock;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
@@ -37,7 +36,6 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private static final TenantName tenant = TenantName.from("contenttest");
 
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-    private final Clock clock = componentRegistry.getClock();
 
     private TenantRepository tenantRepository;
     private SessionContentHandler handler = null;
@@ -59,10 +57,11 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
         assertMkdir("/bar/brask/");
         assertMkdir("/bar/brask/bram/");
         assertMkdir("/brask/og/bram/");
-    }// TODO: Enable when we have a predictable way of checking request body existence.
+    }
 
     @Test
     @Ignore
+    // TODO: Enable when we have a predictable way of checking request body existence.
     public void require_that_mkdir_with_body_is_illegal(){
         HttpResponse response = put("/foobio/", "foo");
         assertNotNull(response);
@@ -70,15 +69,15 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     }
 
     @Test
-    public void require_that_nonexistant_session_returns_not_found() {
-        HttpResponse response = doRequest(HttpRequest.Method.GET, "/test.txt", 2l);
+    public void require_that_nonexistent_session_returns_not_found() {
+        HttpResponse response = doRequest(HttpRequest.Method.GET, "/test.txt", 2);
         assertNotNull(response);
         assertThat(response.getStatus(), is(Response.Status.NOT_FOUND));
     }
 
     protected HttpResponse put(String path, String content) {
         ByteArrayInputStream data = new ByteArrayInputStream(Utf8.toBytes(content));
-        return doRequest(HttpRequest.Method.PUT, path, data);
+        return doRequest(HttpRequest.Method.PUT, path, 1, data);
     }
 
     @Test
@@ -95,7 +94,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     }
 
     @Test
-    public void require_that_nonexistant_file_returs_not_found_when_deleted() throws IOException {
+    public void require_that_nonexistent_file_returns_not_found_when_deleted() throws IOException {
         assertDeleteFile(Response.Status.NOT_FOUND, "/test2.txt", "{\"error-code\":\"NOT_FOUND\",\"message\":\"Session 1 does not contain a file 'test2.txt'\"}");
     }
 
@@ -152,15 +151,11 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     }
 
     protected HttpResponse doRequest(HttpRequest.Method method, String path) {
-        return doRequest(method, path, 1l);
+        return doRequest(method, path, 1);
     }
 
     private HttpResponse doRequest(HttpRequest.Method method, String path, long sessionId) {
         return handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, method, Cmd.CONTENT, sessionId, path));
-    }
-
-    private HttpResponse doRequest(HttpRequest.Method method, String path, InputStream data) {
-        return doRequest(method, path, 1l, data);
     }
 
     private HttpResponse doRequest(HttpRequest.Method method, String path, long sessionId, InputStream data) {
@@ -173,7 +168,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
                                           new OrchestratorMock(),
-                                          clock),
+                                          componentRegistry.getClock()),
                 tenantRepository);
     }
 }

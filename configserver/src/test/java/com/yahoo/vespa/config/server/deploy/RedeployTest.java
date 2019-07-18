@@ -9,7 +9,6 @@ import com.yahoo.component.Version;
 import org.junit.Test;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

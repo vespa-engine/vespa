@@ -62,7 +62,7 @@ public class RemoteSessionTest {
     public void require_that_session_is_initialized() {
         Clock clock = Clock.systemUTC();
         Session session = createSession(2, clock);
-        assertThat(session.getSessionId(), is(2l));
+        assertThat(session.getSessionId(), is(2L));
         session = createSession(Long.MAX_VALUE, clock);
         assertThat(session.getSessionId(), is(Long.MAX_VALUE));
     }
@@ -73,14 +73,14 @@ public class RemoteSessionTest {
         session.loadPrepared();
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
-        assertThat(applicationSet.getApplicationGeneration(), is(3l));
+        assertThat(applicationSet.getApplicationGeneration(), is(3L));
         assertThat(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
         session.deactivate();
 
         applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
-        assertThat(applicationSet.getApplicationGeneration(), is(3l));
+        assertThat(applicationSet.getApplicationGeneration(), is(3L));
         assertThat(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty(), Instant.now()).getModel());
     }
@@ -224,9 +224,7 @@ public class RemoteSessionTest {
                 .curator(curator)
                 .clock(clock)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
-        if (permanentApplicationPackage.isPresent())
-            registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get());
-
+        permanentApplicationPackage.ifPresent(registryBuilder::permanentApplicationPackage);
 
         return new RemoteSession(tenantName, sessionId, registryBuilder.build(), zkc);
     }
@@ -234,12 +232,12 @@ public class RemoteSessionTest {
     private class MockModelFactory implements ModelFactory {
 
         /** Throw a RuntimeException on load - this is handled gracefully during model building */
-        public boolean throwOnLoad = false;
+        boolean throwOnLoad = false;
 
         /** Throw an Error on load - this is useful to propagate this condition all the way to the test */
-        public boolean throwErrorOnLoad = false;
+        boolean throwErrorOnLoad = false;
 
-        public ModelContext modelContext;
+        ModelContext modelContext;
         public Version vespaVersion = new Version(1, 2, 3);
 
         /** The validation overrides of this, or null if none */
@@ -247,9 +245,9 @@ public class RemoteSessionTest {
         
         private Clock clock = Clock.fixed(LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
 
-        public MockModelFactory() { this(null); }
+        MockModelFactory() { this(null); }
 
-        public MockModelFactory(String validationOverrides) {
+        MockModelFactory(String validationOverrides) {
             this.validationOverrides = validationOverrides;
         }
 
@@ -271,7 +269,7 @@ public class RemoteSessionTest {
             return loadModel();
         }
 
-        public Model loadModel() {
+        Model loadModel() {
             try {
                 ApplicationPackage application = new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().withValidationOverrides(validationOverrides).build();
                 DeployState deployState = new DeployState.Builder().applicationPackage(application).now(clock.instant()).build();

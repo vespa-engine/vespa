@@ -366,7 +366,7 @@ public class HostedDeployTest {
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
             ModelCreateResult result = super.createAndValidateModel(modelContext, validationParameters);
-            return new ModelCreateResult(result.getModel(), Arrays.asList(action));
+            return new ModelCreateResult(result.getModel(), List.of(action));
         }
     }
 

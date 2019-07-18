@@ -24,16 +24,16 @@ public class TimeoutBudgetTest {
         ManualClock clock = new ManualClock();
 
         TimeoutBudget budget = new TimeoutBudget(clock, Duration.ofMillis(7));
-        assertThat(budget.timeLeft().toMillis(), is(7l));
+        assertThat(budget.timeLeft().toMillis(), is(7L));
         clock.advance(Duration.ofMillis(1));
-        assertThat(budget.timeLeft().toMillis(), is(6l));
+        assertThat(budget.timeLeft().toMillis(), is(6L));
         clock.advance(Duration.ofMillis(5));
-        assertThat(budget.timeLeft().toMillis(), is(1l));
-        assertThat(budget.timeLeft().toMillis(), is(1l));
+        assertThat(budget.timeLeft().toMillis(), is(1L));
+        assertThat(budget.timeLeft().toMillis(), is(1L));
         clock.advance(Duration.ofMillis(1));
-        assertThat(budget.timeLeft().toMillis(), is(0l));
+        assertThat(budget.timeLeft().toMillis(), is(0L));
         clock.advance(Duration.ofMillis(5));
-        assertThat(budget.timeLeft().toMillis(), is(0l));
+        assertThat(budget.timeLeft().toMillis(), is(0L));
 
         clock.advance(Duration.ofMillis(1));
         assertThat(budget.timesUsed(), is("[0 ms, 1 ms, 5 ms, 0 ms, 1 ms, 5 ms, total: 13 ms]"));

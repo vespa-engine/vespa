@@ -170,7 +170,7 @@ public class FileDistributionStatusTest {
                                appId);
     }
 
-    HttpResponse getStatus(FileDistributionStatus fileDistributionStatus, Application application) {
+    private HttpResponse getStatus(FileDistributionStatus fileDistributionStatus, Application application) {
         return fileDistributionStatus.status(application, timeout);
     }
 

@@ -46,9 +46,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.Response.Status.*;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
+import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
@@ -70,7 +71,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
     private String preparedMessage = " prepared.\"}";
     private String tenantMessage = "";
-    private RemoteSessionRepo remoteSessionRepo;
     private TenantRepository tenantRepository;
 
     @Before
@@ -80,11 +80,9 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         preparedMessage = " for tenant '" + tenant + "' prepared.\"";
         tenantMessage = ",\"tenant\":\"" + tenant + "\"";
         tenantRepository = new TenantRepository(componentRegistry, false);
-        remoteSessionRepo = new RemoteSessionRepo(tenant);
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenant)
                 .withSessionFactory(new MockSessionFactory())
                 .withLocalSessionRepo(localRepo)
-                .withRemoteSessionRepo(remoteSessionRepo)
                 .withApplicationRepo(TenantApplications.create(componentRegistry, new MockReloadHandler(), tenant));
         tenantRepository.addTenant(tenantBuilder);
     }
@@ -149,21 +147,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         assertThat(SessionHandlerTest.getRenderedString(response), containsString("debuglog"));
     }
 
-    /**
-     * A mock remote session repo based on contents of local repo. Only works when there is just one session in local repo
-     */
-    // TODO: Fix this mess
-    private SessionZooKeeperClient fromLocalSessionRepo(LocalSessionRepo localRepo) {
-        SessionZooKeeperClient zooKeeperClient = null;
-        for (LocalSession ls : localRepo.listSessions()) {
-            zooKeeperClient = new MockSessionZKClient(curator, tenant, ls.getSessionId());
-            if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
-            RemoteSession remSess = new RemoteSession(tenant, ls.getSessionId(),
-                                                      new TestComponentRegistry.Builder().curator(curator).build(),
-                                                      zooKeeperClient);
-            remoteSessionRepo.addSession(remSess);
-        }
-        return zooKeeperClient;
+    private SessionZooKeeperClient createSessionZooKeeperClient(LocalSession session) {
+        return new MockSessionZKClient(curator, tenant, session.getSessionId());
     }
 
     @Test
@@ -173,7 +158,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         SessionHandler sessHandler = createHandler();
         sessHandler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 1L));
         session.setStatus(Session.Status.PREPARE);
-        SessionZooKeeperClient zooKeeperClient = fromLocalSessionRepo(localRepo);
+        SessionZooKeeperClient zooKeeperClient = createSessionZooKeeperClient(session);
         zooKeeperClient.writeStatus(Session.Status.PREPARE);
         HttpResponse getResponse = sessHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
@@ -187,7 +172,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         localRepo.addSession(session);
         SessionHandler sessHandler = createHandler();
         session.setStatus(Session.Status.NEW);
-        SessionZooKeeperClient zooKeeperClient = fromLocalSessionRepo(localRepo);
+        SessionZooKeeperClient zooKeeperClient = createSessionZooKeeperClient(session);
         zooKeeperClient.writeStatus(Session.Status.NEW);
         HttpResponse getResponse = sessHandler.handle(
                 SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.GET, Cmd.PREPARED, 1L));
@@ -247,7 +232,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(defaultTenant, componentRegistry);
         TenantBuilder defaultTenantBuilder = TenantBuilder.create(componentRegistry, defaultTenant)
                 .withLocalSessionRepo(localRepoDefault)
-                .withRemoteSessionRepo(new RemoteSessionRepo(defaultTenant))
                 .withSessionFactory(new MockSessionFactory());
         tenantRepository.addTenant(defaultTenantBuilder);
         final SessionHandler handler = createHandler();
@@ -324,7 +308,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void test_out_of_capacity_response() throws InterruptedException, IOException {
+    public void test_out_of_capacity_response() throws IOException {
         String message = "Internal error";
         SessionThrowingException session = new SessionThrowingException(new OutOfCapacityException(message));
         localRepo.addSession(session);
@@ -337,7 +321,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void test_that_nullpointerexception_gives_internal_server_error() throws InterruptedException, IOException {
+    public void test_that_nullpointerexception_gives_internal_server_error() throws IOException {
         String message = "No nodes available";
         SessionThrowingException session = new SessionThrowingException(new NullPointerException(message));
         localRepo.addSession(session);
@@ -350,7 +334,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
-    public void test_application_lock_failure() throws InterruptedException, IOException {
+    public void test_application_lock_failure() throws IOException {
         String message = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
         SessionThrowingException session =
                 new SessionThrowingException(new ApplicationLockException(new UncheckedTimeoutException(message)));

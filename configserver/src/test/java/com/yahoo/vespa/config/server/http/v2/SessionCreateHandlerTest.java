@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +50,6 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     private static final HashMap<String, String> postHeaders = new HashMap<>();
 
     private final TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
-    private final Clock clock = componentRegistry.getClock();
 
     private String pathPrefix = "/application/v2/session/";
     private String createdMessage = " created.\"";
@@ -179,13 +177,12 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_session_is_stored_in_repo() throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         createHandler().handle(post(outFile));
-        assertNotNull(localSessionRepo.getSession(0l));
+        assertNotNull(localSessionRepo.getSession(0));
     }
-
 
     @Test
     public void require_that_application_urls_can_be_given_as_from_parameter() throws Exception {
-        localSessionRepo.addSession(new SessionHandlerTest.MockSession(2l, FilesApplicationPackage.fromFile(testApp)));
+        localSessionRepo.addSession(new SessionHandlerTest.MockSession(2, FilesApplicationPackage.fromFile(testApp)));
         ApplicationId fooId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("foo")
@@ -194,7 +191,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         applicationRepo.createApplication(fooId);
         applicationRepo.createPutTransaction(fooId, 2).commit();
         assertFromParameter("3", "http://myhost:40555/application/v2/tenant/" + tenant + "/application/foo/environment/test/region/baz/instance/quux");
-        localSessionRepo.addSession(new SessionHandlerTest.MockSession(5l, FilesApplicationPackage.fromFile(testApp)));
+        localSessionRepo.addSession(new SessionHandlerTest.MockSession(5, FilesApplicationPackage.fromFile(testApp)));
         ApplicationId bioId = new ApplicationId.Builder()
                               .tenant(tenant)
                               .applicationName("foobio")
@@ -221,7 +218,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                 new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
                                           new OrchestratorMock(),
-                                          clock),
+                                          componentRegistry.getClock()),
                 tenantRepository,
                 componentRegistry.getConfigserverConfig());
 

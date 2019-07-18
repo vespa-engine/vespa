@@ -97,7 +97,7 @@ public class ZKMetricUpdater extends TimerTask {
                 buffer.clear();
             } while (nread >= 0);
 
-            return Optional.of(baos.toString("UTF-8"));
+            return Optional.of(baos.toString(StandardCharsets.UTF_8));
         } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
             log.warning("Failure in retrieving monitoring data: (" + e.getClass().getName() + ") " + e.getMessage());
             return Optional.empty();

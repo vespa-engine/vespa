@@ -11,7 +11,6 @@ import java.util.List;
 
 /**
  * @author geirst
- * @since 5.44
  */
 public class ConfigChangeActionsBuilder {
 
@@ -25,15 +24,15 @@ public class ConfigChangeActionsBuilder {
 
     public ConfigChangeActionsBuilder restart(String message, String clusterName, String clusterType, String serviceType, String serviceName) {
         actions.add(new MockRestartAction(message,
-                                          Arrays.asList(createService(clusterName, clusterType, serviceType, serviceName))));
+                                          List.of(createService(clusterName, clusterType, serviceType, serviceName))));
         return this;
     }
 
-    public ConfigChangeActionsBuilder refeed(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
+    ConfigChangeActionsBuilder refeed(String name, boolean allowed, String message, String documentType, String clusterName, String serviceName) {
         actions.add(new MockRefeedAction(name,
                                          allowed,
                                          message,
-                                         Arrays.asList(createService(clusterName, "myclustertype", "myservicetype", serviceName)), documentType));
+                                         List.of(createService(clusterName, "myclustertype", "myservicetype", serviceName)), documentType));
         return this;
     }
 

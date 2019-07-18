@@ -69,11 +69,11 @@ public class TenantApplicationsTest {
         TenantApplications repo = createZKAppRepo();
         ApplicationId myapp = createApplicationId("myapp");
         repo.createApplication(myapp);
-        repo.createPutTransaction(myapp, 3l).commit();
+        repo.createPutTransaction(myapp, 3).commit();
         String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
         assertNotNull(curatorFramework.checkExists().forPath(path));
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("3"));
-        repo.createPutTransaction(myapp, 5l).commit();
+        repo.createPutTransaction(myapp, 5).commit();
         assertNotNull(curatorFramework.checkExists().forPath(path));
         assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("5"));
     }

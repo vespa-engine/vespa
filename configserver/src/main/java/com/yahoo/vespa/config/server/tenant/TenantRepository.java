@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
@@ -285,7 +284,7 @@ public class TenantRepository {
         tenants.get(name).delete();
     }
 
-    public synchronized void closeTenant(TenantName name) {
+    private synchronized void closeTenant(TenantName name) {
         Tenant tenant = tenants.remove(name);
         if (tenant == null)
             throw new IllegalArgumentException("Closing '" + name + "' failed, tenant does not exist");

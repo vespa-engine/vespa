@@ -65,17 +65,17 @@ public class LocalSessionTest {
     @Test
     public void require_that_session_is_initialized() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 2);
-        assertThat(session.getSessionId(), is(2l));
+        assertThat(session.getSessionId(), is(2L));
         session = createSession(TenantName.defaultName(), Long.MAX_VALUE);
         assertThat(session.getSessionId(), is(Long.MAX_VALUE));
-        assertThat(session.getActiveSessionAtCreate(), is(0l));
+        assertThat(session.getActiveSessionAtCreate(), is(0L));
     }
 
     @Test
     public void require_that_session_status_is_updated() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
         assertThat(session.getStatus(), is(Session.Status.NEW));
-        doPrepare(session, Instant.now());
+        doPrepare(session);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
         session.createActivateTransaction().commit();
         assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
@@ -84,7 +84,7 @@ public class LocalSessionTest {
     @Test
     public void require_that_marking_session_modified_changes_status_to_new() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session, Instant.now());
+        doPrepare(session);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
         session.getApplicationFile(Path.createRoot(), LocalSession.Mode.READ);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
@@ -97,7 +97,7 @@ public class LocalSessionTest {
         SessionTest.MockSessionPreparer preparer = new SessionTest.MockSessionPreparer();
         LocalSession session = createSession(TenantName.defaultName(), 3, preparer);
         assertFalse(preparer.isPrepared);
-        doPrepare(session, Instant.now());
+        doPrepare(session);
         assertTrue(preparer.isPrepared);
         assertThat(session.getStatus(), is(Session.Status.PREPARE));
     }
@@ -148,7 +148,7 @@ public class LocalSessionTest {
         NetworkPorts ports = new NetworkPorts(list);
 
         AllocatedHosts input = AllocatedHosts.withHosts(Collections.singleton(
-                new HostSpec("myhost", Collections.<String>emptyList(),
+                new HostSpec("myhost", Collections.emptyList(),
                              Optional.empty(), Optional.empty(), Optional.empty(),
                              Optional.of(ports))));
 
@@ -156,7 +156,7 @@ public class LocalSessionTest {
         ApplicationId origId = new ApplicationId.Builder()
                                .tenant("tenant")
                                .applicationName("foo").instanceName("quux").build();
-        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build(), Instant.now());
+        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build());
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
@@ -169,7 +169,7 @@ public class LocalSessionTest {
     @Test
     public void require_that_application_metadata_is_correct() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session, new PrepareParams.Builder().build(), Instant.now());
+        doPrepare(session, new PrepareParams.Builder().build());
         assertThat(session.getMetaData().toString(), is("n/a, n/a, 0, 0, , 0"));
     }
 
@@ -179,7 +179,7 @@ public class LocalSessionTest {
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer) throws Exception {
-        return createSession(tenant, sessionId, preparer, Optional.<AllocatedHosts>empty());
+        return createSession(tenant, sessionId, preparer, Optional.empty());
     }
 
     private LocalSession createSession(TenantName tenant, long sessionId, SessionTest.MockSessionPreparer preparer, Optional<AllocatedHosts> allocatedHosts) throws Exception {
@@ -204,16 +204,16 @@ public class LocalSessionTest {
                         flagSource));
     }
 
-    private void doPrepare(LocalSession session, Instant now) {
-        doPrepare(session, new PrepareParams.Builder().build(), now);
+    private void doPrepare(LocalSession session) {
+        doPrepare(session, new PrepareParams.Builder().build());
     }
 
-    private void doPrepare(LocalSession session, PrepareParams params, Instant now) {
-        session.prepare(getLogger(false), params, Optional.empty(), tenantPath, now);
+    private void doPrepare(LocalSession session, PrepareParams params) {
+        session.prepare(getLogger(), params, Optional.empty(), tenantPath, Instant.now());
     }
 
-    DeployHandlerLogger getLogger(boolean verbose) {
-        return new DeployHandlerLogger(new Slime().get(), verbose,
+    private DeployHandlerLogger getLogger() {
+        return new DeployHandlerLogger(new Slime().get(), false,
                                        new ApplicationId.Builder().tenant("testtenant").applicationName("testapp").build());
     }
 

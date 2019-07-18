@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.application;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -18,22 +19,21 @@ import static org.junit.Assert.assertEquals;
 
 public class ApplicationMapperTest {
 
-    ApplicationId appId;
-    ApplicationMapper applicationMapper;
-    ArrayList<Version> vespaVersions = new ArrayList<>();
-    ArrayList<Application> applications = new ArrayList<>();
+    private ApplicationId appId;
+    private ApplicationMapper applicationMapper;
+    private ArrayList<Version> vespaVersions = new ArrayList<>();
+    private ArrayList<Application> applications = new ArrayList<>();
 
     @Before
     public void setUp() {
         applicationMapper = new ApplicationMapper();
         appId = new ApplicationId.Builder()
-                .tenant("test").applicationName("test").instanceName("test").build();
-        vespaVersions.add(Version.fromString("1.2.3"));
-        vespaVersions.add(Version.fromString("1.2.4"));
-        vespaVersions.add(Version.fromString("1.2.5"));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(0), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(1), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
-        applications.add(new Application(new ModelStub(), null, 0, false, vespaVersions.get(2), MetricUpdater.createTestUpdater(), ApplicationId.defaultId()));
+                .tenant("test")
+                .applicationName("test")
+                .instanceName("test")
+                .build();
+        vespaVersions.addAll(List.of(Version.fromString("1.2.3"), Version.fromString("1.2.4"), Version.fromString("1.2.5")));
+        applications.addAll(List.of(createApplication(vespaVersions.get(0)), createApplication(vespaVersions.get(1)), createApplication(vespaVersions.get(2))));
     }
 
     @Test
@@ -53,7 +53,6 @@ public class ApplicationMapperTest {
     @Test (expected = VersionDoesNotExistException.class)
     public void testGetForVersionThrows() {
         applicationMapper.register(appId, ApplicationSet.fromList(Arrays.asList(applications.get(0), applications.get(2))));
-
         applicationMapper.getForVersion(appId, Optional.of(vespaVersions.get(1)), Instant.now());
     }
 
@@ -62,9 +61,16 @@ public class ApplicationMapperTest {
         applicationMapper.register(appId, ApplicationSet.fromSingle(applications.get(0)));
 
         applicationMapper.getForVersion(new ApplicationId.Builder()
-                                        .tenant("different").applicationName("different").instanceName("different").build(),
+                                                .tenant("different")
+                                                .applicationName("different")
+                                                .instanceName("different")
+                                                .build(),
                                         Optional.of(vespaVersions.get(1)),
                                         Instant.now());
+    }
+
+    private Application createApplication(Version version) {
+        return new Application(new ModelStub(), null, 0, false, version, MetricUpdater.createTestUpdater(), ApplicationId.defaultId());
     }
 
 }

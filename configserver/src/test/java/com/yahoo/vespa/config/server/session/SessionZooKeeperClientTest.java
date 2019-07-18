@@ -92,18 +92,18 @@ public class SessionZooKeeperClientTest {
     public void require_that_create_time_can_be_written_and_read() {
         SessionZooKeeperClient zkc = createSessionZKClient("3");
         curator.delete(Path.fromString("3"));
-        assertThat(zkc.readCreateTime(), is(0l));
-        zkc.createNewSession(123456l, TimeUnit.SECONDS);
-        assertThat(zkc.readCreateTime(), is(123456l));
+        assertThat(zkc.readCreateTime(), is(0L));
+        zkc.createNewSession(123456L, TimeUnit.SECONDS);
+        assertThat(zkc.readCreateTime(), is(123456L));
     }
 
     @Test
     public void require_that_create_time_has_correct_unit() {
         SessionZooKeeperClient zkc = createSessionZKClient("3");
         curator.delete(Path.fromString("3"));
-        assertThat(zkc.readCreateTime(), is(0l));
+        assertThat(zkc.readCreateTime(), is(0L));
         zkc.createNewSession(60, TimeUnit.MINUTES);
-        assertThat(zkc.readCreateTime(), is(3600l));
+        assertThat(zkc.readCreateTime(), is(3600L));
     }
 
     private void assertApplicationIdParse(String sessionId, String idString, String expectedIdString) {

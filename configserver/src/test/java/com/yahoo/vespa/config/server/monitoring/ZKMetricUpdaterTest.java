@@ -62,8 +62,7 @@ public class ZKMetricUpdaterTest {
     private ZKMetricUpdater buildUpdater() {
         ZookeeperServerConfig zkServerConfig = new ZookeeperServerConfig(
                 new ZookeeperServerConfig.Builder().clientPort(serverPort).myid(12345));
-        ZKMetricUpdater updater = new ZKMetricUpdater(zkServerConfig, 0, -1);
-        return updater;
+        return new ZKMetricUpdater(zkServerConfig, 0, -1);
     }
 
     private void setupTcpServer(Supplier<String> reportProvider) throws IOException {

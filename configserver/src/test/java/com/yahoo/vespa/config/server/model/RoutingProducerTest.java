@@ -66,7 +66,7 @@ public class RoutingProducerTest {
     private ApplicationInfo createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
         return new ApplicationInfo(
                 appId,
-                3l,
+                3L,
                 createVespaModel(
                         createApplicationPackage(
                                 appId.tenant() + "." + appId.application() + ".yahoo.com",

@@ -11,10 +11,8 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import javax.annotation.Nullable;
 
 import org.junit.Test;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Collections2;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -37,7 +35,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     }
 
     @Test
-    public void require_that_nonexistant_file_returns_not_found() throws IOException {
+    public void require_that_nonexistant_file_returns_not_found() {
         HttpResponse response = doRequest(HttpRequest.Method.GET, "/test2.txt");
         assertNotNull(response);
         assertThat(response.getStatus(), is(NOT_FOUND));
@@ -88,12 +86,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     protected abstract HttpResponse doRequest(HttpRequest.Method method, String path);
 
     private String generateResultArray(String... files) {
-        Collection<String> output = Collections2.transform(Arrays.asList(files), new Function<String, String>() {
-            @Override
-            public String apply(@Nullable String input) {
-                return "\"" + baseUrl + input + "\"";
-            }
-        });
+        Collection<String> output = Collections2.transform(Arrays.asList(files), input -> "\"" + baseUrl + input + "\"");
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         sb.append(Joiner.on(",").join(output));

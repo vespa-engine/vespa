@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -139,7 +140,7 @@ public class TenantHandlerTest {
     private void assertResponseEquals(SessionResponse response, String payload) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        assertEquals(baos.toString("UTF-8"), payload);
+        assertEquals(baos.toString(StandardCharsets.UTF_8), payload);
     }
 
 }

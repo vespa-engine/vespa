@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -212,7 +211,7 @@ public class LbServicesProducerTest {
     private ApplicationInfo createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
         return new ApplicationInfo(
                 appId,
-                3l,
+                3,
                 createVespaModel(createApplicationPackage(
                         appId.tenant() + "." + appId.application() + ".yahoo.com", appId.tenant().value() + "." + appId.application().value() + "2.yahoo.com"),
                 deploystateBuilder));

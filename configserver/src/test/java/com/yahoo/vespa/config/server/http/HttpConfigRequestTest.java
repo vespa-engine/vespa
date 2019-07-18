@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import java.io.IOException;
-
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.config.ConfigKey;
 
@@ -17,7 +15,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class HttpConfigRequestTest {
     @Test
@@ -39,7 +36,7 @@ public class HttpConfigRequestTest {
     }
 
     @Test
-    public void require_that_request_can_be_created_with_advanced_uri() throws IOException {
+    public void require_that_request_can_be_created_with_advanced_uri() {
         HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest(
                 "http://example.yahoo.com:19071/config/v1/vespa.config.cloud.sentinel/host-01.example.yahoo.com", GET));
     }

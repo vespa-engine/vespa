@@ -44,9 +44,9 @@ public class HttpGetConfigHandlerTest {
     @Before
     public void setUp() {
         mockRequestHandler = new MockRequestHandler();
-        mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
+        mockRequestHandler.setAllConfigs(new HashSet<>() {{
             add(new ConfigKey<>("bar", "myid", "foo"));
-            }} );
+        }} );
         TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder().build();
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, tenant).withRequestHandler(mockRequestHandler));

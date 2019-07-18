@@ -8,7 +8,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 
-import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -19,7 +18,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class DeployHandlerLoggerTest {
     @Test

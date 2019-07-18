@@ -6,7 +6,6 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -20,17 +19,14 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.concurrent.Executor;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
-
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class HttpGetConfigHandlerTest {
     private static final String configUri = "http://yahoo.com:8080/config/v1/foo.bar/myid";
@@ -41,12 +37,10 @@ public class HttpGetConfigHandlerTest {
     @Before
     public void setUp() {
         mockRequestHandler = new MockRequestHandler();
-        mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
+        mockRequestHandler.setAllConfigs(new HashSet<>() {{
             add(new ConfigKey<>("bar", "myid", "foo"));
-            }} );
-        handler = new HttpGetConfigHandler(
-                HttpGetConfigHandler.testOnlyContext(),
-                mockRequestHandler);
+        }} );
+        handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), mockRequestHandler);
     }
 
     @Test

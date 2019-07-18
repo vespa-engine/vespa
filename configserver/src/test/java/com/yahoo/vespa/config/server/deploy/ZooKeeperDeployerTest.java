@@ -8,7 +8,6 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.prelude.semantics.parser.ParseException;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import org.junit.Rule;
@@ -25,7 +24,6 @@ import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ZooKeeperDeployerTest {
 
@@ -34,7 +32,7 @@ public class ZooKeeperDeployerTest {
     private static final String defFile = "test2.def";
 
     @Test
-    public void require_that_deployer_is_initialized() throws IOException, ParseException {
+    public void require_that_deployer_is_initialized() throws IOException {
         ConfigCurator zkfacade = ConfigCurator.create(new MockCurator());
         File serverdbDir = folder.newFolder("serverdb");
         File defsDir = new File(serverdbDir, "serverdefs");

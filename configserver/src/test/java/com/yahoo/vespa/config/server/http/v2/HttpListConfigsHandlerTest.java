@@ -41,9 +41,9 @@ public class HttpListConfigsHandlerTest {
     @Before
     public void setUp() {
         mockRequestHandler = new MockRequestHandler();
-        mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>() {{ 
+        mockRequestHandler.setAllConfigs(new HashSet<>() {{
             add(new ConfigKey<>("bar", "conf/id", "foo"));
-            }} );
+        }} );
         TenantName tenantName = TenantName.from("mytenant");
         TenantRepository tenantRepository = new TenantRepository(componentRegistry, false);
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
@@ -73,7 +73,7 @@ public class HttpListConfigsHandlerTest {
     @Test
     public void require_that_named_handler_can_be_created() throws IOException {
         HttpRequest req = HttpRequest.createTestRequest("http://foo.com:8080/config/v2/tenant/mytenant/application/myapplication/foo.bar/conf/id/", GET);
-        req.getJDiscRequest().parameters().put("http.path", Arrays.asList("foo.bar"));
+        req.getJDiscRequest().parameters().put("http.path", List.of("foo.bar"));
         HttpResponse response = namedHandler.handle(req);
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"children\":[],\"configs\":[]}"));
     }
@@ -81,14 +81,14 @@ public class HttpListConfigsHandlerTest {
     @Test
     public void require_that_named_handler_can_be_created_from_full_appid() throws IOException {
         HttpRequest req = HttpRequest.createTestRequest("http://foo.com:8080/config/v2/tenant/mytenant/application/myapplication/environment/prod/region/myregion/instance/myinstance/foo.bar/conf/id/", GET);
-        req.getJDiscRequest().parameters().put("http.path", Arrays.asList("foo.bar"));
+        req.getJDiscRequest().parameters().put("http.path", List.of("foo.bar"));
         HttpResponse response = namedHandler.handle(req);
         assertThat(SessionHandlerTest.getRenderedString(response), is("{\"children\":[],\"configs\":[]}"));
     }
     
     @Test
     public void require_child_listings_correct() {
-        Set<ConfigKey<?>> keys = new LinkedHashSet<ConfigKey<?>>() {{
+        Set<ConfigKey<?>> keys = new LinkedHashSet<>() {{
             add(new ConfigKey<>("name1", "id/1", "ns1"));
             add(new ConfigKey<>("name1", "id/1", "ns1"));
             add(new ConfigKey<>("name1", "id/2", "ns1"));
@@ -104,7 +104,7 @@ public class HttpListConfigsHandlerTest {
  
     @Test
     public void require_url_building_and_mimetype_correct() {
-        ListConfigsResponse resp = new ListConfigsResponse(new HashSet<ConfigKey<?>>(), null, "http://foo.com/config/v2/tenant/mytenant/application/mya/", true);
+        ListConfigsResponse resp = new ListConfigsResponse(new HashSet<>(), null, "http://foo.com/config/v2/tenant/mytenant/application/mya/", true);
         assertEquals(resp.toUrl(new ConfigKey<>("myconfig", "my/id", "mynamespace"), true), "http://foo.com/config/v2/tenant/mytenant/application/mya/mynamespace.myconfig/my/id");
         assertEquals(resp.toUrl(new ConfigKey<>("myconfig", "my/id", "mynamespace"), false), "http://foo.com/config/v2/tenant/mytenant/application/mya/mynamespace.myconfig/my/id/");
         assertEquals(resp.toUrl(new ConfigKey<>("myconfig", "", "mynamespace"), false), "http://foo.com/config/v2/tenant/mytenant/application/mya/mynamespace.myconfig");
@@ -128,7 +128,7 @@ public class HttpListConfigsHandlerTest {
     
     @Test
     public void require_correct_error_response_on_no_model() throws IOException {
-        mockRequestHandler.setAllConfigs(new HashSet<ConfigKey<?>>());
+        mockRequestHandler.setAllConfigs(new HashSet<>());
         HttpResponse response = namedHandler.handle(HttpRequest.createTestRequest("http://yahoo.com:8080/config/v2/tenant/mytenant/application/myapplication/foo.bar/myid/", GET));
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND,
                 HttpErrorResponse.errorCodes.NOT_FOUND,
@@ -137,7 +137,7 @@ public class HttpListConfigsHandlerTest {
     
     @Test
     public void require_correct_configid_parent() {
-        assertEquals(ListConfigsResponse.parentConfigId(null), null);
+        assertNull(ListConfigsResponse.parentConfigId(null));
         assertEquals(ListConfigsResponse.parentConfigId("foo"), "");
         assertEquals(ListConfigsResponse.parentConfigId(""), "");
         assertEquals(ListConfigsResponse.parentConfigId("/"), "");

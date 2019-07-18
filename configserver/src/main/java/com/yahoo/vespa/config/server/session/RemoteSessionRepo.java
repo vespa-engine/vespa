@@ -3,9 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -33,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -68,7 +63,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
-
         this.curator = registry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
@@ -83,20 +77,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
-    }
-
-    // For testing only
-    public RemoteSessionRepo(TenantName tenantName) {
-        this.curator = null;
-        this.remoteSessionFactory = null;
-        this.reloadHandler = null;
-        this.tenantName = tenantName;
-        this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
-        this.metrics = null;
-        this.directoryCache = null;
-        this.applicationRepo = null;
-        this.flagSource = new InMemoryFlagSource();
-        this.zkWatcherExecutor = Runnable::run;
     }
 
     public List<Long> getSessions() {

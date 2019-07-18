@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -33,14 +32,13 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionContext;
 import com.yahoo.vespa.config.server.session.SessionFactory;
-import com.yahoo.vespa.config.server.session.SessionPreparer;
-import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -80,16 +78,13 @@ public class SessionHandlerTest {
     public static String getRenderedString(HttpResponse response) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        return baos.toString("UTF-8");
+        return baos.toString(StandardCharsets.UTF_8);
     }
 
     public static class MockSession extends LocalSession {
 
-        private final InMemoryFlagSource flagSource;
         public boolean doVerboseLogging = false;
         public Session.Status status;
-        private final SessionPreparer preparer;
-        private final ApplicationPackage app;
         private ConfigChangeActions actions = new ConfigChangeActions();
         private long createTime = System.currentTimeMillis() / 1000;
         private ApplicationId applicationId;
@@ -99,10 +94,7 @@ public class SessionHandlerTest {
         }
 
         private MockSession(long id, ApplicationPackage app, InMemoryFlagSource flagSource) {
-            super(TenantName.defaultName(), id, null, new SessionContext(null, new MockSessionZKClient(MockApplicationPackage.createEmpty()), null, null, new HostRegistry<>(), flagSource));
-            this.app = app;
-            this.preparer = new SessionTest.MockSessionPreparer();
-            this.flagSource = flagSource;
+            super(TenantName.defaultName(), id, null, new SessionContext(app, new MockSessionZKClient(app), null, null, new HostRegistry<>(), flagSource));
         }
 
         public MockSession(long sessionId, ApplicationPackage applicationPackage, long createTime) {
@@ -140,31 +132,17 @@ public class SessionHandlerTest {
 
         @Override
         public Transaction createDeactivateTransaction() {
-            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> {
-                status = Status.DEACTIVATE;
-            });
+            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.DEACTIVATE);
         }
 
         @Override
         public Transaction createActivateTransaction() {
-            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> {
-                status = Status.ACTIVATE;
-            });
+            return new DummyTransaction().add((DummyTransaction.RunnableOperation) () -> status = Status.ACTIVATE);
         }
 
         @Override
         public ApplicationFile getApplicationFile(Path relativePath, Mode mode) {
-            if (mode == Mode.WRITE) {
-                status = Status.NEW;
-            }
-            if (preparer == null) {
-                return null;
-            }
-            ApplicationPackage pkg = app;
-            if (pkg == null) {
-                return null;
-            }
-            return pkg.getFile(relativePath);
+            return this.applicationPackage.getFile(relativePath);
         }
 
         @Override
@@ -205,8 +183,7 @@ public class SessionHandlerTest {
         public File applicationPackage;
 
         @Override
-        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId,
-                                          TimeoutBudget timeoutBudget) {
+        public LocalSession createSession(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
             createCalled = true;
             if (doThrow) {
                 throw new RuntimeException("foo");

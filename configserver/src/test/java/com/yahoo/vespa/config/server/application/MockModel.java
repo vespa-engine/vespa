@@ -45,6 +45,7 @@ public class MockModel implements Model {
         return new HostInfo(hostname, Arrays.asList(container, serviceNoStatePort));
     }
 
+    // TODO: Move to caller
     static MockModel createClusterController(String hostname, int statePort) {
         ServiceInfo container = createServiceInfo(
                 hostname,

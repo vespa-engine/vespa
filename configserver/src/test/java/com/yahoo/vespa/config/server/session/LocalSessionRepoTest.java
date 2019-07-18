@@ -74,42 +74,42 @@ public class LocalSessionRepoTest {
 
     @Test
     public void require_that_sessions_can_be_loaded_from_disk() {
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNotNull(repo.getSession(3l));
-        assertNull(repo.getSession(4l));
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNotNull(repo.getSession(3L));
+        assertNull(repo.getSession(4L));
     }
 
     @Test
     public void require_that_old_sessions_are_purged() {
         clock.advance(Duration.ofSeconds(1));
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNotNull(repo.getSession(3l));
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNotNull(repo.getSession(3L));
         clock.advance(Duration.ofSeconds(1));
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNotNull(repo.getSession(3l));
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNotNull(repo.getSession(3L));
         clock.advance(Duration.ofSeconds(1));
-        addSession(4l, 6);
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNotNull(repo.getSession(3l));
-        assertNotNull(repo.getSession(4l));
+        addSession(4L, 6);
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNotNull(repo.getSession(3L));
+        assertNotNull(repo.getSession(4L));
         clock.advance(Duration.ofSeconds(1));
-        addSession(5l, 10);
+        addSession(5L, 10);
         repo.purgeOldSessions();
-        assertNull(repo.getSession(1l));
-        assertNull(repo.getSession(2l));
-        assertNull(repo.getSession(3l));
+        assertNull(repo.getSession(1L));
+        assertNull(repo.getSession(2L));
+        assertNull(repo.getSession(3L));
     }
 
     @Test
     public void require_that_all_sessions_are_deleted() {
         repo.close();
-        assertNull(repo.getSession(1l));
-        assertNull(repo.getSession(2l));
-        assertNull(repo.getSession(3l));
+        assertNull(repo.getSession(1L));
+        assertNull(repo.getSession(2L));
+        assertNull(repo.getSession(3L));
     }
 
     private void addSession(long sessionId, long createTime) {
@@ -119,10 +119,10 @@ public class LocalSessionRepoTest {
     @Test
     public void require_that_sessions_belong_to_a_tenant() {
         // tenant is "default"
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNotNull(repo.getSession(3l));
-        assertNull(repo.getSession(4l));
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNotNull(repo.getSession(3L));
+        assertNull(repo.getSession(4L));
 
         // tenant is "newTenant"
         try {
@@ -130,12 +130,12 @@ public class LocalSessionRepoTest {
         } catch (Exception e) {
             fail();
         }
-        assertNull(repo.getSession(1l));
+        assertNull(repo.getSession(1L));
 
-        repo.addSession(new SessionHandlerTest.MockSession(1l, FilesApplicationPackage.fromFile(testApp)));
-        repo.addSession(new SessionHandlerTest.MockSession(2l, FilesApplicationPackage.fromFile(testApp)));
-        assertNotNull(repo.getSession(1l));
-        assertNotNull(repo.getSession(2l));
-        assertNull(repo.getSession(3l));
+        repo.addSession(new SessionHandlerTest.MockSession(1L, FilesApplicationPackage.fromFile(testApp)));
+        repo.addSession(new SessionHandlerTest.MockSession(2L, FilesApplicationPackage.fromFile(testApp)));
+        assertNotNull(repo.getSession(1L));
+        assertNotNull(repo.getSession(2L));
+        assertNull(repo.getSession(3L));
     }
 }

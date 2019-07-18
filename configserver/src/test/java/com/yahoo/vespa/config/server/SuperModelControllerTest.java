@@ -54,7 +54,7 @@ public class SuperModelControllerTest {
         File testApp = new File("src/test/resources/deploy/app");
         ApplicationId app = ApplicationId.from(TenantName.from("a"),
                                                ApplicationName.from("foo"), InstanceName.defaultName());
-        models.put(app, new ApplicationInfo(app, 4l, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
+        models.put(app, new ApplicationInfo(app, 4L, new VespaModel(FilesApplicationPackage.fromFile(testApp))));
         SuperModel superModel = new SuperModel(models);
         handler = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
     }
@@ -94,9 +94,9 @@ public class SuperModelControllerTest {
         ApplicationId simple = applicationId("mysimpleapp", t1);
         ApplicationId advanced = applicationId("myadvancedapp", t1);
         ApplicationId tooAdvanced = applicationId("minetooadvancedapp", t2);
-        models.put(simple, createApplicationInfo(testApp1, simple, 4l));
-        models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
-        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
+        models.put(simple, createApplicationInfo(testApp1, simple, 4L));
+        models.put(advanced, createApplicationInfo(testApp2, advanced, 4L));
+        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4L));
 
         SuperModel superModel = new SuperModel(models);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
@@ -122,9 +122,9 @@ public class SuperModelControllerTest {
         ApplicationId simple = applicationId("mysimpleapp", t1);
         ApplicationId advanced = applicationId("myadvancedapp", t1);
         ApplicationId tooAdvanced = applicationId("minetooadvancedapp", t2);
-        models.put(simple, createApplicationInfo(testApp1, simple, 4l));
-        models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
-        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
+        models.put(simple, createApplicationInfo(testApp1, simple, 4L));
+        models.put(advanced, createApplicationInfo(testApp2, advanced, 4L));
+        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4L));
 
         SuperModel superModel = new SuperModel(models);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone(), new InMemoryFlagSource()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());

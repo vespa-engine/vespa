@@ -13,7 +13,6 @@ import java.util.Stack;
  * Allocates port ranges for all configserver tests.
  *
  * @author Ulf Lilleengen
- * @since 5.1.26
  */
 public class PortRangeAllocator {
     private final static PortRange portRange = new PortRange();
@@ -33,7 +32,7 @@ public class PortRangeAllocator {
         private static final int first = 18651;
         private static final int last = 18899; // see: factory/doc/port-ranges
 
-        public PortRange() {
+        PortRange() {
             freePorts.addAll(ContiguousSet.create(Range.closed(first, last), DiscreteDomain.integers()));
         }
 

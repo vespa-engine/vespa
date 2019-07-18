@@ -15,6 +15,8 @@ import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletionService;
 
@@ -67,10 +69,9 @@ public class MockRpc extends RpcServer {
         return new ConfigserverConfig(b);
     }
 
-    public boolean waitUntilSet(int timeout) {
-        long start = System.currentTimeMillis();
-        long end = start + timeout;
-        while (start < end) {
+    boolean waitUntilSet(Duration timeout) {
+        Instant end = Instant.now().plus(timeout);
+        while (Instant.now().isBefore(end)) {
             if (latestRequest != null)
                 return true;
             try {

@@ -10,8 +10,6 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
-import java.time.Clock;
-
 class MaintainerTester {
 
     private final Curator curator;
@@ -25,7 +23,7 @@ class MaintainerTester {
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           new SessionHandlerTest.MockProvisioner(),
                                                           new OrchestratorMock(),
-                                                          Clock.systemUTC());
+                                                          componentRegistry.getClock());
     }
 
     Curator curator() { return curator; }
