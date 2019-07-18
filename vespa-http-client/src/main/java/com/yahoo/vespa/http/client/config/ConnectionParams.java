@@ -43,16 +43,6 @@ public final class ConnectionParams {
         private int traceLevel = 0;
         private int traceEveryXOperation = 0;
         private boolean printTraceToStdErr = true;
-        private boolean useTlsConfigFromEnvironment = false;
-
-        /**
-         * Use TLS configuration through the standard Vespa environment variables.
-         * Setting this to 'true' will override any other TLS/HTTPS related configuration.
-         */
-        public Builder setUseTlsConfigFromEnvironment(boolean useTlsConfigFromEnvironment) {
-            this.useTlsConfigFromEnvironment = useTlsConfigFromEnvironment;
-            return this;
-        }
 
         /**
          * Sets the SSLContext for the connection to the gateway when SSL is enabled for Endpoint.
@@ -243,8 +233,7 @@ public final class ConnectionParams {
                     dryRun,
                     traceLevel,
                     traceEveryXOperation,
-                    printTraceToStdErr,
-                    useTlsConfigFromEnvironment);
+                    printTraceToStdErr);
         }
 
         public int getNumPersistentConnectionsPerEndpoint() {
@@ -284,10 +273,6 @@ public final class ConnectionParams {
         public HostnameVerifier getHostnameVerifier() {
             return hostnameVerifier;
         }
-
-        public boolean useTlsConfigFromEnvironment() {
-            return useTlsConfigFromEnvironment;
-        }
     }
     private final SSLContext sslContext;
     private final HostnameVerifier hostnameVerifier;
@@ -303,7 +288,6 @@ public final class ConnectionParams {
     private final int traceLevel;
     private final int traceEveryXOperation;
     private final boolean printTraceToStdErr;
-    private final boolean useTlsConfigFromEnvironment;
 
     private ConnectionParams(
             SSLContext sslContext,
@@ -319,11 +303,9 @@ public final class ConnectionParams {
             boolean dryRun,
             int traceLevel,
             int traceEveryXOperation,
-            boolean printTraceToStdErr,
-            boolean useTlsConfigFromEnvironment) {
+            boolean printTraceToStdErr) {
         this.sslContext = sslContext;
         this.hostnameVerifier = hostnameVerifier;
-        this.useTlsConfigFromEnvironment = useTlsConfigFromEnvironment;
         this.headers.putAll(headers);
         this.headerProviders.putAll(headerProviders);
         this.numPersistentConnectionsPerEndpoint = numPersistentConnectionsPerEndpoint;
@@ -394,10 +376,6 @@ public final class ConnectionParams {
 
     public boolean getPrintTraceToStdErr() {
         return printTraceToStdErr;
-    }
-
-    public boolean useTlsConfigFromEnvironment() {
-        return useTlsConfigFromEnvironment;
     }
 
     /**
