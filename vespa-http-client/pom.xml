@@ -65,22 +65,6 @@
       <artifactId>airline</artifactId>
       <version>0.6</version>
     </dependency>
-    <dependency>
-      <!-- Needed for Vespa TLS configuration. Standard jar artifact -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>http-utils</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <!-- Needed for Vespa TLS configuration. -->
-      <!-- This artifact is packaged as an OSGi bundle - make sure to manually include or exclude transitive dependencies as necessary -->
-      <!-- Note: includes BouncyCastle to compile scope transitively. -->
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>security-utils</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -156,17 +140,6 @@
             </goals>
             <configuration>
               <outputFile>target/${project.artifactId}-jar-with-dependencies.jar</outputFile>
-              <filters>
-                <filter>
-                  <!-- Don't include signature files in uber jar (most likely from bouncycastle).  -->
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>com.yahoo.vespa.http.client.runner.Runner</mainClass>
