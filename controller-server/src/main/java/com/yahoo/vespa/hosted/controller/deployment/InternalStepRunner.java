@@ -12,7 +12,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -587,7 +586,7 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
-        byte[] servicesXml = servicesXml(controller.system(), testerFlavorFor(id, spec));
+        byte[] servicesXml = servicesXml(controller.zoneRegistry().getSystemAthenzDomain(), testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
 
         ZoneId zone = id.type().zone(controller.system());
@@ -619,9 +618,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(SystemName systemName, Optional<String> testerFlavor) {
-        String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
-
+    static byte[] servicesXml(AthenzDomain domain, Optional<String> testerFlavor) {
         String flavor = testerFlavor.orElse("d-1-4-50");
         int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
@@ -646,7 +643,7 @@ public class InternalStepRunner implements StepRunner {
                 "        <http>\n" +
                 "            <server id='default' port='4080'/>\n" +
                 "            <filtering>\n" +
-                "                <access-control domain='" + domain + "'>\n" + // Set up dummy access control to pass validation :/
+                "                <access-control domain='" + domain.value() + "'>\n" + // Set up dummy access control to pass validation :/
                 "                    <exclude>\n" +
                 "                        <binding>http://*/tester/v1/*</binding>\n" +
                 "                    </exclude>\n" +
@@ -659,7 +656,7 @@ public class InternalStepRunner implements StepRunner {
                 "                        </config>\n" +
                 "                        <component id=\"com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper\" bundle=\"jdisc-security-filters\">\n" +
                 "                            <config name=\"jdisc.http.filter.security.athenz.static-request-resource-mapper\">\n" +
-                "                                <resourceName>" + domain + ":tester-application</resourceName>\n" +
+                "                                <resourceName>" + domain.value() + ":tester-application</resourceName>\n" +
                 "                                <action>deploy</action>\n" +
                 "                            </config>\n" +
                 "                        </component>\n" +
