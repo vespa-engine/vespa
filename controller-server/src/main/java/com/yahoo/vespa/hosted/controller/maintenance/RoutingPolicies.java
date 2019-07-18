@@ -1,8 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.RotationName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -72,14 +72,13 @@ public class RoutingPolicies {
      * Refresh routing policies for application in given zone. This is idempotent and changes will only be performed if
      * load balancers for given application have changed.
      */
-    public void refresh(ApplicationId application, ZoneId zone) {
-        // TODO: Use this to decide how apply routing policies for shared routing layer
+    public void refresh(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone) {
         if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
         var lbs = new LoadBalancers(application, zone, controller.applications().configServer()
                                                                  .getLoadBalancers(application, zone));
         try (var lock = db.lockRoutingPolicies()) {
-            removeObsoleteEndpointsFromDns(lbs, lock);
-            storePoliciesOf(lbs, lock);
+            removeObsoleteEndpointsFromDns(lbs, deploymentSpec, lock);
+            storePoliciesOf(lbs, deploymentSpec, lock);
             removeObsoletePolicies(lbs, lock);
             registerEndpointsInDns(lbs, lock);
         }
@@ -105,10 +104,10 @@ public class RoutingPolicies {
     }
 
     /** Store routing policies for given route */
-    private void storePoliciesOf(LoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void storePoliciesOf(LoadBalancers loadBalancers, DeploymentSpec spec, @SuppressWarnings("unused") Lock lock) {
         Set<RoutingPolicy> policies = new LinkedHashSet<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
-            RoutingPolicy policy = createPolicy(loadBalancers.application, loadBalancers.zone, loadBalancer);
+            RoutingPolicy policy = createPolicy(loadBalancers.application, spec, loadBalancers.zone, loadBalancer);
             if (!policies.add(policy)) {
                 policies.remove(policy);
                 policies.add(policy);
@@ -118,17 +117,14 @@ public class RoutingPolicies {
     }
 
     /** Create a policy for given load balancer and register a CNAME for it */
-    private RoutingPolicy createPolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer) {
-        // TODO(mpolden): Remove rotations from LoadBalancer. Use endpoints from deployment spec instead
-        Set<EndpointId> endpoints = loadBalancer.rotations().stream()
-                                                .map(RotationName::value)
-                                                .map(EndpointId::of)
-                                                .collect(Collectors.toSet());
-        RoutingPolicy routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
-                                                        loadBalancer.hostname(), loadBalancer.dnsZone(),
-                                                        endpoints);
-        RecordName name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
-        RecordData data = RecordData.fqdn(loadBalancer.hostname().value());
+    private RoutingPolicy createPolicy(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone,
+                                       LoadBalancer loadBalancer) {
+        var endpoints = endpointIdsOf(loadBalancer, zone, deploymentSpec);
+        var routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
+                                              loadBalancer.hostname(), loadBalancer.dnsZone(),
+                                              endpoints);
+        var name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
+        var data = RecordData.fqdn(loadBalancer.hostname().value());
         controller.nameServiceForwarder().createCname(name, data, Priority.normal);
         return routingPolicy;
     }
@@ -152,10 +148,10 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced global endpoints for given route from DNS */
-    private void removeObsoleteEndpointsFromDns(LoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void removeObsoleteEndpointsFromDns(LoadBalancers loadBalancers, DeploymentSpec deploymentSpec, @SuppressWarnings("unused") Lock lock) {
         var zonePolicies = get(loadBalancers.application, loadBalancers.zone);
         var removalCandidates = routingTableFrom(zonePolicies).keySet();
-        var activeRoutingIds = routingIdsFrom(loadBalancers.list);
+        var activeRoutingIds = routingIdsFrom(loadBalancers, deploymentSpec);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
             Endpoint endpoint = RoutingPolicy.endpointOf(id.application(), id.endpointId(), controller.system());
@@ -164,11 +160,11 @@ public class RoutingPolicies {
     }
 
     /** Compute routing IDs from given load balancers */
-    private static Set<RoutingId> routingIdsFrom(List<LoadBalancer> loadBalancers) {
+    private static Set<RoutingId> routingIdsFrom(LoadBalancers loadBalancers, DeploymentSpec spec) {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
-        for (var loadBalancer : loadBalancers) {
-            for (var rotation : loadBalancer.rotations()) {
-                routingIds.add(new RoutingId(loadBalancer.application(), EndpointId.of(rotation.value())));
+        for (var loadBalancer : loadBalancers.list) {
+            for (var endpointId : endpointIdsOf(loadBalancer, loadBalancers.zone, spec)) {
+                routingIds.add(new RoutingId(loadBalancer.application(), endpointId));
             }
         }
         return Collections.unmodifiableSet(routingIds);
@@ -185,6 +181,16 @@ public class RoutingPolicies {
             }
         }
         return routingTable;
+    }
+
+    /** Compute all endpoint IDs of given load balancer */
+    private static Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer, ZoneId zone, DeploymentSpec spec) {
+        return spec.endpoints().stream()
+                   .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
+                   .filter(endpoint -> endpoint.regions().contains(zone.region()))
+                   .map(com.yahoo.config.application.api.Endpoint::endpointId)
+                   .map(EndpointId::of)
+                   .collect(Collectors.toSet());
     }
 
     /** Load balancers for a particular deployment */

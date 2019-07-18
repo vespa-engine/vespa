@@ -3,19 +3,18 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RotationName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
+import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -54,59 +52,88 @@ public class RoutingPoliciesTest {
 
     @Test
     public void maintains_global_routing_policies() {
-        int buildNumber = 42;
+        long buildNumber = BuildJob.defaultBuildNumber;
         int clustersPerZone = 2;
-        // Cluster 0 is member of 2 global rotations
-        Map<Integer, Set<RotationName>> rotations = Map.of(0, Set.of(RotationName.from("r0"), RotationName.from("r1")));
-        provisionLoadBalancers(clustersPerZone, rotations, app1.id(), zone1, zone2);
+        int numberOfDeployments = 2;
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0")
+                .endpoint("r1", "c0", "us-west-1")
+                .endpoint("r2", "c1")
+                .build();
+        provisionLoadBalancers(clustersPerZone, app1.id(), zone1, zone2);
 
-        // Creates alias records for cluster0
+        // Creates alias records
         tester.deployCompletely(app1, applicationPackage, ++buildNumber);
-        Supplier<List<Record>> records1 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app1.tenant1.global.vespa.oath.cloud"));
-        Supplier<List<Record>> records2 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r1.app1.tenant1.global.vespa.oath.cloud"));
-        assertEquals(2, records1.get().size());
-        assertEquals(records1.get().size(), records2.get().size());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records1.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records1.get().get(1).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records2.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records2.get().get(1).data().asString());
-        assertEquals(2, tester.controller().applications().routingPolicies().get(app1.id()).iterator().next()
-                              .rotationEndpointsIn(SystemName.main).asList().size());
+        var endpoint1 = "r0.app1.tenant1.global.vespa.oath.cloud";
+        var endpoint2 = "r1.app1.tenant1.global.vespa.oath.cloud";
+        var endpoint3 = "r2.app1.tenant1.global.vespa.oath.cloud";
+
+        assertEquals(endpoint1 + " points to c0 in all regions",
+                     List.of("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1",
+                             "lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     aliasDataOf(endpoint1));
+        assertEquals(endpoint2 + " points to c0 us-west-1",
+                     List.of("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     aliasDataOf(endpoint2));
+        assertEquals(endpoint3 + " points to c1 in all regions",
+                     List.of("lb-1--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1",
+                             "lb-1--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     aliasDataOf(endpoint3));
+        assertEquals("Routing policy count is equal to cluster count",
+                     numberOfDeployments * clustersPerZone,
+                     tester.controller().applications().routingPolicies().get(app1.id()).size());
 
         // Applications gains a new deployment
-        ApplicationPackage updatedApplicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
+        ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .region(zone3.region())
+                .endpoint("r0", "c0")
+                .endpoint("r1", "c0", "us-west-1")
+                .endpoint("r2", "c1")
+                .build();
+        numberOfDeployments++;
+        provisionLoadBalancers(clustersPerZone, app1.id(), zone3);
+        tester.deployCompletely(app1, applicationPackage2, ++buildNumber);
+
+        // Endpoint is updated to contain cluster in new deployment
+        assertEquals(endpoint1 + " points to c0 in all regions",
+                     List.of("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1",
+                             "lb-0--tenant1:app1:default--prod.us-east-3/dns-zone-1/prod.us-east-3",
+                             "lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     aliasDataOf(endpoint1));
+
+        // Another application is deployed with a single cluster and global endpoint
+        var endpoint4 = "r0.app2.tenant1.global.vespa.oath.cloud";
+        provisionLoadBalancers(1, app2.id(), zone1, zone2);
+        var applicationPackage3 = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .endpoint("r0", "c0")
+                .build();
+        tester.deployCompletely(app2, applicationPackage3);
+        assertEquals(endpoint4 + " points to c0 in all regions",
+                     List.of("lb-0--tenant1:app2:default--prod.us-central-1/dns-zone-1/prod.us-central-1",
+                             "lb-0--tenant1:app2:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     aliasDataOf(endpoint4));
+
+        // All endpoints for app1 are removed
+        ApplicationPackage applicationPackage4 = new ApplicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
                 .build();
-        int numberOfDeployments = 3;
-        provisionLoadBalancers(clustersPerZone, rotations, app1.id(), zone3);
-        tester.deployCompletely(app1, updatedApplicationPackage, ++buildNumber);
-
-        // Cluster in new deployment is added to the rotation
-        assertEquals(numberOfDeployments, records1.get().size());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records1.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-east-3/dns-zone-1/prod.us-east-3", records1.get().get(1).data().asString());
-        assertEquals("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records1.get().get(2).data().asString());
-
-        // Another application is deployed
-        Supplier<List<Record>> records3 = () -> tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from("r0.app2.tenant1.global.vespa.oath.cloud"));
-        provisionLoadBalancers(1, Map.of(0, Set.of(RotationName.from("r0"))), app2.id(), zone1, zone2);
-        tester.deployCompletely(app2, applicationPackage);
-        assertEquals(2, records3.get().size());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-central-1/dns-zone-1/prod.us-central-1", records3.get().get(0).data().asString());
-        assertEquals("lb-0--tenant1:app2:default--prod.us-west-1/dns-zone-1/prod.us-west-1", records3.get().get(1).data().asString());
-
-        // All rotations for app1 are removed
-        provisionLoadBalancers(clustersPerZone, Map.of(), app1.id(), zone1, zone2, zone3);
-        tester.deployCompletely(app1, updatedApplicationPackage, ++buildNumber);
-        assertEquals(List.of(), records1.get());
+        tester.deployCompletely(app1, applicationPackage4, ++buildNumber);
+        assertEquals("DNS records are removed", List.of(), aliasDataOf(endpoint1));
+        assertEquals("DNS records are removed", List.of(), aliasDataOf(endpoint2));
+        assertEquals("DNS records are removed", List.of(), aliasDataOf(endpoint3));
         Set<RoutingPolicy> policies = tester.controller().curator().readRoutingPolicies(app1.id());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
                    policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
-        assertEquals("Rotations for " + app2 + " are not removed", 2, records3.get().size());
+        assertEquals("Rotations for " + app2 + " are not removed", 2, aliasDataOf(endpoint4).size());
     }
 
     @Test
@@ -222,30 +249,30 @@ public class RoutingPoliciesTest {
                      .collect(Collectors.toSet());
     }
 
-    private void provisionLoadBalancers(int clustersPerZone, Map<Integer, Set<RotationName>> clusterRotations, ApplicationId application, ZoneId... zones) {
-        for (ZoneId zone : zones) {
-            tester.configServer().removeLoadBalancers(application, zone);
-            tester.configServer().addLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone, clusterRotations));
-        }
+    private List<String> aliasDataOf(String name) {
+        return tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from(name)).stream()
+                     .map(Record::data)
+                     .map(RecordData::asString)
+                     .collect(Collectors.toList());
     }
 
     private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, ZoneId... zones) {
-        provisionLoadBalancers(clustersPerZone, Map.of(), application, zones);
+        for (ZoneId zone : zones) {
+            tester.configServer().removeLoadBalancers(application, zone);
+            tester.configServer().addLoadBalancers(zone, createLoadBalancers(zone, application, clustersPerZone));
+        }
     }
 
-    private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count,
-                                                          Map<Integer, Set<RotationName>> clusterRotations) {
+    private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Set<RotationName> rotations = clusterRotations.getOrDefault(i, Collections.emptySet());
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
                                      application,
                                      ClusterSpec.Id.from("c" + i),
                                      HostName.from("lb-" + i + "--" + application.serializedForm() +
                                                    "--" + zone.value()),
-                                     Optional.of("dns-zone-1"),
-                                     rotations));
+                                     Optional.of("dns-zone-1")));
         }
         return loadBalancers;
     }
