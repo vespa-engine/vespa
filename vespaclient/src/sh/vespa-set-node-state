@@ -72,4 +72,4 @@ findhost
 
 eval $($VESPA_HOME/bin/vespa-security-env)
 
-$VESPA_HOME/libexec/vespa/SetNodeState.pl "$@"
+exec $VESPA_HOME/libexec/vespa/SetNodeState.pl "$@"
