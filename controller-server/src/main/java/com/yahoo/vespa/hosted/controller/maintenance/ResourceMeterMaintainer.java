@@ -47,7 +47,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    Clock clock,
                                    Metric metric,
                                    ResourceSnapshotConsumer resourceSnapshotConsumer) {
-        super(controller, interval, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
+        super(controller, interval, jobControl, null, SystemName.all());
         this.clock = clock;
         this.nodeRepository = nodeRepository;
         this.metric = metric;
