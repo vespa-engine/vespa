@@ -823,17 +823,15 @@ public class RestApiTest {
     @Test
     public void test_capacity() throws Exception {
         assertFile(new Request("http://localhost:8080/nodes/v2/capacity/?json=true"), "capacity-zone.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/capacity?json=true"), "capacity-zone.json");
 
         List<String> hostsToRemove = List.of(
-                "%22dockerhost1.yahoo.com%22",
-                "%22dockerhost2.yahoo.com%22",
-                "%22dockerhost3.yahoo.com%22",
-                "%22dockerhost4.yahoo.com%22"
+                "dockerhost1.yahoo.com",
+                "dockerhost2.yahoo.com",
+                "dockerhost3.yahoo.com",
+                "dockerhost4.yahoo.com"
         );
-        String requestUriTemplate =
-                "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=[%s]"
-                        .replaceAll("\\[", "%%5B")
-                        .replaceAll("]", "%%5D");
+        String requestUriTemplate = "http://localhost:8080/nodes/v2/capacity/?json=true&hosts=%s";
 
         assertFile(new Request(String.format(requestUriTemplate,
                 String.join(",", hostsToRemove.subList(0, 3)))),
