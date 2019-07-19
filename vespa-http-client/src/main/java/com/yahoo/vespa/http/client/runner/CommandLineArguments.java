@@ -209,6 +209,10 @@ public class CommandLineArguments {
             description = "Add http header to every request. Header must have the format '<Name>: <Value>'. Use this parameter multiple times for multiple headers")
     private List<String> headers = new ArrayList<>();
 
+    @Option(name = {"--vespaTls"},
+            description = "BETA! Use Vespa TLS configuration from environment if available. Other HTTPS/TLS configuration will be ignored if this is set.")
+    private boolean useTlsConfigFromEnvironment = false;
+
     private final List<Header> parsedHeaders = new ArrayList<>();
 
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
@@ -252,6 +256,7 @@ public class CommandLineArguments {
                                 .setTraceEveryXOperation(traceEveryXOperation)
                                 .setPrintTraceToStdErr(traceArg > 0)
                                 .setNumPersistentConnectionsPerEndpoint(numPersistentConnectionsPerEndpoint)
+                                .setUseTlsConfigFromEnvironment(useTlsConfigFromEnvironment)
                                 .build()
                 )
                         // Enable dynamic throttling.
