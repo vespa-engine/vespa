@@ -108,7 +108,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public AthenzDomain getSystemAccessControlDomain() {
+    public AthenzDomain accessControlDomain() {
         return AthenzDomain.from("vespadomain");
     }
 

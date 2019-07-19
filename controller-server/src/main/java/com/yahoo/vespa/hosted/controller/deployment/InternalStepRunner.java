@@ -586,7 +586,7 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
-        byte[] servicesXml = servicesXml(controller.zoneRegistry().getSystemAccessControlDomain(), testerFlavorFor(id, spec));
+        byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(), testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
 
         ZoneId zone = id.type().zone(controller.system());
