@@ -10,14 +10,12 @@ import com.yahoo.container.plugin.classanalysis.PackageTally;
 import com.yahoo.container.plugin.osgi.ExportPackageParser;
 import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
-import com.yahoo.container.plugin.osgi.ImportPackages;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import com.yahoo.container.plugin.util.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -41,6 +39,9 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.container.plugin.bundle.AnalyzeBundle.publicPackagesAggregated;
+import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageName;
+import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 import static com.yahoo.container.plugin.util.IO.withFileOutputStream;
 import static com.yahoo.container.plugin.util.JarFiles.withInputStream;
@@ -90,32 +91,43 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     @Parameter(alias = "X-Jersey-Binding")
     private String jerseyBinding = null;
 
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException {
         try {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
 
-            AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = AnalyzeBundle.publicPackagesAggregated(
+            // Packages from Export-Package and Global-Package headers in provided scoped jars
+            AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars = publicPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
-            PackageTally includedJarPackageTally = definedPackages(artifactSet.getJarArtifactsToInclude());
 
-            PackageTally projectPackageTally = analyzeProjectClasses();
-            PackageTally pluginPackageTally = projectPackageTally.combine(includedJarPackageTally);
+            // Packages from Export-Package headers in provided scoped jars
+            Set<String> exportedPackagesFromProvidedDeps = publicPackagesFromProvidedJars.exportedPackageNames();
 
-            Set<String> definedPackages = new HashSet<>(projectPackageTally.definedPackages());
-            definedPackages.addAll(includedJarPackageTally.definedPackages());
+            // Packaged defined in this project's code
+            PackageTally projectPackages = getProjectClassesTally();
 
-            warnIfPackagesDefinedOverlapsGlobalPackages(definedPackages, publicPackagesFromProvidedJars.globals);
+            // Packages defined in compile scoped jars
+            PackageTally compileJarsPackages = definedPackages(artifactSet.getJarArtifactsToInclude());
 
-            if (getLog().isDebugEnabled()) {
-                getLog().debug("Referenced packages = " + pluginPackageTally.referencedPackages());
-                getLog().debug("Defined packages = " + pluginPackageTally.definedPackages());
-                getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
-                        .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
+            // The union of packages in the project and compile scoped jars
+            PackageTally includedPackages = projectPackages.combine(compileJarsPackages);
+
+            warnIfPackagesDefinedOverlapsGlobalPackages(includedPackages.definedPackages(), publicPackagesFromProvidedJars.globals);
+            logDebugPackageSets(publicPackagesFromProvidedJars, includedPackages);
+
+            if (hasJdiscCoreProvided(artifactSet.getJarArtifactsProvided())) {
+                // jdisc_core being provided guarantees that log output does not contain its exported packages
+                logMissingPackages(exportedPackagesFromProvidedDeps, projectPackages, compileJarsPackages, includedPackages);
+            } else {
+                getLog().warn("This project does not have jdisc_core as provided dependency, so the " +
+                                      "generated 'Import-Package' OSGi header may be missing important packages.");
             }
+            logOverlappingPackages(projectPackages, exportedPackagesFromProvidedDeps);
+            logUnnecessaryPackages(compileJarsPackages, exportedPackagesFromProvidedDeps);
 
-            Map<String, Import> calculatedImports = ImportPackages.calculateImports(pluginPackageTally.referencedPackages(),
-                    pluginPackageTally.definedPackages(), ExportPackages.exportsByPackageName(publicPackagesFromProvidedJars.exports));
+            Map<String, Import> calculatedImports = calculateImports(includedPackages.referencedPackages(),
+                                                                     includedPackages.definedPackages(),
+                                                                     exportsByPackageName(publicPackagesFromProvidedJars.exports));
 
             Map<String, Optional<String>> manualImports = emptyToNone(importPackage).map(GenerateOsgiManifestMojo::getManualImports)
                     .orElseGet(HashMap::new);
@@ -123,17 +135,74 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 calculatedImports.remove(packageName);
             }
             createManifestFile(new File(project.getBuild().getOutputDirectory()), manifestContent(project,
-                    artifactSet.getJarArtifactsToInclude(), manualImports, calculatedImports.values(), pluginPackageTally));
+                    artifactSet.getJarArtifactsToInclude(), manualImports, calculatedImports.values(), includedPackages));
 
         } catch (Exception e) {
-            throw new MojoExecutionException("Failed generating osgi manifest.", e);
+            throw new MojoExecutionException("Failed generating osgi manifest", e);
+        }
+    }
+
+    private void logDebugPackageSets(AnalyzeBundle.PublicPackages publicPackagesFromProvidedJars, PackageTally includedPackages) {
+        if (getLog().isDebugEnabled()) {
+            getLog().debug("Referenced packages = " + includedPackages.referencedPackages());
+            getLog().debug("Defined packages = " + includedPackages.definedPackages());
+            getLog().debug("Exported packages of dependencies = " + publicPackagesFromProvidedJars.exports.stream()
+                    .map(e -> "(" + e.getPackageNames().toString() + ", " + e.version().orElse("")).collect(Collectors.joining(", ")));
+        }
+    }
+
+    private boolean hasJdiscCoreProvided(List<Artifact> providedArtifacts) {
+        return providedArtifacts.stream().anyMatch(artifact -> artifact.getArtifactId().equals("jdisc_core"));
+    }
+
+    private void logMissingPackages(Set<String> exportedPackagesFromProvidedJars,
+                                    PackageTally projectPackages,
+                                    PackageTally compileJarPackages,
+                                    PackageTally includedPackages) {
+
+        Set<String> definedAndExportedPackages = Sets.union(includedPackages.definedPackages(), exportedPackagesFromProvidedJars);
+
+        Set<String> missingProjectPackages = projectPackages.referencedPackagesMissingFrom(definedAndExportedPackages);
+        if (! missingProjectPackages.isEmpty()) {
+            getLog().warn("Packages unavailable runtime are referenced from project classes " +
+                                  "(annotations can usually be ignored): " + missingProjectPackages);
+        }
+
+        Set<String> missingCompilePackages = compileJarPackages.referencedPackagesMissingFrom(definedAndExportedPackages);
+        if (! missingCompilePackages.isEmpty()) {
+            getLog().info("Packages unavailable runtime are referenced from compile scoped jars " +
+                                  "(annotations can usually be ignored): " + missingCompilePackages);
+        }
+    }
+
+    private void logOverlappingPackages(PackageTally projectPackages,
+                                        Set<String> exportedPackagesFromProvidedDeps) {
+        Set<String> overlappingProjectPackages = Sets.intersection(projectPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        if (! overlappingProjectPackages.isEmpty()) {
+            getLog().warn("Project classes use the following packages that are already defined in provided scoped dependencies: "
+                                  + overlappingProjectPackages);
+        }
+    }
+
+    /*
+     * This mostly detects packages re-exported via composite bundles like jdisc_core and container-disc.
+     * An artifact can only be represented once, either in compile or provided scope. So if the project
+     * adds an artifact in compile scope that we deploy as a pre-installed bundle, we won't see the same
+     * artifact as provided via container-dev and hence can't detect the duplicate packages.
+     */
+    private void logUnnecessaryPackages(PackageTally compileJarsPackages,
+                                        Set<String> exportedPackagesFromProvidedDeps) {
+        Set<String> unnecessaryPackages = Sets.intersection(compileJarsPackages.definedPackages(), exportedPackagesFromProvidedDeps);
+        if (! unnecessaryPackages.isEmpty()) {
+            getLog().info("Compile scoped jars contain the following packages that are most likely " +
+                                  "available from jdisc runtime: " + unnecessaryPackages);
         }
     }
 
     private static void warnIfPackagesDefinedOverlapsGlobalPackages(Set<String> internalPackages, List<String> globalPackages)
             throws MojoExecutionException {
         Set<String> overlap = Sets.intersection(internalPackages, new HashSet<>(globalPackages));
-        if (overlap.isEmpty() == false) {
+        if (! overlap.isEmpty()) {
             throw new MojoExecutionException(
                     "The following packages are both global and included in the bundle:\n   " + String.join("\n   ", overlap));
         }
@@ -173,7 +242,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 Pair.of("WebInfUrl", webInfUrl), //
                 Pair.of("Import-Package", importPackage), //
                 Pair.of("Export-Package", exportPackage))) {
-            if (element.getValue() != null && element.getValue().isEmpty() == false) {
+            if (element.getValue() != null && ! element.getValue().isEmpty()) {
                 ret.put(element.getKey(), element.getValue());
             }
         }
@@ -232,7 +301,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     }
 
     private void warnOnUnsupportedArtifacts(Collection<Artifact> nonJarArtifacts) {
-        List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> "pom".equals(a.getType()) == false)
+        List<Artifact> unsupportedArtifacts = nonJarArtifacts.stream().filter(a -> ! a.getType().equals("pom"))
                 .collect(Collectors.toList());
 
         unsupportedArtifacts.forEach(artifact -> getLog()
@@ -240,7 +309,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private PackageTally analyzeProjectClasses() {
+    private PackageTally getProjectClassesTally() {
         File outputDirectory = new File(project.getBuild().getOutputDirectory());
 
         List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory).filter(file -> file.getName().endsWith(".class"))
@@ -258,7 +327,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         List<ClassFileMetaData> analyzedClasses = new ArrayList<>();
         for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
             JarEntry entry = entries.nextElement();
-            if (entry.isDirectory() == false && entry.getName().endsWith(".class")) {
+            if (! entry.isDirectory() && entry.getName().endsWith(".class")) {
                 analyzedClasses.add(analyzeClass(jarFile, entry));
             }
         }
@@ -305,10 +374,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     }
 
     private static Optional<String> emptyToNone(String str) {
-        return Optional.ofNullable(str).map(String::trim).filter(s -> s.isEmpty() == false);
+        return Optional.ofNullable(str).map(String::trim).filter(s -> ! s.isEmpty());
     }
 
-    private static boolean isClassToAnalyze(String name) {
-        return name.endsWith(".class") && name.endsWith("module-info.class") == false;
-    }
 }

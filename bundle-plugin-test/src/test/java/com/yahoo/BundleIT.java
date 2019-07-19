@@ -18,6 +18,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
+import static com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -143,9 +144,9 @@ public class BundleIT {
     @SuppressWarnings("unchecked")
     @Test
     public void bundle_class_path_mappings_are_generated() throws URISyntaxException, IOException {
-        URL mappingsUrl = getClass().getResource("/" + com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME);
+        URL mappingsUrl = getClass().getResource("/" + CLASSPATH_MAPPINGS_FILENAME);
         assertNotNull(
-                "Could not find " + ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME + " in the test output directory",
+                "Could not find " + CLASSPATH_MAPPINGS_FILENAME + " in the test output directory",
                 mappingsUrl);
 
         ProjectBundleClassPaths bundleClassPaths = ProjectBundleClassPaths.load(Paths.get(mappingsUrl.toURI()));

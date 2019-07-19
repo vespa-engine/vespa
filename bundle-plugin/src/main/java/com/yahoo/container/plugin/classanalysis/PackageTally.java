@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.yahoo.container.plugin.util.Maps;
 
@@ -10,6 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tony Vaagenes
@@ -19,7 +21,8 @@ public class PackageTally {
     private final Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap;
     private final Set<String> referencedPackagesUnfiltered;
 
-    public PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
+    @VisibleForTesting
+    PackageTally(Map<String, Optional<ExportPackageAnnotation>> definedPackagesMap, Set<String> referencedPackagesUnfiltered) {
         this.definedPackagesMap = definedPackagesMap;
         this.referencedPackagesUnfiltered = referencedPackagesUnfiltered;
     }
@@ -38,6 +41,19 @@ public class PackageTally {
             v.ifPresent(annotation -> ret.put(k, annotation));
         });
         return ret;
+    }
+
+    /**
+     * Returns the set of packages that is referenced from this tally, but not included in the given set of available packages.
+     *
+     * @param definedAndExportedPackages Set of available packages (usually all packages defined in the generated bundle's project + all exported packages of dependencies)
+     * @return The set of missing packages, that may cause problem when the bundle is deployed in an OSGi container runtime.
+     */
+    public Set<String> referencedPackagesMissingFrom(Set<String> definedAndExportedPackages) {
+        return Sets.difference(referencedPackages(), definedAndExportedPackages).stream()
+                .filter(pkg -> !pkg.startsWith("java."))
+                .filter(pkg -> !pkg.equals(com.yahoo.api.annotations.PublicApi.class.getPackageName()))
+                .collect(Collectors.toSet());
     }
 
     /**
