@@ -28,9 +28,7 @@
           "ipAddress": "127.0.10.1",
           "port": 4080
         }
-      ],
-      "rotations": [],
-      "inactive": false
+      ]
     },
     {
       "id": "tenant4:application4:instance4:id4",
@@ -60,9 +58,7 @@
           "ipAddress": "127.0.14.1",
           "port": 4080
         }
-      ],
-      "rotations": [],
-      "inactive": false
+      ]
     }
   ]
 }

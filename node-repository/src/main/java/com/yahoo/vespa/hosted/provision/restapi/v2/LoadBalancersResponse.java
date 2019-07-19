@@ -77,10 +77,6 @@ public class LoadBalancersResponse extends HttpResponse {
                 realObject.setString("ipAddress", real.ipAddress());
                 realObject.setLong("port", real.port());
             });
-
-            // TODO(mpolden): The following fields preserves API compatibility. These can be removed once clients stop expecting them
-            lbObject.setArray("rotations");
-            lbObject.setBool("inactive", lb.state() == LoadBalancer.State.inactive);
         });
 
         new JsonFormat(true).encode(stream, slime);
