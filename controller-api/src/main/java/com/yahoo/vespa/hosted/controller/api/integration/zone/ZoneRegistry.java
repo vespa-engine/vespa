@@ -57,7 +57,7 @@ public interface ZoneRegistry {
     AthenzIdentity getConfigServerAthenzIdentity(ZoneId zoneId);
 
     /**  Return the system Athenz domain */
-    AthenzDomain getSystemAthenzDomain();
+    AthenzDomain getSystemAccessControlDomain();
 
     /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
