@@ -737,25 +737,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.provision.RotationName": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.lang.Comparable"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public java.lang.String value()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public int compareTo(com.yahoo.config.provision.RotationName)",
-      "public java.lang.String toString()",
-      "public static com.yahoo.config.provision.RotationName from(java.lang.String)",
-      "public bridge synthetic int compareTo(java.lang.Object)"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.provision.SystemName": {
     "superClass": "java.lang.Enum",
     "interfaces": [],
