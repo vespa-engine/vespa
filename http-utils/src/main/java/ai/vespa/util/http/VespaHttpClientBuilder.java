@@ -4,24 +4,28 @@ package ai.vespa.util.http;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.UnsupportedSchemeException;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.protocol.HttpContext;
 
 import javax.net.ssl.SSLParameters;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,7 +73,7 @@ public class VespaHttpClientBuilder {
     private static HttpClientBuilder createBuilder(ConnectionManagerFactory connectionManagerFactory) {
         var builder = HttpClientBuilder.create();
         addSslSocketFactory(builder, connectionManagerFactory);
-        addTlsAwareRequestInterceptor(builder);
+        addHttpsRewritingRoutePlanner(builder);
         return builder;
     }
 
@@ -86,11 +90,10 @@ public class VespaHttpClientBuilder {
                 });
     }
 
-    private static void addTlsAwareRequestInterceptor(HttpClientBuilder builder) {
+    private static void addHttpsRewritingRoutePlanner(HttpClientBuilder builder) {
         if (TransportSecurityUtils.isTransportSecurityEnabled()
                 && TransportSecurityUtils.getInsecureMixedMode() != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
-            log.log(Level.FINE, "Adding request interceptor to client");
-            builder.addInterceptorFirst(new HttpToHttpsRewritingRequestInterceptor());
+            builder.setRoutePlanner(new HttpToHttpsRoutePlanner());
         }
     }
 
@@ -106,29 +109,32 @@ public class VespaHttpClientBuilder {
                 .build();
     }
 
-    static class HttpToHttpsRewritingRequestInterceptor implements HttpRequestInterceptor {
+
+    /**
+     * Reroutes requests using 'http' to 'https'.
+     * Implementation inspired by {@link org.apache.http.impl.conn.DefaultRoutePlanner}, but without proxy support.
+     */
+    static class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
+
         @Override
-        public void process(HttpRequest request, HttpContext context) {
-            if (request instanceof HttpRequestBase) {
-                HttpRequestBase httpUriRequest = (HttpRequestBase) request;
-                httpUriRequest.setURI(rewriteUri(httpUriRequest.getURI()));
-            } else {
-                log.log(Level.FINE, () -> "Not a HttpRequestBase - skipping URI rewriting: " + request.getClass().getName());
-            }
+        public HttpRoute determineRoute(HttpHost host, HttpRequest request, HttpContext context) throws HttpException {
+            HttpClientContext clientContext = HttpClientContext.adapt(context);
+            RequestConfig config = clientContext.getRequestConfig();
+            InetAddress local = config.getLocalAddress();
+
+            HttpHost target = resolveTarget(host);
+            boolean secure = target.getSchemeName().equalsIgnoreCase("https");
+            return new HttpRoute(target, local, secure);
         }
 
-        private static URI rewriteUri(URI originalUri) {
-            if (!originalUri.getScheme().equals("http")) {
-                return originalUri;
-            }
-            int port = originalUri.getPort();
-            int rewrittenPort = port != -1 ? port : 80;
+        private HttpHost resolveTarget(HttpHost host) throws HttpException {
             try {
-                URI rewrittenUri = new URIBuilder(originalUri).setScheme("https").setPort(rewrittenPort).build();
-                log.log(Level.FINE, () -> String.format("Uri rewritten from '%s' to '%s'", originalUri, rewrittenUri));
-                return rewrittenUri;
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
+                String originalScheme = host.getSchemeName();
+                String scheme = originalScheme.equalsIgnoreCase("http") ? "https" : originalScheme;
+                int port = DefaultSchemePortResolver.INSTANCE.resolve(host);
+                return new HttpHost(host.getHostName(), port, scheme);
+            } catch (UnsupportedSchemeException e) {
+                throw new HttpException(e.getMessage(), e);
             }
         }
     }
