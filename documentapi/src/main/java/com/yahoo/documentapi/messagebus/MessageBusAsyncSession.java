@@ -143,6 +143,14 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         return send(msg);
     }
 
+    private boolean mayOverrideWithGetOnlyRoute(Message msg) {
+        // Only allow implicitly overriding the default Get route if the message is attempted sent
+        // with the default route originally. Otherwise it's reasonable to assume that the caller
+        // has some explicit idea of why the regular route is set to the value it is.
+        return ((msg.getType() == DocumentProtocol.MESSAGE_GETDOCUMENT)
+                && ("default".equals(route) || "route:default".equals(route)));
+    }
+
     /**
      * A convenience method for assigning the internal trace level and route string to a message before sending it
      * through the internal mbus session object.
@@ -155,7 +163,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             long reqId = requestId.incrementAndGet();
             msg.setContext(reqId);
             msg.getTrace().setLevel(traceLevel);
-            String toRoute = (msg.getType() == DocumentProtocol.MESSAGE_GETDOCUMENT ? routeForGet : route);
+            String toRoute = (mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
             if (toRoute != null) {
                 return toResult(reqId, session.send(msg, toRoute, true));
             } else {
