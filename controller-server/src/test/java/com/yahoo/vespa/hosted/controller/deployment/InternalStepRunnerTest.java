@@ -3,15 +3,12 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -28,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -38,7 +34,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -404,7 +399,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void generates_correct_services_xml_test() {
-        assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(SystemName.cd, Optional.of("d-2-12-75"))));
+        assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"), Optional.of("d-2-12-75"))));
     }
 
     private void assertFile(String resourceName, String actualContent) {

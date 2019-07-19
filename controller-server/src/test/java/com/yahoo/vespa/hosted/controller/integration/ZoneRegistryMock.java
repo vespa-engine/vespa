@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -27,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * @author mpolden
@@ -105,6 +105,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public AthenzService getConfigServerAthenzIdentity(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
+    }
+
+    @Override
+    public AthenzDomain accessControlDomain() {
+        return AthenzDomain.from("vespadomain");
     }
 
     @Override
