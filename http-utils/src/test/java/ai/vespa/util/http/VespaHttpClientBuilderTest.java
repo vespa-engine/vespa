@@ -1,14 +1,15 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.util.http;
 
-import ai.vespa.util.http.VespaHttpClientBuilder.HttpToHttpsRewritingRequestInterceptor;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.routing.HttpRoute;
 import org.junit.Test;
 
-import java.net.URI;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author bjorncs
@@ -16,24 +17,25 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class VespaHttpClientBuilderTest {
 
     @Test
-    public void request_interceptor_modifies_scheme_of_requests() {
-        verifyProcessedUriMatchesExpectedOutput("http://dummyhostname:8080/a/path/to/resource?query=value",
-                                                "https://dummyhostname:8080/a/path/to/resource?query=value");
+    public void route_planner_modifies_scheme_of_requests() throws HttpException {
+        verifyProcessedUriMatchesExpectedOutput("http://dummyhostname:8080", "https://dummyhostname:8080");
     }
 
     @Test
-    public void request_interceptor_add_handles_implicit_http_port() {
-        verifyProcessedUriMatchesExpectedOutput("http://dummyhostname/a/path/to/resource?query=value",
-                                                "https://dummyhostname:80/a/path/to/resource?query=value");
+    public void route_planer_handles_implicit_http_port() throws HttpException {
+        verifyProcessedUriMatchesExpectedOutput("http://dummyhostname", "https://dummyhostname:80");
     }
 
-    private static void verifyProcessedUriMatchesExpectedOutput(String inputUri, String expectedOutputUri) {
-        var interceptor = new HttpToHttpsRewritingRequestInterceptor();
-        HttpGet request = new HttpGet(inputUri);
-        interceptor.process(request, new BasicHttpContext());
-        URI modifiedUri = request.getURI();
-        URI expectedUri = URI.create(expectedOutputUri);
-        assertThat(modifiedUri).isEqualTo(expectedUri);
+    @Test
+    public void route_planer_handles_https_port() throws HttpException {
+        verifyProcessedUriMatchesExpectedOutput("http://dummyhostname:443", "https://dummyhostname:443");
+    }
+
+    private static void verifyProcessedUriMatchesExpectedOutput(String inputHostString, String expectedHostString) throws HttpException {
+        var routePlanner = new VespaHttpClientBuilder.HttpToHttpsRoutePlanner();
+        HttpRoute newRoute = routePlanner.determineRoute(HttpHost.create(inputHostString), mock(HttpRequest.class), new HttpClientContext());
+        HttpHost target = newRoute.getTargetHost();
+        assertEquals(expectedHostString, target.toURI());
     }
 
 }
