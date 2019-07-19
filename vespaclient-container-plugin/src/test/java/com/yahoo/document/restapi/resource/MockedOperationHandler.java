@@ -58,11 +58,20 @@ public class MockedOperationHandler implements OperationHandler {
     }
 
     @Override
-    public Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
+    public Optional<String> get(RestUri restUri, Optional<String> fieldSet, Optional<String> cluster) throws RestApiException {
         log.append("GET: " + restUri.generateFullId());
         // This is _not_ an elegant way to return data back to the test.
         // An alternative is removing this entire class in favor of explicit mock expectations.
-        return fieldSet.map(fs -> String.format("{\"fields\": {\"fieldset\": \"%s\"}}", fs));
+        if (!fieldSet.isPresent() && !cluster.isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(String.format("{\"fields\": {\"fieldset\": \"%s\",\"cluster\":\"%s\"}}",
+                                         fieldSet.orElse(""), cluster.orElse("")));
+    }
+
+    @Override
+    public Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
+        return get(restUri, fieldSet, Optional.empty());
     }
 
     @Override

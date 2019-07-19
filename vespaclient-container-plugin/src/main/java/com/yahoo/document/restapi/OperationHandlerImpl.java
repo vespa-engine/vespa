@@ -279,9 +279,13 @@ public class OperationHandlerImpl implements OperationHandler {
     }
 
     @Override
-    public Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
+    public Optional<String> get(RestUri restUri, Optional<String> fieldSet, Optional<String> cluster) throws RestApiException {
         SyncSession syncSession = syncSessions.alloc();
-        setRoute(syncSession, Optional.empty());
+        // Explicit unary used instead of map() due to unhandled exceptions, blargh.
+        Optional<String> route = cluster.isPresent()
+                ? Optional.of(clusterDefToRoute(resolveClusterDef(cluster, clusterEnumerator.enumerateClusters())))
+                : Optional.empty();
+        setRoute(syncSession, route);
         try {
             DocumentId id = new DocumentId(restUri.generateFullId());
             final Document document = syncSession.get(id, fieldSet.orElse(restUri.getDocumentType() + ":[document]"), DocumentProtocol.Priority.NORMAL_1);
@@ -298,6 +302,11 @@ public class OperationHandlerImpl implements OperationHandler {
         } finally {
             syncSessions.free(syncSession);
         }
+    }
+
+    @Override
+    public Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
+        return get(restUri, fieldSet, Optional.empty());
     }
 
     @Override

@@ -101,6 +101,10 @@ public interface OperationHandler {
     default Optional<String> get(RestUri restUri, Optional<String> fieldSet) throws RestApiException {
         return get(restUri);
     }
+
+    default Optional<String> get(RestUri restUri, Optional<String> fieldSet, Optional<String> cluster) throws RestApiException {
+        return get(restUri, fieldSet);
+    }
     
     /** Called just before this is disposed of */
     default void shutdown() {}
