@@ -25,6 +25,8 @@ public class LoadBalancer {
     private final Optional<String> dnsZone;
     private final Set<RotationName> rotations;
 
+    // TODO(mpolden): Kept for API compatibility with internal code. This constructor can be removed when all usages are
+    // TODO(mpolden): removed
     public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, HostName hostname,
                         Optional<String> dnsZone, Set<RotationName> rotations) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
@@ -33,6 +35,16 @@ public class LoadBalancer {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.rotations = ImmutableSortedSet.copyOf(Objects.requireNonNull(rotations, "rotations must be non-null"));
+    }
+
+    public LoadBalancer(String id, ApplicationId application, ClusterSpec.Id cluster, HostName hostname,
+                        Optional<String> dnsZone) {
+        this.id = Objects.requireNonNull(id, "id must be non-null");
+        this.application = Objects.requireNonNull(application, "application must be non-null");
+        this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
+        this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
+        this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
+        this.rotations = Set.of();
     }
 
     public String id() {

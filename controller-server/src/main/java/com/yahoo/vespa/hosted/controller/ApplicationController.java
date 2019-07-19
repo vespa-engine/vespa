@@ -470,7 +470,7 @@ public class ApplicationController {
         } finally {
             // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
             // any DNS updates can be propagated as early as possible.
-            routingPolicies.refresh(application, zone);
+            routingPolicies.refresh(application, applicationPackage.deploymentSpec(), zone);
         }
     }
 
@@ -781,7 +781,7 @@ public class ApplicationController {
         } catch (NotFoundException ignored) {
             // ok; already gone
         } finally {
-            routingPolicies.refresh(application.get().id(), zone);
+            routingPolicies.refresh(application.get().id(), application.get().deploymentSpec(), zone);
         }
         return application.withoutDeploymentIn(zone);
     }
