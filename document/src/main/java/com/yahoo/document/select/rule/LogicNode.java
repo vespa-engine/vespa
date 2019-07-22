@@ -55,7 +55,7 @@ public class LogicNode implements ExpressionNode {
         return this;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         Stack<BucketItem> buf = new Stack<>();
         for (NodeItem item : items) {
@@ -72,6 +72,7 @@ public class LogicNode implements ExpressionNode {
         return buf.pop().buckets;
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         Stack<OrderingItem> buf = new Stack<>();
         for (NodeItem item : items) {

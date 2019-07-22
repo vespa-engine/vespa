@@ -29,6 +29,6 @@ public class Context {
         this.variables = variables;
     }
 
-    private Map<String, Object> variables = new HashMap<String, Object>();
+    private Map<String, Object> variables = new HashMap<>();
 
 }
