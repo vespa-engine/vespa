@@ -30,7 +30,7 @@ public class LogicNode implements ExpressionNode {
     public static final int AND = 2;
 
     // The items contained in this.
-    private final List<NodeItem> items = new ArrayList<NodeItem>();
+    private final List<NodeItem> items = new ArrayList<>();
 
     /**
      * Construct an empty logic expression.
@@ -261,7 +261,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private ResultList value;
 
-        public ValueItem(int operator, ResultList value) {
+        ValueItem(int operator, ResultList value) {
             this.operator = operator;
             this.value = value;
         }
@@ -274,7 +274,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private BucketSet buckets;
 
-        public BucketItem(int operator, BucketSet buckets) {
+        BucketItem(int operator, BucketSet buckets) {
             this.operator = operator;
             this.buckets = buckets;
         }
@@ -287,7 +287,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private OrderingSpecification ordering;
 
-        public OrderingItem(int operator, OrderingSpecification orderSpec) {
+        OrderingItem(int operator, OrderingSpecification orderSpec) {
             this.operator = operator;
             this.ordering = orderSpec;
         }
@@ -300,7 +300,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private ExpressionNode node;
 
-        public NodeItem(int operator, ExpressionNode node) {
+        NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;
             this.node = node;
         }

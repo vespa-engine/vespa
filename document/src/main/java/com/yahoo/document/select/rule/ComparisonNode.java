@@ -7,9 +7,13 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.idstring.GroupDocIdString;
-import com.yahoo.document.select.*;
+import com.yahoo.document.select.BucketSet;
+import com.yahoo.document.select.Context;
+import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Result;
+import com.yahoo.document.select.ResultList;
+import com.yahoo.document.select.Visitor;
 
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -46,17 +50,6 @@ public class ComparisonNode implements ExpressionNode {
     }
 
     /**
-     * Sets the left hand side of this comparison.
-     *
-     * @param lhs The new left hand side.
-     * @return This, to allow chaining.
-     */
-    public ComparisonNode setLHS(ExpressionNode lhs) {
-        this.lhs = lhs;
-        return this;
-    }
-
-    /**
      * Returns the comparison operator of this.
      *
      * @return The operator.
@@ -83,17 +76,6 @@ public class ComparisonNode implements ExpressionNode {
      */
     public ExpressionNode getRHS() {
         return rhs;
-    }
-
-    /**
-     * Sets the right hand side of this comparison.
-     *
-     * @param rhs The new right hand side.
-     * @return This, to allow chaining.
-     */
-    public ComparisonNode setRHS(ExpressionNode rhs) {
-        this.rhs = rhs;
-        return this;
     }
 
     public OrderingSpecification getOrdering(IdNode lhs, LiteralNode rhs, String operator, int order) {
@@ -144,9 +126,9 @@ public class ComparisonNode implements ExpressionNode {
             } else if (rhs instanceof IdNode && lhs instanceof LiteralNode) {
                 return compare(factory, (IdNode)rhs, (LiteralNode)lhs, operator);
             } else if (lhs instanceof SearchColumnNode && rhs instanceof LiteralNode) {
-                return compare(factory, (SearchColumnNode)lhs, (LiteralNode)rhs);
+                return compare((SearchColumnNode)lhs, (LiteralNode)rhs);
             } else if (rhs instanceof SearchColumnNode && lhs instanceof LiteralNode) {
-                return compare(factory, (SearchColumnNode)rhs, (LiteralNode)lhs);
+                return compare((SearchColumnNode)rhs, (LiteralNode)lhs);
             }
         }
         return null;
@@ -155,12 +137,11 @@ public class ComparisonNode implements ExpressionNode {
     /**
      * Compares a search column node with a literal node.
      *
-     * @param factory The bucket id factory used.
      * @param node The search column node.
      * @param literal The literal node to compare to.
      * @return The bucket set containing the buckets covered.
      */
-    private BucketSet compare(BucketIdFactory factory, SearchColumnNode node, LiteralNode literal) {
+    private BucketSet compare(SearchColumnNode node, LiteralNode literal) {
         Object value = literal.getValue();
         int bucketCount = (int) Math.pow(2, 16);
         if (value instanceof Long) {
@@ -211,7 +192,7 @@ public class ComparisonNode implements ExpressionNode {
         return null;
     }
 
-    // Inherit doc from Node.
+    @Override
     public Object evaluate(Context context) {
         Object oLeft = lhs.evaluate(context);
         Object oRight = rhs.evaluate(context);
@@ -254,7 +235,7 @@ public class ComparisonNode implements ExpressionNode {
         }
     }
 
-    public ResultList evaluateListsTrue(AttributeNode.VariableValueList lhs, AttributeNode.VariableValueList rhs) {
+    private ResultList evaluateListsTrue(AttributeNode.VariableValueList lhs, AttributeNode.VariableValueList rhs) {
         if (lhs.size() != rhs.size()) {
             return new ResultList(Result.FALSE);
         }
@@ -272,7 +253,7 @@ public class ComparisonNode implements ExpressionNode {
         return new ResultList(Result.TRUE);
     }
 
-    public ResultList evaluateListsFalse(AttributeNode.VariableValueList lhs, AttributeNode.VariableValueList rhs) {
+    private ResultList evaluateListsFalse(AttributeNode.VariableValueList lhs, AttributeNode.VariableValueList rhs) {
         ResultList lst = evaluateListsTrue(lhs, rhs);
         if (lst.toResult() == Result.TRUE) {
             return new ResultList(Result.FALSE);
@@ -283,7 +264,7 @@ public class ComparisonNode implements ExpressionNode {
         }
     }
 
-    public ResultList evaluateListAndSingle(AttributeNode.VariableValueList lhs, Object rhs) {
+    private ResultList evaluateListAndSingle(AttributeNode.VariableValueList lhs, Object rhs) {
         if (rhs == null && lhs == null) {
             return new ResultList(Result.TRUE);
         }
@@ -293,9 +274,9 @@ public class ComparisonNode implements ExpressionNode {
         }
 
         ResultList retVal = new ResultList();
-        for (int i = 0; i < lhs.size(); i++) {
-        	Result result = evaluateBool(lhs.get(i).getValue(), rhs);
-        	retVal.add((FieldPathIteratorHandler.VariableMap)lhs.get(i).getVariables().clone(), result);
+        for (ResultList.VariableValue value : lhs) {
+            Result result = evaluateBool(value.getValue(), rhs);
+            retVal.add((FieldPathIteratorHandler.VariableMap)value.getVariables().clone(), result);
         }
 
         return retVal;
@@ -444,7 +425,6 @@ public class ComparisonNode implements ExpressionNode {
         visitor.visit(this);
     }
 
-    // Inherit doc from Object.
     @Override
     public String toString() {
         return lhs + " " + operator + " " + rhs;
