@@ -63,9 +63,9 @@ public class LocalSessionStateWatcher {
     public void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             try {
-                ChildData data = fileCache.getCurrentData();
-                if (data != null) {
-                    sessionChanged(Session.Status.parse(Utf8.toString(fileCache.getCurrentData().getData())));
+                ChildData node = fileCache.getCurrentData();
+                if (node != null) {
+                    sessionChanged(Session.Status.parse(Utf8.toString(node.getData())));
                 }
             } catch (Exception e) {
                 log.log(LogLevel.WARNING, session.logPre() + "Error handling session changed for session " + getSessionId(), e);
