@@ -11,19 +11,21 @@ import com.yahoo.config.ConfigInstance;
  * when we don't have the schema.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class GenericConfig {
     public static class GenericConfigBuilder implements ConfigInstance.Builder {
+
         private final ConfigPayloadBuilder payloadBuilder;
         private final ConfigDefinitionKey defKey;
+
         public GenericConfigBuilder(ConfigDefinitionKey defKey, ConfigPayloadBuilder payloadBuilder) {
             this.defKey = defKey;
             this.payloadBuilder = payloadBuilder;
         }
+
+        @SuppressWarnings("unused") // Called by reflection
         private ConfigBuilder override(GenericConfigBuilder superior) {
-            ConfigPayloadBuilder superiorPayload = superior.payloadBuilder;
-            payloadBuilder.override(superiorPayload);
+            payloadBuilder.override(superior.payloadBuilder);
             return this;
         }
 
@@ -49,4 +51,5 @@ public class GenericConfig {
             return "";
         }
     }
+
 }

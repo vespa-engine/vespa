@@ -4,7 +4,8 @@ package com.yahoo.vespa.config.buildergen;
 /**
  * @author Ulf Lilleengen
  */
-public class ConfigDefinitionClass {
+class ConfigDefinitionClass {
+
     private final String name;
     private final String pkg;
     private final String definition;
@@ -19,11 +20,8 @@ public class ConfigDefinitionClass {
         return definition;
     }
 
-    String getSimpleName() {
-        return name;
-    }
-
     String getName() {
         return pkg + "." + name;
     }
+
 }
