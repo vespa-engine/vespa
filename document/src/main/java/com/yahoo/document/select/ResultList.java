@@ -116,13 +116,19 @@ public class ResultList {
         return true;
     }
 
-    public ResultList combineAND(ResultList other)
+    public interface GetResultList {
+        ResultList getResult();
+    }
+
+    public ResultList combineAND(GetResultList other)
     {
+        if (Result.FALSE == toResult()) return ResultList.toResultList(false);
+
         ResultList result = new ResultList();
 
         // TODO: optimize
         for (ResultPair pair : results) {
-            for (ResultPair otherPair : other.results) {
+            for (ResultPair otherPair : other.getResult().results) {
                 FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
 
                 if (combineVariables(varMap, otherPair.variables)) {
@@ -144,13 +150,15 @@ public class ResultList {
         return Result.INVALID;
     }
 
-    public ResultList combineOR(ResultList other)
+    public ResultList combineOR(GetResultList other)
     {
+        if (Result.TRUE == toResult()) return ResultList.toResultList(true);
+
         ResultList result = new ResultList();
 
         // TODO: optimize
         for (ResultPair pair : results) {
-            for (ResultPair otherPair : other.results) {
+            for (ResultPair otherPair : other.getResult().results) {
                 FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
 
                 if (combineVariables(varMap, otherPair.variables)) {

@@ -160,23 +160,22 @@ public class LogicNode implements ExpressionNode {
         buf.push(lhs);
     }
 
-    // Inherit doc from ExpressionNode.
     @Override
     public Object evaluate(Context context) {
         Stack<ValueItem> buf = new Stack<>();
         for (NodeItem item : items) {
-            if ( ! buf.isEmpty()) {
-                while (buf.peek().operator > item.operator) {
+            if ( buf.size() > 1) {
+                while ((buf.peek().getOperator() >= item.operator)) {
                     combineValues(buf);
                 }
             }
             
-            buf.push(new ValueItem(item.operator, ResultList.toResultList(item.node.evaluate(context))));
+            buf.push(new LazyValueItem(item, context));
         }
         while (buf.size() > 1) {
             combineValues(buf);
         }
-        return buf.pop().value;
+        return buf.pop().getResult();
     }
 
     /**
@@ -188,15 +187,15 @@ public class LogicNode implements ExpressionNode {
         ValueItem rhs = buf.pop();
         ValueItem lhs = buf.pop();
 
-        switch (rhs.operator) {
+        switch (rhs.getOperator()) {
             case AND:
-                buf.push(new ValueItem(lhs.operator, lhs.value.combineAND(rhs.value)));
+                buf.push(new EagerValueItem(lhs.getOperator(), lhs.getResult().combineAND(rhs)));
                 break;
             case OR:
-                buf.push(new ValueItem(lhs.operator, lhs.value.combineOR(rhs.value)));
+                buf.push(new EagerValueItem(lhs.getOperator(), lhs.getResult().combineOR(rhs)));
                 break;
             default:
-                throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
+                throw new IllegalStateException("Arithmetic operator " + rhs.getOperator() + " not supported.");
         }
     }
 
@@ -258,13 +257,43 @@ public class LogicNode implements ExpressionNode {
     /**
      * Private class to store results in a stack.
      */
-    private final class ValueItem {
-        private int operator;
-        private ResultList value;
-
-        ValueItem(int operator, ResultList value) {
+    private abstract class ValueItem implements ResultList.GetResultList {
+        private final int operator;
+        ValueItem(int operator) {
             this.operator = operator;
+        }
+        int getOperator() { return operator; }
+    }
+
+    private final class LazyValueItem extends ValueItem {
+        private final NodeItem item;
+        private final Context context;
+        private ResultList lazyResult = null;
+
+        LazyValueItem(NodeItem item, Context context) {
+            super(item.operator);
+            this.item = item;
+            this.context = context;
+        }
+        @Override
+        public ResultList getResult() {
+            if (lazyResult == null) {
+                lazyResult = ResultList.toResultList(item.node.evaluate(context));
+            }
+            return lazyResult;
+        }
+    }
+
+    private final class EagerValueItem extends ValueItem {
+        private final ResultList value;
+
+        EagerValueItem(int operator, ResultList value) {
+            super(operator);
             this.value = value;
+        }
+        @Override
+        public ResultList getResult() {
+            return value;
         }
     }
 

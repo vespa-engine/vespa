@@ -613,7 +613,6 @@ public class PolicyTestCase {
     }
 
     @Test
-    @Ignore
     public void testDocumentSelectorDualCluster() {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setHop(new HopSpec("test", "[DocumentRouteSelector:raw:" +

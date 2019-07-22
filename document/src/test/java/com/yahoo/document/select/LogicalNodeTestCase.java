@@ -45,7 +45,7 @@ public class LogicalNodeTestCase {
         return ((ResultList)node.evaluate(new Context(null))).toResult();
     }
     @Test
-    public void testFullyExhaustedAnd() {
+    public void testFullyExhaustedAND() {
         TracedNode second = new TracedNode(new LiteralNode(true));
         assertFalse(second.isEvaluated());
         ExpressionNode logical = new LogicNode()
@@ -55,13 +55,35 @@ public class LogicalNodeTestCase {
         assertTrue(second.isEvaluated());
     }
     @Test
-    public void testShortCircuitAnd() {
+    public void testShortCircuitAND() {
         TracedNode second = new TracedNode(new LiteralNode(true));
         assertFalse(second.isEvaluated());
         ExpressionNode logical = new LogicNode()
                 .add(null, new LiteralNode(false))
                 .add("and", second);
         assertEquals(Result.FALSE, evaluate(logical));
+        assertFalse(second.isEvaluated());
+    }
+
+    @Test
+    public void testFullyExhaustedOR() {
+        TracedNode second = new TracedNode(new LiteralNode(true));
+        assertFalse(second.isEvaluated());
+        ExpressionNode logical = new LogicNode()
+                .add(null, new LiteralNode(false))
+                .add("or", second);
+        assertEquals(Result.TRUE, evaluate(logical));
+        assertTrue(second.isEvaluated());
+    }
+
+    @Test
+    public void testShortCircuitOR() {
+        TracedNode second = new TracedNode(new LiteralNode(false));
+        assertFalse(second.isEvaluated());
+        ExpressionNode logical = new LogicNode()
+                .add(null, new LiteralNode(true))
+                .add("or", second);
+        assertEquals(Result.TRUE, evaluate(logical));
         assertFalse(second.isEvaluated());
     }
 }
