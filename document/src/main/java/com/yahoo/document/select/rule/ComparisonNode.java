@@ -112,7 +112,7 @@ public class ComparisonNode implements ExpressionNode {
         if (lhs instanceof IdNode && rhs instanceof LiteralNode) {
             return getOrdering((IdNode)lhs, (LiteralNode)rhs, operator, order);
         } else if (rhs instanceof IdNode && lhs instanceof LiteralNode) {
-            return getOrdering((IdNode)rhs, (LiteralNode)rhs, operator, order);
+            return getOrdering((IdNode)rhs, (LiteralNode)lhs, operator, order);
         }
 
         return null;
