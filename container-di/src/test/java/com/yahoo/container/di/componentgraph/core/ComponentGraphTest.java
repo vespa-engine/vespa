@@ -323,6 +323,7 @@ public class ComponentGraphTest {
             fail("Cycle exception expected.");
         } catch (Throwable e) {
             assertThat(e.getMessage(), containsString("cycle"));
+            assertThat(e.getMessage(), containsString("ComponentCausingCycle"));
         }
     }
 

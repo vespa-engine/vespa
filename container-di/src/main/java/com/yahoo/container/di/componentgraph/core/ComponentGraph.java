@@ -13,6 +13,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.Provider;
+import com.yahoo.container.di.componentgraph.cycle.CycleFinder;
+import com.yahoo.container.di.componentgraph.cycle.Graph;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
 import net.jcip.annotations.NotThreadSafe;
@@ -372,13 +374,19 @@ public class ComponentGraph {
     /**
      * The returned list is the nodes from the graph bottom-up.
      *
+     * For each iteration, the algorithm finds the components that are not "wanted by" any other component,
+     * and prepends those components into the resulting 'sorted' list. Hence, the first element in the returned
+     * list is the component that is directly or indirectly wanted by "most" other components.
+     *
      * @return A list where a earlier than b in the list implies that there is no path from a to b
      */
     private static List<Node> topologicalSort(Collection<Node> nodes) {
         Map<ComponentId, Integer> numIncoming = new HashMap<>();
 
         nodes.forEach(
-                node -> node.usedComponents().forEach(injectedNode -> numIncoming.merge(injectedNode.componentId(), 1, (a, b) -> a + b)));
+                node -> node.usedComponents().forEach(
+                        injectedNode -> numIncoming.merge(injectedNode.componentId(), 1, (a, b) -> a + b)));
+
         LinkedList<Node> sorted = new LinkedList<>();
         List<Node> unsorted = new ArrayList<>(nodes);
 
@@ -394,7 +402,7 @@ public class ComponentGraph {
             });
 
             if (ready.isEmpty()) {
-                throw new IllegalStateException("There is a cycle in the component injection graph.");
+                throw new IllegalStateException("There is a cycle in the component injection graph: " + findCycle(notReady));
             }
 
             ready.forEach(node -> node.usedComponents()
@@ -404,4 +412,16 @@ public class ComponentGraph {
         }
         return sorted;
     }
+
+    private static List<String> findCycle(List<Node> nodes) {
+        var cyclicGraph = new Graph<String>();
+        for (var node : nodes) {
+            for (var adjacent : node.usedComponents()) {
+                cyclicGraph.edge(node.componentId().stringValue(),
+                                 adjacent.componentId().stringValue());
+            }
+        }
+        return new CycleFinder<>(cyclicGraph).findCycle();
+    }
+
 }
