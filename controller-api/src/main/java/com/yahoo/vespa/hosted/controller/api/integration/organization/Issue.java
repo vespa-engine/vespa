@@ -105,7 +105,8 @@ public class Issue {
     public enum Type {
 
         defect, // A defect which needs fixing.
-        task    // A task the humans must perform.
+        task,   // A task the humans must perform.
+        operationalTask // SRE and operational tasks.
 
     }
 
