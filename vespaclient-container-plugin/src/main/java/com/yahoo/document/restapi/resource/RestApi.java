@@ -262,8 +262,9 @@ public class RestApi extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGet(RestUri restUri, HttpRequest request) throws RestApiException {
-        final Optional<String> fieldSet = requestProperty("fieldSet", request);
-        final Optional<String> getDocument = operationHandler.get(restUri, fieldSet);
+        final Optional<String> fieldSet = requestProperty(FIELD_SET, request);
+        final Optional<String> cluster  = requestProperty(CLUSTER, request);
+        final Optional<String> getDocument = operationHandler.get(restUri, fieldSet, cluster);
         final ObjectNode resultNode = mapper.createObjectNode();
         if (getDocument.isPresent()) {
             final JsonNode parseNode;

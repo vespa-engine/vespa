@@ -107,7 +107,7 @@ public class OperationHandlerImplTest {
         VisitorControlHandler.CompletionCode completionCode = VisitorControlHandler.CompletionCode.SUCCESS;
         int bucketsVisited = 0;
         Map<String, String> bucketSpaces = new HashMap<>();
-        SyncSession mockSyncSession = mock(MessageBusSyncSession.class); // MBus session needed to avoid setRoute throwing.
+        MessageBusSyncSession mockSyncSession = mock(MessageBusSyncSession.class); // MBus session needed to avoid setRoute throwing.
 
         OperationHandlerImplFixture() {
             bucketSpaces.put("foo", "global");
@@ -314,6 +314,25 @@ public class OperationHandlerImplTest {
         handler.get(dummyGetUri(), Optional.of("donald,duck"));
 
         verify(fixture.mockSyncSession).get(any(), eq("donald,duck"), any());
+    }
+
+    @Test
+    public void get_route_has_default_value_if_no_cluster_is_provided() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+        handler.get(dummyGetUri(), Optional.empty(), Optional.empty());
+
+        // TODO shouldn't this be default-get?
+        verify(fixture.mockSyncSession).setRoute(eq("default"));
+    }
+
+    @Test
+    public void provided_get_cluster_is_propagated_as_route_to_sync_session() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+        handler.get(dummyGetUri(), Optional.empty(), Optional.of("foo"));
+
+        verify(fixture.mockSyncSession).setRoute(eq("[Storage:cluster=foo;clusterconfigid=configId]"));
     }
 
     @Test

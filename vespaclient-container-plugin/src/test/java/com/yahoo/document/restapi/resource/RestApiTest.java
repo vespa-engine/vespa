@@ -288,10 +288,17 @@ public class RestApiTest {
     }
 
     @Test
-    public void get_fieldset_parameter_is_propagated() throws IOException {
+    public void get_fieldset_parameter_is_propagated() {
         Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/bar?fieldSet=foo,baz", getFirstListenPort()));
         HttpGet get = new HttpGet(request.getUri());
         assertHttp200ResponseContains(doRest(get), "\"fieldset\":\"foo,baz\"");
+    }
+
+    @Test
+    public void get_cluster_parameter_is_propagated() {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/docid/bar?cluster=my_cool_cluster", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        assertHttp200ResponseContains(doRest(get), "\"cluster\":\"my_cool_cluster\"");
     }
 
     String visit_test_uri = "/document/v1/namespace/document-type/docid/?continuation=abc";
