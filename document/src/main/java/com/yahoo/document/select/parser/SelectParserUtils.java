@@ -10,7 +10,7 @@ import java.math.BigInteger;
  */
 public class SelectParserUtils {
 
-    public static long decodeLong(String str) {
+    static long decodeLong(String str) {
         if (str.startsWith("0x") || str.startsWith("0X")) {
             str = Long.toString(new BigInteger(str.substring(2), 16).longValue());
         }

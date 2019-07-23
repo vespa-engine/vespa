@@ -3,8 +3,11 @@ package com.yahoo.document.select.rule;
 
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.select.*;
-import com.yahoo.document.idstring.*;
+import com.yahoo.document.idstring.OrderDocIdString;
+import com.yahoo.document.select.BucketSet;
+import com.yahoo.document.select.Context;
+import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Visitor;
 
 /**
  * @author Simon Thoresen Hult
@@ -46,7 +49,7 @@ public class IdNode implements ExpressionNode {
         return divisionBits;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
@@ -55,7 +58,7 @@ public class IdNode implements ExpressionNode {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
         DocumentId id = context.getDocumentOperation().getId();
         if (id == null) {
@@ -97,6 +100,7 @@ public class IdNode implements ExpressionNode {
         return null;
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }

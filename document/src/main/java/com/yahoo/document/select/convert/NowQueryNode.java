@@ -10,10 +10,10 @@ import com.yahoo.document.select.rule.ArithmeticNode;
  */
 public class NowQueryNode {
     private final long value;
-    public NowQueryNode(long value) {
+    NowQueryNode(long value) {
         this.value = value;
     }
-    public NowQueryNode(ArithmeticNode node) {
+    NowQueryNode(ArithmeticNode node) {
     	// Assumes that the structure is checked and verified earlier
         this.value = Long.parseLong(node.getItems().get(1).getNode().toString());
     }

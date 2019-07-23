@@ -15,7 +15,7 @@ public enum Result {
     FALSE,
     INVALID;
 
-    // Inherit doc from Object.
+    @Override
     public String toString() {
         return name().toLowerCase();
     }
@@ -38,7 +38,7 @@ public enum Result {
      */
     public static Result toResult(Object value) {
         if (value == null || value == Result.FALSE || value == Boolean.FALSE ||
-            (Number.class.isInstance(value) && ((Number)value).doubleValue() == 0)) {
+            (value instanceof Number && ((Number)value).doubleValue() == 0)) {
             return Result.FALSE;
         } else if (value == INVALID) {
             return Result.INVALID;

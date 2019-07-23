@@ -43,7 +43,7 @@ public class ResultList {
         }
     }
 
-    List<ResultPair> results = new ArrayList<ResultPair>();
+    private List<ResultPair> results = new ArrayList<>();
 
     public ResultList() {
     }
@@ -86,7 +86,7 @@ public class ResultList {
         }
     }
 
-    boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
+    private boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
         // First, verify that all variables are overlapping
         for (Map.Entry<String, FieldPathIteratorHandler.IndexValue> entry : output.entrySet()) {
             FieldPathIteratorHandler.IndexValue found = input.get(entry.getKey());
@@ -196,7 +196,7 @@ public class ResultList {
             }
             return retVal;
         } else if (value == null || value == Result.FALSE || value == Boolean.FALSE ||
-            (Number.class.isInstance(value) && ((Number)value).doubleValue() == 0)) {
+            (value instanceof Number && ((Number)value).doubleValue() == 0)) {
             return new ResultList(Result.FALSE);
         } else if (value == Result.INVALID) {
             return new ResultList(Result.INVALID);

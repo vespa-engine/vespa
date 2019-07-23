@@ -3,7 +3,10 @@ package com.yahoo.document.select.rule;
 
 import com.yahoo.document.BucketDistribution;
 import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.select.*;
+import com.yahoo.document.select.BucketSet;
+import com.yahoo.document.select.Context;
+import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Visitor;
 
 /**
  * @author Simon Thoresen Hult
@@ -31,16 +34,17 @@ public class SearchColumnNode implements ExpressionNode {
         return distribution;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
         return distribution.getColumn(factory.getBucketId(context.getDocumentOperation().getId()));
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
@@ -50,6 +54,7 @@ public class SearchColumnNode implements ExpressionNode {
         return "searchcolumn." + field;
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }

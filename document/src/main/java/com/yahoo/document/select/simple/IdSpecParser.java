@@ -9,7 +9,7 @@ import com.yahoo.document.select.rule.IdNode;
 public class IdSpecParser extends Parser {
     private IdNode id;
     public IdNode getId() { return id; }
-    public boolean isUserSpec() { return "user".equals(id.getField()); }
+    boolean isUserSpec() { return "user".equals(id.getField()); }
     public boolean parse(CharSequence s) {
         boolean retval = false;
         int pos = eatWhite(s);

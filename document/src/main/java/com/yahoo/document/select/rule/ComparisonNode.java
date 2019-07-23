@@ -108,6 +108,7 @@ public class ComparisonNode implements ExpressionNode {
         return null;
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         if (lhs instanceof IdNode && rhs instanceof LiteralNode) {
             return getOrdering((IdNode)lhs, (LiteralNode)rhs, operator, order);
@@ -118,7 +119,7 @@ public class ComparisonNode implements ExpressionNode {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         if (operator.equals("==") || operator.equals("=")) {
             if (lhs instanceof IdNode && rhs instanceof LiteralNode) {
@@ -421,6 +422,7 @@ public class ComparisonNode implements ExpressionNode {
         }
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }

@@ -188,11 +188,11 @@ public class LogicNode implements ExpressionNode {
         buf.push(new LazyCombinedItem(lhs, rhs));
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
-    // Inherit doc from Object.
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();

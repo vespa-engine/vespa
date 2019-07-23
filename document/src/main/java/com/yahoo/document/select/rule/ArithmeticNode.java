@@ -39,12 +39,12 @@ public class ArithmeticNode implements ExpressionNode {
         return items;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
         StringBuilder ret = null;        
         Stack<ValueItem> buf = new Stack<>();
@@ -80,7 +80,7 @@ public class ArithmeticNode implements ExpressionNode {
                     ret.append(val);
                     continue;
                 }
-            } else if (Number.class.isInstance(val)) {
+            } else if (val instanceof Number) {
                 if (!buf.isEmpty()) {
                     while (buf.peek().operator > item.operator) {
                         popOffTheTop(buf);
@@ -174,10 +174,12 @@ public class ArithmeticNode implements ExpressionNode {
         }
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
@@ -196,7 +198,7 @@ public class ArithmeticNode implements ExpressionNode {
         private int operator;
         private ExpressionNode node;
 
-        public NodeItem(int operator, ExpressionNode node) {
+        NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;
             this.node = node;
         }

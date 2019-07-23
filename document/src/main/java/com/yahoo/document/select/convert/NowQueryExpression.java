@@ -16,7 +16,7 @@ public class NowQueryExpression {
     private final ComparisonNode comparison;
     private final NowQueryNode now;
 
-    public NowQueryExpression(AttributeNode attribute, ComparisonNode comparison, ArithmeticNode arithmetic) {
+    NowQueryExpression(AttributeNode attribute, ComparisonNode comparison, ArithmeticNode arithmetic) {
         this.attribute = attribute;
         this.comparison = comparison;
         this.now = (arithmetic != null ? new NowQueryNode(arithmetic) : new NowQueryNode(0));
