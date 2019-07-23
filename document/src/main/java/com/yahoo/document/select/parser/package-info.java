@@ -3,5 +3,7 @@
 @PublicApi
 package com.yahoo.document.select.parser;
 
+//TODO Vespa 8 Should not be public API
+
 import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
