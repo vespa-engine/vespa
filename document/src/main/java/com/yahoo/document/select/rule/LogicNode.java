@@ -169,8 +169,8 @@ public class LogicNode implements ExpressionNode {
                     combineValues(buf);
                 }
             }
-            
-            buf.push(new LazyValueItem(item, context));
+            ValueItem next = new LazyValueItem(item, context);
+            buf.push(buf.empty() ? new EagerValueItem(next.getOperator(), next.getResult()) : next);
         }
         while (buf.size() > 1) {
             combineValues(buf);
@@ -186,17 +186,7 @@ public class LogicNode implements ExpressionNode {
     private void combineValues(Stack<ValueItem> buf) {
         ValueItem rhs = buf.pop();
         ValueItem lhs = buf.pop();
-
-        switch (rhs.getOperator()) {
-            case AND:
-                buf.push(new EagerValueItem(lhs.getOperator(), lhs.getResult().combineAND(rhs)));
-                break;
-            case OR:
-                buf.push(new EagerValueItem(lhs.getOperator(), lhs.getResult().combineOR(rhs)));
-                break;
-            default:
-                throw new IllegalStateException("Arithmetic operator " + rhs.getOperator() + " not supported.");
-        }
+        buf.push(new LazyCombinedItem(lhs, rhs));
     }
 
     public void accept(Visitor visitor) {
@@ -222,7 +212,7 @@ public class LogicNode implements ExpressionNode {
      * @param operator The operator index to convert.
      * @return The string representation.
      */
-    public String operatorToString(int operator) {
+    private String operatorToString(int operator) {
         switch (operator) {
             case NOP:
                 return null;
@@ -279,6 +269,34 @@ public class LogicNode implements ExpressionNode {
         public ResultList getResult() {
             if (lazyResult == null) {
                 lazyResult = ResultList.toResultList(item.node.evaluate(context));
+            }
+            return lazyResult;
+        }
+    }
+
+    private final class LazyCombinedItem extends ValueItem {
+        private final ValueItem lhs;
+        private final ValueItem rhs;
+        private ResultList lazyResult = null;
+
+        LazyCombinedItem(ValueItem lhs, ValueItem rhs) {
+            super(lhs.getOperator());
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+        @Override
+        public ResultList getResult() {
+            if (lazyResult == null) {
+                switch (rhs.getOperator()) {
+                    case AND:
+                        lazyResult = lhs.getResult().combineAND(rhs);
+                        break;
+                    case OR:
+                        lazyResult = lhs.getResult().combineOR(rhs);
+                        break;
+                    default:
+                        throw new IllegalStateException("Logical operator " + rhs.getOperator() + " not supported.");
+                }
             }
             return lazyResult;
         }
