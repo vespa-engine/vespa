@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 /**
  * Tests for the JRTConnectionPool class.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  * @author hmusum
  */
 public class JRTConnectionPoolTest {

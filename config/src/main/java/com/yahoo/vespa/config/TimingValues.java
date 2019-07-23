@@ -6,7 +6,7 @@ import java.util.Random;
 /**
  * Timeouts, delays and retries used in RPC config protocol.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 public class TimingValues {
     public static final long defaultNextConfigTimeout = 1000;

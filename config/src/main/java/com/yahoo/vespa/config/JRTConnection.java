@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 /**
  * A JRT connection to a config server or config proxy.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 public class JRTConnection implements Connection {
     public final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
@@ -75,10 +75,6 @@ public class JRTConnection implements Connection {
 
     @Override
     public synchronized void setSuccess() {
-        lastSuccess = System.currentTimeMillis();
-    }
-
-    public void setLastSuccess() {
         lastSuccess = System.currentTimeMillis();
     }
 

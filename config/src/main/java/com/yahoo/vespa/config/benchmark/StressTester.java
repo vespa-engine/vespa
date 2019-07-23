@@ -14,7 +14,6 @@ import java.util.*;
  * with test classes that implement the {@link Tester} interface.
  *
  * @author hmusum
- * @since 5.1.5
  */
 public class StressTester {
     private static boolean debug = false;
