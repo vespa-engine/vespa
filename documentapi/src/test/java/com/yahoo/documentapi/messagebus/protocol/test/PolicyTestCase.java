@@ -47,6 +47,7 @@ import com.yahoo.messagebus.routing.RoutingSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
 import com.yahoo.messagebus.test.Receptor;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +69,6 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("deprecation")
 public class PolicyTestCase {
 
     private static final int TIMEOUT = 300;
@@ -313,7 +313,7 @@ public class PolicyTestCase {
         for (int i = 0; i < 10; ++i) {
             RoutingNode leaf = frame.select(1).get(0);
             String recipient = leaf.getRoute().toString();
-            assertTrue(recipient.equals("docproc/cluster.default/*/chain.default"));
+            assertEquals(recipient, "docproc/cluster.default/*/chain.default");
             lst.add(recipient);
 
             leaf.handleReply(new EmptyReply());
@@ -496,7 +496,7 @@ public class PolicyTestCase {
             if (prev == null) {
                 assertNotNull(next);
             } else {
-                assertFalse(prev.equals(next));
+                assertNotEquals(prev, next);
             }
             prev = next;
             leaf.handleReply(new EmptyReply());
@@ -612,6 +612,32 @@ public class PolicyTestCase {
         frame.destroy();
     }
 
+    @Test
+    public void testDocumentSelectorDualCluster() {
+        PolicyTestFrame frame = new PolicyTestFrame(manager);
+        frame.setHop(new HopSpec("test", "[DocumentRouteSelector:raw:" +
+                "route[2]\n" +
+                "route[0].name \"foo\"\n" +
+                "route[0].selector \"(testdoc AND (testdoc.intfield / 1000 > 0))\"\n" +
+                "route[0].feed \"myfeed\"\n" +
+                "route[1].name \"bar\"\n" +
+                "route[1].selector \"(other AND (other.intfield / 1000 > 0))\"\n" +
+                "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
+
+        frame.setMessage(new GetDocumentMessage(new DocumentId("doc:scheme:"), "fieldSet"));
+        frame.assertSelect(Arrays.asList("bar", "foo"));
+
+        Document doc = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:scheme:"));
+        doc.setFieldValue("intfield", 3000);
+        Message put = new PutDocumentMessage(new DocumentPut(doc));
+        frame.setMessage(put);
+        frame.assertSelect(Arrays.asList("foo"));
+
+        frame.setMessage(put);
+        frame.assertMergeOneReply("foo");
+
+        frame.destroy();
+    }
 
     @Test
     public void testDocumentRouteSelectorIgnore() {
@@ -676,7 +702,7 @@ public class PolicyTestCase {
         assertSelect(frame, 32, Arrays.asList("docproc/cluster.default/9/chain.default"));
         frame.getNetwork().unregisterSession("9/chain.default");
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 7));
-        assertSelect(frame, 32, new ArrayList<String>());
+        assertSelect(frame, 32, new ArrayList<>());
 
         // Test merge behavior.
         frame.setHop(new HopSpec("test", "[RoundRobin]").addRecipient("docproc/cluster.default/0/chain.default"));

@@ -84,7 +84,7 @@ public class DocumentSelector {
      * @return True if the document is accepted.
      * @throws RuntimeException if the evaluation enters an illegal state
      */
-    public ResultList getMatchingResultList(Context context) {
+    private ResultList getMatchingResultList(Context context) {
         return ResultList.toResultList(expression.evaluate(context));
     }
 

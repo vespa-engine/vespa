@@ -27,11 +27,12 @@ public class EmbracedNode implements ExpressionNode {
         return this;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return node.getBucketSet(factory);
     }
 
+    @Override
     public Object evaluate(Context context) {
         return node.evaluate(context);
     }
@@ -41,10 +42,12 @@ public class EmbracedNode implements ExpressionNode {
         return "(" + node + ")";
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }

@@ -28,16 +28,17 @@ public class NegationNode implements ExpressionNode {
         return this;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
         return Result.invert(Result.toResult(node.evaluate(context)));
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
@@ -47,6 +48,7 @@ public class NegationNode implements ExpressionNode {
         return "not " + node;
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }

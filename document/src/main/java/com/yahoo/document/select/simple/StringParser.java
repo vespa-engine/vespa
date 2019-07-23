@@ -14,7 +14,7 @@ public class StringParser extends Parser {
         int pos = eatWhite(s);
         if (pos + 1 < s.length()) {
         if (s.charAt(pos++) == '"') {
-            StringBuffer str = new StringBuffer("");
+            StringBuilder str = new StringBuilder();
             for(; (pos < s.length()) && (s.charAt(pos) != '"');pos++) {
                 if ((pos < s.length()) && (s.charAt(pos) == '\\')) {
                     pos++;

@@ -3,7 +3,20 @@ package com.yahoo.document.select.convert;
 
 import com.yahoo.document.select.NowCheckVisitor;
 import com.yahoo.document.select.Visitor;
-import com.yahoo.document.select.rule.*;
+import com.yahoo.document.select.rule.ArithmeticNode;
+import com.yahoo.document.select.rule.AttributeNode;
+import com.yahoo.document.select.rule.ComparisonNode;
+import com.yahoo.document.select.rule.DocumentNode;
+import com.yahoo.document.select.rule.EmbracedNode;
+import com.yahoo.document.select.rule.ExpressionNode;
+import com.yahoo.document.select.rule.IdNode;
+import com.yahoo.document.select.rule.LiteralNode;
+import com.yahoo.document.select.rule.LogicNode;
+import com.yahoo.document.select.rule.NegationNode;
+import com.yahoo.document.select.rule.NowNode;
+import com.yahoo.document.select.rule.SearchColumnNode;
+import com.yahoo.document.select.rule.VariableNode;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,14 +28,13 @@ import java.util.Map;
  */
 public class SelectionExpressionConverter implements Visitor {
 
-    private Map<String, NowQueryExpression> expressionMap = new HashMap<String, NowQueryExpression>();
+    private Map<String, NowQueryExpression> expressionMap = new HashMap<>();
 
     private class BuildState {
         public AttributeNode attribute;
         public ComparisonNode comparison;
         public ArithmeticNode arithmetic;
         public NowNode now;
-        public boolean hasNow() { return now != null; }
     }
 
     private BuildState state;
@@ -38,7 +50,7 @@ public class SelectionExpressionConverter implements Visitor {
     }
 
     public Map<String, String> getQueryMap() {
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         for (NowQueryExpression expression : expressionMap.values()) {
             ret.put(expression.getDocumentType(), expression.toString());
         }
@@ -92,7 +104,6 @@ public class SelectionExpressionConverter implements Visitor {
         }
         state.comparison = node;
         if (state.attribute != null &&
-            state.comparison != null &&
             (state.arithmetic != null || state.now != null)) {
             NowQueryExpression expression = new NowQueryExpression(state.attribute, state.comparison, state.arithmetic);
             expressionMap.put(expression.getDocumentType(), expression);

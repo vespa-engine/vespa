@@ -2,10 +2,21 @@
 package com.yahoo.document.select.rule;
 
 import com.yahoo.collections.BobHash;
-import com.yahoo.document.*;
+import com.yahoo.document.BucketIdFactory;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentGet;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.select.*;
+import com.yahoo.document.select.BucketSet;
+import com.yahoo.document.select.Context;
+import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Result;
+import com.yahoo.document.select.ResultList;
+import com.yahoo.document.select.Visitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +27,7 @@ import java.util.List;
 public class AttributeNode implements ExpressionNode {
 
     private ExpressionNode value;
-    private final List<Item> items = new ArrayList<Item>();
+    private final List<Item> items = new ArrayList<>();
 
     public AttributeNode(ExpressionNode value, List items) {
         this.value = value;
@@ -43,14 +54,14 @@ public class AttributeNode implements ExpressionNode {
         return items;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
-        String pos = value.toString();
+        StringBuilder pos = new StringBuilder(value.toString());
         Object obj = value.evaluate(context);
 
         StringBuilder builder = new StringBuilder();
@@ -74,7 +85,7 @@ public class AttributeNode implements ExpressionNode {
                 obj = evaluateFunction(item.getName(), obj);
             }
 
-            pos = pos + "." + item;
+            pos.append(".").append(item);
         }
 
         if (builder.length() > 0) {
@@ -98,7 +109,7 @@ public class AttributeNode implements ExpressionNode {
 
     private static Object applyFunction(String function, Object value) {
         if (function.equalsIgnoreCase("abs")) {
-            if (Number.class.isInstance(value)) {
+            if (value instanceof Number) {
                 Number nValue = (Number)value;
                 if (value instanceof Double) {
                     return nValue.doubleValue() * (nValue.doubleValue() < 0 ? -1 : 1);
@@ -157,6 +168,7 @@ public class AttributeNode implements ExpressionNode {
         return applyFunction(function, value);
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
@@ -171,6 +183,7 @@ public class AttributeNode implements ExpressionNode {
         return ret.toString();
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }

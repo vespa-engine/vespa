@@ -30,7 +30,7 @@ public class LogicNode implements ExpressionNode {
     public static final int AND = 2;
 
     // The items contained in this.
-    private final List<NodeItem> items = new ArrayList<NodeItem>();
+    private final List<NodeItem> items = new ArrayList<>();
 
     /**
      * Construct an empty logic expression.
@@ -55,7 +55,7 @@ public class LogicNode implements ExpressionNode {
         return this;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         Stack<BucketItem> buf = new Stack<>();
         for (NodeItem item : items) {
@@ -72,6 +72,7 @@ public class LogicNode implements ExpressionNode {
         return buf.pop().buckets;
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         Stack<OrderingItem> buf = new Stack<>();
         for (NodeItem item : items) {
@@ -159,23 +160,21 @@ public class LogicNode implements ExpressionNode {
         buf.push(lhs);
     }
 
-    // Inherit doc from ExpressionNode.
     @Override
     public Object evaluate(Context context) {
         Stack<ValueItem> buf = new Stack<>();
         for (NodeItem item : items) {
-            if ( ! buf.isEmpty()) {
-                while (buf.peek().operator > item.operator) {
+            if ( buf.size() > 1) {
+                while ((buf.peek().getOperator() >= item.operator)) {
                     combineValues(buf);
                 }
             }
-            
-            buf.push(new ValueItem(item.operator, ResultList.toResultList(item.node.evaluate(context))));
+            buf.push(new LazyValueItem(item, context));
         }
         while (buf.size() > 1) {
             combineValues(buf);
         }
-        return buf.pop().value;
+        return buf.pop().getResult();
     }
 
     /**
@@ -186,24 +185,14 @@ public class LogicNode implements ExpressionNode {
     private void combineValues(Stack<ValueItem> buf) {
         ValueItem rhs = buf.pop();
         ValueItem lhs = buf.pop();
-
-        switch (rhs.operator) {
-            case AND:
-                buf.push(new ValueItem(lhs.operator, lhs.value.combineAND(rhs.value)));
-                break;
-            case OR:
-                buf.push(new ValueItem(lhs.operator, lhs.value.combineOR(rhs.value)));
-                break;
-            default:
-                throw new IllegalStateException("Arithmetic operator " + rhs.operator + " not supported.");
-        }
+        buf.push(new LazyCombinedItem(lhs, rhs));
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
-    // Inherit doc from Object.
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
@@ -222,7 +211,7 @@ public class LogicNode implements ExpressionNode {
      * @param operator The operator index to convert.
      * @return The string representation.
      */
-    public String operatorToString(int operator) {
+    private String operatorToString(int operator) {
         switch (operator) {
             case NOP:
                 return null;
@@ -257,13 +246,58 @@ public class LogicNode implements ExpressionNode {
     /**
      * Private class to store results in a stack.
      */
-    private final class ValueItem {
-        private int operator;
-        private ResultList value;
-
-        public ValueItem(int operator, ResultList value) {
+    private abstract class ValueItem implements ResultList.LazyResultList {
+        private final int operator;
+        ValueItem(int operator) {
             this.operator = operator;
-            this.value = value;
+        }
+        int getOperator() { return operator; }
+    }
+
+    private final class LazyValueItem extends ValueItem {
+        private final NodeItem item;
+        private final Context context;
+        private ResultList lazyResult = null;
+
+        LazyValueItem(NodeItem item, Context context) {
+            super(item.operator);
+            this.item = item;
+            this.context = context;
+        }
+        @Override
+        public ResultList getResult() {
+            if (lazyResult == null) {
+                lazyResult = ResultList.toResultList(item.node.evaluate(context));
+            }
+            return lazyResult;
+        }
+    }
+
+    private final class LazyCombinedItem extends ValueItem {
+        private final ValueItem lhs;
+        private final ValueItem rhs;
+        private ResultList lazyResult = null;
+
+        LazyCombinedItem(ValueItem lhs, ValueItem rhs) {
+            super(lhs.getOperator());
+            this.lhs = lhs;
+            this.rhs = rhs;
+        }
+        @Override
+        public ResultList getResult() {
+            if (lazyResult == null) {
+                switch (rhs.getOperator()) {
+                    case AND:
+                        lazyResult = lhs.getResult().combineAND(rhs);
+                        break;
+                    case OR:
+                        lazyResult = lhs.getResult().combineOR(rhs);
+                        break;
+                    default:
+                        throw new IllegalStateException("Logical operator " + rhs.getOperator() + " not supported.");
+                }
+            }
+            return lazyResult;
         }
     }
 
@@ -274,7 +308,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private BucketSet buckets;
 
-        public BucketItem(int operator, BucketSet buckets) {
+        BucketItem(int operator, BucketSet buckets) {
             this.operator = operator;
             this.buckets = buckets;
         }
@@ -287,7 +321,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private OrderingSpecification ordering;
 
-        public OrderingItem(int operator, OrderingSpecification orderSpec) {
+        OrderingItem(int operator, OrderingSpecification orderSpec) {
             this.operator = operator;
             this.ordering = orderSpec;
         }
@@ -300,7 +334,7 @@ public class LogicNode implements ExpressionNode {
         private int operator;
         private ExpressionNode node;
 
-        public NodeItem(int operator, ExpressionNode node) {
+        NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;
             this.node = node;
         }

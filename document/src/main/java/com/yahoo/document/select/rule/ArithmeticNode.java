@@ -3,7 +3,10 @@ package com.yahoo.document.select.rule;
 
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.datatypes.NumericFieldValue;
-import com.yahoo.document.select.*;
+import com.yahoo.document.select.BucketSet;
+import com.yahoo.document.select.Context;
+import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Visitor;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ public class ArithmeticNode implements ExpressionNode {
     public static final int DIV = 4;
     public static final int MUL = 5;
 
-    private final List<NodeItem> items = new ArrayList<NodeItem>();
+    private final List<NodeItem> items = new ArrayList<>();
 
     public ArithmeticNode() {
         // empty
@@ -36,15 +39,15 @@ public class ArithmeticNode implements ExpressionNode {
         return items;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
     }
 
-    // Inherit doc from ExpressionNode.
+    @Override
     public Object evaluate(Context context) {
         StringBuilder ret = null;        
-        Stack<ValueItem> buf = new Stack<ValueItem>();
+        Stack<ValueItem> buf = new Stack<>();
         for (int i = 0; i < items.size(); ++i) {
             NodeItem item = items.get(i);
             Object val = item.node.evaluate(context);
@@ -77,7 +80,7 @@ public class ArithmeticNode implements ExpressionNode {
                     ret.append(val);
                     continue;
                 }
-            } else if (Number.class.isInstance(val)) {
+            } else if (val instanceof Number) {
                 if (!buf.isEmpty()) {
                     while (buf.peek().operator > item.operator) {
                         popOffTheTop(buf);
@@ -171,10 +174,12 @@ public class ArithmeticNode implements ExpressionNode {
         }
     }
 
+    @Override
     public OrderingSpecification getOrdering(int order) {
         return null;
     }
 
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
@@ -183,7 +188,7 @@ public class ArithmeticNode implements ExpressionNode {
         public int operator;
         public Number value;
 
-        public ValueItem(int operator, Number value) {
+        ValueItem(int operator, Number value) {
             this.operator = operator;
             this.value = value;
         }
@@ -193,7 +198,7 @@ public class ArithmeticNode implements ExpressionNode {
         private int operator;
         private ExpressionNode node;
 
-        public NodeItem(int operator, ExpressionNode node) {
+        NodeItem(int operator, ExpressionNode node) {
             this.operator = operator;
             this.node = node;
         }

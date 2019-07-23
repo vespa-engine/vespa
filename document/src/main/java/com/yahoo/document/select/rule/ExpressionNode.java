@@ -21,14 +21,14 @@ public interface ExpressionNode {
      * @param doc The document to evaluate over.
      * @return The value of this.
      */
-    public Object evaluate(Context doc);
+    Object evaluate(Context doc);
 
     /**
      * Returns the set of bucket ids covered by this node.
      *
      * @param factory The factory used by the current application.
      */
-    public BucketSet getBucketSet(BucketIdFactory factory);
+    BucketSet getBucketSet(BucketIdFactory factory);
 
     /**
      * If this document selection implies a specific ordering (using the orderdoc scheme),
@@ -36,13 +36,13 @@ public interface ExpressionNode {
      *
      * @param order The order in which we are looking to traverse the ordering (ASCENDING or DESCENDING)
      */
-    public OrderingSpecification getOrdering(int order);
+    OrderingSpecification getOrdering(int order);
 
     /**
      * Perform visitation of this node.
      *
      * @param visitor The visitor that wishes to visit the node.
      */
-    public void accept(Visitor visitor);
+    void accept(Visitor visitor);
 
 }

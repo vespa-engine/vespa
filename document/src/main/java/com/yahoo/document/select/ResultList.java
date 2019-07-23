@@ -43,7 +43,7 @@ public class ResultList {
         }
     }
 
-    List<ResultPair> results = new ArrayList<ResultPair>();
+    private List<ResultPair> results = new ArrayList<>();
 
     public ResultList() {
     }
@@ -86,7 +86,7 @@ public class ResultList {
         }
     }
 
-    boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
+    private boolean combineVariables(FieldPathIteratorHandler.VariableMap output, FieldPathIteratorHandler.VariableMap input) {
         // First, verify that all variables are overlapping
         for (Map.Entry<String, FieldPathIteratorHandler.IndexValue> entry : output.entrySet()) {
             FieldPathIteratorHandler.IndexValue found = input.get(entry.getKey());
@@ -116,13 +116,19 @@ public class ResultList {
         return true;
     }
 
-    public ResultList combineAND(ResultList other)
+    public interface LazyResultList {
+        ResultList getResult();
+    }
+
+    public ResultList combineAND(LazyResultList other)
     {
+        if (Result.FALSE == toResult()) return ResultList.toResultList(false);
+
         ResultList result = new ResultList();
 
         // TODO: optimize
         for (ResultPair pair : results) {
-            for (ResultPair otherPair : other.results) {
+            for (ResultPair otherPair : other.getResult().results) {
                 FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
 
                 if (combineVariables(varMap, otherPair.variables)) {
@@ -144,13 +150,15 @@ public class ResultList {
         return Result.INVALID;
     }
 
-    public ResultList combineOR(ResultList other)
+    public ResultList combineOR(LazyResultList other)
     {
+        if (Result.TRUE == toResult()) return ResultList.toResultList(true);
+
         ResultList result = new ResultList();
 
         // TODO: optimize
         for (ResultPair pair : results) {
-            for (ResultPair otherPair : other.results) {
+            for (ResultPair otherPair : other.getResult().results) {
                 FieldPathIteratorHandler.VariableMap varMap = (FieldPathIteratorHandler.VariableMap)pair.variables.clone();
 
                 if (combineVariables(varMap, otherPair.variables)) {
@@ -188,7 +196,7 @@ public class ResultList {
             }
             return retVal;
         } else if (value == null || value == Result.FALSE || value == Boolean.FALSE ||
-            (Number.class.isInstance(value) && ((Number)value).doubleValue() == 0)) {
+            (value instanceof Number && ((Number)value).doubleValue() == 0)) {
             return new ResultList(Result.FALSE);
         } else if (value == Result.INVALID) {
             return new ResultList(Result.INVALID);

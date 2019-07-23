@@ -7,7 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Context {
-    private DocumentOperation documentOperation = null;
+    private DocumentOperation documentOperation;
+    private Map<String, Object> variables = new HashMap<>();
 
     public Context(DocumentOperation documentOperation) {
         this.documentOperation = documentOperation;
@@ -28,7 +29,4 @@ public class Context {
     public void setVariables(Map<String, Object> variables) {
         this.variables = variables;
     }
-
-    private Map<String, Object> variables = new HashMap<String, Object>();
-
 }
