@@ -116,11 +116,11 @@ public class ResultList {
         return true;
     }
 
-    public interface GetResultList {
+    public interface LazyResultList {
         ResultList getResult();
     }
 
-    public ResultList combineAND(GetResultList other)
+    public ResultList combineAND(LazyResultList other)
     {
         if (Result.FALSE == toResult()) return ResultList.toResultList(false);
 
@@ -150,7 +150,7 @@ public class ResultList {
         return Result.INVALID;
     }
 
-    public ResultList combineOR(GetResultList other)
+    public ResultList combineOR(LazyResultList other)
     {
         if (Result.TRUE == toResult()) return ResultList.toResultList(true);
 

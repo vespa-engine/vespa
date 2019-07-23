@@ -169,8 +169,7 @@ public class LogicNode implements ExpressionNode {
                     combineValues(buf);
                 }
             }
-            ValueItem next = new LazyValueItem(item, context);
-            buf.push(buf.empty() ? new EagerValueItem(next.getOperator(), next.getResult()) : next);
+            buf.push(new LazyValueItem(item, context));
         }
         while (buf.size() > 1) {
             combineValues(buf);
@@ -247,7 +246,7 @@ public class LogicNode implements ExpressionNode {
     /**
      * Private class to store results in a stack.
      */
-    private abstract class ValueItem implements ResultList.GetResultList {
+    private abstract class ValueItem implements ResultList.LazyResultList {
         private final int operator;
         ValueItem(int operator) {
             this.operator = operator;
@@ -299,19 +298,6 @@ public class LogicNode implements ExpressionNode {
                 }
             }
             return lazyResult;
-        }
-    }
-
-    private final class EagerValueItem extends ValueItem {
-        private final ResultList value;
-
-        EagerValueItem(int operator, ResultList value) {
-            super(operator);
-            this.value = value;
-        }
-        @Override
-        public ResultList getResult() {
-            return value;
         }
     }
 
