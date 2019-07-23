@@ -3999,18 +3999,13 @@
     "methods": [
       "public void <init>(com.yahoo.document.select.rule.ExpressionNode, java.lang.String, com.yahoo.document.select.rule.ExpressionNode)",
       "public com.yahoo.document.select.rule.ExpressionNode getLHS()",
-      "public com.yahoo.document.select.rule.ComparisonNode setLHS(com.yahoo.document.select.rule.ExpressionNode)",
       "public java.lang.String getOperator()",
       "public com.yahoo.document.select.rule.ComparisonNode setOperator(java.lang.String)",
       "public com.yahoo.document.select.rule.ExpressionNode getRHS()",
-      "public com.yahoo.document.select.rule.ComparisonNode setRHS(com.yahoo.document.select.rule.ExpressionNode)",
       "public com.yahoo.document.select.OrderingSpecification getOrdering(com.yahoo.document.select.rule.IdNode, com.yahoo.document.select.rule.LiteralNode, java.lang.String, int)",
       "public com.yahoo.document.select.OrderingSpecification getOrdering(int)",
       "public com.yahoo.document.select.BucketSet getBucketSet(com.yahoo.document.BucketIdFactory)",
       "public java.lang.Object evaluate(com.yahoo.document.select.Context)",
-      "public com.yahoo.document.select.ResultList evaluateListsTrue(com.yahoo.document.select.rule.AttributeNode$VariableValueList, com.yahoo.document.select.rule.AttributeNode$VariableValueList)",
-      "public com.yahoo.document.select.ResultList evaluateListsFalse(com.yahoo.document.select.rule.AttributeNode$VariableValueList, com.yahoo.document.select.rule.AttributeNode$VariableValueList)",
-      "public com.yahoo.document.select.ResultList evaluateListAndSingle(com.yahoo.document.select.rule.AttributeNode$VariableValueList, java.lang.Object)",
       "public void accept(com.yahoo.document.select.Visitor)",
       "public java.lang.String toString()"
     ],
@@ -4125,7 +4120,6 @@
       "final"
     ],
     "methods": [
-      "public void <init>(com.yahoo.document.select.rule.LogicNode, int, com.yahoo.document.select.rule.ExpressionNode)",
       "public int getOperator()",
       "public com.yahoo.document.select.rule.ExpressionNode getNode()"
     ],
@@ -4147,8 +4141,7 @@
       "public com.yahoo.document.select.OrderingSpecification getOrdering(int)",
       "public java.lang.Object evaluate(com.yahoo.document.select.Context)",
       "public void accept(com.yahoo.document.select.Visitor)",
-      "public java.lang.String toString()",
-      "public java.lang.String operatorToString(int)"
+      "public java.lang.String toString()"
     ],
     "fields": [
       "public static final int NOP",
