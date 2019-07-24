@@ -101,13 +101,18 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
     do {
         // perform compaction on EnumStore if necessary
         if (extraBytesNeeded > this->_enumStore.getRemaining() ||
-            this->_enumStore.getPendingCompact()) {
+            this->_enumStore.getPendingCompact())
+        {
+            this->logEnumStoreEvent("enumstorecompact", "reserve");
             this->removeAllOldGenerations();
             this->_enumStore.clearPendingCompact();
             EnumIndexMap old2New(this->_enumStore.getNumUniques()*3);
+            this->logEnumStoreEvent("enumstorecompact", "start");
             if (!this->_enumStore.performCompaction(extraBytesNeeded, old2New)) {
+                this->logEnumStoreEvent("enumstorecompact", "failed_compact");
                 // fallback to resize strategy
                 this->_enumStore.fallbackResize(extraBytesNeeded);
+                this->logEnumStoreEvent("enumstorecompact", "fallbackresize_complete");
                 if (extraBytesNeeded > this->_enumStore.getRemaining()) {
                     HDR_ABORT("Cannot fallbackResize enumStore");
                 }
@@ -120,6 +125,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
             for (auto & data : this->_changes) {
                 data._enumScratchPad = ChangeBase::UNSET_ENUM;
             }
+            this->logEnumStoreEvent("enumstorecompact", "complete");
         }
     } while (0);
 

@@ -137,8 +137,10 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::reEnumerate(const EnumIndexMap & old2New)
 {
+    this->logEnumStoreEvent("reenumerate", "reserved");
     auto newIndexes = std::make_unique<vespalib::Array<EnumIndex>>();
     newIndexes->reserve(_enumIndices.capacity());
+    this->logEnumStoreEvent("reenumerate", "start");
     for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
         EnumIndex oldIdx = _enumIndices[i];
         EnumIndex newIdx;
@@ -154,6 +156,7 @@ SingleValueEnumAttribute<B>::reEnumerate(const EnumIndexMap & old2New)
         _enumIndices.replaceVector(std::move(newIndexes));
     }
     this->logEnumStoreEvent("compactfixup", "complete");
+    this->logEnumStoreEvent("reenumerate", "complete");
 }
 
 template <typename B>
