@@ -47,23 +47,8 @@ public class ConfigDefinitionTest {
     }
 
     @Test
-    public void testDefNumberCompare() {
-        ConfigDefinition df1 = new ConfigDefinition("d", "25");
-        ConfigDefinition df2 = new ConfigDefinition("d", "5");
-        ConfigDefinition df3 = new ConfigDefinition("d", "1-1");
-        ConfigDefinition df4 = new ConfigDefinition("d", "0-2-3");
-        ConfigDefinition df5 = new ConfigDefinition("d", "1");
-        ConfigDefinition df6 = new ConfigDefinition("d", "1-0");
-        assertTrue(df1.compareTo(df2) > 0);
-        assertTrue(df2.compareTo(df4) > 0);
-        assertEquals(1, df3.compareTo(df4));
-        assertEquals(-1, df4.compareTo(df5));
-        assertEquals(0, df5.compareTo(df6));
-    }
-
-    @Test
     public void testIntDefaultValues() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1");
+        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
 
         def.addIntDef("foo");
         def.addIntDef("bar", 0);
@@ -83,7 +68,7 @@ public class ConfigDefinitionTest {
 
     @Test
     public void testLongDefaultValues() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1");
+        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
 
         def.addLongDef("foo");
         def.addLongDef("bar", 1234567890123L);
@@ -102,7 +87,7 @@ public class ConfigDefinitionTest {
     @Test
     @SuppressWarnings("serial")
     public void testDefaultsPayloadMap() {
-        ConfigDefinition def = new ConfigDefinition("foo", "1");
+        ConfigDefinition def = new ConfigDefinition("foo", "1", "namespace1");
         def.addStringDef("mystring");
         def.addStringDef("mystringdef", "foo");
         def.addBoolDef("mybool");

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
@@ -16,11 +15,10 @@ import java.util.regex.Pattern;
 
 /**
  * Represents one legal def file, or (internally) one array or inner array definition in a def file.
- * Definitions are comparable based on version.
  * @author vegardh
  *
  */
-public class ConfigDefinition implements Comparable<ConfigDefinition> {
+public class ConfigDefinition {
     public static final Pattern namePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-_]*");
     public static final Pattern namespacePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-._]*");
 
@@ -62,16 +60,8 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         this.namespace = namespace;
     }
 
-    public ConfigDefinition(String name, String version) {
-        this(name, version, CNode.DEFAULT_NAMESPACE);
-    }
-
     public String getName() {
         return name;
-    }
-
-    private String getVersion() {
-        return version;
     }
 
     public String getNamespace() {
@@ -349,7 +339,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      */
     public static class StructDef extends ConfigDefinition {
         StructDef(String name, String version, ConfigDefinition parent) {
-            super(name, version);
+            super(name, version, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -361,7 +351,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      */
     public static class InnerArrayDef extends ConfigDefinition {
         InnerArrayDef(String name, String version, ConfigDefinition parent) {
-            super(name, version);
+            super(name, version, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -374,7 +364,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class ArrayDef extends ConfigDefinition {
         private TypeSpec typeSpec;
         ArrayDef(String name, String version, ConfigDefinition parent) {
-            super(name, version);
+            super(name, version, parent.getNamespace());
             this.parent = parent;
         }
         public TypeSpec getTypeSpec() {
@@ -400,7 +390,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class LeafMapDef extends ConfigDefinition {
 	private TypeSpec typeSpec;
 	LeafMapDef(String name, String version, ConfigDefinition parent) {
-            super(name, version);
+            super(name, version, parent.getNamespace());
             this.parent = parent;
         }
 	public TypeSpec getTypeSpec() {
@@ -418,7 +408,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      */
     public static class StructMapDef extends ConfigDefinition {
 	StructMapDef(String name, String version, ConfigDefinition parent) {
-            super(name, version);
+            super(name, version, parent.getNamespace());
             this.parent = parent;
         }
     }
@@ -1059,15 +1049,6 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             ancestor = ancestor.getParent();
         }
         return ret.toString();
-    }
-
-    @Override
-    public int compareTo(ConfigDefinition other) {
-        Objects.requireNonNull(other);
-        if (!getName().equals(other.getName())) {
-            throw new IllegalArgumentException("Different def names used to compare: "+getName()+"/"+other.getName());
-        }
-        return new VersionComparator().compare(getVersion(),other.getVersion());
     }
 
     @Override
