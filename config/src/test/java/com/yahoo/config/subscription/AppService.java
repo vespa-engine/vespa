@@ -10,25 +10,22 @@ import com.yahoo.vespa.config.TimingValues;
  * Application that subscribes to config defined in app.def and
  * generated code in AppConfig.java.
  */
-public class AppService {
-    protected int timesConfigured = 0;
+class AppService {
+    private int timesConfigured = 0;
 
-    protected AppConfig config = null;
+    private AppConfig config = null;
     private final ConfigSubscriber subscriber;
-    protected final String configId;
 
-    final Thread configThread;
-    boolean stopThread = false;
+    private boolean stopThread = false;
 
-    public AppService(String configId, ConfigSourceSet csource) {
+    AppService(String configId, ConfigSourceSet csource) {
         this(configId, csource, null);
     }
 
-    public int timesConfigured() { return timesConfigured; }
+    int timesConfigured() { return timesConfigured; }
 
-    public AppService(String configId, ConfigSourceSet csource, TimingValues timingValues) {
+    private AppService(String configId, ConfigSourceSet csource, TimingValues timingValues) {
         if (csource == null) throw new IllegalArgumentException("Config source cannot be null");
-        this.configId = configId;
         subscriber = new ConfigSubscriber(csource);
         ConfigHandle<AppConfig> temp;
         if (timingValues == null) {
@@ -37,15 +34,12 @@ public class AppService {
             temp = subscriber.subscribe(AppConfig.class, configId, csource, timingValues);
         }
         final ConfigHandle<AppConfig> handle = temp;
-        configThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopThread) {
-                    boolean changed = subscriber.nextConfig(500);
-                    if (changed) {
-                        configure(handle.getConfig());
-                        timesConfigured++;
-                    }
+        Thread configThread = new Thread(() -> {
+            while (!stopThread) {
+                boolean changed = subscriber.nextConfig(500);
+                if (changed) {
+                    configure(handle.getConfig());
+                    timesConfigured++;
                 }
             }
         });
@@ -56,7 +50,7 @@ public class AppService {
         configThread.start();
     }
 
-    public void configure(AppConfig config) {
+    private void configure(AppConfig config) {
         this.config = config;
     }
 

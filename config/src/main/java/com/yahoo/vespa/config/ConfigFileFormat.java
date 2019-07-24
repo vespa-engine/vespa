@@ -184,7 +184,7 @@ public class ConfigFileFormat implements SlimeFormat, ObjectTraverser {
         encode(os, slime.get());
     }
 
-    public void encode(OutputStream os, Inspector inspector) throws IOException {
+    private void encode(OutputStream os, Inspector inspector) throws IOException {
         this.out = new DataOutputStream(os);
         this.nodeStack = new Stack<>();
         nodeStack.push(new Node(root));
@@ -226,7 +226,7 @@ public class ConfigFileFormat implements SlimeFormat, ObjectTraverser {
             this.mapKey = mapKey;
         }
 
-        public Node(CNode node) {
+        Node(CNode node) {
             this(node, -1, "");
         }
     }

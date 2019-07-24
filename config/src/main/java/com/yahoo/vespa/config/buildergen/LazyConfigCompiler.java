@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigInstance;
 
 import javax.tools.*;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -76,7 +75,7 @@ public class LazyConfigCompiler implements ConfigCompiler {
         @SuppressWarnings("unchecked")
         private <BUILDER extends ConfigInstance.Builder> BUILDER loadBuilder(String builderClassUrl) {
             try {
-                Class<BUILDER> clazz = (Class<BUILDER>) classLoader.<BUILDER>loadClass(builderClassUrl);
+                Class<BUILDER> clazz = (Class<BUILDER>) classLoader.loadClass(builderClassUrl);
                 return clazz.getDeclaredConstructor().newInstance();
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("Error creating new instance of '" + builderClassUrl + "'", e);

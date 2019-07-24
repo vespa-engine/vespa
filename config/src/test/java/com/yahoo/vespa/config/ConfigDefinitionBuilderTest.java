@@ -26,7 +26,7 @@ public class ConfigDefinitionBuilderTest {
 
     @Test
     // TODO Test ranges
-    public void testCreateConfigDefinition() throws IOException, InterruptedException {
+    public void testCreateConfigDefinition() throws IOException {
         File defFile = new File(DEF_NAME);
         DefParser defParser = new DefParser(defFile.getName(), new FileReader(defFile));
         CNode root = defParser.getTree();
@@ -122,8 +122,8 @@ public class ConfigDefinitionBuilderTest {
         assertEquals(def.getLeafMapDefs().get("intMap").getTypeSpec().getType(), "int");
         assertEquals(def.getLeafMapDefs().get("stringMap").getTypeSpec().getType(), "string");
         assertEquals(def.getStructMapDefs().size(), 1);
-        assertEquals(def.getStructMapDefs().get("myStructMap").getIntDefs().get("myInt").getDefVal(), null);
-        assertEquals(def.getStructMapDefs().get("myStructMap").getStringDefs().get("myString").getDefVal(), null);
+        assertNull(def.getStructMapDefs().get("myStructMap").getIntDefs().get("myInt").getDefVal());
+        assertNull(def.getStructMapDefs().get("myStructMap").getStringDefs().get("myString").getDefVal());
         assertEquals(def.getStructMapDefs().get("myStructMap").getIntDefs().get("myIntDef").getDefVal(), (Integer)56);
         assertEquals(def.getStructMapDefs().get("myStructMap").getStringDefs().get("myStringDef").getDefVal(), "g");
 

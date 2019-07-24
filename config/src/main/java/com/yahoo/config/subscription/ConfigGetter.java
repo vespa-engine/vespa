@@ -69,7 +69,7 @@ public class ConfigGetter<T extends ConfigInstance> {
      * @return an instance of a config class
      */
     public static <T extends ConfigInstance> T getConfig(Class<T> c, String configId) {
-        ConfigGetter<T> getter = new ConfigGetter<T>(c);
+        ConfigGetter<T> getter = new ConfigGetter<>(c);
         return getter.getConfig(configId);
     }
 
@@ -82,7 +82,7 @@ public class ConfigGetter<T extends ConfigInstance> {
      * @return an instance of a config class
      */
     public static <T extends ConfigInstance> T getConfig(Class<T> c, String configId, ConfigSource source) {
-        ConfigGetter<T> getter = new ConfigGetter<T>(source, c);
+        ConfigGetter<T> getter = new ConfigGetter<>(source, c);
         return getter.getConfig(configId);
     }
 }

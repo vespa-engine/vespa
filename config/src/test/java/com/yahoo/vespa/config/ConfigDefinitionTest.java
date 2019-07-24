@@ -113,8 +113,14 @@ public class ConfigDefinitionTest {
         def.addLongDef("mylongdef", 11L);
         def.addDoubleDef("mydouble");
         def.addDoubleDef("mydoubledef", 2d);
-        EnumDef ed = new EnumDef(new ArrayList<String>(){{add("a1"); add("a2");}}, null);
-        EnumDef eddef = new EnumDef(new ArrayList<String>(){{add("a11"); add("a22");}}, "a22");
+        EnumDef ed = new EnumDef(new ArrayList<>() {{
+            add("a1");
+            add("a2");
+        }}, null);
+        EnumDef eddef = new EnumDef(new ArrayList<>() {{
+            add("a11");
+            add("a22");
+        }}, "a22");
         def.addEnumDef("myenum", ed);
         def.addEnumDef("myenumdef", eddef);
         def.addReferenceDef("myref");

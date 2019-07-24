@@ -43,10 +43,10 @@ public class ConfigInstanceUtil {
                                                               ConfigPayload payload) {
         T instance;
         try {
-            ConfigTransformer<?> transformer = new ConfigTransformer<T>(type);
-            ConfigBuilder instanceBuilder = transformer.toConfigBuilder(payload);
+            ConfigTransformer<?> transformer = new ConfigTransformer<>(type);
+            ConfigInstance.Builder instanceBuilder = transformer.toConfigBuilder(payload);
             Constructor<T> constructor = type.getConstructor(instanceBuilder.getClass());
-            instance = constructor.newInstance((ConfigInstance.Builder) instanceBuilder);
+            instance = constructor.newInstance(instanceBuilder);
 
             // Workaround for JDK7, where compilation fails due to fields being
             // private and not accessible from T. Reference it as a

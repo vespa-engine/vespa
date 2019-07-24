@@ -105,7 +105,7 @@ public class ConfigUtils {
      * @return String with spaces stripped
      */
     public static String stripSpaces(String str) {
-        StringBuilder ret = new StringBuilder("");
+        StringBuilder ret = new StringBuilder();
         boolean inQuotes = false;
         boolean inSpaceSequence = false;
         for (char c : str.toCharArray()) {
@@ -308,7 +308,6 @@ public class ConfigUtils {
      * @param input A string consisting of "namespace.name.version"
      * @return a ConfigDefinitionKey
      */
-    @SuppressWarnings("deprecation")
     public static ConfigDefinitionKey getConfigDefinitionKeyFromString(String input) {
         final String name;
         final String namespace;
@@ -349,7 +348,6 @@ public class ConfigUtils {
      * @param nodeName name of  a node in ZooKeeper that holds a config definition
      * @return a ConfigDefinitionKey
      */
-    @SuppressWarnings("deprecation")
     public static ConfigDefinitionKey createConfigDefinitionKeyFromZKString(String nodeName) {
         final String name;
         final String namespace;
@@ -392,7 +390,6 @@ public class ConfigUtils {
      * @param content content of a config definition
      * @return a ConfigDefinitionKey
      */
-    @SuppressWarnings("deprecation")
     public static ConfigDefinitionKey createConfigDefinitionKeyFromDefContent(String name, byte[] content) {
         String namespace = ConfigUtils.getDefNamespace(new StringReader(Utf8.toString(content)));
         if (namespace.isEmpty()) {

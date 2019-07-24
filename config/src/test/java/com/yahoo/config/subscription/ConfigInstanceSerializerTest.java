@@ -25,7 +25,7 @@ import static org.junit.Assert.fail;
  */
 public class ConfigInstanceSerializerTest {
     @Test
-    public void test_that_leaf_types_are_serialized_to_json_types() throws IOException {
+    public void test_that_leaf_types_are_serialized_to_json_types() {
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         builder.boolval(false);
         builder.stringval("foo");
@@ -50,7 +50,7 @@ public class ConfigInstanceSerializerTest {
     }
 
     @Test
-    public void test_that_nested_structs_are_formatted_to_json() throws IOException {
+    public void test_that_nested_structs_are_formatted_to_json() {
         StructtypesConfig.Builder builder = new StructtypesConfig.Builder();
         StructtypesConfig.Nested.Builder nestedBuilder = new StructtypesConfig.Nested.Builder();
         StructtypesConfig.Nested.Inner.Builder innerBuilder = new StructtypesConfig.Nested.Inner.Builder();
@@ -106,7 +106,7 @@ public class ConfigInstanceSerializerTest {
     }
 
     @Test
-    public void test_that_arrays_are_formatted_to_json() throws IOException {
+    public void test_that_arrays_are_formatted_to_json() {
         ArraytypesConfig.Builder builder = new ArraytypesConfig.Builder();
         builder.boolarr(true);
         builder.boolarr(false);
@@ -149,7 +149,7 @@ public class ConfigInstanceSerializerTest {
     }
 
     @Test
-    public void test_that_maps_are_formatted_to_json() throws IOException {
+    public void test_that_maps_are_formatted_to_json() {
         MaptypesConfig.Builder builder = new MaptypesConfig.Builder();
         builder.boolmap("foo", true);
         builder.intmap("bar", 3);
@@ -195,7 +195,7 @@ public class ConfigInstanceSerializerTest {
     }
 
     @Test
-    public void test_that_non_standard_types_are_formatted_as_json_strings() throws IOException {
+    public void test_that_non_standard_types_are_formatted_as_json_strings() {
         SpecialtypesConfig.Builder builder = new SpecialtypesConfig.Builder();
         builder.myfile("thefilename");
         builder.myref("thereference");

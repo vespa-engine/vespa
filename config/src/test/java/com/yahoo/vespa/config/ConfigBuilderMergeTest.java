@@ -82,10 +82,10 @@ public class ConfigBuilderMergeTest {
     public void require_that_struct_fields_are_overwritten() {
         String name1 = "foo";
         String gender1 = "MALE";
-        String emails1[] = { "foo@bar", "bar@foo" };
+        String[] emails1 = {"foo@bar", "bar@foo"};
         String name2 = "bar";
         String gender2 = "FEMALE";
-        String emails2[] = { "foo@bar", "bar@foo" };
+        String[] emails2 = {"foo@bar", "bar@foo"};
         StructtypesConfig.Builder b1 = createSimpleStructBuilder(name1, gender1, emails1);
         StructtypesConfig.Builder b2 = createSimpleStructBuilder(name2, gender2, emails2);
         ConfigInstanceUtil.setValues(b1, b2);

@@ -178,7 +178,7 @@ public class FunctionTest {
         }
         //System.out.println("Config lacking " + param + "-> " + config + "\n");
         try {
-            ConfigGetter<FunctionTestConfig> getter = new ConfigGetter<FunctionTestConfig>(FunctionTestConfig.class);
+            ConfigGetter<FunctionTestConfig> getter = new ConfigGetter<>(FunctionTestConfig.class);
             getter.getConfig("raw:\n" + config);
             if (isArray) {
                 // Arrays are empty by default
@@ -210,7 +210,7 @@ public class FunctionTest {
         assertEquals(1, config.boolarr().size());
         assertEquals(1, config.boolarr().size());  // new api with accessor for a List of the original Java type
         assertEquals(false, config.boolarr().get(0));  // new List api
-        assertEquals(false, config.boolarr(0));        // short-hand
+        assertFalse(config.boolarr(0));        // short-hand
         assertEquals(0, config.intarr().size());
         assertEquals(2, config.longarr().size());
         assertEquals(Long.MAX_VALUE, config.longarr(0));
@@ -239,9 +239,9 @@ public class FunctionTest {
         assertEquals("inner1", config.rootStruct().inner1().name());
         assertEquals(12, config.rootStruct().inner1().index());
         assertEquals(2, config.rootStruct().innerArr().size());
-        assertEquals(true, config.rootStruct().innerArr(0).boolVal());
+        assertTrue(config.rootStruct().innerArr(0).boolVal());
         assertEquals("deep", config.rootStruct().innerArr(0).stringVal());
-        assertEquals(false, config.rootStruct().innerArr(1).boolVal());
+        assertFalse(config.rootStruct().innerArr(1).boolVal());
         assertEquals("blue a=\"escaped\"", config.rootStruct().innerArr(1).stringVal());
 
         assertEquals(2, config.myarray().size());  // new List api

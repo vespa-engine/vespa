@@ -8,11 +8,10 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.LZ4PayloadCompressor;
 import org.junit.Test;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -58,19 +57,15 @@ public class PayloadTest {
         Payload h = null;
         Payload i = null;
         Payload j = null;
-        try {
-            g = Payload.from(new Utf8Array(foo1.getBytes("UTF-8")), CompressionInfo.uncompressed());
-            h = Payload.from(new Utf8Array(foo1.getBytes("UTF-8")), CompressionInfo.uncompressed());
+        g = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
+        h = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
 
-            LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
-            CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, foo2.length());
-            Utf8Array compressed = new Utf8Array(compressor.compress(foo2.getBytes()));
+        LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
+        CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, foo2.length());
+        Utf8Array compressed = new Utf8Array(compressor.compress(foo2.getBytes()));
 
-            i = Payload.from(compressed, info);
-            j = Payload.from(compressed, info);
-        } catch (UnsupportedEncodingException e1) {
-            fail();
-        }
+        i = Payload.from(compressed, info);
+        j = Payload.from(compressed, info);
 
         new EqualsTester()
                 .addEqualityGroup(a, b, g, h)

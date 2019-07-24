@@ -4,7 +4,13 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.codegen.CNode;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -16,39 +22,39 @@ import java.util.regex.Pattern;
  */
 public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static final Pattern namePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-_]*");
-    public static final Pattern namespacePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-\\._]*");
+    public static final Pattern namespacePattern = Pattern.compile("[a-zA-Z][a-zA-Z0-9-._]*");
 
     public static Logger log = Logger.getLogger(ConfigDefinition.class.getName());
     private final String name;
     private final String version;
     private final String namespace;
-    protected ConfigDefinition parent = null;
+    ConfigDefinition parent = null;
 
     // TODO Strings without default are null, could be not OK.
-    private Map<String, StringDef> stringDefs = new LinkedHashMap<String, StringDef>();
-    private Map<String, BoolDef> boolDefs = new LinkedHashMap<String, BoolDef>();
-    private Map<String, IntDef> intDefs = new LinkedHashMap<String, IntDef>();
-    private Map<String, LongDef> longDefs = new LinkedHashMap<String, LongDef>();
-    private Map<String, DoubleDef> doubleDefs = new LinkedHashMap<String, DoubleDef>();
-    private Map<String, EnumDef> enumDefs = new LinkedHashMap<String, EnumDef>();
-    private Map<String, RefDef> referenceDefs = new LinkedHashMap<String, RefDef>();
-    private Map<String, FileDef> fileDefs = new LinkedHashMap<String, FileDef>();
+    private Map<String, StringDef> stringDefs = new LinkedHashMap<>();
+    private Map<String, BoolDef> boolDefs = new LinkedHashMap<>();
+    private Map<String, IntDef> intDefs = new LinkedHashMap<>();
+    private Map<String, LongDef> longDefs = new LinkedHashMap<>();
+    private Map<String, DoubleDef> doubleDefs = new LinkedHashMap<>();
+    private Map<String, EnumDef> enumDefs = new LinkedHashMap<>();
+    private Map<String, RefDef> referenceDefs = new LinkedHashMap<>();
+    private Map<String, FileDef> fileDefs = new LinkedHashMap<>();
     private Map<String, PathDef> pathDefs = new LinkedHashMap<>();
     private Map<String, UrlDef> urlDefs = new LinkedHashMap<>();
-    private Map<String, StructDef> structDefs = new LinkedHashMap<String, StructDef>();
-    private Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<String, InnerArrayDef>();
-    private Map<String, ArrayDef> arrayDefs = new LinkedHashMap<String, ArrayDef>();
+    private Map<String, StructDef> structDefs = new LinkedHashMap<>();
+    private Map<String, InnerArrayDef> innerArrayDefs = new LinkedHashMap<>();
+    private Map<String, ArrayDef> arrayDefs = new LinkedHashMap<>();
     private Map<String, LeafMapDef> leafMapDefs = new LinkedHashMap<>();
     private Map<String, StructMapDef> structMapDefs = new LinkedHashMap<>();
 
-    public static final Integer INT_MIN = -0x80000000;
-    public static final Integer INT_MAX = 0x7fffffff;
+    static final Integer INT_MIN = -0x80000000;
+    static final Integer INT_MAX = 0x7fffffff;
 
-    public static final Long LONG_MIN = -0x8000000000000000L;
-    public static final Long LONG_MAX = 0x7fffffffffffffffL;
+    static final Long LONG_MIN = -0x8000000000000000L;
+    static final Long LONG_MAX = 0x7fffffffffffffffL;
 
-    public static final Double DOUBLE_MIN = -1e308d;
-    public static final Double DOUBLE_MAX = 1e308d;
+    private static final Double DOUBLE_MIN = -1e308d;
+    private static final Double DOUBLE_MAX = 1e308d;
 
     public ConfigDefinition(String name, String version, String namespace) {
         this.name = name;
@@ -64,7 +70,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         return name;
     }
 
-    public String getVersion() {
+    private String getVersion() {
         return version;
     }
 
@@ -73,12 +79,12 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     }
 
     /** @return  The parent ConfigDefinition, or null if this is the root. */
-    public ConfigDefinition getParent() {
+    private ConfigDefinition getParent() {
         return parent;
     }
 
     /** @return The root ConfigDefinition, might be this. */
-    public ConfigDefinition getRoot() {
+    private ConfigDefinition getRoot() {
         ConfigDefinition ancestor = this;
         while (ancestor.getParent() != null) {
             ancestor = ancestor.getParent();
@@ -205,7 +211,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             if (commaSep==null) {
                 return null;
             }
-            List<String> in = new ArrayList<String>();
+            List<String> in = new ArrayList<>();
             for (String val: commaSep.split(",")) {
                 in.add(val.trim());
             }
@@ -233,7 +239,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
             return enumVals;
         }
 
-        public boolean checkValue(String id, String val, int index) {
+        boolean checkValue(String id, String val, int index) {
             if ("int".equals(getType())) {
                 return checkInt(id, val, index);
             } else if ("long".equals(getType())) {
@@ -342,7 +348,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      * of as an inner array with only one element.
      */
     public static class StructDef extends ConfigDefinition {
-        public StructDef(String name, String version, ConfigDefinition parent) {
+        StructDef(String name, String version, ConfigDefinition parent) {
             super(name, version);
             this.parent = parent;
         }
@@ -354,7 +360,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      *
      */
     public static class InnerArrayDef extends ConfigDefinition {
-        public InnerArrayDef(String name, String version, ConfigDefinition parent) {
+        InnerArrayDef(String name, String version, ConfigDefinition parent) {
             super(name, version);
             this.parent = parent;
         }
@@ -367,7 +373,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      */
     public static class ArrayDef extends ConfigDefinition {
         private TypeSpec typeSpec;
-        public ArrayDef(String name, String version, ConfigDefinition parent) {
+        ArrayDef(String name, String version, ConfigDefinition parent) {
             super(name, version);
             this.parent = parent;
         }
@@ -393,7 +399,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      */
     public static class LeafMapDef extends ConfigDefinition {
 	private TypeSpec typeSpec;
-	public LeafMapDef(String name, String version, ConfigDefinition parent) {
+	LeafMapDef(String name, String version, ConfigDefinition parent) {
             super(name, version);
             this.parent = parent;
         }
@@ -411,7 +417,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      *
      */
     public static class StructMapDef extends ConfigDefinition {
-	public StructMapDef(String name, String version, ConfigDefinition parent) {
+	StructMapDef(String name, String version, ConfigDefinition parent) {
             super(name, version);
             this.parent = parent;
         }
@@ -428,14 +434,14 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class EnumDef implements DefaultValued<String>{
         private List<String> vals;
         private String defVal;
-        public EnumDef(List<String> vals, String defVal) {
+        EnumDef(List<String> vals, String defVal) {
             if (defVal!=null && !vals.contains(defVal)) {
                 throw new IllegalArgumentException("Def val "+defVal+" is not in given vals "+vals);
             }
             this.vals = vals;
             this.defVal = defVal;
         }
-        public List<String> getVals() {
+        List<String> getVals() {
             return vals;
         }
 
@@ -448,7 +454,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class StringDef implements DefaultValued<String> {
         private String defVal;
 
-        public StringDef(String def) {
+        StringDef(String def) {
             this.defVal=def;
         }
 
@@ -461,7 +467,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class BoolDef implements DefaultValued<Boolean> {
        private Boolean defVal;
 
-       public BoolDef(Boolean def) {
+       BoolDef(Boolean def) {
            this.defVal=def;
        }
 
@@ -478,29 +484,21 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         private Double defVal;
         private Double min;
         private Double max;
-        public DoubleDef(Double defVal, Double min, Double max) {
+        DoubleDef(Double defVal, Double min, Double max) {
             super();
             this.defVal = defVal;
-            if (min == null) {
-                this.min = DOUBLE_MIN;
-            } else {
-                this.min = min;
-            }
-            if (max == null){
-                this.max = DOUBLE_MAX;
-            } else {
-                this.max = max;
-            }
+            this.min = Objects.requireNonNullElse(min, DOUBLE_MIN);
+            this.max = Objects.requireNonNullElse(max, DOUBLE_MAX);
         }
 
         @Override
         public Double getDefVal() {
             return defVal;
         }
-        public Double getMin() {
+        Double getMin() {
             return min;
         }
-        public Double getMax() {
+        Double getMax() {
             return max;
         }
     }
@@ -509,19 +507,11 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         private Integer defVal;
         private Integer min;
         private Integer max;
-        public IntDef(Integer def, Integer min, Integer max) {
+        IntDef(Integer def, Integer min, Integer max) {
             super();
             this.defVal = def;
-            if (min == null) {
-                this.min = INT_MIN;
-            } else {
-                this.min = min;
-            }
-            if (max == null) {
-                this.max = INT_MAX;
-            } else {
-                this.max = max;
-            }
+            this.min = Objects.requireNonNullElse(min, INT_MIN);
+            this.max = Objects.requireNonNullElse(max, INT_MAX);
         }
 
         @Override
@@ -540,19 +530,11 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         private Long defVal;
         private Long min;
         private Long max;
-        public LongDef(Long def, Long min, Long max) {
+        LongDef(Long def, Long min, Long max) {
             super();
             this.defVal = def;
-            if (min == null) {
-                this.min = LONG_MIN;
-            } else {
-                this.min = min;
-            }
-            if (max == null) {
-                this.max = LONG_MAX;
-            } else {
-                this.max = max;
-            }
+            this.min = Objects.requireNonNullElse(min, LONG_MIN);
+            this.max = Objects.requireNonNullElse(max, LONG_MAX);
         }
 
         @Override
@@ -570,7 +552,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class RefDef implements DefaultValued<String>{
         private String defVal;
 
-        public RefDef(String defVal) {
+        RefDef(String defVal) {
             super();
             this.defVal = defVal;
         }
@@ -584,7 +566,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class FileDef implements DefaultValued<String>{
         private String defVal;
 
-        public FileDef(String defVal) {
+        FileDef(String defVal) {
             super();
             this.defVal = defVal;
         }
@@ -598,7 +580,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class PathDef implements DefaultValued<String>{
         private String defVal;
 
-        public PathDef(String defVal) {
+        PathDef(String defVal) {
             this.defVal = defVal;
         }
 
@@ -611,7 +593,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     public static class UrlDef implements DefaultValued<String>{
         private String defVal;
 
-        public UrlDef(String defVal) {
+        UrlDef(String defVal) {
             this.defVal = defVal;
         }
 
@@ -634,7 +616,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
     }
 
     public void addEnumDef(String id, List<String> vals, String defVal) {
-        List<String> in = new ArrayList<String>();
+        List<String> in = new ArrayList<>();
         for (String ins: vals) {
             in.add(ins.trim());
         }
@@ -940,15 +922,15 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
         return true;
     }
 
-    static void failTooSmall(Object val, Object min, String defName, String valKey) {
+    private static void failTooSmall(Object val, Object min, String defName, String valKey) {
         defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+"<"+min);
     }
 
-    static void failTooBig(Object val, Object max, String defName, String valKey) {
+    private static void failTooBig(Object val, Object max, String defName, String valKey) {
         defFail("Value \""+valKey+"\" outside range in definition \""+defName+"\": "+val+">"+max);
     }
 
-    static void failInvalidEnum(Object val, String defName, String defKey) {
+    private static void failInvalidEnum(Object val, String defName, String defKey) {
         defFail("Invalid enum value \""+val+"\" for \""+defKey+"\" in definition \""+defName);
     }
 
@@ -957,7 +939,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      * @param msg failure message
      * @return warnings list with msg added
      */
-    static List<String> defFail(String msg) {
+    private static List<String> defFail(String msg) {
         throw new IllegalArgumentException(msg);
     }
 
@@ -1069,7 +1051,7 @@ public class ConfigDefinition implements Comparable<ConfigDefinition> {
      *
      * @return a string composed of the ancestors of this ConfigDefinition, not including the root.
      */
-    public String getAncestorString() {
+    private String getAncestorString() {
         StringBuilder ret = new StringBuilder();
         ConfigDefinition ancestor = this;
         while (ancestor.getParent() != null) {

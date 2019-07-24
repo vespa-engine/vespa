@@ -163,8 +163,9 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     @SuppressWarnings("serial")
     public void close() {
         super.close();
-        reqQueue = new LinkedBlockingQueue<JRTClientConfigRequest>() {
-            @Override public void put(JRTClientConfigRequest e) throws InterruptedException {
+        reqQueue = new LinkedBlockingQueue<>() {
+            @Override
+            public void put(JRTClientConfigRequest e) throws InterruptedException {
                 // When closed, throw away all requests that callbacks try to put
             }
         };

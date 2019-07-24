@@ -433,7 +433,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
         if (structBuilderClass == null)
             throw new RuntimeException("Could not find builder class " + structBuilderName);
         try {
-            return structBuilderClass.getDeclaredConstructor(new Class<?>[]{});
+            return structBuilderClass.getDeclaredConstructor();
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Could not create class '" + "'" + structBuilderClass.getName() + "'");
         }

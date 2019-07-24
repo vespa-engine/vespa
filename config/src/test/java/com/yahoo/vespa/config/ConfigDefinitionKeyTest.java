@@ -20,10 +20,10 @@ public class ConfigDefinitionKeyTest {
         assertEquals("foo", def1.getName());
         assertEquals("fuz", def1.getNamespace());
 
-        assertTrue(def1.equals(def1));
-        assertFalse(def1.equals(def2));
-        assertFalse(def1.equals(new Object()));
-        assertTrue(def2.equals(def2));
+        assertEquals(def1, def1);
+        assertNotEquals(def1, def2);
+        assertNotEquals(def1, new Object());
+        assertEquals(def2, def2);
     }
 
     @Test

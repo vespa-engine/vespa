@@ -17,6 +17,7 @@ import org.junit.Ignore;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -137,7 +138,7 @@ public class ConfigFileFormatterTest {
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString("UTF-8"), is("enumval null\nintval null\nlongval null\nboolval false\ndoubleval null\n"));
+        assertThat(baos.toString(StandardCharsets.UTF_8), is("enumval null\nintval null\nlongval null\nboolval false\ndoubleval null\n"));
     }
 
     // TODO: Reenable this when we can reenable typechecking.
@@ -160,7 +161,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString("UTF-8"), is("stringval \"" + value + "\"\n"));
+        assertThat(baos.toString(StandardCharsets.UTF_8), is("stringval \"" + value + "\"\n"));
     }
 
     @Test
@@ -326,7 +327,7 @@ public class ConfigFileFormatterTest {
         assertThat(Utf8.toString(baos.toByteArray()), is("stringval \"" + input + "\"\n"));
     }
 
-    public static String bytesToHexString(byte[] bytes){
+    private static String bytesToHexString(byte[] bytes){
         StringBuilder sb = new StringBuilder();
         for(byte b : bytes){
             sb.append(String.format("%02x", b&0xff));

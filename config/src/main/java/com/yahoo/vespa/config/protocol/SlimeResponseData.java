@@ -70,7 +70,7 @@ class SlimeResponseData {
 
     boolean getResponseInternalRedeployment() {
         Inspector inspector = getResponseField(RESPONSE_INTERNAL_REDEPLOY);
-        return inspector.valid() ? inspector.asBool() : false;
+        return inspector.valid() && inspector.asBool();
     }
 
 }

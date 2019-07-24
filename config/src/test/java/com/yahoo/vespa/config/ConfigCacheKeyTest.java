@@ -24,11 +24,11 @@ public class ConfigCacheKeyTest {
         ConfigCacheKey k5 = new ConfigCacheKey("foo", "id", "ns_1", null); // test with null defMd5
         final ConfigKey<?> configKey = new ConfigKey<>("foo", "id", "ns");
         ConfigCacheKey k1_2 = new ConfigCacheKey(configKey, defMd5);
-        assertTrue(k1.equals(k1));
-        assertTrue(k1.equals(k1_2));
-        assertTrue(k1.equals(k2));
-        assertFalse(k3.equals(k2));
-        assertFalse(k4.equals(k1));
+        assertEquals(k1, k1);
+        assertEquals(k1, k1_2);
+        assertEquals(k1, k2);
+        assertNotEquals(k3, k2);
+        assertNotEquals(k4, k1);
         assertThat(k1.hashCode(), is(k2.hashCode()));
         assertThat(k1.getDefMd5(), is(defMd5));
         assertThat(k1.toString(), is(configKey.toString() + "," + defMd5));

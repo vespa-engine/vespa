@@ -34,6 +34,9 @@ public class ConfigInstanceTest {
 
         assertEquals(1, service1.timesConfigured());
         assertEquals(1, service2.timesConfigured());
+
+        service1.cancelSubscription();
+        service2.cancelSubscription();
     }
 
     /**
@@ -107,11 +110,10 @@ public class ConfigInstanceTest {
     }
 
     private class TestNonstring {
-        private final ConfigSubscriber subscriber;
-        private final ConfigHandle<TestNonstringConfig> handle;
+
         public TestNonstring(String configId) {
-            subscriber = new ConfigSubscriber();
-            handle = subscriber.subscribe(TestNonstringConfig.class, configId);
+            ConfigSubscriber subscriber = new ConfigSubscriber();
+            ConfigHandle<TestNonstringConfig> handle = subscriber.subscribe(TestNonstringConfig.class, configId);
             subscriber.nextConfig();
             handle.getConfig();
         }

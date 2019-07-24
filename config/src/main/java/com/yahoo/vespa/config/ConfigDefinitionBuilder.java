@@ -112,7 +112,7 @@ public class ConfigDefinitionBuilder {
     }
 
 
-    static void addNode(ConfigDefinition def, LeafCNode.IntegerLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.IntegerLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addIntDef(leaf.getName(), Integer.valueOf(leaf.getDefaultValue().getValue()));
         } else {
@@ -120,7 +120,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.LongLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.LongLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addLongDef(leaf.getName(), Long.valueOf(leaf.getDefaultValue().getValue()));
         } else {
@@ -128,7 +128,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.BooleanLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.BooleanLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addBoolDef(leaf.getName(), Boolean.valueOf(leaf.getDefaultValue().getValue()));
         } else {
@@ -136,7 +136,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.DoubleLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.DoubleLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addDoubleDef(leaf.getName(), Double.valueOf(leaf.getDefaultValue().getValue()));
         } else {
@@ -144,7 +144,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.StringLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.StringLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addStringDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
@@ -152,7 +152,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.ReferenceLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.ReferenceLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addReferenceDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
@@ -160,7 +160,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.FileLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.FileLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addFileDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
@@ -168,7 +168,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.PathLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.PathLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addPathDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
@@ -176,7 +176,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.UrlLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.UrlLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addUrlDef(leaf.getName(), leaf.getDefaultValue().getValue());
         } else {
@@ -184,7 +184,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static void addNode(ConfigDefinition def, LeafCNode.EnumLeaf leaf) {
+    private static void addNode(ConfigDefinition def, LeafCNode.EnumLeaf leaf) {
         if (leaf.getDefaultValue() != null) {
             def.addEnumDef(leaf.getName(), Arrays.asList(leaf.getLegalValues()), leaf.getDefaultValue().getValue());
         } else {
@@ -192,7 +192,7 @@ public class ConfigDefinitionBuilder {
         }
     }
 
-    static String convertToEnumValueCommaSeparated(String[] enumValues) {
+    private static String convertToEnumValueCommaSeparated(String[] enumValues) {
         StringBuilder sb = new StringBuilder();
         for (String s : enumValues) {
             sb.append(s);
