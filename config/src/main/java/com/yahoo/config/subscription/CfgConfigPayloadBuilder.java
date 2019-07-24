@@ -29,7 +29,7 @@ public class CfgConfigPayloadBuilder {
         return ConfigPayload.fromBuilder(deserializeToBuilder(lines));
     }
 
-    public ConfigPayloadBuilder deserializeToBuilder(List<String> lines) {
+    private ConfigPayloadBuilder deserializeToBuilder(List<String> lines) {
         int lineNum = 1;
         ConfigPayloadBuilder payloadBuilder = new ConfigPayloadBuilder();
         for (String line : lines) {

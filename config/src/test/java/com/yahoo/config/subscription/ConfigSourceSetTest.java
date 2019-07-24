@@ -15,25 +15,24 @@ import static org.junit.Assert.*;
 public class ConfigSourceSetTest {
     @Test
     public void testEquals() {
-        assertTrue(new ConfigSourceSet().equals(new ConfigSourceSet()));
-        assertFalse(new ConfigSourceSet().equals(new ConfigSourceSet(new String[]{"a"})));
+        assertEquals(new ConfigSourceSet(), new ConfigSourceSet());
+        assertNotEquals(new ConfigSourceSet(), new ConfigSourceSet(new String[]{"a"}));
 
-        assertTrue(new ConfigSourceSet(new String[]{"a"}).equals(new ConfigSourceSet(new String[]{"a"})));
-        assertTrue(new ConfigSourceSet(new String[]{"a"}).equals(new ConfigSourceSet(new String[]{"  A  "})));
-        assertTrue(new ConfigSourceSet(new String[]{"a"}).equals(new ConfigSourceSet(new String[]{"A", "a"})));
-        assertTrue(new ConfigSourceSet(new String[]{"A"}).equals(new ConfigSourceSet(new String[]{"a", " a  "})));
+        assertEquals(new ConfigSourceSet(new String[]{"a"}), new ConfigSourceSet(new String[]{"a"}));
+        assertEquals(new ConfigSourceSet(new String[]{"a"}), new ConfigSourceSet(new String[]{"  A  "}));
+        assertEquals(new ConfigSourceSet(new String[]{"a"}), new ConfigSourceSet(new String[]{"A", "a"}));
+        assertEquals(new ConfigSourceSet(new String[]{"A"}), new ConfigSourceSet(new String[]{"a", " a  "}));
 
-        assertFalse(new ConfigSourceSet(new String[]{"a"}).equals(new ConfigSourceSet(new String[]{"b"})));
-        assertFalse(new ConfigSourceSet(new String[]{"a"}).equals(new ConfigSourceSet(new String[]{"a", "b"})));
+        assertNotEquals(new ConfigSourceSet(new String[]{"a"}), new ConfigSourceSet(new String[]{"b"}));
+        assertNotEquals(new ConfigSourceSet(new String[]{"a"}), new ConfigSourceSet(new String[]{"a", "b"}));
 
-        assertTrue(new ConfigSourceSet(new String[]{"a", "b"}).equals(new ConfigSourceSet(new String[]{"a", "b"})));
-        assertTrue(new ConfigSourceSet(new String[]{"b", "a"}).equals(new ConfigSourceSet(new String[]{"a", "b"})));
-        assertTrue(new ConfigSourceSet(new String[]{"A", " b"}).equals(new ConfigSourceSet(new String[]{"a ", "B"})));
-        assertTrue(new ConfigSourceSet(new String[]{"b", "a", "c"})
-                .equals(new ConfigSourceSet(new String[]{"a", "b", "c"})));
+        assertEquals(new ConfigSourceSet(new String[]{"a", "b"}), new ConfigSourceSet(new String[]{"a", "b"}));
+        assertEquals(new ConfigSourceSet(new String[]{"b", "a"}), new ConfigSourceSet(new String[]{"a", "b"}));
+        assertEquals(new ConfigSourceSet(new String[]{"A", " b"}), new ConfigSourceSet(new String[]{"a ", "B"}));
+        assertEquals(new ConfigSourceSet(new String[]{"b", "a", "c"}), new ConfigSourceSet(new String[]{"a", "b", "c"}));
 
-        assertFalse(new ConfigSourceSet(new String[]{"a", "b"}).equals(new ConfigSourceSet(new String[]{"b", "c"})));
-        assertFalse(new ConfigSourceSet().equals("foo"));
+        assertNotEquals(new ConfigSourceSet(new String[]{"a", "b"}), new ConfigSourceSet(new String[]{"b", "c"}));
+        assertNotEquals("foo", new ConfigSourceSet());
     }
 
     @Test

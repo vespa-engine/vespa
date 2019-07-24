@@ -15,6 +15,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
@@ -75,10 +76,10 @@ public class RawConfigTest {
         assertThat(config.getVespaVersion(), is(not(config3.getVespaVersion())));
 
         // null config
-        assertFalse(config.equals(null));
+        assertNotEquals(null, config);
 
         // different type of object
-        assertFalse(config.equals(key));
+        assertNotEquals(config, key);
 
         // errors
         RawConfig errorConfig1 = new RawConfig(key, defMd5, payload, configMd5, generation, false, 1, defContent, Optional.empty());

@@ -33,8 +33,8 @@ public class ConfigSetSubscriptionTest {
                 configSet,
                 new TimingValues());
 
-        assertTrue(c1.equals(c1));
-        assertFalse(c1.equals(c2));
+        assertEquals(c1, c1);
+        assertNotEquals(c1, c2);
     }
 
     @Test(expected = IllegalArgumentException.class)

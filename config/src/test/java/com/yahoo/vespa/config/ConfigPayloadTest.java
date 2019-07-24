@@ -14,7 +14,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.text.StringUtilities;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.StringReader;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,13 +30,13 @@ import static org.junit.Assert.assertTrue;
 public class ConfigPayloadTest {
 
     @Test
-    public void test_simple_builder() throws Exception {
+    public void test_simple_builder() {
         SimpletypesConfig config = createSimpletypesConfig("stringval", "abcde");
         assertThat(config.stringval(), is("abcde"));
     }
 
     @Test
-    public void require_that_arrays_are_built() throws  Exception {
+    public void require_that_arrays_are_built() {
         AppConfig config = createAppConfig("foo", "4", new String[] { "bar", "baz", "bim" });
         assertThat(config.message(), is("foo"));
         assertThat(config.times(), is(4));
@@ -47,7 +46,7 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_int_leaf_legal() throws Exception {
+    public void test_int_leaf_legal() {
         SimpletypesConfig config = createSimpletypesConfig("intval", "0");
         assertThat(config.intval(), is(0));
         config = createSimpletypesConfig("intval", String.valueOf(Integer.MIN_VALUE));
@@ -61,27 +60,27 @@ public class ConfigPayloadTest {
     }
 
     @Test (expected = RuntimeException.class)
-    public void test_int_leaf_too_large() throws Exception {
-        createSimpletypesConfig("intval", String.valueOf(Integer.MAX_VALUE) + "00");
+    public void test_int_leaf_too_large() {
+        createSimpletypesConfig("intval", Integer.MAX_VALUE + "00");
     }
 
     @Test (expected = RuntimeException.class)
-    public void test_int_leaf_too_large_neg() throws Exception {
-        createSimpletypesConfig("intval", String.valueOf(Integer.MIN_VALUE) + "00");
+    public void test_int_leaf_too_large_neg() {
+        createSimpletypesConfig("intval", Integer.MIN_VALUE + "00");
     }
 
     @Test(expected=RuntimeException.class)
-    public void test_int_leaf_illegal_string() throws Exception {
+    public void test_int_leaf_illegal_string() {
         createSimpletypesConfig("intval", "illegal");
     }
 
     @Test(expected=RuntimeException.class)
-    public void test_int_leaf_illegal_string_suffix() throws Exception {
+    public void test_int_leaf_illegal_string_suffix() {
         createSimpletypesConfig("intval", "123illegal");
     }
 
     @Test(expected=RuntimeException.class)
-    public void test_int_leaf_illegal_string_prefix() throws Exception {
+    public void test_int_leaf_illegal_string_prefix() {
         createSimpletypesConfig("intval", "illegal123");
     }
 
@@ -95,7 +94,7 @@ public class ConfigPayloadTest {
 
 
     @Test
-    public void test_long_leaf() throws Exception {
+    public void test_long_leaf() {
         SimpletypesConfig config = createSimpletypesConfig("longval", "0");
         assertThat(config.longval(), is(0L));
         config = createSimpletypesConfig("longval", String.valueOf(Long.MIN_VALUE));
@@ -109,22 +108,22 @@ public class ConfigPayloadTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void test_long_leaf_illegal_string() throws Exception {
+    public void test_long_leaf_illegal_string() {
         createSimpletypesConfig("longval", "illegal");
     }
 
     @Test (expected = RuntimeException.class)
-    public void test_long_leaf_too_large() throws Exception {
-        createSimpletypesConfig("longval", String.valueOf(Long.MAX_VALUE) + "00");
+    public void test_long_leaf_too_large() {
+        createSimpletypesConfig("longval", Long.MAX_VALUE + "00");
     }
 
     @Test (expected = RuntimeException.class)
-    public void test_long_leaf_too_large_neg() throws Exception {
-        createSimpletypesConfig("longval", String.valueOf(Long.MIN_VALUE) + "00");
+    public void test_long_leaf_too_large_neg() {
+        createSimpletypesConfig("longval", Long.MIN_VALUE + "00");
     }
 
     @Test
-    public void test_double_leaf() throws Exception {
+    public void test_double_leaf() {
         SimpletypesConfig config = createSimpletypesConfig("doubleval", "0");
         assertEquals(0.0, config.doubleval(), 0.01);
         assertEquals(133.3, createSimpletypesConfig("doubleval", "133.3").doubleval(), 0.001);
@@ -135,35 +134,35 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_serializer() throws IOException {
+    public void test_serializer() {
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         assertThat(payload.toString(true), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
     }
 
     @Test(expected=RuntimeException.class)
-    public void test_double_leaf_illegal_string() throws Exception {
+    public void test_double_leaf_illegal_string() {
         createSimpletypesConfig("doubleval", "illegal");
     }
 
     @Test
-    public void test_double_leaf_negative_infinity() throws Exception {
+    public void test_double_leaf_negative_infinity() {
         assertThat(createSimpletypesConfig("doubleval", "-Infinity").doubleval(), is(Double.NEGATIVE_INFINITY));
         assertThat(createSimpletypesConfig("doubleval", "Infinity").doubleval(), is(Double.POSITIVE_INFINITY));
     }
 
     @Test
-    public void test_enum_leaf() throws Exception {
+    public void test_enum_leaf() {
         assertThat(createSimpletypesConfig("enumval", "VAL1").enumval(), is(SimpletypesConfig.Enumval.Enum.VAL1));
         assertThat(createSimpletypesConfig("enumval", "VAL2").enumval(), is(SimpletypesConfig.Enumval.Enum.VAL2));
     }
 
     @Test(expected=RuntimeException.class)
-    public void test_enum_leaf_illegal_string() throws Exception {
+    public void test_enum_leaf_illegal_string() {
         createSimpletypesConfig("enumval", "ILLEGAL");
     }
 
     @Test
-    public void test_bool_leaf() throws Exception {
+    public void test_bool_leaf() {
         SimpletypesConfig config = createSimpletypesConfig("boolval", "true");
         assertThat(config.boolval(), is(true));
         config = createSimpletypesConfig("boolval", "false");
@@ -175,18 +174,18 @@ public class ConfigPayloadTest {
     }
 
     @Test// FIXME: (expected = RuntimeException.class)
-    public void test_bool_leaf_illegal() throws Exception {
+    public void test_bool_leaf_illegal() {
         createSimpletypesConfig("boolval", "illegal");
     }
 
     @Test
-    public void test_string_illegal_value() throws Exception {
+    public void test_string_illegal_value() {
         // TODO: What do we consider illegal string values?
         createSimpletypesConfig("stringval", "insert_illegal_value_please");
     }
 
     @Test
-    public void test_int_array() throws Exception {
+    public void test_int_array() {
         // Normal behavior
         ArraytypesConfig config = createArraytypesConfig("intarr", new String[] { "2", "3", "1", "-2", "5"});
         assertThat(config.intarr().size(),  is(5));
@@ -210,12 +209,12 @@ public class ConfigPayloadTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void test_int_array_illegal() throws Exception {
+    public void test_int_array_illegal() {
         createArraytypesConfig("intarr", new String[] { "2", "3", "illegal", "-2", "5"});
     }
 
     @Test
-    public void test_long_array() throws Exception {
+    public void test_long_array() {
         // Normal behavior
         ArraytypesConfig config = createArraytypesConfig("longarr", new String[] { "2", "3", "1", "-2", "5"});
         assertThat(config.longarr().size(),  is(5));
@@ -239,7 +238,7 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_double_array() throws Exception {
+    public void test_double_array() {
         // Normal behavior
         ArraytypesConfig config = createArraytypesConfig("doublearr", new String[] { "2.1", "3.3", "1.5", "-2.1", "Infinity"});
         assertThat(config.doublearr().size(),  is(5));
@@ -251,7 +250,7 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_enum_array() throws Exception {
+    public void test_enum_array() {
         // Normal behavior
         ArraytypesConfig config = createArraytypesConfig("enumarr", new String[] { "VAL1", "VAL2", "VAL1" });
         assertThat(config.enumarr().size(),  is(3));
@@ -261,7 +260,7 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_simple_struct() throws Exception {
+    public void test_simple_struct() {
         Slime slime = new Slime();
         addStructFields(slime.setObject().setObject("simple"), "foobar", "MALE", new String[] { "foo@bar", "bar@foo" });
         StructtypesConfig config = new ConfigPayload(slime).toInstance(StructtypesConfig.class, "");
@@ -273,7 +272,7 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_simple_struct_arrays() throws Exception {
+    public void test_simple_struct_arrays() {
         StructtypesConfig config = createStructtypesConfigArray(new String[] { "foo", "bar" },
                                                                 new String[] { "MALE", "FEMALE" });
         assertThat(config.simplearr(0).name(), is("foo"));
@@ -284,7 +283,7 @@ public class ConfigPayloadTest {
 
 
     @Test
-    public void test_nested_struct() throws  Exception {
+    public void test_nested_struct() {
         StructtypesConfig config = createStructtypesConfigNested("foo", "FEMALE");
         assertThat(config.nested().inner().name(), is("foo"));
         assertThat(config.nested().inner().gender(), is(StructtypesConfig.Nested.Inner.Gender.Enum.FEMALE));
@@ -293,7 +292,7 @@ public class ConfigPayloadTest {
 
 
     @Test
-    public void test_nested_struct_array() throws  Exception {
+    public void test_nested_struct_array() {
         String [] names = { "foo" ,"bar" };
         String [] genders = { "FEMALE", "MALE" };
         String [][] emails = {
@@ -314,7 +313,7 @@ public class ConfigPayloadTest {
 
 
     @Test
-    public void test_complex_struct_array() throws  Exception  {
+    public void test_complex_struct_array() {
         String [][] names = {
                 { "foo", "bar" },
                 { "baz", "bim" }
@@ -454,19 +453,19 @@ public class ConfigPayloadTest {
     }
 
     @Test
-    public void test_escaped_string() throws Exception {
+    public void test_escaped_string() {
         SimpletypesConfig config = createSimpletypesConfig("stringval", "b=\"escaped\"");
         assertThat(config.stringval(), is("b=\"escaped\""));
     }
 
     @Test
-    public void test_unicode() throws Exception {
+    public void test_unicode() {
         SimpletypesConfig config = createSimpletypesConfig("stringval", "Hei \u00E6\u00F8\u00E5 \uBC14\uB451 \u00C6\u00D8\u00C5 hallo");
         assertThat(config.stringval(), is("Hei \u00E6\u00F8\u00E5 \uBC14\uB451 \u00C6\u00D8\u00C5 hallo"));
     }
 
     @Test
-    public void test_empty_payload() throws Exception {
+    public void test_empty_payload() {
         Slime slime = new Slime();
         slime.setObject();
         IntConfig config = new ConfigPayload(slime).toInstance(IntConfig.class, "");

@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.ConfigPayload;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class SlimeConfigResponse implements ConfigResponse {
         Payload v1payload = Payload.from(payload, compressionInfo).withCompression(CompressionType.UNCOMPRESSED);
         try {
             ConfigPayload.fromUtf8Array(v1payload.getData()).serialize(baos, format);
-            return Arrays.asList(baos.toString("UTF-8").split("\\n"));
+            return Arrays.asList(baos.toString(StandardCharsets.UTF_8).split("\\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

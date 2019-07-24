@@ -3,7 +3,6 @@ package com.yahoo.config.subscription;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.AppConfig;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
@@ -59,8 +58,8 @@ public class ConfigSubscriptionTest {
                 configSet,
                 new TimingValues());
 
-        assertTrue(c1.equals(c1));
-        assertFalse(c1.equals(c2));
+        assertEquals(c1, c1);
+        assertNotEquals(c1, c2);
     }
 
     @Test

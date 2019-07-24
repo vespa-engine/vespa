@@ -11,12 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Class to hold config definitions and resolving requests for the correct definition
  *
  * @author hmusum
- * @since 5.1
  */
 public class ConfigDefinitionSet {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigDefinitionSet.class.getName());
 
-    private final Map<ConfigDefinitionKey, ConfigDefinition> defs = new ConcurrentHashMap<ConfigDefinitionKey, ConfigDefinition>();
+    private final Map<ConfigDefinitionKey, ConfigDefinition> defs = new ConcurrentHashMap<>();
 
     public ConfigDefinitionSet() {
 

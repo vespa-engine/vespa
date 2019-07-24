@@ -57,7 +57,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
             this(false, 0L, false, false, null);
         }
 
-        private ConfigState<T> createUnchanged() { return new ConfigState<T>(generation, config); }
+        private ConfigState<T> createUnchanged() { return new ConfigState<>(generation, config); }
         public boolean isConfigChanged() { return configChanged; }
         public boolean isGenerationChanged() { return generationChanged; }
         public Long getGeneration() { return generation; }
@@ -93,7 +93,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.key = key;
         this.configClass = key.getConfigClass();
         this.subscriber = subscriber;
-        this.config.set(new ConfigState<T>());
+        this.config.set(new ConfigState<>());
     }
 
 

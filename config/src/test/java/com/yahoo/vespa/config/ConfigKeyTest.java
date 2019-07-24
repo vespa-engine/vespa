@@ -27,16 +27,16 @@ public class ConfigKeyTest {
         assertEquals(key1, key2);
 
         ConfigKey<?> key3 = new ConfigKey<>("foo", "a/b/c/d", namespace);
-        assertTrue(!key1.equals(key3));
         assertFalse(key1.equals(key3));
+        assertNotEquals(key1, key3);
 
         assertEquals("a/b/c", new ConfigKey<>("foo", "a/b/c", namespace).getConfigId());
         assertEquals("a", new ConfigKey<>("foo", "a", namespace).getConfigId());
         assertEquals("", new ConfigKey<>("foo", "", namespace).getConfigId());
 
-        assertTrue(key1.equals(key1));
-        assertFalse(key1.equals(key3));
-        assertFalse(key1.equals(new Object()));
+        assertEquals(key1, key1);
+        assertNotEquals(key1, key3);
+        assertNotEquals(key1, new Object());
 
         ConfigKey<?> key4 = new ConfigKey<>("myConfig", null, namespace);
         assertEquals("", key4.getConfigId());
@@ -70,11 +70,11 @@ public class ConfigKeyTest {
         ConfigKey<?> noNamespace = new ConfigKey<>("name", "id", null);
         ConfigKey<?> namespaceFoo = new ConfigKey<>("name", "id", "foo");
         ConfigKey<?> namespaceBar = new ConfigKey<>("name", "id", "bar");
-        assertTrue(noNamespace.equals(noNamespace));
-        assertTrue(namespaceFoo.equals(namespaceFoo));
-        assertFalse(noNamespace.equals(namespaceFoo));
-        assertFalse(namespaceFoo.equals(noNamespace));
-        assertFalse(namespaceFoo.equals(namespaceBar));
+        assertEquals(noNamespace, noNamespace);
+        assertEquals(namespaceFoo, namespaceFoo);
+        assertNotEquals(noNamespace, namespaceFoo);
+        assertNotEquals(namespaceFoo, noNamespace);
+        assertNotEquals(namespaceFoo, namespaceBar);
         assertEquals(noNamespace.getNamespace(), CNode.DEFAULT_NAMESPACE);
         assertEquals(namespaceBar.getNamespace(), "bar");
     }

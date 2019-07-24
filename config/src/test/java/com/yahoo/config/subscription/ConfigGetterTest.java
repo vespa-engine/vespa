@@ -37,6 +37,8 @@ public class ConfigGetterTest {
         AppConfig serviceConfig = service.getConfig();
         assertTrue(service.isConfigured());
         assertThat(config, is(serviceConfig));
+
+        service.cancelSubscription();
     }
 
     @Test
@@ -107,5 +109,7 @@ public class ConfigGetterTest {
         AppConfig serviceConfig = service.getConfig();
         assertTrue(service.isConfigured());
         assertThat(config, is(serviceConfig));
+
+        service.cancelSubscription();
     }
 }

@@ -4,6 +4,7 @@ package com.yahoo.config.subscription.impl;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -54,7 +55,7 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             if (zipEntry==null) throw new IllegalArgumentException("Config '" + key.getName() + "' not found in '" + jarName + "!/" + path + "'.");
             T config = null;
             try {
-                ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), "UTF-8")).split("\n")));
+                ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(Arrays.asList(IOUtils.readAll(new InputStreamReader(jarFile.getInputStream(zipEntry), StandardCharsets.UTF_8)).split("\n")));
                 config = payload.toInstance(configClass, key.getConfigId());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
