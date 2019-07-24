@@ -14,7 +14,6 @@ import java.util.*;
  * Deserializes config payload (cfg format) to a ConfigPayload.
  *
  * @author hmusum
- * @since 5.1.6
  */
 public class CfgConfigPayloadBuilder {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CfgConfigPayloadBuilder.class.getName());
@@ -29,7 +28,8 @@ public class CfgConfigPayloadBuilder {
         return ConfigPayload.fromBuilder(deserializeToBuilder(lines));
     }
 
-    private ConfigPayloadBuilder deserializeToBuilder(List<String> lines) {
+    @SuppressWarnings("WeakerAccess")
+    public ConfigPayloadBuilder deserializeToBuilder(List<String> lines) {
         int lineNum = 1;
         ConfigPayloadBuilder payloadBuilder = new ConfigPayloadBuilder();
         for (String line : lines) {
