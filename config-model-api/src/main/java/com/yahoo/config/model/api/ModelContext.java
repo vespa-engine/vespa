@@ -59,6 +59,7 @@ public interface ModelContext {
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
+        default boolean enableGroupingSessionCache() { return false; }
     }
 
 }

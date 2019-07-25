@@ -136,6 +136,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
         private final Optional<TlsSecrets> tlsSecrets;
+        private final boolean enableGroupingSessionCache;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenantFromConfig,
@@ -172,6 +173,8 @@ public class ModelContextImpl implements ModelContext {
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.tlsSecrets = tlsSecrets;
+            this.enableGroupingSessionCache = Flags.ENABLE_GROUPING_SESSION_CACHE.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override
@@ -228,6 +231,11 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
+
+        @Override
+        public boolean enableGroupingSessionCache() {
+            return enableGroupingSessionCache;
+        }
     }
 
 }
