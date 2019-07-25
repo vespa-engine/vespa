@@ -21,17 +21,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utilities for mangling config text, finding md5sums, version numbers in .def files etc.
+ * Utilities for mangling config text, finding md5sums, finding name and namespace in .def files etc.
  */
 public class ConfigUtils {
     /* Patterns used for finding ranges in config definitions */
     private static final Pattern intPattern = Pattern.compile(".*int.*range.*");
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
     private static final Pattern spaceBeforeCommaPatter = Pattern.compile("\\s,");
-    public static final String intFormattedMax = new DecimalFormat("#.#").format(0x7fffffff);
-    public static final String intFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-0x80000000);
-    public static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
-    public static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
+    private static final String intFormattedMax = new DecimalFormat("#.#").format(0x7fffffff);
+    private static final String intFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-0x80000000);
+    private static final String doubleFormattedMax = new DecimalFormat("#.#").format(1e308);
+    private static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
     /**
      * Computes Md5 hash of a list of strings. The only change to input lines before
@@ -198,17 +198,6 @@ public class ConfigUtils {
     }
 
     /**
-     * Finds the def version from a reader for a def-file. Returns "" (empty string)
-     * if no version was found.
-     *
-     * @param in A reader to a def-file
-     * @return version of the def-file, or "" (empty string) if no version was found
-     */
-    public static String getDefVersion(Reader in) {
-        return getDefKeyword(in, "version");
-    }
-
-    /**
      * Finds the def package or namespace from a reader for a def-file. Returns "" (empty string)
      * if no package or namespace was found. If both package and namespace are declared in the def
      * file, the package is returned.
@@ -221,17 +210,6 @@ public class ConfigUtils {
         String defPackage = getDefKeyword(defLines, "package");
         if (! defPackage.isEmpty()) return defPackage;
         return getDefKeyword(defLines, "namespace");
-    }
-
-    /**
-     * Finds the value of the keyword in <code>keyword</code> from a reader for a def-file.
-     * Returns "" (empty string) if no value for keyword was found.
-     *
-     * @param in  A reader to a def-file
-     * @return value of keyword, or "" (empty string) if no line matching keyword was found
-     */
-    public static String getDefKeyword(Reader in, String keyword) {
-        return getDefKeyword(getDefLines(in), keyword);
     }
 
     private static String getDefKeyword(List<String> defLines, String keyword) {
@@ -271,16 +249,15 @@ public class ConfigUtils {
     }
 
     /**
-     * Finds the name and version from a string with "name,version".
-     * If no name is given, the first part of the tuple will be the empty string
-     * If no version is given, the second part of the tuple will be the empty string
+     * Finds the name and namespace part from a string "name.namespace,version", which
+     * is how it is serialized in zookeeper (versions is always empty)
      *
-     * @param nameCommaVersion A string consisting of "name,version"
-     * @return a Tuple2 with first item being name and second item being version
+     * @param nameCommaVersion A string consisting of "name.namespace,version" or "name.namespace,"
+     * @return a string with name.namespace
      */
-    public static Tuple2<String, String> getNameAndVersionFromString(String nameCommaVersion) {
+    private static String getNameFromSerializedString(String nameCommaVersion) {
         String[] av = nameCommaVersion.split(",");
-        return new Tuple2<>(av[0], av.length >= 2 ? av[1] : "");
+        return av[0];
     }
 
     /**
@@ -302,46 +279,6 @@ public class ConfigUtils {
     }
 
     /**
-     * Creates a ConfigDefinitionKey based on a string with namespace, name and version
-     * (e.g. Vespa's own config definitions in $VESPA_HOME/share/vespa/configdefinitions)
-     *
-     * @param input A string consisting of "namespace.name.version"
-     * @return a ConfigDefinitionKey
-     */
-    public static ConfigDefinitionKey getConfigDefinitionKeyFromString(String input) {
-        final String name;
-        final String namespace;
-        if (!input.contains(".")) {
-            name = input;
-            namespace = "";
-        } else if (input.lastIndexOf(".") == input.indexOf(".")) {
-            Tuple2<String, String> tuple = ConfigUtils.getNameAndNamespaceFromString(input);
-            boolean containsVersion = false;
-            for (int i=0; i < tuple.first.length(); i++) {
-               if (Character.isDigit(tuple.first.charAt(i))) {
-                   containsVersion = true;
-                   break;
-               }
-            }
-            if (containsVersion) {
-                name = tuple.second;
-                namespace = "";
-            } else {
-                name = tuple.first;
-                namespace = tuple.second;
-            }
-        } else {
-            Tuple2<String, String> tuple = ConfigUtils.getNameAndNamespaceFromString(input);
-
-            String tempName = tuple.second;
-            tuple = ConfigUtils.getNameAndNamespaceFromString(tempName);
-            name = tuple.first;
-            namespace = tuple.second;
-        }
-        return new ConfigDefinitionKey(name, namespace);
-    }
-
-    /**
      * Creates a ConfigDefinitionKey from a string for the name of a node in ZooKeeper
      * that holds a config definition
      *
@@ -351,20 +288,12 @@ public class ConfigUtils {
     public static ConfigDefinitionKey createConfigDefinitionKeyFromZKString(String nodeName) {
         final String name;
         final String namespace;
-        if (nodeName.contains(".")) {
-            Tuple2<String, String> tuple = ConfigUtils.getNameAndVersionFromString(nodeName);
-            String tempName = tuple.first; // includes namespace
-            tuple = ConfigUtils.getNameAndNamespaceFromString(tempName);
-            name = tuple.first;
-            namespace = tuple.second;
-        } else {
-            Tuple2<String, String> tuple = ConfigUtils.getNameAndVersionFromString(nodeName);
-            name = tuple.first;
-            namespace = "";
-        }
+        String tempName = ConfigUtils.getNameFromSerializedString(nodeName); // includes namespace
+        Tuple2<String, String> tuple = ConfigUtils.getNameAndNamespaceFromString(tempName);
+        name = tuple.first;
+        namespace = tuple.second;
         return new ConfigDefinitionKey(name, namespace);
     }
-
 
     /**
      * Creates a ConfigDefinitionKey from a file by reading the file and parsing
@@ -390,14 +319,13 @@ public class ConfigUtils {
      * @param content content of a config definition
      * @return a ConfigDefinitionKey
      */
-    public static ConfigDefinitionKey createConfigDefinitionKeyFromDefContent(String name, byte[] content) {
+    static ConfigDefinitionKey createConfigDefinitionKeyFromDefContent(String name, byte[] content) {
         String namespace = ConfigUtils.getDefNamespace(new StringReader(Utf8.toString(content)));
         if (namespace.isEmpty()) {
             namespace = CNode.DEFAULT_NAMESPACE;
         }
         return new ConfigDefinitionKey(name, namespace);
     }
-
 
     /**
      * Escapes a config value according to the cfg format.

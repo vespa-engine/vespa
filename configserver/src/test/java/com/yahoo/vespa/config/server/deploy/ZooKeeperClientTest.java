@@ -101,14 +101,14 @@ public class ZooKeeperClientTest {
         List<String> children = zk.getChildren(defsPath);
         assertEquals(defsPath + " children", 2, children.size());
         Collections.sort(children);
-        assertThat(children.get(0), is("a.b.test2,"));
+        assertThat(children.get(0), is("a.b.test2"));
 
         assertTrue(zk.exists(appPath, ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", "")));
         String userDefsPath = appPath + ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH;
         children = zk.getChildren(userDefsPath);
         assertThat(children.size(), is(2));
         Collections.sort(children);
-        assertThat(children.get(0), is("a.b.test2,"));
+        assertThat(children.get(0), is("a.b.test2"));
     }
 
     // TODO: Evaluate if we want this or not

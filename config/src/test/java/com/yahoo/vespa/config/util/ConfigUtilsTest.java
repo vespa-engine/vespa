@@ -114,22 +114,6 @@ public class ConfigUtilsTest {
     }
 
     @Test
-    public void testGetVersion() {
-        StringReader reader = new StringReader("version=1\nint a default=0");
-        assertThat(ConfigUtils.getDefVersion(reader), is("1"));
-
-        // no version
-        reader = new StringReader("int a default=0");
-        assertThat(ConfigUtils.getDefVersion(reader), is(""));
-
-        // namespace and version
-        reader = new StringReader("version=1\nnamespace=foo\nint a default=0");
-        assertThat(ConfigUtils.getDefVersion(reader), is("1"));
-        reader = new StringReader("namespace=foo\nversion=1\nint a default=0");
-        assertThat(ConfigUtils.getDefVersion(reader), is("1"));
-    }
-
-    @Test
     public void testGetNamespace() {
         StringReader reader = new StringReader("version=1\nnamespace=a\nint a default=0");
         assertThat(ConfigUtils.getDefNamespace(reader), is("a"));
@@ -151,26 +135,6 @@ public class ConfigUtilsTest {
         } catch (IllegalArgumentException e) {
             //
         }
-    }
-
-    @Test
-    public void testGetNameCommaVersion() {
-        String nameCommaversion = "foo,1";
-        Tuple2<String, String> tuple = ConfigUtils.getNameAndVersionFromString(nameCommaversion);
-        assertThat(tuple.first, is("foo"));
-        assertThat(tuple.second, is("1"));
-
-        // no version
-        nameCommaversion = "foo";
-        tuple = ConfigUtils.getNameAndVersionFromString(nameCommaversion);
-        assertThat(tuple.first, is("foo"));
-        assertThat(tuple.second, is(""));
-
-        // no name
-        nameCommaversion = ",1";
-        tuple = ConfigUtils.getNameAndVersionFromString(nameCommaversion);
-        assertThat(tuple.first, is(""));
-        assertThat(tuple.second, is("1"));
     }
 
     @Test
@@ -205,29 +169,18 @@ public class ConfigUtilsTest {
     }
 
     @Test
-    public void testGetConfigDefinitionKey() {
-        String input = "foo.bar";
-        ConfigDefinitionKey def = ConfigUtils.getConfigDefinitionKeyFromString(input);
-        assertThat(def.getName(), is("bar"));
-        assertThat(def.getNamespace(), is("foo"));
-
-        input = "foo.bar.1";
-        def = ConfigUtils.getConfigDefinitionKeyFromString(input);
-        assertThat(def.getName(), is("bar"));
-        assertThat(def.getNamespace(), is("foo"));
-
-        input = "foo.bar.qux.2";
-        def = ConfigUtils.getConfigDefinitionKeyFromString(input);
-        assertThat(def.getName(), is("qux"));
-        assertThat(def.getNamespace(), is("foo.bar"));
-    }
-
-    @Test
     public void testCreateConfigDefinitionKeyFromZKString() {
-        String input = "bar.foo,1";
-        ConfigDefinitionKey def = ConfigUtils.createConfigDefinitionKeyFromZKString(input);
-        assertThat(def.getName(), is("foo"));
-        assertThat(def.getNamespace(), is("bar"));
+        ConfigDefinitionKey def1 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo,1");
+        assertThat(def1.getName(), is("foo"));
+        assertThat(def1.getNamespace(), is("bar"));
+
+        ConfigDefinitionKey def2 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo,");
+        assertThat(def2.getName(), is("foo"));
+        assertThat(def2.getNamespace(), is("bar"));
+
+        ConfigDefinitionKey def3 = ConfigUtils.createConfigDefinitionKeyFromZKString("bar.foo");
+        assertThat(def3.getName(), is("foo"));
+        assertThat(def3.getNamespace(), is("bar"));
     }
 
     @Test

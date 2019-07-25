@@ -288,22 +288,14 @@ public class ZooKeeperClient {
         for (Map.Entry<ConfigDefinitionKey, UnparsedConfigDefinition> entry : configDefs.entrySet()) {
             ConfigDefinitionKey key = entry.getKey();
             String contents = entry.getValue().getUnparsedContent();
-            write(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
-            write(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
+            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.USER_DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
+            writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(ConfigCurator.DEFCONFIGS_ZK_SUBPATH).getAbsolute(), contents);
         }
         logger.log(LogLevel.FINE, configDefs.size() + " user config definitions");
     }
 
-    private void write(String name, String namespace, String path, String data) {
-        write(name, namespace, "", path, com.yahoo.text.Utf8.toBytes(data));
-    }
-
-    private void write(String name, String namespace, String version, String path, byte[] data) {
-        configCurator.putDefData(
-                ("".equals(namespace)) ? name : (namespace + "." + name),
-                version,
-                path,
-                data);
+    private void writeConfigDefinition(String name, String namespace, String path, String data) {
+        configCurator.putDefData(namespace + "." + name, path, com.yahoo.text.Utf8.toBytes(data));
     }
 
     private void write(Version vespaVersion, FileRegistry fileRegistry) {
