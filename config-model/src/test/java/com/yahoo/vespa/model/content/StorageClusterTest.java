@@ -33,7 +33,7 @@ public class StorageClusterTest {
         MockRoot root = new MockRoot();
         return parse(xml, root);
     }
-    StorageCluster parse(String xml, MockRoot root) throws Exception {
+    StorageCluster parse(String xml, MockRoot root) {
         root.getDeployState().getDocumentModel().getDocumentManager().add(
                 new NewDocumentType(new NewDocumentType.Name("music"))
         );
@@ -190,7 +190,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testCapacity() throws Exception {
+    public void testCapacity() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                         "  <documents/>" +
@@ -214,7 +214,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testRootFolder() throws Exception {
+    public void testRootFolder() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                         "  <documents/>" +
@@ -245,7 +245,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testGenericPersistenceTuning() throws Exception {
+    public void testGenericPersistenceTuning() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                         "<documents/>" +
@@ -271,7 +271,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatUserDoesNotSpecifyBothGroupAndNodes() throws Exception {
+    public void requireThatUserDoesNotSpecifyBothGroupAndNodes() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                         "<documents/>\n" +
@@ -302,7 +302,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatGroupNamesMustBeUniqueAmongstSiblings() throws Exception {
+    public void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                 "<documents/>\n" +
@@ -327,7 +327,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() throws Exception {
+    public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                 "<documents/>\n" +
@@ -351,7 +351,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatNestedGroupsRequireDistribution() throws Exception {
+    public void requireThatNestedGroupsRequireDistribution() {
         String xml =
                 "<cluster id=\"storage\">\n" +
                         "<documents/>\n" +

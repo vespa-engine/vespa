@@ -44,7 +44,7 @@ public class Bug6068056Test {
             "</services>";
 
     @Test(expected = RuntimeException.class)
-    public void testContainerClusterCalledDocproc() throws Exception {
+    public void testContainerClusterCalledDocproc() {
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(HOSTS, SERVICES);
         creator.create();
     }

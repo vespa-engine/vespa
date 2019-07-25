@@ -28,7 +28,7 @@ import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.application.validation.Validation;
-import com.yahoo.vespa.model.test.utils.CommonVespaModelSetup;
+import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Ignore;
@@ -89,7 +89,7 @@ public class VespaModelTestCase {
 
     // Verify that common config from plugins is delivered from the root node for any configId, using the Builder based API
     @Test
-    public void testCommonConfig() throws Exception {
+    public void testCommonConfig() {
         VespaModel model = getVespaModel(TESTDIR + "app_nohosts/");
         LogdConfig.Builder b = new LogdConfig.Builder();
         b = (LogdConfig.Builder) model.getConfig(b, "");
@@ -135,7 +135,7 @@ public class VespaModelTestCase {
     }
 
     @Test
-    public void testHostsOverrides() throws IOException, SAXException {
+    public void testHostsOverrides() {
         VespaModel model = new VespaModelCreatorWithMockPkg(
                 simpleHosts,
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -171,8 +171,8 @@ public class VespaModelTestCase {
     }
 
     @Test
-    public void testCreateFromReaders() throws SAXException, IOException {
-        VespaModel model = CommonVespaModelSetup.createVespaModelWithMusic(
+    public void testCreateFromReaders() {
+        VespaModel model = new VespaModelCreatorWithMockPkg(
                 simpleHosts,
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                         "<services  version=\"1.0\">" +
@@ -195,7 +195,9 @@ public class VespaModelTestCase {
                         "     <document type=\"music\" mode=\"index\"/>" +
                         "   </documents>" +
                         "</content>" +
-                        "</services>");
+                        "</services>",
+                ApplicationPackageUtils.generateSearchDefinition("music"))
+                .create();
         MessagebusConfig.Builder mBusB = new MessagebusConfig.Builder();
         model.getConfig(mBusB, "client");
         MessagebusConfig mBus = new MessagebusConfig(mBusB);
@@ -253,11 +255,12 @@ public class VespaModelTestCase {
 
     @Test
     public void testNoAdmin() {
-        VespaModel model = CommonVespaModelSetup.createVespaModelWithMusic(
+        VespaModel model = new VespaModelCreatorWithMockPkg(
                 simpleHosts,
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                         "<services version=\"1.0\">" +
-                        "</services>");
+                        "</services>")
+                .create();
         Admin admin = model.getAdmin();
         assertThat(admin.getSlobroks().size(), is(1));
         assertThat(admin.getConfigservers().size(), is(1));

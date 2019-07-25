@@ -171,7 +171,7 @@ public class IndexedHierarchicDistributionTest {
         return createCluster(createClusterXml(groupXml, 2, 2));
     }
 
-    private String getOddGroupsClusterXml() throws Exception {
+    private String getOddGroupsClusterXml() {
         return joinLines("  <group>",
                 "    <distribution partitions='2|*'/>",
                 "    <group distribution-key='0' name='group0'>",

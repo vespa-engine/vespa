@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 
 import com.yahoo.cloud.config.SentinelConfig;
@@ -68,7 +67,7 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
     }
 
     @Override
-    public void writeFiles(File directory) throws IOException {
+    public void writeFiles(File directory) {
     }
 
     @Override

@@ -24,7 +24,7 @@ public class SourceGroupTest {
     private SearchChains searchChains;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         root = new MockRoot();
         searchChains = new SearchChains(root, "searchchains");
     }

@@ -17,7 +17,7 @@ public class MonitoringConfigSnoopTest {
 
     private TestRoot root;
 
-    public void initRoot(int interval) throws Exception {
+    public void initRoot(int interval) {
         TestDriver tester = new TestDriver();
         root = tester.buildModel(getAdminXml(interval) + getContent());
     }
@@ -53,7 +53,7 @@ public class MonitoringConfigSnoopTest {
     }
 
     @Test
-    public void correct_config_is_snooped_default_interval() throws Exception {
+    public void correct_config_is_snooped_default_interval() {
         String getAdminXmlIntervalNotSpecified = "<admin version='2.0'>"
                 + "  <adminserver hostalias='mockhost' />"
                 + "</admin>";

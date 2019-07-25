@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content.engines;
 
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.model.content.StorageNode;
-import com.yahoo.vespa.model.search.SearchNode;
 
 /**
  * @author baldersheim

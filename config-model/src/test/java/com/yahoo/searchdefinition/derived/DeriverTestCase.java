@@ -4,19 +4,12 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.io.IOUtils;
-import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
-import com.yahoo.searchdefinition.document.SDDocumentType;
 import org.junit.Test;
-import java.io.File;
-import java.io.IOException;
+
 import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests deriving using the Deriver facade

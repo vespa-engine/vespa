@@ -82,7 +82,7 @@ public class VespaDomBuilderTest {
 
 
     @Test
-    public void testUserConfigsWithNamespace() throws Exception {
+    public void testUserConfigsWithNamespace() {
         VespaModel model = createModel(hosts, servicesWithNamespace);
 
         GenericConfig.GenericConfigBuilder builder = 

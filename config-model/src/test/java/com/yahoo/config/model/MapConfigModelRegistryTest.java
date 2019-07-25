@@ -6,7 +6,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelId;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

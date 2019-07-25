@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;

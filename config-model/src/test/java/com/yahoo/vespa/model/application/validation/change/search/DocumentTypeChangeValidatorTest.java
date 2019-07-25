@@ -180,7 +180,7 @@ public class DocumentTypeChangeValidatorTest {
     }
 
     @Test
-    public void requireThatChangingTargetTypeOfReferenceFieldIsNotOK() throws Exception {
+    public void requireThatChangingTargetTypeOfReferenceFieldIsNotOK() {
         DocumentTypeChangeValidator validator = new DocumentTypeChangeValidator(
                 createDocumentTypeWithReferenceField("oldDoc"),
                 createDocumentTypeWithReferenceField("newDoc"));

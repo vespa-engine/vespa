@@ -31,7 +31,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;

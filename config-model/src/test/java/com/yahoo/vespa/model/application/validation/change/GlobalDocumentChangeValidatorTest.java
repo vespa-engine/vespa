@@ -1,17 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change;
 
-import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -23,7 +16,7 @@ import static org.junit.Assert.assertFalse;
 public class GlobalDocumentChangeValidatorTest {
 
     @Test
-    public void testChangGlobalAttribute() throws IOException, SAXException {
+    public void testChangGlobalAttribute() {
         testChangeGlobalAttribute(true, false, false, null);
         testChangeGlobalAttribute(true, true, true, null);
         testChangeGlobalAttribute(false, false, true, null);

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.document.DataType;
 import com.yahoo.search.config.ClusterConfig;
@@ -19,9 +17,6 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -49,7 +44,7 @@ public class SearchClusterTest {
             "</hosts>";
 
     @Test
-    public void testSdConfigLogical() throws IOException, SAXException {
+    public void testSdConfigLogical() {
         // sd1
         SDDocumentType sdt1=new SDDocumentType("s1");
         Search search1 = new Search("s1", null);
@@ -75,7 +70,7 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void search_model_is_connected_to_container_clusters_two_content_clusters() throws Exception {
+    public void search_model_is_connected_to_container_clusters_two_content_clusters() {
         String services = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<services version=\"1.0\">" +
                 "  <admin version='2.0'>" +

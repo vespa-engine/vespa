@@ -20,8 +20,6 @@ import java.util.*;
  */
 public class FileSender implements Serializable {
 
-    public enum FileType {FILE, URI};
-
     /**
      * Send the given file to all given services.
      *

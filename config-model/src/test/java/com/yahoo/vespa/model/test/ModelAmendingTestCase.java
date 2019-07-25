@@ -20,9 +20,7 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.content.Content;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,7 +40,7 @@ import static org.junit.Assert.assertNotNull;
 public class ModelAmendingTestCase {
 
     @Test
-    public void testModelAmending() throws IOException, SAXException {
+    public void testModelAmending() {
         ConfigModelRegistry amendingModelRepo = MapConfigModelRegistry.createFromList(new AdminModelAmenderBuilder(),
                                                                                       new ContainerModelAmenderBuilder(),
                                                                                       new ContentModelAmenderBuilder());

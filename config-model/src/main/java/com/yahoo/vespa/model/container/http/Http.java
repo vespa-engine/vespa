@@ -86,7 +86,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
     }
 
     @Override
-    public void validate() throws Exception {
+    public void validate() {
         validate(bindings);
     }
 

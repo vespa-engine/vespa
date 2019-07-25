@@ -1,20 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.google.common.collect.ImmutableMap;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.document.ReferenceDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
-import com.yahoo.searchdefinition.DocumentReference;
-import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.document.TemporaryImportedField;
-import com.yahoo.searchdefinition.document.TemporarySDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;

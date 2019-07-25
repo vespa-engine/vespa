@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;

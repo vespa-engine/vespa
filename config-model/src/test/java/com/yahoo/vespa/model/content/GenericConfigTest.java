@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorFilestorConfig;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -10,9 +9,6 @@ import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Before;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -53,12 +49,12 @@ public class GenericConfigTest {
     }
 
     @Before
-    public void getVespaModel() throws IOException, SAXException, ParseException {
+    public void getVespaModel() {
         model = (new VespaModelCreatorWithMockPkg(ContentBaseTest.getHosts(), servicesXml(), ApplicationPackageUtils.generateSearchDefinitions("type1"))).create();
     }
 
     @Test
-    public void config_override_on_root_is_visible_on_storage_cluster() throws Exception {
+    public void config_override_on_root_is_visible_on_storage_cluster() {
         StorageCluster cluster = model.getContentClusters().get("storage").getStorageNodes();
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
@@ -66,7 +62,7 @@ public class GenericConfigTest {
     }
 
     @Test
-    public void config_override_on_root_is_visible_on_content_cluster() throws Exception {
+    public void config_override_on_root_is_visible_on_content_cluster() {
         ContentCluster cluster = model.getContentClusters().get("storage");
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());

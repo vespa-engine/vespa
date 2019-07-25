@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.AbstractExportingTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;

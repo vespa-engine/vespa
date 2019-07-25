@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 public class StructTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testStruct() throws IOException, ParseException {
+    public void testStruct() throws IOException {
         assertConfigFile("src/test/examples/structresult.cfg",
                          new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")).toString() + "\n");
     }
@@ -33,7 +33,7 @@ public class StructTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void testStructAndDocumentWithSameNames() throws IOException, ParseException {
+    public void testStructAndDocumentWithSameNames() {
         try {
             DocumenttypesConfig.Builder dt = Deriver.getDocumentTypesConfig("src/test/examples/structanddocumentwithsamenames.sd");
         } catch (Exception e) {

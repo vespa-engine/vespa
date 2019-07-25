@@ -2,7 +2,6 @@
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 
 import java.util.HashMap;

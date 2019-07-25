@@ -9,8 +9,6 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
-import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
@@ -20,7 +18,6 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.T
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.VESPA_CONSUMER_ID;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -94,11 +91,6 @@ class MetricsProxyModelTester {
 
     static RpcConnectorConfig getRpcConnectorConfig(VespaModel model) {
         return new RpcConnectorConfig((RpcConnectorConfig.Builder) model.getConfig(new RpcConnectorConfig.Builder(), CONTAINER_CONFIG_ID));
-    }
-
-    private static Flavor flavorFromString(String name) {
-        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
-                name(name)));
     }
 
 }

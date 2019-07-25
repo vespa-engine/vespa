@@ -8,7 +8,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.net.UnknownHostException;

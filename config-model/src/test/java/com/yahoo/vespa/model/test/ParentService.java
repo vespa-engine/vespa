@@ -13,8 +13,6 @@ import org.w3c.dom.NodeList;
  */
 public class ParentService extends AbstractService implements com.yahoo.test.StandardConfig.Producer {
 
-    public int childCnt = 0;
-
     /**
      * Creates a new ParentService instance
      *

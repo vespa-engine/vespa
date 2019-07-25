@@ -5,9 +5,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 import com.yahoo.vespa.model.container.docproc.model.DocumentProcessorModel;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

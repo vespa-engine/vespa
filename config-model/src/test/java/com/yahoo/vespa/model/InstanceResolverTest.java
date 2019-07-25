@@ -56,7 +56,6 @@ public class InstanceResolverTest {
 
     /**
      * Values unset on builder, trying to set them from def file, but type mismatches there
-     * @throws Exception
      */
     @Test
     public void testApplyDefToBuilderMismatches() throws Exception {

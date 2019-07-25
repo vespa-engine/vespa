@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.defaults.Defaults;
 
 import java.util.Optional;
 

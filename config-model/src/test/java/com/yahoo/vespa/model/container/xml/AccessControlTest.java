@@ -13,9 +13,7 @@ import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,7 +44,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             ContainerCluster.ROOT_HANDLER_BINDING);
 
     @Test
-    public void access_control_filter_chain_is_set_up() throws Exception {
+    public void access_control_filter_chain_is_set_up() {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
@@ -61,7 +59,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void properties_are_set_from_xml() throws Exception {
+    public void properties_are_set_from_xml() {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
@@ -82,7 +80,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void read_is_disabled_and_write_is_enabled_by_default() throws Exception {
+    public void read_is_disabled_and_write_is_enabled_by_default() {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
@@ -98,7 +96,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void read_and_write_can_be_overridden() throws Exception {
+    public void read_and_write_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "  <http>",
                 "    <filtering>",
@@ -114,7 +112,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void access_control_filter_chain_has_correct_handler_bindings() throws Exception {
+    public void access_control_filter_chain_has_correct_handler_bindings() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <search/>",
@@ -145,7 +143,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void handler_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+    public void handler_can_be_excluded_by_excluding_one_of_its_bindings() {
         final String notExcludedBinding = "http://*/custom-handler/*";
         final String excludedBinding = "http://*/excluded/*";
         Element clusterElem = DomBuilderTest.parse(
@@ -166,7 +164,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void access_control_filter_chain_has_all_servlet_bindings() throws Exception {
+    public void access_control_filter_chain_has_all_servlet_bindings() {
         final String servletPath = "servlet/path";
         final String restApiPath = "api/v0";
         final Set<String> requiredBindings = ImmutableSet.of(servletPath, restApiPath);
@@ -194,7 +192,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void servlet_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+    public void servlet_can_be_excluded_by_excluding_one_of_its_bindings() {
         final String servletPath = "servlet/path";
         final String notExcludedBinding = "http://*:8081/" + servletPath;
         final String excludedBinding = "http://*:8080/" + servletPath;
@@ -215,7 +213,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void rest_api_can_be_excluded_by_excluding_one_of_its_bindings() throws Exception {
+    public void rest_api_can_be_excluded_by_excluding_one_of_its_bindings() {
         final String restApiPath = "api/v0";
         final String notExcludedBinding = "http://*:8081/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;
         final String excludedBinding = "http://*:8080/" + restApiPath + Jersey2Servlet.BINDING_SUFFIX;;

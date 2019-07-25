@@ -1,11 +1,9 @@
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;

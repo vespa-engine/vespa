@@ -7,7 +7,6 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -17,8 +16,7 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
@@ -103,7 +101,7 @@ public class DocumentDatabaseTestCase {
         assertEquals(type1Id, proton.documentdb(0).configid());
     }
     @Test
-    public void requireThatWeCanHaveOneSDForIndexedMode() throws IOException, SAXException, ParseException {
+    public void requireThatWeCanHaveOneSDForIndexedMode() {
         assertSingleSD("index");
     }
 
@@ -213,7 +211,7 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatWeCanHaveMultipleSearchDefinitions() throws IOException, SAXException, ParseException {
+    public void requireThatWeCanHaveMultipleSearchDefinitions() {
         final List<String> sds = Arrays.asList("type1", "type2", "type3");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
                 ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
@@ -263,7 +261,7 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatRelevantConfigIsAvailableForClusterSearcher() throws ParseException, IOException, SAXException {
+    public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
         final List<String> sds = Arrays.asList("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, "index"),
                 ApplicationPackageUtils.generateSearchDefinitions(sds)).create();
@@ -336,7 +334,7 @@ public class DocumentDatabaseTestCase {
     }
 
     @Test
-    public void requireThatDocumentDBConfigIsAvailableForStreaming() throws ParseException, IOException, SAXException {
+    public void requireThatDocumentDBConfigIsAvailableForStreaming() {
         assertDocumentDBConfigAvailableForStreaming("streaming");
     }
 

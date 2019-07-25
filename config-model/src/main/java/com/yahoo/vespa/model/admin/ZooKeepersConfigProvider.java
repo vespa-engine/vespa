@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.cloud.config.ZookeepersConfig;
-import com.yahoo.config.model.api.ConfigServerSpec;
 
 import java.util.ArrayList;
 import java.util.List;

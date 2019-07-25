@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container.processing;
 
 import com.yahoo.component.chain.model.ChainedComponentModel;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 
 /**

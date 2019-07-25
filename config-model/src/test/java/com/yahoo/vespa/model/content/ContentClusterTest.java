@@ -695,7 +695,7 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void testConfiguredMetrics() throws Exception {
+    public void testConfiguredMetrics() {
         String xml = "" +
             "<services>" +
             "<content version=\"1.0\" id=\"storage\">\n" +

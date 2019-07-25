@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;

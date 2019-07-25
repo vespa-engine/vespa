@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.content.storagecluster;
 
 import com.yahoo.vespa.config.content.core.StorIntegritycheckerConfig;
-import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
@@ -20,9 +19,6 @@ public class IntegrityCheckerProducer implements StorIntegritycheckerConfig.Prod
     private Integer startTime;
     private Integer stopTime;
     private String weeklyCycle;
-
-    IntegrityCheckerProducer() {
-    }
 
     IntegrityCheckerProducer(Integer startTime, Integer stopTime, String weeklyCycle) {
         this.startTime = startTime;

@@ -20,7 +20,7 @@ public class SearchChainsTest2 {
     private MockRoot root;
 
     @Before
-    public void prepareTest() throws Exception {
+    public void prepareTest() {
         root = new MockRoot("root");
     }
 
