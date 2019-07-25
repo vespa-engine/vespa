@@ -1,18 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 /**
  * Tool to verify that configs across multiple config servers are the same.
@@ -33,11 +38,13 @@ public class ConfigVerification {
         for (String arg : args) {
             configservers.add(prefix + arg + ":" + port + "/config/v2/tenant/" + tenant + "/application/" + appName + "/environment/" + environment + "/region/" + region + "/instance/" + instance + "/?recursive=true");
         }
-        System.exit(compareConfigs(listConfigs(configservers)));
+        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.createWithBasicConnectionManager().build()) {
+            System.exit(compareConfigs(listConfigs(configservers, httpClient), httpClient));
+        }
     }
 
-    private static Map<String, Stack<String>> listConfigs(List<String> urls) throws IOException {
-        Map<String, String> outputs = performRequests(urls);
+    private static Map<String, Stack<String>> listConfigs(List<String> urls, CloseableHttpClient httpClient) throws IOException {
+        Map<String, String> outputs = performRequests(urls, httpClient);
 
         Map<String, Stack<String>> recurseMappings = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : outputs.entrySet()) {
@@ -57,21 +64,21 @@ public class ConfigVerification {
         return recurseMappings;
     }
 
-    private static Map<String, String> performRequests(List<String> urls) throws IOException {
+    private static Map<String, String> performRequests(List<String> urls, CloseableHttpClient httpClient) throws IOException {
         Map<String, String> outputs = new LinkedHashMap<>();
         for (String url : urls) {
-            outputs.put(url, performRequest(url));
+            outputs.put(url, performRequest(url, httpClient));
         }
         return outputs;
     }
 
-    private static int compareConfigs(Map<String, Stack<String>> mappings) throws IOException {
+    private static int compareConfigs(Map<String, Stack<String>> mappings, CloseableHttpClient httpClient) throws IOException {
         for (int n = 0; n < mappings.values().iterator().next().size(); n++) {
             List<String> recurseUrls = new ArrayList<>();
             for (Map.Entry<String, Stack<String>> entry : mappings.entrySet()) {
                 recurseUrls.add(entry.getValue().pop());
             }
-            int ret = compareOutputs(performRequests(recurseUrls));
+            int ret = compareOutputs(performRequests(recurseUrls, httpClient));
             if (ret != 0) {
                 return ret;
             }
@@ -90,14 +97,7 @@ public class ConfigVerification {
         return 0;
     }
 
-    private static String performRequest(String url) throws IOException {
-        URLConnection connection = new URL(url).openConnection();
-        InputStream response = connection.getInputStream();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int ch;
-        while ((ch = response.read()) > -1) {
-            baos.write(ch);
-        }
-        return Utf8.toString(baos.toByteArray());
+    private static String performRequest(String url, CloseableHttpClient httpClient) throws IOException {
+        return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
     }
 }
