@@ -99,6 +99,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private final ExecutionFactory executionFactory;
 
+    private final boolean enableGroupingSessionCache;
+
     private final class MeanConnections implements Callback {
 
         @Override
@@ -122,6 +124,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          ExecutionFactory executionFactory) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
+        this.enableGroupingSessionCache = queryProfileConfig.enableGroupingSessionCache();
         QueryProfileRegistry queryProfileRegistry = QueryProfileConfigurer.createFromConfig(queryProfileConfig);
         this.queryProfileRegistry = queryProfileRegistry.compile();
         this.executionFactory = executionFactory;
@@ -232,6 +235,9 @@ public class SearchHandler extends LoggingRequestHandler {
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
         Query query = new Query(request, requestMap, queryProfile);
+        if (enableGroupingSessionCache) {
+            query.setGroupingSessionCache(true);
+        }
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());

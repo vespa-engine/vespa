@@ -1,20 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.pagetemplates.PageTemplatesConfig;
+import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.search.query.profile.config.QueryProfilesConfig;
-import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -40,6 +40,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     private final List<AbstractSearchCluster> systems = new LinkedList<>();
     private final Options options;
+    private final boolean enableGroupingSessionCache;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -51,6 +52,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
         // TODO: Should be added to container instead of cluster to get proper configId for qr config.
         cluster.addComponent(getFS4ResourcePool());
+        this.enableGroupingSessionCache = cluster.enableGroupingSessionCache();
     }
 
     private static Component<?, ComponentModel> getFS4ResourcePool() {
@@ -97,7 +99,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     @Override
     public void getConfig(QueryProfilesConfig.Builder builder) {
-        if (queryProfiles!=null) queryProfiles.getConfig(builder);
+        if (queryProfiles!=null) {
+            queryProfiles.getConfig(builder);
+            builder.enableGroupingSessionCache(enableGroupingSessionCache);
+        }
     }
 
     @Override
