@@ -2,7 +2,7 @@ package com.yahoo.vespa.orchestrator.controller;
 
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
+import com.yahoo.vespa.jaxrs.client.VespaJerseyJaxRsClientFactory;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,7 +27,7 @@ public class RetryingClusterControllerClientFactoryTest {
 
     @Test
     public void verifyJerseyCallForSetNodeState() throws IOException {
-        JaxRsClientFactory clientFactory = mock(JaxRsClientFactory.class);
+        VespaJerseyJaxRsClientFactory clientFactory = mock(VespaJerseyJaxRsClientFactory.class);
         ClusterControllerJaxRsApi api = mock(ClusterControllerJaxRsApi.class);
         when(clientFactory.createClient(any())).thenReturn(api);
         RetryingClusterControllerClientFactory factory = new RetryingClusterControllerClientFactory(clientFactory);

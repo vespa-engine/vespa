@@ -2,11 +2,11 @@
 package com.yahoo.vespa.orchestrator.controller;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.jaxrs.client.JaxRsClientFactory;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategy;
 import com.yahoo.vespa.jaxrs.client.JaxRsStrategyFactory;
-import com.yahoo.vespa.jaxrs.client.JerseyJaxRsClientFactory;
+import com.yahoo.vespa.jaxrs.client.VespaJerseyJaxRsClientFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,21 +14,21 @@ import java.util.List;
 /**
  * @author bakksjo
  */
-public class RetryingClusterControllerClientFactory implements ClusterControllerClientFactory {
+public class RetryingClusterControllerClientFactory extends AbstractComponent implements ClusterControllerClientFactory {
 
     // TODO: Figure this port out dynamically.
     public static final int HARDCODED_CLUSTERCONTROLLER_PORT = 19050;
     public static final String CLUSTERCONTROLLER_API_PATH = "/";
     public static final String CLUSTERCONTROLLER_SCHEME = "http";
 
-    private JaxRsClientFactory jaxRsClientFactory;
+    private final VespaJerseyJaxRsClientFactory jaxRsClientFactory;
 
     @Inject
     public RetryingClusterControllerClientFactory() {
-        this(new JerseyJaxRsClientFactory());
+        this(new VespaJerseyJaxRsClientFactory("orchestrator-cluster-controller-client"));
     }
 
-    public RetryingClusterControllerClientFactory(JaxRsClientFactory jaxRsClientFactory) {
+    RetryingClusterControllerClientFactory(VespaJerseyJaxRsClientFactory jaxRsClientFactory) {
         this.jaxRsClientFactory = jaxRsClientFactory;
     }
 
@@ -49,5 +49,10 @@ public class RetryingClusterControllerClientFactory implements ClusterController
                         // If there's only 1 CC, we'll try that one twice.
                         .setMaxIterations(clusterControllers.size() > 1 ? 1 : 2);
         return new ClusterControllerClientImpl(jaxRsApi, clusterName);
+    }
+
+    @Override
+    public void deconstruct() {
+        jaxRsClientFactory.close();
     }
 }
