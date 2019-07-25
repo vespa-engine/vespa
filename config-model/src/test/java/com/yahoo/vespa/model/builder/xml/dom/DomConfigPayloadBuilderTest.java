@@ -17,7 +17,12 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;

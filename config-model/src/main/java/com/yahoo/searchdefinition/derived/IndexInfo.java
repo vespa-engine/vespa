@@ -10,7 +10,8 @@ import com.yahoo.searchdefinition.processing.NGramMatch;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Per-index commands which should be applied to queries prior to searching

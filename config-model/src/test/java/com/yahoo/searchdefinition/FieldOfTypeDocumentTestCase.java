@@ -1,7 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentTypeManagerConfigurer;
+import com.yahoo.document.Field;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.derived.Deriver;
 import org.junit.Test;
