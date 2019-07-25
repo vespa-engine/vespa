@@ -284,23 +284,11 @@ public class ConfigCurator {
      * Puts config definition data and metadata into ZK.
      *
      * @param name    The config definition name (including namespace)
-     * @param version The config definition version
      * @param path    /zoopath
      * @param data    The contents to write to ZK (as a byte array)
      */
-    public void putDefData(String name, String version, String path, byte[] data) {
-        if (version == null) {
+    public void putDefData(String name, String path, byte[] data) {
             putData(path, name, data);
-        } else {
-            String fullPath = createFullPath(path, name + "," + version);
-            if (exists(fullPath)) {
-                // TODO This should not happen when all the compatibility hacks in 5.1 have been removed
-                log.log(LogLevel.INFO, "There already exists a config definition '" + name + "', skipping feeding this one to ZooKeeper");
-            }
-            else {
-                putData(fullPath, data);
-            }
-        }
     }
 
     /**
