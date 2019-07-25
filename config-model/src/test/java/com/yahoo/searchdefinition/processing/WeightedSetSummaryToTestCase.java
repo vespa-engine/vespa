@@ -5,12 +5,10 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.vespa.documentmodel.DocumentSummary;
 import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /** @author bratseth */

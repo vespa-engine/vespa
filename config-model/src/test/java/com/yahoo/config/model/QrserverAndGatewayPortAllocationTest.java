@@ -6,14 +6,11 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that qrserver is assigned port Defaults.getDefaults().vespaWebServicePort() even if there is a HTTP gateway configured earlier in
@@ -24,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class QrserverAndGatewayPortAllocationTest {
 
     @Test
-    public void testPorts() throws IOException, SAXException {
+    public void testPorts() {
         String appDir = "src/test/cfg/application/app_qrserverandgw/";
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg(appDir);
         VespaModel vespaModel = creator.create();

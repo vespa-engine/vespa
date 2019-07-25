@@ -8,17 +8,12 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryField.Source;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /*
  * Adjusts position summary fields by adding derived summary fields (.distance and .position) and setting summary

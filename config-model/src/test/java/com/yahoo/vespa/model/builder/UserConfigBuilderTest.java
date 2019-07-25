@@ -17,10 +17,8 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
@@ -40,7 +38,7 @@ public class UserConfigBuilderTest {
     };
 
     @Test
-    public void require_that_simple_config_is_resolved() throws ParserConfigurationException, IOException, SAXException {
+    public void require_that_simple_config_is_resolved() throws ParserConfigurationException {
         Element configRoot = getDocument("<config name=\"simpletypes\">" +
                                          "    <intval>13</intval>" +
                                          "</config>" +
@@ -62,7 +60,7 @@ public class UserConfigBuilderTest {
 
 
     @Test
-    public void require_that_arrays_config_is_resolved() throws ParserConfigurationException, IOException, SAXException {
+    public void require_that_arrays_config_is_resolved() throws ParserConfigurationException {
         Element configRoot = getDocument("<config name=\"arraytypes\">" +
                 "    <intarr operation=\"append\">13</intarr>" +
                 "    <intarr operation=\"append\">10</intarr>" +
@@ -80,7 +78,7 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void require_that_arrays_of_structs_are_resolved() throws ParserConfigurationException, IOException, SAXException {
+    public void require_that_arrays_of_structs_are_resolved() throws ParserConfigurationException {
         Element configRoot = getDocument(
                 "  <config name='vespa.configdefinition.specialtokens'>" +
                         "    <tokenlist operation='append'>" +
@@ -107,7 +105,7 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void no_exception_when_config_class_does_not_exist() throws ParserConfigurationException, IOException, SAXException {
+    public void no_exception_when_config_class_does_not_exist() throws ParserConfigurationException {
         Element configRoot = getDocument("<config name=\"unknown\">" +
                 "    <foo>1</foo>" +
                 "</config>");
@@ -116,7 +114,7 @@ public class UserConfigBuilderTest {
         assertNotNull(builder);
     }
 
-    private Element getDocument(String xml) throws ParserConfigurationException {
+    private Element getDocument(String xml) {
         Reader xmlReader = new StringReader("<model>" + xml + "</model>");
         Document doc;
         try {

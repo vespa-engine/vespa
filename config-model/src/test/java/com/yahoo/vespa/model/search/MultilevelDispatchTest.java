@@ -169,7 +169,6 @@ public class MultilevelDispatchTest {
     @Test
     public void requireThatMaxHitsIsScaled() throws Exception {
         ContentCluster cr = createCluster(getSimpleDispatchXml() + getMaxhitsTuning());
-        IndexedSearchCluster ix = cr.getSearch().getIndexed();
         Dispatch tld = cr.getSearch().getIndexed().getTLDs().get(0);
         PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
         tld.getConfig(builder);
@@ -213,7 +212,7 @@ public class MultilevelDispatchTest {
     }
 
     @Test
-    public void requireThatSearchCoverageIsSetInSingleLevelSetup() throws Exception {
+    public void requireThatSearchCoverageIsSetInSingleLevelSetup() {
         TestRoot root = new TestDriver(true).buildModel(new MockApplicationPackage.Builder()
                                                                 .withServices("<services version='1.0'>" +
                                                                                       "<content id='stateful' version='1.0'>" +
@@ -370,7 +369,7 @@ public class MultilevelDispatchTest {
     }
 
     @Test
-    public void requireThatWeReferenceValidNodesWhenSettingUpDispatchGroups() throws Exception {
+    public void requireThatWeReferenceValidNodesWhenSettingUpDispatchGroups() {
         try {
             createIllegalSetupWithIllegalNodeReference();
             assertFalse("Did not get expected Exception", true);

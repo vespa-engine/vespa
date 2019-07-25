@@ -3,22 +3,13 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.ConfigChangeRefeedAction;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -27,7 +18,7 @@ import static org.junit.Assert.fail;
 public class ClusterSizeReductionValidatorTest {
 
     @Test
-    public void testSizeReductionValidation() throws IOException, SAXException {
+    public void testSizeReductionValidation() {
         ValidationTester tester = new ValidationTester(30);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
@@ -43,7 +34,7 @@ public class ClusterSizeReductionValidatorTest {
     }
 
     @Test
-    public void testSizeReductionValidationMinimalDecreaseIsAllowed() throws IOException, SAXException {
+    public void testSizeReductionValidationMinimalDecreaseIsAllowed() {
         ValidationTester tester = new ValidationTester(30);
 
         VespaModel previous = tester.deploy(null, getServices(3), Environment.prod, null).getFirst();
@@ -61,7 +52,7 @@ public class ClusterSizeReductionValidatorTest {
     */
 
     @Test
-    public void testOverridingSizereductionValidation() throws IOException, SAXException {
+    public void testOverridingSizereductionValidation() {
         ValidationTester tester = new ValidationTester(30);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();

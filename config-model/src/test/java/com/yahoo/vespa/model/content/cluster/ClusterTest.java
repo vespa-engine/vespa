@@ -4,14 +4,11 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
-import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.SearchDefinition;
 import com.yahoo.vespa.model.search.Dispatch;
+import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.junit.Test;
 
@@ -42,7 +39,7 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatSearchCoverageIsApplied() throws ParseException {
+    public void requireThatSearchCoverageIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <coverage>",
                 "    <minimum>0.11</minimum>",
@@ -140,13 +137,6 @@ public class ClusterTest {
 
     private static String getDocumentXml(boolean globalDocType) {
         return "<document mode='index' type='my_document' " + (globalDocType ? "global='true' " : "") + "/>";
-    }
-
-    private static SearchDefinition newSearchDefinition(String name) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
-        builder.importString("search " + name + " { document " + name + " { } }");
-        builder.build();
-        return new SearchDefinition(name, builder.getSearch(name));
     }
 
     private static ProtonConfig getProtonConfig(ContentCluster cluster) {

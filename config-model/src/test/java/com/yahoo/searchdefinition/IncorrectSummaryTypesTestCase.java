@@ -4,8 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
-import java.io.IOException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 /**
@@ -15,7 +13,7 @@ import static org.junit.Assert.fail;
  */
 public class IncorrectSummaryTypesTestCase extends SearchDefinitionTestCase {
     @Test
-    public void testImportingIncorrect() throws IOException, ParseException {
+    public void testImportingIncorrect() throws ParseException {
         try {
             SearchBuilder.createFromString(
                     "search incorrectsummarytypes {\n" +

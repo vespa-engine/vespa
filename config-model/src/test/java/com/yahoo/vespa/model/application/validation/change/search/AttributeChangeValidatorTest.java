@@ -10,7 +10,6 @@ import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
-import static org.junit.Assert.assertEquals;
 
 public class AttributeChangeValidatorTest {
 

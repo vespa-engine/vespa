@@ -8,7 +8,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.ArrayList;
 import java.util.Collection;

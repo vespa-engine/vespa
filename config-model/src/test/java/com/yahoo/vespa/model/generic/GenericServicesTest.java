@@ -2,17 +2,9 @@
 package com.yahoo.vespa.model.generic;
 
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.GenericConfig;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.generic.service.Service;
-import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -40,7 +32,7 @@ public class GenericServicesTest {
     }
 
     @Test
-    public void testServicesSentinelConfig() throws IOException, SAXException {
+    public void testServicesSentinelConfig() {
         String sentinelConfigId1="hosts/bogusname1/sentinel";
         String sentinelConfigId2="hosts/bogusname2/sentinel";
         String sentinelConfigId3="hosts/bogusname3/sentinel";
@@ -72,7 +64,7 @@ public class GenericServicesTest {
     }
 
     @Test
-    public void testServicesModel() throws IOException, SAXException {
+    public void testServicesModel() {
         // Testing that this model can be constructed only for now
     }
 

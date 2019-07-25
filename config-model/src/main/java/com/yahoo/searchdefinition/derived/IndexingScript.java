@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;

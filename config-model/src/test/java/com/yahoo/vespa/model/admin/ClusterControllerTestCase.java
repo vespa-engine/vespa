@@ -95,7 +95,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSeparateHostsRequired() throws Exception {
+    public void testSeparateHostsRequired() {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -122,7 +122,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSeparateHostsFromConfigServerRequired() throws Exception {
+    public void testSeparateHostsFromConfigServerRequired() {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -150,7 +150,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     @Test
-    public void testStandaloneZooKeeper() throws Exception {
+    public void testStandaloneZooKeeper() {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +

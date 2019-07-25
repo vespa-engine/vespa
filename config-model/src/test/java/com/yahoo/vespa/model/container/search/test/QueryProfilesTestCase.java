@@ -1,26 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search.test;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
-import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
-import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
 import static org.junit.Assert.assertEquals;

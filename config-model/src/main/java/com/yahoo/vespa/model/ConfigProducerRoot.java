@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;

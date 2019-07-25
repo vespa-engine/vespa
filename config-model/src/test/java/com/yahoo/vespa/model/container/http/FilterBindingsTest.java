@@ -11,9 +11,6 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 import static com.yahoo.collections.CollectionUtil.first;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,7 +32,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     }
 
 
-    private void buildContainerCluster(Element containerElem) throws SAXException, IOException {
+    private void buildContainerCluster(Element containerElem) {
         ContainerModel model = new ContainerModelBuilder(true, Networking.enable).build(DeployState.createTestState(), null, null, root, containerElem);
         root.freezeModelTopology();
     }

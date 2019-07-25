@@ -3,13 +3,12 @@ package com.yahoo.vespa.model.container.docproc;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.config.docproc.DocprocConfig;
-import com.yahoo.container.jdisc.config.SessionConfig;
-import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
+import com.yahoo.container.jdisc.ContainerMbusConfig;
+import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.HashMap;
@@ -18,7 +17,6 @@ import java.util.Map;
 /**
  * @author einarmr
  * @author gjoranv
- * @since 5.1.9
  */
 public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         implements 
@@ -70,16 +68,8 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         return preferLocalNode;
     }
 
-    public void setPreferLocalNode(boolean preferLocalNode) {
-        this.preferLocalNode = preferLocalNode;
-    }
-
     public int getNumNodesPerClient() {
         return numNodesPerClient;
-    }
-
-    public void setNumNodesPerClient(int numNodesPerClient) {
-        this.numNodesPerClient = numNodesPerClient;
     }
 
     @Override
@@ -116,10 +106,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         }
     }
     
-    public ProcessingHandler<DocprocChains> getDocprocHandler() {
-        return getChains().getDocprocHandler();
-    }
-
     @Override
     public void getConfig(SchemamappingConfig.Builder builder) {
         Map<Pair<String, String>, String> allMappings = new HashMap<>();

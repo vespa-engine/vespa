@@ -7,14 +7,11 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.FieldSet;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 

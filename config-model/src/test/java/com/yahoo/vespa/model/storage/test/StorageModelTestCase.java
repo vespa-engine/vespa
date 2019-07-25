@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 public class StorageModelTestCase {
 
     @Test(expected=RuntimeException.class)
-    public void testTwoClustersSameName() throws Exception {
+    public void testTwoClustersSameName() {
         createModel("src/test/cfg/storage/twoclusterssamename");
     }
 
@@ -31,7 +31,7 @@ public class StorageModelTestCase {
     }
 
     @Test
-    public void testIndexGreaterThanNumNodes() throws Exception {
+    public void testIndexGreaterThanNumNodes() {
         VespaModel vespaModel = createModel("src/test/cfg/storage/app_index_higher_than_num_nodes");
 
         // Test fleet controller config
@@ -43,7 +43,7 @@ public class StorageModelTestCase {
     }
 
     @Test
-    public void testMetricsSnapshotIntervalYAMAS() throws Exception {
+    public void testMetricsSnapshotIntervalYAMAS() {
         VespaModel vespaModel = createModel("src/test/cfg/storage/clustercontroller_advanced");
         ContentCluster contentCluster = vespaModel.getContentClusters().values().iterator().next();
         assertNotNull(contentCluster);

@@ -396,7 +396,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void nested_components_are_injected_to_handlers() throws Exception {
+    public void nested_components_are_injected_to_handlers() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <handler id='myHandler'>",

@@ -77,7 +77,7 @@ public class ContentClusterBuilder {
         return this;
     }
 
-    public ContentCluster build(MockRoot root) throws Exception {
+    public ContentCluster build(MockRoot root) {
         return ContentClusterUtils.createCluster(getXml(), root);
     }
 

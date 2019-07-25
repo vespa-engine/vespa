@@ -341,7 +341,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         @Override
-        public Reader createReader() throws FileNotFoundException {
+        public Reader createReader() {
             try {
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
                 return IOUtils.createReader(file, "UTF-8");
@@ -352,7 +352,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         @Override
-        public InputStream createInputStream() throws FileNotFoundException {
+        public InputStream createInputStream() {
             try {
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
                 return new BufferedInputStream(new FileInputStream(file));

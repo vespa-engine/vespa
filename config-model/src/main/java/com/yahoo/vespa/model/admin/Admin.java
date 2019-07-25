@@ -119,8 +119,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return configservers;
     }
 
-    public void removeSlobroks() { slobroks.clear(); }
-
     /** Returns an immutable list of the slobroks in this */
     public List<Slobrok> getSlobroks() { return Collections.unmodifiableList(slobroks); }
 

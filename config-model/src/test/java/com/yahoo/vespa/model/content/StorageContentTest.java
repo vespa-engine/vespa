@@ -4,16 +4,13 @@ package com.yahoo.vespa.model.content;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -44,7 +41,7 @@ public class StorageContentTest extends ContentBaseTest {
                 "</services>";
     }
 
-    private VespaModel getStorageVespaModel(String cluster1docs, String cluster2docs) throws ParseException, IOException, SAXException {
+    private VespaModel getStorageVespaModel(String cluster1docs, String cluster2docs) {
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2", "type3");
         return new VespaModelCreatorWithMockPkg(getHosts(), createStorageVespaServices(cluster1docs, cluster2docs), sds).create();
     }

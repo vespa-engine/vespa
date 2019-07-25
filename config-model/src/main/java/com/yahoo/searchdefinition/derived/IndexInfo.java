@@ -11,7 +11,6 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Per-index commands which should be applied to queries prior to searching

@@ -8,7 +8,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.derived.SearchOrderer;

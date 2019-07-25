@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.MB;
 import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
 

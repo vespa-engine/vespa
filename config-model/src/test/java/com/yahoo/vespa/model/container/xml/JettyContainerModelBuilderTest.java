@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void verify_that_overriding_connector_options_works() throws Exception {
+    public void verify_that_overriding_connector_options_works() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>\n" +
                 "  <http>\n" +
@@ -56,7 +56,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_enabling_jetty_works() throws Exception {
+    public void verify_that_enabling_jetty_works() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>" +
                         nodesXml +
@@ -67,7 +67,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_enabling_jetty_works_for_custom_http_servers() throws Exception {
+    public void verify_that_enabling_jetty_works_for_custom_http_servers() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <http>",
@@ -80,7 +80,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verifyThatJettyHttpServerHasFilterBindingsProvider() throws Exception {
+    public void verifyThatJettyHttpServerHasFilterBindingsProvider() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 nodesXml,
@@ -101,7 +101,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() throws Exception {
+    public void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<container id='default' version='1.0'>",
                 "  <http>",

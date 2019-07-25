@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.producer;
 
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,7 +14,6 @@ import java.util.Set;
  * how the user configs are stored, and defines the methods to retrieve user configs and merge the repo with others.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class UserConfigRepo {
     private final Map<ConfigDefinitionKey, ConfigPayloadBuilder> userConfigsMap;
@@ -44,10 +43,6 @@ public class UserConfigRepo {
 
     public UserConfigRepo(Map<ConfigDefinitionKey, ConfigPayloadBuilder> map) {
         this.userConfigsMap = map;
-    }
-
-    public UserConfigRepo(UserConfigRepo userConfigRepo) {
-        this.userConfigsMap = userConfigRepo.userConfigsMap;
     }
 
     public ConfigPayloadBuilder get(ConfigDefinitionKey key) {

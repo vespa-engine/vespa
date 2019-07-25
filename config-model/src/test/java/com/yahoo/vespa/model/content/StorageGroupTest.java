@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class StorageGroupTest {
 
-    ContentCluster parse(String xml) throws Exception {
+    ContentCluster parse(String xml) {
         return ContentClusterUtils.createCluster(xml, new MockRoot());
     }
 

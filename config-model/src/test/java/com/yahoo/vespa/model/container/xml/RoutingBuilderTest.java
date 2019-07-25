@@ -64,7 +64,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
     }
 
 
-    private ApplicationContainer getContainer(ApplicationPackage applicationPackage, String region, Element clusterElem) throws IOException, SAXException {
+    private ApplicationContainer getContainer(ApplicationPackage applicationPackage, String region, Element clusterElem) {
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .zone(new Zone(Environment.prod, RegionName.from(region)))

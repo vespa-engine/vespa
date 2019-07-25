@@ -18,7 +18,6 @@ import org.xml.sax.InputSource;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.ArrayList;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -155,7 +154,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailWrongTagName()  throws FileNotFoundException, ParserConfigurationException {
+    public void testFailWrongTagName() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<configs name=\"foo\"/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -168,7 +167,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailNoNameAttribute()  throws FileNotFoundException, ParserConfigurationException {
+    public void testFailNoNameAttribute() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -180,7 +179,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void testNamespace() throws FileNotFoundException, ParserConfigurationException {
+    public void testNamespace() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config name=\"function-test\" namespace=\"config\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -201,7 +200,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void testNameParsing() throws FileNotFoundException, ParserConfigurationException {
+    public void testNameParsing() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config name=\"function-test\" version=\"1\" namespace=\"config\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -226,7 +225,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidName() throws FileNotFoundException, ParserConfigurationException {
+    public void testNameParsingInvalidName() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config name=\" function-test\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -234,7 +233,7 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidNamespace() throws FileNotFoundException, ParserConfigurationException {
+    public void testNameParsingInvalidNamespace() throws ParserConfigurationException {
         Element configRoot = getDocument(new StringReader("<config name=\"function-test\" namespace=\"_foo\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -309,7 +308,7 @@ public class DomConfigPayloadBuilderTest {
         //assertThat(builder.warnings().size(), is(1));
     }
 
-    private Element getDocument(Reader xmlReader) throws ParserConfigurationException {
+    private Element getDocument(Reader xmlReader) {
         Document doc;
         try {
             doc = XmlHelper.getDocumentBuilder().parse(new InputSource(xmlReader));

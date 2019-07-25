@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;

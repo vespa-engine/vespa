@@ -8,9 +8,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class IndexingModeChangeValidatorTest {
 
     @Test
-    public void testChangingIndexMode() throws IOException, SAXException {
+    public void testChangingIndexMode() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =

@@ -3,9 +3,7 @@ package com.yahoo.searchdefinition.expressiontransforms;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
 

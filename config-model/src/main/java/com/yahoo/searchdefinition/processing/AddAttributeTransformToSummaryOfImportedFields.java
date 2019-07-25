@@ -6,11 +6,9 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableImportedComplexSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 
 import java.util.stream.Stream;
 

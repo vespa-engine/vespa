@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;

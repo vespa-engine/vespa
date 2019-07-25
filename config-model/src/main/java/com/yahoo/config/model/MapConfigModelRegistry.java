@@ -5,20 +5,19 @@ import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.log.LogLevel;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
 
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class MapConfigModelRegistry extends ConfigModelRegistry {
 
-    private static final Logger log = Logger.getLogger(MapConfigModelRegistry.class.getPackage().getName());
     private final List<ConfigModelBuilder> builders;
 
     /**

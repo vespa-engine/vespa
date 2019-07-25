@@ -48,8 +48,4 @@ public class ApplicationPackageTester {
         return new ApplicationPackageTester(applicationPackageDir, true);
     }
 
-    public static ApplicationPackageTester createWithoutValidation(String applicationPackageDir) {
-        return new ApplicationPackageTester(applicationPackageDir, false);
-    }
-
 }

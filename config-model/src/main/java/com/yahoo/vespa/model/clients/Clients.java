@@ -4,14 +4,8 @@ package com.yahoo.vespa.model.clients;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.vespa.model.container.ContainerCluster;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * This is the clients plugin for the Vespa model. It is responsible for creating

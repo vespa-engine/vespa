@@ -6,7 +6,6 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;

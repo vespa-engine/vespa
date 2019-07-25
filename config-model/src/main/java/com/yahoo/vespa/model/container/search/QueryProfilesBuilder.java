@@ -6,7 +6,6 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.config.application.api.ApplicationPackage;
 
-import java.util.Collections;
 import java.util.List;
 
 /**

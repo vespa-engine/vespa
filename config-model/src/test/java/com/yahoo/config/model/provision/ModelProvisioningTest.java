@@ -14,7 +14,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -609,7 +608,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testClusterControllersCanSupplementWithAllContainerClusters() throws ParseException {
+    public void testClusterControllersCanSupplementWithAllContainerClusters() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
@@ -1029,7 +1028,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testUsingNodesAndGroupCountAttributesAndGettingJustOneNode() throws ParseException {
+    public void testUsingNodesAndGroupCountAttributesAndGettingJustOneNode() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -1069,7 +1068,7 @@ public class ModelProvisioningTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRequiringMoreNodesThanAreAvailable() throws ParseException {
+    public void testRequiringMoreNodesThanAreAvailable() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +

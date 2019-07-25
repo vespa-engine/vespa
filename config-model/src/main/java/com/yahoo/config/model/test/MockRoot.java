@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;

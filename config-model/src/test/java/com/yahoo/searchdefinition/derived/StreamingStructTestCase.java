@@ -4,9 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * Tests VSM configuration deriving for structs

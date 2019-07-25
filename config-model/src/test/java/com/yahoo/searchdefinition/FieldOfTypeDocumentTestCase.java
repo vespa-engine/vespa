@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.document.*;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.derived.Deriver;
-import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ import static org.junit.Assert.assertSame;
 public class FieldOfTypeDocumentTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testDocument() throws IOException, ParseException {
+    public void testDocument() throws IOException {
 
         List<String> sds = new ArrayList<>();
         sds.add("src/test/examples/music.sd");

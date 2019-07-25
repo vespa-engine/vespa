@@ -117,7 +117,7 @@ public class ContainerIncludeTest {
     }
 
     @Test
-    public void included_file_with_xml_schema_violation() throws Exception {
+    public void included_file_with_xml_schema_violation() {
         try {
             VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/container/data/include_xml_error/");
             creator.create(true);

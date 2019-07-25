@@ -104,7 +104,7 @@ public class RestApiTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void all_non_restApi_components_are_injected_to_RestApiContext() throws Exception {
+    public void all_non_restApi_components_are_injected_to_RestApiContext() {
         ComponentsConfig componentsConfig = root.getConfig(ComponentsConfig.class, CLUSTER_ID);
 
         Set<ComponentId> clusterChildrenComponentIds = getContainerCluster(CLUSTER_ID).getAllComponents().stream()

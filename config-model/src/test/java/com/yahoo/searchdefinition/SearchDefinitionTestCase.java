@@ -5,12 +5,10 @@ import com.yahoo.io.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 
 import static helpers.CompareConfigTestHelper.assertSerializedConfigEquals;
 import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
-import static org.junit.Assert.assertEquals;
 
 public abstract class SearchDefinitionTestCase {
 

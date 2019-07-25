@@ -4,8 +4,6 @@ package com.yahoo.searchdefinition.derived.validation;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 
-import java.util.logging.Logger;
-
 /**
  * @author mathiasm
  */

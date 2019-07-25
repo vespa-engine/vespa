@@ -149,7 +149,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
     }
 
     @Test
-    public void noContentClustersOneDocprocCluster() throws ParseException, IOException, SAXException {
+    public void noContentClustersOneDocprocCluster() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services version='1.0'>\n" +
@@ -447,14 +447,12 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                 searchClusterPost, searchClusterPostPost, mainPost, searchClusterSpecs);
     }
 
-    private VespaModel getIndexedSearchVespaModel(String xml)
-            throws ParseException, IOException, SAXException {
+    private VespaModel getIndexedSearchVespaModel(String xml) {
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("music", "album", "artist");
         return new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
     }
 
-    private VespaModel getIndexedContentVespaModel(List<DocprocClusterSpec> docprocClusterSpecs, List<SearchClusterSpec> searchClusterSpecs)
-            throws ParseException, IOException, SAXException {
+    private VespaModel getIndexedContentVespaModel(List<DocprocClusterSpec> docprocClusterSpecs, List<SearchClusterSpec> searchClusterSpecs) {
         List<String> sds = new ArrayList<>();
 
         for (SearchClusterSpec cluster : searchClusterSpecs) {

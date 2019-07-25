@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 public class PortsMetaTestCase {
 
     @Test
-    public void testRegister() throws Exception {
+    public void testRegister() {
         PortsMeta pm = new PortsMeta();
         pm.on(0).tag("foo");
         pm.on(1).tag("bar");
@@ -31,7 +31,7 @@ public class PortsMetaTestCase {
     }
 
     @Test
-    public void testAdminStatusApi() throws Exception {
+    public void testAdminStatusApi() {
         PortsMeta pm = new PortsMeta()
                 .on(0).tag("rpc").tag("nc").tag("admin").tag("status")
                 .on(1).tag("rpc").tag("rtx").tag("admin").tag("status")

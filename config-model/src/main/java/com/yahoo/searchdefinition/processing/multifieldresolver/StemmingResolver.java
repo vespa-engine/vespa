@@ -2,14 +2,9 @@
 package com.yahoo.searchdefinition.processing.multifieldresolver;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.language.Linguistics;
-import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
-import com.yahoo.searchdefinition.processing.BuiltInFieldSets;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
-import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 
 import java.util.List;
 import java.util.logging.Level;

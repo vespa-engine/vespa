@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Owns the query profiles and query profile types to be handed to the qrs nodes.

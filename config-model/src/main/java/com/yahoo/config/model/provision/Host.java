@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Flavor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 

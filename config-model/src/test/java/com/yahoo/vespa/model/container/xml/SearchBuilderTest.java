@@ -93,14 +93,14 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
     // TODO: remove test when all containers are named 'container'
     @Test
-    public void cluster_with_only_search_gets_qrserver_as_service_name() throws Exception {
+    public void cluster_with_only_search_gets_qrserver_as_service_name() {
         createClusterWithOnlyDefaultChains();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
         assertThat(cluster.getContainers().get(0).getServiceName(), is(QRSERVER.serviceName));
     }
 
     @Test
-    public void empty_search_element_gives_default_chains() throws Exception {
+    public void empty_search_element_gives_default_chains() {
         createClusterWithOnlyDefaultChains();
         assertThat(chainsConfig().chains(), hasItemWithMethod("vespaPhases", "id"));
         assertThat(chainsConfig().chains(), hasItemWithMethod("native", "id"));
@@ -137,7 +137,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cluster_is_connected_to_content_clusters() throws Exception {
+    public void cluster_is_connected_to_content_clusters() {
         String hosts = hostsXml();
 
         String services = "" +
@@ -163,7 +163,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void cluster_is_connected_to_search_clusters() throws Exception {
+    public void cluster_is_connected_to_search_clusters() {
         String hosts = hostsXml();
 
         String services = "" +

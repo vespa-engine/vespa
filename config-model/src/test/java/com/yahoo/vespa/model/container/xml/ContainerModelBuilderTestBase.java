@@ -71,7 +71,7 @@ public abstract class ContainerModelBuilderTestBase {
     }
 
     @Before
-    public void prepareTest() throws Exception {
+    public void prepareTest() {
         root = new MockRoot("root");
     }
 
