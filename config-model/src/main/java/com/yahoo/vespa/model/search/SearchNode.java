@@ -54,6 +54,7 @@ public class SearchNode extends AbstractService implements
     private final boolean flushOnShutdown;
     private NodeSpec nodeSpec;
     private int distributionKey;
+    private int searchableCopies = 1;
     private final String clusterName;
     private TransactionLogServer tls;
     private AbstractService serviceLayerService;
@@ -139,6 +140,9 @@ public class SearchNode extends AbstractService implements
 
     private String getBaseDir() {
         return getDefaults().underVespaHome("var/db/vespa/search/cluster." + getClusterName()) + "/n" + distributionKey;
+    }
+    public void setSearchableCopies(int searchableCopies) {
+        this.searchableCopies = searchableCopies;
     }
 
     public void updatePartition(int partitionId) {
@@ -267,7 +271,7 @@ public class SearchNode extends AbstractService implements
         }
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             Flavor nodeFlavor = getHostResource().getFlavor().get();
-            NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(nodeFlavor);
+            NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(nodeFlavor, searchableCopies);
             nodeFlavorTuning.getConfig(builder);
 
             if (tuning.isPresent()) {

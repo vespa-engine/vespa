@@ -31,7 +31,7 @@ public class NodeFlavorTuningTest {
         assertEquals(24 * GB, cfg.hwinfo().memory().size());
     }
 
-    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, int gb) {
+    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, int gb, int searchableCopies) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         for (Pair<String, String> sdMode : sdAndMode) {
             builder.documentdb.add(new ProtonConfig.Documentdb.Builder()
@@ -39,18 +39,22 @@ public class NodeFlavorTuningTest {
                                    .configid("some/config/id/" + sdMode.getFirst())
                                    .mode(ProtonConfig.Documentdb.Mode.Enum.valueOf(sdMode.getSecond())));
         }
-        return configFromMemorySetting(gb, builder);
+        return configFromMemorySetting(gb, builder, searchableCopies);
     }
-    @Test
-    public void require_that_initial_numdocs_is_dependent_of_mode() {
-        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24);
+    private void verify_that_initial_numdocs_is_dependent_of_mode(int searchablecopies) {
+        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24, searchablecopies);
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());
-        assertEquals(402653184, cfg.documentdb(1).allocation().initialnumdocs());
+        assertEquals(402653184/searchablecopies, cfg.documentdb(1).allocation().initialnumdocs());
         assertEquals("b", cfg.documentdb(1).inputdoctypename());
-        assertEquals(402653184, cfg.documentdb(2).allocation().initialnumdocs());
+        assertEquals(402653184/searchablecopies, cfg.documentdb(2).allocation().initialnumdocs());
         assertEquals("c", cfg.documentdb(2).inputdoctypename());
+    }
+    @Test
+    public void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
+        verify_that_initial_numdocs_is_dependent_of_mode(1);
+        verify_that_initial_numdocs_is_dependent_of_mode(3);
     }
 
     @Test
@@ -169,9 +173,9 @@ public class NodeFlavorTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().
                 minMainMemoryAvailableGb(memoryGb));
     }
-    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder) {
+    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder, int searchableCopies) {
         return getConfig(new FlavorsConfig.Flavor.Builder().
-                minMainMemoryAvailableGb(memoryGb), builder);
+                minMainMemoryAvailableGb(memoryGb), builder, searchableCopies);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
@@ -184,16 +188,14 @@ public class NodeFlavorTuningTest {
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder) {
-        getConfig(flavorBuilder, new ProtonConfig.Builder());
-        flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
-        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
-        tuning.getConfig(protonBuilder);
-        return new ProtonConfig(protonBuilder);
+        return getConfig(flavorBuilder, new ProtonConfig.Builder());
     }
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
+        return getConfig(flavorBuilder, protonBuilder, 1);
+    }
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, int searchableCopies) {
         flavorBuilder.name("my_flavor");
-        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)));
+        NodeFlavorTuning tuning = new NodeFlavorTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)), searchableCopies);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
