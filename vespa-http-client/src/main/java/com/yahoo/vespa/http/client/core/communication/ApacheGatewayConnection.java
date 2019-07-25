@@ -406,7 +406,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             }
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
-            clientBuilder.setConnectionTimeToLive(15, TimeUnit.SECONDS);
+            clientBuilder.setConnectionTimeToLive(10, TimeUnit.MINUTES);
             clientBuilder.setUserAgent(String.format("vespa-http-client (%s)", Vtag.currentVersion));
             clientBuilder.setDefaultHeaders(Collections.singletonList(new BasicHeader(Headers.CLIENT_VERSION, Vtag.currentVersion)));
             clientBuilder.disableContentCompression();
