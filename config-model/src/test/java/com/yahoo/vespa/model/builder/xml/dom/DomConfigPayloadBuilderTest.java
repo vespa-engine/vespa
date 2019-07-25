@@ -16,7 +16,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -37,7 +36,7 @@ import static org.junit.Assert.fail;
 public class DomConfigPayloadBuilderTest {
 
     @Test
-    public void testFunctionTest_DefaultValues() throws FileNotFoundException, ParserConfigurationException {
+    public void testFunctionTest_DefaultValues() throws FileNotFoundException {
         Element configRoot = getDocument(new FileReader(new File("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml")));
         ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         String expected = ""
@@ -81,9 +80,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void put_to_leaf_map() throws Exception {
+    public void put_to_leaf_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"foobar\">" +
+                "<config name=\"test.foobar\">" +
                 "  <intmap>" +
                 "    <item key=\"bar\">1338</item>" +
                 "    <item key=\"foo\">1337</item>" +
@@ -94,9 +93,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void put_to_inner_map() throws Exception {
+    public void put_to_inner_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"foobar\">" +
+                "<config name=\"test.foobar\">" +
                 "  <innermap>" +
                 "    <item key=\"bar\">" +
                 "      <foo>baz</foo>" +
@@ -111,9 +110,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void put_to_nested_map() throws Exception {
+    public void put_to_nested_map() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"foobar\">" +
+                "<config name=\"test.foobar\">" +
                 "  <nestedmap>" +
                 "    <item key=\"bar\">" +
                 "      <inner>" +
@@ -136,10 +135,10 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void append_to_leaf_array() throws Exception {
+    public void append_to_leaf_array() {
         // Simulate user config from vespa-services.xml
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"function-test\">" +
+                "<config name=\"a.function-test\">" +
                 "  <intarr operation=\"append\">1</intarr>" +
                 "  <intarr operation=\"append\">2</intarr>" +
                 "</config> ");
@@ -148,9 +147,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void camel_case_via_dashes() throws Exception {
+    public void camel_case_via_dashes() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"function-test\">" +
+                "<config name=\"test.function-test\">" +
                 "  <some-struct> <any-value>17</any-value> </some-struct>" +
                 "</config> ");
         ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
@@ -159,7 +158,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailWrongTagName() throws ParserConfigurationException {
+    public void testFailWrongTagName() {
         Element configRoot = getDocument(new StringReader("<configs name=\"foo\"/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -172,7 +171,7 @@ public class DomConfigPayloadBuilderTest {
 
     // Verifies that an exception is thrown when the root element is not 'config'.
     @Test
-    public void testFailNoNameAttribute() throws ParserConfigurationException {
+    public void testFailNoNameAttribute() {
         Element configRoot = getDocument(new StringReader("<config/>"));
         try {
             new DomConfigPayloadBuilder(null).build(configRoot);
@@ -184,53 +183,17 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void testNamespace() throws ParserConfigurationException {
-        Element configRoot = getDocument(new StringReader("<config name=\"function-test\" namespace=\"config\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"int_val\":\"1\"}", config);
-
-        configRoot = getDocument(new StringReader("<config name=\"config.function-test\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"int_val\":\"1\"}", config);
-
-        configRoot = getDocument(new StringReader("<config name=\"config.function_test\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"int_val\":\"1\"}", config);
-    }
-
-    @Test
-    public void testNameParsing() throws ParserConfigurationException {
-        Element configRoot = getDocument(new StringReader("<config name=\"function-test\" version=\"1\" namespace=\"config\">" +
+    public void testNameParsing() {
+        Element configRoot = getDocument(new StringReader("<config name=\"test.function-test\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(configRoot);
         assertThat(key.getName(), is("function-test"));
-        assertThat(key.getNamespace(), is("config"));
-
-        configRoot = getDocument(new StringReader("<config name=\"function_test\" version=\"1\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        key = DomConfigPayloadBuilder.parseConfigName(configRoot);
-        assertThat(key.getName(), is("function_test"));
-        assertThat(key.getNamespace(), is("config"));
-
-        // Both namespace and name in name attribute
-        configRoot = getDocument(new StringReader("<config name=\"config.function-test\" version=\"1\">" +
-                "<int_val>1</int_val> +" +
-                "</config>"));
-        key = DomConfigPayloadBuilder.parseConfigName(configRoot);
-        assertThat(key.getName(), is("function-test"));
-        assertThat(key.getNamespace(), is("config"));
+        assertThat(key.getNamespace(), is("test"));
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidName() throws ParserConfigurationException {
+    public void testNameParsingInvalidName() {
         Element configRoot = getDocument(new StringReader("<config name=\" function-test\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
@@ -238,17 +201,17 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
-    public void testNameParsingInvalidNamespace() throws ParserConfigurationException {
-        Element configRoot = getDocument(new StringReader("<config name=\"function-test\" namespace=\"_foo\" version=\"1\">" +
+    public void testNameParsingInvalidNamespace() {
+        Element configRoot = getDocument(new StringReader("<config name=\"_foo.function-test\" version=\"1\">" +
                 "<int_val>1</int_val> +" +
                 "</config>"));
         DomConfigPayloadBuilder.parseConfigName(configRoot);
     }
 
     @Test
-    public void require_that_item_syntax_works_with_leaf() throws ParserConfigurationException {
+    public void require_that_item_syntax_works_with_leaf() {
         Element configRoot = getDocument(
-                "<config name=\"arraytypes\" version=\"1\">" +
+                "<config name=\"test.arraytypes\" version=\"1\">" +
                 "    <intarr>" +
                 "        <item>13</item>" +
                 "        <item>10</item>" +
@@ -261,9 +224,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void require_that_item_syntax_works_with_struct() throws ParserConfigurationException {
+    public void require_that_item_syntax_works_with_struct() {
         Element configRoot = getDocument(
-                "<config name=\"arraytypes\" version=\"1\">" +
+                "<config name=\"test.arraytypes\" version=\"1\">" +
                         "    <lolarray>" +
                         "        <item><foo>hei</foo><bar>hei2</bar></item>" +
                         "        <item><foo>hoo</foo><bar>hoo2</bar></item>" +
@@ -277,9 +240,9 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void require_that_item_syntax_works_with_struct_array() throws ParserConfigurationException {
+    public void require_that_item_syntax_works_with_struct_array() {
         Element configRoot = getDocument(
-                "<config name=\"arraytypes\" version=\"1\">" +
+                "<config name=\"test.arraytypes\" version=\"1\">" +
                 "    <lolarray>" +
                 "        <item><fooarray><item>13</item></fooarray></item>" +
                 "        <item><fooarray><item>10</item></fooarray></item>" +
@@ -292,18 +255,18 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
-    public void require_that_item_is_reserved_in_root() throws ParserConfigurationException {
+    public void require_that_item_is_reserved_in_root() {
         Element configRoot = getDocument(
-                "<config name=\"arraytypes\" version=\"1\">" +
+                "<config name=\"test.arraytypes\" version=\"1\">" +
                 "    <item>13</item>" +
                 "</config>");
         new DomConfigPayloadBuilder(null).build(configRoot);
     }
 
     @Test(expected=ConfigurationRuntimeException.class)
-    public void require_that_exceptions_are_issued() throws ParserConfigurationException, FileNotFoundException {
+    public void require_that_exceptions_are_issued() throws FileNotFoundException {
         Element configRoot = getDocument(
-                "<config name=\"simpletypes\">" +
+                "<config name=\"test.simpletypes\">" +
                 "<longval>invalid</longval>" +
                 "</config>");
         DefParser defParser = new DefParser("simpletypes",
@@ -323,7 +286,7 @@ public class DomConfigPayloadBuilderTest {
         return doc.getDocumentElement();
     }
 
-    private Element getDocument(String xml) throws ParserConfigurationException {
+    private Element getDocument(String xml) {
         Reader xmlReader = new StringReader(xml);
         return getDocument(xmlReader);
     }

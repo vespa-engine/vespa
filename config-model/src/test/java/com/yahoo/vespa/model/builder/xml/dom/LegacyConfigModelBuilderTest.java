@@ -3,15 +3,14 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -19,12 +18,12 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class LegacyConfigModelBuilderTest {
+
     @Test
     public void testThatProducerIsInserted() {
-        String services = "<foo><config name=\"bar\"><key>value</key></config></foo>";
+        String services = "<foo><config name=\"bar.foo\"><key>value</key></config></foo>";
         ModelBuilder builder = new ModelBuilder();
         Model model = builder.build(DeployState.createTestState(new MockApplicationPackage.Builder().withServices(services).build()),
                                     null, null, new MockRoot(), XML.getDocument(services).getDocumentElement());
@@ -51,7 +50,7 @@ public class LegacyConfigModelBuilderTest {
     }
     private static class ModelBuilder extends LegacyConfigModelBuilder<Model> {
 
-        public ModelBuilder() {
+        ModelBuilder() {
             super(Model.class);
         }
 
@@ -61,7 +60,7 @@ public class LegacyConfigModelBuilderTest {
 
         @Override
         public List<ConfigModelId> handlesElements() {
-            return Arrays.asList(ConfigModelId.fromName("foo"));
+            return List.of(ConfigModelId.fromName("foo"));
         }
     }
 }

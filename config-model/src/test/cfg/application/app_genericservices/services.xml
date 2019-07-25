@@ -3,11 +3,11 @@
 <services version="1.0">
 
   <service version="1.0" name="myservice" command="mycmd1.sh">
-    <config name="myconfig">
+    <config name="a.myconfig">
       <mysetting>bar</mysetting>
     </config>
     <node hostalias="node1">
-      <config name="myconfig">
+      <config name="a.myconfig">
         <mysetting>baz</mysetting>
       </config>
     </node>
@@ -17,11 +17,11 @@
   </service>
 
   <service version="1.0" name="myotherservice" command="/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR">
-    <config name="myconfig">
+    <config name="a.myconfig">
       <mysetting>bar2</mysetting>
     </config>
     <node hostalias="node3">
-      <config name="myconfig">
+      <config name="a.myconfig">
         <mysetting>baz2</mysetting>
       </config>
     </node>

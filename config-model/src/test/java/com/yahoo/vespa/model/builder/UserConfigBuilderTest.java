@@ -8,7 +8,6 @@ import com.yahoo.config.model.deploy.ConfigDefinitionStore;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
-import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -18,7 +17,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
@@ -28,47 +26,42 @@ import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class UserConfigBuilderTest {
 
-    private final ConfigDefinitionStore configDefinitionStore = new ConfigDefinitionStore() {
-        @Override
-        public Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) { return Optional.empty(); }
-    };
+    private final ConfigDefinitionStore configDefinitionStore = defKey -> Optional.empty();
 
     @Test
-    public void require_that_simple_config_is_resolved() throws ParserConfigurationException {
-        Element configRoot = getDocument("<config name=\"simpletypes\">" +
+    public void require_that_simple_config_is_resolved() {
+        Element configRoot = getDocument("<config name=\"test.simpletypes\">" +
                                          "    <intval>13</intval>" +
                                          "</config>" +
-                                         "<config name=\"simpletypes\" version=\"1\">" +
+                                         "<config name=\"test.simpletypes\" version=\"1\">" +
                                          "    <stringval>foolio</stringval>" +
                                          "</config>");
         UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         assertFalse(map.isEmpty());
-        ConfigDefinitionKey key = new ConfigDefinitionKey("simpletypes", "config");
+        ConfigDefinitionKey key = new ConfigDefinitionKey("simpletypes", "test");
         assertNotNull(map.get(key));
         SimpletypesConfig config = createConfig(SimpletypesConfig.class, map.get(key));
         assertThat(config.intval(), is(13));
         assertThat(config.stringval(), is("foolio"));
     }
 
-    public static <ConfigType extends ConfigInstance> ConfigType createConfig(Class<ConfigType> clazz, ConfigPayloadBuilder builder) {
+    private static <ConfigType extends ConfigInstance> ConfigType createConfig(Class<ConfigType> clazz, ConfigPayloadBuilder builder) {
         return ConfigPayload.fromBuilder(builder).toInstance(clazz, "");
     }
 
-
     @Test
-    public void require_that_arrays_config_is_resolved() throws ParserConfigurationException {
-        Element configRoot = getDocument("<config name=\"arraytypes\">" +
+    public void require_that_arrays_config_is_resolved() {
+        Element configRoot = getDocument("<config name=\"test.arraytypes\">" +
                 "    <intarr operation=\"append\">13</intarr>" +
                 "    <intarr operation=\"append\">10</intarr>" +
                 "    <intarr operation=\"append\">1337</intarr>" +
                 "</config>");
         UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         assertFalse(map.isEmpty());
-        ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "config");
+        ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "test");
         assertNotNull(map.get(key));
         ArraytypesConfig config = createConfig(ArraytypesConfig.class, map.get(key));
         assertThat(config.intarr().size(), is(3));
@@ -78,7 +71,7 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void require_that_arrays_of_structs_are_resolved() throws ParserConfigurationException {
+    public void require_that_arrays_of_structs_are_resolved() {
         Element configRoot = getDocument(
                 "  <config name='vespa.configdefinition.specialtokens'>" +
                         "    <tokenlist operation='append'>" +
@@ -105,12 +98,12 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void no_exception_when_config_class_does_not_exist() throws ParserConfigurationException {
-        Element configRoot = getDocument("<config name=\"unknown\">" +
+    public void no_exception_when_config_class_does_not_exist() {
+        Element configRoot = getDocument("<config name=\"is.unknown\">" +
                 "    <foo>1</foo>" +
                 "</config>");
         UserConfigRepo repo = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
-        ConfigPayloadBuilder builder = repo.get(new ConfigDefinitionKey("unknown", "config"));
+        ConfigPayloadBuilder builder = repo.get(new ConfigDefinitionKey("unknown", "is"));
         assertNotNull(builder);
     }
 

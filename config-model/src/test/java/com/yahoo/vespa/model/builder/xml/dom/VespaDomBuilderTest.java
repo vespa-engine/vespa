@@ -25,7 +25,7 @@ import static org.junit.Assert.assertThat;
  */
 public class VespaDomBuilderTest {
 
-    final static String hosts = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+    private final static String hosts = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
             "<hosts>" +
             "  <host name=\"localhost\">" +
             "    <alias>node1</alias>" +
@@ -33,9 +33,9 @@ public class VespaDomBuilderTest {
             "  </host>" +
             "</hosts>";
 
-    final static String services = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+    private final static String services = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
             "<services>" +
-            "  <config name=\"standard\">" +
+            "  <config name=\"a.standard\">" +
             "    <basicStruct>" +
             "      <stringVal>default</stringVal>" +
             "    </basicStruct>" +
@@ -45,7 +45,7 @@ public class VespaDomBuilderTest {
             "    <adminserver hostalias=\"node1\" />" +
             "  </admin>" +
             "  <container version=\"1.0\">" +
-            "      <config name=\"standard\">" +
+            "      <config name=\"a.standard\">" +
             "        <basicStruct>" +
             "          <stringVal>qrservers</stringVal>" +
             "        </basicStruct>" +
@@ -56,19 +56,7 @@ public class VespaDomBuilderTest {
             "  </container>\n" +
             "</services>";
 
-    final static String servicesWithNamespace = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<services>" +
-            "  <config name=\"testnamespace\" namespace=\"foo\">" +
-            "    <basicStruct>" +
-            "      <stringVal>default</stringVal>" +
-            "    </basicStruct>" +
-            "  </config> " +
-            "  <admin version=\"2.0\">" +
-            "    <adminserver hostalias=\"node1\" />" +
-            "  </admin>" +
-            "</services>";
-
-    final static String servicesWithNamespace2 = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+    private final static String servicesWithNamespace = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
             "<services>" +
             "  <config name=\"foo.testnamespace\">" +
             "    <basicStruct>" +
@@ -87,16 +75,6 @@ public class VespaDomBuilderTest {
 
         GenericConfig.GenericConfigBuilder builder = 
                 new GenericConfig.GenericConfigBuilder(new ConfigDefinitionKey("testnamespace", "foo"), new ConfigPayloadBuilder());
-        model.getConfig(builder, "admin");
-        assertEquals(builder.getPayload().toString(), "{\n" + 
-        		" \"basicStruct\": {\n" + 
-        		"  \"stringVal\": \"default\"\n" + 
-        		" }\n" + 
-        		"}\n");
-        
-        model = createModel(hosts, servicesWithNamespace2);
-
-        builder = new GenericConfig.GenericConfigBuilder(new ConfigDefinitionKey("testnamespace", "foo"), new ConfigPayloadBuilder());
         model.getConfig(builder, "admin");
         assertEquals(builder.getPayload().toString(), "{\n" + 
         		" \"basicStruct\": {\n" + 

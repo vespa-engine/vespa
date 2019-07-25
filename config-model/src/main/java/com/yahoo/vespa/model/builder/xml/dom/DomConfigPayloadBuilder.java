@@ -3,17 +3,16 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.codegen.CNode;
-import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.ConfigDefinition;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.config.*;
 
 import com.yahoo.vespa.config.util.ConfigUtils;
 import org.w3c.dom.Element;
 
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,8 +25,6 @@ import java.util.regex.Pattern;
  * @author Ulf Lilleengen
  */
 public class DomConfigPayloadBuilder {
-
-    private static final Logger log = Logger.getLogger(DomConfigPayloadBuilder.class.getPackage().toString());
 
     private static final Pattern namePattern = ConfigDefinition.namePattern;
     private static final Pattern namespacePattern = ConfigDefinition.namespacePattern;
@@ -57,40 +54,30 @@ public class DomConfigPayloadBuilder {
 
     public static ConfigDefinitionKey parseConfigName(Element configE) {
         if (!configE.getNodeName().equals("config")) {
-            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" 
-                                                    + configE.getNodeName() + "'.");
+            throw new ConfigurationRuntimeException("The root element must be 'config', but was '" + configE.getNodeName() + "'.");
         }
+
         if (!configE.hasAttribute("name")) {
             throw new ConfigurationRuntimeException
                     ("The 'config' element must have a 'name' attribute that matches the name of the config definition.");
         }
 
-        String xmlName = configE.getAttribute("name");
-        final boolean xmlNamespaceAttributeExists = configE.hasAttribute("namespace");
-
-        String xmlNamespace = null;
-        // If name contains dots, rewrite to name and namespace
-        if (xmlName.contains(".")) {
-            Tuple2<String, String> t = ConfigUtils.getNameAndNamespaceFromString(xmlName);
-            xmlName = t.first;
-            xmlNamespace = t.second;
-        } else {
-            if (!xmlNamespaceAttributeExists) {
-                log.log(LogLevel.WARNING, "No namespace in 'config name=" + xmlName + "', please specify one");
-            }
+        String elementString = configE.getAttribute("name");
+        if (!elementString.contains(".")) {
+            throw new ConfigurationRuntimeException("The config name '" + elementString +
+                                                            "' contains illegal characters. Only names with the pattern " +
+                                                            namespacePattern.pattern() + "." + namePattern.pattern() + " are legal.");
         }
+
+        Tuple2<String, String> t = ConfigUtils.getNameAndNamespaceFromString(elementString);
+        String xmlName = t.first;
+        String xmlNamespace = t.second;
 
         if (!validName(xmlName)) {
             throw new ConfigurationRuntimeException("The config name '" + xmlName +
                     "' contains illegal characters. Only names with the pattern " + namePattern.toString() + " are legal.");
         }
 
-        if (xmlNamespace == null) {
-            xmlNamespace = configE.getAttribute("namespace");
-            if (xmlNamespace == null || xmlNamespace.isEmpty()) {
-                xmlNamespace = CNode.DEFAULT_NAMESPACE;
-            }
-        }
         if (!validNamespace(xmlNamespace)) {
             throw new ConfigurationRuntimeException("The config namespace '" + xmlNamespace +
                     "' contains illegal characters. Only namespaces with the pattern " + namespacePattern.toString() + " are legal.");
