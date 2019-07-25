@@ -5,24 +5,35 @@ vespa-fbench - fastserver benchmarking program
 1 Installing vespa-fbench
 -------------------------
 
-The preferred way of running vespa-fbench is to create your own test
-directory where you place all fbench executables and prepare test
-files. If you have access to the fbench source, you may consult the
-'INSTALL' file for information on how to install fbench. If you have a
-pre-compiled distribution of fbench, simply extract the archive. The
-fbench install directory should contain the following set of files:
+vespa-fbench is distributed together with Vespa in the published RPM
+and Docker image. Using the pre-built vespa-fbench is preferred, but
+if you have to compile it yourself consult the README.md in
+https://github.com/vespa-engine/vespa. 
 
-  README
-  bin/vespa-fbench
-  bin/vespa-fbench-filter-file
-  bin/vespa-fbench-geturl
-  bin/plot.pl
-  bin/pretest.sh
-  bin/vespa-fbench-result-filter.pl
-  bin/runtests.sh
-  bin/separate.pl
-  bin/vespa-fbench-split-file
+Installing on Vespa CentOS / RHEL 7:
+  yum-config-manager --add-repo \
+    https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo
+  yum -y install epel-release centos-release-scl
+  yum -y install vespa
 
+The above installation provides the follwing vespa-fbench executables:
+  /opt/vespa/bin/vespa-fbench
+  /opt/vespa/bin/vespa-fbench-filter-file
+  /opt/vespa/bin/vespa-fbench-geturl
+  /opt/vespa/bin/vespa-fbench-result-filter.pl
+  /opt/vespa/bin/vespa-fbench-split-file
+
+Additional utilities referenced in this document can be fetched from
+https://github.com/vespa-engine/vespa/tree/master/fbench/util:
+  plot.pl
+  pretest.sh
+  runtests.sh
+  separate.pl
+
+It is also possible to use Docker to directly execute vespa-fbench by
+using the pre-built Vespa docker image:
+  docker run --entrypoint /opt/vespa/bin/vespa-fbench \
+    docker.io/vespaengine/vespa <your fbench options>
 
 2 Benchmark overview
 --------------------
