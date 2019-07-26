@@ -78,7 +78,7 @@ public class DerivedConfiguration {
         if ( ! search.isDocumentsOnly()) {
             attributeFields = new AttributeFields(search);
             summaries = new Summaries(search, deployLogger);
-            summaryMap = new SummaryMap(search, summaries);
+            summaryMap = new SummaryMap(search);
             juniperrc = new Juniperrc(search);
             rankProfileList = new RankProfileList(search, search.rankingConstants(), attributeFields, rankProfileRegistry, queryProfiles, importedModels);
             indexingScript = new IndexingScript(search);
