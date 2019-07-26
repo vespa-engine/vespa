@@ -12,6 +12,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributefeature");
@@ -115,6 +116,24 @@ public:
     void execute(uint32_t docId) override;
 };
 
+/**
+ * Implements the executor for fetching values from a single or array attribute vector
+ */
+template <typename T>
+class MultiAttributeExecutor : public fef::FeatureExecutor {
+private:
+    const T & _attribute;
+    uint32_t  _idx;
+public:
+    /**
+     * Constructs an executor.
+     *
+     * @param attribute The attribute vector to use.
+     */
+    MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
+    void execute(uint32_t docId) override;
+};
+
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector & _attribute;
@@ -188,6 +207,20 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
     outputs().set_number(1, 0.0f);  // weight
     outputs().set_number(2, 0.0f);  // contains
     outputs().set_number(3, 1.0f);  // count
+}
+
+template <typename T>
+void
+MultiAttributeExecutor<T>::execute(uint32_t docId)
+{
+    const multivalue::Value<typename T::BaseType> * values = nullptr;
+    uint32_t numValues = _attribute.getRawValues(docId, values);
+
+    outputs().set_number(0, __builtin_expect(_idx < numValues, true)
+                         ? values[_idx].value() : 0.0f);
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, 0.0f);  // count
 }
 
 void
@@ -328,6 +361,12 @@ AttributeBlueprint::createInstance() const
         return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
     }
 
+#define MULTI_FP(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, multivalue::Value<T>>
+#define CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(a, T, idx) \
+    if (dynamic_cast<const MULTI_FP(T) *>(a) != nullptr) { \
+        return stash.create<MultiAttributeExecutor<MULTI_FP(T)>>(*static_cast<const MULTI_FP(T) *>(a), idx); \
+    }
+
 namespace {
 
 fef::FeatureExecutor &
@@ -371,6 +410,8 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             } else if (attribute->isIntegerType()) {
                 return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
+                CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(attribute, double, idx);
+                CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(attribute, float, idx);
                 return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
