@@ -10,22 +10,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeReposi
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  * Creates a ResourceSnapshot per application, which is then passed on to a ResourceSnapshotConsumer
- * TODO: Write JSON blob of node repo somewhere
  *
  * @author olaa
  */
@@ -57,22 +52,12 @@ public class ResourceMeterMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         List<NodeRepositoryNode> nodes = getNodes();
-        Map<ApplicationId, ResourceAllocation> resourceAllocationByApplication = getResourceAllocationByApplication(nodes);
-
-        // For now, we're only interested in resource allocation
-        Instant timeStamp = clock.instant();
-        Map<ApplicationId, ResourceSnapshot> resourceSnapshots = resourceAllocationByApplication.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> new ResourceSnapshot(e.getValue(), timeStamp))
-                );
-
+        List<ResourceSnapshot> resourceSnapshots = getResourceSnapshots(nodes);
 
         resourceSnapshotConsumer.consume(resourceSnapshots);
 
         metric.set(metering_last_reported, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
-        metric.set(metering_total_reported, resourceSnapshots.values().stream()
-                        .map(ResourceSnapshot::getResourceAllocation)
+        metric.set(metering_total_reported, resourceSnapshots.stream()
                         .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()) // total metered resource usage, for alerting on drastic changes
                         .sum()
                 , metric.createContext(Collections.emptyMap()));
@@ -88,11 +73,12 @@ public class ResourceMeterMaintainer extends Maintainer {
                 .collect(Collectors.toList());
     }
 
-    private Map<ApplicationId, ResourceAllocation> getResourceAllocationByApplication(List<NodeRepositoryNode> nodes) {
+    private List<ResourceSnapshot> getResourceSnapshots(List<NodeRepositoryNode> nodes) {
         return nodes.stream()
                 .collect(Collectors.groupingBy(
                         node -> applicationIdFromNodeOwner(node.getOwner()),
-                        Collectors.collectingAndThen(Collectors.toList(), ResourceAllocation::from)));
+                        Collectors.collectingAndThen(Collectors.toList(), nodeList -> ResourceSnapshot.from(nodeList, clock.instant()))
+                )).values().stream().collect(Collectors.toList());
     }
 
     private ApplicationId applicationIdFromNodeOwner(NodeOwner owner) {

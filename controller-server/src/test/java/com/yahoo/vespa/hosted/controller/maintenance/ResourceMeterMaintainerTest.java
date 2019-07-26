@@ -1,10 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
@@ -13,10 +11,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -41,20 +36,20 @@ public class ResourceMeterMaintainerTest {
 
         ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), nodeRepository, tester.clock(), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
-        Map<ApplicationId, ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
+        List<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 
+        // The mocked repository contains two applications, so we should also consume two ResourceSnapshots
         assertEquals(2, consumedResources.size());
+        ResourceSnapshot app1 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant1", "app1", "default"))).findFirst().orElseThrow();
+        ResourceSnapshot app2 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant2", "app2", "default"))).findFirst().orElseThrow();
 
-        ResourceSnapshot app1 = consumedResources.get(ApplicationId.from("tenant1", "app1", "default"));
-        ResourceSnapshot app2 = consumedResources.get(ApplicationId.from("tenant2", "app2", "default"));
+        assertEquals(24, app1.getCpuCores(), DELTA);
+        assertEquals(24, app1.getMemoryGb(), DELTA);
+        assertEquals(500, app1.getDiskGb(), DELTA);
 
-        assertEquals(24, app1.getResourceAllocation().getCpuCores(), DELTA);
-        assertEquals(24, app1.getResourceAllocation().getMemoryGb(), DELTA);
-        assertEquals(500, app1.getResourceAllocation().getDiskGb(), DELTA);
-
-        assertEquals(40, app2.getResourceAllocation().getCpuCores(), DELTA);
-        assertEquals(24, app2.getResourceAllocation().getMemoryGb(), DELTA);
-        assertEquals(500, app2.getResourceAllocation().getDiskGb(), DELTA);
+        assertEquals(40, app2.getCpuCores(), DELTA);
+        assertEquals(24, app2.getMemoryGb(), DELTA);
+        assertEquals(500, app2.getDiskGb(), DELTA);
 
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
         assertEquals(1112.0d, (Double) metrics.getMetric("metering_total_reported"), DELTA);
