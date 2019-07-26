@@ -21,6 +21,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -63,7 +64,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ApplicationDimensionsConfig.Producer,
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
-        QrStartConfig.Producer
+        QrStartConfig.Producer,
+        ThreadpoolConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
@@ -149,6 +151,11 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         super.getConfig(builder);
         // This takes effect via vespa-start-container-daemon:configure_gcopts
         builder.jvm.verbosegc(false);
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.maxthreads(10);
     }
 
     private MetricSet getAdditionalDefaultMetrics() {

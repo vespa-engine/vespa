@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -10,7 +11,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 /**
  * @author hmusum
  */
-public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> {
+public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> implements ThreadpoolConfig.Producer {
 
     public LogserverContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState);
@@ -28,6 +29,11 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
         super.getConfig(builder);
         // This takes effect via vespa-start-container-daemon:configure_gcopts
         builder.jvm.verbosegc(false);
+    }
+
+    @Override
+    public void getConfig(ThreadpoolConfig.Builder builder) {
+        builder.maxthreads(10);
     }
 
     private void addLogHandler() {
