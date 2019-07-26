@@ -15,10 +15,6 @@ public class TestOptions implements CloudConfigOptions {
     private Optional<Integer> rpcPort = Optional.empty();
     private Optional<String> environment = Optional.empty();
     private Optional<String> region = Optional.empty();
-    private Optional<String> defaultFlavor = Optional.empty();
-    private Optional<String> defaultAdminFlavor = Optional.empty();
-    private Optional<String> defaultContainerFlavor = Optional.empty();
-    private Optional<String> defaultContentFlavor = Optional.empty();
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
     private Optional<Integer> numParallelTenantLoaders = Optional.empty();
