@@ -8,6 +8,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ public final class ConnectionParams {
         private int traceEveryXOperation = 0;
         private boolean printTraceToStdErr = true;
         private boolean useTlsConfigFromEnvironment = false;
+        private Duration connectionTimeToLive = Duration.ofSeconds(15);
 
         /**
          * Use TLS configuration through the standard Vespa environment variables.
@@ -227,6 +229,13 @@ public final class ConnectionParams {
             return this;
         }
 
+        /**
+         * Set the maximum time to live for persistent connections
+         */
+        public Builder setConnectionTimeToLive(Duration connectionTimeToLive) {
+            this.connectionTimeToLive = connectionTimeToLive;
+            return this;
+        }
 
         public ConnectionParams build() {
             return new ConnectionParams(
@@ -244,7 +253,8 @@ public final class ConnectionParams {
                     traceLevel,
                     traceEveryXOperation,
                     printTraceToStdErr,
-                    useTlsConfigFromEnvironment);
+                    useTlsConfigFromEnvironment,
+                    connectionTimeToLive);
         }
 
         public int getNumPersistentConnectionsPerEndpoint() {
@@ -288,6 +298,10 @@ public final class ConnectionParams {
         public boolean useTlsConfigFromEnvironment() {
             return useTlsConfigFromEnvironment;
         }
+
+        public Duration getConnectionTimeToLive() {
+            return connectionTimeToLive;
+        }
     }
     private final SSLContext sslContext;
     private final HostnameVerifier hostnameVerifier;
@@ -304,6 +318,7 @@ public final class ConnectionParams {
     private final int traceEveryXOperation;
     private final boolean printTraceToStdErr;
     private final boolean useTlsConfigFromEnvironment;
+    private final Duration connectionTimeToLive;
 
     private ConnectionParams(
             SSLContext sslContext,
@@ -320,10 +335,12 @@ public final class ConnectionParams {
             int traceLevel,
             int traceEveryXOperation,
             boolean printTraceToStdErr,
-            boolean useTlsConfigFromEnvironment) {
+            boolean useTlsConfigFromEnvironment,
+            Duration connectionTimeToLive) {
         this.sslContext = sslContext;
         this.hostnameVerifier = hostnameVerifier;
         this.useTlsConfigFromEnvironment = useTlsConfigFromEnvironment;
+        this.connectionTimeToLive = connectionTimeToLive;
         this.headers.putAll(headers);
         this.headerProviders.putAll(headerProviders);
         this.numPersistentConnectionsPerEndpoint = numPersistentConnectionsPerEndpoint;
@@ -398,6 +415,10 @@ public final class ConnectionParams {
 
     public boolean useTlsConfigFromEnvironment() {
         return useTlsConfigFromEnvironment;
+    }
+
+    public Duration getConnectionTimeToLive() {
+        return connectionTimeToLive;
     }
 
     /**
