@@ -20,6 +20,7 @@ import org.apache.http.message.BasicLineParser;
 import javax.inject.Inject;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -109,6 +110,8 @@ public class CommandLineArguments {
                 return false;
         }
     }
+
+    // TODO Don't duplicate default values from ConnectionParams.Builder. Some defaults are already inconsistent.
 
     @Inject
     private HelpOption helpOption;
@@ -213,6 +216,10 @@ public class CommandLineArguments {
             description = "BETA! Use Vespa TLS configuration from environment if available. Other HTTPS/TLS configuration will be ignored if this is set.")
     private boolean useTlsConfigFromEnvironment = false;
 
+    @Option(name = {"--connectionTimeToLive"},
+            description = "Maximum time to live for persistent connections. Specified as integer, in seconds.")
+    private long connectionTimeToLive = 15;
+
     private final List<Header> parsedHeaders = new ArrayList<>();
 
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
@@ -257,6 +264,7 @@ public class CommandLineArguments {
                                 .setPrintTraceToStdErr(traceArg > 0)
                                 .setNumPersistentConnectionsPerEndpoint(numPersistentConnectionsPerEndpoint)
                                 .setUseTlsConfigFromEnvironment(useTlsConfigFromEnvironment)
+                                .setConnectionTimeToLive(Duration.ofSeconds(connectionTimeToLive))
                                 .build()
                 )
                         // Enable dynamic throttling.
