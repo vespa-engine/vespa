@@ -22,13 +22,12 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
 
     private Map<String,FieldResultTransform> resultTransforms = new java.util.LinkedHashMap<>();
 
-    /** Crateate a summary map from a search definition */
-    public SummaryMap(Search search, Summaries summaries) {
-        derive(search, summaries);
+    /** Creates a summary map from a search definition */
+    SummaryMap(Search search) {
+        derive(search);
     }
 
-    protected void derive(Search search, Summaries summaries) {
-        // TODO: This should really derive from the 'summaries' argument. Bug?
+    protected void derive(Search search) {
         for (DocumentSummary documentSummary : search.getSummaries().values()) {
             derive(documentSummary);
         }

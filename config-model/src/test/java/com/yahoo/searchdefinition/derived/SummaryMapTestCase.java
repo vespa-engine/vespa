@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 /**
  * Tests summary map extraction
@@ -27,7 +28,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
-        SummaryMap summaryMap=new SummaryMap(search, new Summaries(search, new BaseDeployLogger()));
+        SummaryMap summaryMap=new SummaryMap(search);
 
         Iterator transforms=summaryMap.resultTransformIterator();
         FieldResultTransform transform = (FieldResultTransform)transforms.next();
@@ -66,7 +67,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         assertEquals("access", transform.getFieldName());
         assertEquals(SummaryTransform.ATTRIBUTE,transform.getTransform());
 
-        assertTrue(!transforms.hasNext());
+        assertFalse(transforms.hasNext());
     }
     @Test
     public void testPositionDeriving() {
@@ -77,7 +78,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
         new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
-        SummaryMap summaryMap = new SummaryMap(search, new Summaries(search, new BaseDeployLogger()));
+        SummaryMap summaryMap = new SummaryMap(search);
 
         Iterator transforms = summaryMap.resultTransformIterator();
 
@@ -106,7 +107,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         assertEquals("location_zcurve", transform.getFieldName());
         assertEquals(SummaryTransform.ATTRIBUTE,transform.getTransform());
 
-        assertTrue(!transforms.hasNext());
+        assertFalse(transforms.hasNext());
 
         SummarymapConfig.Builder scb = new SummarymapConfig.Builder();
         summaryMap.getConfig(scb);
@@ -143,7 +144,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
     @Test
     public void testFailOnSummaryFieldSourceCollision() {
         try {
-            Search search = SearchBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
+            SearchBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
         } catch (Exception e) {
             assertTrue(e.getMessage().matches(".*equally named field.*"));
         }
