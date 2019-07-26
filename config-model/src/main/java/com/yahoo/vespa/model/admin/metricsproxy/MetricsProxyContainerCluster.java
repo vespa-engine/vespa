@@ -93,7 +93,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         this.parent = parent;
         applicationId = deployState.getProperties().applicationId();
 
-        setMessageBusEnabled(false);
         setRpcServerEnabled(true);
         addDefaultHandlersExceptStatus();
 
@@ -157,6 +156,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     public void getConfig(ThreadpoolConfig.Builder builder) {
         builder.maxthreads(10);
     }
+
+    protected boolean messageBusEnabled() { return false; }
 
     private MetricSet getAdditionalDefaultMetrics() {
         return getAdmin()

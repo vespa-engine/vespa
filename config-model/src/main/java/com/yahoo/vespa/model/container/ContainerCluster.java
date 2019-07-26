@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
-import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
@@ -20,10 +19,8 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.container.handler.ThreadPoolProvider;
-import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
@@ -89,7 +86,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         ComponentsConfig.Producer,
         JdiscBindingsConfig.Producer,
         DocumentmanagerConfig.Producer,
-        ContainerMbusConfig.Producer,
         ContainerDocumentConfig.Producer,
         HealthMonitorConfig.Producer,
         ApplicationMetadataConfig.Producer,
@@ -138,10 +134,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
-
-    // TODO: move all message-bus related fields/methods to ApplicationContainerCluster. No need for mbus for other clusters.
-    private MbusParams mbusParams;
-    private boolean messageBusEnabled = true;
 
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
@@ -296,16 +288,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     protected abstract void doPrepare(DeployState deployState);
-
-    public void addMbusServer(ComponentId chainId) {
-        ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
-
-        addComponent(
-                new Component<>(new ComponentModel(new BundleInstantiationSpecification(
-                        serviceId,
-                        ComponentSpecification.fromString(MbusServerProvider.class.getName()),
-                        null))));
-    }
 
     public String getName() {
         return name;
@@ -551,24 +533,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
-    @Override
-    public void getConfig(ContainerMbusConfig.Builder builder) {
-        if (mbusParams != null) {
-            if (mbusParams.maxConcurrentFactor != null)
-                builder.maxConcurrentFactor(mbusParams.maxConcurrentFactor);
-            if (mbusParams.documentExpansionFactor != null)
-                builder.documentExpansionFactor(mbusParams.documentExpansionFactor);
-            if (mbusParams.containerCoreMemory != null)
-                builder.containerCoreMemory(mbusParams.containerCoreMemory);
-        }
-        if (containerDocproc != null)
-            containerDocproc.getConfig(builder);
-    }
-
-    public void setMbusParams(MbusParams mbusParams) {
-        this.mbusParams = mbusParams;
-    }
-
     public void initialize(Map<String, AbstractSearchCluster> clusterMap) {
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
@@ -660,10 +624,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
 
-    public final void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
-
-    boolean messageBusEnabled() { return messageBusEnabled; }
-
     public final void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
 
     boolean rpcServerEnabled() { return rpcServerEnabled; }
@@ -677,21 +637,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return "container cluster '" + getName() + "'";
     }
 
-    public static class MbusParams {
-        // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
-        final Double maxConcurrentFactor;
-
-        // the amount that documents expand temporarily when processing them
-        final Double documentExpansionFactor;
-
-        // the space to reserve for container, docproc stuff (memory that cannot be used for processing documents), in MB
-        final Integer containerCoreMemory;
-
-        public MbusParams(Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
-            this.maxConcurrentFactor = maxConcurrentFactor;
-            this.documentExpansionFactor = documentExpansionFactor;
-            this.containerCoreMemory = containerCoreMemory;
-        }
-    }
+    protected abstract boolean messageBusEnabled();
 
 }
