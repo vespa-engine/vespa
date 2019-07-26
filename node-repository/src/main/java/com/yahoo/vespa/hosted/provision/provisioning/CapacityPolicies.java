@@ -85,9 +85,6 @@ public class CapacityPolicies {
         if (clusterType == ClusterSpec.Type.admin)
             return new NodeResources(0.5, 3, 50);
 
-        if (zone.system().isCd() && zone.environment().isTest())
-            new NodeResources(4, 4, 50);
-
         return new NodeResources(1.5, 8, 50);
     }
 
