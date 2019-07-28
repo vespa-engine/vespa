@@ -83,6 +83,9 @@ public:
         const NumberOrObject *get_raw(size_t idx) const {
             return &_outputs[idx];
         }
+        NumberOrObject *get_raw(size_t idx) {
+            return &_outputs[idx];
+        }
         size_t size() const { return _outputs.size(); }
     };
 

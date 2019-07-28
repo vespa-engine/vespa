@@ -93,11 +93,11 @@ considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
     return search::features::util::getAsFeature(value);
 }
 
-
 }
 
 
 namespace search::features {
+namespace {
 
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -201,12 +201,13 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
 {
     typename T::LoadedValueType v = _attribute.getFast(docId);
     // value
-    outputs().set_number(0, __builtin_expect(attribute::isUndefined(v), false)
-                         ? attribute::getUndefined<feature_t>()
-                         : util::getAsFeature(v));
-    outputs().set_number(1, 0.0f);  // weight
-    outputs().set_number(2, 0.0f);  // contains
-    outputs().set_number(3, 1.0f);  // count
+    fef::NumberOrObject * o = outputs().get_raw(0);
+    o[0].as_number = __builtin_expect(attribute::isUndefined(v), false)
+                     ? attribute::getUndefined<feature_t>()
+                     : util::getAsFeature(v);
+    o[1].as_number = 0;  // weight
+    o[2].as_number = 0;  // contains
+    o[3].as_number = 1;  // contains
 }
 
 template <typename T>
@@ -216,20 +217,21 @@ MultiAttributeExecutor<T>::execute(uint32_t docId)
     const multivalue::Value<typename T::BaseType> * values = nullptr;
     uint32_t numValues = _attribute.getRawValues(docId, values);
 
-    outputs().set_number(0, __builtin_expect(_idx < numValues, true)
-                         ? values[_idx].value() : 0.0f);
-    outputs().set_number(1, 0.0f);  // weight
-    outputs().set_number(2, 0.0f);  // contains
-    outputs().set_number(3, 0.0f);  // count
+    fef::NumberOrObject * o = outputs().get_raw(0);
+    o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
+    o[1].as_number = 0;  // weight
+    o[2].as_number = 0;  // contains
+    o[3].as_number = 0;  // count
 }
 
 void
 CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
-    outputs().set_number(0, 0.0f);  // value
-    outputs().set_number(1, 0.0f);  // weight
-    outputs().set_number(2, 0.0f);  // contains
-    outputs().set_number(3, _attribute.getValueCount(docId)); // count
+    fef::NumberOrObject * o = outputs().get_raw(0);
+    o[0].as_number = 0;  // value
+    o[1].as_number = 0;  // weight
+    o[2].as_number = 0;  // contains
+    o[3].as_number = _attribute.getValueCount(docId); // count
 }
 
 template <typename T>
@@ -253,10 +255,11 @@ AttributeExecutor<T>::execute(uint32_t docId)
     if (_idx < _buffer.size()) {
         value = considerUndefined(_buffer[_idx], _attrType);
     }
-    outputs().set_number(0, value);         // value
-    outputs().set_number(1, 0.0f);          // weight
-    outputs().set_number(2, 0.0f);          // contains
-    outputs().set_number(3, _defaultCount); // count
+    fef::NumberOrObject * o = outputs().get_raw(0);
+    o[0].as_number = value;  // value
+    o[1].as_number = 0;  // weight
+    o[2].as_number = 0;  // contains
+    o[3].as_number = _defaultCount; // count
 }
 
 
@@ -298,6 +301,7 @@ WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
     outputs().set_number(3, count);    // count
 }
 
+}
 
 AttributeBlueprint::AttributeBlueprint() :
     fef::Blueprint("attribute"),
