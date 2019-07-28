@@ -34,6 +34,7 @@ import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
 import org.tensorflow.framework.SignatureDef;
 import org.tensorflow.framework.TensorInfo;
+import org.tensorflow.op.core.DecodeRaw;
 
 import java.io.IOException;
 import java.util.List;

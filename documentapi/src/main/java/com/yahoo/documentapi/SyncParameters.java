@@ -11,6 +11,7 @@ import java.util.Optional;
  * @author Simon Thoresen Hult
  */
 public class SyncParameters extends Parameters {
+
     private final Duration defaultTimeout;
 
     private SyncParameters() {
@@ -26,6 +27,7 @@ public class SyncParameters extends Parameters {
     }
 
     public static class Builder {
+
         private Duration defaultTimeout;
 
         /**
@@ -39,4 +41,5 @@ public class SyncParameters extends Parameters {
             return new SyncParameters(defaultTimeout);
         }
     }
+
 }
