@@ -102,12 +102,12 @@ public abstract class IntermediateOperation {
     /** Add dimension name constraints for this operation */
     public void addDimensionNameConstraints(DimensionRenamer renamer) { }
 
-    /** Conveinence method to adds dimensions and constraints of the given tensor type */
+    /** Convenience method to adds dimensions and constraints of the given tensor type */
     protected void addConstraintsFrom(OrderedTensorType type, DimensionRenamer renamer) {
         for (int i = 0; i < type.dimensions().size(); i++) {
             renamer.addDimension(type.dimensions().get(i).name());
 
-            // Each dimension is distinct:
+            // Each dimension is distinct and ordered correctly:
             for (int j = i + 1; j < type.dimensions().size(); j++) {
                 renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
                                       DimensionRenamer.Constraint.notEqual(false),
@@ -216,6 +216,21 @@ public abstract class IntermediateOperation {
         return i < 0 ? 0 : Integer.parseInt(name.substring(i + 1));
     }
 
+    public abstract String operationName();
+
+    @Override
+    public String toString() {
+        return operationName() + "(" +
+               inputs().stream().map(input -> asString(input.type())).collect(Collectors.joining(", ")) +
+               ")";
+    }
+
+    public String toFullString() {
+        return "\t" + lazyGetType() + ":\t" + operationName() + "(" +
+               inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
+               ")";
+    }
+
     /**
      * An interface mapping operation attributes to Vespa Values.
      * Adapter for differences in different model types.
@@ -224,21 +239,6 @@ public abstract class IntermediateOperation {
         Optional<Value> get(String key);
         Optional<Value> get(String key, OrderedTensorType type);
         Optional<List<Value>> getList(String key);
-    }
-
-    public abstract String operationName();
-
-    @Override
-    public String toString() {
-        return operationName() +
-               inputs().stream().map(input -> asString(input.type())).collect(Collectors.joining(", ")) +
-               ")";
-    }
-
-    public String toFullString() {
-        return "\t" + lazyGetType() + ":\t" + operationName() +
-               inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
-               ")";
     }
 
 }

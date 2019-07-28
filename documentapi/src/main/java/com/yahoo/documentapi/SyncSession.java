@@ -51,13 +51,11 @@ public interface SyncSession extends Session {
     /**
      * Gets a document with an unspecified timeout
      *
-     * @param id       The id of the document to get.
-     * @param fieldSet A comma-separated list of fields to retrieve
-     * @param priority The priority with which to perform this operation.
-     * @return The known document having this id, or null if there is no
-     *         document having this id.
-     * @throws UnsupportedOperationException Thrown if this access does not
-     *                                       support retrieving.
+     * @param id       the id of the document to get
+     * @param fieldSet a comma-separated list of fields to retrieve
+     * @param priority the priority with which to perform this operation
+     * @return the document with this id, or null if there is none
+     * @throws UnsupportedOperationException thrown if this does not support retrieving
      */
     default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority) {
         return get(id, fieldSet, priority, null);
@@ -66,11 +64,10 @@ public interface SyncSession extends Session {
     /**
      * Gets a document with timeout.
      *
-     * @param id The id of the document to get.
-     * @param timeout Timeout. If timeout is null, an unspecified default will be used.
-     * @return The known document having this id, or null if there is no
-     *         document having this id.
-     * @throws UnsupportedOperationException Thrown if this access does not support retrieving.
+     * @param id The id of the document to get
+     * @param timeout Timeout. If timeout is null, an unspecified default will be used
+     * @return the document with this id, or null if there is none
+     * @throws UnsupportedOperationException thrown if this access does not support retrieving
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     Document get(DocumentId id, Duration timeout);

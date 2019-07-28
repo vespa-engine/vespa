@@ -5,15 +5,16 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import org.tensorflow.DataType;
+import org.tensorflow.framework.DataType;
 import org.tensorflow.framework.TensorProto;
+import org.tensorflow.framework.TensorShapeProto;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-
+import java.util.List;
 
 /**
  * Converts TensorFlow tensors into Vespa tensors.
@@ -48,9 +49,11 @@ public class TensorConverter {
     static Tensor toVespaTensor(TensorProto tensorProto, TensorType type) {
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type);
         Values values = readValuesOf(tensorProto);
-        for (int i = 0; i < values.size(); ++i) {
+        if (values.size() == 0) // Might be stored as "tensor_content" instead
+            return toVespaTensor(readTensorContentOf(tensorProto));
+
+        for (int i = 0; i < values.size(); ++i)
             builder.cellByDirectIndex(i, values.get(i));
-        }
         return builder.build();
     }
 
@@ -74,28 +77,47 @@ public class TensorConverter {
             case UINT8: return new IntValues(tfTensor);
             case INT32: return new IntValues(tfTensor);
             case INT64: return new LongValues(tfTensor);
+            default: throw new IllegalArgumentException("Cannot convert a tensor with elements of type " +
+                                                        tfTensor.dataType() + " to a Vespa tensor");
         }
-        throw new IllegalArgumentException("Cannot convert a tensor with elements of type " +
-                                           tfTensor.dataType() + " to a Vespa tensor");
     }
 
     private static Values readValuesOf(TensorProto tensorProto) {
         switch (tensorProto.getDtype()) {
-            case DT_BOOL:
-                return new ProtoBoolValues(tensorProto);
-            case DT_HALF:
-                return new ProtoHalfValues(tensorProto);
-            case DT_INT16:
-            case DT_INT32:
-                return new ProtoIntValues(tensorProto);
-            case DT_INT64:
-                return new ProtoInt64Values(tensorProto);
-            case DT_FLOAT:
-                return new ProtoFloatValues(tensorProto);
-            case DT_DOUBLE:
-                return new ProtoDoubleValues(tensorProto);
+            case DT_BOOL: return new ProtoBoolValues(tensorProto);
+            case DT_HALF: return new ProtoHalfValues(tensorProto);
+            case DT_INT16: case DT_INT32: return new ProtoIntValues(tensorProto);
+            case DT_INT64: return new ProtoInt64Values(tensorProto);
+            case DT_FLOAT: return new ProtoFloatValues(tensorProto);
+            case DT_DOUBLE: return new ProtoDoubleValues(tensorProto);
+            default: throw new IllegalArgumentException("Unsupported data type in attribute tensor import");
         }
-        throw new IllegalArgumentException("Unsupported data type in attribute tensor import");
+    }
+
+    private static Class dataTypeToClass(DataType dataType) {
+        switch (dataType) {
+            case DT_BOOL: return Boolean.class;
+            case DT_INT16: return Short.class;
+            case DT_INT32: return Integer.class;
+            case DT_INT64: return Long.class;
+            case DT_HALF: return Float.class;
+            case DT_FLOAT: return Float.class;
+            case DT_DOUBLE: return Double.class;
+            default: throw new IllegalArgumentException("Unsupported data type in attribute tensor import");
+        }
+    }
+
+    private static org.tensorflow.Tensor readTensorContentOf(TensorProto tensorProto) {
+        return org.tensorflow.Tensor.create(dataTypeToClass(tensorProto.getDtype()),
+                                            asSizeArray(tensorProto.getTensorShape().getDimList()),
+                                            tensorProto.getTensorContent().asReadOnlyByteBuffer());
+    }
+
+    private static long[] asSizeArray(List<TensorShapeProto.Dim> dimensions) {
+        long[] sizes = new long[dimensions.size()];
+        for (int i = 0; i < dimensions.size(); i++)
+            sizes[i] = dimensions.get(i).getSize();
+        return sizes;
     }
 
     /** Allows reading values from buffers of various numeric types as bytes */

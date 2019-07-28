@@ -75,7 +75,6 @@ public class DimensionRenamer {
         if (solution != null) return solution;
 
         for (RenameTarget target : prioritizedRenameTargets()) {
-            System.out.println("Trying rename " + target);
             target.insertRename(this);
             solution = solveWithOrWithoutSoftConstraints(maxIterations);
             if (solution != null) return solution;
@@ -90,8 +89,9 @@ public class DimensionRenamer {
         if ( solution == null) {
             ListMap<Arc, Constraint> hardConstraints = new ListMap<>();
             boolean anyRemoved = copyHard(constraints, hardConstraints);
-            if (anyRemoved)
+            if (anyRemoved) {
                 solution = NamingConstraintSolver.solve(dimensions, hardConstraints, maxIterations);
+            }
         }
         return solution;
     }
