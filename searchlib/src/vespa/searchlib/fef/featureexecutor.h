@@ -58,10 +58,10 @@ public:
     };
 
     class Outputs {
-        vespalib::ArrayRef<NumberOrObject> _outputs;
     public:
+        using OutputArray = vespalib::ArrayRef<NumberOrObject>;
         Outputs() : _outputs() {}
-        void bind(vespalib::ArrayRef<NumberOrObject> outputs) { _outputs = outputs; }
+        void bind(OutputArray  outputs) { _outputs = outputs; }
         void set_number(size_t idx, feature_t value) {
             _outputs[idx].as_number = value;
         }
@@ -83,7 +83,12 @@ public:
         const NumberOrObject *get_raw(size_t idx) const {
             return &_outputs[idx];
         }
+        OutputArray get_bound() const {
+            return _outputs;
+        }
         size_t size() const { return _outputs.size(); }
+    private:
+        vespalib::ArrayRef<NumberOrObject> _outputs;
     };
 
 private:
