@@ -36,7 +36,7 @@ public class MetricsResponse extends HttpResponse {
 
             MetricsAggregator aggregator = entry.getValue();
             Cursor metrics = cluster.setObject("metrics");
-            aggregator.aggregateQueryRate().ifPresent(queryrate -> metrics.setDouble("queriesPerSecond", queryrate));
+            aggregator.aggregateQueryRate().ifPresent(queryRate -> metrics.setDouble("queriesPerSecond", queryRate));
             aggregator.aggregateFeedRate().ifPresent(feedRate -> metrics.setDouble("feedPerSecond", feedRate));
             aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
             aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
