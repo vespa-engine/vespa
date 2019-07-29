@@ -31,8 +31,8 @@ public class ResourceMeterMaintainer extends Maintainer {
     private final NodeRepository nodeRepository;
     private final ResourceSnapshotConsumer resourceSnapshotConsumer;
 
-    private static final String metering_last_reported = "metering_last_reported";
-    private static final String metering_total_reported = "metering_total_reported";
+    private static final String METERING_LAST_REPORTED = "metering_last_reported";
+    private static final String METERING_TOTAL_REPORTED = "metering_total_reported";
 
     @SuppressWarnings("WeakerAccess")
     public ResourceMeterMaintainer(Controller controller,
@@ -56,8 +56,8 @@ public class ResourceMeterMaintainer extends Maintainer {
 
         resourceSnapshotConsumer.consume(resourceSnapshots);
 
-        metric.set(metering_last_reported, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
-        metric.set(metering_total_reported, resourceSnapshots.stream()
+        metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
+        metric.set(METERING_TOTAL_REPORTED, resourceSnapshots.stream()
                         .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()) // total metered resource usage, for alerting on drastic changes
                         .sum()
                 , metric.createContext(Collections.emptyMap()));

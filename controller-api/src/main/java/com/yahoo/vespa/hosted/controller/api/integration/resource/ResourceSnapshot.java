@@ -14,11 +14,11 @@ import java.util.stream.Collectors;
  */
 public class ResourceSnapshot {
 
-    private ApplicationId applicationId;
-    private double cpuCores;
-    private double memoryGb;
-    private double diskGb;
-    private Instant timestamp;
+    private final ApplicationId applicationId;
+    private final double cpuCores;
+    private final double memoryGb;
+    private final double diskGb;
+    private final Instant timestamp;
 
     public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, Instant timestamp) {
         this.applicationId = applicationId;
@@ -64,23 +64,4 @@ public class ResourceSnapshot {
         return timestamp;
     }
 
-    public void setApplicationId(ApplicationId applicationId) {
-        this.applicationId = applicationId;
-    }
-
-    public void setCpuCores(double cpuCores) {
-        this.cpuCores = cpuCores;
-    }
-
-    public void setMemoryGb(double memoryGb) {
-        this.memoryGb = memoryGb;
-    }
-
-    public void setDiskGb(double diskGb) {
-        this.diskGb = diskGb;
-    }
-
-    public void setTimestamp(Instant timestamp) {
-        this.timestamp = timestamp;
-    }
 }
