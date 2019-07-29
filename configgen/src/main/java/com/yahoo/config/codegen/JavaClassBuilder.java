@@ -96,7 +96,7 @@ public class JavaClassBuilder implements ClassBuilder {
                 "  public final static String CONFIG_DEF_MD5 = \"" + root.getMd5() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAME = \"" + root.getName() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAMESPACE = \"" + root.getNamespace() + "\";\n" + //
-                "  public final static String CONFIG_DEF_VERSION = \"" + root.getVersion() + "\";\n" + //
+                "  public final static String CONFIG_DEF_VERSION = \"" + root.getVersion() + "\";\n" + // TODO: Remove on Vespa 8
                 "  public final static String[] CONFIG_DEF_SCHEMA = {\n" + //
                 "" + indentCode(INDENTATION + INDENTATION, getDefSchema()) + "\n" + //
                 "  };\n" + //
