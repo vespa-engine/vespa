@@ -201,7 +201,7 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
 {
     typename T::LoadedValueType v = _attribute.getFast(docId);
     // value
-    fef::NumberOrObject * o = outputs().get_raw(0);
+    auto o = outputs().get_bound();
     o[0].as_number = __builtin_expect(attribute::isUndefined(v), false)
                      ? attribute::getUndefined<feature_t>()
                      : util::getAsFeature(v);
@@ -217,7 +217,7 @@ MultiAttributeExecutor<T>::execute(uint32_t docId)
     const multivalue::Value<typename T::BaseType> * values = nullptr;
     uint32_t numValues = _attribute.getRawValues(docId, values);
 
-    fef::NumberOrObject * o = outputs().get_raw(0);
+    auto o = outputs().get_bound();
     o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
     o[1].as_number = 0;  // weight
     o[2].as_number = 0;  // contains
@@ -227,7 +227,7 @@ MultiAttributeExecutor<T>::execute(uint32_t docId)
 void
 CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
-    fef::NumberOrObject * o = outputs().get_raw(0);
+    auto o = outputs().get_bound();
     o[0].as_number = 0;  // value
     o[1].as_number = 0;  // weight
     o[2].as_number = 0;  // contains
@@ -255,7 +255,7 @@ AttributeExecutor<T>::execute(uint32_t docId)
     if (_idx < _buffer.size()) {
         value = considerUndefined(_buffer[_idx], _attrType);
     }
-    fef::NumberOrObject * o = outputs().get_raw(0);
+    auto o = outputs().get_bound();
     o[0].as_number = value;  // value
     o[1].as_number = 0;  // weight
     o[2].as_number = 0;  // contains
