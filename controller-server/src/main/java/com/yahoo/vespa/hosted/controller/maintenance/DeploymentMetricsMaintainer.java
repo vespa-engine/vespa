@@ -78,6 +78,11 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                              .at(now);
                             applications.store(locked.with(existingDeployment.zone(), newMetrics)
                                                      .recordActivityAt(now, existingDeployment.zone()));
+
+                            if (controller().system() == SystemName.cd) {
+
+                            }
+
                         });
                     }
                 } catch (Exception e) {
