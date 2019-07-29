@@ -5,7 +5,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 
@@ -15,7 +14,6 @@ import java.util.stream.Stream;
 
 /**
  * Retrieves metrics from the configuration server.
- * Intended for Public zones.
  *
  * @author ogronnesby
  */

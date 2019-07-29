@@ -6,7 +6,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.ConfigServerMetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
@@ -21,7 +22,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,8 +79,18 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                             applications.store(locked.with(existingDeployment.zone(), newMetrics)
                                                      .recordActivityAt(now, existingDeployment.zone()));
 
-                            if (controller().system() == SystemName.cd) {
 
+                            if (controller().system() == SystemName.cd) {
+                                MetricsService.DeploymentMetrics configServerCollectedMetrics = new ConfigServerMetricsService(controller().configServer())
+                                        .getDeploymentMetrics(application.id(), deployment.zone());
+                                log.log(Level.INFO, String.format("Deployment metrics for application %s in zone %s. \nQPS: %d\nWPS: %d\n Doc count: %d\nQuery latency: %d\nWrite latency: %d\n",
+                                        application.id().serializedForm(),
+                                        deployment.zone().value(),
+                                        configServerCollectedMetrics.queriesPerSecond(),
+                                        configServerCollectedMetrics.writesPerSecond(),
+                                        configServerCollectedMetrics.documentCount(),
+                                        configServerCollectedMetrics.queryLatencyMillis(),
+                                        configServerCollectedMetrics.writeLatencyMillis()));
                             }
 
                         });
