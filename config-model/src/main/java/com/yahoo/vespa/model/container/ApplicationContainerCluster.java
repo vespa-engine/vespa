@@ -2,13 +2,18 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.jdisc.ContainerMbusConfig;
+import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.jdisc.http.ServletPathsConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.defaults.Defaults;
@@ -39,7 +44,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         BundlesConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
-        ServletPathsConfig.Producer
+        ServletPathsConfig.Producer,
+        ContainerMbusConfig.Producer
 {
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
@@ -51,6 +57,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private Optional<TlsSecrets> tlsSecrets;
     private final boolean enableGroupingSessionCache;
+
+    private MbusParams mbusParams;
+    private boolean messageBusEnabled = true;
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
@@ -156,11 +165,60 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (modelEvaluation != null) modelEvaluation.getConfig(builder);
     }
 
+    @Override
+    public void getConfig(ContainerMbusConfig.Builder builder) {
+        if (mbusParams != null) {
+            if (mbusParams.maxConcurrentFactor != null)
+                builder.maxConcurrentFactor(mbusParams.maxConcurrentFactor);
+            if (mbusParams.documentExpansionFactor != null)
+                builder.documentExpansionFactor(mbusParams.documentExpansionFactor);
+            if (mbusParams.containerCoreMemory != null)
+                builder.containerCoreMemory(mbusParams.containerCoreMemory);
+        }
+        if (getDocproc() != null)
+            getDocproc().getConfig(builder);
+    }
+
     public Optional<TlsSecrets> getTlsSecrets() {
         return tlsSecrets;
     }
 
     public boolean enableGroupingSessionCache() {
         return enableGroupingSessionCache;
+    }
+
+    public void setMbusParams(MbusParams mbusParams) {
+        this.mbusParams = mbusParams;
+    }
+
+    public final void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
+
+    protected boolean messageBusEnabled() { return messageBusEnabled; }
+
+    public void addMbusServer(ComponentId chainId) {
+        ComponentId serviceId = chainId.nestInNamespace(ComponentId.fromString("MbusServer"));
+
+        addComponent(
+                new Component<>(new ComponentModel(new BundleInstantiationSpecification(
+                        serviceId,
+                        ComponentSpecification.fromString(MbusServerProvider.class.getName()),
+                        null))));
+    }
+
+    public static class MbusParams {
+        // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
+        final Double maxConcurrentFactor;
+
+        // the amount that documents expand temporarily when processing them
+        final Double documentExpansionFactor;
+
+        // the space to reserve for container, docproc stuff (memory that cannot be used for processing documents), in MB
+        final Integer containerCoreMemory;
+
+        public MbusParams(Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
+            this.maxConcurrentFactor = maxConcurrentFactor;
+            this.documentExpansionFactor = documentExpansionFactor;
+            this.containerCoreMemory = containerCoreMemory;
+        }
     }
 }

@@ -4,14 +4,14 @@ package com.yahoo.vespa.model.container.docproc;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.jdisc.config.SessionConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.chain.Chains;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 
 /**
- * @author einarmr
- * @since 5.1.9
+ * @author Einar M R Rosenvinge
  */
 public class DocprocChains extends Chains<DocprocChain> {
     private final ProcessingHandler<DocprocChains> docprocHandler;
@@ -20,10 +20,6 @@ public class DocprocChains extends Chains<DocprocChain> {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(this, "com.yahoo.docproc.jdisc.DocumentProcessingHandler");
         addComponent(docprocHandler);
-    }
-
-    public ProcessingHandler<DocprocChains> getDocprocHandler() {
-        return docprocHandler;
     }
 
     private void addComponent(Component component) {
@@ -35,13 +31,13 @@ public class DocprocChains extends Chains<DocprocChain> {
 
 
     public void addServersAndClientsForChains() {
-        if (getParent() instanceof ContainerCluster) {
+        if (getParent() instanceof ApplicationContainerCluster) {
             for (DocprocChain chain: getChainGroup().getComponents())
-                addServerAndClientForChain((ContainerCluster) getParent(), chain);
+                addServerAndClientForChain((ApplicationContainerCluster) getParent(), chain);
         }
     }
 
-    private void addServerAndClientForChain(ContainerCluster cluster, DocprocChain docprocChain) {
+    private void addServerAndClientForChain(ApplicationContainerCluster cluster, DocprocChain docprocChain) {
         docprocHandler.addServerBindings("mbus://*/" + docprocChain.getSessionName());
 
         cluster.addMbusServer(ComponentId.fromString(docprocChain.getSessionName()));

@@ -36,6 +36,8 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
         builder.maxthreads(10);
     }
 
+    protected boolean messageBusEnabled() { return false; }
+
     private void addLogHandler() {
         Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
         logHandler.addServerBindings("*://*/logs");
