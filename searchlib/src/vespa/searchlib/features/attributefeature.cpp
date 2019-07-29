@@ -358,25 +358,39 @@ AttributeBlueprint::createInstance() const
 
 namespace {
 
-struct AttrBaseType;
-#define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
-    { \
-        using AttrType = SingleValueNumericAttribute<T>; \
-        const AttrType * typed_attr = dynamic_cast<const AttrType *>(a); \
-        if (typed_attr != nullptr) { \
-            return stash.create<SingleAttributeExecutor<AttrType>>(*typed_attr); \
-        } \
+template <typename T>
+struct SingleValueExecutorCreator {
+    using AttrType = SingleValueNumericAttribute<T>;
+    using PtrType = const AttrType *;
+    using ExecType = SingleAttributeExecutor<AttrType>;
+    SingleValueExecutorCreator() : ptr(nullptr) {}
+    bool handle(const IAttributeVector *attribute) {
+        ptr = dynamic_cast<PtrType>(attribute);
+        return ptr != nullptr;
     }
-
-#define CREATE_AND_RETURN_IF_MULTI_NUMERIC(a, idx, T) \
-    { \
-        using AttrType = MultiValueNumericAttribute<T, multivalue::Value<T::BaseType>>; \
-        const AttrType * typed_attr = dynamic_cast<const AttrType *>(a); \
-        if (typed_attr != nullptr) { \
-            return stash.create<MultiAttributeExecutor<AttrType>>(*typed_attr, idx); \
-        } \
+    fef::FeatureExecutor & create(vespalib::Stash &stash) const {
+        return stash.create<ExecType>(*ptr);
     }
+private:
+    PtrType ptr;
+};
 
+template <typename T>
+struct MultiValueExecutorCreator {
+    using AttrType = MultiValueNumericAttribute<T, multivalue::Value<typename T::BaseType>>;
+    using PtrType = const AttrType *;
+    using ExecType = MultiAttributeExecutor<AttrType>;
+    MultiValueExecutorCreator() : ptr(nullptr) {}
+    bool handle(const IAttributeVector *attribute) {
+        ptr = dynamic_cast<PtrType>(attribute);
+        return ptr != nullptr;
+    }
+    fef::FeatureExecutor & create(vespalib::Stash &stash, uint32_t idx) const {
+        return stash.create<ExecType>(*ptr, idx);
+    }
+private:
+    PtrType ptr;
+};
 
 fef::FeatureExecutor &
 createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
@@ -402,10 +416,10 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
         }
     } else { // SINGLE or ARRAY
         if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, FloatingPointAttributeTemplate<double>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, FloatingPointAttributeTemplate<float>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, IntegerAttributeTemplate<int32_t>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, IntegerAttributeTemplate<int64_t>);
+            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;  if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
         }
         {
             uint32_t idx = 0;
@@ -417,12 +431,12 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             if (attribute->isStringType()) {
                 return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
             } else if (attribute->isIntegerType()) {
-                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, IntegerAttributeTemplate<int32_t>);
-                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, IntegerAttributeTemplate<int64_t>);
+                { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+                { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
                 return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
-                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, FloatingPointAttributeTemplate<double>);
-                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, FloatingPointAttributeTemplate<float>);
+                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
                 return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
