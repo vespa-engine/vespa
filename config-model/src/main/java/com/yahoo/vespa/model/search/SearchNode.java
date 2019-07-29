@@ -54,6 +54,7 @@ public class SearchNode extends AbstractService implements
     private final boolean flushOnShutdown;
     private NodeSpec nodeSpec;
     private int distributionKey;
+    private int redundancy = 1;
     private int searchableCopies = 1;
     private final String clusterName;
     private TransactionLogServer tls;
@@ -143,6 +144,9 @@ public class SearchNode extends AbstractService implements
     }
     public void setSearchableCopies(int searchableCopies) {
         this.searchableCopies = searchableCopies;
+    }
+    public void setRedundancy(int redundancy) {
+        this.redundancy = redundancy;
     }
 
     public void updatePartition(int partitionId) {
@@ -271,7 +275,7 @@ public class SearchNode extends AbstractService implements
         }
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             Flavor nodeFlavor = getHostResource().getFlavor().get();
-            NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(nodeFlavor, searchableCopies);
+            NodeFlavorTuning nodeFlavorTuning = new NodeFlavorTuning(nodeFlavor, redundancy, searchableCopies);
             nodeFlavorTuning.getConfig(builder);
 
             if (tuning.isPresent()) {

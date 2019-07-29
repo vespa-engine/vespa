@@ -16,10 +16,13 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     static long MB = 1024 * 1024;
     static long GB = MB * 1024;
     private final Flavor nodeFlavor;
+    private final int redundancy;
     private final int searchableCopies;
 
-    public NodeFlavorTuning(Flavor nodeFlavor, int searchableCopies) {
+
+    public NodeFlavorTuning(Flavor nodeFlavor, int redundancy, int searchableCopies) {
         this.nodeFlavor = nodeFlavor;
+        this.redundancy = redundancy;
         this.searchableCopies = searchableCopies;
     }
 
@@ -42,7 +45,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
             long numDocs = (long)nodeFlavor.getMinMainMemoryAvailableGb()*GB/64L;
-            builder.allocation.initialnumdocs(numDocs/searchableCopies);
+            builder.allocation.initialnumdocs(numDocs/Math.max(searchableCopies, redundancy));
         }
     }
 
