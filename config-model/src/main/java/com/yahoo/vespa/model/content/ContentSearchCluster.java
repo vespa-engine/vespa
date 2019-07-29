@@ -287,6 +287,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
         this.redundancy = redundancy;
         for (SearchNode node : getSearchNodes()) {
+            node.setRedundancy(redundancy.redundancyFromSearchNodePerspective());
             node.setSearchableCopies(redundancy.searchableCopies());
         }
     }

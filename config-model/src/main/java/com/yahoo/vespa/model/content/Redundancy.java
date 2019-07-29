@@ -58,6 +58,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     public boolean isEffectivelyGloballyDistributed() {
         return totalNodes == effectiveFinalRedundancy();
     }
+    public int redundancyFromSearchNodePerspective() { return finalRedundancy/explicitGroups; }
     public int searchableCopies() { return readyCopies/(explicitGroups*implicitGroups); }
 
     @Override
@@ -69,7 +70,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
-        distBuilder.redundancy(finalRedundancy/explicitGroups);
+        distBuilder.redundancy(redundancyFromSearchNodePerspective());
         distBuilder.searchablecopies(searchableCopies());
         builder.distribution(distBuilder);
     }
