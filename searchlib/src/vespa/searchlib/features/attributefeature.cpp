@@ -12,6 +12,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.attributefeature");
@@ -115,6 +116,24 @@ public:
     void execute(uint32_t docId) override;
 };
 
+/**
+ * Implements the executor for fetching values from a single or array attribute vector
+ */
+template <typename T>
+class MultiAttributeExecutor : public fef::FeatureExecutor {
+private:
+    const T & _attribute;
+    uint32_t  _idx;
+public:
+    /**
+     * Constructs an executor.
+     *
+     * @param attribute The attribute vector to use.
+     */
+    MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
+    void execute(uint32_t docId) override;
+};
+
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
 private:
     const attribute::IAttributeVector & _attribute;
@@ -188,6 +207,20 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
     outputs().set_number(1, 0.0f);  // weight
     outputs().set_number(2, 0.0f);  // contains
     outputs().set_number(3, 1.0f);  // count
+}
+
+template <typename T>
+void
+MultiAttributeExecutor<T>::execute(uint32_t docId)
+{
+    const multivalue::Value<typename T::BaseType> * values = nullptr;
+    uint32_t numValues = _attribute.getRawValues(docId, values);
+
+    outputs().set_number(0, __builtin_expect(_idx < numValues, true)
+                         ? values[_idx].value() : 0.0f);
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, 0.0f);  // count
 }
 
 void
@@ -323,12 +356,41 @@ AttributeBlueprint::createInstance() const
     return std::make_unique<AttributeBlueprint>();
 }
 
-#define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
-    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != nullptr) { \
-        return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
-    }
-
 namespace {
+
+template <typename T>
+struct SingleValueExecutorCreator {
+    using AttrType = SingleValueNumericAttribute<T>;
+    using PtrType = const AttrType *;
+    using ExecType = SingleAttributeExecutor<AttrType>;
+    SingleValueExecutorCreator() : ptr(nullptr) {}
+    bool handle(const IAttributeVector *attribute) {
+        ptr = dynamic_cast<PtrType>(attribute);
+        return ptr != nullptr;
+    }
+    fef::FeatureExecutor & create(vespalib::Stash &stash) const {
+        return stash.create<ExecType>(*ptr);
+    }
+private:
+    PtrType ptr;
+};
+
+template <typename T>
+struct MultiValueExecutorCreator {
+    using AttrType = MultiValueNumericAttribute<T, multivalue::Value<typename T::BaseType>>;
+    using PtrType = const AttrType *;
+    using ExecType = MultiAttributeExecutor<AttrType>;
+    MultiValueExecutorCreator() : ptr(nullptr) {}
+    bool handle(const IAttributeVector *attribute) {
+        ptr = dynamic_cast<PtrType>(attribute);
+        return ptr != nullptr;
+    }
+    fef::FeatureExecutor & create(vespalib::Stash &stash, uint32_t idx) const {
+        return stash.create<ExecType>(*ptr, idx);
+    }
+private:
+    PtrType ptr;
+};
 
 fef::FeatureExecutor &
 createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
@@ -354,10 +416,10 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
         }
     } else { // SINGLE or ARRAY
         if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, FloatingPointAttributeTemplate<double>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, FloatingPointAttributeTemplate<float>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, IntegerAttributeTemplate<int32_t>);
-            CREATE_AND_RETURN_IF_SINGLE_NUMERIC(attribute, IntegerAttributeTemplate<int64_t>);
+            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;  if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
+            { SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;      if (creator.handle(attribute)) return creator.create(stash); }
         }
         {
             uint32_t idx = 0;
@@ -369,8 +431,12 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             if (attribute->isStringType()) {
                 return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
             } else if (attribute->isIntegerType()) {
+                { MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+                { MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
                 return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
+                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
+                { MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator; if (creator.handle(attribute)) return creator.create(stash, idx); }
                 return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
