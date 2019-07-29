@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.logging.Logger;
 
 
 /**
@@ -25,6 +26,7 @@ import java.time.Instant;
  * @author ogronnesby
  */
 public class MetricsRetriever {
+    private static final Logger log = Logger.getLogger(MetricsRetriever.class.getName());
     private final HttpClient httpClient = HttpClientBuilder.create().build();
 
     /**
@@ -39,6 +41,12 @@ public class MetricsRetriever {
 
     private void getHostMetrics(URI hostURI, MetricsAggregator metrics) {
             Slime responseBody = doMetricsRequest(hostURI);
+            var parseError = responseBody.get().field("error_message").asString();
+
+            if (! parseError.isEmpty()) {
+                log.info("Failed to retrieve logs from " + hostURI + ": " + parseError);
+            }
+
             Inspector services = responseBody.get().field("services");
             services.traverse((ArrayTraverser) (i, servicesInspector) -> {
                 parseService(servicesInspector, metrics);
