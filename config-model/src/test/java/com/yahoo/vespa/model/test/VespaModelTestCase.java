@@ -66,13 +66,9 @@ public class VespaModelTestCase {
             "</host>" +
             "</hosts>";
 
-    public static VespaModel getVespaModel(String configPath) {
-        return getVespaModel(configPath, true);
-    }
-
-    public static VespaModel getVespaModel(String configPath, boolean validateXml) {
+    private static VespaModel getVespaModel(String configPath) {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg(configPath);
-        return creator.create(validateXml);
+        return creator.create(true);
     }
 
     // Debugging
@@ -232,7 +228,7 @@ public class VespaModelTestCase {
     public void testDeployLogger() throws IOException, SAXException {
         final String services = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<services  version=\"1.0\">" +
-                "<config name=\"unknsownfoo\">" +
+                "<config name=\"bar.unknsownfoo\">" +
                 "<logserver><host>foo</host></logserver>" +
                 "</config>" +
                 "<admin  version=\"2.0\">" +
