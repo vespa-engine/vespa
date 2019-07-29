@@ -83,7 +83,7 @@ public class CapacityPolicies {
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin)
-            return new NodeResources(0.5, 3, 50);
+            return new NodeResources(0.5, zone.system().isCd() ? 2.5 : 3, 50);
 
         return new NodeResources(1.5, 8, 50);
     }
