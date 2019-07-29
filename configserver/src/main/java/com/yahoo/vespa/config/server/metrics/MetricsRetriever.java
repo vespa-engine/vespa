@@ -41,10 +41,10 @@ public class MetricsRetriever {
 
     private void getHostMetrics(URI hostURI, MetricsAggregator metrics) {
             Slime responseBody = doMetricsRequest(hostURI);
-            var parseError = responseBody.get().field("error_message").asString();
+            var parseError = responseBody.get().field("error_message");
 
-            if (! parseError.isEmpty()) {
-                log.info("Failed to retrieve logs from " + hostURI + ": " + parseError);
+            if (parseError.valid()) {
+                log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
             }
 
             Inspector services = responseBody.get().field("services");
