@@ -356,18 +356,27 @@ AttributeBlueprint::createInstance() const
     return std::make_unique<AttributeBlueprint>();
 }
 
-#define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
-    if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != nullptr) { \
-        return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
-    }
-
-#define MULTI_FP(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, multivalue::Value<T>>
-#define CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(a, T, idx) \
-    if (dynamic_cast<const MULTI_FP(T) *>(a) != nullptr) { \
-        return stash.create<MultiAttributeExecutor<MULTI_FP(T)>>(*static_cast<const MULTI_FP(T) *>(a), idx); \
-    }
-
 namespace {
+
+struct AttrBaseType;
+#define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
+    { \
+        using AttrType = SingleValueNumericAttribute<T>; \
+        const AttrType * typed_attr = dynamic_cast<const AttrType *>(a); \
+        if (typed_attr != nullptr) { \
+            return stash.create<SingleAttributeExecutor<AttrType>>(*typed_attr); \
+        } \
+    }
+
+#define CREATE_AND_RETURN_IF_MULTI_NUMERIC(a, idx, T) \
+    { \
+        using AttrType = MultiValueNumericAttribute<T, multivalue::Value<T::BaseType>>; \
+        const AttrType * typed_attr = dynamic_cast<const AttrType *>(a); \
+        if (typed_attr != nullptr) { \
+            return stash.create<MultiAttributeExecutor<AttrType>>(*typed_attr, idx); \
+        } \
+    }
+
 
 fef::FeatureExecutor &
 createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
@@ -408,10 +417,12 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             if (attribute->isStringType()) {
                 return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
             } else if (attribute->isIntegerType()) {
+                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, IntegerAttributeTemplate<int32_t>);
+                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, IntegerAttributeTemplate<int64_t>);
                 return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
-                CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(attribute, double, idx);
-                CREATE_AND_RETURN_IF_MULTI_FP_NUMERIC(attribute, float, idx);
+                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, FloatingPointAttributeTemplate<double>);
+                CREATE_AND_RETURN_IF_MULTI_NUMERIC(attribute, idx, FloatingPointAttributeTemplate<float>);
                 return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
