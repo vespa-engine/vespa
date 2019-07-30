@@ -39,7 +39,7 @@ struct TypeOrId {
 
 struct Struct : DatatypeConfig {
     Struct(const vespalib::string &name) {
-        type = STRUCT;
+        type = Type::STRUCT;
         sstruct.name = name;
     }
     Struct &setCompression(Sstruct::Compression::Type t, int32_t level,
@@ -65,7 +65,7 @@ struct Struct : DatatypeConfig {
 struct Array : DatatypeConfig {
     Array(TypeOrId nested_type) {
         addNestedType(nested_type);
-        type = ARRAY;
+        type = Type::ARRAY;
         array.element.id = nested_type.id;
     }
 };
@@ -73,7 +73,7 @@ struct Array : DatatypeConfig {
 struct Wset : DatatypeConfig {
     Wset(TypeOrId nested_type) {
         addNestedType(nested_type);
-        type = WSET;
+        type = Type::WSET;
         wset.key.id = nested_type.id;
     }
     Wset &removeIfZero() { wset.removeifzero = true; return *this; }
@@ -87,7 +87,7 @@ struct Map : DatatypeConfig {
     Map(TypeOrId key_type, TypeOrId value_type) {
         addNestedType(key_type);
         addNestedType(value_type);
-        type = MAP;
+        type = Type::MAP;
         map.key.id = key_type.id;
         map.value.id = value_type.id;
     }
@@ -95,7 +95,7 @@ struct Map : DatatypeConfig {
 
 struct AnnotationRef : DatatypeConfig {
     AnnotationRef(int32_t annotation_type_id) {
-        type = ANNOTATIONREF;
+        type = Type::ANNOTATIONREF;
         annotationref.annotation.id = annotation_type_id;
     }
 };

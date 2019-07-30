@@ -1161,7 +1161,7 @@ TEST(DocumentTest, testCompressionConfigured)
                       Struct("serializetest.body").setId(45)
                       .addField("stringfield", DataType::T_STRING)
                       .setCompression(DocumenttypesConfig::Documenttype::
-                                      Datatype::Sstruct::Compression::LZ4,
+                                      Datatype::Sstruct::Compression::Type::LZ4,
                                       9, 99, 0));
     DocumentTypeRepo repo2(builder2.config());
 

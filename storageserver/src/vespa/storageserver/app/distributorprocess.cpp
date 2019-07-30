@@ -32,7 +32,7 @@ DistributorProcess::setupConfig(uint64_t subscribeTimeout)
     std::unique_ptr<vespa::config::content::core::StorServerConfig> config =
         config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(_configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
     if (config->persistenceProvider.type
-        != vespa::config::content::core::StorServerConfig::PersistenceProvider::STORAGE)
+        != vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE)
     {
         _activeFlag = DistributorNode::NEED_ACTIVE_BUCKET_STATES_SET;
     }

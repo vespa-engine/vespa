@@ -62,8 +62,8 @@ DocTypeRep
 DocumenttypesConfigBuilderHelper::document(int32_t id, const vespalib::string &name,
                                            const DatatypeConfig &header,
                                            const DatatypeConfig &body) {
-    assert(header.type == DatatypeConfig::STRUCT);
-    assert(body.type == DatatypeConfig::STRUCT);
+    assert(header.type == DatatypeConfig::Type::STRUCT);
+    assert(body.type == DatatypeConfig::Type::STRUCT);
     _config.documenttype.resize(_config.documenttype.size() + 1);
     _config.documenttype.back().id = id;
     _config.documenttype.back().name = name;

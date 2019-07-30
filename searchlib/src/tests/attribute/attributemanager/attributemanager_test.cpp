@@ -222,27 +222,29 @@ AttributeManagerTest::testConfigConvert()
     // typedef AttributeVector::Config AVC;
     typedef BT AVBT;
     typedef CollectionType AVCT;
-    typedef AttributesConfig::Attribute CACA;
+    using CACA = AttributesConfig::Attribute;
+    using CACAD = CACA::Datatype;
+    using CACAC = CACA::Collectiontype;
     typedef ConfigConverter CC;
 
-    EXPECT_TRUE(assertDataType(AVBT::STRING, CACA::STRING));
-    EXPECT_TRUE(assertDataType(AVBT::INT8, CACA::INT8));
-    EXPECT_TRUE(assertDataType(AVBT::INT16, CACA::INT16));
-    EXPECT_TRUE(assertDataType(AVBT::INT32, CACA::INT32));
-    EXPECT_TRUE(assertDataType(AVBT::INT64, CACA::INT64));
-    EXPECT_TRUE(assertDataType(AVBT::FLOAT, CACA::FLOAT));
-    EXPECT_TRUE(assertDataType(AVBT::DOUBLE, CACA::DOUBLE));
-    EXPECT_TRUE(assertDataType(AVBT::PREDICATE, CACA::PREDICATE));
-    EXPECT_TRUE(assertDataType(AVBT::TENSOR, CACA::TENSOR));
-    EXPECT_TRUE(assertDataType(AVBT::NONE, CACA::NONE));
+    EXPECT_TRUE(assertDataType(AVBT::STRING, CACAD::STRING));
+    EXPECT_TRUE(assertDataType(AVBT::INT8, CACAD::INT8));
+    EXPECT_TRUE(assertDataType(AVBT::INT16, CACAD::INT16));
+    EXPECT_TRUE(assertDataType(AVBT::INT32, CACAD::INT32));
+    EXPECT_TRUE(assertDataType(AVBT::INT64, CACAD::INT64));
+    EXPECT_TRUE(assertDataType(AVBT::FLOAT, CACAD::FLOAT));
+    EXPECT_TRUE(assertDataType(AVBT::DOUBLE, CACAD::DOUBLE));
+    EXPECT_TRUE(assertDataType(AVBT::PREDICATE, CACAD::PREDICATE));
+    EXPECT_TRUE(assertDataType(AVBT::TENSOR, CACAD::TENSOR));
+    EXPECT_TRUE(assertDataType(AVBT::NONE, CACAD::NONE));
 
-    EXPECT_TRUE(assertCollectionType(AVCT::SINGLE, CACA::SINGLE));
-    EXPECT_TRUE(assertCollectionType(AVCT::ARRAY, CACA::ARRAY));
-    EXPECT_TRUE(assertCollectionType(AVCT::WSET, CACA::WEIGHTEDSET));
+    EXPECT_TRUE(assertCollectionType(AVCT::SINGLE, CACAC::SINGLE));
+    EXPECT_TRUE(assertCollectionType(AVCT::ARRAY, CACAC::ARRAY));
+    EXPECT_TRUE(assertCollectionType(AVCT::WSET, CACAC::WEIGHTEDSET));
     EXPECT_TRUE(assertCollectionType(AVCT(AVCT::SINGLE, true, false),
-                                    CACA::SINGLE, true, false));
+                                    CACAC::SINGLE, true, false));
     EXPECT_TRUE(assertCollectionType(AVCT(AVCT::SINGLE, false, true),
-                                    CACA::SINGLE, false, true));
+                                    CACAC::SINGLE, false, true));
 
     { // fastsearch
         CACA a;
@@ -270,7 +272,7 @@ AttributeManagerTest::testConfigConvert()
     }
     { // tensor
         CACA a;
-        a.datatype = CACA::TENSOR;
+        a.datatype = CACAD::TENSOR;
         a.tensortype = "tensor(x[5])";
         AttributeVector::Config out = ConfigConverter::convert(a);
         EXPECT_EQUAL("tensor(x[5])", out.tensorType().to_spec());

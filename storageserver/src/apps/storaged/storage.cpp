@@ -37,8 +37,8 @@ Process::UP createProcess(vespalib::stringref configId) {
     if (serverConfig->isDistributor) {
         return Process::UP(new DistributorProcess(configId));
     } else switch (serverConfig->persistenceProvider.type) {
-        case vespa::config::content::core::StorServerConfig::PersistenceProvider::STORAGE:
-        case vespa::config::content::core::StorServerConfig::PersistenceProvider::DUMMY:
+        case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
+        case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
             return Process::UP(new DummyServiceLayerProcess(configId));
         default:
             throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);

@@ -51,7 +51,7 @@ GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
 DocsumTools::FieldSpec::FieldSpec() :
     _outputName(),
     _inputNames(),
-    _command(VsmsummaryConfig::Fieldmap::NONE)
+    _command(VsmsummaryConfig::Fieldmap::Command::NONE)
 { }
 
 DocsumTools::FieldSpec::~FieldSpec() = default;
