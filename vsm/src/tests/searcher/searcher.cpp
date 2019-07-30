@@ -766,7 +766,7 @@ TEST("FieldSearchSpec constrution") {
         EXPECT_EQUAL(0x100000u, f.maxLength());
     }
     {
-        FieldSearchSpec f(7, "f0", VsmfieldsConfig::Fieldspec::AUTOUTF8, "substring", 789);
+        FieldSearchSpec f(7, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 789);
         EXPECT_TRUE(f.valid());
         EXPECT_EQUAL(7u, f.id());
         EXPECT_EQUAL("f0", f.name());
@@ -777,8 +777,8 @@ TEST("FieldSearchSpec constrution") {
 
 TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
-    specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::AUTOUTF8, "substring", 1000);
-    specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::AUTOUTF8, "", 1000);
+    specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "substring", 1000);
+    specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8, "", 1000);
     IndexFieldMapT indexMap;
     indexMap["i0"].push_back(0);
     indexMap["i1"].push_back(1);

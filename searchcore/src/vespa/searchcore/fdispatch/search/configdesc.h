@@ -69,9 +69,9 @@ public:
     class QueryDistributionMode {
     public:
         enum Mode { 
-            RANDOM        = PartitionsConfig::Dataset::RANDOM,
-            AUTOMATIC     = PartitionsConfig::Dataset::AUTOMATIC,
-            FIXEDROW      = PartitionsConfig::Dataset::FIXEDROW
+            RANDOM        = static_cast<int>(PartitionsConfig::Dataset::Querydistribution::RANDOM),
+            AUTOMATIC     = static_cast<int>(PartitionsConfig::Dataset::Querydistribution::AUTOMATIC),
+            FIXEDROW      = static_cast<int>(PartitionsConfig::Dataset::Querydistribution::FIXEDROW)
         };
 
         QueryDistributionMode(Mode mode, double minGroupCoverage, double latencyDecayRate) :

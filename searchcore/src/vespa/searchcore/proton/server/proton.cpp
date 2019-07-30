@@ -65,7 +65,7 @@ CompressionConfig::Type
 convert(InternalProtonType::Packetcompresstype type)
 {
     switch (type) {
-      case InternalProtonType::LZ4: return CompressionConfig::LZ4;
+      case InternalProtonType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
       default: return CompressionConfig::LZ4;
     }
 }
@@ -74,10 +74,10 @@ void
 setBucketCheckSumType(const ProtonConfig & proton)
 {
     switch (proton.bucketdb.checksumtype) {
-    case InternalProtonType::Bucketdb::LEGACY:
+    case InternalProtonType::Bucketdb::Checksumtype::LEGACY:
         bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::LEGACY);
         break;
-    case InternalProtonType::Bucketdb::XXHASH64:
+    case InternalProtonType::Bucketdb::Checksumtype::XXHASH64:
         bucketdb::BucketState::setChecksumType(bucketdb::BucketState::ChecksumType::XXHASH64);
         break;
     }
@@ -273,7 +273,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
     switch (flush.strategy) {
-    case ProtonConfig::Flush::MEMORY: {
+    case ProtonConfig::Flush::Strategy::MEMORY: {
         auto memoryFlush = std::make_shared<MemoryFlush>(
                 MemoryFlushConfigUpdater::convertConfig(flush.memory, hwInfo.memory()), fastos::ClockSystem::now());
         _memoryFlushConfigUpdater = std::make_unique<MemoryFlushConfigUpdater>(memoryFlush, flush.memory, hwInfo.memory());
@@ -281,7 +281,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
         strategy = memoryFlush;
         break;
     }
-    case ProtonConfig::Flush::SIMPLE:
+    case ProtonConfig::Flush::Strategy::SIMPLE:
     default:
         strategy = std::make_shared<SimpleFlush>();
         break;

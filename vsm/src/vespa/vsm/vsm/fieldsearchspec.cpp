@@ -45,7 +45,7 @@ FieldSearchSpec::FieldSearchSpec() :
     _name(),
     _maxLength(0x100000),
     _searcher(),
-    _searchMethod(VsmfieldsConfig::Fieldspec::NONE),
+    _searchMethod(VsmfieldsConfig::Fieldspec::Searchmethod::NONE),
     _arg1(),
     _reconfigured(false)
 {
@@ -65,12 +65,12 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
 {
     switch(searchDef) {
     default:
-        LOG(warning, "Unknown searchdef = %d. Defaulting to AUTOUTF8", searchDef);
+        LOG(warning, "Unknown searchdef = %d. Defaulting to AUTOUTF8", static_cast<int>(searchDef));
         [[fallthrough]];
-    case VsmfieldsConfig::Fieldspec::AUTOUTF8:
-    case VsmfieldsConfig::Fieldspec::NONE:
-    case VsmfieldsConfig::Fieldspec::SSE2UTF8:
-    case VsmfieldsConfig::Fieldspec::UTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::UTF8:
         if (arg1 == "substring") {
             _searcher = UTF8SubStringFieldSearcher(fid);
         } else if (arg1 == "suffix") {
@@ -79,25 +79,25 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
             _searcher = UTF8ExactStringFieldSearcher(fid);
         } else if (arg1 == "word") {
             _searcher = UTF8ExactStringFieldSearcher(fid);
-        } else if (searchDef == VsmfieldsConfig::Fieldspec::UTF8) {
+        } else if (searchDef == VsmfieldsConfig::Fieldspec::Searchmethod::UTF8) {
             _searcher = UTF8StrChrFieldSearcher(fid);
         } else {
             _searcher = FUTF8StrChrFieldSearcher(fid);
         }
         break;
-    case VsmfieldsConfig::Fieldspec::BOOL:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::BOOL:
         _searcher = BoolFieldSearcher(fid);
         break;
-    case VsmfieldsConfig::Fieldspec::INT8:
-    case VsmfieldsConfig::Fieldspec::INT16:
-    case VsmfieldsConfig::Fieldspec::INT32:
-    case VsmfieldsConfig::Fieldspec::INT64:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::INT8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::INT16:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::INT32:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::INT64:
         _searcher = IntFieldSearcher(fid);
         break;
-    case VsmfieldsConfig::Fieldspec::FLOAT:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::FLOAT:
         _searcher = FloatFieldSearcher(fid);
         break;
-    case VsmfieldsConfig::Fieldspec::DOUBLE:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::DOUBLE:
         _searcher = DoubleFieldSearcher(fid);
         break;
     }
@@ -114,10 +114,10 @@ FieldSearchSpec::reconfig(const search::QueryTerm & term)
         return;
     }
     switch (_searchMethod) {
-    case VsmfieldsConfig::Fieldspec::NONE:
-    case VsmfieldsConfig::Fieldspec::AUTOUTF8:
-    case VsmfieldsConfig::Fieldspec::UTF8:
-    case VsmfieldsConfig::Fieldspec::SSE2UTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::UTF8:
+    case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
         if ((term.isSubstring() && _arg1 != "substring") ||
             (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") ||

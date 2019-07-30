@@ -28,9 +28,9 @@ Schema::DataType
 convertIndexDataType(const IndexschemaConfig::Indexfield::Datatype &type)
 {
     switch (type) {
-    case IndexschemaConfig::Indexfield::STRING:
+    case IndexschemaConfig::Indexfield::Datatype::STRING:
         return DataType::STRING;
-    case IndexschemaConfig::Indexfield::INT64:
+    case IndexschemaConfig::Indexfield::Datatype::INT64:
         return DataType::INT64;
     }
     return DataType::STRING;
@@ -41,11 +41,11 @@ Schema::CollectionType
 convertIndexCollectionType(const IndexschemaConfig::Indexfield::Collectiontype &type)
 {
     switch (type) {
-    case IndexschemaConfig::Indexfield::SINGLE:
+    case IndexschemaConfig::Indexfield::Collectiontype::SINGLE:
         return CollectionType::SINGLE;
-    case IndexschemaConfig::Indexfield::ARRAY:
+    case IndexschemaConfig::Indexfield::Collectiontype::ARRAY:
         return CollectionType::ARRAY;
-    case IndexschemaConfig::Indexfield::WEIGHTEDSET:
+    case IndexschemaConfig::Indexfield::Collectiontype::WEIGHTEDSET:
         return CollectionType::WEIGHTEDSET;
     }
     return CollectionType::SINGLE;

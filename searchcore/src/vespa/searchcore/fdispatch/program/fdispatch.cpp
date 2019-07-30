@@ -271,7 +271,7 @@ CompressionConfig::Type
 convert(InternalFdispatchrcType::Packetcompresstype type)
 {
     switch (type) {
-      case InternalFdispatchrcType::LZ4: return CompressionConfig::LZ4;
+      case InternalFdispatchrcType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
       default: return CompressionConfig::LZ4;
     }
 }

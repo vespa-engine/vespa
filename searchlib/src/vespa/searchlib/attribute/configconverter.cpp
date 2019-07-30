@@ -19,20 +19,20 @@ DataTypeMap
 getDataTypeMap()
 {
     DataTypeMap map;
-    map[AttributesConfig::Attribute::STRING] = BasicType::STRING;
-    map[AttributesConfig::Attribute::BOOL] = BasicType::BOOL;
-    map[AttributesConfig::Attribute::UINT2] = BasicType::UINT2;
-    map[AttributesConfig::Attribute::UINT4] = BasicType::UINT4;
-    map[AttributesConfig::Attribute::INT8] = BasicType::INT8;
-    map[AttributesConfig::Attribute::INT16] = BasicType::INT16;
-    map[AttributesConfig::Attribute::INT32] = BasicType::INT32;
-    map[AttributesConfig::Attribute::INT64] = BasicType::INT64;
-    map[AttributesConfig::Attribute::FLOAT] = BasicType::FLOAT;
-    map[AttributesConfig::Attribute::DOUBLE] = BasicType::DOUBLE;
-    map[AttributesConfig::Attribute::PREDICATE] = BasicType::PREDICATE;
-    map[AttributesConfig::Attribute::TENSOR] = BasicType::TENSOR;
-    map[AttributesConfig::Attribute::REFERENCE] = BasicType::REFERENCE;
-    map[AttributesConfig::Attribute::NONE] = BasicType::NONE;
+    map[AttributesConfig::Attribute::Datatype::STRING] = BasicType::STRING;
+    map[AttributesConfig::Attribute::Datatype::BOOL] = BasicType::BOOL;
+    map[AttributesConfig::Attribute::Datatype::UINT2] = BasicType::UINT2;
+    map[AttributesConfig::Attribute::Datatype::UINT4] = BasicType::UINT4;
+    map[AttributesConfig::Attribute::Datatype::INT8] = BasicType::INT8;
+    map[AttributesConfig::Attribute::Datatype::INT16] = BasicType::INT16;
+    map[AttributesConfig::Attribute::Datatype::INT32] = BasicType::INT32;
+    map[AttributesConfig::Attribute::Datatype::INT64] = BasicType::INT64;
+    map[AttributesConfig::Attribute::Datatype::FLOAT] = BasicType::FLOAT;
+    map[AttributesConfig::Attribute::Datatype::DOUBLE] = BasicType::DOUBLE;
+    map[AttributesConfig::Attribute::Datatype::PREDICATE] = BasicType::PREDICATE;
+    map[AttributesConfig::Attribute::Datatype::TENSOR] = BasicType::TENSOR;
+    map[AttributesConfig::Attribute::Datatype::REFERENCE] = BasicType::REFERENCE;
+    map[AttributesConfig::Attribute::Datatype::NONE] = BasicType::NONE;
     return map;
 }
 
@@ -40,9 +40,9 @@ CollectionTypeMap
 getCollectionTypeMap()
 {
     CollectionTypeMap map;
-    map[AttributesConfig::Attribute::SINGLE] = CollectionType::SINGLE;
-    map[AttributesConfig::Attribute::ARRAY] = CollectionType::ARRAY;
-    map[AttributesConfig::Attribute::WEIGHTEDSET] = CollectionType::WSET;
+    map[AttributesConfig::Attribute::Collectiontype::SINGLE] = CollectionType::SINGLE;
+    map[AttributesConfig::Attribute::Collectiontype::ARRAY] = CollectionType::ARRAY;
+    map[AttributesConfig::Attribute::Collectiontype::WEIGHTEDSET] = CollectionType::WSET;
     return map;
 }
 

@@ -43,7 +43,7 @@ RankManager::Snapshot::detectFields(const VsmfieldsHandle & fields)
 {
     for (uint32_t i = 0; i < fields->fieldspec.size(); ++i) {
         const VsmfieldsConfig::Fieldspec & fs = fields->fieldspec[i];
-        bool isAttribute = (fs.fieldtype == VsmfieldsConfig::Fieldspec::ATTRIBUTE);
+        bool isAttribute = (fs.fieldtype == VsmfieldsConfig::Fieldspec::Fieldtype::ATTRIBUTE);
         LOG(debug, "Adding field of type '%s' and name '%s' with id '%u' the index environment.",
                    isAttribute ? "ATTRIBUTE" : "INDEX", fs.name.c_str(), i);
         // This id must match the vsm specific field id

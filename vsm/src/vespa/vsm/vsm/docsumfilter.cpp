@@ -188,7 +188,7 @@ DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
         return nullptr;
     }
     switch (command) {
-    case VsmsummaryConfig::Fieldmap::FLATTENJUNIPER:
+    case VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER:
         if (_snippetModifiers != nullptr) {
             FieldModifier * mod = _snippetModifiers->getModifier(fId);
             if (mod != nullptr) {
@@ -319,7 +319,7 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
                               const Document & docsum,
                               ResultPacker & packer)
 {
-    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
         const DocsumFieldSpec::FieldIdentifier & fieldId = fieldSpec.getOutputField();
         const document::FieldValue * fv = docsum.getField(fieldId.getId());
         if (fv != nullptr) {
@@ -347,7 +347,7 @@ DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
                                 const Document & docsum,
                                 ResultPacker & packer)
 {
-    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+    if (fieldSpec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
         LOG(debug, "writeFlattenField: Cannot handle command NONE");
         packer.AddEmpty();
         return;
@@ -362,7 +362,7 @@ DocsumFilter::writeFlattenField(const DocsumFieldSpec & fieldSpec,
     }
 
     switch (fieldSpec.getCommand()) {
-    case VsmsummaryConfig::Fieldmap::FLATTENJUNIPER:
+    case VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER:
         _flattenWriter.setSeparator("\x1E"); // record separator (same as juniper uses)
         break;
     default:
@@ -453,7 +453,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
             // this really means 'structured data'
             writeSlimeField(*it, doc, _packer);
         } else {
-            if (it->getInputFields().size() == 1 && it->getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+            if (it->getInputFields().size() == 1 && it->getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
                 const DocsumFieldSpec::FieldIdentifier & fieldId = it->getInputFields()[0];
                 const document::FieldValue * field = doc.getField(fieldId.getId());
                 if (field != nullptr) {
@@ -461,7 +461,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
                 } else {
                     writeEmpty(type, _packer); // void input
                 }
-            } else if (it->getInputFields().size() == 0 && it->getCommand() == VsmsummaryConfig::Fieldmap::NONE) {
+            } else if (it->getInputFields().size() == 0 && it->getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
                 LOG(spam, "0 inputfields for output field %u",  it->getOutputField().getId());
                 writeEmpty(type, _packer); // no input
             } else {

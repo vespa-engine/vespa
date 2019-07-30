@@ -86,7 +86,7 @@ TEST("requireThatStructsCanConfigureCompression") {
     builder.document(doc_type_id, type_name,
                      Struct(header_name),
                      Struct(body_name).setCompression(
-                             Sstruct::Compression::LZ4,
+                             Sstruct::Compression::Type::LZ4,
                              comp_level, comp_minres, comp_minsize));
     DocumentTypeRepo repo(builder.config());
 

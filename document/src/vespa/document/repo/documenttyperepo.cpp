@@ -310,7 +310,7 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
     }
 
     CompressionConfig::Type type = CompressionConfig::NONE;
-    if (s.compression.type == Datatype::Sstruct::Compression::LZ4) {
+    if (s.compression.type == Datatype::Sstruct::Compression::Type::LZ4) {
         type = CompressionConfig::LZ4;
     }
 
@@ -348,18 +348,18 @@ void addAnnotationRef(int32_t id, const Datatype::Annotationref &a, Repo &r, con
 
 void addDataType(const Datatype &type, Repo &repo, const AnnotationTypeRepo &a_repo) {
     switch (type.type) {
-    case Datatype::STRUCT:
+    case Datatype::Type::STRUCT:
         return addStruct(type.id, type.sstruct, repo);
-    case Datatype::ARRAY:
+    case Datatype::Type::ARRAY:
         return addArray(type.id, type.array, repo);
-    case Datatype::WSET:
+    case Datatype::Type::WSET:
         return addWset(type.id, type.wset, repo);
-    case Datatype::MAP:
+    case Datatype::Type::MAP:
         return addMap(type.id, type.map, repo);
-    case Datatype::ANNOTATIONREF:
+    case Datatype::Type::ANNOTATIONREF:
         return addAnnotationRef(type.id, type.annotationref, repo, a_repo);
     default:
-        throw IllegalArgumentException(make_string("Unknown datatype type %d for id %d", type.type, type.id));
+        throw IllegalArgumentException(make_string("Unknown datatype type %d for id %d", static_cast<int>(type.type), type.id));
     }
 }
 

@@ -16,7 +16,7 @@ DocsumFieldSpec::FieldIdentifier::FieldIdentifier(FieldIdT id, FieldPath path) :
 
 DocsumFieldSpec::DocsumFieldSpec() :
     _resultType(search::docsummary::RES_INT),
-    _command(VsmsummaryConfig::Fieldmap::NONE),
+    _command(VsmsummaryConfig::Fieldmap::Command::NONE),
     _outputField(),
     _inputFields()
 { }

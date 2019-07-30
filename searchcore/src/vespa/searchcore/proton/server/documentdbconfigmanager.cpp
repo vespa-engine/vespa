@@ -152,9 +152,9 @@ template<typename T>
 CompressionConfig
 deriveCompression(const T & config) {
     CompressionConfig compression;
-    if (config.type == T::LZ4) {
+    if (config.type == T::Type::LZ4) {
         compression.type = CompressionConfig::LZ4;
-    } else if (config.type == T::ZSTD) {
+    } else if (config.type == T::Type::ZSTD) {
         compression.type = CompressionConfig::ZSTD;
     }
     compression.compressionLevel = config.level;

@@ -607,15 +607,15 @@ TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
 
 TEST_F(DistributorTest, replica_counting_mode_is_configured_to_trusted_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    EXPECT_EQ(ConfigBuilder::TRUSTED, currentReplicaCountingMode());
+    EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
 TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
-    builder.minimumReplicaCountingMode = ConfigBuilder::ANY;
+    builder.minimumReplicaCountingMode = ConfigBuilder::MinimumReplicaCountingMode::ANY;
     configureDistributor(builder);
-    EXPECT_EQ(ConfigBuilder::ANY, currentReplicaCountingMode());
+    EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::ANY, currentReplicaCountingMode());
 }
 
 TEST_F(DistributorTest, bucket_activation_is_enabled_by_default) {

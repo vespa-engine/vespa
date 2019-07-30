@@ -216,9 +216,9 @@ setupLiveAttributes(AttributesConfigBuilder::AttributeVector &attributes)
     attributes.push_back(setupFastSearchAttribute("a0"));
     attributes.push_back(setupFastSearchAndMoreAttribute("a1"));
     attributes.push_back(setupFastSearchAttribute("a2"));
-    attributes.back().datatype = AttributesConfig::Attribute::INT8;
+    attributes.back().datatype = AttributesConfig::Attribute::Datatype::INT8;
     attributes.push_back(setupFastSearchAttribute("a3"));
-    attributes.back().collectiontype = AttributesConfig::Attribute::ARRAY;
+    attributes.back().collectiontype = AttributesConfig::Attribute::Collectiontype::ARRAY;
     attributes.push_back(setupFastSearchAttribute("a4"));
     attributes.back().createifnonexistent = true;
 }

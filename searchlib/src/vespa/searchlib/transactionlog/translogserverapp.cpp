@@ -28,9 +28,9 @@ DomainPart::Crc
 getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
 {
     switch (crcType) {
-        case searchlib::TranslogserverConfig::ccitt_crc32:
+        case searchlib::TranslogserverConfig::Crcmethod::ccitt_crc32:
             return DomainPart::ccitt_crc32;
-        case searchlib::TranslogserverConfig::xxh64:
+        case searchlib::TranslogserverConfig::Crcmethod::xxh64:
             return DomainPart::xxh64;
     }
     LOG_ABORT("should not be reached");

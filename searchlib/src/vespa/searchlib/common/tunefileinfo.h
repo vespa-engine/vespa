@@ -26,10 +26,10 @@ public:
     template <typename Config>
     void setFromConfig(const enum Config::Io &config) {
         switch (config) {
-        case Config::NORMAL:
+        case Config::Io::NORMAL:
             _tuneControl = NORMAL;
             break;
-        case Config::DIRECTIO:
+        case Config::Io::DIRECTIO:
             _tuneControl = DIRECTIO;
             break;
         default:
@@ -70,13 +70,13 @@ public:
     template <typename Config>
     void setFromConfig(const enum Config::Io &config) {
         switch (config) {
-        case Config::NORMAL:
+        case Config::Io::NORMAL:
             _tuneControl = NORMAL;
             break;
-        case Config::OSYNC:
+        case Config::Io::OSYNC:
             _tuneControl = OSYNC;
             break;
-        case Config::DIRECTIO:
+        case Config::Io::DIRECTIO:
             _tuneControl = DIRECTIO;
             break;
         default:
