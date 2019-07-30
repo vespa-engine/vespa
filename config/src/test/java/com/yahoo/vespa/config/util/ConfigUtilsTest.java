@@ -67,18 +67,18 @@ public class ConfigUtilsTest {
         lines.add("foo=\"1#hello\"");
         lines.add(""); //empty line should not affect md5sum
 
-        assertThat(ConfigUtils.getMd5(lines), is(expectedMd5));
+        assertThat(getMd5(lines), is(expectedMd5));
 
         lines.clear();
 
         // Check that comment character in string leads to a different md5 than the original
         lines.add("foo=\"1#hello and some more\"");
-        String md5 = ConfigUtils.getMd5(lines);
+        String md5 = getMd5(lines);
         assertThat(md5, is(not(expectedMd5)));
 
         // Check that added characters aft comment character in string leads to a different md5 than above
         lines.add("foo=\"1#hello and some more and even more\"");
-        assertThat(ConfigUtils.getMd5(lines), is(not(md5)));
+        assertThat(getMd5(lines), is(not(md5)));
     }
 
     @Test
@@ -221,6 +221,25 @@ public class ConfigUtilsTest {
         }
         assertThat(def.getName(), is("app"));
         assertThat(def.getNamespace(), is("mynamespace"));
+    }
+
+    /**
+     * Computes Md5 hash of a list of strings. The only change to input lines before
+     * computing md5 is to skip empty lines.
+     *
+     * @param lines A list of lines
+     * @return the Md5 hash of the list, with lowercase letters
+     */
+    private static String getMd5(List<String> lines) {
+        StringBuilder sb = new StringBuilder();
+        for (String line : lines) {
+            // Remove empty lines
+            line = line.trim();
+            if (line.length() > 0) {
+                sb.append(line).append("\n");
+            }
+        }
+        return ConfigUtils.getMd5(sb.toString());
     }
 
 }
