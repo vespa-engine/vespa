@@ -9,14 +9,24 @@ import com.yahoo.net.HostName;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.ConfigPayload;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,8 +44,7 @@ public class ConfigUtils {
     private static final String doubleFormattedMin = new DecimalFormat("#.#", new DecimalFormatSymbols(Locale.ENGLISH)).format(-1e308);
 
     /**
-     * Computes Md5 hash of a list of strings. The only change to input lines before
-     * computing md5 is to skip empty lines.
+     * Computes Md5 hash of a list of strings.
      *
      * @param payload a config payload
      * @return the Md5 hash of the list, with lowercase letters
@@ -47,30 +56,7 @@ public class ConfigUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        MessageDigest md5 = getMd5Instance();
-        md5.update(baos.toByteArray());
-        return HexDump.toHexString(md5.digest()).toLowerCase();
-    }
-
-    /**
-     * Computes Md5 hash of a list of strings. The only change to input lines before
-     * computing md5 is to skip empty lines.
-     *
-     * @param lines A list of lines
-     * @return the Md5 hash of the list, with lowercase letters
-     */
-    public static String getMd5(List<String> lines) {
-        StringBuilder sb = new StringBuilder();
-        for (String line : lines) {
-            // Remove empty lines
-            line = line.trim();
-            if (line.length() > 0) {
-                sb.append(line).append("\n");
-            }
-        }
-        MessageDigest md5 = getMd5Instance();
-        md5.update(Utf8.toBytes(sb.toString()));
-        return HexDump.toHexString(md5.digest()).toLowerCase();
+        return getMd5(baos.toByteArray());
     }
 
     /**
@@ -80,14 +66,16 @@ public class ConfigUtils {
      * @return the Md5 hash of the input, with lowercase letters
      */
     public static String getMd5(String input) {
-        MessageDigest md5 = getMd5Instance();
-        md5.update(IOUtils.utf8ByteBuffer(input));
-        return HexDump.toHexString(md5.digest()).toLowerCase();
+        return getMd5(input.getBytes(StandardCharsets.UTF_8));
     }
 
     public static String getMd5(Utf8Array input) {
+        return getMd5(input.getBytes());
+    }
+
+    public static String getMd5(byte[] input) {
         MessageDigest md5 = getMd5Instance();
-        md5.update(input.getBytes());
+        md5.update(input);
         return HexDump.toHexString(md5.digest()).toLowerCase();
     }
 
@@ -95,7 +83,7 @@ public class ConfigUtils {
         try {
             return MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            return null;
+            throw new RuntimeException("Could not get md5 instance");
         }
     }
 
@@ -161,12 +149,6 @@ public class ConfigUtils {
             }
         }
 
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
         StringBuilder sb = new StringBuilder();
         for (String line : linesCopy) {
             // Normalize line, like it's done in make-config-preproc.pl
@@ -193,8 +175,7 @@ public class ConfigUtils {
                 sb.append(line).append("\n");
             }
         }
-        md5.update(Utf8.toBytes(sb.toString()));
-        return HexDump.toHexString(md5.digest()).toLowerCase();
+        return getMd5(sb.toString());
     }
 
     /**
