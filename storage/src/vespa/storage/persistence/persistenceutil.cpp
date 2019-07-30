@@ -182,16 +182,16 @@ uint32_t
 PersistenceUtil::convertErrorCode(const spi::Result& response)
 {
     switch (response.getErrorCode()) {
-    case spi::Result::NONE:
+    case spi::Result::ErrorType::NONE:
         return 0;
-    case spi::Result::TIMESTAMP_EXISTS:
+    case spi::Result::ErrorType::TIMESTAMP_EXISTS:
         return api::ReturnCode::TIMESTAMP_EXIST;
-    case spi::Result::TRANSIENT_ERROR:
-    case spi::Result::FATAL_ERROR:
+    case spi::Result::ErrorType::TRANSIENT_ERROR:
+    case spi::Result::ErrorType::FATAL_ERROR:
         return mbus::ErrorCode::APP_TRANSIENT_ERROR;
-    case spi::Result::RESOURCE_EXHAUSTED:
+    case spi::Result::ErrorType::RESOURCE_EXHAUSTED:
         return api::ReturnCode::NO_SPACE;
-    case spi::Result::PERMANENT_ERROR:
+    case spi::Result::ErrorType::PERMANENT_ERROR:
     default:
         return mbus::ErrorCode::APP_FATAL_ERROR;
     }

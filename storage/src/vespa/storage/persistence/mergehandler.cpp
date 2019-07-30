@@ -169,7 +169,7 @@ MergeHandler::populateMetaData(
                                                        spi::ALL_VERSIONS,
                                                        context));
 
-    if (createIterResult.getErrorCode() != spi::Result::NONE) {
+    if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to create iterator for "
                << bucket
@@ -183,7 +183,7 @@ MergeHandler::populateMetaData(
     while (true) {
         spi::IterateResult result(
                 _spi.iterate(iteratorId, UINT64_MAX, context));
-        if (result.getErrorCode() != spi::Result::NONE) {
+        if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
                << bucket
@@ -226,7 +226,7 @@ MergeHandler::buildBucketInfoList(
         if (entry.exist()) {
             spi::BucketInfoResult infoResult(_spi.getBucketInfo(bucket));
 
-            if (infoResult.getErrorCode() != spi::Result::NONE) {
+            if (infoResult.getErrorCode() != spi::Result::ErrorType::NONE) {
                 std::ostringstream ss;
                 ss << "Failed to get bucket info for "
                    << bucket << ": "
@@ -432,7 +432,7 @@ MergeHandler::fetchLocalData(
                                 spi::NEWEST_DOCUMENT_OR_REMOVE,
                                 context));
 
-    if (createIterResult.getErrorCode() != spi::Result::NONE) {
+    if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
         std::ostringstream ss;
         ss << "Failed to create iterator for "
            << bucket.toString()
@@ -451,7 +451,7 @@ MergeHandler::fetchLocalData(
     while (true) {
         spi::IterateResult result(
                 _spi.iterate(iteratorId, remainingSize, context));
-        if (result.getErrorCode() != spi::Result::NONE) {
+        if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
                << bucket.toString()
@@ -712,7 +712,7 @@ MergeHandler::applyDiffLocally(
     flushGuard.flush();
 
     spi::BucketInfoResult infoResult(_spi.getBucketInfo(bucket));
-    if (infoResult.getErrorCode() != spi::Result::NONE) {
+    if (infoResult.getErrorCode() != spi::Result::ErrorType::NONE) {
         LOG(warning, "Failed to get bucket info for %s: %s",
             bucket.toString().c_str(),
             infoResult.getErrorMessage().c_str());

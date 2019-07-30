@@ -325,7 +325,7 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
-            return Result(Result::RESOURCE_EXHAUSTED,
+            return Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                           make_string("Put operation rejected for document '%s': '%s'",
                                       doc->getId().toString().c_str(), state.message().c_str()));
         }
@@ -335,12 +335,12 @@ PersistenceEngine::put(const Bucket& b, Timestamp t, const document::Document::S
     LOG(spam, "put(%s, %" PRIu64 ", (\"%s\", \"%s\"))", b.toString().c_str(), static_cast<uint64_t>(t.getValue()),
         docType.toString().c_str(), doc->getId().toString().c_str());
     if (!doc->getId().hasDocType()) {
-        return Result(Result::PERMANENT_ERROR,
+        return Result(Result::ErrorType::PERMANENT_ERROR,
                       make_string("Old id scheme not supported in elastic mode (%s)", doc->getId().toString().c_str()));
     }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     if (!handler) {
-        return Result(Result::PERMANENT_ERROR,
+        return Result(Result::ErrorType::PERMANENT_ERROR,
                       make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
     TransportLatch latch(1);
@@ -356,13 +356,13 @@ PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, C
     LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()), did.toString().c_str());
     if (!did.hasDocType()) {
-        return RemoveResult(Result::PERMANENT_ERROR,
+        return RemoveResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("Old id scheme not supported in elastic mode (%s)", did.toString().c_str()));
     }
     DocTypeName docType(did.getDocType());
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     if (!handler) {
-        return RemoveResult(Result::PERMANENT_ERROR,
+        return RemoveResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
     TransportLatch latch(1);
@@ -378,7 +378,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
     if (!_writeFilter.acceptWriteOperation()) {
         IResourceWriteFilter::State state = _writeFilter.getAcceptState();
         if (!state.acceptWriteOperation()) {
-            return UpdateResult(Result::RESOURCE_EXHAUSTED,
+            return UpdateResult(Result::ErrorType::RESOURCE_EXHAUSTED,
                                 make_string("Update operation rejected for document '%s': '%s'",
                                             upd->getId().toString().c_str(), state.message().c_str()));
         }
@@ -386,16 +386,16 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
     try {
         upd->eagerDeserialize();
     } catch (document::FieldNotFoundException & e) {
-        return UpdateResult(Result::TRANSIENT_ERROR,
+        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
                                         upd->getId().toString().c_str(), upd->getType().getName().c_str()));
     } catch (document::DocumentTypeNotFoundException & e) {
-        return UpdateResult(Result::TRANSIENT_ERROR,
+        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s'.",
                                         upd->getId().toString().c_str(), e.getDocumentTypeName().c_str()));
 
     } catch (document::WrongTensorTypeException &e) {
-        return UpdateResult(Result::TRANSIENT_ERROR,
+        return UpdateResult(Result::ErrorType::TRANSIENT_ERROR,
                             make_string("Update operation rejected for document '%s' of type '%s': 'Wrong tensor type: %s'",
                                         upd->getId().toString().c_str(),
                                         upd->getType().getName().c_str(),
@@ -407,11 +407,11 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         b.toString().c_str(), static_cast<uint64_t>(t.getValue()), docType.toString().c_str(),
         upd->getId().toString().c_str(), (upd->getCreateIfNonExistent() ? "true" : "false"));
     if (!upd->getId().hasDocType()) {
-        return UpdateResult(Result::PERMANENT_ERROR,
+        return UpdateResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("Old id scheme not supported in elastic mode (%s)", upd->getId().toString().c_str()));
     }
     if (upd->getId().getDocType() != docType.getName()) {
-        return UpdateResult(Result::PERMANENT_ERROR,
+        return UpdateResult(Result::ErrorType::PERMANENT_ERROR,
                             make_string("Update operation rejected due to bad id (%s, %s)", upd->getId().toString().c_str(), docType.getName().c_str()));
     }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
@@ -423,7 +423,7 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         latch.await();
         return latch.getUpdateResult();
     } else {
-        return UpdateResult(Result::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str()));
+        return UpdateResult(Result::ErrorType::PERMANENT_ERROR, make_string("No handler for document type '%s'", docType.toString().c_str()));
     }
 }
 
@@ -493,11 +493,11 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
         std::lock_guard<std::mutex> guard(_iterators_lock);
         auto it = _iterators.find(id);
         if (it == _iterators.end()) {
-            return IterateResult(Result::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
+            return IterateResult(Result::ErrorType::PERMANENT_ERROR, make_string("Unknown iterator with id %" PRIu64, id.getValue()));
         }
         iteratorEntry = it->second;
         if (iteratorEntry->in_use) {
-            return IterateResult(Result::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is already in use", id.getValue()));
+            return IterateResult(Result::ErrorType::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is already in use", id.getValue()));
         }
         iteratorEntry->in_use = true;
     }
@@ -509,7 +509,7 @@ PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize, Context&) const
         iteratorEntry->in_use = false;
         return result;
     } catch (const std::exception & e) {
-        IterateResult result(Result::PERMANENT_ERROR, make_string("Caught exception during visitor iterator.iterate() = '%s'", e.what()));
+        IterateResult result(Result::ErrorType::PERMANENT_ERROR, make_string("Caught exception during visitor iterator.iterate() = '%s'", e.what()));
         LOG(warning, "Caught exception during visitor iterator.iterate() = '%s'", e.what());
         std::lock_guard<std::mutex> guard(_iterators_lock);
         iteratorEntry->in_use = false;
@@ -528,7 +528,7 @@ PersistenceEngine::destroyIterator(IteratorId id, Context&)
         return Result();
     }
     if (it->second->in_use) {
-        return Result(Result::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is currently in use", id.getValue()));
+        return Result(Result::ErrorType::TRANSIENT_ERROR, make_string("Iterator with id %" PRIu64 " is currently in use", id.getValue()));
     }
     delete it->second;
     _iterators.erase(it);

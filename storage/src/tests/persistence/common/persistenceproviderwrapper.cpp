@@ -14,7 +14,7 @@
 
 #define CHECK_ERROR(className, failType) \
     { \
-        if (_result.getErrorCode() != spi::Result::NONE && (_failureMask & (failType))) { \
+        if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
             return className(_result.getErrorCode(), _result.getErrorMessage()); \
         } \
     }
@@ -41,7 +41,7 @@ includedVersionsToString(spi::IncludedVersions versions)
 
 PersistenceProviderWrapper::PersistenceProviderWrapper(spi::PersistenceProvider& spi)
     : _spi(spi),
-      _result(spi::Result(spi::Result::NONE, "")),
+      _result(spi::Result(spi::Result::ErrorType::NONE, "")),
       _log(),
       _failureMask(0)
 { }

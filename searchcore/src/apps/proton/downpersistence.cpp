@@ -10,7 +10,7 @@ namespace storage::spi {
 
 namespace {
 
-Result errorResult(Result::FATAL_ERROR, "Node is down");
+Result errorResult(Result::ErrorType::FATAL_ERROR, "Node is down");
 
 }
 

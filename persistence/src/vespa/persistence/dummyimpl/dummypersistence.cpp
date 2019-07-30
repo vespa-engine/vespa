@@ -409,7 +409,7 @@ DummyPersistence::setActiveState(const Bucket& b,
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
-        return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
     (*bc)->setActive(newState == BucketInfo::ACTIVE);
     return Result();
@@ -424,7 +424,7 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
     if (!bc.get()) {
         LOG(debug, "getBucketInfo(%s) : (bucket not found)",
             b.toString().c_str());
-        return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
 
     BucketInfo info((*bc)->getBucketInfo());
@@ -446,7 +446,7 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
-        return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
 
     DocEntry::SP existing = (*bc)->getEntry(t);
@@ -454,7 +454,7 @@ DummyPersistence::put(const Bucket& b, Timestamp t, const Document::SP& doc,
         if (doc->getId() == *existing->getDocumentId()) {
             return Result();
         } else {
-            return Result(Result::TIMESTAMP_EXISTS,
+            return Result(Result::ErrorType::TIMESTAMP_EXISTS,
                           "Timestamp already existed");
         }
     }
@@ -474,7 +474,7 @@ DummyPersistence::maintain(const Bucket& b,
     if (_simulateMaintainFailure) {
         BucketContentGuard::UP bc(acquireBucketWithLock(b));
         if (!bc.get()) {
-            return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
+            return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
         }
 
         if (!(*bc)->_entries.empty()) {
@@ -503,7 +503,7 @@ DummyPersistence::remove(const Bucket& b,
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
-        return RemoveResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return RemoveResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
 
     DocEntry::SP entry((*bc)->getEntry(did));
@@ -564,13 +564,13 @@ DummyPersistence::createIterator(
                         true).release());
         if (!docSelection.get()) {
             return CreateIteratorResult(
-                    Result::PERMANENT_ERROR,
+                    Result::ErrorType::PERMANENT_ERROR,
                     "Got invalid/unparseable document selection string");
         }
     }
     BucketContentGuard::UP bc(acquireBucketWithLock(b, LockMode::Shared));
     if (!bc.get()) {
-        return CreateIteratorResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return CreateIteratorResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
 
     Iterator* it;
@@ -650,7 +650,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
         vespalib::MonitorGuard lock(_monitor);
         std::map<IteratorId, Iterator::UP>::iterator iter(_iterators.find(id));
         if (iter == _iterators.end()) {
-            return IterateResult(Result::PERMANENT_ERROR,
+            return IterateResult(Result::ErrorType::PERMANENT_ERROR,
                         "Bug! Used iterate without sending createIterator first");
         }
         it = iter->second.get();
@@ -659,7 +659,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket, LockMode::Shared));
     if (!bc.get()) {
         ctx.trace(9, "finished iterate(); bucket not found");
-        return IterateResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return IterateResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
     LOG(debug, "Iterator %" PRIu64 " acquired bucket lock", uint64_t(id));
 
@@ -776,7 +776,7 @@ DummyPersistence::split(const Bucket& source,
     BucketContentGuard::UP sourceGuard(acquireBucketWithLock(source));
     if (!sourceGuard.get()) {
         LOG(debug, "%s not found", source.toString().c_str());
-        return Result(Result::TRANSIENT_ERROR, "Bucket not found");
+        return Result(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
     BucketContentGuard::UP target1Guard(acquireBucketWithLock(target1));
     BucketContentGuard::UP target2Guard(acquireBucketWithLock(target2));
@@ -863,7 +863,7 @@ DummyPersistence::revert(const Bucket& b, Timestamp t, Context&)
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
-        return BucketInfoResult(Result::TRANSIENT_ERROR, "Bucket not found");
+        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
     }
 
     BucketContent& content(**bc);

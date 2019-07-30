@@ -631,7 +631,7 @@ TEST_F(MergeHandlerTest, spi_flush_guard) {
     MergeHandler handler(providerWrapper, getEnv());
 
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+            spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
 
     setUpChain(MIDDLE);
     // Fail applying unrevertable remove
@@ -826,7 +826,7 @@ TEST_F(MergeHandlerTest, merge_bucket_spi_failures) {
     PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+            spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -858,7 +858,7 @@ TEST_F(MergeHandlerTest, get_bucket_diff_spi_failures) {
     PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+            spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -893,7 +893,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_spi_failures) {
     PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+            spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
@@ -960,7 +960,7 @@ TEST_F(MergeHandlerTest, get_bucket_diff_reply_spi_failures) {
     PersistenceProviderWrapper providerWrapper(getPersistenceProvider());
     MergeHandler handler(providerWrapper, getEnv());
     providerWrapper.setResult(
-            spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+            spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
     HandleGetBucketDiffReplyInvoker invoker;
 
     setUpChain(FRONT);
@@ -1051,7 +1051,7 @@ TEST_F(MergeHandlerTest, apply_bucket_diff_reply_spi_failures) {
         invoker.setChainPos(pos);
         MergeHandler handler(providerWrapper, getEnv());
         providerWrapper.setResult(
-                spi::Result(spi::Result::PERMANENT_ERROR, "who you gonna call?"));
+                spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "who you gonna call?"));
 
         ExpectedExceptionSpec exceptions[] = {
             { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },

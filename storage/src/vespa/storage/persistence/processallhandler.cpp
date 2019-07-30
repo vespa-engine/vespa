@@ -39,7 +39,7 @@ public:
                 *entry.getDocumentId(),
                 _context);
 
-        if (removeResult.getErrorCode() != spi::Result::NONE) {
+        if (removeResult.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to do remove for removelocation: "
                << removeResult.getErrorMessage();

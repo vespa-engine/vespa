@@ -476,7 +476,7 @@ void feedOperationRejected(FeedToken & token, const vespalib::string &opType, co
     if (token) {
         auto message = make_string("%s operation rejected for document '%s' of type '%s': '%s'",
                                    opType.c_str(), docId.c_str(), docTypeName.toString().c_str(), rejectMessage.c_str());
-        token->setResult(make_unique<ResultType>(Result::RESOURCE_EXHAUSTED, message), false);
+        token->setResult(make_unique<ResultType>(Result::ErrorType::RESOURCE_EXHAUSTED, message), false);
         token->fail();
     }
 }
@@ -527,7 +527,7 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
             if (token) {
                 auto message = make_string("Update operation rejected for document '%s' of type '%s': 'Field not found'",
                                            update.getId().toString().c_str(), _docTypeName.toString().c_str());
-                token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+                token->setResult(make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR, message), false);
                 token->fail();
             }
             return true;
@@ -536,7 +536,7 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
                                        update.getId().toString().c_str(),
                                        e.getDocumentTypeName().c_str(),
                                        _docTypeName.toString().c_str());
-            token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+            token->setResult(make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR, message), false);
             token->fail();
             return true;
         } catch (document::WrongTensorTypeException &e) {
@@ -544,7 +544,7 @@ FeedHandler::considerUpdateOperationForRejection(FeedToken &token, UpdateOperati
                                        update.getId().toString().c_str(),
                                        _docTypeName.toString().c_str(),
                                        e.getMessage().c_str());
-            token->setResult(make_unique<UpdateResult>(Result::TRANSIENT_ERROR, message), false);
+            token->setResult(make_unique<UpdateResult>(Result::ErrorType::TRANSIENT_ERROR, message), false);
             token->fail();
             return true;
         }

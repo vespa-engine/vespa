@@ -157,7 +157,7 @@ doIterate(PersistenceProvider& spi,
         Context context(defaultLoadType, Priority(0), Trace::TraceLevel(0));
         IterateResult result(spi.iterate(id, maxByteSize, context));
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
 
         chunks.push_back(Chunk{result.steal_entries()});
         if (result.isCompleted()
@@ -214,13 +214,13 @@ iterateBucket(PersistenceProvider& spi,
             versions,
             context);
 
-    EXPECT_EQ(Result::NONE, iter.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, iter.getErrorCode());
 
     while (true) {
         IterateResult result =
             spi.iterate(iter.getIteratorId(),
                          std::numeric_limits<int64_t>().max(), context);
-        if (result.getErrorCode() != Result::NONE) {
+        if (result.getErrorCode() != Result::ErrorType::NONE) {
             return std::vector<DocEntry::UP>();
         }
         auto list = result.steal_entries();
@@ -639,7 +639,7 @@ TEST_F(ConformanceTest, testPutNewDocumentVersion)
     GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
                             context);
 
-    EXPECT_EQ(Result::NONE, gr.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(4), gr.getTimestamp());
 
     if (!((*doc2)==gr.getDocument())) {
@@ -691,7 +691,7 @@ TEST_F(ConformanceTest, testPutOlderDocumentVersion)
     GetResult gr = spi->get(bucket, document::AllFields(), doc1->getId(),
                             context);
 
-    EXPECT_EQ(Result::NONE, gr.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, gr.getErrorCode());
     EXPECT_EQ(Timestamp(5), gr.getTimestamp());
     EXPECT_EQ(*doc1, gr.getDocument());
 }
@@ -822,7 +822,7 @@ TEST_F(ConformanceTest, testRemove)
                                 doc1->getId(),
                                 context);
 
-    EXPECT_EQ(Result::NONE, getResult.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, getResult.getErrorCode());
     EXPECT_EQ(Timestamp(0), getResult.getTimestamp());
     EXPECT_TRUE(!getResult.hasDocument());
 }
@@ -848,7 +848,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
     {
@@ -876,7 +876,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
     // Old entry may or may not be present, depending on the provider.
@@ -904,7 +904,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
                                                 removeId,
                                                 context);
         spi->flush(bucket, context);
-        EXPECT_EQ(Result::NONE, removeResult.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, removeResult.getErrorCode());
         EXPECT_EQ(false, removeResult.wasFound());
     }
     {
@@ -957,7 +957,7 @@ TEST_F(ConformanceTest, testUpdate)
                                           context);
         spi->flush(bucket, context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(3), result.getExistingTimestamp());
     }
 
@@ -967,7 +967,7 @@ TEST_F(ConformanceTest, testUpdate)
                                     doc1->getId(),
                                     context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(4), result.getTimestamp());
         EXPECT_EQ(document::IntFieldValue(42),
                              static_cast<document::IntFieldValue&>(
@@ -983,7 +983,7 @@ TEST_F(ConformanceTest, testUpdate)
                                     doc1->getId(),
                                     context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
         EXPECT_TRUE(!result.hasDocument());
     }
@@ -993,13 +993,13 @@ TEST_F(ConformanceTest, testUpdate)
                                           context);
         spi->flush(bucket, context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getExistingTimestamp());
     }
 
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
         EXPECT_TRUE(!result.hasDocument());
     }
@@ -1010,13 +1010,13 @@ TEST_F(ConformanceTest, testUpdate)
         // but since CreateIfNonExistent is set it should be auto-created anyway.
         UpdateResult result = spi->update(bucket, Timestamp(7), update, context);
         spi->flush(bucket, context);
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getExistingTimestamp());
     }
 
     {
         GetResult result = spi->get(bucket, document::AllFields(), doc1->getId(), context);
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(7), result.getTimestamp());
         EXPECT_EQ(document::IntFieldValue(42),
                              reinterpret_cast<document::IntFieldValue&>(
@@ -1039,7 +1039,7 @@ TEST_F(ConformanceTest, testGet)
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 
@@ -1060,7 +1060,7 @@ TEST_F(ConformanceTest, testGet)
         GetResult result = spi->get(bucket, document::AllFields(),
                                     doc1->getId(), context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 }
@@ -1077,7 +1077,7 @@ TEST_F(ConformanceTest, testIterateCreateIterator)
 
     spi::CreateIteratorResult result(
             createIterator(*spi, b, createSelection("")));
-    EXPECT_EQ(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     // Iterator ID 0 means invalid iterator, so cannot be returned
     // from a successful createIterator call.
     EXPECT_TRUE(result.getIteratorId() != IteratorId(0));
@@ -1096,7 +1096,7 @@ TEST_F(ConformanceTest, testIterateWithUnknownId)
 
     IteratorId unknownId(123);
     IterateResult result(spi->iterate(unknownId, 1024, context));
-    EXPECT_EQ(Result::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
 }
 
 TEST_F(ConformanceTest, testIterateDestroyIterator)
@@ -1111,7 +1111,7 @@ TEST_F(ConformanceTest, testIterateDestroyIterator)
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
     {
         IterateResult result(spi->iterate(iter.getIteratorId(), 1024, context));
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     }
 
     {
@@ -1122,7 +1122,7 @@ TEST_F(ConformanceTest, testIterateDestroyIterator)
     // Iteration should now fail
     {
         IterateResult result(spi->iterate(iter.getIteratorId(), 1024, context));
-        EXPECT_EQ(Result::PERMANENT_ERROR, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
     }
     {
         Result destroyResult(
@@ -1422,7 +1422,7 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
 
     CreateIteratorResult iter(
             createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
-    EXPECT_TRUE(iter.getErrorCode() == Result::NONE);
+    EXPECT_TRUE(iter.getErrorCode() == Result::ErrorType::NONE);
 
     std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
     std::vector<DocAndTimestamp> docs;
@@ -1444,14 +1444,14 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
     {
         CreateIteratorResult iter(
                 createIterator(*spi, b, createSelection("the muppet show")));
-        if (iter.getErrorCode() == Result::NONE) {
+        if (iter.getErrorCode() == Result::ErrorType::NONE) {
             IterateResult result(
                     spi->iterate(iter.getIteratorId(), 4096, context));
-            EXPECT_EQ(Result::NONE, result.getErrorCode());
+            EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
         } else {
-            EXPECT_EQ(Result::PERMANENT_ERROR, iter.getErrorCode());
+            EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, iter.getErrorCode());
             EXPECT_EQ(IteratorId(0), iter.getIteratorId());
         }
     }
@@ -1461,14 +1461,14 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
                                b,
                                createSelection(
                                        "unknownddoctype.something=thatthing")));
-        if (iter.getErrorCode() == Result::NONE) {
+        if (iter.getErrorCode() == Result::ErrorType::NONE) {
             IterateResult result(spi->iterate(
                     iter.getIteratorId(), 4096, context));
-            EXPECT_EQ(Result::NONE, result.getErrorCode());
+            EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
         } else {
-            EXPECT_EQ(Result::PERMANENT_ERROR, iter.getErrorCode());
+            EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, iter.getErrorCode());
             EXPECT_EQ(IteratorId(0), iter.getIteratorId());
         }
     }
@@ -1491,7 +1491,7 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
     verifyDocs(docs, chunks);
 
     IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
-    EXPECT_EQ(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
 
@@ -1511,7 +1511,7 @@ TEST_F(ConformanceTest, testIterateEmptyBucket)
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
     IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
-    EXPECT_EQ(Result::NONE, result.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
 
@@ -1556,7 +1556,7 @@ testDeleteBucketPostCondition(const PersistenceProvider::UP &spi,
                                     doc1.getId(),
                                     context);
 
-        EXPECT_EQ(Result::NONE, result.getErrorCode());
+        EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
         EXPECT_EQ(Timestamp(0), result.getTimestamp());
     }
 }
@@ -2152,7 +2152,7 @@ TEST_F(ConformanceTest, testMaintain)
     spi->put(bucket, Timestamp(3), doc1, context);
     spi->flush(bucket, context);
 
-    EXPECT_EQ(Result::NONE,
+    EXPECT_EQ(Result::ErrorType::NONE,
                          spi->maintain(bucket, LOW).getErrorCode());
 }
 

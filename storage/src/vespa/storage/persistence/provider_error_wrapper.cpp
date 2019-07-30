@@ -9,9 +9,9 @@ template <typename ResultType>
 ResultType
 ProviderErrorWrapper::checkResult(ResultType&& result) const
 {
-    if (result.getErrorCode() == spi::Result::FATAL_ERROR) {
+    if (result.getErrorCode() == spi::Result::ErrorType::FATAL_ERROR) {
         trigger_shutdown_listeners(result.getErrorMessage());
-    } else if (result.getErrorCode() == spi::Result::RESOURCE_EXHAUSTED) {
+    } else if (result.getErrorCode() == spi::Result::ErrorType::RESOURCE_EXHAUSTED) {
         trigger_resource_exhaustion_listeners(result.getErrorMessage());
     }
     return std::forward<ResultType>(result);

@@ -65,7 +65,7 @@ public:
         _result = result;
     }
     void clearResult() {
-        _result = spi::Result(spi::Result::NONE, "");
+        _result = spi::Result(spi::Result::ErrorType::NONE, "");
     }
     const spi::Result& getResult() const { return _result; }
     /**
