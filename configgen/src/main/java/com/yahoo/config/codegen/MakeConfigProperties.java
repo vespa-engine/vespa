@@ -33,13 +33,14 @@ class MakeConfigProperties {
              System.getProperty("config.packagePrefix"));
     }
 
-    private MakeConfigProperties(String destDir,
-                                 String specFiles,
-                                 String language,
-                                 String dirInRoot,
-                                 String dumpTree,
-                                 String generateFrameworkCode,
-                                 String javaPackagePrefix) throws PropertyException {
+    @SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
+    public MakeConfigProperties(String destDir,
+                                String specFiles,
+                                String language,
+                                String dirInRoot,
+                                String dumpTree,
+                                String generateFrameworkCode,
+                                String javaPackagePrefix) throws PropertyException {
         this.destDir = checkDestinationDir(destDir);
         this.specFiles = checkSpecificationFiles(specFiles);
         this.language = checkLanguage(language);
