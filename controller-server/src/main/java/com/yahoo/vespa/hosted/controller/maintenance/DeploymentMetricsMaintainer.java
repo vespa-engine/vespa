@@ -83,7 +83,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                             if (controller().system() == SystemName.cd) {
                                 MetricsService.DeploymentMetrics configServerCollectedMetrics = new ConfigServerMetricsService(controller().configServer())
                                         .getDeploymentMetrics(application.id(), deployment.zone());
-                                log.log(Level.INFO, String.format("Deployment metrics for application %s in zone %s. \nQPS: %d\nWPS: %d\n Doc count: %d\nQuery latency: %d\nWrite latency: %d\n",
+                                log.log(Level.INFO, String.format("Deployment metrics for application %s in zone %s. \nQPS: %.2f\nWPS: %.2f\nDoc count: %d\nQuery latency: %.2f\nWrite latency: %.2f",
                                         application.id().serializedForm(),
                                         deployment.zone().value(),
                                         configServerCollectedMetrics.queriesPerSecond(),
