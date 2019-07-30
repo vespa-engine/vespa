@@ -11,7 +11,8 @@ import java.util.StringTokenizer;
  *
  * @author gjoranv
  */
-class MakeConfigProperties {
+@SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
+public class MakeConfigProperties {
 
     private static final List<String> legalLanguages = Arrays.asList("java", "cpp" );
 

@@ -25,7 +25,8 @@ public class MakeConfig {
             return new JavaClassBuilder(root, nd, properties.destDir, properties.javaPackagePrefix);
     }
 
-    private static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
+    @SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
+    public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
         for (File specFile : properties.specFiles) {
             String name = specFile.getName();
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
