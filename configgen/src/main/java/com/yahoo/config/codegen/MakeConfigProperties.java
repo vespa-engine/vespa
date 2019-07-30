@@ -11,9 +11,10 @@ import java.util.StringTokenizer;
  *
  * @author gjoranv
  */
+@SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
 public class MakeConfigProperties {
 
-    private static final List<String> legalLanguages = Arrays.asList("java", "cpp", "cppng" );
+    private static final List<String> legalLanguages = Arrays.asList("java", "cpp" );
 
     final File destDir;
     final File[] specFiles;
@@ -33,13 +34,14 @@ public class MakeConfigProperties {
              System.getProperty("config.packagePrefix"));
     }
 
+    @SuppressWarnings("WeakerAccess") // Used by ConfigGenMojo
     public MakeConfigProperties(String destDir,
-                         String specFiles,
-                         String language,
-                         String dirInRoot,
-                         String dumpTree,
-                         String generateFrameworkCode,
-                         String javaPackagePrefix) throws PropertyException {
+                                String specFiles,
+                                String language,
+                                String dirInRoot,
+                                String dumpTree,
+                                String generateFrameworkCode,
+                                String javaPackagePrefix) throws PropertyException {
         this.destDir = checkDestinationDir(destDir);
         this.specFiles = checkSpecificationFiles(specFiles);
         this.language = checkLanguage(language);
