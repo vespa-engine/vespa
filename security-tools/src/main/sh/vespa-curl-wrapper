@@ -6,7 +6,7 @@
 
 set -e
 
-eval $(vespa-security-env)
+eval $($VESPA_HOME/bin/vespa-security-env)
 
 CURL_PARAMETERS=("$@")
 
