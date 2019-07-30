@@ -64,7 +64,7 @@ TEST_F(ProviderErrorWrapperTest, fatal_error_invokes_listener) {
     Fixture f(getPersistenceProvider());
     auto listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
-    f.providerWrapper.setResult(spi::Result(spi::Result::FATAL_ERROR, "eject! eject!"));
+    f.providerWrapper.setResult(spi::Result(spi::Result::ErrorType::FATAL_ERROR, "eject! eject!"));
 
     EXPECT_FALSE(listener->_seen_fatal_error);
     f.perform_spi_operation();
@@ -78,7 +78,7 @@ TEST_F(ProviderErrorWrapperTest, resource_exhaustion_error_invokes_listener) {
     Fixture f(getPersistenceProvider());
     auto listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
-    f.providerWrapper.setResult(spi::Result(spi::Result::RESOURCE_EXHAUSTED, "out of juice"));
+    f.providerWrapper.setResult(spi::Result(spi::Result::ErrorType::RESOURCE_EXHAUSTED, "out of juice"));
 
     EXPECT_FALSE(listener->_seen_resource_exhaustion_error);
     f.perform_spi_operation();
@@ -103,8 +103,8 @@ TEST_F(ProviderErrorWrapperTest, listener_not_invoked_on_regular_errors) {
     auto listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
 
-    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::TRANSIENT_ERROR));
-    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::PERMANENT_ERROR));
+    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::TRANSIENT_ERROR));
+    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::PERMANENT_ERROR));
 }
 
 TEST_F(ProviderErrorWrapperTest, multiple_listeners_can_be_registered) {
@@ -114,7 +114,7 @@ TEST_F(ProviderErrorWrapperTest, multiple_listeners_can_be_registered) {
     f.errorWrapper.register_error_listener(listener1);
     f.errorWrapper.register_error_listener(listener2);
 
-    f.providerWrapper.setResult(spi::Result(spi::Result::RESOURCE_EXHAUSTED, "out of juice"));
+    f.providerWrapper.setResult(spi::Result(spi::Result::ErrorType::RESOURCE_EXHAUSTED, "out of juice"));
     f.perform_spi_operation();
 
     EXPECT_TRUE(listener1->_seen_resource_exhaustion_error);

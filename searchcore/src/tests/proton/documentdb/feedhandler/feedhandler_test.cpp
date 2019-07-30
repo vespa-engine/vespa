@@ -684,7 +684,7 @@ TEST_F("require that put is rejected if resource limit is reached", FeedHandlerF
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.put_count);
-    EXPECT_EQUAL(Result::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
     EXPECT_EQUAL("Put operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
                  token.getResult()->getErrorMessage());
 }
@@ -700,7 +700,7 @@ TEST_F("require that update is rejected if resource limit is reached", FeedHandl
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(0, f.feedView.update_count);
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
-    EXPECT_EQUAL(Result::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::RESOURCE_EXHAUSTED, token.getResult()->getErrorCode());
     EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Attribute resource limit reached'",
                  token.getResult()->getErrorMessage());
 }
@@ -715,7 +715,7 @@ TEST_F("require that remove is NOT rejected if resource limit is reached", FeedH
     FeedTokenContext token;
     f.handler.performOperation(std::move(token.token), std::move(op));
     EXPECT_EQUAL(1, f.feedView.remove_count);
-    EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::NONE, token.getResult()->getErrorCode());
     EXPECT_EQUAL("", token.getResult()->getErrorMessage());
 }
 
@@ -738,7 +738,7 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
     EXPECT_TRUE(dynamic_cast<const UpdateResult *>(token.getResult()));
     if (expectReject) {
         TEST_DO(f.feedView.checkCounts(0, 0u, 0, 0u));
-        EXPECT_EQUAL(Result::TRANSIENT_ERROR, token.getResult()->getErrorCode());
+        EXPECT_EQUAL(Result::ErrorType::TRANSIENT_ERROR, token.getResult()->getErrorCode());
         if (fieldName == "tensor2") {
             EXPECT_EQUAL("Update operation rejected for document 'id:test:searchdocument::foo' of type 'searchdocument': 'Wrong tensor type: Field tensor type is 'tensor(x{},y{})' but other tensor type is 'tensor(x{})''",
                          token.getResult()->getErrorMessage());
@@ -752,7 +752,7 @@ checkUpdate(FeedHandlerFixture &f, SchemaContext &schemaContext,
         } else {
             TEST_DO(f.feedView.checkCounts(0, 0u, 1, 16u));
         }
-        EXPECT_EQUAL(Result::NONE, token.getResult()->getErrorCode());
+        EXPECT_EQUAL(Result::ErrorType::NONE, token.getResult()->getErrorCode());
         EXPECT_EQUAL("", token.getResult()->getErrorMessage());
     }
 }

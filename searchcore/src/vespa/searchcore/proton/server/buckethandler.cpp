@@ -26,7 +26,7 @@ BucketHandler::performSetCurrentState(BucketId bucketId,
                                       IGenericResultHandler *resultHandler)
 {
     if (!_nodeUp) {
-        Result result(Result::TRANSIENT_ERROR,
+        Result result(Result::ErrorType::TRANSIENT_ERROR,
                       "Cannot set bucket active state when node is down");
         resultHandler->handle(result);
         return;

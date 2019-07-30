@@ -469,7 +469,7 @@ TEST_F("require that puts are routed to handler", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId1, f.hset.handler1);
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
 
-    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
+    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
                  f.engine.put(bucket1, tstamp1, doc3, context));
 }
 
@@ -477,7 +477,7 @@ TEST_F("require that puts are routed to handler", SimpleFixture)
 TEST_F("require that puts with old id scheme are rejected", SimpleFixture) {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
                  f.engine.put(bucket1, tstamp1, old_doc, context));
 }
 
@@ -490,7 +490,7 @@ TEST_F("require that put is rejected if resource limit is reached", SimpleFixtur
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     EXPECT_EQUAL(
-            Result(Result::RESOURCE_EXHAUSTED,
+            Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                    "Put operation rejected for document 'doc:old:id-scheme': 'Disk is full'"),
             f.engine.put(bucket1, tstamp1, old_doc, context));
 }
@@ -512,7 +512,7 @@ TEST_F("require that updates are routed to handler", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
     EXPECT_EQUAL(tstamp3, ur.getExistingTimestamp());
 
-    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"),
+    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
                  f.engine.update(bucket1, tstamp1, upd3, context));
 }
 
@@ -522,7 +522,7 @@ TEST_F("require that updates with old id scheme are rejected", SimpleFixture)
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
-    EXPECT_EQUAL(UpdateResult(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+    EXPECT_EQUAL(UpdateResult(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
                  f.engine.update(bucket1, tstamp1, old_upd, context));
 }
 
@@ -531,7 +531,7 @@ TEST_F("require that updates with bad ids are rejected", SimpleFixture)
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
-    EXPECT_EQUAL(UpdateResult(Result::PERMANENT_ERROR, "Update operation rejected due to bad id (id:type2:type2::1, type1)"),
+    EXPECT_EQUAL(UpdateResult(Result::ErrorType::PERMANENT_ERROR, "Update operation rejected due to bad id (id:type2:type2::1, type1)"),
                  f.engine.update(bucket1, tstamp1, bad_id_upd, context));
 }
 
@@ -544,7 +544,7 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
     EXPECT_EQUAL(
-            Result(Result::RESOURCE_EXHAUSTED,
+            Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                    "Update operation rejected for document 'id:type1:type1::1': 'Disk is full'"),
             f.engine.update(bucket1, tstamp1, upd1, context));
 }
@@ -559,7 +559,7 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
     assertHandler(bucket0, tstamp0, docId0, f.hset.handler2);
     EXPECT_FALSE(rr.wasFound());
     EXPECT_TRUE(rr.hasError());
-    EXPECT_EQUAL(Result(Result::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
+    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
 
     f.hset.handler1.setExistingTimestamp(tstamp2);
     rr = f.engine.remove(bucket1, tstamp1, docId1, context);
@@ -590,7 +590,7 @@ TEST_F("require that removes with old id scheme are rejected", SimpleFixture)
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
-    EXPECT_EQUAL(RemoveResult(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+    EXPECT_EQUAL(RemoveResult(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
                  f.engine.remove(bucket1, tstamp1, old_docId, context));
 }
 
@@ -626,11 +626,11 @@ TEST_F("require that setClusterState() is routed to handlers", SimpleFixture)
 
 TEST_F("require that setActiveState() is routed to handlers and merged", SimpleFixture)
 {
-    f.hset.handler1.bucketStateResult = Result(Result::TRANSIENT_ERROR, "err1");
-    f.hset.handler2.bucketStateResult = Result(Result::PERMANENT_ERROR, "err2");
+    f.hset.handler1.bucketStateResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1");
+    f.hset.handler2.bucketStateResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2");
 
     Result result = f.engine.setActiveState(bucket1, storage::spi::BucketInfo::NOT_ACTIVE);
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
     EXPECT_EQUAL("err1, err2", result.getErrorMessage());
     EXPECT_EQUAL(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler1.lastBucketState);
     EXPECT_EQUAL(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler2.lastBucketState);
@@ -655,11 +655,11 @@ TEST_F("require that createBucket() is routed to handlers and merged", SimpleFix
 {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    f.hset.handler1._createBucketResult = Result(Result::TRANSIENT_ERROR, "err1a");
-    f.hset.handler2._createBucketResult = Result(Result::PERMANENT_ERROR, "err2a");
+    f.hset.handler1._createBucketResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1a");
+    f.hset.handler2._createBucketResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2a");
 
     Result result = f.engine.createBucket(bucket1, context);
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
     EXPECT_EQUAL("err1a, err2a", result.getErrorMessage());
 }
 
@@ -668,11 +668,11 @@ TEST_F("require that deleteBucket() is routed to handlers and merged", SimpleFix
 {
     storage::spi::LoadType loadType(0, "default");
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    f.hset.handler1.deleteBucketResult = Result(Result::TRANSIENT_ERROR, "err1");
-    f.hset.handler2.deleteBucketResult = Result(Result::PERMANENT_ERROR, "err2");
+    f.hset.handler1.deleteBucketResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1");
+    f.hset.handler2.deleteBucketResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2");
 
     Result result = f.engine.deleteBucket(bucket1, context);
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
     EXPECT_EQUAL("err1, err2", result.getErrorMessage());
 }
 
@@ -754,7 +754,7 @@ TEST_F("require that iterate requires valid iterator", SimpleFixture) {
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     IterateResult it_result = f.engine.iterate(IteratorId(1), max_size, context);
     EXPECT_TRUE(it_result.hasError());
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, it_result.getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
     EXPECT_EQUAL("Unknown iterator with id 1", it_result.getErrorMessage());
 
     CreateIteratorResult result =
@@ -799,7 +799,7 @@ TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
     uint64_t max_size = 1024;
     IterateResult it_result = f.engine.iterate(create_result.getIteratorId(), max_size, context);
     EXPECT_TRUE(it_result.hasError());
-    EXPECT_EQUAL(Result::PERMANENT_ERROR, it_result.getErrorCode());
+    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
     string msg_prefix = "Unknown iterator with id";
     EXPECT_EQUAL(msg_prefix, it_result.getErrorMessage().substr(0, msg_prefix.size()));
 }

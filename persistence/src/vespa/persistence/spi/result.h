@@ -13,7 +13,7 @@ class Result {
 public:
     typedef std::unique_ptr<Result> UP;
 
-    enum ErrorType {
+    enum class ErrorType {
         NONE,
         TRANSIENT_ERROR,
         PERMANENT_ERROR,
@@ -26,7 +26,7 @@ public:
     /**
      * Constructor to use for a result where there is no error.
      */
-    Result() : _errorCode(NONE), _errorMessage() {}
+    Result() : _errorCode(ErrorType::NONE), _errorMessage() {}
 
     /**
      * Constructor to use when an error has been detected.
@@ -46,7 +46,7 @@ public:
     }
 
     bool hasError() const {
-        return _errorCode != NONE;
+        return _errorCode != ErrorType::NONE;
     }
 
     ErrorType getErrorCode() const {
@@ -65,6 +65,8 @@ private:
 };
 
 std::ostream & operator << (std::ostream & os, const Result & r);
+
+std::ostream & operator << (std::ostream & os, const Result::ErrorType &errorCode);
 
 class BucketInfoResult : public Result {
 public:
