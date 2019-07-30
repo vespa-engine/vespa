@@ -182,7 +182,7 @@ Client::run()
         }
     }
     if (_output)
-        _output->write(FBENCH_DELIMITER + 1, strlen(FBENCH_DELIMITER) - 1);
+        _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
 
     if (_args->_ignoreCount == 0)
         _masterTimer->Start();
@@ -230,12 +230,12 @@ Client::run()
                 if (!fetch_status.Ok()) {
                     _output->write("\nFBENCH: URL FETCH FAILED!\n",
                                           strlen("\nFBENCH: URL FETCH FAILED!\n"));
-                    _output->write(FBENCH_DELIMITER + 1, strlen(FBENCH_DELIMITER) - 1);
+                    _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 } else {
                     sprintf(timestr, "\nTIME USED: %0.4f s\n",
                             _reqTimer->GetTimespan() / 1000.0);
                     _output->write(timestr, strlen(timestr));
-                    _output->write(FBENCH_DELIMITER + 1, strlen(FBENCH_DELIMITER) - 1);
+                    _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
                 }
             }
             if (fetch_status.ResultSize() >= _args->_byteLimit) {
