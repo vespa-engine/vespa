@@ -20,6 +20,7 @@ Travis-CI build status: [![Build Status](https://travis-ci.org/vespa-engine/vesp
    
 ## Background
 
+
 Use cases such as search, recommendation and personalization need to select a subset of data in a large corpus,
 evaluate machine-learned models over the selected data, organize and aggregate it and return it, typically in less
 than 100 milliseconds, all while the data corpus is continuously changing. 
