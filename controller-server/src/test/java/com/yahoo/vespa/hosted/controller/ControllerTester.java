@@ -248,8 +248,7 @@ public final class ControllerTester {
 
     public AthenzDomain createDomainWithAdmin(String domainName, AthenzUser user) {
         AthenzDomain domain = new AthenzDomain(domainName);
-        athenzDb.addDomain(new AthenzDbMock.Domain(domain));
-        athenzDb.domains.get(domain).admin(user);
+        athenzDb.getOrCreateDomain(domain).admin(user);
         return domain;
     }
 

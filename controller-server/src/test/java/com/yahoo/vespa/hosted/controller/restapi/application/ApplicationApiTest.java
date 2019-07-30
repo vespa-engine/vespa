@@ -28,10 +28,10 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
@@ -562,6 +562,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
                 .region("us-west-1")
                 .build();
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN_2, "service"), true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithServiceForWrongDomain)),
@@ -573,6 +574,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
                 .region("us-west-1")
                 .build();
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService)),
@@ -1127,12 +1129,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void deployment_fails_on_illegal_domain_in_deployment_spec() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
-                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("invalid.domain"), com.yahoo.config.provision.AthenzService.from("service"))
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("another.domain"), com.yahoo.config.provision.AthenzService.from("service"))
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         long screwdriverProjectId = 123;
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(new AthenzDomain("another.domain"), "service"), true);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
@@ -1147,7 +1150,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
                                       .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(screwdriverId),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain in deployment.xml: [another.domain] must match tenant domain: [domain1]\"}",
                               400);
 
     }
@@ -1164,6 +1167,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
 
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
@@ -1188,6 +1192,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         UserId tenantAdmin = new UserId("tenant-admin");
         UserId userId = new UserId("new-user");
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         // Create tenant
         // PUT (create) the authenticated user
@@ -1222,6 +1227,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.computeVersionStatus();
         UserId tenantAdmin = new UserId("new_user");
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, tenantAdmin);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         // Create tenant
         // PUT (create) the authenticated user
@@ -1247,6 +1253,39 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
+    public void deployment_fails_when_athenz_service_cannot_be_launched() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("default")
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        long screwdriverProjectId = 123;
+        ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
+
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), false);
+
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+
+        // Allow systemtest to succeed by notifying completion of system test
+        controllerTester.jobCompletion(JobType.component)
+                        .application(application.id())
+                        .projectId(screwdriverProjectId)
+                        .uploadArtifact(applicationPackage)
+                        .submit();
+
+        String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"Not allowed to launch Athenz service domain1.service\"}";
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
+                                      .data(createApplicationDeployData(applicationPackage, false))
+                                      .screwdriverIdentity(screwdriverId),
+                              expectedResult,
+                              400);
+
+    }
+
+    @Test
     public void redeployment_succeeds_when_not_specifying_versions_or_application_package() {
         // Setup
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
@@ -1262,6 +1301,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
 
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
@@ -1476,11 +1516,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void createAthenzDomainWithAdmin(AthenzDomain domain, UserId userId) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzDbMock.Domain domainMock = new AthenzDbMock.Domain(domain);
+        AthenzDbMock.Domain domainMock = mock.getSetup().getOrCreateDomain(domain);
         domainMock.markAsVespaTenant();
         domainMock.admin(AthenzUser.fromUserId(userId.id()));
-        mock.getSetup().addDomain(domainMock);
     }
+
+    /**
+     * Mock athenz service identity configuration. Simulates that configserver is allowed to launch a service
+     */
+    private void configureAthenzIdentity(com.yahoo.vespa.athenz.api.AthenzService service, boolean allowLaunch) {
+        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
+                                                                          .getComponent(AthenzClientFactoryMock.class.getName());
+        AthenzDbMock.Domain domainMock = mock.getSetup().domains.computeIfAbsent(service.getDomain(), AthenzDbMock.Domain::new);
+        domainMock.services.put(service.getName(), new AthenzDbMock.Service(allowLaunch));
+    }
+
 
     /**
      * In production this happens outside hosted Vespa, so there is no API for it and we need to reach down into the

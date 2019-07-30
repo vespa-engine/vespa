@@ -26,6 +26,10 @@ public class AthenzDbMock {
         return this;
     }
 
+    public Domain getOrCreateDomain(AthenzDomain domain) {
+        return domains.computeIfAbsent(domain, Domain::new);
+    }
+
     public AthenzDbMock addHostedOperator(AthenzIdentity athenzIdentity) {
         hostedOperators.add(athenzIdentity);
         return this;
@@ -37,6 +41,7 @@ public class AthenzDbMock {
         public final Set<AthenzIdentity> admins = new HashSet<>();
         public final Set<AthenzIdentity> tenantAdmins = new HashSet<>();
         public final Map<ApplicationId, Application> applications = new HashMap<>();
+        public final Map<String, Service> services = new HashMap<>();
         public boolean isVespaTenant = false;
 
         public Domain(AthenzDomain name) {
@@ -78,4 +83,12 @@ public class AthenzDbMock {
         }
     }
 
+    public static class Service {
+
+        public final boolean allowLaunch;
+
+        public Service(boolean allowLaunch) {
+            this.allowLaunch = allowLaunch;
+        }
+    }
 }

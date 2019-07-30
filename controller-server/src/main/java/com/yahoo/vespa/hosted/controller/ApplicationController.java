@@ -13,7 +13,9 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -853,14 +855,17 @@ public class ApplicationController {
     /**
      * Verifies that the application can be deployed to the tenant, following these rules:
      *
-     * 1. If the principal is given, verify that the principal is tenant admin or admin of the tenant domain
-     * 2. If the principal is not given, verify that the Athenz domain of the tenant equals Athenz domain given in deployment.xml
+     * 1. Verify that the Athenz service can be launched by the config server
+     * 2. If the principal is given, verify that the principal is tenant admin or admin of the tenant domain
+     * 3. If the principal is not given, verify that the Athenz domain of the tenant equals Athenz domain given in deployment.xml
      *
      * @param tenantName Tenant where application should be deployed
      * @param applicationPackage Application package
      * @param deployer Principal initiating the deployment, possibly empty
      */
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
+        verifyAllowedLaunchAthenzService(applicationPackage.deploymentSpec());
+
         applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
             Tenant tenant = controller.tenants().require(tenantName);
             deployer.filter(AthenzPrincipal.class::isInstance)
@@ -883,6 +888,25 @@ public class ApplicationController {
                                              throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.value() + "] " +
                                                                                 "must match tenant domain: [" + tenantDomain.getName() + "]");
                                      });
+        });
+    }
+
+    /*
+     * Verifies that the configured athenz service (if any) can be launched.
+     */
+    private void verifyAllowedLaunchAthenzService(DeploymentSpec deploymentSpec) {
+        deploymentSpec.athenzDomain().ifPresent(athenzDomain -> {
+            controller.zoneRegistry().zones().reachable().ids()
+                      .forEach(zone -> {
+                          AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerAthenzIdentity(zone);
+                          deploymentSpec.athenzService(zone.environment(), zone.region())
+                                        .map(service -> new AthenzService(athenzDomain.value(), service.value()))
+                                        .ifPresent(service -> {
+                                            boolean allowedToLaunch = ((AthenzFacade) accessControl).canLaunch(configServerAthenzIdentity, service);
+                                            if (!allowedToLaunch)
+                                                throw new IllegalArgumentException("Not allowed to launch Athenz service " + service.getFullName());
+                                        });
+                      });
         });
     }
 

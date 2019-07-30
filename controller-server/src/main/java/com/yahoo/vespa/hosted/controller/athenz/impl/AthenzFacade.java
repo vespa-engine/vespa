@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
@@ -190,6 +191,10 @@ public class AthenzFacade implements AccessControl {
 
     public boolean hasHostedOperatorAccess(AthenzIdentity identity) {
         return hasAccess("modify", service.getDomain().getName() + ":hosted-vespa", identity);
+    }
+
+    public boolean canLaunch(AthenzIdentity principal, AthenzService service) {
+        return hasAccess("launch", service.getDomain().getName() + ":service."+service.getName(), principal);
     }
 
     /**

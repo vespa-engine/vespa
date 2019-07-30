@@ -107,6 +107,12 @@ public class ZmsClientMock implements ZmsClient {
                 return false;
             }
             return false;
+        } else if ("launch".equals(action)){
+            AthenzDbMock.Domain domain = getDomainOrThrow(resource.getDomain(), false);
+            String serviceName = resource.getEntityName().replace("service.","");
+            if(!domain.services.containsKey(serviceName)) return false;
+            AthenzDbMock.Service service = domain.services.get(serviceName);
+            return service.allowLaunch;
         }
         return false;
     }

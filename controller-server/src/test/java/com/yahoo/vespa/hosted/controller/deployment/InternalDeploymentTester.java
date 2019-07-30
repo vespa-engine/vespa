@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
@@ -39,8 +40,11 @@ import static org.junit.Assert.assertTrue;
 
 public class InternalDeploymentTester {
 
+    private static final String ATHENZ_DOMAIN = "domain";
+    private static final String ATHENZ_SERVICE = "service";
+
     public static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-            .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+            .athenzIdentity(AthenzDomain.from(ATHENZ_DOMAIN), AthenzService.from(ATHENZ_SERVICE))
             .upgradePolicy("default")
             .region("us-central-1")
             .parallel("us-west-1", "us-east-3")
@@ -84,6 +88,10 @@ public class InternalDeploymentTester {
         Logger.getLogger(InternalStepRunner.class.getName()).setLevel(LogLevel.DEBUG);
         Logger.getLogger("").setLevel(LogLevel.DEBUG);
         tester.controllerTester().configureDefaultLogHandler(handler -> handler.setLevel(LogLevel.DEBUG));
+
+        // Mock Athenz domain to allow launch of service
+        AthenzDbMock.Domain domain = tester.controllerTester().athenzDb().getOrCreateDomain(new com.yahoo.vespa.athenz.api.AthenzDomain(ATHENZ_DOMAIN));
+        domain.services.put(ATHENZ_SERVICE, new AthenzDbMock.Service(true));
     }
 
     /**
