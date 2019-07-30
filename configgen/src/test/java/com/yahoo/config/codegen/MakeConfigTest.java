@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class MakeConfigTest {
 
-    File dest;
+    private File dest;
     
     @Before
     public void setUp() {
@@ -29,8 +29,9 @@ public class MakeConfigTest {
         if (dir.isDirectory()) {
             String[] children = dir.list();
 
-            for (int i = 0; i < children.length; i++) {
-                boolean success = recursiveDeleteDir(new File(dir, children[i]));
+            assert children != null;
+            for (String child : children) {
+                boolean success = recursiveDeleteDir(new File(dir, child));
 
                 if (!success) return false;
             }
@@ -42,10 +43,8 @@ public class MakeConfigTest {
     
     @Test
     public void testProps() throws PropertyException {
-        long ts = System.currentTimeMillis();
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
-        System.setProperty("config.requireNamespace", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
         System.setProperty("config.spec", "src/test/resources/allfeatures.def");
         MakeConfigProperties p = new MakeConfigProperties();
@@ -57,7 +56,6 @@ public class MakeConfigTest {
         
         System.setProperty("config.dumpTree", "false");
         System.setProperty("config.useFramework", "false");
-        System.setProperty("config.requireNamespace", "false");
         System.setProperty("config.dest", dest.getAbsolutePath());
         System.setProperty("config.spec", "src/test/resources/allfeatures.def,src/test/resources/bar.foo.def");
         p = new MakeConfigProperties();
@@ -71,7 +69,6 @@ public class MakeConfigTest {
     public void testMake() throws IOException, InterruptedException {
         System.setProperty("config.dumpTree", "true");
         System.setProperty("config.useFramework", "true");
-        System.setProperty("config.requireNamespace", "true");
         System.setProperty("config.dest", dest.getAbsolutePath());
         System.setProperty("config.spec", "src/test/resources/allfeatures.def");
         MakeConfig.main(new String[]{});

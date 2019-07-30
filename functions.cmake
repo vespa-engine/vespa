@@ -132,7 +132,7 @@ function(vespa_generate_config TARGET RELATIVE_CONFIG_DEF_PATH)
 
     add_custom_command(
         OUTPUT ${CONFIG_H_PATH} ${CONFIG_CPP_PATH}
-        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_PARENT_DIR} -Dconfig.lang=cppng -Dconfig.requireNamespace=false -Dconfig.subdir=${CONFIG_DEST_DIRNAME} -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
+        COMMAND java -Dconfig.spec=${CONFIG_DEF_PATH} -Dconfig.dest=${CONFIG_DEST_PARENT_DIR} -Dconfig.lang=cpp -Dconfig.subdir=${CONFIG_DEST_DIRNAME} -Dconfig.dumpTree=false -Xms64m -Xmx64m -jar ${PROJECT_SOURCE_DIR}/configgen/target/configgen.jar
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
         MAIN_DEPENDENCY ${CONFIG_DEF_PATH}
         )

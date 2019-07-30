@@ -18,14 +18,14 @@ public class MakeConfig {
         classBuilder = createClassBuilder(root, nd, properties);
     }
 
-    public static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties properties) {
+    private static ClassBuilder createClassBuilder(InnerCNode root, NormalizedDefinition nd, MakeConfigProperties properties) {
         if (isCpp(properties))
             return new CppClassBuilder(root, nd, properties.destDir, properties.dirInRoot);
         else
             return new JavaClassBuilder(root, nd, properties.destDir, properties.javaPackagePrefix);
     }
 
-    public static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
+    private static boolean makeConfig(MakeConfigProperties properties) throws FileNotFoundException {
         for (File specFile : properties.specFiles) {
             String name = specFile.getName();
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
@@ -49,7 +49,7 @@ public class MakeConfig {
     /**
      * Generates the code and print it to this.out.
      */
-    void buildClasses() {
+    private void buildClasses() {
         classBuilder.createConfigClasses();
     }
 
@@ -58,7 +58,7 @@ public class MakeConfig {
         out.println("       (default language for generated code is Java)");
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         try {
             MakeConfigProperties props = new MakeConfigProperties();
             boolean success = makeConfig(props);
@@ -81,7 +81,7 @@ public class MakeConfig {
     }
 
     private static boolean isCpp(MakeConfigProperties properties) {
-        return (properties.language.equals("cppng") || properties.language.equals("cpp"));
+        return properties.language.equals("cpp");
     }
 
     // The Exceptions class below is copied from vespajlib/com.yahoo.protect.Exceptions
@@ -100,7 +100,7 @@ public class MakeConfig {
          * <code>e.getMessage(): e.getCause().getMessage(): e.getCause().getCause().getMessage()...</code>
          * In addition, some heuristics are used to clean up common cases where exception nesting causes bad messages.
          */
-        public static String toMessageString(Throwable t) {
+        static String toMessageString(Throwable t) {
             StringBuilder b = new StringBuilder();
             String lastMessage = null;
             String message;

@@ -11,9 +11,9 @@ import java.util.StringTokenizer;
  *
  * @author gjoranv
  */
-public class MakeConfigProperties {
+class MakeConfigProperties {
 
-    private static final List<String> legalLanguages = Arrays.asList("java", "cpp", "cppng" );
+    private static final List<String> legalLanguages = Arrays.asList("java", "cpp" );
 
     final File destDir;
     final File[] specFiles;
@@ -33,13 +33,13 @@ public class MakeConfigProperties {
              System.getProperty("config.packagePrefix"));
     }
 
-    public MakeConfigProperties(String destDir,
-                         String specFiles,
-                         String language,
-                         String dirInRoot,
-                         String dumpTree,
-                         String generateFrameworkCode,
-                         String javaPackagePrefix) throws PropertyException {
+    private MakeConfigProperties(String destDir,
+                                 String specFiles,
+                                 String language,
+                                 String dirInRoot,
+                                 String dumpTree,
+                                 String generateFrameworkCode,
+                                 String javaPackagePrefix) throws PropertyException {
         this.destDir = checkDestinationDir(destDir);
         this.specFiles = checkSpecificationFiles(specFiles);
         this.language = checkLanguage(language);
