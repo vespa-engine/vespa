@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -183,8 +184,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     .flavor("d-2-8-50");
         }
 
-        public Builder nodeType(NodeType nodeType) {
-            this.nodeSpecBuilder.type(nodeType);
+        public Builder nodeSpecBuilder(Function<NodeSpec.Builder, NodeSpec.Builder> nodeSpecBuilderModifier) {
+            this.nodeSpecBuilder = nodeSpecBuilderModifier.apply(nodeSpecBuilder);
             return this;
         }
 
