@@ -55,4 +55,13 @@ public class StoredInteger implements Supplier<OptionalInt> {
             throw new UncheckedIOException("Failed to store integer in " + path, e);
         }
     }
+
+    public void clear(TaskContext taskContext) {
+        try {
+            taskContext.log(logger, "Deleting " + path);
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to delete integer in " + path, e);
+        }
+    }
 }
