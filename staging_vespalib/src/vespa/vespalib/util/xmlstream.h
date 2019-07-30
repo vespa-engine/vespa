@@ -42,7 +42,7 @@ class XmlOutputStream;
 
 bool isLegalName(const std::string& name);
 
-enum XmlTagFlags { NONE = 0, CONVERT_ILLEGAL_CHARACTERS = 1 };
+enum class XmlTagFlags { NONE = 0, CONVERT_ILLEGAL_CHARACTERS = 1 };
 
 /**
  * @class document::XmlTag
@@ -56,7 +56,7 @@ class XmlTag {
     XmlTagFlags _flags;
 public:
     XmlTag(const XmlTag&);
-    XmlTag(const std::string& name, XmlTagFlags = NONE);
+    XmlTag(const std::string& name, XmlTagFlags = XmlTagFlags::NONE);
     ~XmlTag();
 
     const std::string& getName() const { return _name; }

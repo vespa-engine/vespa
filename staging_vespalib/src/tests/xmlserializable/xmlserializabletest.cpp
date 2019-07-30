@@ -56,7 +56,7 @@ Test::testEscaping()
     std::ostringstream ost;
     XmlOutputStream xos(ost);
     using namespace vespalib::xml;
-    xos << XmlTag("!#trash%-", CONVERT_ILLEGAL_CHARACTERS)
+    xos << XmlTag("!#trash%-", XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS)
             << XmlTag("foo")
                 << XmlAttribute("bar", "<100%\" &\n>")
             << XmlEndTag()
