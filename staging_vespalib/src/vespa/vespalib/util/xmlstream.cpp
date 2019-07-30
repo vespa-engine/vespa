@@ -361,7 +361,7 @@ XmlTag::XmlTag(const std::string& name, XmlTagFlags flags)
       _content(),
       _flags(flags)
 {
-    if (_flags == CONVERT_ILLEGAL_CHARACTERS) {
+    if (_flags == XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS) {
         convertToLegalName(_name);
     }
     if (!isLegalName(_name)) {

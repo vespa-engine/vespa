@@ -37,7 +37,7 @@ XmlWriter::visitMetricSet(const MetricSet& set, bool)
 {
     using namespace vespalib::xml;
     if (set.used() || _verbosity >= 2) {
-        _xos << XmlTag(set.getName(), CONVERT_ILLEGAL_CHARACTERS);
+        _xos << XmlTag(set.getName(), XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS);
         printCommonXmlParts(set);
         return true;
     }
@@ -56,7 +56,7 @@ XmlWriter::visitCountMetric(const AbstractCountMetric& metric, bool)
     if (!metric.inUse(*values) && _verbosity < 2) return true;
     using namespace vespalib::xml;
     std::ostringstream ost;
-    _xos << XmlTag(metric.getName(), CONVERT_ILLEGAL_CHARACTERS)
+    _xos << XmlTag(metric.getName(), XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS)
          << XmlAttribute(metric.sumOnAdd()
                         ? "count" : "value", values->toString("count"));
     printCommonXmlParts(metric);
@@ -70,7 +70,7 @@ XmlWriter::visitValueMetric(const AbstractValueMetric& metric, bool)
     MetricValueClass::UP values(metric.getValues());
     if (!metric.inUse(*values) && _verbosity < 2) return true;
     using namespace vespalib::xml;
-    _xos << XmlTag(metric.getName(), CONVERT_ILLEGAL_CHARACTERS)
+    _xos << XmlTag(metric.getName(), XmlTagFlags::CONVERT_ILLEGAL_CHARACTERS)
          << XmlAttribute("average", values->getLongValue("count") == 0
                     ? 0 : values->getDoubleValue("total")
                           / values->getDoubleValue("count"))
