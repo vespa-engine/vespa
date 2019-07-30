@@ -77,10 +77,23 @@ public class CoreCollector {
     List<String> readBacktrace(NodeAgentContext context, Path coredumpPath, Path binPath, boolean allThreads) {
         String threads = allThreads ? "thread apply all bt" : "bt";
         String[] command = {gdb.toString(), "-n", "-ex", threads, "-batch", binPath.toString(), coredumpPath.toString()};
+
         ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
-        if (result.getExitStatus() != 0) {
+        if (result.getExitStatus() != 0)
             throw new RuntimeException("Failed to read backtrace " + result + ", Command: " + Arrays.toString(command));
-        }
+
+        return Arrays.asList(result.getOutput().split("\n"));
+    }
+
+    List<String> readJstack(NodeAgentContext context, Path coredumpPath, Path binPath) {
+        String[] command = isRunningVespa6(context) ?
+                new String[] {"jstack", binPath.toString(), coredumpPath.toString()} :
+                new String[] {"jhsdb", "jstack", "--exe", binPath.toString(), "--core", coredumpPath.toString()};
+
+        ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
+        if (result.getExitStatus() != 0)
+            throw new RuntimeException("Failed to read jstack " + result + ", Command: " + Arrays.toString(command));
+
         return Arrays.asList(result.getOutput().split("\n"));
     }
 
@@ -96,11 +109,19 @@ public class CoreCollector {
             Path binPath = readBinPath(context, coredumpPath);
 
             data.put("bin_path", binPath.toString());
-            data.put("backtrace", readBacktrace(context, coredumpPath, binPath, false));
-            data.put("backtrace_all_threads", readBacktrace(context, coredumpPath, binPath, true));
+            if (binPath.getFileName().toString().equals("java")) {
+                data.put("backtrace_all_threads", readJstack(context, coredumpPath, binPath));
+            } else {
+                data.put("backtrace", readBacktrace(context, coredumpPath, binPath, false));
+                data.put("backtrace_all_threads", readBacktrace(context, coredumpPath, binPath, true));
+            }
         } catch (RuntimeException e) {
             context.log(logger, Level.WARNING, "Failed to extract backtrace", e);
         }
         return data;
+    }
+
+    private static boolean isRunningVespa6(NodeAgentContext context) {
+        return context.node().wantedVespaVersion().map(v -> v.getMajor() == 6).orElse(false);
     }
 }
