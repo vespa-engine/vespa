@@ -272,7 +272,7 @@ public class CppClassBuilder implements ClassBuilder {
                 String typeName = getTypeName(child, false);
                 declaredTypes.add(child.getName());
                 if (child instanceof LeafCNode.EnumLeaf) {
-                    w.write(indent + "enum " + typeName + " { ");
+                    w.write(indent + "enum class " + typeName + " { ");
                     LeafCNode.EnumLeaf leaf = (LeafCNode.EnumLeaf) child;
                     for (int i=0; i<leaf.getLegalValues().length; ++i) {
                         if (i != 0) {
@@ -623,7 +623,7 @@ public class CppClassBuilder implements ClassBuilder {
                     for (int i=0; i<leaf.getLegalValues().length; ++i) {
                         w.write("    " + (i != 0 ? "} else " : ""));
                         w.write("if (name == \"" + leaf.getLegalValues()[i] + "\") {\n"
-                                + "        return " + leaf.getLegalValues()[i] + ";\n");
+                                + "        return " + typeName + "::" + leaf.getLegalValues()[i] + ";\n");
                     }
                     w.write("    } else {\n"
                             + "        throw InvalidConfigException(\"Illegal enum value '\" + name + \"'\");\n"
@@ -638,12 +638,12 @@ public class CppClassBuilder implements ClassBuilder {
                             + "    switch (t) {\n"
                             );
                     for (int i=0; i<leaf.getLegalValues().length; ++i) {
-                        w.write("        case " + leaf.getLegalValues()[i]  + ": return \"" + leaf.getLegalValues()[i] + "\";\n");
+                        w.write("        case " + typeName + "::" + leaf.getLegalValues()[i]  + ": return \"" + leaf.getLegalValues()[i] + "\";\n");
                     }
                     w.write("        default:\n"
                             + "        {\n"
                             + "            vespalib::asciistream ost;\n"
-                            + "            ost << \"UNKNOWN(\" << t << \")\";\n"
+                            + "            ost << \"UNKNOWN(\" << static_cast<int>(t) << \")\";\n"
                             + "            return ost.str();\n"
                             + "        }\n"
                             + "    }\n"
@@ -687,6 +687,9 @@ public class CppClassBuilder implements ClassBuilder {
             } else if (child instanceof LeafCNode) { // If we have a default value, use that..
                 LeafCNode leaf = (LeafCNode) child;
                 if (leaf.getDefaultValue() != null) {
+                    if (leaf.getType().equals("enum")) {
+                        w.write(getTypeName(leaf, false) + "::");
+                    }
                     w.write(getDefaultValue(leaf));
                 } else {
                     // Defines empty constructor defaults for primitives without default set
@@ -699,7 +702,7 @@ public class CppClassBuilder implements ClassBuilder {
                     } else if (leaf.getType().equals("string")) {
                     } else if (leaf.getType().equals("enum")) {
                         LeafCNode.EnumLeaf enumNode = (LeafCNode.EnumLeaf) leaf;
-                        w.write(enumNode.getLegalValues()[0]);
+                        w.write(getTypeName(leaf, false) + "::" + enumNode.getLegalValues()[0]);
                     } else if (leaf.getType().equals("reference")) {
                     } else if (leaf.getType().equals("file")) {
                     }
@@ -1097,6 +1100,9 @@ public class CppClassBuilder implements ClassBuilder {
                 if (child instanceof LeafCNode && ((LeafCNode) child).getDefaultValue() != null) {
                     LeafCNode leaf = (LeafCNode) child;
                     String defaultValue = getDefaultValue(leaf);
+                    if (leaf.getType().equals("enum")) {
+                        defaultValue = getTypeName(leaf, false) + "::" + defaultValue;
+                    }
                     w.write("()(" + childInspector + ", " + defaultValue + ");\n");
                 } else if (child instanceof InnerCNode) {
                     w.write("()(" + childInspector + ");\n");
