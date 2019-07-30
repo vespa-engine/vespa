@@ -796,8 +796,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .forEach(hostInfo -> {
+                            log.info(hostInfo.getHostname() + ": " + hostInfo.getServices().stream().map(ServiceInfo::getServiceType).collect(Collectors.joining(", ")));
                             ServiceInfo serviceInfo = hostInfo.getServices().stream().filter(service -> METRICS_PROXY_CONTAINER.serviceName.equals(service.getServiceType()))
-                                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find services " + METRICS_PROXY_CONTAINER.serviceName.toString()));
+                                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find service " + METRICS_PROXY_CONTAINER.serviceName.toString()));
                             String clusterName = serviceInfo.getProperty("clusterid").orElse("");
                             String clusterTypeString = serviceInfo.getProperty("clustertype").orElse("");
                             if (!ClusterInfo.ClusterType.isValidType(clusterTypeString)) return;
