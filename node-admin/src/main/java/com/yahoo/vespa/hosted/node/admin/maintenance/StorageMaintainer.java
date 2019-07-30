@@ -86,7 +86,7 @@ public class StorageMaintainer {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
         }
 
-        return 1024 * Long.valueOf(results[0]);
+        return 1024 * Long.parseLong(results[0]);
     }
 
 
