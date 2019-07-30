@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import org.junit.Test;
@@ -157,14 +154,7 @@ public class NodeAdminImplTest {
     }
 
     private NodeAgentContext createNodeAgentContext(String hostname) {
-        NodeSpec nodeSpec = new NodeSpec.Builder()
-                .hostname(hostname)
-                .state(NodeState.active)
-                .type(NodeType.tenant)
-                .flavor("default")
-                .build();
-
-        return new NodeAgentContextImpl.Builder(nodeSpec).build();
+        return new NodeAgentContextImpl.Builder(hostname).build();
     }
 
     private NodeAgentWithScheduler mockNodeAgentWithSchedulerFactory(NodeAgentContext context) {
