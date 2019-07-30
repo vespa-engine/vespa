@@ -36,6 +36,7 @@ using search::fef::FeatureType;
 
 using namespace search::fef::indexproperties;
 
+namespace search::features {
 namespace {
 template <typename X, typename Y>
 bool equals(X lhs, Y rhs) {
@@ -53,17 +54,17 @@ isUndefined(T value, BasicType::Type type)
 {
     switch (type) {
     case BasicType::INT8:
-        return search::attribute::isUndefined<int8_t>(static_cast<int8_t>(value));
+        return attribute::isUndefined<int8_t>(static_cast<int8_t>(value));
     case BasicType::INT16:
-        return search::attribute::isUndefined<int16_t>(static_cast<int16_t>(value));
+        return attribute::isUndefined<int16_t>(static_cast<int16_t>(value));
     case BasicType::INT32:
-        return search::attribute::isUndefined<int32_t>(static_cast<int32_t>(value));
+        return attribute::isUndefined<int32_t>(static_cast<int32_t>(value));
     case BasicType::INT64:
-        return search::attribute::isUndefined<int64_t>(static_cast<int64_t>(value));
+        return attribute::isUndefined<int64_t>(static_cast<int64_t>(value));
     case BasicType::FLOAT:
-        return search::attribute::isUndefined<float>(static_cast<float>(value));
+        return attribute::isUndefined<float>(static_cast<float>(value));
     case BasicType::DOUBLE:
-        return search::attribute::isUndefined<double>(static_cast<double>(value));
+        return attribute::isUndefined<double>(static_cast<double>(value));
     default:
         return false;
     }
@@ -77,27 +78,21 @@ isUndefined<vespalib::stringref>(vespalib::stringref, BasicType::Type)
 }
 
 template <typename T>
-search::feature_t
+feature_t
 considerUndefined(T value, BasicType::Type type)
 {
     if (isUndefined(value, type)) {
-        return search::attribute::getUndefined<search::feature_t>();
+        return attribute::getUndefined<feature_t>();
     }
-    return search::features::util::getAsFeature(value);
+    return util::getAsFeature(value);
 }
 
 template <>
-search::feature_t
+feature_t
 considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
 {
-    return search::features::util::getAsFeature(value);
+    return util::getAsFeature(value);
 }
-
-}
-
-
-namespace search::features {
-namespace {
 
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -301,67 +296,6 @@ WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
     outputs().set_number(3, count);    // count
 }
 
-}
-
-AttributeBlueprint::AttributeBlueprint() :
-    fef::Blueprint("attribute"),
-    _attrName(),
-    _attrKey(),
-    _extra(),
-    _tensorType(ValueType::double_type())
-{
-}
-
-AttributeBlueprint::~AttributeBlueprint() = default;
-
-void
-AttributeBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
-                                      fef::IDumpFeatureVisitor &) const
-{
-}
-
-bool
-AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
-                          const fef::ParameterList & params)
-{
-    // params[0] = attribute name
-    // params[1] = index (array attribute) or key (weighted set attribute)
-    _attrName = params[0].getValue();
-    _attrKey = createAttributeKey(_attrName);
-    if (params.size() == 2) {
-        _extra = params[1].getValue();
-    }
-    vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
-    if (!attrType.empty()) {
-        _tensorType = ValueType::from_spec(attrType);
-        if (_tensorType.is_error()) {
-            LOG(error, "%s: invalid type: '%s'", getName().c_str(), attrType.c_str());
-        }
-    }
-    FeatureType output_type = _tensorType.is_double()
-                              ? FeatureType::number()
-                              : FeatureType::object(_tensorType);
-    describeOutput("value", "The value of a single value attribute, "
-                   "the value at the given index of an array attribute, "
-                   "the given key of a weighted set attribute, or"
-                   "the tensor of a tensor attribute", output_type);
-    if (!_tensorType.is_tensor()) {
-        describeOutput("weight", "The weight associated with the given key in a weighted set attribute.");
-        describeOutput("contains", "1 if the given key is present in a weighted set attribute, 0 otherwise.");
-        describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
-    }
-    env.hintAttributeAccess(_attrName);
-    return !_tensorType.is_error();
-}
-
-fef::Blueprint::UP
-AttributeBlueprint::createInstance() const
-{
-    return std::make_unique<AttributeBlueprint>();
-}
-
-namespace {
-
 template <typename T>
 struct SingleValueExecutorCreator {
     using AttrType = SingleValueNumericAttribute<T>;
@@ -483,6 +417,63 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
     return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }
 
+}
+
+AttributeBlueprint::AttributeBlueprint() :
+    fef::Blueprint("attribute"),
+    _attrName(),
+    _attrKey(),
+    _extra(),
+    _tensorType(ValueType::double_type())
+{
+}
+
+AttributeBlueprint::~AttributeBlueprint() = default;
+
+void
+AttributeBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &,
+                                      fef::IDumpFeatureVisitor &) const
+{
+}
+
+bool
+AttributeBlueprint::setup(const fef::IIndexEnvironment & env,
+                          const fef::ParameterList & params)
+{
+    // params[0] = attribute name
+    // params[1] = index (array attribute) or key (weighted set attribute)
+    _attrName = params[0].getValue();
+    _attrKey = createAttributeKey(_attrName);
+    if (params.size() == 2) {
+        _extra = params[1].getValue();
+    }
+    vespalib::string attrType = type::Attribute::lookup(env.getProperties(), _attrName);
+    if (!attrType.empty()) {
+        _tensorType = ValueType::from_spec(attrType);
+        if (_tensorType.is_error()) {
+            LOG(error, "%s: invalid type: '%s'", getName().c_str(), attrType.c_str());
+        }
+    }
+    FeatureType output_type = _tensorType.is_double()
+                              ? FeatureType::number()
+                              : FeatureType::object(_tensorType);
+    describeOutput("value", "The value of a single value attribute, "
+                   "the value at the given index of an array attribute, "
+                   "the given key of a weighted set attribute, or"
+                   "the tensor of a tensor attribute", output_type);
+    if (!_tensorType.is_tensor()) {
+        describeOutput("weight", "The weight associated with the given key in a weighted set attribute.");
+        describeOutput("contains", "1 if the given key is present in a weighted set attribute, 0 otherwise.");
+        describeOutput("count", "Returns the number of elements in this array or weighted set attribute.");
+    }
+    env.hintAttributeAccess(_attrName);
+    return !_tensorType.is_error();
+}
+
+fef::Blueprint::UP
+AttributeBlueprint::createInstance() const
+{
+    return std::make_unique<AttributeBlueprint>();
 }
 
 void
