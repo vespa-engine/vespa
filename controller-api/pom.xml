@@ -69,6 +69,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ec2</artifactId>
+            <version>1.11.542</version>
+            <scope>compile</scope>
+        </dependency>
 
     </dependencies>
 
