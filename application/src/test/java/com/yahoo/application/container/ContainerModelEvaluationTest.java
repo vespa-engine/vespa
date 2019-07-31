@@ -7,6 +7,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.test.json.JsonTestHelper;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -64,7 +65,7 @@ public class ContainerModelEvaluationTest {
     private void assertResponse(String url, String expectedResponse, JDisc jdisc) {
         try {
             Response response = jdisc.handleRequest(new Request(url));
-            assertEquals(expectedResponse, response.getBodyAsString());
+            JsonTestHelper.assertJsonEquals(expectedResponse, response.getBodyAsString());
             assertEquals(200, response.getStatus());
         }
         catch (CharacterCodingException e) {

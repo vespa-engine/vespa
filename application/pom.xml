@@ -134,7 +134,12 @@
       <artifactId>httpclient</artifactId>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>testutil</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- These dependencies are necessary in test classpath when using jdisc_http_filters -->
     <dependency>
