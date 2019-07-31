@@ -791,26 +791,32 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     /** Finds the hosts of an application, grouped by cluster name */
     private Collection<ClusterInfo> getClustersOfApplication(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        Map<String, List<URI>> clusterHosts = new HashMap<>();
         Map<String, ClusterInfo> clusters = new HashMap<>();
         application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .forEach(hostInfo -> {
-                            log.info(hostInfo.getHostname() + ": " + hostInfo.getServices().stream().map(ServiceInfo::getServiceType).collect(Collectors.joining(", ")));
-                            ServiceInfo serviceInfo = hostInfo.getServices().stream().filter(service -> METRICS_PROXY_CONTAINER.serviceName.equals(service.getServiceType()))
-                                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Unable to find service " + METRICS_PROXY_CONTAINER.serviceName.toString()));
-                            String clusterName = serviceInfo.getProperty("clusterid").orElse("");
-                            String clusterTypeString = serviceInfo.getProperty("clustertype").orElse("");
-                            if (!ClusterInfo.ClusterType.isValidType(clusterTypeString)) return;
-                            ClusterInfo.ClusterType clusterType = ClusterInfo.ClusterType.valueOf(clusterTypeString);
-                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(serviceInfo) + "/metrics/v1/values?consumer=Vespa");
-                            clusterHosts.computeIfAbsent(clusterName, l -> new ArrayList<URI>()).add(host);
-                            clusters.computeIfAbsent(clusterName, c -> new ClusterInfo(clusterName, clusterType)).addHost(host);
+                            ServiceInfo metricsService = getServiceInfoByType(hostInfo, METRICS_PROXY_CONTAINER.serviceName);
+                            ServiceInfo clusterServiceInfo =  getServiceInfoByType(hostInfo, "container", "searchnode");
+                            ClusterInfo clusterInfo = createClusterInfo(clusterServiceInfo);
+                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + servicePort(metricsService) + "/metrics/v1/values?consumer=Vespa");
+                            clusters.computeIfAbsent(clusterInfo.getClusterId(), c -> clusterInfo).addHost(host);
                         }
                 );
         return clusters.values();
 
     }
+
+    private ServiceInfo getServiceInfoByType(HostInfo hostInfo, String... types) {
+        List<String> type = List.of(types);
+        return hostInfo.getServices().stream().filter(serviceInfo -> type.contains(serviceInfo.getServiceType())).findFirst().orElseThrow();
+    }
+
+    private ClusterInfo createClusterInfo(ServiceInfo serviceInfo) {
+        String clusterName = serviceInfo.getServiceName();
+        ClusterInfo.ClusterType clusterType = serviceInfo.getServiceType().equals("searchnode") ? ClusterInfo.ClusterType.content : ClusterInfo.ClusterType.container;
+        return new ClusterInfo(clusterName, clusterType);
+    }
+
     /** Returns version to use when deploying application in given environment */
     static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
         if (     environment.isManuallyDeployed()
