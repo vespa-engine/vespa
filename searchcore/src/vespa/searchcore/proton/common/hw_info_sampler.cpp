@@ -8,7 +8,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <thread>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.hw_info_sampler");
@@ -32,8 +32,8 @@ sampleDiskSizeBytes(const std::string &pathStr, const HwInfoSampler::Config &cfg
     if (cfg.diskSizeBytes != 0) {
         return cfg.diskSizeBytes;
     }
-    std::experimental::filesystem::path path(pathStr);
-    auto space_info = std::experimental::filesystem::space(path);
+    std::filesystem::path path(pathStr);
+    auto space_info = std::filesystem::space(path);
     return space_info.capacity;
 }
 

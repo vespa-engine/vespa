@@ -3,7 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/timer.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <unistd.h>
 
 using vespalib::makeLambdaTask;
@@ -47,7 +47,7 @@ DiskMemUsageSampler::sampleUsage()
 
 namespace {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 uint64_t
 sampleDiskUsageOnFileSystem(const fs::path &path, const HwInfo::Disk &disk)
