@@ -158,8 +158,6 @@ public abstract class Container extends AbstractService implements
 
         if (getHttp() == null) {
             initDefaultJettyConnector();
-        } else {
-            reserveHttpPortsPrepended();
         }
 
         tagServers();
@@ -179,14 +177,6 @@ public abstract class Container extends AbstractService implements
         }
         if (rpcServerEnabled()) {
             portsMeta.on(offset++).tag("rpc").tag("admin");
-        }
-    }
-
-    private void reserveHttpPortsPrepended() {
-        if (getHttp() != null && getHttp().getHttpServer() != null) {
-            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
-                reservePortPrepended(getPort(connectorFactory), "http/" + connectorFactory.getName());
-            }
         }
     }
 
