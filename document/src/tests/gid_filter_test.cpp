@@ -19,8 +19,10 @@ protected:
         Fixture(vespalib::stringref selection);
         ~Fixture();
 
-        Fixture(Fixture&&) = default;
-        Fixture& operator=(Fixture&&) = default;
+        Fixture(const Fixture&) = delete;
+        Fixture(Fixture&&) = delete;
+        Fixture& operator=(const Fixture&) = delete;
+        Fixture& operator=(Fixture&&) = delete;
 
         static Fixture for_selection(vespalib::stringref s) {
             return Fixture(s);
