@@ -6,7 +6,7 @@
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <experimental/optional>
+#include <optional>
 
 namespace search::predicate {
 
@@ -139,7 +139,7 @@ private:
     using GenerationHolder = vespalib::GenerationHolder;
     using generation_t = vespalib::GenerationHandler::generation_t;
     template <typename T>
-    using optional = std::experimental::optional<T>;
+    using optional = std::optional<T>;
 
     Dictionary _dictionary;
     BTreeStore _btree_posting_lists;

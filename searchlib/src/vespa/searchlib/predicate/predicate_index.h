@@ -29,7 +29,7 @@ class PredicateIndex : public PopulateInterface {
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     template <typename T>
-    using optional = std::experimental::optional<T>;
+    using optional = std::optional<T>;
 
 public:
     typedef std::unique_ptr<PredicateIndex> UP;
