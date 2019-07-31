@@ -42,7 +42,7 @@ public class MetricsAggregator {
     }
 
     public Optional<Double> aggregateFeedLatency() {
-        return Optional.ofNullable(feed).map(m -> m.latencySum / m.latencyCount);
+        return Optional.ofNullable(feed).map(m -> m.latencySum / m.latencyCount).filter(num -> !num.isNaN());
 
     }
 
@@ -54,7 +54,7 @@ public class MetricsAggregator {
         if (container == null && qr == null) return Optional.empty();
         var c = Optional.ofNullable(container).orElseGet(LatencyMetrics::new);
         var q = Optional.ofNullable(qr).orElseGet(LatencyMetrics::new);
-        return Optional.of((c.latencySum + q.latencySum) / (c.latencyCount + q.latencyCount));
+        return Optional.of((c.latencySum + q.latencySum) / (c.latencyCount + q.latencyCount)).filter(num -> !num.isNaN());
     }
 
     public Optional<Double> aggregateQueryRate() {
