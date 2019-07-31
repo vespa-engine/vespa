@@ -218,7 +218,7 @@ public:
     virtual bool shouldBlockThisOperation(uint32_t messageType, uint8_t priority) const;
 
 protected:
-    friend class IdealStateManagerTest;
+    friend struct IdealStateManagerTest;
     friend class IdealStateManager;
 
     IdealStateManager* _manager;
