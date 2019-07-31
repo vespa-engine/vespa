@@ -9,6 +9,7 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import org.junit.Before;
 import org.junit.Test;
@@ -175,5 +176,7 @@ public class FileSenderTest {
 
         @Override
         public String[] getPortSuffixes() { return null; }
+
+        @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 }

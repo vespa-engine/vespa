@@ -129,5 +129,18 @@ public class HostResourceTest {
             }
             return suffixes;
         }
+
+        @Override
+        public void allocatePorts(int start, PortAllocBridge from) {
+            for (int i = 0; i < portCount; i++) {
+                String suffix = "generic." + i;
+                if (start == 0) {
+                    from.allocatePort(suffix);
+                } else {
+                    from.requirePort(start++, suffix);
+                }
+            }
+        }
+
     }
 }

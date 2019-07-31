@@ -14,6 +14,8 @@ import com.yahoo.config.provision.Zone;
  */
 public class ConfigSentinel extends AbstractService implements SentinelConfig.Producer {
 
+    static final int BASEPORT = 19097;
+
     private final ApplicationId applicationId;
     private final Zone zone;
 
@@ -30,6 +32,13 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         portsMeta.on(1).tag("telnet").tag("interactive").tag("http").tag("state");
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
+    }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        from.requirePort(start++, "rpc");
+        from.requirePort(start++, "http");
     }
 
     /**

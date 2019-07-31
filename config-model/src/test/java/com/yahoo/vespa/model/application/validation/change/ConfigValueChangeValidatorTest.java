@@ -12,6 +12,7 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -249,6 +250,8 @@ public class ConfigValueChangeValidatorTest {
 
         @Override
         public String[] getPortSuffixes() { return null; }
+
+        @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 
     private static class SimpleConfigProducer extends AbstractConfigProducer<AbstractConfigProducer<?>>

@@ -14,6 +14,7 @@ public class Logd
     extends AbstractService
     implements LogdConfig.Producer
 {
+    static final int BASEPORT = 19089;
 
     /**
      * Creates a new Logd instance.
@@ -23,6 +24,12 @@ public class Logd
         setProp("clustertype", "hosts");
         setProp("clustername", "admin");
         portsMeta.on(0).tag("http").tag("state");
+    }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        from.wantPort(start, "http");
     }
 
     /**

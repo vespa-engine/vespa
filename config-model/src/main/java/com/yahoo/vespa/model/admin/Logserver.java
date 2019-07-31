@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 
 /**
  * Represents the Logserver. There is exactly one logserver in a Vespa
@@ -70,6 +71,15 @@ public class Logserver extends AbstractService {
     @Override
     public String[] getPortSuffixes() {
         return new String[]{ "rpc", "unused/1", "unused/2", "unused/3" };
+    }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        int port = (start == 0) ? getWantedPort() : start;
+        from.requirePort(port++, "unused");
+        from.requirePort(port++, "logtp");
+        from.requirePort(port++, "last.errors");
+        from.requirePort(port++, "replicator");
     }
 
 }

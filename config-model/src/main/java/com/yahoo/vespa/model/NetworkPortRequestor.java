@@ -26,6 +26,9 @@ public interface NetworkPortRequestor {
      */
     default int getWantedPort() { return 0; }
 
+    /** allocate the ports you need */
+    void allocatePorts(int start, PortAllocBridge from);
+
     /**
      * Returns the number of ports needed by this service.
      * User-defined ports for container http servers should not be counted, as those

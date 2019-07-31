@@ -14,6 +14,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
@@ -271,6 +272,42 @@ public abstract class Container extends AbstractService implements
         }
         assert (off == n);
         return suffixes;
+    }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        int off = 2;
+        if (getHttp() == null) {
+            if (requireSpecificPorts) {
+                from.requirePort(start, "http");
+            } else {
+                from.allocatePort("http");
+            }
+            from.allocatePort("http/1");
+        } else if (getHttp().getHttpServer() == null) {
+            // no http server ports
+        } else {
+            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
+                int port = getPort(connectorFactory);
+                String name = "http/" + connectorFactory.getName();
+                from.requirePort(port, name);
+            }
+        }
+        if (messageBusEnabled()) {
+            from.allocatePort("messaging");
+            ++off;
+        }
+        if (rpcServerEnabled()) {
+            from.allocatePort("rpc/admin");
+            ++off;
+        }
+        // TODO: remove this
+        if (getHttp() == null) {
+            from.allocatePort("unused/" + off);
+            ++off;
+            from.allocatePort("unused/" + off);
+        }
     }
 
     /**

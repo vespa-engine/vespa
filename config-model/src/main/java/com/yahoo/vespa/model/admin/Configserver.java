@@ -3,6 +3,8 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
+
 
 /**
  * Represents a Configserver. There may be one or more Configservers in a
@@ -29,6 +31,21 @@ public class Configserver extends AbstractService {
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
     }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (requiresWantedPort()) {
+            from.requirePort(start++, "rpc");
+            from.requirePort(start++, "http");
+        } else if (start == 0) {
+            from.allocatePort("rpc");
+            from.allocatePort("http");
+        } else {
+            from.wantPort(start++, "rpc");
+            from.wantPort(start++, "http");
+        }
+    }
+
 
     /**
      * Returns the desired base port for this service.

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 
 /**
  * Represents a Slobrok service.
@@ -12,6 +13,8 @@ import com.yahoo.vespa.model.AbstractService;
  */
 public class Slobrok extends AbstractService implements StateserverConfig.Producer {
     private static final long serialVersionUID = 1L;
+
+    public final static int BASEPORT = 19099;
 
     @Override
     public void getConfig(StateserverConfig.Builder builder) {
@@ -39,7 +42,7 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     @Override
     public int getWantedPort() {
         if (getId() == 1) {
-            return 19099;
+            return BASEPORT;
         } else {
             return 0;
         }
@@ -47,6 +50,13 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
 
     public String getStartupCommand() {
         return "exec $ROOT/sbin/vespa-slobrok -p " + getRpcPort() + " -c " + getConfigId();
+    }
+
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        from.wantPort(start, "rpc");
+        from.allocatePort("http");
     }
 
     /**
