@@ -229,7 +229,7 @@ public abstract class Container extends AbstractService implements
     }
 
     /**
-     * @return the number of ports needed by the Container except those reserved manually(reservePortPrepended)
+     * @return the number of ports needed by the Container
      */
     public int getPortCount() {
         // TODO Vespa 8: remove +2, only here for historical reasons

@@ -454,14 +454,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
         this.basePort = wantedPort;
     }
 
-    /** Temporary hack: reserve port with index 0
-     *  Must be done this way since the system test framework
-     *  currently uses the first port as container http port.
-     */
-    public void reservePortPrepended(int port, String suffix) {
-        ports.add(0, hostResource.ports().requireNetworkPort(port, this, suffix));
-    }
-
     public void setHostResource(HostResource hostResource) {
         this.hostResource = hostResource;
     }
