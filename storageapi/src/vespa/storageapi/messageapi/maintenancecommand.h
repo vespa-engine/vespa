@@ -12,8 +12,10 @@ public:
     MaintenanceCommand(const MessageType& type, const document::Bucket &bucket)
         : BucketInfoCommand(type, bucket)
     {}
+    MaintenanceCommand(const MaintenanceCommand &) = default;
     MaintenanceCommand(MaintenanceCommand &&) = default;
-    MaintenanceCommand & operator = (MaintenanceCommand &&) = default;
+    MaintenanceCommand & operator = (const MaintenanceCommand &) = delete;
+    MaintenanceCommand & operator = (MaintenanceCommand &&) = delete;
     ~MaintenanceCommand();
 
     const vespalib::string& getReason() const { return _reason; };
