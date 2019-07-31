@@ -69,11 +69,6 @@ public class Logserver extends AbstractService {
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "rpc", "unused/1", "unused/2", "unused/3" };
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         int port = (start == 0) ? getWantedPort() : start;
         from.requirePort(port++, "unused");

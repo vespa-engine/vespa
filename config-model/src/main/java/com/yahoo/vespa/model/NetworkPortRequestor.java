@@ -44,10 +44,4 @@ public interface NetworkPortRequestor {
      * @return true if this Service requires the wanted base port.
      */
     default boolean requiresWantedPort() { return false; }
-
-    /**
-     * Return names for each port requested.
-     * The size of the returned array must be equal to getPortCount().
-     */
-    String[] getPortSuffixes();
 }

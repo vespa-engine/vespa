@@ -57,11 +57,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
     public int getPortCount() { return 2; }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "rpc", "http" };
-    }
-
-    @Override
     public int getHealthPort() {return getRelativePort(1); }
 
     /**

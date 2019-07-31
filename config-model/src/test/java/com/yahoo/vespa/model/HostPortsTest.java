@@ -114,7 +114,6 @@ public class HostPortsTest {
             super(parent, "slobrok."+number);
         }
         @Override public int getPortCount() { return 1; }
-        @Override public String[] getPortSuffixes() { return new String[]{"http"}; }
         @Override public String getServiceType() { return "slobrok"; }
 
         @Override
@@ -141,15 +140,6 @@ public class HostPortsTest {
 
         @Override
         public int getPortCount() { return portCount; }
-
-        @Override
-        public String[] getPortSuffixes() {
-            String[] suffixes = new String[portCount];
-            for (int i = 0; i < portCount; i++) {
-                suffixes[i] = "generic." + i;
-            }
-            return suffixes;
-        }
 
         @Override
         public void allocatePorts(int start, PortAllocBridge from) {

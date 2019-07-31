@@ -67,11 +67,6 @@ public class Configserver extends AbstractService {
      */
     public int getPortCount() { return 2; }
 
-    @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "rpc", "http" };
-    }
-
     private int getConfigServerRpcPort() {
         return getRelativePort(0);
     }

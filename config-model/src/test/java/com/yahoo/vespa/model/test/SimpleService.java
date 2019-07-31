@@ -40,11 +40,6 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
     public int getPortCount() { return 5; }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "a", "b", "c", "d", "e" };
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = getWantedPort();
         from.wantPort(start++, "a");

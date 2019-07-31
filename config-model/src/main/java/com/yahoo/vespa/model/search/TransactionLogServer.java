@@ -40,11 +40,6 @@ public class TransactionLogServer extends AbstractService  {
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{"tls"};
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         // NB: ignore "start"
         from.allocatePort("tls");

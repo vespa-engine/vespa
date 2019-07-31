@@ -53,9 +53,4 @@ public class ConfigProxy extends AbstractService {
      */
     public int getPortCount() { return 1; }
 
-    @Override
-    public String[] getPortSuffixes() {
-        return new String[]{"rpc"};
-    }
-
 }

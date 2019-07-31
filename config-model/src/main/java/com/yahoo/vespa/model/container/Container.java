@@ -234,33 +234,6 @@ public abstract class Container extends AbstractService implements
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        // TODO clean up this mess
-        int n = getPortCount();
-        String[] suffixes = new String[n];
-        int off = 0;
-        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts;
-        if (httpPorts > 0) {
-            suffixes[off++] = "http";
-        }
-        for (int i = 1; i < httpPorts; i++) {
-            suffixes[off++] = "http/" + i;
-        }
-        if (messageBusEnabled()) {
-            suffixes[off++] = "messaging";
-        }
-        if (rpcServerEnabled()) {
-            suffixes[off++] = "rpc/admin";
-        }
-        while (off < n) {
-            suffixes[off] = "unused/" + off;
-            ++off;
-        }
-        assert (off == n);
-        return suffixes;
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = BASEPORT;
         int off = 2;

@@ -57,11 +57,6 @@ public abstract class ContentNode extends AbstractService
     public int getPortCount() { return 3; }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[] { "messaging", "rpc", "http" };
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) {
             from.allocatePort("messaging");

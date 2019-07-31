@@ -110,13 +110,6 @@ public class MetricsProxyContainer extends Container implements
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        var suffixes = super.getPortSuffixes();
-        suffixes[metricsRpcPortOffset()] = "rpc/metrics";
-        return suffixes;
-    }
-
-    @Override
     public void getConfig(RpcConnectorConfig.Builder builder) {
         builder.port(getRelativePort(metricsRpcPortOffset()));
     }

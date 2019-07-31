@@ -77,9 +77,6 @@ public class StartupCommandChangeValidatorTest {
             return 0;
         }
 
-        @Override
-        public String[] getPortSuffixes() { return null; }
-
         @Override public void allocatePorts(int start, PortAllocBridge from) { }
     }
 }
