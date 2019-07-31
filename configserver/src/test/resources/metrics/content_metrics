@@ -1,7 +1,7 @@
 {
   "services": [
         {
-        "name":"distributor",
+        "name":"vespa.distributor",
         "timestamp": 1557306075,
         "metrics": [
             {

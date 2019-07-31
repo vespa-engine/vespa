@@ -65,7 +65,7 @@ public class MetricsRetriever {
         service.field("metrics").traverse((ArrayTraverser) (i, m) -> {
             Inspector values = m.field("values");
             switch (serviceName) {
-                case "container":
+                case "vespa.container":
                     metrics.addContainerLatency(
                             values.field("query_latency.sum").asDouble(),
                             values.field("query_latency.count").asDouble());
@@ -73,12 +73,12 @@ public class MetricsRetriever {
                             values.field("feed_latency.sum").asDouble(),
                             values.field("feed_latency.count").asDouble());
                     break;
-                case "qrserver":
+                case "vespa.qrserver":
                     metrics.addQrLatency(
                             values.field("query_latency.sum").asDouble(),
                             values.field("query_latency.count").asDouble());
                     break;
-                case "distributor":
+                case "vespa.distributor":
                     metrics.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
                     break;
             }
