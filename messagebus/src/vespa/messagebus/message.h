@@ -29,8 +29,10 @@ public:
      * Constructs a new instance of this class.
      */
     Message();
-    Message(Message &&) = default;
-    Message & operator = (Message &&) = default;
+    Message(const Message &) = delete;
+    Message(Message &&) = delete;
+    Message & operator = (const Message &) = delete;
+    Message & operator = (Message &&) = delete;
 
     /**
      * If a message is deleted with elements on the callstack, this destructor
