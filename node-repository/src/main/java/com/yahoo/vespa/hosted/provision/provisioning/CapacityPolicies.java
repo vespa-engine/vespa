@@ -83,7 +83,7 @@ public class CapacityPolicies {
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin)
-            return new NodeResources(0.5, zone.system().isCd() ? 2.5 : 3, 50);
+            return nodeResourcesForAdminCluster();
 
         return new NodeResources(1.5, 8, 50);
     }
@@ -109,6 +109,11 @@ public class CapacityPolicies {
                 zone.environment().isProduction())
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         return nodeCount;
+    }
+
+    private NodeResources nodeResourcesForAdminCluster() {
+        double memoryInGb = (zone.system().isCd() ? 2 : 3);
+        return new NodeResources(0.5, memoryInGb, 50);
     }
 
 }
