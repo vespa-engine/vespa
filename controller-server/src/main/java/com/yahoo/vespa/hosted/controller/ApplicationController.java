@@ -621,8 +621,7 @@ public class ApplicationController {
                                                         .iterator());
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId + ": "
-                                   + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
             return Collections.emptyList();
         }
     }
@@ -641,7 +640,7 @@ public class ApplicationController {
                 return endpoints;
         }
         catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to get endpoint information for " + id + ": " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed to get endpoint information for " + id, e);
         }
         return routingPolicies.get(id).stream()
                               .filter(policy -> policy.endpointIn(controller.system()).scope() == Endpoint.Scope.zone)
