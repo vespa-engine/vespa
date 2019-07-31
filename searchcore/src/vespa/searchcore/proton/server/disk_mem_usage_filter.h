@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <mutex>
 
 namespace proton {
@@ -21,7 +21,7 @@ namespace proton {
 class DiskMemUsageFilter : public IResourceWriteFilter,
                            public IDiskMemUsageNotifier {
 public:
-    using space_info = std::experimental::filesystem::space_info;
+    using space_info = std::filesystem::space_info;
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 

@@ -13,7 +13,7 @@ namespace proton {
  */
 class DiskMemUsageSampler {
     DiskMemUsageFilter _filter;
-    std::experimental::filesystem::path _path;
+    std::filesystem::path _path;
     double _sampleInterval;
     std::unique_ptr<vespalib::Timer> _periodicTimer;
 
