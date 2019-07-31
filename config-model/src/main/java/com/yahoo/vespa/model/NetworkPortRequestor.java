@@ -46,14 +46,6 @@ public interface NetworkPortRequestor {
     default boolean requiresWantedPort() { return false; }
 
     /**
-     * Override if the services does not require consecutive port numbers. I.e. if any ports
-     * in addition to the baseport should be allocated from Vespa's default port range.
-     *
-     * @return true by default
-     */
-    default boolean requiresConsecutivePorts() { return true; }
-
-    /**
      * Return names for each port requested.
      * The size of the returned array must be equal to getPortCount().
      */

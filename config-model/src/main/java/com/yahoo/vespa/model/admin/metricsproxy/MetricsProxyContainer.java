@@ -90,11 +90,6 @@ public class MetricsProxyContainer extends Container implements
 
     // Must have predictable ports for both http and rpc.
     @Override
-    public boolean requiresConsecutivePorts() {
-        return true;
-    }
-
-    @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = BASEPORT;
         from.wantPort(start++, "http");

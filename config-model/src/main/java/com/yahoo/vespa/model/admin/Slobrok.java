@@ -35,11 +35,6 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     @Override
-    public boolean requiresConsecutivePorts() {
-        return false;
-    }
-
-    @Override
     public int getWantedPort() {
         if (getId() == 1) {
             return BASEPORT;

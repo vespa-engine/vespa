@@ -224,10 +224,6 @@ public abstract class Container extends AbstractService implements
         return requireSpecificPorts && (getHttp() == null);
     }
 
-    public boolean requiresConsecutivePorts() {
-        return false;
-    }
-
     /**
      * @return the number of ports needed by the Container
      */
