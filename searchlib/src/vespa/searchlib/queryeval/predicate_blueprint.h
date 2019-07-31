@@ -56,7 +56,7 @@ private:
     using BTreeIterator = predicate::SimpleIndex<datastore::EntryRef>::BTreeIterator;
     using VectorIterator = predicate::SimpleIndex<datastore::EntryRef>::VectorIterator;
     template <typename T>
-    using optional = std::experimental::optional<T>;
+    using optional = std::optional<T>;
     using Alloc = vespalib::alloc::Alloc;
 
     const PredicateAttribute & predicate_attribute() const {
