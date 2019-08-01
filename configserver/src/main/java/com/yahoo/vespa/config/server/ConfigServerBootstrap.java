@@ -7,7 +7,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.exception.TransientException;
+import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.log.LogLevel;

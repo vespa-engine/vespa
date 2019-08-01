@@ -38,8 +38,7 @@ public class ConfigServerException extends RuntimeException {
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
-        CERTIFICATE_NOT_READY,
-        LOAD_BALANCER_NOT_READY
+        CERTIFICATE_NOT_READY
     }
 
 }

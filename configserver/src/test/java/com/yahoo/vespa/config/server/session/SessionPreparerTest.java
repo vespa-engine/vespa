@@ -3,30 +3,20 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.exception.CertificateNotReadyException;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.exception.LoadBalancerServiceException;
-import com.yahoo.config.provision.exception.TransientException;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
-import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.MockReloadHandler;
 import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -39,6 +29,7 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
@@ -54,7 +45,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -207,7 +197,7 @@ public class SessionPreparerTest {
     public void require_that_rotations_are_read_from_zookeeper_and_used() throws IOException {
         final TestModelFactory modelFactory = new TestModelFactory(version123);
         preparer = createPreparer(new ModelFactoryRegistry(Collections.singletonList(modelFactory)),
-                                  HostProvisionerProvider.empty());
+                HostProvisionerProvider.empty());
 
         final String rotations = "foo.msbe.global.vespa.yahooapis.com";
         final ApplicationId applicationId = applicationId("test");
@@ -304,13 +294,6 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }
 
-    @Test(expected = TransientException.class)
-    public void require_that_conflict_is_returned_when_creating_load_balancer_fails() throws IOException {
-        preparer = createPreparer(HostProvisionerProvider.withProvisioner(new FailWithTransientExceptionProvisioner()));
-        var params = new PrepareParams.Builder().applicationId(applicationId("test")).build();
-        prepare(new File("src/test/resources/deploy/hosted-app"), params);
-    }
-
     private void prepare(File app) throws IOException {
         prepare(app, new PrepareParams.Builder().build());
     }
@@ -342,24 +325,6 @@ public class SessionPreparerTest {
     private ApplicationId applicationId(String applicationName) {
         return ApplicationId.from(TenantName.defaultName(),
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
-    }
-
-    private static class FailWithTransientExceptionProvisioner implements Provisioner {
-
-        @Override
-        public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
-        }
-
-        @Override
-        public void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts) { }
-
-        @Override
-        public void remove(NestedTransaction transaction, ApplicationId application) { }
-
-        @Override
-        public void restart(ApplicationId application, HostFilter filter) { }
-
     }
 
 }

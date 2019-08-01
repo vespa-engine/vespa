@@ -62,7 +62,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.CERTIFICATE_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.LOAD_BALANCER_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.PARENT_HOST_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
@@ -233,8 +232,7 @@ public class InternalStepRunner implements StepRunner {
                 || e.getErrorCode() == ACTIVATION_CONFLICT
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE
                 || e.getErrorCode() == PARENT_HOST_NOT_READY
-                || e.getErrorCode() == CERTIFICATE_NOT_READY
-                || e.getErrorCode() == LOAD_BALANCER_NOT_READY) {
+                || e.getErrorCode() == CERTIFICATE_NOT_READY) {
                 logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
                 return Optional.empty();
             }

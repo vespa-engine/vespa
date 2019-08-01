@@ -61,6 +61,17 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.provision.ApplicationLockException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.Exception)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.ApplicationName": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -133,6 +144,17 @@
       "public static com.yahoo.config.provision.Capacity fromCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromNodeCount(int, java.util.Optional, boolean, boolean)",
       "public static com.yahoo.config.provision.Capacity fromRequiredNodeType(com.yahoo.config.provision.NodeType)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.CertificateNotReadyException": {
+    "superClass": "com.yahoo.config.provision.TransientException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
     ],
     "fields": []
   },
@@ -629,6 +651,28 @@
       "public static final enum com.yahoo.config.provision.NodeType controllerhost"
     ]
   },
+  "com.yahoo.config.provision.OutOfCapacityException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.ParentHostUnavailableException": {
+    "superClass": "com.yahoo.config.provision.TransientException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.provision.ProvisionLogger": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -737,6 +781,19 @@
       "public static com.yahoo.config.provision.TenantName defaultName()",
       "public int compareTo(com.yahoo.config.provision.TenantName)",
       "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.provision.TransientException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Throwable)"
     ],
     "fields": []
   },

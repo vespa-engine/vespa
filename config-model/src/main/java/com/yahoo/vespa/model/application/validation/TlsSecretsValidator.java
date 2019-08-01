@@ -2,7 +2,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.provision.exception.CertificateNotReadyException;
+import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.vespa.model.VespaModel;
 
 public class TlsSecretsValidator extends Validator {
