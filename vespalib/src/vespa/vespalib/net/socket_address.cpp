@@ -8,6 +8,7 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <cassert>
+#include <cerrno>
 
 namespace vespalib {
 

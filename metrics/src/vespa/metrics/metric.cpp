@@ -12,6 +12,7 @@
 #include <iterator>
 #include <cassert>
 #include <algorithm>
+#include <ostream>
 
 namespace metrics {
 
