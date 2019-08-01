@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationLockException;
+import com.yahoo.config.provision.exception.ApplicationLockException;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
