@@ -49,7 +49,7 @@ public class HttpErrorResponse extends HttpResponse {
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
-        TRANSIENT_ERROR
+        LOAD_BALANCER_NOT_READY
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -100,8 +100,8 @@ public class HttpErrorResponse extends HttpResponse {
         return new HttpErrorResponse(CONFLICT, errorCodes.CERTIFICATE_NOT_READY.name(), msg);
     }
 
-    public static HttpErrorResponse transientError(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.TRANSIENT_ERROR.name(), msg);
+    public static HttpErrorResponse loadBalancerNotReady(String msg) {
+        return new HttpErrorResponse(CONFLICT, errorCodes.LOAD_BALANCER_NOT_READY.name(), msg);
     }
 
     @Override
