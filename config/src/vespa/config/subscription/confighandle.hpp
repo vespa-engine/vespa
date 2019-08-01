@@ -13,7 +13,7 @@ template <typename ConfigType>
 std::unique_ptr<ConfigType>
 ConfigHandle<ConfigType>::getConfig() const
 {
-    return _subscription->getConfig().newInstance<ConfigType>();
+    return _subscription->getConfig().template newInstance<ConfigType>();
 }
 
 template <typename ConfigType>
