@@ -1,35 +1,30 @@
 package com.yahoo.vespa.hosted.controller.api.integration.aws;
 
-import com.amazonaws.services.ec2.model.InstanceStatusEvent;
-
 import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 
 public class CloudEvent {
     public String instanceEventId;
     public String code;
     public String description;
-    public Date notAfter;
-    public Date notBefore;
-    public Date notBeforeDeadline;
+    public Optional<Date> notBefore;
+    public Optional<Date> notBeforeDeadline;
+    public Optional<Date> notAfter;
 
     public String zoneName;
     public Set<String> affectedHostnames;
 
-    private CloudEvent() { }
+    public CloudEvent(String instanceEventId, String code, String description, Date notAfter, Date notBefore, Date notBeforeDeadline,
+                       String zoneName, Set<String> affectedHostnames) {
+        this.instanceEventId = instanceEventId;
+        this.code = code;
+        this.description = description;
+        this.notBefore = Optional.ofNullable(notBefore);
+        this.notBeforeDeadline = Optional.ofNullable(notBeforeDeadline);
+        this.notAfter = Optional.ofNullable(notAfter);
 
-    public static CloudEvent fromAwsEvent(InstanceStatusEvent event, String zoneName, Set<String> affectedHostnames) {
-        CloudEvent cloudEvent = new CloudEvent();
-        cloudEvent.instanceEventId = event.getInstanceEventId();
-        cloudEvent.code = event.getCode();
-        cloudEvent.description = event.getDescription();
-        cloudEvent.notAfter = event.getNotAfter();
-        cloudEvent.notBefore = event.getNotBefore();
-        cloudEvent.notBeforeDeadline = event.getNotBeforeDeadline();
-
-        cloudEvent.zoneName = zoneName;
-        cloudEvent.affectedHostnames = affectedHostnames;
-
-        return cloudEvent;
+        this.zoneName = zoneName;
+        this.affectedHostnames = affectedHostnames;
     }
 }
