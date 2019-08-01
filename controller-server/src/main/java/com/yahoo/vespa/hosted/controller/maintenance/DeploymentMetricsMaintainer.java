@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.ConfigServerMetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
@@ -78,20 +77,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                              .at(now);
                             applications.store(locked.with(existingDeployment.zone(), newMetrics)
                                                      .recordActivityAt(now, existingDeployment.zone()));
-
-
-                            if (controller().system() == SystemName.cd) {
-                                MetricsService.DeploymentMetrics configServerCollectedMetrics = new ConfigServerMetricsService(controller().configServer())
-                                        .getDeploymentMetrics(application.id(), deployment.zone());
-                                log.log(Level.INFO, String.format("Deployment metrics for application %s in zone %s. \nQPS: %.2f\nWPS: %.2f\nDoc count: %d\nQuery latency: %.2f\nWrite latency: %.2f",
-                                        application.id().serializedForm(),
-                                        deployment.zone().value(),
-                                        configServerCollectedMetrics.queriesPerSecond(),
-                                        configServerCollectedMetrics.writesPerSecond(),
-                                        configServerCollectedMetrics.documentCount(),
-                                        configServerCollectedMetrics.queryLatencyMillis(),
-                                        configServerCollectedMetrics.writeLatencyMillis()));
-                            }
 
                         });
                     }
