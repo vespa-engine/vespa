@@ -101,8 +101,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public void getConfig(QueryProfilesConfig.Builder builder) {
         if (queryProfiles!=null) {
             queryProfiles.getConfig(builder);
-            builder.enableGroupingSessionCache(enableGroupingSessionCache);
         }
+        builder.enableGroupingSessionCache(enableGroupingSessionCache);
     }
 
     @Override
