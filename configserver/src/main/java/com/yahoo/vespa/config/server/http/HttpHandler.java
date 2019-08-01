@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.CertificateNotReadyException;
-import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.exception.ApplicationLockException;
+import com.yahoo.config.provision.exception.CertificateNotReadyException;
+import com.yahoo.config.provision.exception.LoadBalancerServiceException;
+import com.yahoo.config.provision.exception.ParentHostUnavailableException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.log.LogLevel;
-import com.yahoo.config.provision.OutOfCapacityException;
+import com.yahoo.config.provision.exception.OutOfCapacityException;
 import com.yahoo.vespa.config.server.ActivationConflictException;
 import com.yahoo.yolean.Exceptions;
 
@@ -67,6 +68,8 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.parentHostNotReady(getMessage(e, request));
         } catch (CertificateNotReadyException e) {
             return HttpErrorResponse.certificateNotReady(getMessage(e, request));
+        } catch (LoadBalancerServiceException e) {
+            return HttpErrorResponse.loadBalancerNotReady(getMessage(e, request));
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Unexpected exception handling a config server request", e);
             return HttpErrorResponse.internalServerError(getMessage(e, request));

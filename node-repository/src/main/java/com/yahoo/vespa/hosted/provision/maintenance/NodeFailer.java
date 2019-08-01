@@ -5,7 +5,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TransientException;
+import com.yahoo.config.provision.exception.TransientException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
