@@ -47,7 +47,7 @@ vespa_define_module(
     TEST_DEPENDS
     messagebus_messagebus-test
     vdstestlib
-    atomic
+    ${VESPA_ATOMIC_LIB}
 
     TESTS
     src/tests
