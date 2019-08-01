@@ -87,6 +87,10 @@ public class VespaHttpClientBuilder {
                     } else {
                         builder.setSSLSocketFactory(socketFactory);
                     }
+                    // Workaround that allows re-using https connections, see https://stackoverflow.com/a/42112034/1615280 for details.
+                    // Proper solution would be to add a request interceptor that adds a x500 principal as user token,
+                    // but certificate subject CN is not accessible through the TlsContext currently.
+                    builder.setUserTokenHandler(context -> null);
                 });
     }
 
