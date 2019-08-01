@@ -32,7 +32,7 @@ vespa_add_library(searchlib
     INSTALL lib64
     DEPENDS
     staging_vespalib
-    atomic
+    ${VESPA_ATOMIC_LIB}
 )
 
 vespa_add_target_package_dependency(searchlib Protobuf)

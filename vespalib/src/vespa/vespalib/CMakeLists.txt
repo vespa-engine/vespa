@@ -25,7 +25,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_websocket>
     INSTALL lib64
     DEPENDS
-    gcc
+    ${VESPA_GCC_LIB}
 )
 
 vespa_add_target_package_dependency(vespalib OpenSSL)
