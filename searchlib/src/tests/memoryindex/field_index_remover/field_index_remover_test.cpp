@@ -19,7 +19,7 @@ struct WordFieldPair {
     WordFieldPair(vespalib::stringref word, uint32_t fieldId)
         : _word(word), _fieldId(fieldId)
     {}
-    bool operator<(const WordFieldPair &rhs) {
+    bool operator<(const WordFieldPair &rhs) const {
         if (_word != rhs._word) {
             return _word < rhs._word;
         }

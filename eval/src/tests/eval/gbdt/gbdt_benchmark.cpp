@@ -95,7 +95,7 @@ std::vector<Option> all_options({{0, none},{1, vm_forest}});
 struct Result {
     double us;
     size_t opt_idx;
-    bool operator<(const Result &rhs) {
+    bool operator<(const Result &rhs) const {
         return (us < rhs.us);
     }
 };
