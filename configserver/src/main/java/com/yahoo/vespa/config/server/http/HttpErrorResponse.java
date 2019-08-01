@@ -20,6 +20,7 @@ import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 
 /**
  * @author Ulf Lilleengen
+ * @since 5.1
  */
 public class HttpErrorResponse extends HttpResponse {
 
@@ -48,8 +49,7 @@ public class HttpErrorResponse extends HttpResponse {
         REQUEST_TIMEOUT,
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
-        CERTIFICATE_NOT_READY,
-        LOAD_BALANCER_NOT_READY
+        CERTIFICATE_NOT_READY
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -98,10 +98,6 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse certificateNotReady(String msg) {
         return new HttpErrorResponse(CONFLICT, errorCodes.CERTIFICATE_NOT_READY.name(), msg);
-    }
-
-    public static HttpErrorResponse loadBalancerNotReady(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.LOAD_BALANCER_NOT_READY.name(), msg);
     }
 
     @Override
