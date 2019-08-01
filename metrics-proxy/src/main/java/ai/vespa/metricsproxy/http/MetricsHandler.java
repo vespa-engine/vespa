@@ -6,6 +6,7 @@ package ai.vespa.metricsproxy.http;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.metric.model.ResponseFormat;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
@@ -18,6 +19,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
@@ -25,6 +29,7 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
+import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static java.util.logging.Level.WARNING;
 
@@ -37,6 +42,15 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
 
     static final String V1_PATH = "/metrics/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
+
+    static final Set<String> AVAILABLE_FORMAT;
+    static {
+        AVAILABLE_FORMAT = Collections.unmodifiableSet(new HashSet<>(2) {{
+            for (ResponseFormat f : ResponseFormat.values()) {
+                add(f.name().toLowerCase());
+            }
+        }});
+    }
 
     private final ValuesFetcher valuesFetcher;
 
@@ -70,9 +84,17 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
         }
     }
 
-    private JsonResponse valuesResponse(HttpRequest request) {
+    private HttpResponse valuesResponse(HttpRequest request) {
         try {
-            return new JsonResponse(OK, valuesFetcher.fetch(request.getProperty("consumer")));
+            ResponseFormat format = ResponseFormat.getResponseFormat(request.getProperty("format"));
+
+            switch (format) {
+                case PROMETHEUS:
+                    return new TextResponse(OK, valuesFetcher.fetch(request.getProperty("consumer"), format));
+                case JSON:
+                default:
+                    return new JsonResponse(OK, valuesFetcher.fetch(request.getProperty("consumer"), format));
+            }
         } catch (JsonRenderingException e) {
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }

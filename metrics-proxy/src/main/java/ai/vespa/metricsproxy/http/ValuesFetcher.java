@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ResponseFormat;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
+import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 
 /**
  * Generates metrics values in json format for the metrics/v1 rest api.
@@ -41,14 +43,20 @@ public class ValuesFetcher {
         this.metricsConsumers = metricsConsumers;
     }
 
-    public String fetch(String requestedConsumer) throws JsonRenderingException {
+    public String fetch(String requestedConsumer, ResponseFormat format) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer);
 
         List<MetricsPacket> metrics = metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now())
                 .stream()
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
                 .collect(Collectors.toList());
-        return toGenericJsonModel(metrics).serialize();
+        switch (format) {
+            case PROMETHEUS:
+                return toPrometheusModel(metrics).serialize();
+            case JSON:
+            default:
+                return toGenericJsonModel(metrics).serialize();
+        }
     }
 
     private ConsumerId getConsumerOrDefault(String consumer) {
