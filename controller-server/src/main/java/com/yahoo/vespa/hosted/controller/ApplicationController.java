@@ -615,10 +615,21 @@ public class ApplicationController {
             throw new NotExistsException("Deployment", deploymentId.toString());
 
         try {
-            return ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
-                                                        .map(RoutingEndpoint::endpoint)
-                                                        .map(URI::create)
-                                                        .iterator());
+            if (controller.system().isPublic()) {
+                return controller.applications().get(deploymentId.applicationId()).stream()
+                        .flatMap(application -> {
+                            return application.endpointsIn(controller.system())
+                                    .scope(Endpoint.Scope.zone)
+                                    .asList().stream()
+                                    .map(Endpoint::url);
+                        })
+                        .collect(Collectors.toUnmodifiableList());
+            } else {
+                return routingGenerator.endpoints(deploymentId).stream()
+                        .map(RoutingEndpoint::endpoint)
+                        .map(URI::create)
+                        .collect(Collectors.toUnmodifiableList());
+            }
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to get endpoint information for " + deploymentId, e);
