@@ -20,6 +20,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.config.provision.exception.TransientException;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -343,19 +344,11 @@ public class SessionPreparerTest {
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
-    private static class LoadBalancerException extends TransientException {
-
-        LoadBalancerException() {
-            super("Unable to create lod balancer");
-        }
-
-    }
-
     private static class FailWithTransientExceptionProvisioner implements Provisioner {
 
         @Override
         public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
-            throw new LoadBalancerException();
+            throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
         }
 
         @Override
