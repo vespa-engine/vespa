@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
 import com.yahoo.config.provision.NodeFlavors;
@@ -64,20 +63,14 @@ public class CapacityPolicies {
         if (requestedResources.isEmpty())
             return defaultNodeResources(cluster.type());
 
-        // Flavor is specified and is allocateByLegacyName: Handle legacy flavor specs
-        if (zone.system() == SystemName.cd)
-            return flavors.exists(requestedResources.get().legacyName().get()) ? requestedResources.get()
-                                                                               : defaultNodeResources(cluster.type());
-        else {
-            switch (zone.environment()) {
-                case dev: case test: case staging: return defaultNodeResources(cluster.type());
-                default:
-                    flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
-                    // Return this spec containing the legacy flavor name, not the flavor's capacity object
-                    // which describes the flavors capacity, as the point of legacy allocation is to match
-                    // by name, not by resources
-                    return requestedResources.get();
-            }
+        switch (zone.environment()) {
+            case dev: case test: case staging: return defaultNodeResources(cluster.type());
+            default:
+                flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
+                // Return this spec containing the legacy flavor name, not the flavor's capacity object
+                // which describes the flavors capacity, as the point of legacy allocation is to match
+                // by name, not by resources
+                return requestedResources.get();
         }
     }
 
