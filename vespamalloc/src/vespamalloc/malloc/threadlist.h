@@ -48,4 +48,7 @@ private:
     static __thread ThreadPool * _myPool TLS_LINKAGE;
 };
 
+template <typename MemBlockPtrT, typename ThreadStatT>
+__thread ThreadPoolT<MemBlockPtrT, ThreadStatT> * ThreadListT<MemBlockPtrT, ThreadStatT>::_myPool TLS_LINKAGE = nullptr;
+
 }
