@@ -74,7 +74,7 @@ public:
     static inline size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
 };
 
-inline void crash() { *((unsigned *) NULL) = 0; }
+inline void crash() { *((volatile unsigned *) NULL) = 0; }
 
 template <typename T>
 inline void swap(T & a, T & b)      { T tmp(a); a = b; b = tmp; }
