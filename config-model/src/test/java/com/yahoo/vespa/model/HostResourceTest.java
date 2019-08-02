@@ -122,12 +122,16 @@ public class HostResourceTest {
         public int getPortCount() { return portCount; }
 
         @Override
-        public String[] getPortSuffixes() {
-            String[] suffixes = new String[portCount];
+        public void allocatePorts(int start, PortAllocBridge from) {
             for (int i = 0; i < portCount; i++) {
-                suffixes[i] = "generic." + i;
+                String suffix = "generic." + i;
+                if (start == 0) {
+                    from.allocatePort(suffix);
+                } else {
+                    from.requirePort(start++, suffix);
+                }
             }
-            return suffixes;
         }
+
     }
 }

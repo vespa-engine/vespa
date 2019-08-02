@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.test.StandardConfig.Builder;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 
 import java.util.HashMap;
 
@@ -39,8 +40,13 @@ public class SimpleService extends AbstractService implements com.yahoo.test.Sta
     public int getPortCount() { return 5; }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "a", "b", "c", "d", "e" };
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = getWantedPort();
+        from.wantPort(start++, "a");
+        from.wantPort(start++, "b");
+        from.wantPort(start++, "c");
+        from.wantPort(start++, "d");
+        from.wantPort(start++, "e");
     }
 
     // Make sure this service is listed in the sentinel config

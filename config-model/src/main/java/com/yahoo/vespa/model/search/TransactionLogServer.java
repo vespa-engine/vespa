@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Element;
 
@@ -39,8 +40,9 @@ public class TransactionLogServer extends AbstractService  {
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[]{"tls"};
+    public void allocatePorts(int start, PortAllocBridge from) {
+        // NB: ignore "start"
+        from.allocatePort("tls");
     }
 
     /**

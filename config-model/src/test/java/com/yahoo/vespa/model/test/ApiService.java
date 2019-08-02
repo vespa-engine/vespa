@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.test;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 
 /**
  * This is a service for testing the plugin exchange mechanism in the
@@ -36,6 +37,5 @@ public class ApiService extends AbstractService implements com.yahoo.test.Standa
 
     public int getPortCount() { return 0; }
 
-    @Override
-    public String[] getPortSuffixes() { return null; }
+    @Override public void allocatePorts(int start, PortAllocBridge from) { }
 }
