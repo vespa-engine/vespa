@@ -305,7 +305,8 @@ public class StorageClusterTest {
     public void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
         String xml =
                 "<cluster id=\"storage\">\n" +
-                "<documents/>\n" +
+                 "  <redundancy>2</redundancy>" +
+                "  <documents/>\n" +
                 "  <group>\n" +
                 "    <distribution partitions=\"*\"/>\n" +
                 "    <group distribution-key=\"0\" name=\"bar\">\n" +
@@ -330,6 +331,7 @@ public class StorageClusterTest {
     public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
         String xml =
                 "<cluster id=\"storage\">\n" +
+                "  <redundancy>2</redundancy>" +
                 "<documents/>\n" +
                 "  <group>\n" +
                 "    <distribution partitions=\"*\"/>\n" +
