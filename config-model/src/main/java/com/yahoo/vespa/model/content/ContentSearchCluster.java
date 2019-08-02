@@ -233,7 +233,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
             snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                      clusterName, node, flushOnShutdown, tuning, parentGroup.isHosted());
+                                      clusterName, node, flushOnShutdown, tuning, parentGroup.getOwner().isHostedVespa());
             snode.setHostResource(node.getHostResource());
             snode.initService(deployState.getDeployLogger());
 
@@ -283,12 +283,12 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             if (usesHierarchicDistribution()) {
                 indexedCluster.setMaxNodesDownPerFixedRow((redundancy.effectiveFinalRedundancy() / groupToSpecMap.size()) - 1);
             }
-            indexedCluster.setSearchableCopies(redundancy.readyCopies());
+            indexedCluster.setSearchableCopies(redundancy.searchableCopies());
         }
         this.redundancy = redundancy;
         for (SearchNode node : getSearchNodes()) {
-            node.setRedundancy(redundancy.finalRedundancy());
-            node.setSearchableCopies(redundancy.readyCopies());
+            node.setRedundancy(redundancy.redundancyFromSearchNodePerspective());
+            node.setSearchableCopies(redundancy.searchableCopies());
         }
     }
 

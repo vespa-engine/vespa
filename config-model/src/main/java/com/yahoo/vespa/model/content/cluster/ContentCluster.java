@@ -80,9 +80,9 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                            MessagetyperouteselectorpolicyConfig.Producer,
                                                            BucketspacesConfig.Producer {
 
-    private final String documentSelection;
+    private String documentSelection;
     private ContentSearchCluster search;
-    private final boolean isHosted;
+    private final boolean isHostedVespa;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     private com.yahoo.vespa.model.content.StorageGroup rootGroup;
@@ -91,9 +91,9 @@ public class ContentCluster extends AbstractConfigProducer implements
     private Redundancy redundancy;
     private ClusterControllerConfig clusterControllerConfig;
     private PersistenceEngine.PersistenceFactory persistenceFactory;
-    private final String clusterName;
+    private String clusterName;
     private Integer maxNodesPerMerge;
-    private final Zone zone;
+    private Zone zone;
 
     /**
      * If multitenant or a cluster controller was explicitly configured in this cluster:
@@ -124,20 +124,21 @@ public class ContentCluster extends AbstractConfigProducer implements
                     new SearchDefinitionBuilder().build(deployState.getDocumentModel().getDocumentManager(), documentsElement);
 
             String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
-            RedundancyBuilder redundancyBuilder = new RedundancyBuilder(contentElement);
+            Redundancy redundancy = new RedundancyBuilder().build(contentElement);
             Set<NewDocumentType> globallyDistributedDocuments = new GlobalDistributionBuilder(documentDefinitions).build(documentsElement);
 
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
-                                                  globallyDistributedDocuments, routingSelection,
+                                                  globallyDistributedDocuments, routingSelection, redundancy,
                                                   deployState.zone(), deployState.isHosted());
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
-            c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, redundancyBuilder, c);
+            c.rootGroup = new StorageGroup.Builder(contentElement, c, context).buildRootGroup(deployState);
             validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
-            c.search.handleRedundancy(c.redundancy);
+            redundancy.setExplicitGroups(c.getRootGroup().getNumberOfLeafGroups());
+            c.search.handleRedundancy(redundancy);
 
             IndexedSearchCluster index = c.search.getIndexed();
             if (index != null) {
@@ -491,13 +492,14 @@ public class ContentCluster extends AbstractConfigProducer implements
     private ContentCluster(AbstractConfigProducer parent, String clusterName,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
-                           String routingSelection,  Zone zone, boolean isHosted) {
+                           String routingSelection, Redundancy redundancy, Zone zone, boolean isHostedVespa) {
         super(parent, clusterName);
-        this.isHosted = isHosted;
+        this.isHostedVespa = isHostedVespa;
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.documentSelection = routingSelection;
+        this.redundancy = redundancy;
         this.zone = zone;
     }
 
@@ -551,10 +553,6 @@ public class ContentCluster extends AbstractConfigProducer implements
     public final ContentSearchCluster getSearch() { return search; }
 
     public Redundancy redundancy() { return redundancy; }
-    public ContentCluster setRedundancy(Redundancy redundancy) {
-        this.redundancy = redundancy;
-        return this;
-    }
 
     @Override
     public void getConfig(MessagetyperouteselectorpolicyConfig.Builder builder) {
@@ -641,14 +639,14 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
     }
 
-    public boolean isHosted() {
-        return isHosted;
+    public boolean isHostedVespa() {
+        return isHostedVespa;
     }
 
     @Override
     public void validate() throws Exception {
         super.validate();
-        if (search.usesHierarchicDistribution() && !isHosted) {
+        if (search.usesHierarchicDistribution() && ! isHostedVespa) {
             // validate manually configured groups
             new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.policy).validate();
             if (search.getIndexed().useMultilevelDispatchSetup()) {
