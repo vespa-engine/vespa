@@ -29,6 +29,13 @@ MemBlockT<MinSizeClassC, MaxSizeClassMultiAllocC>::logBigBlock(size_t exact, siz
 }
 
 template <size_t MinSizeClassC, size_t MaxSizeClassMultiAllocC>
+void
+MemBlockT<MinSizeClassC, MaxSizeClassMultiAllocC>::bigBlockLimit(size_t lim)
+{
+    _bigBlockLimit = lim;
+}
+
+template <size_t MinSizeClassC, size_t MaxSizeClassMultiAllocC>
 FILE * MemBlockT<MinSizeClassC, MaxSizeClassMultiAllocC>::_logFile = stderr;
 template <size_t MinSizeClassC, size_t MaxSizeClassMultiAllocC>
 size_t MemBlockT<MinSizeClassC, MaxSizeClassMultiAllocC>::_bigBlockLimit = 0x80000000;
