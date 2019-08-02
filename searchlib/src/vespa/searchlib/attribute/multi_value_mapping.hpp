@@ -11,7 +11,14 @@ namespace search::attribute {
 template <typename EntryT, typename RefT>
 MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
                                                   const vespalib::GrowStrategy &gs)
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuninitialized"
+#endif
     : MultiValueMappingBase(gs, _store.getGenerationHolder()),
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
       _store(storeCfg)
 {
 }

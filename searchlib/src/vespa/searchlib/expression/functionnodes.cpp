@@ -212,7 +212,14 @@ void MultiArgFunctionNode::onPrepareResult()
     } else if (_args.size() > 1) {
         setResultType(std::unique_ptr<ResultNode>(static_cast<ResultNode *>(_args[0]->getResult().clone())));
         for(size_t i(1), m(_args.size()); i < m; i++) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-undefined-compare"
+#endif
             if (&_args[i]->getResult() != NULL) {
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
                 setResultType(_ArithmeticTypeConversion.getType(getResult(), _args[i]->getResult()));
             }
         }
