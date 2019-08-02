@@ -20,6 +20,7 @@ import java.util.Optional;
  * @author Haakon Dybdahl
  */
 public class NodeStateChangeChecker {
+    // TODO: Switch to vds.datastored.bucket_space{name:default}.buckets_total
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.alldisks.buckets";
 
     private final int minStorageNodesUp;
