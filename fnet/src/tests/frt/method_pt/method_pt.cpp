@@ -61,12 +61,18 @@ public:
 
 //-------------------------------------------------------------
 
+#ifdef __clang__
+#define UNUSED_MEMBER [[maybe_unused]]
+#else
+#define UNUSED_MEMBER
+#endif
+
 class ComplexA
 {
 private:
-  uint32_t _fill1;
-  uint32_t _fill2;
-  uint32_t _fill3;
+  UNUSED_MEMBER uint32_t _fill1;
+  UNUSED_MEMBER uint32_t _fill2;
+  UNUSED_MEMBER uint32_t _fill3;
 
 public:
 
@@ -83,9 +89,9 @@ public:
 class ComplexB
 {
 private:
-  uint32_t _fill1;
-  uint32_t _fill2;
-  uint32_t _fill3;
+  UNUSED_MEMBER uint32_t _fill1;
+  UNUSED_MEMBER uint32_t _fill2;
+  UNUSED_MEMBER uint32_t _fill3;
 
 public:
 
