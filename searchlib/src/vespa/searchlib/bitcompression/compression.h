@@ -1143,7 +1143,7 @@ public:
     DecodeContext64Base()
         : search::ComprFileDecodeContext(),
           _valI(nullptr),
-          _valE(static_cast<const uint64_t *>(nullptr) - 1),
+          _valE(reinterpret_cast<const uint64_t *>(PTRDIFF_MAX)),
           _realValE(nullptr),
           _val(0),
           _cacheInt(0),
@@ -1325,7 +1325,7 @@ public:
     DecodeContext64(const uint64_t *compr,
                     int bitOffset)
         : DecodeContext64Base(compr + 1,
-                              static_cast<const uint64_t *>(nullptr) - 1,
+                              reinterpret_cast<const uint64_t *>(PTRDIFF_MAX),
                               nullptr,
                               0,
                               EC::bswap(*compr),
