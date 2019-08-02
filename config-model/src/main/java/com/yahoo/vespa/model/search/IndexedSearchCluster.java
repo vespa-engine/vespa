@@ -378,13 +378,14 @@ public class IndexedSearchCluster extends SearchCluster
     public void setMaxNodesDownPerFixedRow(int value) {
         maxNodesDownPerFixedRow = value;
     }
-    int getSearchableCopies() {
+    public int getSearchableCopies() {
         return searchableCopies;
     }
 
     public void setSearchableCopies(int searchableCopies) {
         this.searchableCopies = searchableCopies;
     }
+
     public void setDispatchSpec(DispatchSpec dispatchSpec) {
         if (dispatchSpec.getNumDispatchGroups() != null) {
             this.dispatchSpec = new DispatchSpec.Builder().setGroups
