@@ -45,7 +45,7 @@ public:
     static size_t unAdjustSize(size_t sz) { return sz; }
     static void dumpInfo(size_t level);
     static void dumpFile(FILE * fp)       { _logFile = fp; }
-    static void bigBlockLimit(size_t lim) { _bigBlockLimit = lim; }
+    static void bigBlockLimit(size_t lim);
     static void setFill(uint8_t ) { }
     static bool verifySizeClass(int sc) { (void) sc; return true; }
     static size_t getMinSizeForAlignment(size_t align, size_t sz) {
@@ -60,6 +60,8 @@ private:
 };
 
 typedef MemBlockT<5, 20> MemBlock;
+template <> void MemBlock::dumpInfo(size_t level);
+extern template class MemBlockT<5, 20>;
 
 }
 

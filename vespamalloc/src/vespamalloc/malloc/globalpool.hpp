@@ -35,6 +35,14 @@ void AllocPoolT<MemBlockPtrT>::enableThreadSupport()
 }
 
 template <typename MemBlockPtrT>
+void
+AllocPoolT<MemBlockPtrT>::setParams(size_t alwaysReuseLimit, size_t threadCacheLimit)
+{
+    _alwaysReuseLimit = alwaysReuseLimit;
+    _threadCacheLimit = threadCacheLimit;
+}
+
+template <typename MemBlockPtrT>
 typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc)
 {

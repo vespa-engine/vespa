@@ -27,10 +27,7 @@ public:
     DataSegment<MemBlockPtrT> & dataSegment()      { return _dataSegment; }
     void enableThreadSupport() __attribute__((noinline));
 
-    static void setParams(size_t alwaysReuseLimit, size_t threadCacheLimit) {
-        _alwaysReuseLimit = alwaysReuseLimit;
-        _threadCacheLimit = threadCacheLimit;
-    }
+    static void setParams(size_t alwaysReuseLimit, size_t threadCacheLimit);
 
     void info(FILE * os, size_t level=0) __attribute__((noinline));
 private:
