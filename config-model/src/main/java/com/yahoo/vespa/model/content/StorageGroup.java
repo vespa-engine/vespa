@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.content.cluster.RedundancyBuilder;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class StorageGroup {
     private final String index;
     private Optional<String> partitions;
     String name;
-    private final ContentCluster owner;
+    private final boolean isHosted;
     private final Optional<Long> mmapNoCoreLimit;
     private final Optional<Boolean> coreOnOOM;
     private final Optional<String> noVespaMalloc;
@@ -51,7 +52,7 @@ public class StorageGroup {
     /**
      * Creates a storage group
      *
-     * @param owner the cluster this group belongs to
+     * @param isHosted true if this is in a hosted setup
      * @param name the name of this group
      * @param index the distribution-key index og this group
      * @param partitions the distribution strategy to use to distribute content to subgroups or empty
@@ -59,12 +60,12 @@ public class StorageGroup {
      *        (having nodes, not subgroups as children).
      * @param useCpuSocketAffinity whether processes should be started with socket affinity
      */
-    private StorageGroup(ContentCluster owner, String name, String index, Optional<String> partitions,
+    private StorageGroup(boolean isHosted, String name, String index, Optional<String> partitions,
                          boolean useCpuSocketAffinity, Optional<Long> mmapNoCoreLimit, Optional<Boolean> coreOnOOM,
                          Optional<String> noVespaMalloc, Optional<String> vespaMalloc,
                          Optional<String> vespaMallocDebug, Optional<String> vespaMallocDebugStackTrace)
     {
-        this.owner = owner;
+        this.isHosted = isHosted;
         this.index = index;
         this.name = name;
         this.partitions = partitions;
@@ -76,8 +77,8 @@ public class StorageGroup {
         this.vespaMallocDebug = vespaMallocDebug;
         this.vespaMallocDebugStackTrace = vespaMallocDebugStackTrace;
     }
-    private StorageGroup(ContentCluster owner, String name, String index) {
-        this(owner, name, index, Optional.empty(), false, Optional.empty(),Optional.empty(), Optional.empty(),
+    private StorageGroup(boolean isHosted, String name, String index) {
+        this(isHosted, name, index, Optional.empty(), false, Optional.empty(),Optional.empty(), Optional.empty(),
              Optional.empty(), Optional.empty(), Optional.empty());
     }
 
@@ -90,7 +91,7 @@ public class StorageGroup {
     /** Returns the nodes of this, or an empty list of it is not a leaf group */
     public List<StorageNode> getNodes() { return nodes; }
 
-    public ContentCluster getOwner() { return owner; }
+    public boolean isHosted() { return isHosted; }
 
     /** Returns the index of this group, or null if it is the root group */
     public String getIndex() { return index; }
@@ -194,16 +195,14 @@ public class StorageGroup {
     public static class Builder {
 
         private final ModelElement clusterElement;
-        private final ContentCluster owner;
         private final ConfigModelContext context;
 
-        public Builder(ModelElement clusterElement, ContentCluster owner, ConfigModelContext context) {
+        public Builder(ModelElement clusterElement, ConfigModelContext context) {
             this.clusterElement = clusterElement;
-            this.owner = owner;
             this.context = context;
         }
 
-        public StorageGroup buildRootGroup(DeployState deployState) {
+        public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
@@ -212,12 +211,28 @@ public class StorageGroup {
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
                     deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
-            GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
-            if (owner.isHostedVespa()) {
-                return groupBuilder.buildHosted(deployState, owner, Optional.empty());
-            } else {
-                return groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+            GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
+            StorageGroup storageGroup = (owner.isHosted())
+                    ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
+                    : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
+            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(), storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes());
+            owner.setRedundancy(redundancy);
+            if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
+                storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
             }
+            return storageGroup;
+        }
+
+        /** This returns a partition string which specifies equal distribution between all groups */
+        // TODO: Make a partitions object
+        static private String computePartitions(int redundancyPerGroup, int numGroups) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < numGroups - 1; ++i) {
+                sb.append(redundancyPerGroup);
+                sb.append("|");
+            }
+            sb.append("*");
+            return sb.toString();
         }
 
         /**
@@ -262,9 +277,6 @@ public class StorageGroup {
                 
                 if ( ! parent.isPresent() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
                     storageGroup.nodes.add(buildSingleNode(deployState, owner));
-                    
-                if ( ! parent.isPresent())
-                    owner.redundancy().setTotalNodes(storageGroup.countNodes());
 
                 return storageGroup;
             }
@@ -297,19 +309,11 @@ public class StorageGroup {
                 if (hostGroups.size() > 1) {
                     if (parent.isPresent())
                         throw new IllegalArgumentException("Cannot specify groups using the groups attribute in nested content groups");
-                    owner.redundancy().setTotalNodes(hostMapping.size());
-
-                    // Switch redundancy settings to meaning "per group"
-                    owner.redundancy().setImplicitGroups(hostGroups.size());
-
-                    // Compute partitions expression
-                    int redundancyPerGroup = (int)Math.floor(owner.redundancy().effectiveFinalRedundancy() / hostGroups.size());
-                    storageGroup.partitions = Optional.of(computePartitions(redundancyPerGroup, hostGroups.size()));
 
                     // create subgroups as returned from allocation
                     for (Map.Entry<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroup : hostGroups.entrySet()) {
                         String groupIndex = String.valueOf(hostGroup.getKey().get().index());
-                        StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex);
+                        StorageGroup subgroup = new StorageGroup(true, groupIndex, groupIndex);
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
                             subgroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), subgroup, host.getValue()));
                         }
@@ -323,22 +327,8 @@ public class StorageGroup {
                     for (GroupBuilder subGroup : subGroups) {
                         storageGroup.subgroups.add(subGroup.buildHosted(deployState, owner, Optional.of(this)));
                     }
-                    if ( ! parent.isPresent())
-                        owner.redundancy().setTotalNodes(storageGroup.countNodes());
                 }
                 return storageGroup;
-            }
-
-            /** This returns a partition string which specifies equal distribution between all groups */
-            // TODO: Make a partitions object
-            private String computePartitions(int redundancyPerGroup, int numGroups) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < numGroups - 1; ++i) {
-                    sb.append(redundancyPerGroup);
-                    sb.append("|");
-                }
-                sb.append("*");
-                return sb.toString();
             }
 
             /** Collect hosts per group */
@@ -387,9 +377,9 @@ public class StorageGroup {
          * <li>Neither element is present: Create a single node.
          * </ul>
          */
-        private GroupBuilder collectGroup(Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
+        private GroupBuilder collectGroup(boolean isHosted, Optional<ModelElement> groupElement, Optional<ModelElement> nodesElement, String name, String index) {
             StorageGroup group = new StorageGroup(
-                    owner, name, index,
+                    isHosted, name, index,
                     childAsString(groupElement, "distribution.partitions"),
                     booleanAttributeOr(groupElement, VespaDomBuilder.CPU_SOCKET_AFFINITY_ATTRIB_NAME, false),
                     childAsLong(groupElement, VespaDomBuilder.MMAP_NOCORE_LIMIT),
@@ -399,7 +389,7 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(group, groupElement.get()) : Collections.emptyList();
+            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get()) : Collections.emptyList();
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
@@ -450,7 +440,7 @@ public class StorageGroup {
             return nodes;
         }
 
-        private List<GroupBuilder> collectSubGroups(StorageGroup parentGroup, ModelElement parentGroupElement) {
+        private List<GroupBuilder> collectSubGroups(boolean isHosted, StorageGroup parentGroup, ModelElement parentGroupElement) {
             List<ModelElement> subGroupElements = parentGroupElement.subElements("group");
             if (subGroupElements.size() > 1 &&  ! parentGroup.getPartitions().isPresent())
                 throw new IllegalArgumentException("'distribution' attribute is required with multiple subgroups");
@@ -461,7 +451,7 @@ public class StorageGroup {
                 indexPrefix = parentGroup.index + ".";
             }
             for (ModelElement g : subGroupElements) {
-                subGroups.add(collectGroup(Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
+                subGroups.add(collectGroup(isHosted, Optional.of(g), Optional.ofNullable(g.child("nodes")), g.stringAttribute("name"),
                                            indexPrefix + g.integerAttribute("distribution-key")));
             }
             return subGroups;

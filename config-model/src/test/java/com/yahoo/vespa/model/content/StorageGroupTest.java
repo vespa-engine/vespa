@@ -80,6 +80,7 @@ public class StorageGroupTest {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>4</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <distribution partitions=\"1|*\"/>\n" +
@@ -134,6 +135,7 @@ public class StorageGroupTest {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <redundancy>2</redundancy>" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <distribution partitions=\"1|*\"/>\n" +
