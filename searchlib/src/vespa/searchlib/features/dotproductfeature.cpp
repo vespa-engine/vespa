@@ -444,6 +444,9 @@ ArrayParam<T>::~ArrayParam() = default;
 // FIXME this feels a bit dirty, consider breaking up ArrayParam to remove dependencies
 // on templated vector parsing. This is why it's defined in this translation unit as it is.
 template ArrayParam<int64_t>::ArrayParam(const Property & prop);
+#ifdef __clang__
+template ArrayParam<int64_t>::~ArrayParam();
+#endif
 template struct ArrayParam<double>;
 template struct ArrayParam<float>;
 
