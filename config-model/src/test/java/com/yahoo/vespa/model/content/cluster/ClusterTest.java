@@ -124,8 +124,6 @@ public class ClusterTest {
                         "    </engine>",
                         "    <group>",
                         "      <node hostalias='my_host' distribution-key='0' />",
-                        "      <node hostalias='my_host' distribution-key='1' />",
-                        "      <node hostalias='my_host' distribution-key='2' />",
                         "    </group>",
                         contentSearchXml,
                         "  </content>",
