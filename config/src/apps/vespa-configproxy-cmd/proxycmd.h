@@ -4,7 +4,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-class FRT_Supervisor;
 class FRT_Target;
 class FRT_RPCRequest;
 class FRT_Values;
@@ -26,7 +25,6 @@ class ProxyCmd
 {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
-    FRT_Supervisor *_supervisor;
     FRT_Target     *_target;
     FRT_RPCRequest *_req;
     Flags           _flags;
