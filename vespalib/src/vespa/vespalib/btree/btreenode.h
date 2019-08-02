@@ -161,6 +161,7 @@ public:
     static const NoAggregated &getEmptyAggregated() { return _instance; }
 };
 
+template <> MinMaxAggregated BTreeNodeAggregatedWrap<MinMaxAggregated>::_instance;
 
 template <typename KeyT, uint32_t NumSlots>
 class BTreeNodeT : public BTreeNode {
