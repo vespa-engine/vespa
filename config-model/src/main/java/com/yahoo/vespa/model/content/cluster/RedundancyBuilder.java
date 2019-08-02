@@ -10,7 +10,7 @@ import com.yahoo.vespa.model.content.Redundancy;
  */
 public class RedundancyBuilder {
     Integer initialRedundancy = 2;
-    Integer finalRedundancy = 2;
+    Integer finalRedundancy = 3;
     Integer readyCopies = 2;
 
     RedundancyBuilder(ModelElement clusterXml) {
