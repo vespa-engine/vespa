@@ -71,10 +71,10 @@ public class Logserver extends AbstractService {
     @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         int port = (start == 0) ? getWantedPort() : start;
-        from.requirePort(port++, "unused");
-        from.requirePort(port++, "logtp");
-        from.requirePort(port++, "last.errors");
-        from.requirePort(port++, "replicator");
+        from.requirePort(port++, "rpc");
+        from.requirePort(port++, "unused/1");
+        from.requirePort(port++, "unused/2");
+        from.requirePort(port++, "unused/3");
     }
 
 }
