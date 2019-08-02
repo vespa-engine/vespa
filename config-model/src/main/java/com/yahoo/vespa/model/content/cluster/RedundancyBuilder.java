@@ -2,22 +2,22 @@
 package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+import com.yahoo.vespa.model.content.IndexedHierarchicDistributionValidator;
 import com.yahoo.vespa.model.content.Redundancy;
 
 /**
  * Builds redundancy config for a content cluster.
  */
 public class RedundancyBuilder {
+    Integer initialRedundancy = 2;
+    Integer finalRedundancy = 3;
+    Integer readyCopies = 2;
 
-    Redundancy build(ModelElement clusterXml) {
-        Integer initialRedundancy = 2;
-        Integer finalRedundancy = 3;
-        Integer readyCopies = 2;
-
+    RedundancyBuilder(ModelElement clusterXml) {
         ModelElement redundancyElement = clusterXml.child("redundancy");
         if (redundancyElement != null) {
             initialRedundancy = redundancyElement.integerAttribute("reply-after");
-            finalRedundancy = (int)redundancyElement.asLong();
+            finalRedundancy = (int) redundancyElement.asLong();
 
             if (initialRedundancy == null) {
                 initialRedundancy = finalRedundancy;
@@ -35,8 +35,16 @@ public class RedundancyBuilder {
                 throw new IllegalArgumentException("Number of searchable copies can not be higher than final redundancy");
             }
         }
-
-        return new Redundancy(initialRedundancy, finalRedundancy, readyCopies);
+    }
+    public Redundancy build(String clusterName, boolean isHosted, int subGroups, int leafGroups,  int totalNodes) {
+        if (isHosted) {
+            return new Redundancy(initialRedundancy, finalRedundancy, readyCopies, leafGroups, totalNodes);
+        } else {
+            subGroups = Math.max(1, subGroups);
+            IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(clusterName, finalRedundancy, subGroups);
+            IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(clusterName, finalRedundancy, readyCopies, subGroups);
+            return new Redundancy(initialRedundancy/leafGroups, finalRedundancy/leafGroups, readyCopies/leafGroups, leafGroups, totalNodes);
+        }
     }
 
 }
