@@ -48,7 +48,7 @@ public class GroupTestCase {
         assertDistribution("*|*|*", 5, "2,2,1");
         assertDistribution("*|*|*|*", 5, "2,1,1,1");
 
-        assertDistributionFailure("2|*", 0, "The max redundancy must be a positive number in the range 1-255.");
+        assertDistributionFailure("2|*", 0, "The max redundancy (0)must be a positive number in the range 1-255.");
         assertDistributionFailure("*|2", 3, "Illegal distribution spec \"*|2\". Asterix specification must be tailing the specification.");
         assertDistributionFailure("*|2|*", 3, "Illegal distribution spec \"*|2|*\". Asterix specification must be tailing the specification.");
         assertDistributionFailure("0|*", 3, "Illegal distribution spec \"0|*\". Copy counts must be in the range 1-255.");
