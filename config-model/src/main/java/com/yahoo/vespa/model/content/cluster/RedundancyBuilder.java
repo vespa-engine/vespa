@@ -43,7 +43,7 @@ public class RedundancyBuilder {
             subGroups = Math.max(1, subGroups);
             IndexedHierarchicDistributionValidator.validateThatLeafGroupsCountIsAFactorOfRedundancy(clusterName, finalRedundancy, subGroups);
             IndexedHierarchicDistributionValidator.validateThatReadyCopiesIsCompatibleWithRedundancy(clusterName, finalRedundancy, readyCopies, subGroups);
-            return new Redundancy(initialRedundancy/leafGroups, finalRedundancy/leafGroups, readyCopies/leafGroups, leafGroups, totalNodes);
+            return new Redundancy(initialRedundancy/subGroups, finalRedundancy/subGroups, readyCopies/subGroups, subGroups, totalNodes);
         }
     }
 
