@@ -237,7 +237,9 @@ public class Group implements Comparable<Group> {
             }
             this.distributionSpec = distributionSpec;
             // Create the pre calculated results
-            if (maxRedundancy <= 0 || maxRedundancy > 255) throw new IllegalArgumentException("The max redundancy must be a positive number in the range 1-255.");
+            if (maxRedundancy <= 0 || maxRedundancy > 255) {
+                throw new IllegalArgumentException("The max redundancy (" + maxRedundancy + ") must be a positive number in the range 1-255.");
+            }
             int asterixCount = distributionSpec.length - firstAsterix;
             int[][] preCalculations = new int[maxRedundancy + 1][];
             for (int i=1; i<=maxRedundancy; ++i) {
