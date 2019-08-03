@@ -113,6 +113,7 @@ public class DistributorTest {
         assertEquals(true, conf.inlinebucketsplitting());
 
         cluster = parseCluster("<cluster id=\"storage\">\n" +
+                "  <redundancy>2</redundancy>" +
                 "  <documents/>" +
                 "    <tuning>" +
                 "      <distribution type=\"legacy\"/>" +

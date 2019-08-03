@@ -14,6 +14,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -991,6 +992,10 @@ public class ModelProvisioningTest {
                         "  <admin version='3.0'>" +
                         "    <nodes count='3'/>" + // Ignored
                         "  </admin>" +
+                        "  <container version='1.0' id='container'>" +
+                        "     <search/>" +
+                        "     <nodes count='2'/>" +
+                        "  </container>" +
                         "  <content version='1.0' id='bar'>" +
                         "     <redundancy reply-after='8'>12</redundancy>" +
                         "     <documents>" +
@@ -1002,7 +1007,7 @@ public class ModelProvisioningTest {
                         "  </content>" +
                         "</services>";
 
-        int numberOfHosts = 4;
+        int numberOfHosts = 6;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
@@ -1013,6 +1018,7 @@ public class ModelProvisioningTest {
         assertEquals(4, cluster.redundancy().effectiveFinalRedundancy());
         assertEquals(4, cluster.redundancy().effectiveReadyCopies());
         assertEquals(4, cluster.getSearch().getIndexed().getDispatchSpec().getGroups().size());
+        assertEquals(4, cluster.getSearch().getIndexed().getSearchableCopies());
         assertFalse(cluster.getRootGroup().getPartitions().isPresent());
         assertEquals(4, cluster.getRootGroup().getNodes().size());
         assertEquals(0, cluster.getRootGroup().getSubgroups().size());
@@ -1025,6 +1031,10 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getNodes().get(2).getConfigId(), is("bar/storage/2"));
         assertThat(cluster.getRootGroup().getNodes().get(3).getDistributionKey(), is(3));
         assertThat(cluster.getRootGroup().getNodes().get(3).getConfigId(), is("bar/storage/3"));
+        PartitionsConfig.Builder partBuilder = new PartitionsConfig.Builder();
+        cluster.getSearch().getIndexed().getTLDs().get(0).getConfig(partBuilder);
+        PartitionsConfig partCFg = partBuilder.build();
+        assertEquals(4, partCFg.dataset(0).searchablecopies());
     }
 
     @Test

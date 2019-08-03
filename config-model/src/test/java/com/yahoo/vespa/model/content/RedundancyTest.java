@@ -22,9 +22,7 @@ public class RedundancyTest {
     }
 
     private static Redundancy createRedundancy(int redundancy, int implicitGroups, int totalNodes) {
-        Redundancy r = new Redundancy(1, redundancy, 1);
-        r.setImplicitGroups(implicitGroups);
-        r.setTotalNodes(totalNodes);
+        Redundancy r = new Redundancy(1, redundancy, 1, implicitGroups, totalNodes);
         return r;
     }
 
