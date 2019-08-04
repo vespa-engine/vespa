@@ -14,8 +14,6 @@ import com.yahoo.config.provision.Zone;
  */
 public class ConfigSentinel extends AbstractService implements SentinelConfig.Producer {
 
-    static final int BASEPORT = 19097;
-
     private final ApplicationId applicationId;
     private final Zone zone;
 
@@ -34,13 +32,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         setProp("clustername", "admin");
     }
 
-    @Override
-    public void allocatePorts(int start, PortAllocBridge from) {
-        if (start == 0) start = BASEPORT;
-        from.requirePort(start++, "rpc");
-        from.requirePort(start++, "http");
-    }
-
     /**
      * Returns the desired base port for this service.
      */
@@ -55,6 +46,11 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
      * @return The number of ports reserved by the Sentinel.
      */
     public int getPortCount() { return 2; }
+
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{ "rpc", "http" };
+    }
 
     @Override
     public int getHealthPort() {return getRelativePort(1); }

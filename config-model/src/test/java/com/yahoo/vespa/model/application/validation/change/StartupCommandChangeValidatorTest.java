@@ -8,7 +8,6 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import org.junit.Test;
 
@@ -77,6 +76,7 @@ public class StartupCommandChangeValidatorTest {
             return 0;
         }
 
-        @Override public void allocatePorts(int start, PortAllocBridge from) { }
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 }

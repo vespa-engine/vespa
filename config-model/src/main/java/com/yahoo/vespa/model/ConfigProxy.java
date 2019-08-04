@@ -30,12 +30,6 @@ public class ConfigProxy extends AbstractService {
         setProp("clustername", "admin");
     }
 
-    @Override
-    public void allocatePorts(int start, PortAllocBridge from) {
-        if (start == 0) start = BASEPORT;
-        from.requirePort(start, "rpc");
-    }
-
     /**
      * Returns the desired base port for this service.
      */
@@ -52,5 +46,10 @@ public class ConfigProxy extends AbstractService {
      * @return The number of ports reserved by the config proxy
      */
     public int getPortCount() { return 1; }
+
+    @Override
+    public String[] getPortSuffixes() {
+        return new String[]{"rpc"};
+    }
 
 }

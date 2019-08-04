@@ -196,6 +196,16 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /**
+     * Override if the services does not require consecutive port numbers. I.e. if any ports
+     * in addition to the baseport should be allocated from Vespa's default port range.
+     *
+     * @return true by default
+     */
+    public boolean requiresConsecutivePorts() {
+        return true;
+    }
+
+    /**
      * Gets the ports metainfo object. The service implementation
      * must populate this object in the constructor.
      */
@@ -442,6 +452,14 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      */
     public void setBasePort(int wantedPort) {
         this.basePort = wantedPort;
+    }
+
+    /** Temporary hack: reserve port with index 0
+     *  Must be done this way since the system test framework
+     *  currently uses the first port as container http port.
+     */
+    public void reservePortPrepended(int port, String suffix) {
+        ports.add(0, hostResource.ports().requireNetworkPort(port, this, suffix));
     }
 
     public void setHostResource(HostResource hostResource) {
