@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.test;
 import com.yahoo.test.StandardConfig.Builder;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.PortAllocBridge;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -58,5 +57,6 @@ public class ParentService extends AbstractService implements com.yahoo.test.Sta
     
     public int getPortCount() { return 0; }
 
-    @Override public void allocatePorts(int start, PortAllocBridge from) { }
+    @Override
+    public String[] getPortSuffixes() { return null; }
 }

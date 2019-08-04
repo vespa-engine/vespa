@@ -137,9 +137,34 @@ public class HostPorts {
 
     /** Allocate all ports for a service */
     List<Integer> allocatePorts(NetworkPortRequestor service, int wantedPort) {
-        PortAllocBridge allocator = new PortAllocBridge(this, service);
-        service.allocatePorts(wantedPort, allocator);
-        return allocator.result();
+        List<Integer> ports = new ArrayList<>();
+        final int count = service.getPortCount();
+        if (count < 1)
+            return ports;
+
+        String[] suffixes = service.getPortSuffixes();
+        if (suffixes.length != count) {
+            throw new IllegalArgumentException("service "+service+" had "+suffixes.length+" port suffixes, but port count "+count+", mismatch");
+        }
+
+        if (wantedPort > 0) {
+            boolean force = service.requiresWantedPort();
+            if (service.requiresConsecutivePorts()) {
+                for (int i = 0; i < count; i++) {
+                    ports.add(wantNetworkPort(wantedPort+i, service, suffixes[i], force));
+                }
+            } else {
+                ports.add(wantNetworkPort(wantedPort, service, suffixes[0], force));
+                for (int i = 1; i < count; i++) {
+                    ports.add(allocateNetworkPort(service, suffixes[i]));
+                }
+            }
+        } else {
+            for (int i = 0; i < count; i++) {
+                ports.add(allocateNetworkPort(service, suffixes[i]));
+            }
+        }
+        return ports;
     }
 
     public void flushPortReservations() {

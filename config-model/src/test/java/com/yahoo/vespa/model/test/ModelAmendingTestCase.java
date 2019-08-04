@@ -13,7 +13,6 @@ import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
@@ -128,7 +127,8 @@ public class ModelAmendingTestCase {
             return 0;
         }
 
-        @Override public void allocatePorts(int start, PortAllocBridge from) { }
+        @Override
+        public String[] getPortSuffixes() { return null; }
     }
 
     public static class AdminModelAmender extends ConfigModel {

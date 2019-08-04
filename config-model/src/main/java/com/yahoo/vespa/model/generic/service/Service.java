@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.generic.service;
 
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.PortAllocBridge;
 
 /**
  * An application specific generic service
@@ -25,7 +24,9 @@ public class Service extends AbstractService {
     }
 
     @Override
-    public void allocatePorts(int start, PortAllocBridge from) { }
+    public String[] getPortSuffixes() {
+        return null;
+    }
 
     @Override
     public String getStartupCommand() {
