@@ -2,8 +2,9 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
