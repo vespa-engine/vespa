@@ -1,15 +1,18 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.node.admin.task.util.env;
+package com.yahoo.vespa.hosted.node.admin.task.util;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 /**
  * Rewrites default-env.txt files.
@@ -45,8 +48,8 @@ public class DefaultEnvRewriter {
         return this;
     }
 
-    public boolean converge() throws IOException {
-        List<String> defaultEnvLines = Files.readAllLines(defaultEnvFile);
+    public boolean converge() {
+        List<String> defaultEnvLines = uncheck(() -> Files.readAllLines(defaultEnvFile));
         List<String> newDefaultEnvLines = new ArrayList<>();
         Set<String> seenNames = new TreeSet<>();
         for (String line : defaultEnvLines) {
@@ -73,7 +76,9 @@ public class DefaultEnvRewriter {
         if (defaultEnvLines.equals(newDefaultEnvLines)) {
             return false;
         } else {
-            Files.write(defaultEnvFile, newDefaultEnvLines);
+            Path tempFile = Paths.get(defaultEnvFile.toString() + ".tmp");
+            uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
+            uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
             return true;
         }
     }
