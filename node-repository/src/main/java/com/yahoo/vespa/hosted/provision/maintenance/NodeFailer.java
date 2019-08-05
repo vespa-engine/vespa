@@ -290,7 +290,7 @@ public class NodeFailer extends Maintainer {
     /**
      * We can attempt to fail any number of *tenant* and *host* nodes because the operation will not be effected
      * unless the node is replaced.
-     * We can also attempt to fail a single proxy(host) as there should be enough redudancy to handle that.
+     * We can also attempt to fail a single proxy(host) as there should be enough redundancy to handle that.
      * But we refuse to fail out config(host)/controller(host)
      */
     private boolean failAllowedFor(NodeType nodeType) {
@@ -307,15 +307,15 @@ public class NodeFailer extends Maintainer {
     }
 
     /**
-     * Returns true if the node is considered bad: all monitored services services are down.
-     * If a node remains bad for a long time, the NodeFailer will eventually try to fail the node.
+     * Returns true if the node is considered bad: All monitored services services are down.
+     * If a node remains bad for a long time, the NodeFailer will try to fail the node.
      */
     static boolean badNode(List<ServiceInstance> services) {
         Map<ServiceStatus, Long> countsByStatus = services.stream()
                 .collect(Collectors.groupingBy(ServiceInstance::serviceStatus, counting()));
 
         return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
-                countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
+               countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
     }
 
     /**
