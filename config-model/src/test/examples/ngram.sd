@@ -13,9 +13,8 @@ search ngram {
     }
 
     field gram_2 type string {
-      indexing: index
+      indexing: attribute | index # index take precedence for matching
       match: gram     # gram-size 2 is default
-      # index-to: gram_2, default
     }
 
     field gram_3 type string {
@@ -24,7 +23,6 @@ search ngram {
         gram
         gram-size: 3
       }
-      # index-to: gram_3, default
     }
 
   }

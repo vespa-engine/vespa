@@ -37,7 +37,7 @@ public class NGramTestCase extends SearchDefinitionTestCase {
         assertEquals(3,gram3.getMatching().getGramSize());
 
         assertEquals("input gram_1 | ngram 1 | index gram_1 | summary gram_1",gram1.getIndexingScript().iterator().next().toString());
-        assertEquals("input gram_2 | ngram 2 | index gram_2",gram2.getIndexingScript().iterator().next().toString());
+        assertEquals("input gram_2 | ngram 2 | attribute gram_2 | index gram_2",gram2.getIndexingScript().iterator().next().toString());
         assertEquals("input gram_3 | ngram 3 | index gram_3",gram3.getIndexingScript().iterator().next().toString());
 
         assertFalse(gram1.getNormalizing().doRemoveAccents());
@@ -77,7 +77,7 @@ public class NGramTestCase extends SearchDefinitionTestCase {
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("gram matching is not supported with attributes, use 'index' not 'attribute' in indexing",e.getMessage());
+            assertEquals("gram matching is not supported with attributes, use 'index' in indexing",e.getMessage());
         }
     }
 
