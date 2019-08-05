@@ -36,6 +36,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneSummaryReadIo(builder.summary.read);
         tuneSummaryCache(builder.summary.cache);
         tuneSearchReadIo(builder.search.mmap);
+        tuneWriteFilter(builder.writefilter);
         for (ProtonConfig.Documentdb.Builder dbb : builder.documentdb) {
             getConfig(dbb);
         }
@@ -102,6 +103,14 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         if (nodeFlavor.hasFastDisk()) {
             builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
         }
+    }
+
+    private void tuneWriteFilter(ProtonConfig.Writefilter.Builder builder) {
+        // "Reserve" 1GB of memory for other processes running on the content node (config-proxy, cluster-controller, metrics-proxy)
+        double reservedMemoryGb = 1;
+        double defaultMemoryLimit = new ProtonConfig.Writefilter(new ProtonConfig.Writefilter.Builder()).memorylimit();
+        double scaledMemoryLimit = ((nodeFlavor.getMinMainMemoryAvailableGb() - reservedMemoryGb) * defaultMemoryLimit) / nodeFlavor.getMinMainMemoryAvailableGb();
+        builder.memorylimit(scaledMemoryLimit);
     }
 
 }
