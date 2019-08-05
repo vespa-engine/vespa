@@ -4,19 +4,19 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
-public class CloudEvent {
-    public String instanceEventId;
-    public String code;
-    public String description;
-    public Optional<Date> notBefore;
-    public Optional<Date> notBeforeDeadline;
-    public Optional<Date> notAfter;
+public final class CloudEvent {
+    public final String instanceEventId;
+    public final String code;
+    public final String description;
+    public final Optional<Date> notBefore;
+    public final Optional<Date> notBeforeDeadline;
+    public final Optional<Date> notAfter;
 
-    public String regionName;
+    public String awsRegionName;
     public Set<String> affectedHostnames;
 
     public CloudEvent(String instanceEventId, String code, String description, Date notAfter, Date notBefore, Date notBeforeDeadline,
-                      String regionName, Set<String> affectedHostnames) {
+                      String awsRegionName, Set<String> affectedHostnames) {
         this.instanceEventId = instanceEventId;
         this.code = code;
         this.description = description;
@@ -24,7 +24,7 @@ public class CloudEvent {
         this.notBeforeDeadline = Optional.ofNullable(notBeforeDeadline);
         this.notAfter = Optional.ofNullable(notAfter);
 
-        this.regionName = regionName;
+        this.awsRegionName = awsRegionName;
         this.affectedHostnames = affectedHostnames;
     }
 }
