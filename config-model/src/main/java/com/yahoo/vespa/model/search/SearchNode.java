@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -158,6 +159,16 @@ public class SearchNode extends AbstractService implements
         return nodeSpec;
     }
 
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        // NB: ignore "start"
+        from.allocatePort("rpc");
+        from.allocatePort("fs4");
+        from.allocatePort("future/4");
+        from.allocatePort("unused/3");
+        from.allocatePort("health");
+    }
+
     /**
      * Returns the number of ports needed by this service.
      *
@@ -166,11 +177,6 @@ public class SearchNode extends AbstractService implements
     @Override
     public int getPortCount() {
         return 5;
-    }
-
-    @Override
-    public String[] getPortSuffixes() {
-        return new String[] { "rpc", "fs4", "future/4", "unused/3", "health" };
     }
 
     /**

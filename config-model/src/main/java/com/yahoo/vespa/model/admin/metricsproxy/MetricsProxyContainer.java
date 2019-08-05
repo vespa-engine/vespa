@@ -13,6 +13,7 @@ import ai.vespa.metricsproxy.service.VespaServicesConfig;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.container.Container;
 
 import java.util.LinkedHashMap;
@@ -58,6 +59,15 @@ public class MetricsProxyContainer extends Container implements
     }
 
     int metricsRpcPortOffset() {
+        if (numHttpServerPorts != 2) {
+            throw new IllegalArgumentException("expecting 2 http server ports");
+        }
+        if (numMessageBusPorts() != 0) {
+            throw new IllegalArgumentException("expecting 0 message bus ports");
+        }
+        if (numRpcPorts() != 1) {
+            throw new IllegalArgumentException("expecting 1 rpc port");
+        }
         return numHttpServerPorts + numMessageBusPorts() + numRpcPorts();
     }
 
@@ -66,9 +76,11 @@ public class MetricsProxyContainer extends Container implements
         return METRICS_PROXY_CONTAINER;
     }
 
+    static public int BASEPORT = 19092;
+
     @Override
     public int getWantedPort() {
-        return 19092;
+        return BASEPORT;
     }
 
     @Override
@@ -78,8 +90,12 @@ public class MetricsProxyContainer extends Container implements
 
     // Must have predictable ports for both http and rpc.
     @Override
-    public boolean requiresConsecutivePorts() {
-        return true;
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        from.wantPort(start++, "http");
+        from.wantPort(start++, "http/1");
+        from.wantPort(start++, "rpc/admin");
+        from.wantPort(start++, "rpc/metrics");
     }
 
     @Override
@@ -91,13 +107,6 @@ public class MetricsProxyContainer extends Container implements
     protected void tagServers() {
         super.tagServers();
         portsMeta.on(metricsRpcPortOffset()).tag("rpc").tag("metrics");
-    }
-
-    @Override
-    public String[] getPortSuffixes() {
-        var suffixes = super.getPortSuffixes();
-        suffixes[metricsRpcPortOffset()] = "rpc/metrics";
-        return suffixes;
     }
 
     @Override

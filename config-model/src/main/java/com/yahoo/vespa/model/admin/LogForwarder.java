@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 
 public class LogForwarder extends AbstractService implements LogforwarderConfig.Producer {
 
@@ -50,17 +51,16 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         return new Config(null, null, null, null);
     }
 
+    // LogForwarder does not need any ports.
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) { }
+
     /**
      * LogForwarder does not need any ports.
      *
      * @return The number of ports reserved by the LogForwarder
      */
     public int getPortCount() { return 0; }
-
-    @Override
-    public String[] getPortSuffixes() {
-        return null;
-    }
 
     /**
      * @return The command used to start LogForwarder

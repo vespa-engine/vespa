@@ -14,6 +14,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ComponentGroup;
@@ -157,8 +158,6 @@ public abstract class Container extends AbstractService implements
 
         if (getHttp() == null) {
             initDefaultJettyConnector();
-        } else {
-            reserveHttpPortsPrepended();
         }
 
         tagServers();
@@ -178,14 +177,6 @@ public abstract class Container extends AbstractService implements
         }
         if (rpcServerEnabled()) {
             portsMeta.on(offset++).tag("rpc").tag("admin");
-        }
-    }
-
-    private void reserveHttpPortsPrepended() {
-        if (getHttp() != null && getHttp().getHttpServer() != null) {
-            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
-                reservePortPrepended(getPort(connectorFactory), "http/" + connectorFactory.getName());
-            }
         }
     }
 
@@ -233,12 +224,8 @@ public abstract class Container extends AbstractService implements
         return requireSpecificPorts && (getHttp() == null);
     }
 
-    public boolean requiresConsecutivePorts() {
-        return false;
-    }
-
     /**
-     * @return the number of ports needed by the Container except those reserved manually(reservePortPrepended)
+     * @return the number of ports needed by the Container
      */
     public int getPortCount() {
         // TODO Vespa 8: remove +2, only here for historical reasons
@@ -247,30 +234,39 @@ public abstract class Container extends AbstractService implements
     }
 
     @Override
-    public String[] getPortSuffixes() {
-        // TODO clean up this mess
-        int n = getPortCount();
-        String[] suffixes = new String[n];
-        int off = 0;
-        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts;
-        if (httpPorts > 0) {
-            suffixes[off++] = "http";
-        }
-        for (int i = 1; i < httpPorts; i++) {
-            suffixes[off++] = "http/" + i;
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        int off = 2;
+        if (getHttp() == null) {
+            if (requireSpecificPorts) {
+                from.requirePort(start, "http");
+            } else {
+                from.allocatePort("http");
+            }
+            from.allocatePort("http/1");
+        } else if (getHttp().getHttpServer() == null) {
+            // no http server ports
+        } else {
+            for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
+                int port = getPort(connectorFactory);
+                String name = "http/" + connectorFactory.getName();
+                from.requirePort(port, name);
+            }
         }
         if (messageBusEnabled()) {
-            suffixes[off++] = "messaging";
-        }
-        if (rpcServerEnabled()) {
-            suffixes[off++] = "rpc/admin";
-        }
-        while (off < n) {
-            suffixes[off] = "unused/" + off;
+            from.allocatePort("messaging");
             ++off;
         }
-        assert (off == n);
-        return suffixes;
+        if (rpcServerEnabled()) {
+            from.allocatePort("rpc/admin");
+            ++off;
+        }
+        // TODO: remove this
+        if (getHttp() == null) {
+            from.allocatePort("unused/" + off);
+            ++off;
+            from.allocatePort("unused/" + off);
+        }
     }
 
     /**
