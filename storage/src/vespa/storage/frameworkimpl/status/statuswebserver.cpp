@@ -59,7 +59,7 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
         } catch (const vespalib::PortListenException & e) {
             LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s', giving up and restarting.",
                 e.get_port(), e.get_protocol().c_str(), e.what());
-            std::quick_exit(17);
+            std::_Exit(17);
         }
         // Now that we know config update went well, update internal state
         _port = server->getListenPort();

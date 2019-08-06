@@ -27,7 +27,7 @@ ConfigPoller::run()
         }
     } catch (config::InvalidConfigException & e) {
         LOG(fatal, "Got exception, will just exit quickly : %s", e.what());
-        std::quick_exit(17);
+        std::_Exit(17);
     }
 }
 
