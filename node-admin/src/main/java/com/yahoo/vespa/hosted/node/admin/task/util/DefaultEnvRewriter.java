@@ -5,15 +5,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Rewrites default-env.txt files.
@@ -22,12 +23,7 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
  */
 public class DefaultEnvRewriter {
 
-    private final Map<String, Operation> operations = new TreeMap<>();
-    private final Path defaultEnvFile;
-
-    public DefaultEnvRewriter(Path defaultEnvFile) {
-        this.defaultEnvFile = defaultEnvFile;
-    }
+    private final Map<String, Operation> operations = new LinkedHashMap<>();
 
     public DefaultEnvRewriter addOverride(String name, String value) {
         return addOperation("override", name, value);
@@ -49,14 +45,39 @@ public class DefaultEnvRewriter {
         return this;
     }
 
-    public boolean converge() {
-        List<String> defaultEnvLines = ifExists(() -> Files.readAllLines(defaultEnvFile)).orElse(List.of());
+    /**
+     * Updates or created a default-env.txt file
+     *
+     * @return true if the file was modified
+     */
+    public boolean updateFile(Path defaultEnvFile) {
+        List<String> currentDefaultEnvLines = ifExists(() -> Files.readAllLines(defaultEnvFile)).orElse(List.of());
+        List<String> newDefaultEnvLines = generateContent(currentDefaultEnvLines);
+        if (currentDefaultEnvLines.equals(newDefaultEnvLines)) {
+            return false;
+        } else {
+            Path tempFile = Paths.get(defaultEnvFile.toString() + ".tmp");
+            uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
+            uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
+            return true;
+        }
+    }
+
+    /**
+     * @return generated default-env.txt content
+     */
+    public String generateContent() {
+        return generateContent(List.of()).stream()
+                .collect(joining(System.lineSeparator(), "", System.lineSeparator()));
+    }
+
+    private List<String> generateContent(List<String> currentDefaultEnvLines) {
         List<String> newDefaultEnvLines = new ArrayList<>();
         Set<String> seenNames = new TreeSet<>();
-        for (String line : defaultEnvLines) {
+        for (String line : currentDefaultEnvLines) {
             String[] items = line.split(" ");
             if (items.length < 2) {
-                throw new IllegalArgumentException(String.format("Invalid line in file '%s': %s", defaultEnvFile, line));
+                throw new IllegalArgumentException(String.format("Invalid line in file '%s': %s", currentDefaultEnvLines, line));
             }
             String name = items[1];
             if (!seenNames.contains(name)) { // implicitly removes duplicated variables
@@ -74,14 +95,7 @@ public class DefaultEnvRewriter {
                 newDefaultEnvLines.add(operation.toLine());
             }
         }
-        if (defaultEnvLines.equals(newDefaultEnvLines)) {
-            return false;
-        } else {
-            Path tempFile = Paths.get(defaultEnvFile.toString() + ".tmp");
-            uncheck(() -> Files.write(tempFile, newDefaultEnvLines));
-            uncheck(() -> Files.move(tempFile, defaultEnvFile, ATOMIC_MOVE));
-            return true;
-        }
+        return newDefaultEnvLines;
     }
 
     private static class Operation {
