@@ -2,8 +2,9 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
@@ -36,12 +37,12 @@ public class NGramMatch extends Processor {
     }
 
     private void implementGramMatch(Search search, SDField field, boolean validate) {
-        if (validate && field.doesAttributing())
-            throw new IllegalArgumentException("gram matching is not supported with attributes, use 'index' not 'attribute' in indexing");
+        if (validate && field.doesAttributing() && ! field.doesIndexing())
+            throw new IllegalArgumentException("gram matching is not supported with attributes, use 'index' in indexing");
 
         int n = field.getMatching().getGramSize();
         if (n < 0)
-            n=DEFAULT_GRAM_SIZE; // not set - use default gram size
+            n = DEFAULT_GRAM_SIZE; // not set - use default gram size
         if (validate && n == 0)
             throw new IllegalArgumentException("Illegal gram size in " + field + ": Must be at least 1");
         field.getNormalizing().inferCodepoint();
@@ -67,9 +68,8 @@ public class NGramMatch extends Processor {
         @Override
         protected Expression newTransform(DataType fieldType) {
             Expression exp = new NGramExpression(null, ngram);
-            if (fieldType instanceof CollectionDataType) {
+            if (fieldType instanceof CollectionDataType)
                 exp = new ForEachExpression(exp);
-            }
             return exp;
         }
 
