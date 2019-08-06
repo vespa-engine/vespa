@@ -33,7 +33,7 @@ vespalib::string _G_what;
 void silent_terminate() {
     std::lock_guard<std::mutex> guard(_G_silence_mutex);
     LOG(fatal, "Will exit with code 66 due to: %s", _G_what.c_str());
-    std::quick_exit(66);
+    std::_Exit(66);
 }
 
 }

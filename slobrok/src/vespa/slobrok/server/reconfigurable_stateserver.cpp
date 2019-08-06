@@ -52,7 +52,7 @@ ReconfigurableStateServer::configure(std::unique_ptr<vespa::config::core::States
         } catch (vespalib::PortListenException & e) {
             LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s', giving up and restarting.",
                 e.get_port(), e.get_protocol().c_str(), e.what());
-            std::quick_exit(17);
+            std::_Exit(17);
         }
     }
 
