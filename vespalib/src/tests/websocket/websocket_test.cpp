@@ -33,7 +33,7 @@ vespalib::string read_bytes(Socket &socket, size_t wanted_bytes) {
     while (result.size() < wanted_bytes) {
         size_t read_size = std::min(sizeof(tmp), wanted_bytes - result.size());
         size_t read_result = socket.read(tmp, read_size);
-        if (read_result <= 0) {
+        if (static_cast<ssize_t>(read_result) <= 0) {
             return result;
         }
         result.append(tmp, read_result);
