@@ -76,7 +76,7 @@ FastS_fdispatch_RPC::RPC_EnableEngine(FRT_RPCRequest *req)
 
         cnt += ds_plain->ForEachEngine(
                 ExecuteWhenEqualName(name,
-                        std::mem_fun( &FastS_EngineBase::ClearBad )))
+                        std::mem_fn( &FastS_EngineBase::ClearBad )))
                        ._cnt;
     }
 
@@ -102,8 +102,9 @@ FastS_fdispatch_RPC::RPC_DisableEngine(FRT_RPCRequest *req)
         uint32_t badness = FastS_EngineBase::BAD_ADMIN;
         cnt += ds_plain->ForEachEngine(
                 ExecuteWhenEqualName(name,
-                        std::bind2nd(
-                                std::mem_fun( &FastS_EngineBase::MarkBad ),
+                        std::bind(
+                                std::mem_fn( &FastS_EngineBase::MarkBad ),
+                                std::placeholders::_1,
                                 badness)))
                ._cnt;
     }
