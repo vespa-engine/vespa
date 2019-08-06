@@ -21,23 +21,23 @@ import static java.util.stream.Collectors.joining;
  *
  * @author bjorncs
  */
-public class DefaultEnvRewriter {
+public class DefaultEnvWriter {
 
     private final Map<String, Operation> operations = new LinkedHashMap<>();
 
-    public DefaultEnvRewriter addOverride(String name, String value) {
+    public DefaultEnvWriter addOverride(String name, String value) {
         return addOperation("override", name, value);
     }
 
-    public DefaultEnvRewriter addFallback(String name, String value) {
+    public DefaultEnvWriter addFallback(String name, String value) {
         return addOperation("fallback", name, value);
     }
 
-    public DefaultEnvRewriter addUnset(String name) {
+    public DefaultEnvWriter addUnset(String name) {
         return addOperation("unset", name, null);
     }
 
-    private DefaultEnvRewriter addOperation(String action, String name, String value) {
+    private DefaultEnvWriter addOperation(String action, String name, String value) {
         if (operations.containsKey(name)) {
             throw new IllegalArgumentException(String.format("Operation on variable '%s' already added", name));
         }

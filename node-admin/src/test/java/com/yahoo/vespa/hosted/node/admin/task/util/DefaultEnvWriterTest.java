@@ -18,42 +18,42 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bjorncs
  */
-public class DefaultEnvRewriterTest {
+public class DefaultEnvWriterTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final Path EXAMPLE_FILE = Paths.get(DefaultEnvRewriterTest.class.getResource("/default-env-example.txt").getFile());
-    private static final Path EXPECTED_RESULT_FILE = Paths.get(DefaultEnvRewriterTest.class.getResource("/default-env-rewritten.txt").getFile());
+    private static final Path EXAMPLE_FILE = Paths.get(DefaultEnvWriterTest.class.getResource("/default-env-example.txt").getFile());
+    private static final Path EXPECTED_RESULT_FILE = Paths.get(DefaultEnvWriterTest.class.getResource("/default-env-rewritten.txt").getFile());
 
     @Test
     public void default_env_is_correctly_rewritten() throws IOException {
         Path tempFile = temporaryFolder.newFile().toPath();
         Files.copy(EXAMPLE_FILE, tempFile, REPLACE_EXISTING);
 
-        DefaultEnvRewriter rewriter = new DefaultEnvRewriter();
-        rewriter.addOverride("VESPA_HOSTNAME", "my-new-hostname");
-        rewriter.addFallback("VESPA_CONFIGSERVER", "new-fallback-configserver");
-        rewriter.addOverride("VESPA_TLS_CONFIG_FILE", "/override/path/to/config.file");
+        DefaultEnvWriter writer = new DefaultEnvWriter();
+        writer.addOverride("VESPA_HOSTNAME", "my-new-hostname");
+        writer.addFallback("VESPA_CONFIGSERVER", "new-fallback-configserver");
+        writer.addOverride("VESPA_TLS_CONFIG_FILE", "/override/path/to/config.file");
 
-        boolean modified = rewriter.updateFile(tempFile);
+        boolean modified = writer.updateFile(tempFile);
 
         assertTrue(modified);
         assertEquals(Files.readString(EXPECTED_RESULT_FILE), Files.readString(tempFile));
 
-        modified = rewriter.updateFile(tempFile);
+        modified = writer.updateFile(tempFile);
         assertFalse(modified);
         assertEquals(Files.readString(EXPECTED_RESULT_FILE), Files.readString(tempFile));
     }
 
     @Test
     public void generates_default_env_content() throws IOException {
-        DefaultEnvRewriter rewriter = new DefaultEnvRewriter();
-        rewriter.addOverride("VESPA_HOSTNAME", "my-new-hostname");
-        rewriter.addFallback("VESPA_CONFIGSERVER", "new-fallback-configserver");
-        rewriter.addOverride("VESPA_TLS_CONFIG_FILE", "/override/path/to/config.file");
-        rewriter.addUnset("VESPA_LEGACY_OPTION");
-        String generatedContent = rewriter.generateContent();
+        DefaultEnvWriter writer = new DefaultEnvWriter();
+        writer.addOverride("VESPA_HOSTNAME", "my-new-hostname");
+        writer.addFallback("VESPA_CONFIGSERVER", "new-fallback-configserver");
+        writer.addOverride("VESPA_TLS_CONFIG_FILE", "/override/path/to/config.file");
+        writer.addUnset("VESPA_LEGACY_OPTION");
+        String generatedContent = writer.generateContent();
         assertEquals(Files.readString(EXPECTED_RESULT_FILE), generatedContent);
     }
 }
