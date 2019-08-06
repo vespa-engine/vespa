@@ -11,7 +11,6 @@ import com.yahoo.document.select.rule.LiteralNode;
 import com.yahoo.document.select.rule.LogicNode;
 import com.yahoo.document.select.rule.NegationNode;
 import com.yahoo.document.select.rule.NowNode;
-import com.yahoo.document.select.rule.SearchColumnNode;
 import com.yahoo.document.select.rule.VariableNode;
 
 /**
@@ -67,9 +66,6 @@ public class NowCheckVisitor implements Visitor {
 
     public void visit(NowNode node) {
         nowNodeCount++;
-    }
-
-    public void visit(SearchColumnNode node) {
     }
 
     public void visit(VariableNode node) {

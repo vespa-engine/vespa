@@ -68,7 +68,6 @@ TOKEN :
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
     <ID: "id"> |
-    <SEARCHCOLUMN: "searchcolumn"> |
     <ID_SCHEME: "scheme"> |
     <ID_TYPE: "type"> |
     <ID_NAMESPACE: "namespace"> |
@@ -179,7 +178,6 @@ ExpressionNode value() :
 {
     ( LOOKAHEAD(2)
       ( ret = id() |
-        ret = searchColumn() |
         ret = literal() |
         ret = variable() |
         ret = now() |
@@ -201,7 +199,6 @@ DocumentNode document() :
 void identifier() : { }
 {                                                                                                                                                                                                                                            
     (  <ID> |
-       <SEARCHCOLUMN> |
        <ID_SCHEME> |
        <ID_TYPE> |
        <ID_NAMESPACE> |
@@ -237,15 +234,6 @@ IdNode id() :
      <INTEGER> { ret.setWidthBits(Short.parseShort(token.image)); } <COMMA> 
      <INTEGER> { ret.setDivisionBits(Short.parseShort(token.image)); } <RBRACE> ) )
               ] )
-    { return ret; }
-}
-
-SearchColumnNode searchColumn() :
-{
-    SearchColumnNode ret = new SearchColumnNode();
-}
-{
-    ( <SEARCHCOLUMN> [ LOOKAHEAD(2) <DOT> <INTEGER> { ret.setField(Integer.parseInt(token.image)); } ] )
     { return ret; }
 }
 

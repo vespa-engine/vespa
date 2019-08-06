@@ -35,8 +35,6 @@ public class BucketSelectorTestCase {
         assertBucketCount("id.bucket = 0x4000000000003018", 1); // Bucket 16:12312
         assertBucketCount("id.bucket == 0x4000000000000258", 1); // Bucket 16:600
 
-        assertBucketCount("searchcolumn.3 == 1", 21845);
-
         // Check that the correct buckets is found
         assertBucket("id.bucket = 0x4000000000003018", new BucketId(16, 12312));
         assertBucket("id.bucket == 0x4000000000000258", new BucketId(16, 600));

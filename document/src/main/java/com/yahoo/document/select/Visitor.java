@@ -1,7 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.select;
 
-import com.yahoo.document.select.rule.*;
+
+import com.yahoo.document.select.rule.ArithmeticNode;
+import com.yahoo.document.select.rule.AttributeNode;
+import com.yahoo.document.select.rule.ComparisonNode;
+import com.yahoo.document.select.rule.DocumentNode;
+import com.yahoo.document.select.rule.EmbracedNode;
+import com.yahoo.document.select.rule.IdNode;
+import com.yahoo.document.select.rule.LiteralNode;
+import com.yahoo.document.select.rule.LogicNode;
+import com.yahoo.document.select.rule.NegationNode;
+import com.yahoo.document.select.rule.NowNode;
+import com.yahoo.document.select.rule.VariableNode;
 
 /**
  * This interface can be used to create custom visitors for the selection tree.
@@ -10,16 +21,15 @@ import com.yahoo.document.select.rule.*;
  */
 
 public interface Visitor {
-    public void visit(ArithmeticNode node);
-    public void visit(AttributeNode node);
-    public void visit(ComparisonNode node);
-    public void visit(DocumentNode node);
-    public void visit(EmbracedNode node);
-    public void visit(IdNode node);
-    public void visit(LiteralNode node);
-    public void visit(LogicNode node);
-    public void visit(NegationNode node);
-    public void visit(NowNode node);
-    public void visit(SearchColumnNode node);
-    public void visit(VariableNode node);
+    void visit(ArithmeticNode node);
+    void visit(AttributeNode node);
+    void visit(ComparisonNode node);
+    void visit(DocumentNode node);
+    void visit(EmbracedNode node);
+    void visit(IdNode node);
+    void visit(LiteralNode node);
+    void visit(LogicNode node);
+    void visit(NegationNode node);
+    void visit(NowNode node);
+    void visit(VariableNode node);
 }

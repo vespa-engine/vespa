@@ -14,7 +14,6 @@ import com.yahoo.document.select.rule.LiteralNode;
 import com.yahoo.document.select.rule.LogicNode;
 import com.yahoo.document.select.rule.NegationNode;
 import com.yahoo.document.select.rule.NowNode;
-import com.yahoo.document.select.rule.SearchColumnNode;
 import com.yahoo.document.select.rule.VariableNode;
 
 import java.util.HashMap;
@@ -149,11 +148,6 @@ public class SelectionExpressionConverter implements Visitor {
     public void visit(NowNode node) {
         if (state == null ) return;
         state.now = node;
-    }
-
-    public void visit(SearchColumnNode node) {
-        if (state == null ) return;
-        throw new UnsupportedOperationException("Searchcolumn not supported yet.");
     }
 
     public void visit(VariableNode node) {
