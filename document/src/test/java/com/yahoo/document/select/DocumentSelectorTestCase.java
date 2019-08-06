@@ -75,7 +75,6 @@ public class DocumentSelectorTestCase {
         assertParse("id.hash() > 0");
         assertParse("id.namespace.hash() > 0");
         assertParse("id.order(5,2) > 100");
-        assertParse("searchcolumn.10 = 6");
         assertParse("music.artist = \"*\"");
         assertParse("music.artist.lowercase() = \"*\"");
         assertParse("music_.artist = \"*\"");
@@ -114,7 +113,6 @@ public class DocumentSelectorTestCase {
     @Test
     public void testReservedWords() throws ParseException {
         assertParse(null, "id == 'id' or id_t or idtype"); // ignore canonical form
-        assertParse(null, "searchcolumn == 1 or searchcolumn_t or searchcolumntype");
         assertParse(null, "id.scheme == 'scheme' or scheme_t or schemetype");
         assertParse(null, "id.namespace == 'namespace' or namespace_t or namespacetype");
         assertParse(null, "id.specific == 'specific' or specific_t or specifictype");
@@ -200,9 +198,6 @@ public class DocumentSelectorTestCase {
                     "id.bucket == 0x80000000000000f2");
         assertParse("id.group == \"yahoo.com\"");
         assertParse("id.specific == \"mypart\"");
-
-        // Test search column stuff.
-        assertParse("searchcolumn.10 = 6");
 
         // Test other operators.
         assertParse("id.scheme = \"*doc\"");
@@ -558,8 +553,6 @@ public class DocumentSelectorTestCase {
         assertError("id.group == 1234", documents.get(3), "Group identifier is null.");
         assertError("id.group == \"yahoo\"", documents.get(3), "Group identifier is null.");
         assertError("id.type == \"unknown\"", documents.get(0), "Document id doesn't have doc type.");
-
-        assertEquals(Result.TRUE, evaluate("searchcolumn.10 == 6", documents.get(3)));
 
         // Branch operators.
         assertEquals(Result.FALSE, evaluate("true and false", documents.get(0)));

@@ -25,7 +25,6 @@ class ArithmeticValueNode;
 class FunctionValueNode;
 class IdValueNode;
 class InvalidConstant;
-class SearchColumnValueNode;
 class FieldValueNode;
 class FloatValueNode;
 class IntegerValueNode;

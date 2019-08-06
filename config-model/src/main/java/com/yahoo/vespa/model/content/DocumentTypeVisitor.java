@@ -2,7 +2,16 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.document.select.Visitor;
-import com.yahoo.document.select.rule.*;
+import com.yahoo.document.select.rule.ArithmeticNode;
+import com.yahoo.document.select.rule.AttributeNode;
+import com.yahoo.document.select.rule.ComparisonNode;
+import com.yahoo.document.select.rule.EmbracedNode;
+import com.yahoo.document.select.rule.IdNode;
+import com.yahoo.document.select.rule.LiteralNode;
+import com.yahoo.document.select.rule.LogicNode;
+import com.yahoo.document.select.rule.NegationNode;
+import com.yahoo.document.select.rule.NowNode;
+import com.yahoo.document.select.rule.VariableNode;
 
 public abstract class DocumentTypeVisitor implements Visitor {
     @Override
@@ -50,10 +59,6 @@ public abstract class DocumentTypeVisitor implements Visitor {
 
     @Override
     public void visit(NowNode nowNode) {
-    }
-
-    @Override
-    public void visit(SearchColumnNode searchColumnNode) {
     }
 
     @Override

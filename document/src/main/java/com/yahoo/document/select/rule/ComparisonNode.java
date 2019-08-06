@@ -126,34 +126,7 @@ public class ComparisonNode implements ExpressionNode {
                 return compare(factory, (IdNode)lhs, (LiteralNode)rhs, operator);
             } else if (rhs instanceof IdNode && lhs instanceof LiteralNode) {
                 return compare(factory, (IdNode)rhs, (LiteralNode)lhs, operator);
-            } else if (lhs instanceof SearchColumnNode && rhs instanceof LiteralNode) {
-                return compare((SearchColumnNode)lhs, (LiteralNode)rhs);
-            } else if (rhs instanceof SearchColumnNode && lhs instanceof LiteralNode) {
-                return compare((SearchColumnNode)rhs, (LiteralNode)lhs);
             }
-        }
-        return null;
-    }
-
-    /**
-     * Compares a search column node with a literal node.
-     *
-     * @param node The search column node.
-     * @param literal The literal node to compare to.
-     * @return The bucket set containing the buckets covered.
-     */
-    private BucketSet compare(SearchColumnNode node, LiteralNode literal) {
-        Object value = literal.getValue();
-        int bucketCount = (int) Math.pow(2, 16);
-        if (value instanceof Long) {
-            BucketSet ret = new BucketSet();
-            for (int i = 0; i < bucketCount; i++) {
-                BucketId id = new BucketId(16, i);
-                if ((Long)value == node.getDistribution().getColumn(id)) {
-                    ret.add(new BucketId(16, i));
-                }
-            }
-            return ret;
         }
         return null;
     }
