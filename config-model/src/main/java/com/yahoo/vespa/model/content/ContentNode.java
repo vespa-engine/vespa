@@ -8,6 +8,7 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 
 /**
@@ -56,8 +57,16 @@ public abstract class ContentNode extends AbstractService
     public int getPortCount() { return 3; }
 
     @Override
-    public String[] getPortSuffixes() {
-        return new String[] { "messaging", "rpc", "http" };
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) {
+            from.allocatePort("messaging");
+            from.allocatePort("rpc");
+            from.allocatePort("http");
+        } else {
+            from.wantPort(start++, "messaging");
+            from.wantPort(start++, "rpc");
+            from.wantPort(start++, "http");
+        }
     }
 
     @Override

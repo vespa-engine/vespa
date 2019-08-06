@@ -62,7 +62,6 @@ public class MetricsProxyContainerTest {
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertEquals(19092, container.getSearchPort());
         assertEquals(19092, container.getHealthPort());
-        assertEquals("http", container.getPortSuffixes()[0]);
 
         assertTrue(container.getPortsMeta().getTagsAt(0).contains("http"));
         assertTrue(container.getPortsMeta().getTagsAt(0).contains("state"));
@@ -78,8 +77,6 @@ public class MetricsProxyContainerTest {
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("metrics"));
 
-        assertEquals("rpc/metrics", container.getPortSuffixes()[offset]);
-
         RpcConnectorConfig config = getRpcConnectorConfig(model);
         assertEquals(19095, config.port());
     }
@@ -93,8 +90,6 @@ public class MetricsProxyContainerTest {
         assertEquals(2, container.getPortsMeta().getTagsAt(offset).size());
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("admin"));
-
-        assertEquals("rpc/admin", container.getPortSuffixes()[offset]);
     }
 
     @Test

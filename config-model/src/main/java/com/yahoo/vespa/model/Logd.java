@@ -14,6 +14,7 @@ public class Logd
     extends AbstractService
     implements LogdConfig.Producer
 {
+    static final int BASEPORT = 19089;
 
     /**
      * Creates a new Logd instance.
@@ -25,17 +26,18 @@ public class Logd
         portsMeta.on(0).tag("http").tag("state");
     }
 
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        if (start == 0) start = BASEPORT;
+        from.wantPort(start, "http");
+    }
+
     /**
      * Logd needs a state port.
      *
      * @return The number of ports reserved by the logd
      */
     public int getPortCount() { return 1; }
-
-    @Override
-    public String[] getPortSuffixes() {
-        return new String[]{"http"};
-    }
 
     /** Returns the desired base port for this service.  */
     public int getWantedPort() { return 19089; }

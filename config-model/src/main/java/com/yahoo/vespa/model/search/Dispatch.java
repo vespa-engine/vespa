@@ -5,6 +5,7 @@ import com.yahoo.vespa.config.search.core.FdispatchrcConfig;
 import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
@@ -230,14 +231,17 @@ public class Dispatch extends AbstractService implements SearchInterface,
         }
     }
 
+    @Override
+    public void allocatePorts(int start, PortAllocBridge from) {
+        // NB: ignore "start"
+        from.allocatePort("rpc");
+        from.allocatePort("fs4");
+        from.allocatePort("health");
+    }
+
     /**
      * @return the number of ports needed
      */
     public int getPortCount() { return 3; }
-
-    @Override
-    public String[] getPortSuffixes() {
-        return new String[]{ "rpc", "fs4", "health" };
-    }
 
 }
