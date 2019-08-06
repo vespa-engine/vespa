@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
@@ -29,14 +28,6 @@ public interface ExpressionNode {
      * @param factory The factory used by the current application.
      */
     BucketSet getBucketSet(BucketIdFactory factory);
-
-    /**
-     * If this document selection implies a specific ordering (using the orderdoc scheme),
-     * return that specification.  
-     *
-     * @param order The order in which we are looking to traverse the ordering (ASCENDING or DESCENDING)
-     */
-    OrderingSpecification getOrdering(int order);
 
     /**
      * Perform visitation of this node.

@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Result;
 import com.yahoo.document.select.Visitor;
 
@@ -48,8 +47,4 @@ public class NegationNode implements ExpressionNode {
         return "not " + node;
     }
 
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
 }

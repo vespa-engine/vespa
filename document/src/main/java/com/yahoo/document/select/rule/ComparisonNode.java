@@ -9,7 +9,6 @@ import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.idstring.GroupDocIdString;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Result;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.Visitor;
@@ -78,47 +77,6 @@ public class ComparisonNode implements ExpressionNode {
         return rhs;
     }
 
-    public OrderingSpecification getOrdering(IdNode lhs, LiteralNode rhs, String operator, int order) {
-        if (lhs.getWidthBits() == -1 || lhs.getDivisionBits() == -1 || !(rhs.getValue() instanceof Long)) {
-            return null;
-        }
-
-        if (operator.equals("==") || operator.equals("=")) {
-            return new OrderingSpecification(order, (Long)rhs.getValue(), lhs.getWidthBits(), lhs.getDivisionBits());
-        } 
-
-        if (order == OrderingSpecification.ASCENDING) {
-            if ((operator.equals("<") || operator.equals("<="))) {
-                return new OrderingSpecification(order, 0, lhs.getWidthBits(), lhs.getDivisionBits());
-            } 
-            if (operator.equals(">")) {
-                return new OrderingSpecification(order, (Long)rhs.getValue() + 1, lhs.getWidthBits(), lhs.getDivisionBits());
-            }
-            if (operator.equals(">=")) {
-                return new OrderingSpecification(order, (Long)rhs.getValue(), lhs.getWidthBits(), lhs.getDivisionBits());
-            }
-        } else {
-            if (operator.equals("<")) {
-                return new OrderingSpecification(order, (Long)rhs.getValue() - 1, lhs.getWidthBits(), lhs.getDivisionBits());
-            }
-            if (operator.equals("<=")) {
-                return new OrderingSpecification(order, (Long)rhs.getValue(), lhs.getWidthBits(), lhs.getDivisionBits());
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        if (lhs instanceof IdNode && rhs instanceof LiteralNode) {
-            return getOrdering((IdNode)lhs, (LiteralNode)rhs, operator, order);
-        } else if (rhs instanceof IdNode && lhs instanceof LiteralNode) {
-            return getOrdering((IdNode)rhs, (LiteralNode)lhs, operator, order);
-        }
-
-        return null;
-    }
-
     @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         if (operator.equals("==") || operator.equals("=")) {
@@ -131,6 +89,7 @@ public class ComparisonNode implements ExpressionNode {
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     private BucketSet compare(BucketIdFactory factory, IdNode id, LiteralNode literal, String operator) {
         String field = id.getField();
         Object value = literal.getValue();

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.BucketId;
-import com.yahoo.document.DocumentId;
-import com.yahoo.document.idstring.*;
+import com.yahoo.document.idstring.DocIdString;
+import com.yahoo.document.idstring.GroupDocIdString;
+import com.yahoo.document.idstring.OrderDocIdString;
+import com.yahoo.document.idstring.UserDocIdString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -44,7 +44,9 @@ public class BucketIdFactoryTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testBucketGeneration() {
+        // TODO Rewrite in time for VESPA 8 to use IdIdString
         BucketIdFactory factory = new BucketIdFactory(32, 26, 6);
         DocumentId doc1 = new DocumentId(new DocIdString("ns", "spec"));
         DocumentId doc2 = new DocumentId(new DocIdString("ns2", "spec"));

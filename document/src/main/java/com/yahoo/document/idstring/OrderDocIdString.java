@@ -4,13 +4,13 @@ package com.yahoo.document.idstring;
 import com.yahoo.collections.MD5;
 import com.yahoo.text.Utf8;
 
-import java.security.MessageDigest;
-
 /**
  * Representation of groupdoc scheme in document IDs.
  *
  * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
  */
+//TODO Remove no later than Vespa 8
+@Deprecated
 public class OrderDocIdString extends IdString {
     String group;
     int widthBits;

@@ -543,12 +543,6 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.TRUE, evaluate("id.user=2345", documents.get(5)));
         assertEquals(Result.TRUE, evaluate("id.group=\"mygroup\"", documents.get(6)));
 
-        assertEquals(Result.TRUE, evaluate("id.order(31,19)=5678", documents.get(4)));
-        assertEquals(Result.TRUE, evaluate("id.order(31,19)<=5678", documents.get(4)));
-        assertEquals(Result.FALSE, evaluate("id.order(31,19)>5678", documents.get(4)));
-        assertEquals(Result.FALSE, evaluate("id.order(25,23)==5678", documents.get(4)));
-        assertEquals(Result.FALSE, evaluate("id.order(31,19)=5678", documents.get(3)));
-
         assertError("id.user == 1234", documents.get(0), "User identifier is null.");
         assertError("id.group == 1234", documents.get(3), "Group identifier is null.");
         assertError("id.group == \"yahoo\"", documents.get(3), "Group identifier is null.");

@@ -5,7 +5,6 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 import java.util.List;
@@ -175,16 +174,11 @@ public class ArithmeticNode implements ExpressionNode {
     }
 
     @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
-
-    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
-    private class ValueItem {
+    private static class ValueItem {
         public int operator;
         public Number value;
 

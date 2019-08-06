@@ -98,16 +98,6 @@ public class DocumentSelector {
     }
 
     /**
-     *  Returns the ordering specification, if any, implied by this document
-     *  selection expression.
-     *
-     *  @param order The order of the
-     */
-    public OrderingSpecification getOrdering(int order) {
-        return expression.getOrdering(order);
-    }
-
-    /**
      * Visits the expression tree.
      *
      * @param visitor The visitor to use.

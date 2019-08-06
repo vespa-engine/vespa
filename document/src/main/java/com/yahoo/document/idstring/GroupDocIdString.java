@@ -11,6 +11,8 @@ import java.security.MessageDigest;
  *
  * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
  */
+//TODO Remove no later than Vespa 8
+@Deprecated
 public class GroupDocIdString extends IdString {
     String group;
 

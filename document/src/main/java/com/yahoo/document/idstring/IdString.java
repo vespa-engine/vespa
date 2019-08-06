@@ -5,8 +5,6 @@ import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.OptionalInt;
 
 /**
@@ -46,10 +44,10 @@ public abstract class IdString {
     }
 
     public enum Scheme { doc, userdoc, groupdoc, orderdoc, id }
-    final Scheme scheme;
-    final String namespace;
-    final String namespaceSpecific;
-    Utf8String cache;
+    private final Scheme scheme;
+    private final String namespace;
+    private final String namespaceSpecific;
+    private Utf8String cache;
 
     public static int[] generateOrderDocParams(String scheme) {
         int parenPos = scheme.indexOf("(");
@@ -113,6 +111,7 @@ public abstract class IdString {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static IdString parseAndCreate(String id) {
         String namespace;
         long userId;

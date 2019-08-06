@@ -9,6 +9,8 @@ import java.math.BigInteger;
  *
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+//TODO Remove no later than Vespa 8
+@Deprecated
 public class UserDocIdString extends IdString {
     long userId;
 
