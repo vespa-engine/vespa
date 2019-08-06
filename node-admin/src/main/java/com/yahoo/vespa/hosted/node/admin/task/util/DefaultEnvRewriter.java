@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
@@ -49,7 +50,7 @@ public class DefaultEnvRewriter {
     }
 
     public boolean converge() {
-        List<String> defaultEnvLines = uncheck(() -> Files.readAllLines(defaultEnvFile));
+        List<String> defaultEnvLines = ifExists(() -> Files.readAllLines(defaultEnvFile)).orElse(List.of());
         List<String> newDefaultEnvLines = new ArrayList<>();
         Set<String> seenNames = new TreeSet<>();
         for (String line : defaultEnvLines) {
