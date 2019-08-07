@@ -493,9 +493,6 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getRoute() != null && !"storage".equals(msg.getRoute().toString())) {
             sb.append("route=").append(msg.getRoute()).append("\n");
         }
-        if (msg.getVisitorOrdering() != 0) {
-            sb.append("ordering=").append(msg.getVisitorOrdering()).append("\n");
-        }
         if (msg.getMaxBucketsPerVisitor() != 1) {
             sb.append("max buckets per visitor=").append(msg.getMaxBucketsPerVisitor()).append("\n");
         }
@@ -716,7 +713,6 @@ public class MessageBusVisitorSessionTestCase {
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet("[header]");
-        params.setVisitorOrdering(123);
         params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3));
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
@@ -747,7 +743,6 @@ public class MessageBusVisitorSessionTestCase {
                 "ninja -> turtles\n" +
                 "]\n" +
                 "route=extraterrestrial/highway\n" +
-                "ordering=123\n" +
                 "max buckets per visitor=55\n" +
                 "load type=samnmax\n" +
                 "priority=HIGHEST\n" +

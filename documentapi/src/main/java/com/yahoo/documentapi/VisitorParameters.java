@@ -41,7 +41,6 @@ public class VisitorParameters extends Parameters {
     private float weight = 1;
     private long maxFirstPassHits = -1;
     private long maxTotalHits = -1;
-    private int visitorOrdering = 0;
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
     private float dynamicMaxBucketsIncreaseFactor = 2;
@@ -92,7 +91,6 @@ public class VisitorParameters extends Parameters {
         setControlHandler(params.getControlHandler());
         setMaxFirstPassHits(params.getMaxFirstPassHits());
         setMaxTotalHits(params.getMaxTotalHits());
-        setVisitorOrdering(params.getVisitorOrdering());
         setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
         setLoadType(params.getLoadType());
         setPriority(params.getPriority());
@@ -300,10 +298,6 @@ public class VisitorParameters extends Parameters {
 
     public void setBucketsToVisit(Set<BucketId> buckets) { bucketsToVisit = buckets; }
 
-    public int getVisitorOrdering() { return visitorOrdering; }
-
-    public void setVisitorOrdering(int order) { visitorOrdering = order; }
-
     public int getMaxBucketsPerVisitor() { return maxBucketsPerVisitor; }
 
     public void setMaxBucketsPerVisitor(int max) { maxBucketsPerVisitor = max; }
@@ -356,7 +350,7 @@ public class VisitorParameters extends Parameters {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("VisitorParameters(\n")
                 .append("  Document selection: ").append(documentSelection).append('\n')
                 .append("  Bucket space:       ").append(bucketSpace).append('\n')
@@ -382,7 +376,6 @@ public class VisitorParameters extends Parameters {
         sb.append("  Weight:             ").append(weight).append('\n');
         sb.append("  Max firstpass hits: ").append(maxFirstPassHits).append('\n');
         sb.append("  Max total hits:     ").append(maxTotalHits).append('\n');
-        sb.append("  Visitor ordering:   ").append(visitorOrdering).append('\n');
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');
         if (dynamicallyIncreaseMaxBucketsPerVisitor) {

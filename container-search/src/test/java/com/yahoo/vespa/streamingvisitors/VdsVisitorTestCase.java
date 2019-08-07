@@ -243,7 +243,6 @@ public class VdsVisitorTestCase {
                 assertEquals(DocumentProtocol.Priority.VERY_HIGH, params.getPriority());
             }
         }
-        assertEquals(0, params.getVisitorOrdering());
         assertEquals(-1, params.getMaxFirstPassHits());
         if (qa.maxBucketsPerVisitor != 0) {
             assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());

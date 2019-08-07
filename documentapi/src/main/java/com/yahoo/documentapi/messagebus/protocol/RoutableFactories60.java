@@ -183,9 +183,8 @@ public abstract class RoutableFactories60 {
                 msg.getParameters().put(key, buf.getBytes(null, sz));
             }
 
-            msg.setVisitorOrdering(buf.getInt(null));
+            buf.getInt(null); // unused ordering spec
             msg.setMaxBucketsPerVisitor(buf.getInt(null));
-            msg.setVisitorDispatcherVersion(50);
             msg.setBucketSpace(decodeBucketSpace(buf));
             return msg;
         }
@@ -229,7 +228,7 @@ public abstract class RoutableFactories60 {
                 buf.put(null, b);
             }
 
-            buf.putInt(null, msg.getVisitorOrdering());
+            buf.putInt(null, 0);
             buf.putInt(null, msg.getMaxBucketsPerVisitor());
             return encodeBucketSpace(msg.getBucketSpace(), buf);
         }

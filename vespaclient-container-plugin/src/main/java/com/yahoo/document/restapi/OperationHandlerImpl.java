@@ -23,7 +23,6 @@ import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
@@ -429,7 +428,6 @@ public class OperationHandlerImpl implements OperationHandler {
         params.setSessionTimeoutMs(VISIT_TIMEOUT_MS);
 
         params.visitInconsistentBuckets(true); // TODO document this as part of consistency doc
-        params.setVisitorOrdering(VisitorOrdering.ASCENDING);
 
         BucketSpaceRoute bucketSpaceRoute = resolveBucketSpaceRoute(options.cluster, options.bucketSpace, restUri);
         params.setRoute(bucketSpaceRoute.getClusterRoute());
