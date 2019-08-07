@@ -3,7 +3,6 @@ package com.yahoo.document;
 
 import com.yahoo.document.idstring.DocIdString;
 import com.yahoo.document.idstring.GroupDocIdString;
-import com.yahoo.document.idstring.OrderDocIdString;
 import com.yahoo.document.idstring.UserDocIdString;
 import org.junit.Test;
 
@@ -57,12 +56,7 @@ public class BucketIdFactoryTestCase {
         DocumentId groupDoc1 = new DocumentId(new GroupDocIdString("ns", "yahoo.com", "spec"));
         DocumentId groupDoc2 = new DocumentId(new GroupDocIdString("ns2", "yahoo.com", "spec2"));
         DocumentId groupDoc3 = new DocumentId(new GroupDocIdString("ns", "yahoo", "spec"));
-        DocumentId orderDoc1 = new DocumentId(new OrderDocIdString("ns", "13", 31, 19, 1268182861, "foo"));
-        DocumentId orderDoc2 = new DocumentId(new OrderDocIdString("ns", "13", 31, 19, 1205110861, "foo"));
-        DocumentId orderDoc3 = new DocumentId(new OrderDocIdString("ns", "13", 31, 19, 1205715661, "foo"));
-        DocumentId orderDoc4 = new DocumentId(new OrderDocIdString("ns", "13", 4, 0, 2, "foo"));
-        DocumentId orderDoc5 = new DocumentId(new OrderDocIdString("ns", "13", 4, 0, 4, "foo"));
-        DocumentId orderDoc6 = new DocumentId(new OrderDocIdString("ns", "13", 4, 0, 11, "foo"));
+
 
         BucketId docBucket1 = factory.getBucketId(doc1);
         BucketId docBucket2 = factory.getBucketId(doc2);
@@ -73,12 +67,6 @@ public class BucketIdFactoryTestCase {
         BucketId groupDocBucket1 = factory.getBucketId(groupDoc1);
         BucketId groupDocBucket2 = factory.getBucketId(groupDoc2);
         BucketId groupDocBucket3 = factory.getBucketId(groupDoc3);
-        BucketId orderDocBucket1 = factory.getBucketId(orderDoc1);
-        BucketId orderDocBucket2 = factory.getBucketId(orderDoc2);
-        BucketId orderDocBucket3 = factory.getBucketId(orderDoc3);
-        BucketId orderDocBucket4 = factory.getBucketId(orderDoc4);
-        BucketId orderDocBucket5 = factory.getBucketId(orderDoc5);
-        BucketId orderDocBucket6 = factory.getBucketId(orderDoc6);
 
         assertEquals(new Hex(0xe99703f200000012l), new Hex(userDocBucket1.getRawId()));
         assertEquals(new Hex(0xebfa518a00000012l), new Hex(userDocBucket2.getRawId()));
@@ -91,14 +79,6 @@ public class BucketIdFactoryTestCase {
         assertEquals(new Hex(0xe980c9abd5fd8d11l), new Hex(docBucket1.getRawId()));
         assertEquals(new Hex(0xeafe870c5f9c37b9l), new Hex(docBucket2.getRawId()));
         assertEquals(new Hex(0xeaebe9473ecbcd69l), new Hex(docBucket3.getRawId()));
-
-        assertEquals(new Hex(0xeae764e90000000dl), new Hex(orderDocBucket1.getRawId()));
-        assertEquals(new Hex(0xeacb85f10000000dl), new Hex(orderDocBucket2.getRawId()));
-        assertEquals(new Hex(0xea68ddf10000000dl), new Hex(orderDocBucket3.getRawId()));
-
-        assertEquals(new Hex(0xe87526540000000dl), new Hex(orderDocBucket4.getRawId()));
-        assertEquals(new Hex(0xea59f8f20000000dl), new Hex(orderDocBucket5.getRawId()));
-        assertEquals(new Hex(0xe9eb703d0000000dl), new Hex(orderDocBucket6.getRawId()));
     }
 
     //Actually a BucketId testcase ...

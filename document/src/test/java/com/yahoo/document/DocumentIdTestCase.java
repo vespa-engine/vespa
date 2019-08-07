@@ -236,12 +236,6 @@ public class DocumentIdTestCase {
         assertTrue(group.getScheme().hasGroup());
         assertFalse(group.getScheme().hasNumber());
         assertEquals("mygroup", group.getScheme().getGroup());
-
-        DocumentId order = new DocumentId("orderdoc(5,2):ns:42:007:foo");
-        assertTrue(order.getScheme().hasGroup());
-        assertTrue(order.getScheme().hasNumber());
-        assertEquals("42", order.getScheme().getGroup());
-        assertEquals(42, order.getScheme().getNumber());
     }
 
     @Test
