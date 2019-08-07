@@ -343,78 +343,6 @@ VisitorOperation::verifyCreateVisitorCommand(DistributorMessageSender& sender)
     }
 }
 
-namespace {
-
-bool
-isSplitPastOrderBits(const document::BucketId& bucket,
-                     const document::OrderingSpecification& ordering) {
-    int32_t bitsUsed = bucket.getUsedBits();
-    int32_t orderBitCount = ordering.getWidthBits() -
-                            ordering.getDivisionBits();
-    return (bitsUsed > 32 + orderBitCount);
-}
-
-bool
-isInconsistentlySplit(const document::BucketId& ain,
-                      const document::BucketId& bin) {
-    int minUsed = std::min(ain.getUsedBits(), bin.getUsedBits());
-
-    document::BucketId a = document::BucketId(minUsed,
-            ain.getRawId()).stripUnused();
-    document::BucketId b = document::BucketId(minUsed,
-            bin.getRawId()).stripUnused();
-
-    return (a == b);
-}
-
-bool
-isInconsistentlySplit(const document::BucketId& bucket,
-                      const std::vector<document::BucketId>& buckets)
-{
-    if (buckets.size()) {
-        for (uint32_t i=0; i<buckets.size(); i++) {
-            if (isInconsistentlySplit(bucket, buckets[i])) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-} // End anonymous namespace
-
-bool
-VisitorOperation::isSpecialBucketForOrderDoc(const document::BucketId& bucketId) const
-{
-    if (isSplitPastOrderBits(bucketId, *_ordering)) {
-        LOG(spam, "Split past orderbits: Found in db: %s", bucketId.toString().c_str());
-    } else if (isInconsistentlySplit(bucketId, _superBucket.subBucketsVisitOrder)) {
-        LOG(spam, "Inconsistent: Found in db: %s", bucketId.toString().c_str());
-    } else {
-        return false;
-    }
-    return true;
-}
-
-std::vector<document::BucketId>::const_iterator
-VisitorOperation::addSpecialBucketsForOrderDoc(
-        std::vector<document::BucketId>::const_iterator iter,
-        std::vector<document::BucketId>::const_iterator end)
-{
-    if (_ordering->getWidthBits() == 0) {
-        return iter;
-    }
-    for (; iter != end; ++iter) {
-        if (isSpecialBucketForOrderDoc(*iter)) {
-            _superBucket.subBucketsVisitOrder.push_back(*iter);
-            _superBucket.subBuckets[*iter] = BucketInfo();
-        } else {
-            break;
-        }
-    }
-    return iter;
-}
-
 bool
 VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& buckets)
 {
@@ -426,7 +354,7 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
         bucketVisitOrder.push_back(buckets[i].getBucketId());
     }
 
-    VisitorOrder bucketLessThan(*_ordering);
+    VisitorOrder bucketLessThan;
     std::sort(bucketVisitOrder.begin(), bucketVisitOrder.end(), bucketLessThan);
 
     std::vector<document::BucketId>::const_iterator iter(bucketVisitOrder.begin());
@@ -449,8 +377,6 @@ VisitorOperation::pickBucketsToVisit(const std::vector<BucketDatabase::Entry>& b
             break;
         }
     }
-
-    iter = addSpecialBucketsForOrderDoc(iter, end);
 
     bool doneExpand(iter == bucketVisitOrder.end());
     return doneExpand;
@@ -538,9 +464,7 @@ VisitorOperation::expandBucketContained()
         _superBucket.subBucketsVisitOrder.push_back(*bid);
         _superBucket.subBuckets[*bid] = BucketInfo();
 
-        bid = getBucketIdAndLast(_bucketSpace.getBucketDatabase(),
-                                 _superBucket.bid,
-                                 *bid);
+        bid = getBucketIdAndLast(_bucketSpace.getBucketDatabase(), _superBucket.bid, *bid);
     }
 
     bool doneExpand = (!bid.get() || !_superBucket.bid.contains(*bid));
@@ -551,25 +475,21 @@ void
 VisitorOperation::expandBucket()
 {
     bool doneExpandBuckets = false;
-    if (_ordering->getWidthBits() > 0) { // Orderdoc
-        doneExpandBuckets = expandBucketAll();
+    bool doneExpandContainingBuckets = true;
+    if (!_superBucket.bid.contains(_lastBucket)) {
+        LOG(spam, "Bucket %s does not contain progress bucket %s",
+            _superBucket.bid.toString().c_str(),
+            _lastBucket.toString().c_str());
+        doneExpandContainingBuckets = expandBucketContaining();
     } else {
-        bool doneExpandContainingBuckets = true;
-        if (!_superBucket.bid.contains(_lastBucket)) {
-            LOG(spam, "Bucket %s does not contain progress bucket %s",
-                _superBucket.bid.toString().c_str(),
-                _lastBucket.toString().c_str());
-            doneExpandContainingBuckets = expandBucketContaining();
-        } else {
-            LOG(spam, "Bucket %s contains progress bucket %s",
-                _superBucket.bid.toString().c_str(),
-                _lastBucket.toString().c_str());
-        }
+        LOG(spam, "Bucket %s contains progress bucket %s",
+            _superBucket.bid.toString().c_str(),
+            _lastBucket.toString().c_str());
+    }
 
-        if (doneExpandContainingBuckets) {
-            LOG(spam, "Done expanding containing buckets");
-            doneExpandBuckets = expandBucketContained();
-        }
+    if (doneExpandContainingBuckets) {
+        LOG(spam, "Done expanding containing buckets");
+        doneExpandBuckets = expandBucketContained();
     }
 
     if (doneExpandBuckets) {
@@ -587,8 +507,7 @@ VisitorOperation::expandBucket()
 namespace {
 
 bool
-alreadyTried(const std::vector<uint16_t>& triedNodes,
-             uint16_t node)
+alreadyTried(const std::vector<uint16_t>& triedNodes, uint16_t node)
 {
     for (uint32_t j = 0; j < triedNodes.size(); j++) {
         if (triedNodes[j] == node) {
@@ -650,10 +569,6 @@ VisitorOperation::pickTargetNode(
 bool
 VisitorOperation::parseDocumentSelection(DistributorMessageSender& )
 {
-    if (!_ordering.get()) {
-        _ordering.reset(new document::OrderingSpecification());
-    }
-
     return true;
 }
 

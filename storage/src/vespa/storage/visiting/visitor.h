@@ -86,7 +86,7 @@ public:
 
     class HitCounter {
     public:
-        HitCounter(const document::OrderingSpecification* ordering);
+        HitCounter();
 
         void addHit(const document::DocumentId& hit, uint32_t size);
 
@@ -105,7 +105,6 @@ public:
         uint64_t _firstPassBytes;
         uint32_t _secondPassHits;
         uint64_t _secondPassBytes;
-        const document::OrderingSpecification* _ordering;
     };
 
     enum VisitorState
@@ -336,7 +335,6 @@ protected:
     std::unique_ptr<api::StorageMessageAddress> _dataDestination;
     std::shared_ptr<document::select::Node> _documentSelection;
     std::string _documentSelectionString;
-    std::unique_ptr<document::OrderingSpecification> _ordering;
     vdslib::VisitorStatistics _visitorStatistics;
 
     bool isCompletedCalled() const { return _calledCompletedVisitor; }
@@ -469,7 +467,6 @@ public:
                framework::MicroSecTime toTimestamp,
                std::unique_ptr<document::select::Node> docSelection,
                const std::string& docSelectionString,
-               std::unique_ptr<document::OrderingSpecification>,
                VisitorMessageHandler&,
                VisitorMessageSession::UP,
                documentapi::Priority::Value);

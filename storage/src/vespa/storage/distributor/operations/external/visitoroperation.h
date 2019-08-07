@@ -134,18 +134,12 @@ private:
      * code value, which avoids overwriting more critical errors.
      */
     void markOperationAsFailed(const api::ReturnCode& result);
-    bool isSpecialBucketForOrderDoc(const document::BucketId& bucketId) const;
-    std::vector<document::BucketId>::const_iterator addSpecialBucketsForOrderDoc(
-            std::vector<document::BucketId>::const_iterator iter,
-            std::vector<document::BucketId>::const_iterator end);
     /**
      * Compute time remaining of visitor in milliseconds, relative to timeout
      * time point. In case of the current time having passed the timeout
      * point, function returns 0.
      */
     uint64_t timeLeft() const noexcept;
-
-    std::unique_ptr<document::OrderingSpecification> _ordering;
 
     DistributorComponent& _owner;
     DistributorBucketSpace &_bucketSpace;

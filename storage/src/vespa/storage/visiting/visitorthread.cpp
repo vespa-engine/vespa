@@ -530,7 +530,6 @@ VisitorThread::onCreateVisitor(
     if (result.success()) {
         _visitors[cmd->getVisitorId()] = visitor;
         try{
-            std::unique_ptr<document::OrderingSpecification> order;
             VisitorMessageSession::UP messageSession(
                     _messageSessionFactory.createSession(*visitor, *this));
             documentapi::Priority::Value documentPriority =
@@ -543,7 +542,6 @@ VisitorThread::onCreateVisitor(
                            framework::MicroSecTime(cmd->getToTime()),
                            std::move(docSelection),
                            cmd->getDocumentSelection(),
-                           std::move(order),
                            _messageSender,
                            std::move(messageSession),
                            documentPriority);

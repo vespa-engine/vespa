@@ -20,12 +20,11 @@ using document::BucketSpace;
 
 namespace storage {
 
-Visitor::HitCounter::HitCounter(const document::OrderingSpecification* ordering)
+Visitor::HitCounter::HitCounter()
     : _firstPassHits(0),
       _firstPassBytes(0),
       _secondPassHits(0),
-      _secondPassBytes(0),
-      _ordering(ordering)
+      _secondPassBytes(0)
 {
 }
 
@@ -529,7 +528,6 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
                framework::MicroSecTime toTimestamp,
                std::unique_ptr<document::select::Node> docSelection,
                const std::string& docSelectionString,
-               std::unique_ptr<document::OrderingSpecification> ordering,
                VisitorMessageHandler& handler,
                VisitorMessageSession::UP messageSession,
                documentapi::Priority::Value documentPriority)
@@ -539,14 +537,13 @@ Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId,
     _visitorCmdId = cmdId;
     _id = name;
     _messageHandler = &handler;
-    _ordering = std::move(ordering);
     _documentSelection.reset(docSelection.release());
     _documentSelectionString = docSelectionString;
     _buckets = buckets;
     _visitorOptions._fromTime = fromTimestamp;
     _visitorOptions._toTime = toTimestamp;
     _currentBucket = 0;
-    _hitCounter.reset(new HitCounter(_ordering.get()));
+    _hitCounter.reset(new HitCounter());
     _messageSession = std::move(messageSession);
     _documentPriority = documentPriority;
 
