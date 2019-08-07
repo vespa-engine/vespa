@@ -83,12 +83,4 @@ public interface IssueHandler {
      */
     Optional<User> escalate(IssueId issueId, Contact contact);
 
-    /**
-     * Returns whether there exists an issue with an exactly matching summary.
-     *
-     * @param issue The summary of the issue.
-     * @return Whether the issue exists.
-     */
-    boolean issueExists(Issue issue);
-
 }

@@ -101,11 +101,6 @@ public class MockIssueHandler implements IssueHandler {
         return Optional.empty();
     }
 
-    @Override
-    public boolean issueExists(Issue issue) {
-        return issues.values().stream().anyMatch(i -> i.issue.summary().equals(issue.summary()));
-    }
-
     public MockIssueHandler close(IssueId issueId) {
         issues.get(issueId).open = false;
         touch(issueId);
