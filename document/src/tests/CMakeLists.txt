@@ -20,7 +20,6 @@ vespa_add_executable(document_gtest_runner_app TEST
     gid_filter_test.cpp
     globalidtest.cpp
     gtest_runner.cpp
-    orderingselectortest.cpp
     positiontypetest.cpp
     primitivefieldvaluetest.cpp
     stringtokenizertest.cpp

@@ -22,7 +22,6 @@ string _G_typeName[6] = {
     "doc",
     "userdoc",
     "groupdoc",
-    "orderdoc",
     "id",
     "null"
 };
@@ -50,7 +49,6 @@ IdString::toString() const
 namespace {
 
 void reportError(const char* part) __attribute__((noinline));
-void reportError(stringref s) __attribute__((noinline));
 void reportError(stringref s, const char* part) __attribute__((noinline));
 void reportTooShortDocId(const char * id, size_t sz) __attribute__((noinline));
 void reportNoSchemeSeparator(const char * id) __attribute__((noinline));
@@ -64,11 +62,6 @@ void reportError(stringref s, const char* part)
     throw IdParseException(make_string("Unparseable %s '%s': Not an unsigned 64-bit number", part, string(s).c_str()), VESPA_STRLOC);
 }
 
-void reportError(stringref s)
-{
-    throw IdParseException(make_string("Unparseable order doc scheme '%s': Scheme must contain parameters on the form (width, division)",
-                                       string(s).c_str()), VESPA_STRLOC);
-}
 void reportNoSchemeSeparator(const char * id)
 {
     throw IdParseException(make_string("Unparseable id '%s': No scheme separator ':' found", id), VESPA_STRLOC);
@@ -87,39 +80,6 @@ uint64_t getAsNumber(stringref s, const char* part) {
         reportError(s, part);
     }
     return value;
-}
-
-void
-getOrderDocBits(stringref scheme, uint16_t & widthBits, uint16_t & divisionBits)
-{
-    const char* parenPos = reinterpret_cast<const char*>(
-            memchr(scheme.data(), '(', scheme.size()));
-    const char* endParenPos = reinterpret_cast<const char*>(
-            memchr(scheme.data(), ')', scheme.size()));
-
-    if (parenPos == NULL || endParenPos == NULL || endParenPos < parenPos) {
-        reportError(scheme);
-    }
-
-    const char* separatorPos = reinterpret_cast<const char*>(
-            memchr(parenPos + 1, ',', endParenPos - parenPos - 1));
-    if (separatorPos == NULL) {
-        reportError(scheme);
-    }
-
-    char* endptr = NULL;
-    // strtoul stops at first non-numeric char (in this case ',' and ')'), so don't
-    // require any extra zero-terminated buffers
-    errno = 0;
-    widthBits = static_cast<uint16_t>(strtoul(parenPos + 1, &endptr, 10));
-    if (errno != 0 || *endptr != ',') {
-        reportError(scheme);
-    }
-    errno = 0;
-    divisionBits = static_cast<uint16_t>(strtoul(separatorPos + 1, &endptr, 10));
-    if (errno != 0 || *endptr != ')') {
-        reportError(scheme);
-    }
 }
 
 union TwoByte {
@@ -141,7 +101,6 @@ const FourByte _G_doc = {{'d', 'o', 'c', ':'}};
 const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
 const EightByte _G_userdoc = {{'u', 's', 'e', 'r', 'd', 'o', 'c', ':'}};
 const EightByte _G_groupdoc = {{'g', 'r', 'o', 'u', 'p', 'd', 'o', 'c'}};
-const EightByte _G_orderdoc = {{'o', 'r', 'd', 'e', 'r', 'd', 'o', 'c'}};
 const TwoByte _G_id = {{'i', 'd'}};
 
 typedef char v16qi __attribute__ ((__vector_size__(16)));
@@ -256,8 +215,6 @@ IdString::createIdString(const char * id, size_t sz_)
                 return IdString::UP(new UserDocIdString(stringref(id, sz_)));
             } else if (_G_groupdoc.as64 == *reinterpret_cast<const uint64_t *>(id) && (id[8] == ':')) {
                 return IdString::UP(new GroupDocIdString(stringref(id, sz_)));
-            } else if (_G_orderdoc.as64 == *reinterpret_cast<const uint64_t *>(id) && (id[8] == '(')) {
-                return IdString::UP(new OrderDocIdString(stringref(id, sz_)));
             } else {
                 reportNoSchemeSeparator(id);
             }
@@ -395,40 +352,6 @@ IdString::LocationType
 GroupDocIdString::locationFromGroupName(vespalib::stringref name)
 {
     return makeLocation(name);
-}
-
-OrderDocIdString::OrderDocIdString(stringref rawId) :
-    IdString(4, static_cast<const char *>(memchr(rawId.data(), ':', rawId.size())) - rawId.data() + 1, rawId),
-    _widthBits(0),
-    _divisionBits(0),
-    _ordering(getAsNumber(rawId.substr(offset(2), offset(3) - offset(2) - 1), "ordering"))
-{
-    validate();
-    getOrderDocBits(rawId.substr(0, offset(0) - 1), _widthBits, _divisionBits);
-   
-    string group(rawId.substr(offset(1), offset(2) - offset(1) - 1)); 
-    char* errStr = NULL;
-    _location = strtoull(group.c_str(), &errStr, 0);
-    if (*errStr != '\0') {
-        LocationUnion location;
-        fastc_md5sum((const unsigned char*) group.c_str(), group.size(), location._key);
-        _location = location._location[0];
-    }
-}
-
-std::pair<int16_t, int64_t>
-OrderDocIdString::getGidBitsOverride() const
-{
-    int usedBits = _widthBits - _divisionBits;
-    int64_t gidBits = (_ordering << (64 - _widthBits));
-    gidBits = BucketId::reverse(gidBits);
-    gidBits &= (std::numeric_limits<uint64_t>::max() >> (64 - usedBits));
-    return std::pair<int16_t, int64_t>(usedBits, gidBits);
-}
-
-string
-OrderDocIdString::getSchemeName() const {
-    return make_string("%s(%d,%d)", getTypeName(getType()).c_str(), _widthBits, _divisionBits);
 }
 
 } // document

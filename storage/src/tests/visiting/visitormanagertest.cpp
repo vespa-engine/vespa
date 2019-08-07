@@ -332,22 +332,6 @@ VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& d
     return equalCount;
 }
 
-TEST_F(VisitorManagerTest, hit_counter) {
-    document::OrderingSpecification spec(document::OrderingSpecification::ASCENDING, 42, 7, 2);
-    Visitor::HitCounter hitCounter(&spec);
-
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:42:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:49:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:60:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:10:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:21:foo"), 450);
-
-    EXPECT_EQ(3, hitCounter.getFirstPassHits());
-    EXPECT_EQ(1350, hitCounter.getFirstPassBytes());
-    EXPECT_EQ(2, hitCounter.getSecondPassHits());
-    EXPECT_EQ(900, hitCounter.getSecondPassBytes());
-}
-
 namespace {
 
 int getTotalSerializedSize(const std::vector<document::Document::SP>& docs)

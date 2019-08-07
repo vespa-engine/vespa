@@ -30,59 +30,9 @@ Visitor::HitCounter::HitCounter(const document::OrderingSpecification* ordering)
 }
 
 void
-Visitor::HitCounter::addHit(const document::DocumentId& hit, uint32_t size)
+Visitor::HitCounter::addHit(const document::DocumentId& , uint32_t size)
 {
     bool firstPass = false;
-
-    if (_ordering && _ordering->getWidthBits() > 0
-        && hit.getScheme().getType() == document::IdString::ORDERDOC)
-    {
-        const document::OrderDocIdString& order(
-                static_cast<const document::OrderDocIdString&>(hit.getScheme()));
-
-        int32_t width = (1 << order.getWidthBits());
-        int32_t division = (1 << order.getDivisionBits());
-
-        if (_ordering->getOrder() == document::OrderingSpecification::ASCENDING) {
-            uint64_t upperLimit = UINT64_MAX;
-            if (_ordering->getOrderingStart() < upperLimit - (width - division)) {
-                upperLimit = _ordering->getOrderingStart() + width - division;
-            }
-            if (order.getOrdering() >= _ordering->getOrderingStart() &&
-                order.getOrdering() <= upperLimit) {
-                firstPass = true;
-                /*std::cerr << "First pass because ordering (+) "
-                          << order.getOrdering() << " is between "
-                          << _ordering->getOrderingStart()
-                          << " and " << upperLimit << "\n";*/
-            } else {
-                /*std::cerr << "Not first pass because ordering (+) "
-                          << order.getOrdering() << " is not between "
-                          << _ordering->getOrderingStart()
-                          << " and " << upperLimit << "\n";*/
-            }
-        } else {
-            uint64_t lowerLimit = 0;
-            if (_ordering->getOrderingStart() > (uint64_t)(width - division)) {
-                lowerLimit = _ordering->getOrderingStart() - (width - division);
-            }
-            if (order.getOrdering() <= _ordering->getOrderingStart() &&
-                order.getOrdering() >= lowerLimit) {
-                firstPass = true;
-                /*std::cerr << "First pass because ordering (-) "
-                          << order.getOrdering() << " is between "
-                          << lowerLimit << " and "
-                          << _ordering->getOrderingStart() << "\n";*/
-            } else {
-                /*std::cerr << "Not first pass because ordering (-) "
-                          << order.getOrdering() << " is not between "
-                          << lowerLimit << " and "
-                          << _ordering->getOrderingStart() << "\n";*/
-            }
-        }
-    } else {
-//        std::cerr << "Not counting first pass: " << _ordering->getWidthBits() << "\n";
-    }
 
     if (firstPass) {
         _firstPassHits++;

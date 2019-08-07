@@ -8,7 +8,6 @@
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/select/orderingselector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <iomanip>
@@ -649,55 +648,10 @@ VisitorOperation::pickTargetNode(
 }
 
 bool
-VisitorOperation::documentSelectionMayHaveOrdering() const
+VisitorOperation::parseDocumentSelection(DistributorMessageSender& )
 {
-    // FIXME: this is hairy and depends on opportunistic ordering
-    // parsing working fine even when no ordering is present.
-    return strcasestr(_msg->getDocumentSelection().c_str(), "order") != NULL;
-}
-
-void
-VisitorOperation::attemptToParseOrderingSelector()
-{
-    std::unique_ptr<document::select::Node> docSelection;
-    std::shared_ptr<const document::DocumentTypeRepo> repo(_owner.getTypeRepo());
-    document::select::Parser parser(
-            *repo, _owner.getBucketIdFactory());
-    docSelection = parser.parse(_msg->getDocumentSelection());
-    
-    document::OrderingSelector selector;
-    _ordering = selector.select(*docSelection, _msg->getVisitorOrdering());
-}
-
-bool
-VisitorOperation::parseDocumentSelection(DistributorMessageSender& sender)
-{
-    try{
-        if (documentSelectionMayHaveOrdering()) {
-            attemptToParseOrderingSelector();
-        }
-
-        if (!_ordering.get()) {
-            _ordering.reset(new document::OrderingSpecification());
-        }
-    } catch (document::DocumentTypeNotFoundException& e) {
-        std::ostringstream ost;
-        ost << "Failed to parse document select string '"
-            << _msg->getDocumentSelection() << "': " << e.getMessage();
-        LOG(warning, "CreateVisitor(%s): %s",
-            _msg->getInstanceId().c_str(), ost.str().c_str());
-
-        sendReply(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, ost.str()), sender);
-        return false;
-    } catch (document::select::ParsingFailedException& e) {
-        std::ostringstream ost;
-        ost << "Failed to parse document select string '"
-            << _msg->getDocumentSelection() << "': " << e.getMessage();
-        LOG(warning, "CreateVisitor(%s): %s",
-            _msg->getInstanceId().c_str(), ost.str().c_str());
-
-        sendReply(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, ost.str()), sender);
-        return false;
+    if (!_ordering.get()) {
+        _ordering.reset(new document::OrderingSpecification());
     }
 
     return true;

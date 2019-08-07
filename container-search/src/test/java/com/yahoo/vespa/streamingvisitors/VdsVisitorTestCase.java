@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
@@ -118,7 +117,6 @@ public class VdsVisitorTestCase {
         long to = 0;
         String loadTypeName = null;
         DocumentProtocol.Priority priority = null;
-        String ordering = null;
         int maxBucketsPerVisitor = 0;
 
         // Parameters in query object
@@ -143,7 +141,6 @@ public class VdsVisitorTestCase {
             to = 456;
             loadTypeName = "low";
             priority = DocumentProtocol.Priority.HIGH_2;
-            ordering = "-";
             maxBucketsPerVisitor = 2;
 
             defineGrouping = true;
@@ -202,9 +199,6 @@ public class VdsVisitorTestCase {
         if (qa.priority != null) {
             queryString.append("&streaming.priority=").append(qa.priority);
         }
-        if (qa.ordering != null) {
-            queryString.append("&streaming.ordering=").append(URLEncoder.encode(qa.ordering, "UTF-8"));
-        }
         if (qa.maxBucketsPerVisitor != 0) {
             queryString.append("&streaming.maxbucketspervisitor=").append(qa.maxBucketsPerVisitor);
         }
@@ -249,25 +243,14 @@ public class VdsVisitorTestCase {
                 assertEquals(DocumentProtocol.Priority.VERY_HIGH, params.getPriority());
             }
         }
-        if (qa.ordering != null) {
-            assertEquals(VdsVisitor.getOrdering(qa.ordering), params.getVisitorOrdering());
-            assertEquals(qa.offset+qa.hits, params.getMaxFirstPassHits());
-            if (qa.maxBucketsPerVisitor != 0) {
-                assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
-            } else {
-                assertEquals(1, params.getMaxBucketsPerVisitor());
-            }
-            assertEquals(true, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
+        assertEquals(0, params.getVisitorOrdering());
+        assertEquals(-1, params.getMaxFirstPassHits());
+        if (qa.maxBucketsPerVisitor != 0) {
+            assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
         } else {
-            assertEquals(0, params.getVisitorOrdering());
-            assertEquals(-1, params.getMaxFirstPassHits());
-            if (qa.maxBucketsPerVisitor != 0) {
-                assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
-            } else {
-                assertEquals(Integer.MAX_VALUE, params.getMaxBucketsPerVisitor());
-            }
-            assertEquals(false, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
+            assertEquals(Integer.MAX_VALUE, params.getMaxBucketsPerVisitor());
         }
+        assertEquals(false, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
 
         // Verify parameters based only on query
         assertEquals(qa.timeout*1000, params.getTimeoutMs(),0.0000001);
@@ -337,18 +320,6 @@ public class VdsVisitorTestCase {
     }
 
     @Test
-    public void testGetOrdering() {
-        assertEquals(OrderingSpecification.ASCENDING, VdsVisitor.getOrdering("+"));
-        assertEquals(OrderingSpecification.DESCENDING, VdsVisitor.getOrdering("-"));
-        try {
-            VdsVisitor.getOrdering("illegalValue");
-            assertTrue("Method expected to throw RuntimeException", false);
-        } catch (RuntimeException e) {
-            assertEquals("Ordering must be on the format {+/-}", e.getMessage());
-        }
-    }
-
-    @Test
     public void testBasics() throws Exception {
         Route route = Route.parse("storageClusterRouteSpec");
         String searchCluster = "searchClusterConfigId";
@@ -360,7 +331,7 @@ public class VdsVisitorTestCase {
 
         // Groupdoc
         qa.groupName = "group";
-        qa.maxBucketsPerVisitor = 2; // default ordering, non-default maxBucketsPerVisitor
+        qa.maxBucketsPerVisitor = 2; // non-default maxBucketsPerVisitor
         qa.loadTypeName = "normal"; // non-default loadTypeName, default priority
         verifyVisitorOk(factory, qa, route, searchCluster);
 
@@ -368,17 +339,6 @@ public class VdsVisitorTestCase {
         verifyVisitorOk(factory, qa, route, searchCluster);
 
         qa.priority = DocumentProtocol.Priority.NORMAL_2; // unknown loadTypeName, non-default priority
-        verifyVisitorOk(factory, qa, route, searchCluster);
-
-        // Orderdoc
-        qa.groupName = null;
-        qa.selection = "id.group==\"group1\" and id.order(3,1)>=0";
-        qa.ordering = "+"; // non-default ordering, default maxBucketsPerVisitor
-        qa.maxBucketsPerVisitor = 0;
-        qa.loadTypeName = null; // default loadTypeName, non-default priority
-        verifyVisitorOk(factory, qa, route, searchCluster);
-        qa.selection = "";
-
         verifyVisitorOk(factory, qa, route, searchCluster);
 
         // Userdoc and lots of non-default parameters

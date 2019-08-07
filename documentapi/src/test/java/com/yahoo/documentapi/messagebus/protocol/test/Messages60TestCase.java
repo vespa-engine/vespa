@@ -12,7 +12,6 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.idstring.IdString;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage;
@@ -208,7 +207,6 @@ public class Messages60TestCase extends MessagesTestBase {
             msg.getBuckets().add(new BucketId(16, 1234));
             msg.setVisitRemoves(true);
             msg.setFieldSet("foo bar");
-            msg.setVisitorOrdering(OrderingSpecification.DESCENDING);
             msg.setMaxBucketsPerVisitor(2);
             msg.setBucketSpace(BUCKET_SPACE);
             assertEquals(BASE_MESSAGE_LENGTH + 178 + serializedLength(BUCKET_SPACE), serialize("CreateVisitorMessage", msg));
@@ -228,7 +226,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(new BucketId(16, 1234), msg.getBuckets().iterator().next());
                 assertEquals("somevalue", Utf8.toString(msg.getParameters().get("myvar")));
                 assertEquals("34", Utf8.toString(msg.getParameters().get("anothervar")));
-                assertEquals(OrderingSpecification.DESCENDING, msg.getVisitorOrdering());
                 assertEquals(2, msg.getMaxBucketsPerVisitor());
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }

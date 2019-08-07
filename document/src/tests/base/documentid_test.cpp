@@ -36,16 +36,6 @@ void checkUser(const string &id, int64_t user_id) {
     EXPECT_EQUAL(user_id, getAs<IdType>(doc_id).getUserId());
 }
 
-void checkOrdering(const string &id, uint64_t ordering) {
-    DocumentId doc_id(id);
-    EXPECT_EQUAL(ordering, getAs<OrderDocIdString>(doc_id).getOrdering());
-}
-
-void checkGroup(const string &id, const string &group) {
-    DocumentId doc_id(id);
-    EXPECT_EQUAL(group, getAs<GroupDocIdString>(doc_id).getGroup());
-}
-
 void checkType(const string &id, const string &doc_type) {
     DocumentId doc_id(id);
     ASSERT_TRUE(doc_id.hasDocType());
@@ -55,26 +45,6 @@ void checkType(const string &id, const string &doc_type) {
 TEST("require that doc id can be parsed") {
     const string id = "doc:" + ns + ":" + ns_id;
     checkId(id, IdString::DOC, ns, ns_id);
-}
-
-TEST("require that userdoc id can be parsed") {
-    const string id = "userdoc:" + ns + ":1234:" + ns_id;
-    checkId(id, IdString::USERDOC, ns, ns_id);
-    checkUser<UserDocIdString>(id, 1234);
-}
-
-TEST("require that orderdoc id can be parsed") {
-    const string id = "orderdoc(31,19):" + ns + ":1234:1268182861:" + ns_id;
-    checkId(id, IdString::ORDERDOC, ns, ns_id);
-    checkUser<OrderDocIdString>(id, 1234);
-    checkOrdering(id, 1268182861);
-}
-
-TEST("require that groupdoc id can be parsed") {
-    const string group = "mygroup";
-    const string id = "groupdoc:" + ns + ":" + group + ":" + ns_id;
-    checkId(id, IdString::GROUPDOC, ns, ns_id);
-    checkGroup(id, group);
 }
 
 TEST("require that id id can be parsed") {
@@ -92,16 +62,6 @@ TEST("require that we allow ':' in namespace specific part") {
     id="doc:" + ns + ":" + nss;
     checkId(id, IdString::DOC, ns, nss);
 
-    id="userdoc:" + ns + ":123:" + nss;
-    checkId(id, IdString::USERDOC, ns, nss);
-    checkUser<UserDocIdString>(id, 123);
-
-    id="groupdoc:" + ns + ":123:" + nss;
-    checkId(id, IdString::GROUPDOC, ns, nss);
-    checkGroup(id, "123");
-
-    id="orderdoc(5,2):" + ns + ":42:007:" + nss;
-    checkId(id, IdString::ORDERDOC, ns, nss);
 }
 
 TEST("require that id id can specify location") {
@@ -208,30 +168,11 @@ TEST("require that id strings reports features (hasNumber, hasGroup)") {
     EXPECT_EQUAL(42u, user.getScheme().getNumber());
     EXPECT_EQUAL("foo", user.getScheme().getNamespaceSpecific());
 
-    user = DocumentId("userdoc:ns:42:foo");
-    EXPECT_TRUE(user.getScheme().hasNumber());
-    EXPECT_FALSE(user.getScheme().hasGroup());
-    EXPECT_EQUAL(42u, user.getScheme().getNumber());
-    EXPECT_EQUAL("foo", user.getScheme().getNamespaceSpecific());
-
     DocumentId group("id:ns:type:g=mygroup:foo");
     EXPECT_FALSE(group.getScheme().hasNumber());
     EXPECT_TRUE(group.getScheme().hasGroup());
     EXPECT_EQUAL("mygroup", group.getScheme().getGroup());
     EXPECT_EQUAL("foo", group.getScheme().getNamespaceSpecific());
-
-    group = DocumentId("groupdoc:ns:mygroup:foo");
-    EXPECT_FALSE(group.getScheme().hasNumber());
-    EXPECT_TRUE(group.getScheme().hasGroup());
-    EXPECT_EQUAL("mygroup", group.getScheme().getGroup());
-    EXPECT_EQUAL("foo", group.getScheme().getNamespaceSpecific());
-
-    DocumentId order("orderdoc(5,2):ns:42:007:foo");
-    EXPECT_TRUE(order.getScheme().hasNumber());
-    EXPECT_TRUE(order.getScheme().hasGroup());
-    EXPECT_EQUAL(42u, order.getScheme().getNumber());
-    EXPECT_EQUAL("42", order.getScheme().getGroup());
-    EXPECT_EQUAL("foo", order.getScheme().getNamespaceSpecific());
 }
 
 }  // namespace

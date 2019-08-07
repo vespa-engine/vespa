@@ -313,27 +313,6 @@ TEST_F(VisitorOperationTest, distributor_not_ready) {
               runEmptyVisitor(createVisitorCommand("notready", id, nullId)));
 }
 
-// Distributor only parses selection if in the order doc case (which is detected
-// by first checking if string contains "order" which it must to refer to
-// "id.order" !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-TEST_F(VisitorOperationTest, invalid_order_doc_selection) {
-    enableDistributorClusterState("distributor:1 storage:1");
-    document::BucketId id(0x400000000000007b);
-    addNodesToBucketDB(id, "0=1/1/1/t");
-
-    auto res = runEmptyVisitor(
-            createVisitorCommand("invalidOrderDoc", id, nullId, 8, 500,
-                                 false, false, "dumpvisitor",
-                                 document::OrderingSpecification::ASCENDING,
-                                 "id.order(10,3)=1 and dummy"));
-    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
-              "ReturnCode(ILLEGAL_PARAMETERS, Failed to parse document select "
-              "string 'id.order(10,3)=1 and dummy': Document type 'dummy' not "
-              "found at column 22 when parsing selection 'id.order(10,3)=1 and dummy')",
-              res);
-
-}
-
 TEST_F(VisitorOperationTest, non_existing_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
     enableDistributorClusterState("distributor:1 storage:1");
@@ -1162,66 +1141,6 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket, std::stri
     }
 
     out = ost.str();
-}
-
-TEST_F(VisitorOperationTest, user_visitor_order) {
-    enableDistributorClusterState("distributor:1 storage:1");
-
-    // Create buckets in bucketdb
-    std::vector<document::BucketId> buckets;
-    document::BucketId id000(35, 0x0000004d2);
-    buckets.push_back(id000);
-    document::BucketId id001(35, 0x4000004d2);
-    buckets.push_back(id001);
-    document::BucketId id01(34, 0x2000004d2);
-    buckets.push_back(id01);
-    document::BucketId id1(33, 0x1000004d2);
-    buckets.push_back(id1);
-
-    for (uint32_t i=0; i<buckets.size(); i++) {
-        addNodesToBucketDB(buckets[i], "0=1/1/1/t");
-    }
-
-    document::BucketId id(16, 0x04d2);
-
-    std::string res;
-    ASSERT_NO_FATAL_FAILURE(doOrderedVisitor(id, res));
-    EXPECT_EQ("BucketId(0x88000002000004d2)\n"
-              "BucketId(0x8c000004000004d2)\n"
-              "BucketId(0x8c000000000004d2)\n"
-              "BucketId(0x84000001000004d2)\n",
-              res);
-}
-
-TEST_F(VisitorOperationTest, user_visitor_order_split_past_order_bits) {
-    enableDistributorClusterState("distributor:1 storage:1");
-
-    // Create buckets in bucketdb
-    std::vector<document::BucketId> buckets;
-    document::BucketId id1(33, 0x1000004d2);
-    buckets.push_back(id1);
-    document::BucketId id01(34, 0x2000004d2);
-    buckets.push_back(id01);
-    document::BucketId id00001(37, 0x10000004d2);
-    buckets.push_back(id00001);
-    document::BucketId id00000(37, 0x00000004d2);
-    buckets.push_back(id00000);
-    document::BucketId id0000(36, 0x0000004d2);
-    buckets.push_back(id0000);
-    for (uint32_t i=0; i<buckets.size(); i++) {
-        addNodesToBucketDB(buckets[i], "0=1/1/1/t");
-    }
-
-    document::BucketId id(16, 0x04d2);
-
-    std::string res;
-    ASSERT_NO_FATAL_FAILURE(doOrderedVisitor(id, res));
-    EXPECT_EQ("BucketId(0x88000002000004d2)\n"
-              "BucketId(0x90000000000004d2)\n"
-              "BucketId(0x94000000000004d2)\n"
-              "BucketId(0x94000010000004d2)\n"
-              "BucketId(0x84000001000004d2)\n",
-              res);
 }
 
 std::unique_ptr<VisitorOperation>

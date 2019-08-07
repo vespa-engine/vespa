@@ -20,7 +20,7 @@ public:
     typedef std::unique_ptr<IdString> UP;
     typedef vespalib::CloneablePtr<IdString> CP;
     typedef uint64_t LocationType;
-    enum Type { DOC=0, USERDOC, GROUPDOC, ORDERDOC, ID, NULLID };
+    enum Type { DOC=0, USERDOC, GROUPDOC, ID, NULLID };
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
@@ -162,38 +162,6 @@ private:
     vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
 
     int64_t _userId;
-};
-
-/**
- * \class document::OrderDocIdString
- * \ingroup base
- * \brief Scheme for distributing documents based on a group and a parametrized ordering.
- */
-class OrderDocIdString final : public IdString {
-public:
-    OrderDocIdString(vespalib::stringref rawId);
-
-    int64_t  getUserId() const { return _location; }
-    uint16_t getWidthBits() const { return _widthBits; }
-    uint16_t getDivisionBits() const { return _divisionBits; }
-    uint64_t getOrdering() const { return _ordering; }
-    std::pair<int16_t, int64_t> getGidBitsOverride() const override;
-    vespalib::string getSchemeName() const override;
-    bool hasNumber() const override { return true; }
-    uint64_t getNumber() const override { return _location; }
-    bool hasGroup() const override { return true; }
-    vespalib::stringref getGroup() const override { return getComponent(1); }
-
-private:
-    LocationType getLocation() const override { return _location; }
-    OrderDocIdString* clone() const override { return new OrderDocIdString(*this); }
-    Type getType() const override { return ORDERDOC; }
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(3); }
-
-    LocationType _location;
-    uint16_t _widthBits;
-    uint16_t _divisionBits;
-    uint64_t _ordering;
 };
 
 /**

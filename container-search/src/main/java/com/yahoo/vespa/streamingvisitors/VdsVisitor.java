@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.DocumentAccess;
@@ -62,7 +61,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private static final CompoundName streamingTotimestamp=new CompoundName("streaming.totimestamp");
     private static final CompoundName streamingLoadtype=new CompoundName("streaming.loadtype");
     private static final CompoundName streamingPriority=new CompoundName("streaming.priority");
-    private static final CompoundName streamingOrdering=new CompoundName("streaming.ordering");
     private static final CompoundName streamingMaxbucketspervisitor=new CompoundName("streaming.maxbucketspervisitor");
 
     private static final Logger log = Logger.getLogger(VdsVisitor.class.getName());
@@ -74,16 +72,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private final Map<Integer, Grouping> groupingMap = new ConcurrentHashMap<>();
     private Query query = null;
     private VisitorSessionFactory visitorSessionFactory;
-
-    static int getOrdering(String ordering) {
-        if (ordering.equals("+")) {
-            return OrderingSpecification.ASCENDING;
-        } else if (ordering.equals("-")) {
-            return OrderingSpecification.DESCENDING;
-        } else {
-            throw new RuntimeException("Ordering must be on the format {+/-}");
-        }
-    }
 
     public interface VisitorSessionFactory {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
@@ -209,14 +197,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         params.setMaxBucketsPerVisitor(Integer.MAX_VALUE);
         params.setTraceLevel(inferSessionTraceLevel(query));
 
-
-        String ordering = query.properties().getString(streamingOrdering);
-        if (ordering != null) {
-            params.setVisitorOrdering(getOrdering(ordering));
-            params.setMaxFirstPassHits(query.getOffset() + query.getHits());
-            params.setMaxBucketsPerVisitor(1);
-            params.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
-        }
 
         String maxbuckets = query.properties().getString(streamingMaxbucketspervisitor);
         if (maxbuckets != null) {

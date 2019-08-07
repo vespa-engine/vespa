@@ -26,12 +26,6 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
         writeGlobalIdBucketId(ost, "doc:ns:specific");
         writeGlobalIdBucketId(ost, "doc:another:specific");
         writeGlobalIdBucketId(ost, "doc:ns:another");
-        writeGlobalIdBucketId(ost, "userdoc:ns:100:specific");
-        writeGlobalIdBucketId(ost, "userdoc:np:100:another");
-        writeGlobalIdBucketId(ost, "userdoc:ns:101:specific");
-        writeGlobalIdBucketId(ost, "groupdoc:ns:agroup:specific");
-        writeGlobalIdBucketId(ost, "groupdoc:np:agroup:another");
-        writeGlobalIdBucketId(ost, "groupdoc:ns:another:specific");
         for (uint32_t i=0; i<20; ++i) {
             std::ostringstream ost2;
             ost2 << i;
