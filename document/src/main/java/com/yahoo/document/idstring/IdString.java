@@ -38,11 +38,6 @@ public abstract class IdString {
         return "";
     }
 
-    public class GidModifier {
-        public int usedBits;
-        public long value;
-    }
-
     public enum Scheme { doc, userdoc, groupdoc, id }
     private final Scheme scheme;
     private final String namespace;
@@ -90,7 +85,6 @@ public abstract class IdString {
         String namespace;
         long userId;
         String group;
-        long ordering;
 
         int schemePos = id.indexOf(":");
         if (schemePos < 0) {
@@ -131,7 +125,7 @@ public abstract class IdString {
             currPos = colonPos + 1;
             return new IdIdString(namespace, type, keyValues, id.substring(currPos));
 
-        } if (schemeStr.equals("doc")) {
+        } else if (schemeStr.equals("doc")) {
             return new DocIdString(namespace, id.substring(currPos));
         } else if (schemeStr.equals("userdoc")) {
             colonPos = id.indexOf(":", currPos);
@@ -175,7 +169,6 @@ public abstract class IdString {
     public abstract long getLocation();
     public String getSchemeParameters() { return ""; }
     public abstract String getSchemeSpecific();
-    public GidModifier getGidModifier() { return null; }
 
     public boolean equals(Object o) {
         return (o instanceof IdString && o.toString().equals(toString()));
