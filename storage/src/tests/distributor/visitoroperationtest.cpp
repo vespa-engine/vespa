@@ -51,8 +51,6 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
                          bool visitInconsistentBuckets = false,
                          bool visitRemoves = false,
                          std::string libraryName = "dumpvisitor",
-                         document::OrderingSpecification::Order visitorOrdering =
-                         document::OrderingSpecification::ASCENDING,
                          const std::string& docSelection = "")
     {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(
@@ -75,7 +73,6 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
         if (visitInconsistentBuckets) {
             cmd->setVisitInconsistentBuckets();
         }
-        cmd->setVisitorOrdering(visitorOrdering);
         return cmd;
     }
 
@@ -141,7 +138,6 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
                            document::BucketId lastId,
                            uint32_t maxBuckets);
 
-    void doOrderedVisitor(document::BucketId startBucket, std::string& out);
 
     void doStandardVisitTest(const std::string& clusterState);
 
@@ -339,7 +335,6 @@ TEST_F(VisitorOperationTest, user_single_bucket) {
             false,
             false,
             "dumpvisitor",
-            document::OrderingSpecification::ASCENDING,
             "true"));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -365,7 +360,6 @@ VisitorOperationTest::runVisitor(document::BucketId id,
                 false,
                 false,
                 "dumpvisitor",
-                document::OrderingSpecification::ASCENDING,
                 "true"));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -617,7 +611,6 @@ TEST_F(VisitorOperationTest, bucket_high_bit_count) {
                 false,
                 false,
                 "dumpvisitor",
-                document::OrderingSpecification::ASCENDING,
                 "true"));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -644,7 +637,6 @@ TEST_F(VisitorOperationTest, bucket_low_bit_count) {
                 false,
                 false,
                 "dumpvisitor",
-                document::OrderingSpecification::ASCENDING,
                 "true"));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -938,43 +930,6 @@ TEST_F(VisitorOperationTest, failure_on_all_nodes) {
     // client, not the ones sent from the content nodes to the distributor.
 }
 
-TEST_F(VisitorOperationTest, visit_order) {
-    std::vector<document::BucketId> buckets;
-
-    document::BucketId id000(35, 0x0000004d2);
-    buckets.push_back(id000);
-    document::BucketId id001(35, 0x4000004d2);
-    buckets.push_back(id001);
-    document::BucketId id01(34, 0x2000004d2);
-    buckets.push_back(id01);
-    document::BucketId id1(33, 0x1000004d2);
-    buckets.push_back(id1);
-
-    std::sort(buckets.begin(),
-              buckets.end(),
-              VisitorOrder(document::OrderingSpecification(
-                  document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(id000, id001, id01, id1));
-
-    std::sort(buckets.begin(),
-              buckets.end(),
-              VisitorOrder(document::OrderingSpecification(
-                  document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(id1, id01, id001, id000));
-
-    std::sort(buckets.begin(),
-              buckets.end(),
-              VisitorOrder(document::OrderingSpecification(
-                  document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(id01, id1, id000, id001));
-
-    std::sort(buckets.begin(),
-              buckets.end(),
-              VisitorOrder(document::OrderingSpecification(
-                  document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(id01, id001, id000, id1));
-}
-
 TEST_F(VisitorOperationTest, visit_in_chunks) {
     enableDistributorClusterState("distributor:1 storage:1");
 
@@ -1016,131 +971,6 @@ TEST_F(VisitorOperationTest, visit_in_chunks) {
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
               "ReturnCode(NONE)",
               val.second);
-}
-
-TEST_F(VisitorOperationTest, visit_order_split_past_order_bits) {
-    std::vector<document::BucketId> buckets;
-
-    document::BucketId max(INT_MAX);
-    buckets.push_back(max);
-    document::BucketId id1(33, 0x1000004d2);
-    buckets.push_back(id1);
-    document::BucketId id01(34, 0x2000004d2);
-    buckets.push_back(id01);
-    document::BucketId id00001(37, 0x10000004d2);
-    buckets.push_back(id00001);
-    document::BucketId id00000(37, 0x00000004d2);
-    buckets.push_back(id00000);
-    document::BucketId id0000(36, 0x0000004d2);
-    buckets.push_back(id0000);
-    document::BucketId null(0, 0);
-    buckets.push_back(null);
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, id0000, id00000, id00001, id01, id1, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, id1, id01, id0000, id00000, id00001, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, id01, id1, id0000, id00000, id00001, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, id01, id0000, id00000, id00001, id1, max));
-}
-
-TEST_F(VisitorOperationTest, visit_order_inconsistently_split) {
-    std::vector<document::BucketId> buckets;
-
-    document::BucketId max(INT_MAX);
-    buckets.push_back(max);
-    document::BucketId id000(35, 0x0000004d2);
-    buckets.push_back(id000);
-    document::BucketId id001(35, 0x4000004d2);
-    buckets.push_back(id001);
-    document::BucketId id01(34, 0x2000004d2);
-    buckets.push_back(id01);
-    document::BucketId id1(33, 0x1000004d2);
-    buckets.push_back(id1);
-    document::BucketId idsuper(16, 0x04d2);
-    buckets.push_back(idsuper);
-    document::BucketId null(0, 0);
-    buckets.push_back(null);
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x0, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id000, id001, id01, id1, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0xFF, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id1, id01, id001, id000, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::ASCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id01, id1, id000, id001, max));
-
-    std::sort(buckets.begin(), buckets.end(), VisitorOrder(
-            document::OrderingSpecification(document::OrderingSpecification::DESCENDING, 0x14, 6, 2)));
-    EXPECT_THAT(buckets, ElementsAre(null, idsuper, id01, id001, id000, id1, max));
-}
-
-void
-VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket, std::string& out)
-{
-    std::vector<document::BucketId> buckets;
-
-    while (true) {
-        _sender.clear();
-
-        auto op = createOpWithDefaultConfig(
-                createVisitorCommand(
-                    "uservisitororder",
-                    startBucket,
-                    buckets.size() ? buckets[buckets.size() - 1] :
-                    nullId,
-                    1,
-                    500,
-                    false,
-                    false,
-                    "dumpvisitor",
-                    document::OrderingSpecification::DESCENDING,
-                    "id.order(6,2)<= 20"));
-
-        op->start(_sender, framework::MilliSecTime(0));
-
-        ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
-
-        for (uint32_t i = 0; i < _sender.commands().size(); ++i) {
-            const api::CreateVisitorCommand cmd(
-                    static_cast<const api::CreateVisitorCommand&>(
-                            *_sender.command(i)));
-
-            for (uint32_t j = 0; j < cmd.getBuckets().size(); ++j) {
-                buckets.push_back(cmd.getBuckets()[j]);
-            }
-        }
-
-        sendReply(*op);
-
-        ASSERT_EQ(1, _sender.replies().size());
-
-        auto& reply = dynamic_cast<const api::CreateVisitorReply&>(*_sender.reply(0));
-
-        if (reply.getLastBucket() == document::BucketId(0x000000007fffffff)) {
-            break;
-        }
-    }
-
-    std::ostringstream ost;
-    for (uint32_t i = 0; i < buckets.size(); ++i) {
-        ost << buckets[i] << "\n";
-    }
-
-    out = ost.str();
 }
 
 std::unique_ptr<VisitorOperation>

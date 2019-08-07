@@ -40,7 +40,6 @@ private:
     bool _visitInconsistentBuckets;
     vdslib::Parameters _params;
     uint32_t _version;
-    document::OrderingSpecification::Order _ordering;
     uint32_t _maxBucketsPerVisitor;
 
 protected:
@@ -100,9 +99,6 @@ public:
 
     Timestamp getToTimestamp() const { return _toTime; };
     void setToTimestamp(Timestamp to) { _toTime = to; };
-
-    document::OrderingSpecification::Order getVisitorOrdering() const { return _ordering; }
-    void setVisitorOrdering(document::OrderingSpecification::Order ordering) { _ordering = ordering; }
 
     uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
     void setMaxBucketsPerVisitor(uint32_t max) { _maxBucketsPerVisitor = max; }
