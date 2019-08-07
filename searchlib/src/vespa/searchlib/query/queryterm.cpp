@@ -251,7 +251,7 @@ void
 QueryTermBase::visitMembers(vespalib::ObjectVisitor & visitor) const
 {
     QueryTermSimple::visitMembers(visitor);
-    visit(visitor, "termlength", _cachedTermLen);
+    visit(visitor, "termlength", static_cast<uint64_t>(_cachedTermLen));
 }
 
 void
