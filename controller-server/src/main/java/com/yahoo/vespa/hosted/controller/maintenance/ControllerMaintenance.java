@@ -5,12 +5,10 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.*;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -55,6 +53,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ResourceMeterMaintainer resourceMeterMaintainer;
     private final NameServiceDispatcher nameServiceDispatcher;
     private final BillingMaintainer billingMaintainer;
+    private final AwsEventReporterMaintainer awsEventReporterMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -65,7 +64,9 @@ public class ControllerMaintenance extends AbstractComponent {
                                  CostReportConsumer reportConsumer,
                                  ResourceSnapshotConsumer resourceSnapshotConsumer,
                                  Billing billing,
-                                 SelfHostedCostConfig selfHostedCostConfig) {
+                                 SelfHostedCostConfig selfHostedCostConfig,
+                                 IssueHandler issueHandler,
+                                 AwsEventFetcher awsEventFetcher) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -88,6 +89,7 @@ public class ControllerMaintenance extends AbstractComponent {
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepository, Clock.systemUTC(), metric, resourceSnapshotConsumer);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
+        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -117,6 +119,7 @@ public class ControllerMaintenance extends AbstractComponent {
         resourceMeterMaintainer.deconstruct();
         nameServiceDispatcher.deconstruct();
         billingMaintainer.deconstruct();
+        awsEventReporterMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
