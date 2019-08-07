@@ -74,7 +74,6 @@ public class DocumentSelectorTestCase {
         assertParse("id.namespace = \"*\"");
         assertParse("id.hash() > 0");
         assertParse("id.namespace.hash() > 0");
-        assertParse("id.order(5,2) > 100");
         assertParse("music.artist = \"*\"");
         assertParse("music.artist.lowercase() = \"*\"");
         assertParse("music_.artist = \"*\"");
@@ -330,7 +329,6 @@ public class DocumentSelectorTestCase {
         documents.add(createDocument("doc:anotherspace:foo", 13, 4.1f, "bar", "foo"));
         documents.add(createDocument("userdoc:myspace:1234:mail1", 15, 1.0f, "some", "some"));
         documents.add(createDocument("userdoc:myspace:5678:bar", 14, 2.4f, "Yet", "More"));
-        documents.add(createDocument("orderdoc(31,19):ns2:1234:5678:foo", 14, 2.4f, "Yet", "More"));
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("doc:myspace:missingint", null, 2.0f, null, "bar"));
@@ -354,16 +352,14 @@ public class DocumentSelectorTestCase {
         documents.get(1).getDocument().setFieldValue("structarray", aval);
 
         MapFieldValue<IntegerFieldValue, StringFieldValue> mval =
-                new MapFieldValue<>((MapDataType)documents.get(1).getDocument().getField("mymap")
-                                                                                             .getDataType());
+                new MapFieldValue<>((MapDataType)documents.get(1).getDocument().getField("mymap").getDataType());
         mval.put(new IntegerFieldValue(3), new StringFieldValue("a"));
         mval.put(new IntegerFieldValue(5), new StringFieldValue("b"));
         mval.put(new IntegerFieldValue(7), new StringFieldValue("c"));
         documents.get(1).getDocument().setFieldValue("mymap", mval);
 
         MapFieldValue<StringFieldValue, Array> amval =
-                new MapFieldValue<>((MapDataType)documents.get(1).getDocument().getField("structarrmap")
-                                                                                 .getDataType());
+                new MapFieldValue<>((MapDataType)documents.get(1).getDocument().getField("structarrmap").getDataType());
         amval.put(new StringFieldValue("foo"), aval);
 
         Array<Struct> abval = new Array<>(documents.get(1).getDocument().getField("structarray").getDataType());
@@ -381,8 +377,7 @@ public class DocumentSelectorTestCase {
         amval.put(new StringFieldValue("bar"), abval);
         documents.get(1).getDocument().setFieldValue("structarrmap", amval);
 
-        WeightedSet<StringFieldValue> wsval = new WeightedSet<>(documents.get(1).getDocument().getField("stringweightedset")
-                                                                     .getDataType());
+        WeightedSet<StringFieldValue> wsval = new WeightedSet<>(documents.get(1).getDocument().getField("stringweightedset").getDataType());
         wsval.add(new StringFieldValue("foo"));
         wsval.add(new StringFieldValue("val1"));
         wsval.add(new StringFieldValue("val2"));
@@ -396,16 +391,14 @@ public class DocumentSelectorTestCase {
         Array aval2 = new Array(documents.get(2).getDocument().getField("structarray").getDataType());
         documents.get(2).getDocument().setFieldValue("structarray", aval2);
 
-        Array<IntegerFieldValue> intvals1 = new Array<>(documents.get(0).getDocument().getField("intarray")
-                                                                                  .getDataType());
+        Array<IntegerFieldValue> intvals1 = new Array<>(documents.get(0).getDocument().getField("intarray").getDataType());
         intvals1.add(new IntegerFieldValue(12));
         intvals1.add(new IntegerFieldValue(40));
         intvals1.add(new IntegerFieldValue(60));
         intvals1.add(new IntegerFieldValue(84));
         documents.get(0).getDocument().setFieldValue("intarray", intvals1);
 
-        Array<IntegerFieldValue> intvals2 = new Array<>(documents.get(1).getDocument().getField("intarray")
-                                                                                  .getDataType());
+        Array<IntegerFieldValue> intvals2 = new Array<>(documents.get(1).getDocument().getField("intarray").getDataType());
         intvals2.add(new IntegerFieldValue(3));
         intvals2.add(new IntegerFieldValue(56));
         intvals2.add(new IntegerFieldValue(23));
@@ -485,18 +478,19 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.TRUE, evaluate("test.hint + 1 > 13", documents.get(1)));
         // Case where field is not present (i.e. null) is defined for (in)equality comparisons, but
         // not for other relations.
-        assertEquals(Result.TRUE, evaluate("test.hint != 1234", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("test.hint == 1234", documents.get(7)));
-        assertEquals(Result.INVALID, evaluate("test.hint < 1234", documents.get(7)));
+        DocumentPut doc1234 = documents.get(6);
+        assertEquals(Result.TRUE, evaluate("test.hint != 1234", doc1234));
+        assertEquals(Result.FALSE, evaluate("test.hint == 1234", doc1234));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234", doc1234));
         // Propagation of Invalid through logical operators should match C++ implementation
-        assertEquals(Result.FALSE, evaluate("test.hint < 1234 and false", documents.get(7)));
-        assertEquals(Result.INVALID, evaluate("test.hint < 1234 and true", documents.get(7)));
-        assertEquals(Result.TRUE, evaluate("test.hint < 1234 or true", documents.get(7)));
-        assertEquals(Result.INVALID, evaluate("test.hint < 1234 or false", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint < 1234 and false", doc1234));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234 and true", doc1234));
+        assertEquals(Result.TRUE, evaluate("test.hint < 1234 or true", doc1234));
+        assertEquals(Result.INVALID, evaluate("test.hint < 1234 or false", doc1234));
         // Must be possible to predicate a sub-expression on the presence of a field without
         // propagating up an Invalid value from the comparison.
-        assertEquals(Result.FALSE, evaluate("test.hint and test.hint < 1234", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("test.hint != null and test.hint < 1234", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint and test.hint < 1234", doc1234));
+        assertEquals(Result.FALSE, evaluate("test.hint != null and test.hint < 1234", doc1234));
 
         // Document types.
         assertEquals(Result.TRUE, evaluate("test", documents.get(0)));
@@ -508,23 +502,23 @@ public class DocumentSelectorTestCase {
         // Field existence
         assertEquals(Result.TRUE, evaluate("test.hint", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.hstring", documents.get(0)));
-        assertEquals(Result.FALSE, evaluate("test.hint", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("test.hstring", documents.get(7)));
-        assertEquals(Result.TRUE, evaluate("not test.hint", documents.get(7)));
-        assertEquals(Result.TRUE, evaluate("not test.hstring", documents.get(7)));
+        assertEquals(Result.FALSE, evaluate("test.hint", doc1234));
+        assertEquals(Result.FALSE, evaluate("test.hstring", doc1234));
+        assertEquals(Result.TRUE, evaluate("not test.hint", doc1234));
+        assertEquals(Result.TRUE, evaluate("not test.hstring", doc1234));
 
         assertEquals(Result.TRUE, evaluate("test.hint != null", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("null != test.hint", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("test.hint == null", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("null == test.hint", documents.get(0)));
-        assertEquals(Result.TRUE, evaluate("null == test.hint", documents.get(7)));
-        assertEquals(Result.TRUE, evaluate("test.hint == null", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("test.hint != null", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("null != test.hint", documents.get(7)));
+        assertEquals(Result.TRUE, evaluate("null == test.hint", doc1234));
+        assertEquals(Result.TRUE, evaluate("test.hint == null", doc1234));
+        assertEquals(Result.FALSE, evaluate("test.hint != null", doc1234));
+        assertEquals(Result.FALSE, evaluate("null != test.hint", doc1234));
 
-        assertEquals(Result.TRUE, evaluate("test.hint or true", documents.get(7)));
-        assertEquals(Result.TRUE, evaluate("not test.hint and true", documents.get(7)));
-        assertEquals(Result.FALSE, evaluate("not test.hint and false", documents.get(7)));
+        assertEquals(Result.TRUE, evaluate("test.hint or true", doc1234));
+        assertEquals(Result.TRUE, evaluate("not test.hint and true", doc1234));
+        assertEquals(Result.FALSE, evaluate("not test.hint and false", doc1234));
 
         // Id values.
         assertEquals(Result.TRUE, evaluate("id == \"doc:myspace:anything\"", documents.get(0)));
@@ -532,16 +526,14 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("id == \"doc:myspa:nything\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("Id.scHeme == \"doc\"", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("id.scheme == \"userdoc\"", documents.get(0)));
-        assertEquals(Result.TRUE, evaluate("id.type == \"test\"", documents.get(5)));
-        assertEquals(Result.FALSE, evaluate("id.type == \"wrong\"", documents.get(5)));
+        assertEquals(Result.TRUE, evaluate("id.type == \"test\"", documents.get(4)));
+        assertEquals(Result.FALSE, evaluate("id.type == \"wrong\"", documents.get(4)));
         assertEquals(Result.TRUE, evaluate("Id.namespaCe == \"myspace\"", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("id.NaMespace == \"pace\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("id.specific == \"anything\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("id.user=1234", documents.get(2)));
-        assertEquals(Result.TRUE, evaluate("id.user=1234", documents.get(4)));
-        assertEquals(Result.TRUE, evaluate("id.group=\"1234\"", documents.get(4)));
-        assertEquals(Result.TRUE, evaluate("id.user=2345", documents.get(5)));
-        assertEquals(Result.TRUE, evaluate("id.group=\"mygroup\"", documents.get(6)));
+        assertEquals(Result.TRUE, evaluate("id.user=2345", documents.get(4)));
+        assertEquals(Result.TRUE, evaluate("id.group=\"mygroup\"", documents.get(5)));
 
         assertError("id.user == 1234", documents.get(0), "User identifier is null.");
         assertError("id.group == 1234", documents.get(3), "Group identifier is null.");
