@@ -198,10 +198,10 @@ void IdentifiableTest::testNboStream()
     }
     {
         nbostream s;
-        s << long(9);
+        s << int64_t(9);
         EXPECT_EQUAL(8u, s.size());
         EXPECT_EQUAL(0u, s.rp());
-        long a(7), b(1);
+        int64_t a(7), b(1);
         s >> a;
         EXPECT_EQUAL(0u, s.size());
         EXPECT_EQUAL(8u, s.rp());
