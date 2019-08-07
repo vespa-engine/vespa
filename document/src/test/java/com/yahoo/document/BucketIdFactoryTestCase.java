@@ -3,7 +3,7 @@ package com.yahoo.document;
 
 import com.yahoo.document.idstring.DocIdString;
 import com.yahoo.document.idstring.GroupDocIdString;
-import com.yahoo.document.idstring.UserDocIdString;
+import com.yahoo.document.idstring.IdIdString;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -50,9 +50,9 @@ public class BucketIdFactoryTestCase {
         DocumentId doc1 = new DocumentId(new DocIdString("ns", "spec"));
         DocumentId doc2 = new DocumentId(new DocIdString("ns2", "spec"));
         DocumentId doc3 = new DocumentId(new DocIdString("ns", "spec2"));
-        DocumentId userDoc1 = new DocumentId(new UserDocIdString("ns", 0x12, "spec"));
-        DocumentId userDoc2 = new DocumentId(new UserDocIdString("ns2", 0x12, "spec2"));
-        DocumentId userDoc3 = new DocumentId(new UserDocIdString("ns", 0x13, "spec"));
+        DocumentId userDoc1 = new DocumentId(new IdIdString("ns", "mytype","n=18", "spec"));
+        DocumentId userDoc2 = new DocumentId(new IdIdString("ns", "mytype","n=18", "spec2"));
+        DocumentId userDoc3 = new DocumentId(new IdIdString("ns", "mytype","n=19", "spec"));
         DocumentId groupDoc1 = new DocumentId(new GroupDocIdString("ns", "yahoo.com", "spec"));
         DocumentId groupDoc2 = new DocumentId(new GroupDocIdString("ns2", "yahoo.com", "spec2"));
         DocumentId groupDoc3 = new DocumentId(new GroupDocIdString("ns", "yahoo", "spec"));
@@ -68,17 +68,17 @@ public class BucketIdFactoryTestCase {
         BucketId groupDocBucket2 = factory.getBucketId(groupDoc2);
         BucketId groupDocBucket3 = factory.getBucketId(groupDoc3);
 
-        assertEquals(new Hex(0xe99703f200000012l), new Hex(userDocBucket1.getRawId()));
-        assertEquals(new Hex(0xebfa518a00000012l), new Hex(userDocBucket2.getRawId()));
-        assertEquals(new Hex(0xeac1850800000013l), new Hex(userDocBucket3.getRawId()));
+        assertEquals(new Hex(0xeb3089a300000012L), new Hex(userDocBucket1.getRawId()));
+        assertEquals(new Hex(0xea780a8700000012L), new Hex(userDocBucket2.getRawId()));
+        assertEquals(new Hex(0xe80d16fc00000013L), new Hex(userDocBucket3.getRawId()));
 
-        assertEquals(new Hex(0xe90ce4b09a1acd50l), new Hex(groupDocBucket1.getRawId()));
-        assertEquals(new Hex(0xe9cedaa49a1acd50l), new Hex(groupDocBucket2.getRawId()));
-        assertEquals(new Hex(0xe8cdb18bafe81f24l), new Hex(groupDocBucket3.getRawId()));
+        assertEquals(new Hex(0xe90ce4b09a1acd50L), new Hex(groupDocBucket1.getRawId()));
+        assertEquals(new Hex(0xe9cedaa49a1acd50L), new Hex(groupDocBucket2.getRawId()));
+        assertEquals(new Hex(0xe8cdb18bafe81f24L), new Hex(groupDocBucket3.getRawId()));
 
-        assertEquals(new Hex(0xe980c9abd5fd8d11l), new Hex(docBucket1.getRawId()));
-        assertEquals(new Hex(0xeafe870c5f9c37b9l), new Hex(docBucket2.getRawId()));
-        assertEquals(new Hex(0xeaebe9473ecbcd69l), new Hex(docBucket3.getRawId()));
+        assertEquals(new Hex(0xe980c9abd5fd8d11L), new Hex(docBucket1.getRawId()));
+        assertEquals(new Hex(0xeafe870c5f9c37b9L), new Hex(docBucket2.getRawId()));
+        assertEquals(new Hex(0xeaebe9473ecbcd69L), new Hex(docBucket3.getRawId()));
     }
 
     //Actually a BucketId testcase ...
@@ -95,7 +95,7 @@ public class BucketIdFactoryTestCase {
 
     @Test
     public void testBidContainsDocId() {
-        DocumentId docId = new DocumentId("userdoc:recovery:18:99999");
+        DocumentId docId = new DocumentId("id:ns:recovery:n=18:99999");
         BucketIdFactory factory = new BucketIdFactory(32, 26, 6);
         BucketId bid = new BucketId(16, 0x12L);
         assert(bid.contains(docId, factory));

@@ -72,10 +72,6 @@ public class DocumentIdTestCase {
             //valid URIs
             new DocumentId("doc:blabla:something");
             new DocumentId("doc:doc:doc");
-            new DocumentId("userdoc:bla:2387:");
-            new DocumentId("userdoc:bar:0:");
-            new DocumentId("userdoc:bar:18446744073709551615:");
-            new DocumentId("userdoc:foo:15:bar");
             new DocumentId("id:namespace:type:n=42:whatever");
             new DocumentId("id:namespace:type::whatever");
         } catch (IllegalArgumentException iae) {
@@ -89,13 +85,6 @@ public class DocumentIdTestCase {
         checkInvalidUri("doc:::");
         checkInvalidUri("doc::/");
         checkInvalidUri("doc");
-        checkInvalidUri("userdoc:");
-        checkInvalidUri("userdoc::");
-        checkInvalidUri("userdoc:::");
-        checkInvalidUri("userdoc:::/");
-        checkInvalidUri("userdoc");
-        checkInvalidUri("userdoc:-87987//");
-        checkInvalidUri("userdoc:18446744073709551620/bar/");
         checkInvalidUri("id:namespace:type");
         checkInvalidUri("id:namespace:type:key-values");
         checkInvalidUri("id:namespace:type:n=0,n=1:foo");
@@ -218,11 +207,6 @@ public class DocumentIdTestCase {
         assertFalse(none.getScheme().hasNumber());
 
         DocumentId user = new DocumentId("id:ns:type:n=42:foo");
-        assertFalse(user.getScheme().hasGroup());
-        assertTrue(user.getScheme().hasNumber());
-        assertEquals(42, user.getScheme().getNumber());
-
-        user = new DocumentId("userdoc:ns:42:foo");
         assertFalse(user.getScheme().hasGroup());
         assertTrue(user.getScheme().hasNumber());
         assertEquals(42, user.getScheme().getNumber());

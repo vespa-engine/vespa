@@ -86,9 +86,9 @@ public class GlobalIdTestCase {
 
     @Test
     public void testToBucketId() {
-        verifyGidToBucketIdMapping("userdoc:ns:1:abc");
-        verifyGidToBucketIdMapping("userdoc:ns:1000:abc");
-        verifyGidToBucketIdMapping("userdoc:hsgf:18446744073700000000:dfdfsdfg");
+        verifyGidToBucketIdMapping("id:ns:mytype:n=1:abc");
+        verifyGidToBucketIdMapping("id:ns:mytype:n=1000:abc");
+        verifyGidToBucketIdMapping("id:hsgf:mytype:n=9146744073700000000:dfdfsdfg");
         verifyGidToBucketIdMapping("groupdoc:ns:somegroup:hmm");
         verifyGidToBucketIdMapping("doc:foo:test");
         verifyGidToBucketIdMapping("doc:myns:http://foo.bar");

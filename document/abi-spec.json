@@ -3510,7 +3510,6 @@
     ],
     "fields": [
       "public static final enum com.yahoo.document.idstring.IdString$Scheme doc",
-      "public static final enum com.yahoo.document.idstring.IdString$Scheme userdoc",
       "public static final enum com.yahoo.document.idstring.IdString$Scheme groupdoc",
       "public static final enum com.yahoo.document.idstring.IdString$Scheme id"
     ]
@@ -3542,22 +3541,6 @@
       "public int hashCode()",
       "public java.lang.String toString()",
       "public com.yahoo.text.Utf8String toUtf8()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.document.idstring.UserDocIdString": {
-    "superClass": "com.yahoo.document.idstring.IdString",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, long, java.lang.String)",
-      "public boolean hasNumber()",
-      "public long getNumber()",
-      "public long getLocation()",
-      "public java.lang.String getSchemeSpecific()",
-      "public long getUserId()"
     ],
     "fields": []
   },

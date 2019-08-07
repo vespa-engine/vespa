@@ -4,7 +4,6 @@ package com.yahoo.document.idstring;
 import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
-import java.math.BigInteger;
 import java.util.OptionalInt;
 
 /**
@@ -38,7 +37,7 @@ public abstract class IdString {
         return "";
     }
 
-    public enum Scheme { doc, userdoc, groupdoc, id }
+    public enum Scheme { doc, groupdoc, id }
     private final Scheme scheme;
     private final String namespace;
     private final String namespaceSpecific;
@@ -127,20 +126,6 @@ public abstract class IdString {
 
         } else if (schemeStr.equals("doc")) {
             return new DocIdString(namespace, id.substring(currPos));
-        } else if (schemeStr.equals("userdoc")) {
-            colonPos = id.indexOf(":", currPos);
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': User id missing");
-            }
-
-            try {
-                userId = new BigInteger(id.substring(currPos, colonPos)).longValue();
-            } catch (IllegalArgumentException iae) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': " + iae.getMessage(), iae.getCause());
-            }
-
-            currPos = colonPos + 1;
-            return new UserDocIdString(namespace, userId, id.substring(currPos));
         } else if (schemeStr.equals("groupdoc")) {
             colonPos = id.indexOf(":", currPos);
 

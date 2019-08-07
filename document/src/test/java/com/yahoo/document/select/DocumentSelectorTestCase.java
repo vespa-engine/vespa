@@ -186,9 +186,9 @@ public class DocumentSelectorTestCase {
         assertParse("mytype");
 
         // Test document id.
-        assertParse("id == \"userdoc:ns:mytest\"");
+        assertParse("id == \"id:ns:mytype::mytest\"");
         assertParse("id.namespace == \"myspace\"");
-        assertParse("id.scheme == \"userdoc\"");
+        assertParse("id.scheme == \"id\"");
         assertParse("id.type == \"mytype\"");
         assertParse("id.user == 1234");
         assertParse("id.bucket == 8388608", "id.bucket == 0x800000");
@@ -259,7 +259,7 @@ public class DocumentSelectorTestCase {
     public void testDocumentRemove() throws ParseException {
         assertEquals(Result.TRUE, evaluate("test", createRemove("id:ns:test::1")));
         assertEquals(Result.FALSE, evaluate("test", createRemove("id:ns:null::1")));
-        assertEquals(Result.FALSE, evaluate("test", createRemove("userdoc:test:1234:1")));
+        assertEquals(Result.TRUE, evaluate("test", createRemove("id:ns:test:n=1234:1")));
         assertEquals(Result.INVALID, evaluate("test.hint", createRemove("id:ns:test::1")));
         assertEquals(Result.FALSE, evaluate("test.hint", createRemove("id:ns:null::1")));
         assertEquals(Result.INVALID, evaluate("test.hint == 0", createRemove("id:ns:test::1")));
@@ -275,7 +275,7 @@ public class DocumentSelectorTestCase {
     public void testDocumentGet() throws ParseException {
         assertEquals(Result.TRUE, evaluate("test", createGet("id:ns:test::1")));
         assertEquals(Result.FALSE, evaluate("test", createGet("id:ns:null::1")));
-        assertEquals(Result.FALSE, evaluate("test", createGet("userdoc:test:1234:1")));
+        assertEquals(Result.TRUE, evaluate("test", createGet("id:ns:test:n=1234:1")));
         assertEquals(Result.INVALID, evaluate("test.hint", createGet("id:ns:test::1")));
         assertEquals(Result.FALSE, evaluate("test.hint", createGet("id:ns:null::1")));
         assertEquals(Result.INVALID, evaluate("test.hint == 0", createGet("id:ns:test::1")));
@@ -327,8 +327,8 @@ public class DocumentSelectorTestCase {
         List<DocumentPut> documents = new ArrayList<>();
         documents.add(createDocument("doc:myspace:anything", 24, 2.0f, "foo", "bar"));
         documents.add(createDocument("doc:anotherspace:foo", 13, 4.1f, "bar", "foo"));
-        documents.add(createDocument("userdoc:myspace:1234:mail1", 15, 1.0f, "some", "some"));
-        documents.add(createDocument("userdoc:myspace:5678:bar", 14, 2.4f, "Yet", "More"));
+        documents.add(createDocument("id:myspace:test:n=1234:mail1", 15, 1.0f, "some", "some"));
+        documents.add(createDocument("id:myspace:test:n=5678:bar", 14, 2.4f, "Yet", "More"));
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
         documents.add(createDocument("doc:myspace:missingint", null, 2.0f, null, "bar"));
@@ -525,7 +525,7 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.TRUE, evaluate(" iD==  \"doc:myspace:anything\"  ", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("id == \"doc:myspa:nything\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("Id.scHeme == \"doc\"", documents.get(0)));
-        assertEquals(Result.FALSE, evaluate("id.scheme == \"userdoc\"", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("id.scheme == \"id\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("id.type == \"test\"", documents.get(4)));
         assertEquals(Result.FALSE, evaluate("id.type == \"wrong\"", documents.get(4)));
         assertEquals(Result.TRUE, evaluate("Id.namespaCe == \"myspace\"", documents.get(0)));
