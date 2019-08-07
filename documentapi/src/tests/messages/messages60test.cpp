@@ -214,7 +214,7 @@ bool
 Messages60Test::testDocumentListMessage()
 {
     document::Document::SP doc =
-        createDoc(getTypeRepo(), "testdoc", "userdoc:scheme:1234:");
+        createDoc(getTypeRepo(), "testdoc", "id:scheme:testdoc:n=1234:1");
     DocumentListMessage::Entry entry(1234, doc, false);
 
     DocumentListMessage tmp(document::BucketId(16, 1234));
@@ -227,7 +227,7 @@ Messages60Test::testDocumentListMessage()
         if (EXPECT_TRUE(obj.get() != NULL)) {
             DocumentListMessage &ref = static_cast<DocumentListMessage&>(*obj);
 
-            EXPECT_EQUAL("userdoc:scheme:1234:", ref.getDocuments()[0].getDocument()->getId().toString());
+            EXPECT_EQUAL("id:scheme:testdoc:n=1234:1", ref.getDocuments()[0].getDocument()->getId().toString());
             EXPECT_EQUAL(1234, ref.getDocuments()[0].getTimestamp());
             EXPECT_TRUE(!ref.getDocuments()[0].isRemoveEntry());
         }
