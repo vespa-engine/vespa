@@ -37,7 +37,7 @@ public abstract class IdString {
         return "";
     }
 
-    public enum Scheme { doc, groupdoc, id }
+    public enum Scheme { doc, id }
     private final Scheme scheme;
     private final String namespace;
     private final String namespaceSpecific;
@@ -82,8 +82,6 @@ public abstract class IdString {
     @SuppressWarnings("deprecation")
     private static IdString parseAndCreate(String id) {
         String namespace;
-        long userId;
-        String group;
 
         int schemePos = id.indexOf(":");
         if (schemePos < 0) {
@@ -126,16 +124,6 @@ public abstract class IdString {
 
         } else if (schemeStr.equals("doc")) {
             return new DocIdString(namespace, id.substring(currPos));
-        } else if (schemeStr.equals("groupdoc")) {
-            colonPos = id.indexOf(":", currPos);
-
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': Group id missing");
-            }
-
-            group = id.substring(currPos, colonPos);
-            currPos = colonPos + 1;
-            return new GroupDocIdString(namespace, group, id.substring(currPos));
         } else {
             throw new IllegalArgumentException("Unknown id scheme '" + schemeStr + "'");
         }

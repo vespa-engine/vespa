@@ -35,8 +35,8 @@ import static org.junit.Assert.assertFalse;
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
 public class VdsStreamingSearcherTestCase {
-    public static final String USERDOC_ID_PREFIX = "userdoc:namespace:1:userspecific";
-    public static final String GROUPDOC_ID_PREFIX = "groupdoc:namespace:group1:userspecific";
+    public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
+    public static final String GROUPDOC_ID_PREFIX = "id:namespace:mytype:g=group1:userspecific";
 
     private static class MockVisitor implements Visitor {
         private final Query query;
@@ -236,14 +236,10 @@ public class VdsStreamingSearcherTestCase {
         Query generalQuery = new Query("/?streaming.selection=true&query=test");
         Query user1Query = new Query("/?streaming.userid=1&query=test");
         Query group1Query = new Query("/?streaming.groupname=group1&query=test");
-        String userId1 = "userdoc:namespace:1:userspecific";
-        String userId2 = "userdoc:namespace:2:userspecific";
-        String groupId1 = "groupdoc:namespace:group1:userspecific";
-        String groupId2 = "groupdoc:namespace:group2:userspecific";
-        String orderIdGroup1 = "orderdoc(3,1):storage_test:group1:0:userspecific";
-        String orderIdGroup2 = "orderdoc(5,2):storage_test:group2:0:userspecific";
-        String orderIdUser1 = "orderdoc(3,1):storage_test:1:0:userspecific";
-        String orderIdUser2 = "orderdoc(5,2):storage_test:2:0:userspecific";
+        String userId1 = "id:namespace:mytype:n=1:userspecific";
+        String userId2 = "id:namespace:mytype:n=2:userspecific";
+        String groupId1 = "id:namespace:mytype:g=group1:userspecific";
+        String groupId2 = "id:namespace:mytype:g=group2:userspecific";
         String badId = "unknowscheme:namespace:something";
 
         assertTrue(VdsStreamingSearcher.verifyDocId(userId1, generalQuery, true));
@@ -252,30 +248,18 @@ public class VdsStreamingSearcherTestCase {
         assertTrue(VdsStreamingSearcher.verifyDocId(userId2, generalQuery, false));
         assertTrue(VdsStreamingSearcher.verifyDocId(groupId1, generalQuery, false));
         assertTrue(VdsStreamingSearcher.verifyDocId(groupId2, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdGroup1, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdGroup2, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdUser1, generalQuery, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdUser2, generalQuery, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(badId, generalQuery, false));
 
         assertTrue(VdsStreamingSearcher.verifyDocId(userId1, user1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(userId2, user1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(groupId1, user1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(groupId2, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdGroup1, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdGroup2, user1Query, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdUser1, user1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdUser2, user1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(badId, user1Query, false));
 
         assertFalse(VdsStreamingSearcher.verifyDocId(userId1, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(userId2, group1Query, false));
         assertTrue(VdsStreamingSearcher.verifyDocId(groupId1, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(groupId2, group1Query, false));
-        assertTrue(VdsStreamingSearcher.verifyDocId(orderIdGroup1, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdGroup2, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdUser1, group1Query, false));
-        assertFalse(VdsStreamingSearcher.verifyDocId(orderIdUser2, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(badId, group1Query, false));
     }
 

@@ -89,7 +89,7 @@ public class GlobalIdTestCase {
         verifyGidToBucketIdMapping("id:ns:mytype:n=1:abc");
         verifyGidToBucketIdMapping("id:ns:mytype:n=1000:abc");
         verifyGidToBucketIdMapping("id:hsgf:mytype:n=9146744073700000000:dfdfsdfg");
-        verifyGidToBucketIdMapping("groupdoc:ns:somegroup:hmm");
+        verifyGidToBucketIdMapping("id:ns:mytype:g=somegroup:hmm");
         verifyGidToBucketIdMapping("doc:foo:test");
         verifyGidToBucketIdMapping("doc:myns:http://foo.bar");
         verifyGidToBucketIdMapping("doc:jsrthsdf:a234aleingzldkifvasdfgadf");

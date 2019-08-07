@@ -3461,21 +3461,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.document.idstring.GroupDocIdString": {
-    "superClass": "com.yahoo.document.idstring.IdString",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
-      "public long getLocation()",
-      "public java.lang.String getSchemeSpecific()",
-      "public boolean hasGroup()",
-      "public java.lang.String getGroup()"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.idstring.IdIdString": {
     "superClass": "com.yahoo.document.idstring.IdString",
     "interfaces": [],
@@ -3484,6 +3469,7 @@
     ],
     "methods": [
       "public static java.lang.String replaceType(java.lang.String, java.lang.String)",
+      "public static long makeLocation(java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.lang.String)",
       "public long getLocation()",
       "public java.lang.String getSchemeSpecific()",
@@ -3510,7 +3496,6 @@
     ],
     "fields": [
       "public static final enum com.yahoo.document.idstring.IdString$Scheme doc",
-      "public static final enum com.yahoo.document.idstring.IdString$Scheme groupdoc",
       "public static final enum com.yahoo.document.idstring.IdString$Scheme id"
     ]
   },

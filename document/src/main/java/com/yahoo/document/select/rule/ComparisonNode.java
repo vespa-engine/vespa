@@ -6,7 +6,7 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.NumericFieldValue;
-import com.yahoo.document.idstring.GroupDocIdString;
+import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
 import com.yahoo.document.select.Result;
@@ -115,7 +115,7 @@ public class ComparisonNode implements ExpressionNode {
                 {
                     return null; // no idea
                 }
-                return new BucketSet(new BucketId(factory.getLocationBitCount(), new GroupDocIdString("", name, "").getLocation()));
+                return new BucketSet(new BucketId(factory.getLocationBitCount(), IdIdString.makeLocation(name)));
             }
         } else if (field.equalsIgnoreCase("bucket")) {
             if (value instanceof Long) {

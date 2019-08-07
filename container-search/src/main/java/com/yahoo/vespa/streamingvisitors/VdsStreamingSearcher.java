@@ -273,8 +273,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             if (docId.getScheme().hasNumber()) {
                 userId = docId.getScheme().getNumber();
             } else {
-                log.log(logLevel, "Got result with wrong scheme (expected " + IdString.Scheme.userdoc +
-                        " or " + IdString.Scheme.orderdoc + ") in document ID (" + id + ") for " + query);
+                log.log(logLevel, "Got result with wrong scheme  in document ID (" + id + ") for " + query);
                 return false;
             }
             if (new BigInteger(expUserId).longValue() != userId) {
@@ -288,8 +287,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             if (docId.getScheme().hasGroup()) {
                 groupName = docId.getScheme().getGroup();
             } else {
-                log.log(logLevel, "Got result with wrong scheme (expected " + IdString.Scheme.groupdoc +
-                        " or " + IdString.Scheme.orderdoc + ") in document ID (" + id + ") for " + query);
+                log.log(logLevel, "Got result with wrong scheme  in document ID (" + id + ") for " + query);
                 return false;
             }
             if (!expGroupName.equals(groupName)) {

@@ -53,7 +53,7 @@ public abstract class StoragePolicyTestEnvironment {
         DocumentProtocol protocol = (DocumentProtocol) frame.getMessageBus().getProtocol((Utf8Array)DocumentProtocol.NAME);
         policyFactory = new StoragePolicyTestFactory(nodes);
         protocol.putRoutingPolicyFactory("storage", policyFactory);
-        frame.setMessage(createMessage("userdoc:ns:1:foo"));
+        frame.setMessage(createMessage("id:ns:testdoc:n=1:foo"));
         frame.setHop(new HopSpec("test", "[storage:cluster=foo]"));
     }
 

@@ -6,7 +6,7 @@ import com.yahoo.document.select.BucketSelector;
 import java.util.Set;
 
 /**
- * Message (VDS only) to remove an entire location for users using userdoc or groupdoc schemes.
+ * Message (VDS only) to remove an entire location for users using n= or g= schemes.
  * We use a document selection so the user can specify a subset of those documents to be deleted
  * if they wish.
  */

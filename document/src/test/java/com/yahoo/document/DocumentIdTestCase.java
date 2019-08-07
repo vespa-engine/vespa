@@ -169,26 +169,6 @@ public class DocumentIdTestCase {
     }
 
     @Test
-    public void testGroupdoc() {
-        try {
-            //valid
-            new DocumentId("groupdoc:blabla:something:jkl");
-            new DocumentId("groupdoc:doc:doc:asd");
-            new DocumentId("groupdoc:bar:0:a");
-            new DocumentId("groupdoc:bar:18446744073709551615:");
-            new DocumentId("groupdoc:foo:15:bar");
-        } catch (IllegalArgumentException iae) {
-            fail(iae.getMessage());
-        }
-    }
-
-    @Test
-    public void testInvalidGroupdoc() {
-        checkInvalidUri("grouppdoc:blabla:something");
-        checkInvalidUri("groupdoc:blablasomething");
-    }
-
-    @Test
     public void testIdStrings() {
         DocumentId docId = new DocumentId(new IdIdString("namespace", "type", "g=group", "foobar"));
         assertEquals("id:namespace:type:g=group:foobar", docId.toString());
@@ -216,7 +196,7 @@ public class DocumentIdTestCase {
         assertFalse(group.getScheme().hasNumber());
         assertEquals("mygroup", group.getScheme().getGroup());
 
-        group = new DocumentId("groupdoc:ns:mygroup:foo");
+        group = new DocumentId("id:ns:type:g=mygroup:foo");
         assertTrue(group.getScheme().hasGroup());
         assertFalse(group.getScheme().hasNumber());
         assertEquals("mygroup", group.getScheme().getGroup());

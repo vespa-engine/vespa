@@ -370,13 +370,13 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             DocumentListMessage msg = (DocumentListMessage)deserialize("DocumentListMessage", DocumentProtocol.MESSAGE_DOCUMENTLIST, Language.CPP);
-            assertEquals("userdoc:scheme:1234:", msg.getDocuments().get(0).getDocument().getId().toString());
+            assertEquals("id:scheme:mytype:n=1234:1", msg.getDocuments().get(0).getDocument().getId().toString());
             assertEquals(1234, msg.getDocuments().get(0).getTimestamp());
             assertFalse(msg.getDocuments().get(0).isRemoveEntry());
 
             assertEquals(BASE_MESSAGE_LENGTH + 63, serialize("DocumentListMessage", msg));
             msg = (DocumentListMessage)deserialize("DocumentListMessage", DocumentProtocol.MESSAGE_DOCUMENTLIST, Language.JAVA);
-            assertEquals("userdoc:scheme:1234:", msg.getDocuments().get(0).getDocument().getId().toString());
+            assertEquals("id:scheme:mytype:n=1234:1", msg.getDocuments().get(0).getDocument().getId().toString());
             assertEquals(1234, msg.getDocuments().get(0).getTimestamp());
             assertFalse(msg.getDocuments().get(0).isRemoveEntry());
 
