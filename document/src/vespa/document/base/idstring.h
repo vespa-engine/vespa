@@ -20,12 +20,13 @@ public:
     typedef std::unique_ptr<IdString> UP;
     typedef vespalib::CloneablePtr<IdString> CP;
     typedef uint64_t LocationType;
-    enum Type { DOC=0, USERDOC, GROUPDOC, ID, NULLID };
+    enum Type { DOC=0, USERDOC, ID, NULLID };
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
     static IdString::UP createIdString(vespalib::stringref id) { return createIdString(id.data(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
+    static LocationType makeLocation(vespalib::stringref s);
 
     ~IdString() {}
     IdString* clone() const override = 0;
@@ -164,32 +165,4 @@ private:
     int64_t _userId;
 };
 
-/**
- * \class document::GroupDocIdString
- * \ingroup base
- *
- * \brief Scheme for distributing documents based on a group string.
- *
- * The location of a groupdoc identifier is a hash of the group string.
- */
-class GroupDocIdString : public IdString {
-public:
-    GroupDocIdString(vespalib::stringref rawId);
-    bool hasGroup() const override { return true; }
-    vespalib::stringref getGroup() const override { return getComponent(1); }
-    LocationType getLocation() const override;
-
-    /**
-     * Extract the location for the group-specific part of a document ID.
-     * i.e. `name` here must match the `group` in ID "id::foo:g=group:".
-     */
-    static LocationType locationFromGroupName(vespalib::stringref name);
-
-private:
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
-    GroupDocIdString* clone() const override { return new GroupDocIdString(*this); }
-    Type getType() const override { return GROUPDOC; }
-};
-
 } // document
-

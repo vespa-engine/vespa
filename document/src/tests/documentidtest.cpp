@@ -114,8 +114,7 @@ TEST(DocumentIdTest, testDocGlobalId)
     DocumentId did(id);
 
     unsigned char key[16];
-    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()),
-                 id.size(), key);
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);
 
     EXPECT_EQ(GlobalId(key), did.getGlobalId());
 }
@@ -124,10 +123,10 @@ TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)
 {
     EXPECT_EQ(
             DocumentId("id::foo:g=zoid:bar").getScheme().getLocation(),
-            GroupDocIdString::locationFromGroupName("zoid"));
+            IdString::makeLocation("zoid"));
     EXPECT_EQ(
             DocumentId("id::bar:g=doink:baz").getScheme().getLocation(),
-            GroupDocIdString::locationFromGroupName("doink"));
+            IdString::makeLocation("doink"));
 }
 
 } // document

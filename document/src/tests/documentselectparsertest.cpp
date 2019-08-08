@@ -209,7 +209,7 @@ DocumentSelectParserTest::createDocs()
         _doc.back()->setValue("structarray", aval);
     }
     _doc.push_back(createDoc(
-                           "testdoctype1", "groupdoc:myspace:yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
+                           "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
     _doc.push_back(createDoc(
                            "testdoctype2", "doc:myspace:inheriteddoc", 10, 1.4, "inherited", "")); // DOC 4
     _doc.push_back(createDoc(
@@ -238,7 +238,7 @@ DocumentSelectParserTest::createDocs()
     _update.push_back(createUpdate(
         "testdoctype1", "userdoc:myspace:1234:footype1", 0, "foo"));
     _update.push_back(createUpdate(
-        "testdoctype1", "groupdoc:myspace:yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
+        "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
     _update.push_back(createUpdate(
         "testdoctype2", "doc:myspace:inheriteddoc", 10, "bar"));
 }

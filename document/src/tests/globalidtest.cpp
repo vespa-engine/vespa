@@ -87,15 +87,14 @@ TEST_F(GlobalIdTest, testBucketIdConversion)
     verifyDocumentId("userdoc:ns:1:abc");
     verifyDocumentId("userdoc:ns:1000:abc");
     verifyDocumentId("userdoc:hsgf:18446744073700000000:dfdfsdfg");
-    verifyDocumentId("groupdoc:ns:somegroup:hmm");
+    verifyDocumentId("id:ns:mytype:g=somegroup:hmm");
     verifyDocumentId("doc::test");
     verifyDocumentId("doc:myns:http://foo.bar");
     verifyDocumentId("doc:jsrthsdf:a234aleingzldkifvasdfgadf");
 }
 
 void
-GlobalIdTest::verifyGlobalIdRange(const std::vector<DocumentId>& ids,
-                                  uint32_t countBits)
+GlobalIdTest::verifyGlobalIdRange(const std::vector<DocumentId>& ids, uint32_t countBits)
 {
     BucketIdFactory factory;
     for (uint32_t i=0, n=ids.size(); i<n; ++i) {
@@ -161,9 +160,8 @@ TEST_F(GlobalIdTest, testGidRangeConversion)
             case 1: ost << "userdoc:" << name_space.str() << ":";
                     ost << randomizer.nextUint32() << ":";
                     break;
-            case 2: ost << "groupdoc:" << name_space.str() << ":";
-                    for (uint32_t i=0, n=randomizer.nextUint32(1, 10); i<n; ++i)
-                    {
+            case 2: ost << "id:" << name_space.str() << ":mytype:g=";
+                    for (uint32_t i=0, n=randomizer.nextUint32(1, 10); i<n; ++i) {
                         ost << (char) ('a' + randomizer.nextUint32(0, 25));
                     }
                     ost << ":";

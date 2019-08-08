@@ -57,12 +57,6 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                         _schemeCount["userdoc"]++;
                     }
                     break;
-                case document::IdString::GROUPDOC:
-                    if (_doScheme) {
-                        _schemeCount["groupdoc"]++;
-                    }
-                    break;
-                    break;
                 case document::IdString::ID:
                     if (_doScheme) {
                         _schemeCount["id"]++;
