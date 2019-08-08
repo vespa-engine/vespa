@@ -22,14 +22,12 @@ public class ResourceLimits implements ProtonConfig.Producer {
 
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
-        ProtonConfig.Writefilter.Builder writeFilterBuilder = new ProtonConfig.Writefilter.Builder();
         if (diskLimit.isPresent()) {
-            writeFilterBuilder.disklimit(diskLimit.get());
+            builder.writefilter.disklimit(diskLimit.get());
         }
         if (memoryLimit.isPresent()) {
-            writeFilterBuilder.memorylimit(memoryLimit.get());
+            builder.writefilter.memorylimit(memoryLimit.get());
         }
-        builder.writefilter(writeFilterBuilder);
     }
 
     public static class Builder {

@@ -49,7 +49,7 @@ public class SearchNodeTest {
 
     private static SearchNode createSearchNode(AbstractConfigProducer parent, String name, int distributionKey,
                                                NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted) {
-        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), isHosted);
+        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), Optional.empty(), isHosted);
     }
 
     @Test

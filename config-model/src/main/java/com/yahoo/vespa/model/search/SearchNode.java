@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.ContentNode;
+import com.yahoo.vespa.model.content.ResourceLimits;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProvider;
 import org.w3c.dom.Element;
@@ -61,6 +62,7 @@ public class SearchNode extends AbstractService implements
     private TransactionLogServer tls;
     private AbstractService serviceLayerService;
     private final Optional<Tuning> tuning;
+    private final Optional<ResourceLimits> resourceLimits;
     private static final int RPC_PORT = 0;
     private static final int FS4_PORT = 1;
     private static final int FUTURE_HEALTH_PORT = 2;
@@ -75,19 +77,22 @@ public class SearchNode extends AbstractService implements
         private final ContentNode contentNode;
         private final boolean flushOnShutdown;
         private final Optional<Tuning> tuning;
-        public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node, boolean flushOnShutdown, Optional<Tuning> tuning) {
+        private final Optional<ResourceLimits> resourceLimits;
+        public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node,
+                       boolean flushOnShutdown, Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits) {
             this.name = name;
             this.nodeSpec = nodeSpec;
             this.clusterName = clusterName;
             this.contentNode = node;
             this.flushOnShutdown = flushOnShutdown;
             this.tuning = tuning;
+            this.resourceLimits = resourceLimits;
         }
 
         @Override
         protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
-                                  flushOnShutdown, tuning, deployState.isHosted());
+                                  flushOnShutdown, tuning, resourceLimits, deployState.isHosted());
         }
     }
 
@@ -96,22 +101,22 @@ public class SearchNode extends AbstractService implements
      */
     public static SearchNode create(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                                    Optional<Tuning> tuning, boolean isHostedVespa) {
+                                    Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa) {
         return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
-                              flushOnShutdown, tuning, isHostedVespa);
+                              flushOnShutdown, tuning, resourceLimits, isHostedVespa);
     }
 
     private SearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                       Optional<Tuning> tuning, boolean isHostedVespa) {
-        this(parent, name, nodeSpec, clusterName, flushOnShutdown, tuning, isHostedVespa);
+                       Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa) {
+        this(parent, name, nodeSpec, clusterName, flushOnShutdown, tuning, resourceLimits, isHostedVespa);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         setPropertiesElastic(clusterName, distributionKey);
     }
 
     private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName,
-                       boolean flushOnShutdown, Optional<Tuning> tuning, boolean isHostedVespa) {
+                       boolean flushOnShutdown, Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa) {
         super(parent, name);
         this.isHostedVespa = isHostedVespa;
         this.nodeSpec = nodeSpec;
@@ -124,6 +129,7 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
         this.tuning = tuning;
+        this.resourceLimits = resourceLimits;
     }
 
     private void setPropertiesElastic(String clusterName, int distributionKey) {
@@ -286,6 +292,10 @@ public class SearchNode extends AbstractService implements
 
             if (tuning.isPresent()) {
                 tuning.get().getConfig(builder);
+            }
+
+            if (resourceLimits.isPresent()) {
+                resourceLimits.get().getConfig(builder);
             }
         }
     }
