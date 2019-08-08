@@ -76,8 +76,8 @@ public class AuditLoggerTest {
             assertEntry(Entry.Method.POST, 5, "/controller/v1/jobs/upgrader/confidence/6.42");
         }
 
-        { // 14 days pass and another PATCH request is logged. Older entries are removed due to expiry
-            tester.clock().advance(Duration.ofDays(14));
+        { // 15 days pass and another PATCH request is logged. Older entries are removed due to expiry
+            tester.clock().advance(Duration.ofDays(15));
             HttpRequest request = testRequest(Method.PATCH, URI.create("http://localhost:8080/os/v1/"),
                                               "{\"cloud\":\"cloud9\",\"version\":\"44.0\"}");
             tester.controller().auditLogger().log(request);
