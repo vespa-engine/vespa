@@ -583,7 +583,7 @@ public class NodeFailerTest {
                          (2 * 3) /* containers per host */,
                          tester.nodeRepository.getNodes(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
-            assertEquals("Throttled node failures", 1, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
+            assertEquals("Throttled host failures", 1, tester.metric.values.get(NodeFailer.throttledHostFailuresMetric));
 
             // 24 more hours pass without any other nodes being failed out
             for (int minutes = 0, interval = 30; minutes <= 23 * 60; minutes += interval) {
@@ -593,7 +593,7 @@ public class NodeFailerTest {
             tester.failer.run();
             assertEquals(12, tester.nodeRepository.getNodes(Node.State.failed).size());
             assertEquals("Throttling is indicated by the metric", 1, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
-            assertEquals("Throttled node failures", 1, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
+            assertEquals("Throttled host failures", 1, tester.metric.values.get(NodeFailer.throttledHostFailuresMetric));
 
             // The final host and its containers are failed out
             tester.clock.advance(Duration.ofMinutes(30));

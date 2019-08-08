@@ -51,7 +51,10 @@ public class NodeFailer extends Maintainer {
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
     private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
 
-    /** Metric for number of nodes that we want to fail, but cannot due to throttling */
+    /** Metric for number of hosts that we want to fail, but cannot due to throttling */
+    static final String throttledHostFailuresMetric = "throttledHostFailures";
+
+    /** Metric for number of nodes (docker containers) that we want to fail, but cannot due to throttling */
     static final String throttledNodeFailuresMetric = "throttledNodeFailures";
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
@@ -90,6 +93,7 @@ public class NodeFailer extends Maintainer {
 
     @Override
     protected void maintain() {
+        int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
         // Ready nodes
@@ -99,7 +103,8 @@ public class NodeFailer extends Maintainer {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    throttledNodeFailures++;
+                    if (node.type().isDockerHost()) throttledHostFailures++;
+                    else throttledNodeFailures++;
                     continue;
                 }
                 String reason = entry.getValue();
@@ -117,14 +122,16 @@ public class NodeFailer extends Maintainer {
                 continue;
             }
             if (throttle(node)) {
-                throttledNodeFailures++;
+                if (node.type().isDockerHost()) throttledHostFailures++;
+                else throttledNodeFailures++;
                 continue;
             }
             String reason = entry.getValue();
             failActive(node, reason);
         }
 
-        metric.set(throttlingActiveMetric, Math.min( 1, throttledNodeFailures), null);
+        metric.set(throttlingActiveMetric, Math.min( 1, throttledHostFailures + throttledNodeFailures), null);
+        metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
         metric.set(throttledNodeFailuresMetric, throttledNodeFailures, null);
     }
 
