@@ -1790,7 +1790,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void require_that_config_override_and_explicit_proton_tuning_have_precedence_over_default_node_flavor_tuning() {
+    public void require_that_config_override_and_explicit_proton_tuning_and_resource_limits_have_precedence_over_default_node_flavor_tuning() {
         String services = joinLines("<?xml version='1.0' encoding='utf-8' ?>",
                 "<services>",
                 "  <content version='1.0' id='test'>",
@@ -1803,6 +1803,9 @@ public class ModelProvisioningTest {
                 "    <nodes count='1' flavor='content-test-flavor'/>",
                 "    <engine>",
                 "      <proton>",
+                "        <resource-limits>",
+                "          <memory>0.92</memory>",
+                "        </resource-limits>",
                 "        <tuning>",
                 "          <searchnode>",
                 "            <flushstrategy>",
@@ -1828,6 +1831,7 @@ public class ModelProvisioningTest {
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
         assertEquals((long) 16 * GB, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals(0.92, cfg.writefilter().memorylimit(), 0.0001); // from explicit resource-limits
     }
 
     private static long GB = 1024 * 1024 * 1024;
