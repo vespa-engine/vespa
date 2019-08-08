@@ -10,5 +10,6 @@ vespa_add_executable(searchcore_lid_space_compaction_test_app TEST
     searchcore_documentmetastore
     searchcore_bucketdb
     searchcore_pcommon
+    gtest
 )
 vespa_add_test(NAME searchcore_lid_space_compaction_test_app COMMAND searchcore_lid_space_compaction_test_app)
