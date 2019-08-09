@@ -65,7 +65,7 @@ TEST("test that move of owned buffer does not copy") {
     Alloc buf = Alloc::allocHeap(1000);
     const void * ptr = buf.get();
     nbostream os(std::move(buf), 0);
-    os << static_cast<long>(0x567);
+    os << static_cast<int64_t>(0x567);
     EXPECT_EQUAL(ptr, os.peek());
     EXPECT_EQUAL(8ul, os.size());
     nbostream moved(std::move(os));
@@ -73,16 +73,16 @@ TEST("test that move of owned buffer does not copy") {
     EXPECT_EQUAL(0ul, os.size());
     EXPECT_EQUAL(ptr, moved.peek());
     EXPECT_EQUAL(8ul, moved.size());
-    long tmp(0);
+    int64_t tmp(0);
     moved >> tmp;
-    EXPECT_EQUAL(0x567l, tmp);
+    EXPECT_EQUAL(static_cast<int64_t>(0x567), tmp);
 }
 
 TEST("test that move of non-owned buffer does copy") {
     Alloc buf = Alloc::allocHeap(1000);
     const void * ptr = buf.get();
     nbostream os(std::move(buf), 0);
-    os << static_cast<long>(0x567);
+    os << static_cast<int64_t>(0x567);
     EXPECT_EQUAL(ptr, os.peek());
     EXPECT_EQUAL(8ul, os.size());
     nbostream refering(os.peek(), os.size());
@@ -95,9 +95,9 @@ TEST("test that move of non-owned buffer does copy") {
     EXPECT_EQUAL(0ul, refering.size());
     EXPECT_TRUE(ptr != moved.peek());
     EXPECT_EQUAL(8ul, moved.size());
-    long tmp(0);
+    int64_t tmp(0);
     moved >> tmp;
-    EXPECT_EQUAL(0x567l, tmp);
+    EXPECT_EQUAL(static_cast<int64_t>(0x567), tmp);
 }
 
 TEST_F("test serializing 64-bit signed integers", Fixture)
