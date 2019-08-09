@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("buckethandler_test");
 #include <vespa/searchcore/proton/server/buckethandler.h>
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("buckethandler_test");
 
 using namespace proton;
 using document::BucketId;

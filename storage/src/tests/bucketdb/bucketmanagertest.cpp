@@ -255,7 +255,7 @@ BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg,
 TEST_F(BucketManagerTest, remove_last_modified_ok) {
     EXPECT_FALSE(wasBlockedDueToLastModified(
                            new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
-                                   document::DocumentId("userdoc:m:1:foo"),
+                                   document::DocumentId("id:m:test:n=1:foo"),
                                    api::Timestamp(1235)),
                            1235));
 }
@@ -264,7 +264,7 @@ TEST_F(BucketManagerTest, remove_last_modified_ok) {
 TEST_F(BucketManagerTest, remove_last_modified_failed) {
     EXPECT_TRUE(wasBlockedDueToLastModified(
                            new api::RemoveCommand(makeDocumentBucket(document::BucketId(16, 1)),
-                                   document::DocumentId("userdoc:m:1:foo"),
+                                   document::DocumentId("id:m:test:n=1:foo"),
                                    api::Timestamp(1233)),
                            1233));
 }

@@ -5,9 +5,7 @@
 #include <persistence/spi/types.h>
 #include <vespa/searchlib/query/base.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Representation of a test document.
@@ -54,7 +52,4 @@ struct DocumentGidOrderCmp
 };
 
 
-} // namespace test
-
-} // namespace proton
-
+}

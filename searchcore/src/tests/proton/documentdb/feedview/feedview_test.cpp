@@ -133,7 +133,7 @@ ParamsContext::ParamsContext(const vespalib::string &docType, const vespalib::st
 {
     (void) baseDir;
 }
-ParamsContext::~ParamsContext() {}
+ParamsContext::~ParamsContext() = default;
 
 struct MyIndexWriter : public test::MockIndexWriter
 {
@@ -150,22 +150,20 @@ struct MyIndexWriter : public test::MockIndexWriter
           _wantedLidLimit(0),
           _tracer(tracer)
     {}
-    virtual void put(SerialNum serialNum, const document::Document &doc,
-                     const DocumentIdT lid) override {
+    void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
         (void) doc;
         _tracer.tracePut(indexAdapterTypeName, serialNum, lid, false);
     }
-    virtual void remove(SerialNum serialNum, const search::DocumentIdT lid) override {
-        LOG(info, "MyIndexAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)",
-            serialNum, lid);
+    void remove(SerialNum serialNum, const search::DocumentIdT lid) override {
+        LOG(info, "MyIndexAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
         _removes.push_back(lid);
         _tracer.traceRemove(indexAdapterTypeName, serialNum, lid, false);
     }
-    virtual void commit(SerialNum serialNum, OnWriteDoneType) override {
+    void commit(SerialNum serialNum, OnWriteDoneType) override {
         ++_commitCount;
         _tracer.traceCommit(indexAdapterTypeName, serialNum);
     }
-    virtual void heartBeat(SerialNum) override { ++_heartBeatCount; }
+    void heartBeat(SerialNum) override { ++_heartBeatCount; }
     void compactLidSpace(SerialNum, uint32_t lidLimit) override {
         _wantedLidLimit = lidLimit;
     }
@@ -869,13 +867,13 @@ TEST_F("require that update() calls attribute adapter", SearchableFeedViewFixtur
 TEST_F("require that remove() updates document meta store with bucket info",
        SearchableFeedViewFixture)
 {
-    DocumentContext dc1 = f.doc("userdoc:test:1:1", 10);
-    DocumentContext dc2 = f.doc("userdoc:test:1:2", 11);
+    DocumentContext dc1 = f.doc("id:test:searchdocument:n=1:1", 10);
+    DocumentContext dc2 = f.doc("id:test:searchdocument:n=1:2", 11);
     f.putAndWait(dc1);
     BucketChecksum bcs1 = f.getBucketDB()->get(dc1.bid).getChecksum();
     f.putAndWait(dc2);
     BucketChecksum bcs2 = f.getBucketDB()->get(dc2.bid).getChecksum();
-    f.removeAndWait(DocumentContext("userdoc:test:1:2", 20, f.getBuilder()));
+    f.removeAndWait(DocumentContext("id:test:searchdocument:n=1:2", 20, f.getBuilder()));
 
     assertBucketInfo(dc1.bid, Timestamp(10), 1, f.getMetaStore());
     EXPECT_FALSE(f.getMetaStore().validLid(2)); // don't remember remove
@@ -937,11 +935,11 @@ TEST_F("require that remove() calls removeComplete() via delayed thread service"
 TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedViewFixture)
 {
     DocumentContext::List docs;
-    docs.push_back(f.doc("userdoc:test:1:1", 10));
-    docs.push_back(f.doc("userdoc:test:1:2", 11));
-    docs.push_back(f.doc("userdoc:test:1:3", 12));
-    docs.push_back(f.doc("userdoc:test:2:1", 13));
-    docs.push_back(f.doc("userdoc:test:2:2", 14));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:1", 10));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:2", 11));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:3", 12));
+    docs.push_back(f.doc("id:test:searchdocument:n=2:1", 13));
+    docs.push_back(f.doc("id:test:searchdocument:n=2:2", 14));
 
     f.putAndWait(docs);
     TEST_DO(f.assertChangeHandler(docs.back().gid(), 5u, 5u));
@@ -1005,11 +1003,11 @@ assertPostConditionAfterRemoves(const DocumentContext::List &docs,
 TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
 {
     DocumentContext::List docs;
-    docs.push_back(f.doc("userdoc:test:1:1", 10));
-    docs.push_back(f.doc("userdoc:test:1:2", 11));
-    docs.push_back(f.doc("userdoc:test:1:3", 12));
-    docs.push_back(f.doc("userdoc:test:2:1", 13));
-    docs.push_back(f.doc("userdoc:test:2:2", 14));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:1", 10));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:2", 11));
+    docs.push_back(f.doc("id:test:searchdocument:n=1:3", 12));
+    docs.push_back(f.doc("id:test:searchdocument:n=2:1", 13));
+    docs.push_back(f.doc("id:test:searchdocument:n=2:2", 14));
 
     f.putAndWait(docs);
     f.removeAndWait(docs[0]);

@@ -150,7 +150,7 @@ TEST_F(PendingMessageTrackerTest, simple) {
 
     auto remove = std::make_shared<api::RemoveCommand>(
                     makeDocumentBucket(document::BucketId(16, 1234)),
-                    document::DocumentId("userdoc:footype:1234:foo"), 1001);
+                    document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
     remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
     tracker.insert(remove);
 
@@ -182,7 +182,7 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
 {
     for (uint32_t i = 0; i < 4; i++) {
         std::ostringstream ost;
-        ost << "userdoc:footype:1234:" << i;
+        ost << "id:footype:testdoc:n=1234:" << i;
         auto remove = std::make_shared<api::RemoveCommand>(
                         makeDocumentBucket(document::BucketId(16, 1234)),
                         document::DocumentId(ost.str()), 1000 + i);
@@ -192,7 +192,7 @@ PendingMessageTrackerTest::insertMessages(PendingMessageTracker& tracker)
 
     for (uint32_t i = 0; i < 4; i++) {
         std::ostringstream ost;
-        ost << "userdoc:footype:4567:" << i;
+        ost << "id:footype:testdoc:n=4567:" << i;
         auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(16, 4567)), document::DocumentId(ost.str()), 2000 + i);
         remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, i % 2));
         tracker.insert(remove);
@@ -322,7 +322,7 @@ TEST_F(PendingMessageTrackerTest, get_pending_message_types) {
     document::BucketId bid(16, 1234);
 
     auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
-                                                       document::DocumentId("userdoc:footype:1234:foo"), 1001);
+                                                       document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
     remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 0));
     tracker.insert(remove);
 
@@ -357,7 +357,7 @@ TEST_F(PendingMessageTrackerTest, has_pending_message) {
 
     {
         auto remove = std::make_shared<api::RemoveCommand>(makeDocumentBucket(bid),
-                                                           document::DocumentId("userdoc:footype:1234:foo"), 1001);
+                                                           document::DocumentId("id:footype:testdoc:n=1234:foo"), 1001);
         remove->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
         tracker.insert(remove);
     }

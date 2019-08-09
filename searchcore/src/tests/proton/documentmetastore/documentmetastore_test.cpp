@@ -566,7 +566,7 @@ createGid(uint32_t lid)
 GlobalId
 createGid(uint32_t userId, uint32_t lid)
 {
-    DocumentId docId(vespalib::make_string("userdoc:id:%u:%u", userId, lid));
+    DocumentId docId(vespalib::make_string("id:id:testdoc:n=%u:%u", userId, lid));
     return docId.getGlobalId();
 }
 

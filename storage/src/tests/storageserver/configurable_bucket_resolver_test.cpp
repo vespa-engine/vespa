@@ -99,11 +99,5 @@ TEST_F(ConfigurableBucketResolverTest, can_create_resolver_from_bucket_space_con
               resolver->bucketFromId(DocumentId("id::baz::xyz")).getBucketSpace());
 }
 
-TEST_F(ConfigurableBucketResolverTest, legacy_document_id_without_document_type_maps_to_default_space) {
-    auto resolver = create_simple_resolver();
-    EXPECT_EQ(document::FixedBucketSpaces::default_space(),
-              resolver.bucketFromId(DocumentId("userdoc:baz:1234:baz")).getBucketSpace());
-}
-
 }
 

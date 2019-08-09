@@ -211,7 +211,7 @@ VisitorTest::initializeTest(const TestParams& params)
     _documents.clear();
     for (uint32_t i=0; i<docCount; ++i) {
         std::ostringstream uri;
-        uri << "userdoc:test:" << i % 10 << ":http://www.ntnu.no/"
+        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
             << i << ".html";
 
         _documents.push_back(document::Document::SP(

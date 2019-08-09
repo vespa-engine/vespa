@@ -248,7 +248,7 @@ TEST_F(FileStorManagerTest, header_only_put) {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
     Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:foo").release());
+                "some content", "id:crawler:testdoctype1:n=4000:foo").release());
 
     document::BucketId bid(16, 4000);
 
@@ -315,7 +315,7 @@ TEST_F(FileStorManagerTest, put) {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
     Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:foo").release());
+                "some content", "id:crawler:testdoctype1:n=4000:foo").release());
 
     document::BucketId bid(16, 4000);
 
@@ -348,7 +348,7 @@ TEST_F(FileStorManagerTest, disk_move) {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
     Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:foo").release());
+                "some content", "id:crawler:testdoctype1:n=4000:foo").release());
 
     document::BucketId bid(16, 4000);
 
@@ -375,7 +375,7 @@ TEST_F(FileStorManagerTest, disk_move) {
         EXPECT_EQ(0, entry->disk);
         EXPECT_EQ(
                 vespalib::string(
-                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
+                        "BucketInfo(crc 0x3538028e, docCount 1, totDocSize 124, "
                         "ready true, active false)"),
                 entry->getBucketInfo().toString());
     }
@@ -400,7 +400,7 @@ TEST_F(FileStorManagerTest, disk_move) {
         EXPECT_EQ(1, entry->disk);
         EXPECT_EQ(
                 vespalib::string(
-                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
+                        "BucketInfo(crc 0x3538028e, docCount 1, totDocSize 124, "
                         "ready true, active false)"),
                 entry->getBucketInfo().toString());
     }
@@ -439,7 +439,7 @@ TEST_F(FileStorManagerTest, repair_notifies_distributor_on_change) {
     // Creating a document to test with
 
     for (uint32_t i = 0; i < 3; ++i) {
-        document::DocumentId docId(vespalib::make_string("userdoc:ns:1:%d", i));
+        document::DocumentId docId(vespalib::make_string("id:ns:testdoctype1:n=1:%d", i));
         auto doc = std::make_shared<Document>(*_testdoctype1, docId);
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, 1)), doc, i + 1);
         cmd->setAddress(address);
@@ -458,7 +458,7 @@ TEST_F(FileStorManagerTest, repair_notifies_distributor_on_change) {
 
     EXPECT_EQ(
             std::string("NotifyBucketChangeCommand(BucketId(0x4000000000000001), "
-                        "BucketInfo(crc 0x2625a314, docCount 2, totDocSize 154, "
+                        "BucketInfo(crc 0xa14e7e3f, docCount 2, totDocSize 174, "
                         "ready true, active false))"), top.getReply(0)->toString());
 
     top.close();
@@ -518,7 +518,7 @@ TEST_F(FileStorManagerTest, handler_priority) {
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
 
-    Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
     document::BucketIdFactory factory;
     document::BucketId bucket(16, factory.getBucketId(doc->getId()).getRawId());
@@ -624,7 +624,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
 
-    Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
     FastOS_ThreadPool pool(512 * 1024);
     MessagePusherThread pushthread(filestorHandler, doc);
@@ -671,7 +671,7 @@ TEST_F(FileStorManagerTest, handler_pause) {
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
 
-    Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
     document::BucketIdFactory factory;
     document::BucketId bucket(16, factory.getBucketId(doc->getId()).getRawId());
@@ -728,9 +728,9 @@ TEST_F(FileStorManagerTest, remap_split) {
 
     std::string content("Here is some content which is in all documents");
 
-    Document::SP doc1(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc1(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    Document::SP doc2(createDocument(content, "userdoc:footype:4567:bar").release());
+    Document::SP doc2(createDocument(content, "id:footype:testdoctype1:n=4567:bar").release());
 
     document::BucketIdFactory factory;
     document::BucketId bucket1(16, 1234);
@@ -742,12 +742,12 @@ TEST_F(FileStorManagerTest, remap_split) {
         filestorHandler.schedule(std::make_shared<api::PutCommand>(makeDocumentBucket(bucket2), doc2, i + 10), 0);
     }
 
-    EXPECT_EQ("BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n",
+    EXPECT_EQ("BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 1, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 11, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 2, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 12, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000004d2): Put(BucketId(0x40000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 3, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 13, size 118) (priority: 127)\n",
               filestorHandler.dumpQueue(0));
 
     FileStorHandler::RemapInfo a(makeDocumentBucket(document::BucketId(17, 1234)), 0);
@@ -757,12 +757,12 @@ TEST_F(FileStorManagerTest, remap_split) {
     ASSERT_TRUE(a.foundInQueue);
     ASSERT_FALSE(b.foundInQueue);
 
-    EXPECT_EQ("BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 11, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 12, size 108) (priority: 127)\n"
-              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), userdoc:footype:4567:bar, timestamp 13, size 108) (priority: 127)\n"
-              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 1, size 108) (priority: 127)\n"
-              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 2, size 108) (priority: 127)\n"
-              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), userdoc:footype:1234:bar, timestamp 3, size 108) (priority: 127)\n",
+    EXPECT_EQ("BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 11, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 12, size 118) (priority: 127)\n"
+              "BucketId(0x40000000000011d7): Put(BucketId(0x40000000000011d7), id:footype:testdoctype1:n=4567:bar, timestamp 13, size 118) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 1, size 118) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 2, size 118) (priority: 127)\n"
+              "BucketId(0x44000000000004d2): Put(BucketId(0x44000000000004d2), id:footype:testdoctype1:n=1234:bar, timestamp 3, size 118) (priority: 127)\n",
               filestorHandler.dumpQueue(0));
 }
 
@@ -787,9 +787,9 @@ TEST_F(FileStorManagerTest, handler_multi) {
 
     std::string content("Here is some content which is in all documents");
 
-    Document::SP doc1(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc1(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    Document::SP doc2(createDocument(content, "userdoc:footype:4567:bar").release());
+    Document::SP doc2(createDocument(content, "id:footype:testdoctype1:n=4567:bar").release());
 
     document::BucketIdFactory factory;
     document::BucketId bucket1(16, factory.getBucketId(doc1->getId()).getRawId());
@@ -845,7 +845,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
     std::string content("Here is some content which is in all documents");
     std::ostringstream uri;
 
-    Document::SP doc(createDocument(content, "userdoc:footype:1234:bar").release());
+    Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
     document::BucketIdFactory factory;
     document::BucketId bucket(16, factory.getBucketId(doc->getId()).getRawId());
@@ -912,7 +912,7 @@ TEST_F(FileStorManagerTest, priority) {
         std::string content("Here is some content which is in all documents");
         std::ostringstream uri;
 
-        uri << "userdoc:footype:" << (i % 3 == 0 ? 0x10001 : 0x0100001)<< ":mydoc-" << i;
+        uri << "id:footype:testdoctype1:n=" << (i % 3 == 0 ? 0x10001 : 0x0100001)<< ":mydoc-" << i;
         Document::SP doc(createDocument(content, uri.str()).release());
         documents.push_back(doc);
     }
@@ -988,7 +988,7 @@ TEST_F(FileStorManagerTest, split1) {
         std::string content("Here is some content which is in all documents");
         std::ostringstream uri;
 
-        uri << "userdoc:footype:" << (i % 3 == 0 ? 0x10001 : 0x0100001)
+        uri << "id:footype:testdoctype1:n=" << (i % 3 == 0 ? 0x10001 : 0x0100001)
                                << ":mydoc-" << i;
         Document::SP doc(createDocument(
                 content, uri.str()).release());
@@ -1135,7 +1135,7 @@ TEST_F(FileStorManagerTest, split_single_group) {
             std::string content("Here is some content for all documents");
             std::ostringstream uri;
 
-            uri << "userdoc:footype:" << (state ? 0x10001 : 0x0100001)
+            uri << "id:footype:testdoctype1:n=" << (state ? 0x10001 : 0x0100001)
                                    << ":mydoc-" << i;
             documents.emplace_back(createDocument(content, uri.str()));
         }
@@ -1203,7 +1203,7 @@ FileStorManagerTest::putDoc(DummyStorageLink& top,
     spi::Context context(defaultLoadType, spi::Priority(0),
                          spi::Trace::TraceLevel(0));
     document::BucketIdFactory factory;
-    document::DocumentId docId(vespalib::make_string("userdoc:ns:%" PRIu64 ":%d", target.getId(), docNum));
+    document::DocumentId docId(vespalib::make_string("id:ns:testdoctype1:n=%" PRIu64 ":%d", target.getId(), docNum));
     document::BucketId bucket(16, factory.getBucketId(docId).getRawId());
     //std::cerr << "doc bucket is " << bucket << " vs source " << source << "\n";
     _node->getPersistenceProvider().createBucket(
@@ -1261,7 +1261,7 @@ TEST_F(FileStorManagerTest, split_empty_target_with_remapped_ops) {
     splitCmd->setSourceIndex(0);
 
     document::DocumentId docId(
-            vespalib::make_string("userdoc:ns:%d:1234", 0x100001));
+            vespalib::make_string("id:ns:testdoctype1:n=%d:1234", 0x100001));
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     auto putCmd = std::make_shared<api::PutCommand>(makeDocumentBucket(source), doc, 1001);
     putCmd->setAddress(address);
@@ -1350,7 +1350,7 @@ TEST_F(FileStorManagerTest, join) {
     for (uint32_t i=0; i<20; ++i) {
         std::string content("Here is some content which is in all documents");
         std::ostringstream uri;
-        uri << "userdoc:footype:" << (i % 3 == 0 ? 0x10001 : 0x0100001) << ":mydoc-" << i;
+        uri << "id:footype:testdoctype1:n=" << (i % 3 == 0 ? 0x10001 : 0x0100001) << ":mydoc-" << i;
         documents.emplace_back(createDocument(content, uri.str()));
     }
     document::BucketIdFactory factory;
@@ -1476,7 +1476,7 @@ TEST_F(FileStorManagerTest, visiting) {
         std::string content("Here is some content which is in all documents");
         std::ostringstream uri;
 
-        uri << "userdoc:crawler:" << (i < 3 ? 1 : 2) << ":"
+        uri << "id:crawler:testdoctype1:n=" << (i < 3 ? 1 : 2) << ":"
             << randomizer.nextUint32() << ".html";
         Document::SP doc(createDocument(content, uri.str()));
         const document::DocumentType& type(doc->getType());
@@ -1587,7 +1587,7 @@ TEST_F(FileStorManagerTest, remove_location) {
     // Adding some documents to be removed later
     for (uint32_t i=0; i<=10; ++i) {
         std::ostringstream docid;
-        docid << "userdoc:ns:" << (i << 8) << ":foo";
+        docid << "id:ns:testdoctype1:n=" << (i << 8) << ":foo";
         Document::SP doc(createDocument("some content", docid.str()));
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 1000 + i);
         cmd->setAddress(address);
@@ -1624,7 +1624,7 @@ TEST_F(FileStorManagerTest, delete_bucket) {
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
-    document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
+    document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
@@ -1670,7 +1670,7 @@ TEST_F(FileStorManagerTest, delete_bucket_rejects_outdated_bucket_info) {
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
-    document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
+    document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
     Document::SP doc(new Document(*_testdoctype1, docId));
     document::BucketId bid(16, 4000);
 
@@ -1722,7 +1722,7 @@ TEST_F(FileStorManagerTest, delete_bucket_with_invalid_bucket_info){
     top.open();
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 2);
     // Creating a document to test with
-    document::DocumentId docId("userdoc:crawler:4000:http://www.ntnu.no/");
+    document::DocumentId docId("id:crawler:testdoctype1:n=4000:http://www.ntnu.no/");
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(16, 4000);
 
@@ -1816,7 +1816,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     // Putting it
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.no/"));
+                "some content", "id:crawler:testdoctype1:n=4000:http://www.ntnu.no/"));
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
@@ -1833,7 +1833,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     // have to accept this)
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.no/"));
+                "some content", "id:crawler:testdoctype1:n=4000:http://www.ntnu.no/"));
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
@@ -1848,7 +1848,7 @@ TEST_F(FileStorManagerTest, equal_timestamps) {
     // Putting the doc with other id. Now we should fail
     {
         Document::SP doc(createDocument(
-                "some content", "userdoc:crawler:4000:http://www.ntnu.nu/"));
+                "some content", "id:crawler:testdoctype1:n=4000:http://www.ntnu.nu/"));
         auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bid), doc, 100);
         cmd->setAddress(address);
         top.sendDown(cmd);
@@ -1878,7 +1878,7 @@ TEST_F(FileStorManagerTest, get_iter) {
     // Creating some documents to test with
     for (uint32_t i=0; i<10; ++i) {
         std::ostringstream id;
-        id << "userdoc:crawler:4000:http://www.ntnu.no/" << i;
+        id << "id:crawler:testdoctype1:n=4000:http://www.ntnu.no/" << i;
         docs.emplace_back(
                 Document::SP(
                     _node->getTestDocMan().createRandomDocumentAtLocation(
