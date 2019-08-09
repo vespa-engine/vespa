@@ -27,6 +27,13 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     private volatile int pendingCount = 0;
     private volatile boolean closed = false;
     private final Deque<BlockedMessage> blockedQ = new LinkedList<>();
+    private final static class Counter {
+        private int count = 0;
+        void inc() { count ++; }
+        void dec() { count --; }
+        boolean enough() { return count > 5; }
+    }
+    private static ThreadLocal<Counter> sendBlockedRecurseLevel = ThreadLocal.withInitial(Counter::new);
 
     /**
      * The default constructor requires values for all final member variables
@@ -248,14 +255,21 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
     }
 
     private void sendBlockedMessages() {
-        synchronized (lock) {
-            for (boolean success = true; success && !blockedQ.isEmpty(); ) {
-                BlockedMessage msg = blockedQ.remove();
-                success = msg.sendOrExpire();
-                if ( ! success) {
-                    blockedQ.addFirst(msg);
+        Counter recurselevel = sendBlockedRecurseLevel.get();
+        if (recurselevel.enough()) return;
+        try {
+            recurselevel.inc();
+            synchronized (lock) {
+                for (boolean success = true; success && !blockedQ.isEmpty(); ) {
+                    BlockedMessage msg = blockedQ.remove();
+                    success = msg.sendOrExpire();
+                    if (!success) {
+                        blockedQ.addFirst(msg);
+                    }
                 }
             }
+        } finally {
+            recurselevel.dec();
         }
     }
 
