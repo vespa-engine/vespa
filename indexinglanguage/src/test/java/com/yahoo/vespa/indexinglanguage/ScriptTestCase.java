@@ -28,7 +28,7 @@ public class ScriptTestCase {
 
     @Test
     public void requireThatScriptExecutesStatements() {
-        Document input = new Document(type, "doc:scheme:");
+        Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue("in-1", new StringFieldValue("6"));
         input.setFieldValue("in-2", new StringFieldValue("9"));
 
@@ -43,7 +43,7 @@ public class ScriptTestCase {
 
     @Test
     public void requireThatEachStatementHasEmptyInput() {
-        Document input = new Document(type, "doc:scheme:");
+        Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
 
         Expression exp = new ScriptExpression(
@@ -60,7 +60,7 @@ public class ScriptTestCase {
 
     @Test
     public void requireThatFactoryMethodWorks() throws ParseException {
-        Document input = new Document(type, "doc:scheme:");
+        Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue("in-1", new StringFieldValue("FOO"));
 
         Document output = Expression.execute(Expression.fromString("input 'in-1' | { index 'out-1'; lowercase | index 'out-2' }"), input);
@@ -71,7 +71,7 @@ public class ScriptTestCase {
 
     @Test
     public void requireThatIfExpressionPassesOriginalInputAlong() throws ParseException {
-        Document input = new Document(type, "doc:scheme:");
+        Document input = new Document(type, "id:scheme:mytype::");
         Document output = Expression.execute(Expression.fromString("'foo' | if (1 < 2) { 'bar' | index 'out-1' } else { 'baz' | index 'out-1' } | index 'out-1'"), input);
         assertNotNull(output);
         assertEquals(new StringFieldValue("foo"), output.getFieldValue("out-1"));

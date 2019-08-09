@@ -21,7 +21,7 @@ public class DocumentTestCase {
         docType.addField(new Field("my_str", DataType.getArray(DataType.STRING)));
         docType.addField(new Field("my_pos", DataType.getArray(PositionDataType.INSTANCE)));
 
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_input::");
         Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
         arr.add(new StringFieldValue("6;9"));
         doc.setFieldValue("my_str", arr);
@@ -51,7 +51,7 @@ public class DocumentTestCase {
 
         Expression exp = Expression.fromString("input arr_a . input arr_b | index out");
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             assertNotNull(doc = Expression.execute(exp, doc));
             FieldValue val = doc.getFieldValue("out");
             assertNotNull(val);
@@ -61,7 +61,7 @@ public class DocumentTestCase {
             assertEquals(0, arr.size());
         }
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
             arr.add(new StringFieldValue("a1"));
             doc.setFieldValue("arr_a", arr);
@@ -75,7 +75,7 @@ public class DocumentTestCase {
             assertEquals(1, arr.size());
         }
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
             arr.add(new StringFieldValue("a1"));
             arr.add(new StringFieldValue("a2"));
@@ -103,7 +103,7 @@ public class DocumentTestCase {
 
         Expression exp = Expression.fromString("(input str_a | split ',') . (input str_b | split ',') | index out");
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             assertNotNull(doc = Expression.execute(exp, doc));
             FieldValue val = doc.getFieldValue("out");
             assertNotNull(val);
@@ -113,7 +113,7 @@ public class DocumentTestCase {
             assertEquals(0, arr.size());
         }
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             doc.setFieldValue("str_a", new StringFieldValue("a1"));
 
             assertNotNull(doc = Expression.execute(exp, doc));
@@ -125,7 +125,7 @@ public class DocumentTestCase {
             assertEquals(1, arr.size());
         }
         {
-            Document doc = new Document(docType, "doc:scheme:");
+            Document doc = new Document(docType, "id:scheme:my_input::");
             doc.setFieldValue("str_a", new StringFieldValue("a1,a2"));
             doc.setFieldValue("str_b", new StringFieldValue("b1"));
 

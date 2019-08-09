@@ -27,7 +27,7 @@ public class DocumentUpdateTestCase {
         docType.addField(new Field("my_str", DataType.getArray(DataType.STRING)));
         docType.addField(new Field("my_pos", DataType.getArray(PositionDataType.INSTANCE)));
 
-        DocumentUpdate docUpdate = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAdd(docType.getField("my_str"), new StringFieldValue("6;9")));
         docUpdate = Expression.execute(Expression.fromString("input my_str | for_each { to_pos } | index my_pos"), docUpdate);
 
@@ -57,7 +57,7 @@ public class DocumentUpdateTestCase {
     public void requireThatCreateIfNonExistentFlagIsPropagated() throws ParseException {
         DocumentType docType = new DocumentType("my_input");
         docType.addField(new Field("my_str", DataType.getArray(DataType.STRING)));
-        DocumentUpdate upd = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate upd = new DocumentUpdate(docType, "id:scheme:my_input::");
         upd.addFieldUpdate(FieldUpdate.createAdd(docType.getField("my_str"), new StringFieldValue("foo")));
         upd.setCreateIfNonExistent(true);
 
