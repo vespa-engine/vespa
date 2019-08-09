@@ -48,7 +48,7 @@ UniqueStore<EntryT, RefT>::add(const EntryType &value)
         return AddResult(itr.getKey(), false);
 
     } else {
-        EntryRef newRef = _store.template allocator<EntryType>(_typeId).alloc(value).ref;
+        EntryRef newRef = _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
         _dict.insert(itr, newRef, 1u);
         return AddResult(newRef, true);
     }
@@ -71,7 +71,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStore<EntryT, RefT>::move(EntryRef ref)
 {
-    return _store.template allocator<EntryType>(_typeId).alloc(get(ref)).ref;
+    return _store.template allocator<WrappedEntryType>(_typeId).alloc(getWrapped(ref)).ref;
 }
 
 template <typename EntryT, typename RefT>

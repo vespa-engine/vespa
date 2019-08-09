@@ -19,6 +19,7 @@ class UniqueStoreBuilder {
     using DataStoreType = typename UniqueStoreType::DataStoreType;
     using Dictionary = typename UniqueStoreType::Dictionary;
     using EntryType = EntryT;
+    using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
 
     DataStoreType &_store;
@@ -33,7 +34,7 @@ public:
     void setupRefCounts();
     void makeDictionary();
     void add(const EntryType &value) {
-        EntryRef newRef = _store.template allocator<EntryType>(_typeId).alloc(value).ref;
+        EntryRef newRef = _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
         _refs.push_back(newRef);
     }
     EntryRef mapEnumValueToEntryRef(uint32_t enumValue) {

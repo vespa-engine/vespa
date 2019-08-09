@@ -3,6 +3,7 @@
 #pragma once
 
 #include "entry_comparator.h"
+#include "unique_store_entry.h"
 #include "datastore.h"
 
 namespace search::datastore {
@@ -15,6 +16,7 @@ namespace search::datastore {
 template <typename EntryT, typename RefT>
 class UniqueStoreComparator : public EntryComparator {
     using EntryType = EntryT;
+    using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
     using DataStoreType = DataStoreT<RefT>;
     const DataStoreType &_store;
@@ -28,7 +30,7 @@ public:
     inline const EntryType &get(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            return *_store.template getEntry<EntryType>(iRef);
+            return _store.template getEntry<WrappedEntryType>(iRef)->value();
         } else {
             return _value;
         }
