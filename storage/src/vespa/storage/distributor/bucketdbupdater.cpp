@@ -886,7 +886,7 @@ BucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t index) c
 BucketDBUpdater::MergingNodeRemover::~MergingNodeRemover()
 {
     if (_removed_buckets != 0) {
-        LOGBM(info, "After cluster state change %s, %" PRIu64 " buckets no longer "
+        LOGBM(info, "After cluster state change %s, %zu buckets no longer "
                     "have available replicas. Documents in these buckets will "
                     "be unavailable until nodes come back up",
                     _oldState.getTextualDifference(_state).c_str(), _removed_buckets);
