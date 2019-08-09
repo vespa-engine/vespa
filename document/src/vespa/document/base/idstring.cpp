@@ -20,7 +20,6 @@ namespace {
 
 string _G_typeName[6] = {
     "doc",
-    "userdoc",
     "id",
     "null"
 };
@@ -48,17 +47,12 @@ IdString::toString() const
 namespace {
 
 void reportError(const char* part) __attribute__((noinline));
-void reportError(stringref s, const char* part) __attribute__((noinline));
 void reportTooShortDocId(const char * id, size_t sz) __attribute__((noinline));
 void reportNoSchemeSeparator(const char * id) __attribute__((noinline));
 
 void reportError(const char* part)
 {
     throw IdParseException(make_string("Unparseable id: No %s separator ':' found", part), VESPA_STRLOC);
-}
-void reportError(stringref s, const char* part)
-{
-    throw IdParseException(make_string("Unparseable %s '%s': Not an unsigned 64-bit number", part, string(s).c_str()), VESPA_STRLOC);
 }
 
 void reportNoSchemeSeparator(const char * id)
@@ -69,16 +63,6 @@ void reportNoSchemeSeparator(const char * id)
 void reportTooShortDocId(const char * id, size_t sz)
 {
     throw IdParseException( make_string( "Unparseable id '%s': It is too short(%li) " "to make any sense", id, sz), VESPA_STRLOC);
-}
-
-uint64_t getAsNumber(stringref s, const char* part) {
-    char* errPos = NULL;
-    uint64_t value = strtoull(s.data(), &errPos, 10);
-
-    if (s.data() + s.size() != errPos) {
-        reportError(s, part);
-    }
-    return value;
 }
 
 union TwoByte {
@@ -98,7 +82,6 @@ union EightByte {
 
 const FourByte _G_doc = {{'d', 'o', 'c', ':'}};
 const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
-const EightByte _G_userdoc = {{'u', 's', 'e', 'r', 'd', 'o', 'c', ':'}};
 const TwoByte _G_id = {{'i', 'd'}};
 
 typedef char v16qi __attribute__ ((__vector_size__(16)));
@@ -209,11 +192,7 @@ IdString::createIdString(const char * id, size_t sz_)
         } else if (_G_id.as16 == *reinterpret_cast<const uint16_t *>(id) && id[2] == ':') {
             return IdString::UP(new IdIdString(stringref(id, sz_)));
         } else if (sz_ > 8) {
-            if (_G_userdoc.as64 == *reinterpret_cast<const uint64_t *>(id)) {
-                return IdString::UP(new UserDocIdString(stringref(id, sz_)));
-            } else {
-                reportNoSchemeSeparator(id);
-            }
+            reportNoSchemeSeparator(id);
         } else {
             reportTooShortDocId(id, 8);
         }
@@ -318,13 +297,6 @@ DocIdString::DocIdString(stringref ns, stringref id) :
 
 DocIdString::DocIdString(stringref rawId) :
     IdString(2, 4, rawId)
-{
-    validate();
-}
-
-UserDocIdString::UserDocIdString(stringref rawId) :
-    IdString(3, 8, rawId),
-    _userId(getAsNumber(rawId.substr(offset(1), offset(2) - offset(1) - 1), "userid"))
 {
     validate();
 }

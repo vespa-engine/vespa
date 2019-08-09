@@ -20,7 +20,7 @@ public:
     typedef std::unique_ptr<IdString> UP;
     typedef vespalib::CloneablePtr<IdString> CP;
     typedef uint64_t LocationType;
-    enum Type { DOC=0, USERDOC, ID, NULLID };
+    enum Type { DOC=0, ID, NULLID };
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
@@ -136,33 +136,6 @@ private:
     Type getType() const override { return DOC; }
     LocationType getLocation() const override;
     vespalib::stringref getNamespaceSpecific() const override { return getComponent(1); }
-};
-
-/**
- * \class document::UserDocIdString
- * \ingroup base
- *
- * \brief Scheme for distributing documents based on a 64 bit number.
- *
- * The location of a userdoc identifier is the 64 bit id given. The
- * name "userdoc" is purely syntactical; Vespa does not care what the source
- * of the number is.
- */
-class UserDocIdString final : public IdString {
-public:
-    UserDocIdString(vespalib::stringref rawId);
-
-    virtual int64_t getUserId() const { return _userId; }
-    bool hasNumber() const override { return true; }
-    uint64_t getNumber() const override { return _userId; }
-    LocationType getLocation() const override { return _userId; }
-
-private:
-    UserDocIdString* clone() const override { return new UserDocIdString(*this); }
-    Type getType() const override { return USERDOC; }
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
-
-    int64_t _userId;
 };
 
 } // document
