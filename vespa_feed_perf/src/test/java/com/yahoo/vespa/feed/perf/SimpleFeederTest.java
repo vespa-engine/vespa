@@ -39,13 +39,13 @@ public class SimpleFeederTest {
     @Test
     public void requireThatXMLFeederWorks() throws Throwable {
         assertFeed("<vespafeed>" +
-                   "    <document documenttype='simple' documentid='id:scheme:simple:0'>" +
+                   "    <document documenttype='simple' documentid='id:scheme:simple::0'>" +
                    "        <my_str>foo</my_str>" +
                    "    </document>" +
-                   "    <update documenttype='simple' documentid='id:scheme:simple:1'>" +
+                   "    <update documenttype='simple' documentid='id:scheme:simple::1'>" +
                    "        <assign field='my_str'>bar</assign>" +
                    "    </update>" +
-                   "    <remove documenttype='simple' documentid='id:scheme:simple:2'/>" +
+                   "    <remove documenttype='simple' documentid='id:scheme:simple::2'/>" +
                    "</vespafeed>",
                    new MessageHandler() {
 

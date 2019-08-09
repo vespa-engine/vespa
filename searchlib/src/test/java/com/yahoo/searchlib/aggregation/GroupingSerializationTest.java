@@ -280,7 +280,7 @@ public class GroupingSerializationTest {
 
     private static GlobalId createGlobalId(int docId) {
         return new GlobalId(
-                new DocumentId(String.format("id:test:type:%d", docId)).getGlobalId());
+                new DocumentId(String.format("id:test:type::%d", docId)).getGlobalId());
     }
 
     private static ExpressionNode createDummyExpression() {

@@ -158,11 +158,11 @@ public class VespaFeederTestCase {
 
         assertEquals(3, f.sessionFactory.messages.size());
         assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)f.sessionFactory.messages.get(0)).getPriority());
-        assertEquals("id:test:news:foo", ((PutDocumentMessage) f.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
+        assertEquals("id:test:news::foo", ((PutDocumentMessage) f.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
         DocumentUpdate update = ((UpdateDocumentMessage) f.sessionFactory.messages.get(1)).getDocumentUpdate();
-        assertEquals("id:test:news:foo", update.getId().toString());
+        assertEquals("id:test:news::foo", update.getId().toString());
         assertFalse(update.getCreateIfNonExistent());
-        assertEquals("id:test:news:foo", ((RemoveDocumentMessage) f.sessionFactory.messages.get(2)).getDocumentId().toString());
+        assertEquals("id:test:news::foo", ((RemoveDocumentMessage) f.sessionFactory.messages.get(2)).getDocumentId().toString());
 
         assertTrue(f.outputStream.toString().contains("Messages sent to vespa"));
     }
