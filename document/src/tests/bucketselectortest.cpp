@@ -57,11 +57,11 @@ namespace document {
 
 TEST(BucketSelectorTest, testSimple)
 {
-    ASSERT_BUCKET_COUNT("id = \"userdoc:ns:123:foobar\"", 1u);
-    ASSERT_BUCKET_COUNT("id = \"userdoc:ns:123:foo*\"", 0u);
-    ASSERT_BUCKET_COUNT("id == \"userdoc:ns:123:f?oo*\"", 1u);
-    ASSERT_BUCKET_COUNT("id =~ \"userdoc:ns:123:foo*\"", 0u);
-    ASSERT_BUCKET_COUNT("id =~ \"userdoc:ns:123:foo?\"", 0u);
+    ASSERT_BUCKET_COUNT("id = \"id:ns:testdoc:n=123:foobar\"", 1u);
+    ASSERT_BUCKET_COUNT("id = \"id:ns:testdoc:n=123:foo*\"", 0u);
+    ASSERT_BUCKET_COUNT("id == \"id:ns:testdoc:n=123:f?oo*\"", 1u);
+    ASSERT_BUCKET_COUNT("id =~ \"id:ns:testdoc:n=123:foo*\"", 0u);
+    ASSERT_BUCKET_COUNT("id =~ \"id:ns:testdoc:n=123:foo?\"", 0u);
     ASSERT_BUCKET_COUNT("id.user = 123", 1u);
     ASSERT_BUCKET_COUNT("id.user == 123", 1u);
     ASSERT_BUCKET_COUNT("id.group = \"yahoo.com\"", 1u);
@@ -78,7 +78,7 @@ TEST(BucketSelectorTest, testSimple)
     ASSERT_BUCKET_COUNT("(testdoctype1 and id.bucket=0)", 1u);
 
         // Check that the correct buckets is found
-    ASSERT_BUCKET("id = \"userdoc:ns:123:foobar\"",
+    ASSERT_BUCKET("id = \"id:ns:testdoc:n=123:foobar\"",
                   document::BucketId(58, 123));
 
     ASSERT_BUCKET("id.bucket == 0x4000000000000258", document::BucketId(16, 600));

@@ -31,9 +31,9 @@ const IdType &getAs(const DocumentId &doc_id) {
 }
 
 template <typename IdType>
-void checkUser(const string &id, int64_t user_id) {
+void checkUser(const string &id, uint64_t user_id) {
     DocumentId doc_id(id);
-    EXPECT_EQUAL(user_id, getAs<IdType>(doc_id).getUserId());
+    EXPECT_EQUAL(user_id, getAs<IdType>(doc_id).getNumber());
 }
 
 void checkType(const string &id, const string &doc_type) {
@@ -97,16 +97,16 @@ TEST("require that id id location is specified by local id only by default") {
 }
 
 TEST("require that local id can be empty") {
-    const string id = "userdoc:" + ns + ":1234:";
-    checkId(id, IdString::USERDOC, ns, "");
-    checkUser<UserDocIdString>(id, 1234);
+    const string id = "id:" + ns + ":type:n=1234:";
+    checkId(id, IdString::ID, ns, "");
+    checkUser<IdIdString>(id, 1234);
 }
 
 TEST("require that document ids can be assigned") {
-    DocumentId id1("userdoc:" + ns + ":1234:");
+    DocumentId id1("id:" + ns + ":type:n=1234:");
     DocumentId id2 = id1;
-    checkId(id2.toString(), IdString::USERDOC, ns, "");
-    checkUser<UserDocIdString>(id2.toString(), 1234);
+    checkId(id2.toString(), IdString::ID, ns, "");
+    checkUser<IdIdString>(id2.toString(), 1234);
 }
 
 TEST("require that illegal ids fail") {

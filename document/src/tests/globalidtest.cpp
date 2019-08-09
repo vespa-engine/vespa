@@ -84,9 +84,9 @@ namespace {
 
 TEST_F(GlobalIdTest, testBucketIdConversion)
 {
-    verifyDocumentId("userdoc:ns:1:abc");
-    verifyDocumentId("userdoc:ns:1000:abc");
-    verifyDocumentId("userdoc:hsgf:18446744073700000000:dfdfsdfg");
+    verifyDocumentId("id:ns:test:n=1:abc");
+    verifyDocumentId("id:ns:test:n=1000:abc");
+    verifyDocumentId("id:hsgf:test:n=18446744073700000000:dfdfsdfg");
     verifyDocumentId("id:ns:mytype:g=somegroup:hmm");
     verifyDocumentId("doc::test");
     verifyDocumentId("doc:myns:http://foo.bar");
@@ -157,7 +157,7 @@ TEST_F(GlobalIdTest, testGidRangeConversion)
         switch (scheme) {
             case 0: ost << "doc:" << name_space.str() << ":";
                     break;
-            case 1: ost << "userdoc:" << name_space.str() << ":";
+            case 1: ost << "id:" << name_space.str() << ":mytype:n=";
                     ost << randomizer.nextUint32() << ":";
                     break;
             case 2: ost << "id:" << name_space.str() << ":mytype:g=";
