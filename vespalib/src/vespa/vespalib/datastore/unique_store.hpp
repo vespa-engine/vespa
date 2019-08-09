@@ -17,7 +17,8 @@ constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 template <typename EntryT, typename RefT>
 UniqueStore<EntryT, RefT>::UniqueStore()
-    : _store(),
+    : ICompactable(),
+      _store(),
       _typeHandler(1, 2u, RefT::offsetSize(), NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
       _typeId(0),
       _dict()
@@ -95,14 +96,17 @@ UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 
 namespace uniquestore {
 
-template <typename EntryT, typename RefT>
+template <typename RefT>
 class CompactionContext : public ICompactionContext {
 private:
-    using UniqueStoreType = UniqueStore<EntryT, RefT>;
-    using Dictionary = typename UniqueStoreType::Dictionary;
+    using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
+    using Dictionary = btree::BTree<EntryRef, uint32_t,
+                                    btree::NoAggregated,
+                                    EntryComparatorWrapper,
+                                    DictionaryTraits>;
     DataStoreBase &_dataStore;
     Dictionary &_dict;
-    UniqueStoreType &_store;
+    ICompactable &_store;
     std::vector<uint32_t> _bufferIdsToCompact;
     std::vector<std::vector<EntryRef>> _mapping;
 
@@ -140,7 +144,7 @@ private:
 public:
     CompactionContext(DataStoreBase &dataStore,
                       Dictionary &dict,
-                      UniqueStoreType &store,
+                      ICompactable &store,
                       std::vector<uint32_t> bufferIdsToCompact)
         : _dataStore(dataStore),
           _dict(dict),
@@ -180,7 +184,7 @@ ICompactionContext::UP
 UniqueStore<EntryT, RefT>::compactWorst()
 {
     std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(true, true);
-    return std::make_unique<uniquestore::CompactionContext<EntryT, RefT>>
+    return std::make_unique<uniquestore::CompactionContext<RefT>>
         (_store, _dict, *this, std::move(bufferIdsToCompact));
 }
 

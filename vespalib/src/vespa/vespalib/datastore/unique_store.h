@@ -10,6 +10,7 @@
 #include "unique_store_entry.h"
 #include "unique_store_comparator.h"
 #include "i_compaction_context.h"
+#include "i_compactable.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/btree/btree.h>
 
@@ -26,7 +27,7 @@ class UniqueStoreSaver;
  * 32-bit EntryRef.
  */
 template <typename EntryT, typename RefT = EntryRefT<22> >
-class UniqueStore
+class UniqueStore : public ICompactable
 {
 public:
     using DataStoreType = DataStoreT<RefT>;
@@ -64,7 +65,7 @@ private:
 public:
     UniqueStore();
     ~UniqueStore();
-    EntryRef move(EntryRef ref);
+    EntryRef move(EntryRef ref) override;
     AddResult add(const EntryType &value);
     EntryRef find(const EntryType &value);
     const WrappedEntryType &getWrapped(EntryRef ref) const
