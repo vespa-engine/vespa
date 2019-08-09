@@ -303,14 +303,16 @@ class IOThread implements Runnable, AutoCloseable {
             case DISCONNECTED:
                 try {
                     if (! client.connect()) {
-                        log.log(Level.WARNING, "Connect returned null " + endpoint);
+                        log.log(Level.WARNING, "Could not connect to endpoint: '" + endpoint + "'. Will re-try.");
                         drainFirstDocumentsInQueueIfOld();
                         return ThreadState.DISCONNECTED;
                     }
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable1) {
                     drainFirstDocumentsInQueueIfOld();
-                    log.log(Level.INFO, "Connect did not work out " + endpoint, throwable1);
+
+                    log.log(Level.INFO, "Failed connecting to endpoint: '" + endpoint
+                            + "'. Will re-try connecting. Failed with '" + Exceptions.toMessageString(throwable1) + "'",throwable1);
                     executeProblemsCounter.incrementAndGet();
                     return ThreadState.DISCONNECTED;
                 }
@@ -319,15 +321,19 @@ class IOThread implements Runnable, AutoCloseable {
                     client.handshake();
                     successfulHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
+
                     executeProblemsCounter.incrementAndGet();
-                    log.info("Handshake did not work out " + endpoint + ": " + Exceptions.toMessageString(ser));
+                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
+                            + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(ser) + "'",ser);
+
                     drainFirstDocumentsInQueueIfOld();
                     resultQueue.onEndpointError(new FeedProtocolException(ser.getResponseCode(), ser.getResponseString(), ser, endpoint));
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
                     resultQueue.onEndpointError(new FeedConnectException(throwable, endpoint));
-                    log.info("Problem with Handshake " + endpoint + ": " + Exceptions.toMessageString(throwable));
+                    log.log(Level.INFO, "Failed talking to endpoint. Handshake with server endpoint '" + endpoint
+                            + "' failed. Will re-try handshake. Failed with '" + Exceptions.toMessageString(throwable) + "'",throwable);
                     drainFirstDocumentsInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
@@ -339,11 +345,14 @@ class IOThread implements Runnable, AutoCloseable {
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {
-                    log.info("Problems while handing data over to gateway " + endpoint + ": " + Exceptions.toMessageString(ser));
+                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
+                            + "'. Will re-try. Endpoint responded with a HTTP response code we did not expect. '"
+                            + Exceptions.toMessageString(ser) + "'",ser);
                     return ThreadState.CONNECTED;
                 }
                 catch (Throwable e) { // Covers IOException as well
-                    log.info("Problems while handing data over to gateway " + endpoint + ": " + Exceptions.toMessageString(e));
+                    log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
+                            + "'. Will re-try. Connection level error. Failed with '" + Exceptions.toMessageString(e) + "'", e);
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
