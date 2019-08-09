@@ -13,7 +13,7 @@ TEST(ParametersTest, test_parameters)
     par.set("fast", "overture");
     par.set("overture", "yahoo");
     par.set("number", 6);
-    par.set("long", 8589934590L);
+    par.set("int64_t", INT64_C(8589934590));
     par.set("double", 0.25);
     std::unique_ptr<document::ByteBuffer> buffer(par.serialize());
 
@@ -25,14 +25,14 @@ TEST(ParametersTest, test_parameters)
     EXPECT_EQ(vespalib::stringref("yahoo"), par2.get("overture"));
     std::string stringDefault = "wayne corp";
     int numberDefault = 123;
-    long longDefault = 456;
+    int64_t int64Default = 456;
     double doubleDefault = 0.5;
     EXPECT_EQ(6, par2.get("number", numberDefault));
-    EXPECT_EQ(8589934590L, par2.get("long", longDefault));
+    EXPECT_EQ(INT64_C(8589934590), par2.get("int64_t", int64Default));
     EXPECT_DOUBLE_EQ(0.25, par2.get("double", doubleDefault));
 
     EXPECT_EQ(stringDefault, par2.get("nonexistingstring", stringDefault));
     EXPECT_EQ(numberDefault, par2.get("nonexistingnumber", numberDefault));
-    EXPECT_EQ(longDefault,   par2.get("nonexistinglong", longDefault));
+    EXPECT_EQ(int64Default,  par2.get("nonexistingint64_t", int64Default));
     EXPECT_EQ(doubleDefault, par2.get("nonexistingdouble", doubleDefault));
 }
