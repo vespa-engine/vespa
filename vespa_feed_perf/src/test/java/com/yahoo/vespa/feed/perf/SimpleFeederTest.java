@@ -39,13 +39,13 @@ public class SimpleFeederTest {
     @Test
     public void requireThatXMLFeederWorks() throws Throwable {
         assertFeed("<vespafeed>" +
-                   "    <document documenttype='simple' documentid='doc:scheme:0'>" +
+                   "    <document documenttype='simple' documentid='id:scheme:simple:0'>" +
                    "        <my_str>foo</my_str>" +
                    "    </document>" +
-                   "    <update documenttype='simple' documentid='doc:scheme:1'>" +
+                   "    <update documenttype='simple' documentid='id:scheme:simple:1'>" +
                    "        <assign field='my_str'>bar</assign>" +
                    "    </update>" +
-                   "    <remove documenttype='simple' documentid='doc:scheme:2'/>" +
+                   "    <remove documenttype='simple' documentid='id:scheme:simple:2'/>" +
                    "</vespafeed>",
                    new MessageHandler() {
 
@@ -192,14 +192,14 @@ public class SimpleFeederTest {
     public void requireThatParseFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
                                            "<vespafeed>" +
-                                           "    <document documenttype='unknown' documentid='doc:scheme:0'/>" +
+                                           "    <document documenttype='unknown' documentid='id:scheme:simple:0'/>" +
                                            "</vespafeed>",
                                            null);
         try {
             driver.run();
             fail();
         } catch (DeserializationException e) {
-            assertEquals("Field 'doc:scheme:0': Must specify an existing document type, not 'unknown' (at line 1, column 76)",
+            assertEquals("Field 'id:scheme:simple:0': Must specify an existing document type, not 'unknown' (at line 1, column 76)",
                          e.getMessage());
         }
         assertTrue(driver.close());
@@ -209,7 +209,7 @@ public class SimpleFeederTest {
     public void requireThatSyncFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
                                            "<vespafeed>" +
-                                           "    <document documenttype='simple' documentid='doc:scheme:0'/>" +
+                                           "    <document documenttype='simple' documentid='id:scheme:simple:0'/>" +
                                            "</vespafeed>",
                                            null);
         driver.feeder.getSourceSession().close();
@@ -225,7 +225,7 @@ public class SimpleFeederTest {
     @Test
     public void requireThatAsyncFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
-                                           "<vespafeed><document documenttype='simple' documentid='doc:scheme:0'/></vespafeed>",
+                                           "<vespafeed><document documenttype='simple' documentid='id:scheme:simple:0'/></vespafeed>",
                                            new MessageHandler() {
 
                                                @Override
