@@ -413,9 +413,7 @@ public class JobController {
                          .stream().findAny()
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
-                                             .map(policy -> policy.endpointIn(controller.system()).url()))
-                         // TODO jvenstad: Remove ugly thing when public deployments have a valid web certificate.
-                         .map(uri -> controller.system().isPublic() ? URI.create("http://" + uri.getHost() + ":443/") : uri);
+                                             .map(policy -> policy.endpointIn(controller.system()).url()));
     }
 
     /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */
