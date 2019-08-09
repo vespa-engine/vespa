@@ -346,7 +346,7 @@ class IOThread implements Runnable, AutoCloseable {
                 }
                 catch (ServerResponseException ser) {
                     log.log(Level.INFO, "Problems while handing data over to endpoint '" + endpoint
-                            + "'. Will re-try. Endpoint responded with a HTTP response code we did not expect. '"
+                            + "'. Will re-try. Endpoint responded with an unexpected HTTP response code. '"
                             + Exceptions.toMessageString(ser) + "'",ser);
                     return ThreadState.CONNECTED;
                 }
