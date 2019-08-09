@@ -199,7 +199,7 @@ public class SimpleFeederTest {
             driver.run();
             fail();
         } catch (DeserializationException e) {
-            assertEquals("Field 'id:scheme:simple:0': Must specify an existing document type, not 'unknown' (at line 1, column 76)",
+            assertEquals("Field 'id:scheme:simple::0': Must specify an existing document type, not 'unknown' (at line 1, column 83)",
                          e.getMessage());
         }
         assertTrue(driver.close());
