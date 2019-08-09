@@ -12,7 +12,6 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.idstring.IdString;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage;
@@ -208,7 +207,6 @@ public class Messages60TestCase extends MessagesTestBase {
             msg.getBuckets().add(new BucketId(16, 1234));
             msg.setVisitRemoves(true);
             msg.setFieldSet("foo bar");
-            msg.setVisitorOrdering(OrderingSpecification.DESCENDING);
             msg.setMaxBucketsPerVisitor(2);
             msg.setBucketSpace(BUCKET_SPACE);
             assertEquals(BASE_MESSAGE_LENGTH + 178 + serializedLength(BUCKET_SPACE), serialize("CreateVisitorMessage", msg));
@@ -228,7 +226,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(new BucketId(16, 1234), msg.getBuckets().iterator().next());
                 assertEquals("somevalue", Utf8.toString(msg.getParameters().get("myvar")));
                 assertEquals("34", Utf8.toString(msg.getParameters().get("anothervar")));
-                assertEquals(OrderingSpecification.DESCENDING, msg.getVisitorOrdering());
                 assertEquals(2, msg.getMaxBucketsPerVisitor());
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
@@ -370,13 +367,13 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             DocumentListMessage msg = (DocumentListMessage)deserialize("DocumentListMessage", DocumentProtocol.MESSAGE_DOCUMENTLIST, Language.CPP);
-            assertEquals("userdoc:scheme:1234:", msg.getDocuments().get(0).getDocument().getId().toString());
+            assertEquals("id:scheme:testdoc:n=1234:1", msg.getDocuments().get(0).getDocument().getId().toString());
             assertEquals(1234, msg.getDocuments().get(0).getTimestamp());
             assertFalse(msg.getDocuments().get(0).isRemoveEntry());
 
-            assertEquals(BASE_MESSAGE_LENGTH + 63, serialize("DocumentListMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 69, serialize("DocumentListMessage", msg));
             msg = (DocumentListMessage)deserialize("DocumentListMessage", DocumentProtocol.MESSAGE_DOCUMENTLIST, Language.JAVA);
-            assertEquals("userdoc:scheme:1234:", msg.getDocuments().get(0).getDocument().getId().toString());
+            assertEquals("id:scheme:testdoc:n=1234:1", msg.getDocuments().get(0).getDocument().getId().toString());
             assertEquals(1234, msg.getDocuments().get(0).getTimestamp());
             assertFalse(msg.getDocuments().get(0).isRemoveEntry());
 

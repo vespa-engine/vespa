@@ -236,7 +236,7 @@ struct FixtureBase {
 
     void addSingleDocToMetaStore(uint32_t expected_lid) {
         using Result = DocumentMetaStore::Result;
-        DocumentId id(make_string("groupdoc:test:foo:%d", expected_lid));
+        DocumentId id(make_string("id:test:foo:g=foo:%d", expected_lid));
         Result inspect = metaStore->inspect(id.getGlobalId());
         uint32_t docSize = 1;
         EXPECT_EQUAL(expected_lid,
@@ -341,7 +341,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
 TEST_F("require that handleMove() handles move within same subdb and propagates destructor callback", MoveFixture)
 {
     Document::SP doc(new Document);
-    DocumentId doc1id("groupdoc:test:foo:1");
+    DocumentId doc1id("id:test:foo:g=foo:1");
     uint32_t docSize = 1;
     f.runInMaster([&] () { f.metaStore->put(doc1id.getGlobalId(),
                       doc1id.getGlobalId().convertToBucketId(),

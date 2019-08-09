@@ -4,7 +4,6 @@ package com.yahoo.docproc;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
@@ -12,7 +11,7 @@ import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.idstring.UserDocIdString;
+import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.statistics.StatisticsImpl;
 import org.junit.Test;
 
@@ -44,10 +43,15 @@ public class SimpleDocumentProcessorTestCase {
         return processing;
     }
 
-    @Test
-    public void requireThatProcessingMultipleOperationsWork() {
+    private static DocumentType createTestType() {
         DocumentType type = new DocumentType("foobar");
         type.addField("title", DataType.STRING);
+        return type;
+    }
+
+    @Test
+    public void requireThatProcessingMultipleOperationsWork() {
+        DocumentType type = createTestType();
 
         Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"),
                                      new DocumentUpdate(type, "doc:this:is:an:update"),
@@ -63,13 +67,12 @@ public class SimpleDocumentProcessorTestCase {
         assertThat(p.getDocumentOperations().get(1) instanceof DocumentUpdate, is(true));
         assertThat(p.getDocumentOperations().get(2) instanceof DocumentRemove, is(true));
         assertThat(p.getDocumentOperations().get(2).getId().toString(),
-                   is("userdoc:foobar:1234:something"));
+                   is("id:foobar:foobar::12345"));
     }
 
     @Test
     public void requireThatProcessingSingleOperationWorks() {
-        DocumentType type = new DocumentType("foobar");
-        type.addField("title", DataType.STRING);
+        DocumentType type = createTestType();
 
         Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"));
         DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
@@ -83,8 +86,7 @@ public class SimpleDocumentProcessorTestCase {
 
     @Test
     public void requireThatThrowingTerminatesIteration() {
-        DocumentType type = new DocumentType("foobar");
-        type.addField("title", DataType.STRING);
+        DocumentType type = createTestType();
 
         Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"),
                                      new DocumentRemove(new DocumentId("doc:this:is:a:remove")),
@@ -120,7 +122,7 @@ public class SimpleDocumentProcessorTestCase {
 
         @Override
         public void process(DocumentRemove remove) {
-            remove.getId().setId(new UserDocIdString("foobar", 1234L, "something"));
+            remove.getId().setId(new IdIdString("foobar", "foobar", "", "12345"));
         }
 
         @Override

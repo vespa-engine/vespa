@@ -52,22 +52,22 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
 
     private void putToManyAllInSameBucket() throws InterruptedException {
         assertPutMessages(createPutDocumentMessage(), TOMANYALLINSAMEBUCKET,
-                          "userdoc:123456:11111:foo:er:bra",
-                          "userdoc:123456:11111:foo:trallala",
-                          "userdoc:123456:11111:foo:a");
+                          "id:123456:baz:n=11111:foo:er:bra",
+                          "id:123456:baz:n=11111:foo:trallala",
+                          "id:123456:baz:n=11111:foo:a");
     }
 
     private void putToManySomeInSameBucket() throws InterruptedException {
         assertPutMessages(createPutDocumentMessage(), TOMANYSOMEINSAMEBUCKET,
-                          "userdoc:123456:7890:bar:er:bra",
+                          "id:123456:baz:n=7890:bar:er:bra",
                           "doc:foo:bar:er:ja",
-                          "userdoc:567890:1234:a",
+                          "id:567890:baz:n=1234:a",
                           "doc:foo:bar:hahahhaa",
-                          "userdoc:123456:7890:a:a",
+                          "id:123456:baz:n=7890:a:a",
                           "doc:foo:bar:aa",
-                          "userdoc:567890:1234:bar:ala",
+                          "id:567890:baz:n=1234:bar:ala",
                           "doc:foo:bar:sdfgsaa",
-                          "userdoc:123456:7890:bar:tralsfa",
+                          "id:123456:baz:n=7890:bar:tralsfa",
                           "doc:foo:bar:dfshaa");
     }
 
@@ -181,15 +181,15 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
         public Progress process(Processing processing) {
             List<DocumentOperation> operations = processing.getDocumentOperations();
             operations.clear();
-            operations.add(new DocumentPut(type, "userdoc:123456:7890:bar:er:bra"));
+            operations.add(new DocumentPut(type, "id:123456:baz:n=7890:bar:er:bra"));
             operations.add(new DocumentPut(type, "doc:foo:bar:er:ja"));
-            operations.add(new DocumentPut(type, "userdoc:567890:1234:a"));
+            operations.add(new DocumentPut(type, "id:567890:baz:n=1234:a"));
             operations.add(new DocumentPut(type, "doc:foo:bar:hahahhaa"));
-            operations.add(new DocumentPut(type, "userdoc:123456:7890:a:a"));
+            operations.add(new DocumentPut(type, "id:123456:baz:n=7890:a:a"));
             operations.add(new DocumentPut(type, "doc:foo:bar:aa"));
-            operations.add(new DocumentPut(type, "userdoc:567890:1234:bar:ala"));
+            operations.add(new DocumentPut(type, "id:567890:baz:n=1234:bar:ala"));
             operations.add(new DocumentPut(type, "doc:foo:bar:sdfgsaa"));
-            operations.add(new DocumentPut(type, "userdoc:123456:7890:bar:tralsfa"));
+            operations.add(new DocumentPut(type, "id:123456:baz:n=7890:bar:tralsfa"));
             operations.add(new DocumentPut(type, "doc:foo:bar:dfshaa"));
             return Progress.DONE;
         }
@@ -202,9 +202,9 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
         public Progress process(Processing processing) {
             List<DocumentOperation> docs = processing.getDocumentOperations();
             docs.clear();
-            docs.add(new DocumentPut(type, "userdoc:123456:11111:foo:er:bra"));
-            docs.add(new DocumentPut(type, "userdoc:123456:11111:foo:trallala"));
-            docs.add(new DocumentPut(type, "userdoc:123456:11111:foo:a"));
+            docs.add(new DocumentPut(type, "id:123456:baz:n=11111:foo:er:bra"));
+            docs.add(new DocumentPut(type, "id:123456:baz:n=11111:foo:trallala"));
+            docs.add(new DocumentPut(type, "id:123456:baz:n=11111:foo:a"));
             return Progress.DONE;
         }
 

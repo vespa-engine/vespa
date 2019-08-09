@@ -34,7 +34,7 @@ struct Fixture
         return *this;
     }
     Fixture &add(uint32_t lid) {
-        DocumentId docId(make_string("userdoc:test:%u:%u", 1, lid));
+        DocumentId docId(make_string("id:test:test:n=%u:%u", 1, lid));
         const GlobalId &gid = docId.getGlobalId();
         DMSResult res = _metaStore.inspect(gid);
         ASSERT_EQUAL(lid, res._lid);

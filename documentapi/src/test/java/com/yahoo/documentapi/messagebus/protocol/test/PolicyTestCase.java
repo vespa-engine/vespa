@@ -410,17 +410,6 @@ public class PolicyTestCase {
     }
 
     @Test
-    public void remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes() {
-        PolicyTestFrame frame = createFrameWithTwoRoutes();
-
-        frame.setMessage(createRemove("userdoc:testdoc:1234:1"));
-        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
-
-        frame.setMessage(createRemove("userdoc:other:1234:1"));
-        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
-    }
-
-    @Test
     public void get_document_messages_are_sent_to_the_route_handling_the_given_document_type() {
         PolicyTestFrame frame = createFrameWithTwoRoutes();
 
@@ -429,17 +418,6 @@ public class PolicyTestCase {
 
         frame.setMessage(createGet("id:ns:other::1"));
         frame.assertSelect(Arrays.asList("other-route"));
-    }
-
-    @Test
-    public void get_document_messages_with_legacy_document_ids_are_sent_to_all_routes() {
-        PolicyTestFrame frame = createFrameWithTwoRoutes();
-
-        frame.setMessage(createGet("userdoc:testdoc:1234:1"));
-        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
-
-        frame.setMessage(createGet("userdoc:other:1234:1"));
-        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
     }
 
     private PolicyTestFrame createFrameWithTwoRoutes() {

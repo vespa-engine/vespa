@@ -614,7 +614,7 @@ TEST("testMailChecksumExpression") {
     std::string flags = "RWA";
     std::string ymumid = "barmuda";
 
-    document::Document::UP doc = testDocMan.createDocument("foo", "userdoc:footype:1234:" + ymumid);
+    document::Document::UP doc = testDocMan.createDocument("foo", "id:footype:testdoctype1:n=1234:" + ymumid);
     document::WeightedSetFieldValue ws(doc->getField("byteweightedset").getDataType());
 
     for (uint32_t i = 0; i < flags.size(); i++) {

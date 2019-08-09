@@ -24,7 +24,6 @@ public class VisitorParametersTestCase {
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet("[header]");
-        params.setVisitorOrdering(123);
         params.setLoadType(loadType);
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
@@ -61,7 +60,6 @@ public class VisitorParametersTestCase {
         assertEquals(1337, copy.getTimeoutMs());
         assertEquals(111, copy.getMaxPending());
         assertEquals("[header]", copy.getFieldSet());
-        assertEquals(123, copy.getVisitorOrdering());
         assertEquals(loadType, copy.getLoadType());
         assertEquals(true, copy.getVisitRemoves());
         assertEquals(true, copy.getVisitInconsistentBuckets());
@@ -105,7 +103,6 @@ public class VisitorParametersTestCase {
                 "  Weight:             1.0\n" +
                 "  Max firstpass hits: 555\n" +
                 "  Max total hits:     777\n" +
-                "  Visitor ordering:   123\n" +
                 "  Max buckets:        55\n" +
                 "  Priority:           HIGHEST\n" +
                 "  Dynamically increasing max buckets per visitor\n" +
