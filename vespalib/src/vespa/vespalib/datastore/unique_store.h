@@ -7,8 +7,10 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "entry_comparator_wrapper.h"
+#include "unique_store_entry.h"
 #include "unique_store_comparator.h"
 #include "i_compaction_context.h"
+#include "i_compactable.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/btree/btree.h>
 
@@ -25,16 +27,17 @@ class UniqueStoreSaver;
  * 32-bit EntryRef.
  */
 template <typename EntryT, typename RefT = EntryRefT<22> >
-class UniqueStore
+class UniqueStore : public ICompactable
 {
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
+    using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
     using Saver = UniqueStoreSaver<EntryT, RefT>;
     using Builder = UniqueStoreBuilder<EntryT, RefT>;
     using Compare = UniqueStoreComparator<EntryType, RefType>;
-    using UniqueStoreBufferType = BufferType<EntryType>;
+    using UniqueStoreBufferType = BufferType<WrappedEntryType>;
     using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
     using Dictionary = btree::BTree<EntryRef, uint32_t,
                                     btree::NoAggregated,
@@ -62,13 +65,17 @@ private:
 public:
     UniqueStore();
     ~UniqueStore();
-    EntryRef move(EntryRef ref);
+    EntryRef move(EntryRef ref) override;
     AddResult add(const EntryType &value);
     EntryRef find(const EntryType &value);
-    const EntryType &get(EntryRef ref) const
+    const WrappedEntryType &getWrapped(EntryRef ref) const
     {
         RefType iRef(ref);
-        return *_store.template getEntry<EntryType>(iRef);
+        return *_store.template getEntry<WrappedEntryType>(iRef);
+    }
+    const EntryType &get(EntryRef ref) const
+    {
+        return getWrapped(ref).value();
     }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
