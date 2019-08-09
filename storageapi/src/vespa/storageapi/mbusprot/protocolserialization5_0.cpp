@@ -604,7 +604,7 @@ ProtocolSerialization5_0::onEncode(GBBuf& buf, const api::CreateVisitorCommand& 
 {
     ProtocolSerialization4_2::onEncode(buf, cmd);
 
-    buf.putInt(cmd.getVisitorOrdering());
+    buf.putInt(0);  // Unused
     buf.putInt(cmd.getMaxBucketsPerVisitor());
 }
 
@@ -612,9 +612,7 @@ api::StorageCommand::UP
 ProtocolSerialization5_0::onDecodeCreateVisitorCommand(BBuf& buf) const
 {
     api::StorageCommand::UP cvc = ProtocolSerialization4_2::onDecodeCreateVisitorCommand(buf);
-
-    static_cast<api::CreateVisitorCommand*>(cvc.get())->setVisitorOrdering(
-            (document::OrderingSpecification::Order)SH::getInt(buf));
+    SH::getInt(buf); // Unused
 
     static_cast<api::CreateVisitorCommand*>(cvc.get())->setMaxBucketsPerVisitor(SH::getInt(buf));
 

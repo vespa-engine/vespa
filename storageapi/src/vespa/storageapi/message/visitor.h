@@ -49,7 +49,6 @@ private:
     uint32_t _maxPendingReplyCount;
     uint32_t _version;
 
-    document::OrderingSpecification::Order _ordering;
     uint32_t _maxBucketsPerVisitor;
 
 public:
@@ -110,8 +109,6 @@ public:
     void setVisitorDispatcherVersion(uint32_t version) { _version = version; }
     uint32_t getVisitorDispatcherVersion() const { return _version; }
 
-    void setVisitorOrdering(document::OrderingSpecification::Order ordering) { _ordering = ordering; }
-    document::OrderingSpecification::Order getVisitorOrdering() const { return _ordering; }
     void setMaxBucketsPerVisitor(uint32_t max) { _maxBucketsPerVisitor = max; }
     uint32_t getMaxBucketsPerVisitor() const { return _maxBucketsPerVisitor; }
 

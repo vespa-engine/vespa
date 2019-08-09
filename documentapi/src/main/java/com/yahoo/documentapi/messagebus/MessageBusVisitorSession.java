@@ -628,7 +628,6 @@ public class MessageBusVisitorSession implements VisitorSession {
             msg.setVisitRemoves(params.visitRemoves());
             msg.setParameters(params.getLibraryParameters());
             msg.setRoute(params.getRoute());
-            msg.setVisitorOrdering(params.getVisitorOrdering());
             msg.setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
             msg.setLoadType(params.getLoadType());
             msg.setPriority(params.getPriority());

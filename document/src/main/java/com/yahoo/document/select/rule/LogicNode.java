@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.Visitor;
 
@@ -70,61 +69,6 @@ public class LogicNode implements ExpressionNode {
             combineBuckets(buf);
         }
         return buf.pop().buckets;
-    }
-
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        Stack<OrderingItem> buf = new Stack<>();
-        for (NodeItem item : items) {
-            if (!buf.isEmpty()) {
-                while (buf.peek().operator > item.operator) {
-                    pickOrdering(buf);
-                }
-            }
-            buf.push(new OrderingItem(item.operator, item.node.getOrdering(order)));
-        }
-        while (buf.size() > 1) {
-            pickOrdering(buf);
-        }
-        return buf.pop().ordering;
-    }
-
-    private OrderingSpecification pickOrdering(OrderingSpecification a, OrderingSpecification b, boolean isAnd) {
-        if (a.getWidthBits() == b.getWidthBits() && a.getDivisionBits() == b.getDivisionBits() && a.getOrder() == b.getOrder()) {
-            if ((a.getOrder() == OrderingSpecification.ASCENDING && isAnd) ||
-                (a.getOrder() == OrderingSpecification.DESCENDING && !isAnd)) {
-                return new OrderingSpecification(a.getOrder(), Math.max(a.getOrderingStart(), b.getOrderingStart()), b.getWidthBits(), a.getDivisionBits());
-            } else {
-                return new OrderingSpecification(a.getOrder(), Math.min(a.getOrderingStart(), b.getOrderingStart()), b.getWidthBits(), a.getDivisionBits());
-            }
-        }
-        return null;
-    }
-
-    private void pickOrdering(Stack<OrderingItem> buf) {
-        OrderingItem rhs = buf.pop();
-        OrderingItem lhs = buf.pop();
-        switch (rhs.operator) {
-        case AND:
-            if (lhs.ordering == null) {
-                lhs.ordering = rhs.ordering;
-            } else if (rhs.ordering == null) {
-                // empty
-            } else {
-                lhs.ordering = pickOrdering(lhs.ordering, rhs.ordering, true);
-            }
-            break;
-        case OR:
-            if (lhs.ordering != null && rhs.ordering != null) {
-                lhs.ordering = pickOrdering(lhs.ordering, rhs.ordering, false);
-            } else {
-                lhs.ordering = null;
-            }
-            break;
-        default:
-            lhs.ordering = null;
-        }
-        buf.push(lhs);
     }
 
     /**
@@ -246,7 +190,7 @@ public class LogicNode implements ExpressionNode {
     /**
      * Private class to store results in a stack.
      */
-    private abstract class ValueItem implements ResultList.LazyResultList {
+    private static abstract class ValueItem implements ResultList.LazyResultList {
         private final int operator;
         ValueItem(int operator) {
             this.operator = operator;
@@ -254,7 +198,7 @@ public class LogicNode implements ExpressionNode {
         int getOperator() { return operator; }
     }
 
-    private final class LazyValueItem extends ValueItem {
+    private static final class LazyValueItem extends ValueItem {
         private final NodeItem item;
         private final Context context;
         private ResultList lazyResult = null;
@@ -273,7 +217,7 @@ public class LogicNode implements ExpressionNode {
         }
     }
 
-    private final class LazyCombinedItem extends ValueItem {
+    private static final class LazyCombinedItem extends ValueItem {
         private final ValueItem lhs;
         private final ValueItem rhs;
         private ResultList lazyResult = null;
@@ -304,7 +248,7 @@ public class LogicNode implements ExpressionNode {
     /**
      * Private class to store bucket sets in a stack.
      */
-    private final class BucketItem {
+    private static final class BucketItem {
         private int operator;
         private BucketSet buckets;
 
@@ -315,22 +259,9 @@ public class LogicNode implements ExpressionNode {
     }
 
     /**
-     * Private class to store ordering expressions in a stack.
-     */
-    private final class OrderingItem {
-        private int operator;
-        private OrderingSpecification ordering;
-
-        OrderingItem(int operator, OrderingSpecification orderSpec) {
-            this.operator = operator;
-            this.ordering = orderSpec;
-        }
-    }
-
-    /**
      * Private class to store expression nodes in a stack.
      */
-    public final class NodeItem {
+    public static final class NodeItem {
         private int operator;
         private ExpressionNode node;
 

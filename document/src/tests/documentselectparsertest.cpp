@@ -199,7 +199,7 @@ DocumentSelectParserTest::createDocs()
     }
 
     _doc.push_back(createDoc(
-                           "testdoctype1", "userdoc:myspace:1234:footype1", 15, 1.0, "some", "some", 0));  // DOC 2
+                           "testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 15, 1.0, "some", "some", 0));  // DOC 2
         // Add empty struct and array
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
@@ -209,32 +209,26 @@ DocumentSelectParserTest::createDocs()
         _doc.back()->setValue("structarray", aval);
     }
     _doc.push_back(createDoc(
-                           "testdoctype1", "groupdoc:myspace:yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
+                           "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
     _doc.push_back(createDoc(
                            "testdoctype2", "doc:myspace:inheriteddoc", 10, 1.4, "inherited", "")); // DOC 4
     _doc.push_back(createDoc(
-        "testdoctype1", "userdoc:footype:123456789:aardvark",
+        "testdoctype1", "id:footype:testdoctype1:n=123456789:aardvark",
         10, 1.4, "inherited", "", 0));  // DOC 5
     _doc.push_back(createDoc(
-        "testdoctype1", "userdoc:footype:1234:highlong",
+        "testdoctype1", "id:footype:testdoctype1:n=1234:highlong",
         10, 1.4, "inherited", "", 2651257743)); // DOC 6
     _doc.push_back(createDoc(
-        "testdoctype1", "userdoc:footype:1234:highlong",
+        "testdoctype1", "id:footype:testdoctype1:n=1234:highlong",
         10, 1.4, "inherited", "", -2651257743)); // DOC 7
-    _doc.push_back(createDoc(  // DOC 8
-        "testdoctype1", "orderdoc(4,4):footype:1234:12:highlong",
-        10, 1.4, "inherited", "", -2651257743));
-    _doc.push_back(createDoc(  // DOC 9
-        "testdoctype1", "orderdoc(4,4):footype:mygroup:12:highlong",
-        10, 1.4, "inherited", "", -2651257743));
-    _doc.push_back(createDoc( // DOC 10. As DOC 0 but with version 2.
+    _doc.push_back(createDoc( // DOC 8. As DOC 0 but with version 2.
         "testdoctype1", "doc:myspace:anything", 24, 2.0, "foo", "bar", 0));
     _doc.push_back(createDoc(
         "testdoctype1", "id:footype:testdoctype1:n=12345:foo",
-        10, 1.4, "inherited", "", 42)); // DOC 11
+        10, 1.4, "inherited", "", 42)); // DOC 9
     _doc.push_back(createDoc(
         "testdoctype1", "id:myspace:testdoctype1:g=xyzzy:foo",
-        10, 1.4, "inherited", "", 42)); // DOC 12
+        10, 1.4, "inherited", "", 42)); // DOC 10
 
     _update.clear();
     _update.push_back(createUpdate(
@@ -242,9 +236,9 @@ DocumentSelectParserTest::createDocs()
     _update.push_back(createUpdate(
         "testdoctype1", "doc:anotherspace:foo", 10, "foo"));
     _update.push_back(createUpdate(
-        "testdoctype1", "userdoc:myspace:1234:footype1", 0, "foo"));
+        "testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 0, "foo"));
     _update.push_back(createUpdate(
-        "testdoctype1", "groupdoc:myspace:yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
+        "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
     _update.push_back(createUpdate(
         "testdoctype2", "doc:myspace:inheriteddoc", 10, "bar"));
 }
@@ -398,23 +392,22 @@ TEST_F(DocumentSelectParserTest, testParseTerminals)
     verifyParse("_test_doctype3_._only_in_child_ == 0");
 
     // Test document id with simple parser.
-    verifySimpleParse("id == \"userdoc:ns:mytest\"");
+    verifySimpleParse("id == \"id:ns:mytest\"");
     verifySimpleParse("id.namespace == \"myspace\"");
-    verifySimpleParse("id.scheme == \"userdoc\"");
+    verifySimpleParse("id.scheme == \"id\"");
     verifySimpleParse("id.type == \"testdoctype1\"");
     verifySimpleParse("id.group == \"yahoo.com\"");
     verifySimpleParse("id.user == 1234");
     verifySimpleParse("id.user == 0x12456ab", "id.user == 19158699");
 
     // Test document id
-    verifyParse("id == \"userdoc:ns:mytest\"");
+    verifyParse("id == \"id:ns:mytest\"");
     verifyParse("id.namespace == \"myspace\"");
-    verifyParse("id.scheme == \"userdoc\"");
+    verifyParse("id.scheme == \"id\"");
     verifyParse("id.type == \"testdoctype1\"");
     verifyParse("id.user == 1234");
     verifyParse("id.user == 0x12456ab", "id.user == 19158699");
     verifyParse("id.group == \"yahoo.com\"");
-    verifyParse("id.order(10,5) < 100");
 
     verifyParse("id.specific == \"mypart\"");
     verifyParse("id.bucket == 1234");
@@ -633,9 +626,9 @@ void DocumentSelectParserTest::testOperators2()
     PARSEI(" iD==  \"doc:myspace:anything\"  ", *_doc[0], True);
     PARSEI("id == \"doc:myspa:nything\"", *_doc[0], False);
     PARSEI("Id.scHeme == \"doc\"", *_doc[0], True);
-    PARSEI("id.scheme == \"userdoc\"", *_doc[0], False);
-    PARSEI("id.type == \"testdoctype1\"", *_doc[11], True);
-    PARSEI("id.type == \"wrong_type\"", *_doc[11], False);
+    PARSEI("id.scheme == \"id\"", *_doc[0], False);
+    PARSEI("id.type == \"testdoctype1\"", *_doc[9], True);
+    PARSEI("id.type == \"wrong_type\"", *_doc[9], False);
     PARSEI("id.type == \"unknown\"", *_doc[0], Invalid);
     PARSEI("Id.namespaCe == \"myspace\"", *_doc[0], True);
     PARSEI("id.NaMespace == \"pace\"", *_doc[0], False);
@@ -645,14 +638,8 @@ void DocumentSelectParserTest::testOperators2()
     PARSEI("id.group == 1234", *_doc[3], Invalid);
     PARSEI("id.group == \"yahoo\"", *_doc[3], True);
     PARSEI("id.bucket == 1234", *_doc[0], False);
-    PARSEI("id.order(4,4) == 12", *_doc[8], True);
-    PARSEI("id.order(4,4) < 20", *_doc[8], True);
-    PARSEI("id.order(4,4) > 12", *_doc[8], False);
-    PARSEI("id.order(5,5) <= 12", *_doc[8], Invalid);
-    PARSEI("id.order(4,4) <= 12", *_doc[8], True);
-    PARSEI("id.order(4,4) == 12", *_doc[0], Invalid);
-    PARSEI("id.user=12345", *_doc[11], True);
-    PARSEI("id.group == \"xyzzy\"", *_doc[12], True);
+    PARSEI("id.user=12345", *_doc[9], True);
+    PARSEI("id.group == \"xyzzy\"", *_doc[10], True);
 }
 
 void DocumentSelectParserTest::testOperators3()
@@ -684,12 +671,8 @@ void DocumentSelectParserTest::testOperators3()
     std::string gidmatcher = "id.gid == \"" + _doc[0]->getId().getGlobalId().toString() + "\"";
     PARSEI(gidmatcher, *_doc[0], True);
 
-    PARSEI("id.user=123456789 and id = \"userdoc:footype:123456789:aardvark\"", *_doc[5], True);
-    PARSEI("id == \"userdoc:footype:123456789:badger\"", *_doc[5], False);
-
-    PARSEI("id.user = 1234", *_doc[8], True);
-    PARSEI("id.group == \"1234\"", *_doc[8], True);
-    PARSEI("id.group == \"mygroup\"", *_doc[9], True);
+    PARSEI("id.user=123456789 and id = \"id:footype:testdoctype1:n=123456789:aardvark\"", *_doc[5], True);
+    PARSEI("id == \"id:footype:testdoctype1:n=123456789:badger\"", *_doc[5], False);
 }
 
 void DocumentSelectParserTest::testOperators4()
@@ -734,10 +717,10 @@ void DocumentSelectParserTest::testOperators5()
     PARSEI("(0.234).lowercase() == 123", *_doc[0], Invalid);
     PARSE("\"foo\".hash() == 123", *_doc[0], False);
     PARSEI("(234).hash() == 123", *_doc[0], False);
-    PARSE("now() > 1311862500", *_doc[10], True);
-    PARSE("now() < 1611862500", *_doc[10], True);
-    PARSE("now() < 1311862500", *_doc[10], False);
-    PARSE("now() > 1611862500", *_doc[10], False);
+    PARSE("now() > 1311862500", *_doc[8], True);
+    PARSE("now() < 1611862500", *_doc[8], True);
+    PARSE("now() < 1311862500", *_doc[8], False);
+    PARSE("now() > 1611862500", *_doc[8], False);
 
     // Arithmetics
     PARSEI("id.specific.hash() % 10 = 8", *_doc[0], True);
@@ -1129,7 +1112,7 @@ void DocumentSelectParserTest::testDocumentUpdates2()
     PARSEI(" iD==  \"doc:myspace:anything\"  ", *_update[0], True);
     PARSEI("id == \"doc:myspa:nything\"", *_update[0], False);
     PARSEI("Id.scHeme == \"doc\"", *_update[0], True);
-    PARSEI("id.scheme == \"userdoc\"", *_update[0], False);
+    PARSEI("id.scheme == \"id\"", *_update[0], False);
     PARSEI("Id.namespaCe == \"myspace\"", *_update[0], True);
     PARSEI("id.NaMespace == \"pace\"", *_update[0], False);
     PARSEI("id.specific == \"anything\"", *_update[0], True);
@@ -1199,7 +1182,7 @@ TEST_F(DocumentSelectParserTest, testDocumentIdsInRemoves)
 {
     PARSE("testdoctype1", DocumentId("id:ns:testdoctype1::1"), True);
     PARSE("testdoctype1", DocumentId("id:ns:null::1"), False);
-    PARSE("testdoctype1", DocumentId("userdoc:testdoctype1:1234:1"), False);
+    PARSE("testdoctype1", DocumentId("id::testdoctype2:n=1234:1"), False);
     PARSE("testdoctype1.headerval", DocumentId("id:ns:testdoctype1::1"), Invalid);
     // FIXME: Should ideally be False. As long as there always is an AND node with doctype in a selection expression
     // we won't end up sending removes using the wrong route.
@@ -1409,12 +1392,11 @@ TEST_F(DocumentSelectParserTest, test_token_used_as_ident_preserves_casing)
     createDocs();
     using namespace std::string_literals;
 
-    // TYPE, SCHEME, ORDER etc are tokens that may also be used as identifiers
+    // TYPE, SCHEME etc are tokens that may also be used as identifiers
     // without introducing parsing ambiguities. In this context their original
     // casing should be preserved.
     EXPECT_EQ("(== (VAR Type) 123)"s, parse_to_tree("$Type == 123"));
     EXPECT_EQ("(== (VAR giD) 123)"s, parse_to_tree("$giD == 123"));
-    EXPECT_EQ("(== (VAR ORDER) 123)"s, parse_to_tree("$ORDER == 123"));
 }
 
 TEST_F(DocumentSelectParserTest, test_ambiguous_field_spec_expression_is_handled_correctly)

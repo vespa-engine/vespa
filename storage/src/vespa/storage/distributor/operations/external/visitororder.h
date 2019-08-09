@@ -5,10 +5,10 @@
 namespace storage::distributor {
 
 struct VisitorOrder {
-    const document::OrderingSpecification& _ordering;
+    document::OrderingSpecification _ordering;
 
-    VisitorOrder(const document::OrderingSpecification& ordering)
-        : _ordering(ordering) {}
+    VisitorOrder()
+        : _ordering() {}
 
     document::BucketId::Type getOrder(const document::BucketId& bid) {
         int32_t orderBitCount = _ordering.getWidthBits() -

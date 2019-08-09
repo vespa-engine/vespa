@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
@@ -27,10 +26,6 @@ public class NowNode implements ExpressionNode {
         return "now()";
     }
 
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
     @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);

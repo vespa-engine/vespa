@@ -26,6 +26,7 @@ public:
     /** @throws document::IdParseException If parsing of id scheme failed. */
     static IdString::UP createIdString(vespalib::stringref id) { return createIdString(id.data(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
+    static LocationType makeLocation(vespalib::stringref s);
 
     ~IdString() {}
     IdString* clone() const override = 0;

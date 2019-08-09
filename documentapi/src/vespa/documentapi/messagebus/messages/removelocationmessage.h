@@ -10,7 +10,7 @@ namespace document { class BucketIdFactory; }
 namespace documentapi {
 
 /**
- * Message (VDS only) to remove an entire location for users using userdoc or groupdoc schemes for their documents.
+ * Message (VDS only) to remove an entire location for users using user or group schemes for their documents.
  * A location in this context is either a user id or a group name.
  */
 class RemoveLocationMessage : public DocumentMessage {

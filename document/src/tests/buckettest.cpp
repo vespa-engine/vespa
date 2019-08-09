@@ -82,18 +82,12 @@ TEST(BucketTest, testBucketGeneration)
     DocumentId doc1("doc:ns:spec");
     DocumentId doc2("doc:ns2:spec");
     DocumentId doc3("doc:ns:spec2");
-    DocumentId userDoc1("userdoc:ns:18:spec");
-    DocumentId userDoc2("userdoc:ns2:18:spec2");
-    DocumentId userDoc3("userdoc:ns:19:spec");
-    DocumentId groupDoc1("groupdoc:ns:yahoo.com:spec");
-    DocumentId groupDoc2("groupdoc:ns2:yahoo.com:spec2");
-    DocumentId groupDoc3("groupdoc:ns:yahoo:spec");
-    DocumentId orderDoc1("orderdoc(31,19):ns:13:1268182861:foo");
-    DocumentId orderDoc2("orderdoc(31,19):ns:13:1205110861:foo");
-    DocumentId orderDoc3("orderdoc(31,19):ns:13:1205715661:foo");
-    DocumentId orderDoc4("orderdoc(4,0):ns:13:2:foo");
-    DocumentId orderDoc5("orderdoc(4,0):ns:13:4:foo");
-    DocumentId orderDoc6("orderdoc(4,0):ns:13:11:foo");
+    DocumentId userDoc1("id:ns:mytype:n=18:spec");
+    DocumentId userDoc2("id:ns2:mytype:n=18:spec2");
+    DocumentId userDoc3("id:ns:mytype:n=19:spec");
+    DocumentId groupDoc1("id:ns:mytype:g=yahoo.com:spec");
+    DocumentId groupDoc2("id:ns2:mytype:g=yahoo.com:spec2");
+    DocumentId groupDoc3("id:ns:mytype:g=yahoo:spec");
 
     BucketId docBucket1(factory.getBucketId(doc1));
     BucketId docBucket2(factory.getBucketId(doc2));
@@ -104,24 +98,10 @@ TEST(BucketTest, testBucketGeneration)
     BucketId groupDocBucket1(factory.getBucketId(groupDoc1));
     BucketId groupDocBucket2(factory.getBucketId(groupDoc2));
     BucketId groupDocBucket3(factory.getBucketId(groupDoc3));
-    BucketId orderDocBucket1(factory.getBucketId(orderDoc1));
-    BucketId orderDocBucket2(factory.getBucketId(orderDoc2));
-    BucketId orderDocBucket3(factory.getBucketId(orderDoc3));
-    BucketId orderDocBucket4(factory.getBucketId(orderDoc4));
-    BucketId orderDocBucket5(factory.getBucketId(orderDoc5));
-    BucketId orderDocBucket6(factory.getBucketId(orderDoc6));
 
-    EXPECT_EQ(Hex(0xe99703f200000012ull), Hex(userDocBucket1.getRawId()));
-    EXPECT_EQ(Hex(0xebfa518a00000012ull), Hex(userDocBucket2.getRawId()));
-    EXPECT_EQ(Hex(0xeac1850800000013ull), Hex(userDocBucket3.getRawId()));
-
-    EXPECT_EQ(Hex(0xeae764e90000000dull), Hex(orderDocBucket1.getRawId()));
-    EXPECT_EQ(Hex(0xeacb85f10000000dull), Hex(orderDocBucket2.getRawId()));
-    EXPECT_EQ(Hex(0xea68ddf10000000dull), Hex(orderDocBucket3.getRawId()));
-
-    EXPECT_EQ(Hex(0xe87526540000000dull), Hex(orderDocBucket4.getRawId()));
-    EXPECT_EQ(Hex(0xea59f8f20000000dull), Hex(orderDocBucket5.getRawId()));
-    EXPECT_EQ(Hex(0xe9eb703d0000000dull), Hex(orderDocBucket6.getRawId()));
+    EXPECT_EQ(Hex(0xeb3089a300000012ull), Hex(userDocBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xe87e777b00000012ull), Hex(userDocBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xe80d16fc00000013ull), Hex(userDocBucket3.getRawId()));
 
     userDocBucket1.setUsedBits(16);
     EXPECT_EQ(Hex(0x4000000000000012ull), Hex(userDocBucket1.getId()));
@@ -130,9 +110,9 @@ TEST(BucketTest, testBucketGeneration)
     userDocBucket3.setUsedBits(16);
     EXPECT_EQ(Hex(0x4000000000000013ull), Hex(userDocBucket3.getId()));
 
-    EXPECT_EQ(Hex(0xe90ce4b09a1acd50ull), Hex(groupDocBucket1.getRawId()));
-    EXPECT_EQ(Hex(0xe9cedaa49a1acd50ull), Hex(groupDocBucket2.getRawId()));
-    EXPECT_EQ(Hex(0xe8cdb18bafe81f24ull), Hex(groupDocBucket3.getRawId()));
+    EXPECT_EQ(Hex(0xeb82f2be9a1acd50ull), Hex(groupDocBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xebff6e379a1acd50ull), Hex(groupDocBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xe91b9600afe81f24ull), Hex(groupDocBucket3.getRawId()));
 
     groupDocBucket1.setUsedBits(16);
     EXPECT_EQ(Hex(0x400000000000cd50ull), Hex(groupDocBucket1.getId()));

@@ -17,11 +17,11 @@ public class BucketSelectorTestCase {
 
     @Test
     public void testExpressions() throws Exception {
-        assertBucketCount("id = \"userdoc:ns:123:foobar\"", 1);
-        assertBucketCount("id = \"userdoc:ns:123:foo*\"", 0);
-        assertBucketCount("id == \"userdoc:ns:123:f?oo*\"", 1);
-        assertBucketCount("id =~ \"userdoc:ns:123:foo*\"", 0);
-        assertBucketCount("id =~ \"userdoc:ns:123:foo?\"", 0);
+        assertBucketCount("id = \"id:ns:mytype:n=123:foobar\"", 1);
+        assertBucketCount("id = \"id:ns:mytype:n=123:foo*\"", 0);
+        assertBucketCount("id == \"id:ns:mytype:n=123:f?oo*\"", 1);
+        assertBucketCount("id =~ \"id:ns:mytype:n=123:foo*\"", 0);
+        assertBucketCount("id =~ \"id:ns:mytype:n=123:foo?\"", 0);
         assertBucketCount("id.user = 123", 1);
         assertBucketCount("id.user == 123", 1);
         assertBucketCount("id.group = \"yahoo.com\"", 1);
@@ -39,7 +39,7 @@ public class BucketSelectorTestCase {
         assertBucket("id.bucket = 0x4000000000003018", new BucketId(16, 12312));
         assertBucket("id.bucket == 0x4000000000000258", new BucketId(16, 600));
 
-        assertBucket("id = \"userdoc:ns:123:foobar\"", new BucketId(0xeafff5320000007bL));
+        assertBucket("id = \"id:ns:mytype:n=123:foobar\"", new BucketId(0xe8bd6e280000007bL));
         assertBucket("id.user = 123", new BucketId(32, 123));
         assertBucket("id.group = \"yahoo.com\"", new BucketId(32, 0x035837189a1acd50L));
 
@@ -52,8 +52,8 @@ public class BucketSelectorTestCase {
 
     @Test
     public void parenthesis_enclosed_expressions_inherit_bucket_selectors_from_children() throws Exception {
-        assertBucketCount("(id == \"userdoc:ns:123:foobar\")", 1);
-        assertBucket("(id = \"userdoc:ns:123:foobar\")", new BucketId(0xeafff5320000007bL));
+        assertBucketCount("(id == \"id:ns:mytype:n=123:foobar\")", 1);
+        assertBucket("(id = \"id:ns:mytype:n=123:foobar\")", new BucketId(0xe8bd6e280000007bL));
         assertBucketCount("(id.group = \"yahoo.com\" and (testdoctype1.hstringval == \"Doe\"))", 1);
         assertBucket("(id.group = \"yahoo.com\" and (testdoctype1 and (id.namespace == 'foo')))", new BucketId(32, 0x035837189a1acd50L));
     }

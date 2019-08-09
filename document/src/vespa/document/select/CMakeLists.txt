@@ -25,7 +25,6 @@ vespa_add_library(document_select OBJECT
     gid_filter.cpp
     invalidconstant.cpp
     operator.cpp
-    orderingselector.cpp
     orderingspecification.cpp
     result.cpp
     resultset.cpp

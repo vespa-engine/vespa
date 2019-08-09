@@ -37,7 +37,6 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
       _queueTimeout(2000),
       _maxPendingReplyCount(2),
       _version(50),
-      _ordering(document::OrderingSpecification::ASCENDING),
       _maxBucketsPerVisitor(1)
 {
 }
@@ -62,7 +61,6 @@ CreateVisitorCommand::CreateVisitorCommand(const CreateVisitorCommand& o)
       _queueTimeout(o._queueTimeout),
       _maxPendingReplyCount(o._maxPendingReplyCount),
       _version(o._version),
-      _ordering(o._ordering),
       _maxBucketsPerVisitor(o._maxBucketsPerVisitor)
 {
 }
@@ -111,7 +109,6 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
         }
         out << "\n" << indent << "  ";
         _params.print(out, verbose, indent + "  ");
-        out << "\n" << indent << "  " << "ordering(" << _ordering << ")";
         out << "\n" << indent << "  Max buckets: '"
                               << _maxBucketsPerVisitor << "'";
         out << "\n" << indent << "} : ";

@@ -10,7 +10,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
@@ -70,8 +69,4 @@ public class DocumentNode implements ExpressionNode {
         return type;
     }
 
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
 }
