@@ -5,10 +5,20 @@ import com.yahoo.collections.Pair;
 import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.update.FieldUpdate;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.Routable;
@@ -202,14 +212,8 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
                     //nada
                 } else if ("doc:nodocstatus:update:to:nothing".equals(id)) {
                     it.remove();
-                } else if ("userdoc:12345:6789:multiop:nodocstatus:keep:this".equals(id)) {
+                } else if ("id:12345:6789:multiop:nodocstatus:keep:this".equals(id)) {
                     //nada
-                } else if ("userdoc:12345:6789:multiop:nodocstatus:skip:this".equals(id)) {
-                    it.remove();
-                } else if ("userdoc:test:12345:batch:nodocstatus:keep:this".equals(id)) {
-                    //nada
-                } else if ("userdoc:test:12345:batch:nodocstatus:skip:this".equals(id)) {
-                    it.remove();
                 }
             }
             return Progress.DONE;

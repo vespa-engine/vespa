@@ -139,14 +139,13 @@ VisitorManagerTest::initializeTest()
             "Be all my sins remember'd.\n");
     for (uint32_t i=0; i<docCount; ++i) {
         std::ostringstream uri;
-        uri << "userdoc:test:" << i % 10 << ":http://www.ntnu.no/"
+        uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
             << i << ".html";
 
         _documents.push_back(document::Document::SP(
                 _node->getTestDocMan().createDocument(content, uri.str())));
         const document::DocumentType& type(_documents.back()->getType());
-        _documents.back()->setValue(type.getField("headerval"),
-                                    document::IntFieldValue(i % 4));
+        _documents.back()->setValue(type.getField("headerval"), document::IntFieldValue(i % 4));
     }
     for (uint32_t i=0; i<10; ++i) {
         document::BucketId bid(16, i);
@@ -330,22 +329,6 @@ VisitorManagerTest::getMatchingDocuments(std::vector<document::Document::SP >& d
     }
 
     return equalCount;
-}
-
-TEST_F(VisitorManagerTest, hit_counter) {
-    document::OrderingSpecification spec(document::OrderingSpecification::ASCENDING, 42, 7, 2);
-    Visitor::HitCounter hitCounter(&spec);
-
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:42:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:49:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:60:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:10:foo"), 450);
-    hitCounter.addHit(document::DocumentId("orderdoc(7,2):mail:1234:21:foo"), 450);
-
-    EXPECT_EQ(3, hitCounter.getFirstPassHits());
-    EXPECT_EQ(1350, hitCounter.getFirstPassBytes());
-    EXPECT_EQ(2, hitCounter.getSecondPassHits());
-    EXPECT_EQ(900, hitCounter.getSecondPassBytes());
 }
 
 namespace {
@@ -532,8 +515,8 @@ TEST_F(VisitorManagerTest, visit_with_timeframe_and_selection) {
 
     ASSERT_EQ(2, docs.size());
     std::set<std::string> expected;
-    expected.insert("userdoc:test:4:http://www.ntnu.no/4.html");
-    expected.insert("userdoc:test:5:http://www.ntnu.no/5.html");
+    expected.insert("id:test:testdoctype1:n=4:http://www.ntnu.no/4.html");
+    expected.insert("id:test:testdoctype1:n=5:http://www.ntnu.no/5.html");
     std::set<std::string> actual;
     for (uint32_t i=0; i<docs.size(); ++i) {
         actual.insert(docs[i]->getId().toString());

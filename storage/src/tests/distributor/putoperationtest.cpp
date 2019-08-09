@@ -414,7 +414,7 @@ TEST_F(PutOperationTest, no_storage_nodes) {
 TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
-    auto doc = std::make_shared<Document>(doc_type(), DocumentId(UserDocIdString("userdoc:test:13:uri")));
+    auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1:n=13:uri"));
     addNodesToBucketDB(document::BucketId(16,13), "0=0,1=0");
     sendPut(createPut(doc));
 
@@ -431,7 +431,7 @@ TEST_F(PutOperationTest, update_correct_bucket_on_remapped_put) {
 
     sendReply(1);
 
-    ASSERT_EQ("PutReply(userdoc:test:13:uri, "
+    ASSERT_EQ("PutReply(id:test:testdoctype1:n=13:uri, "
               "BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());

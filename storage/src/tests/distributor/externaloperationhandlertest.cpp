@@ -92,19 +92,19 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
 
         EXPECT_EQ(document::BucketId(16, 0xffff),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0xffff))
+                    vespalib::make_string("id:ns:test:n=%d::", 0xffff))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0x10000))
+                    vespalib::make_string("id:ns:test:n=%d::", 0x10000))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0xffff),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0xffff))
+                    vespalib::make_string("id:ns:test:n=%d::", 0xffff))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0x100),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0x100))
+                    vespalib::make_string("id:ns:test:n=%d::", 0x100))
                 ).stripUnused());
         close();
     }
@@ -113,11 +113,11 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
         createLinks();
         EXPECT_EQ(document::BucketId(20, 0x11111),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0x111111))
+                    vespalib::make_string("id:ns:test:n=%d::", 0x111111))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(20, 0x22222),
                 getExternalOperationHandler().getBucketId(document::DocumentId(
-                    vespalib::make_string("userdoc:ns:%d::", 0x222222))
+                    vespalib::make_string("id:ns:test:n=%d::", 0x222222))
                 ).stripUnused());
     }
 }
@@ -161,7 +161,7 @@ ExternalOperationHandlerTest::makeGetCommand(const vespalib::string& id) const {
 
 std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id) const {
-    DocumentId docId(document::UserDocIdString(vespalib::make_string("userdoc:foo:%" PRIu64 ":bar", id)));
+    DocumentId docId(vespalib::make_string("id:foo:test:n=%" PRIu64 ":bar", id));
     return std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
 }
 

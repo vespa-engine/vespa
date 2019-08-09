@@ -65,9 +65,7 @@ public:
     void testDocumentRouteSelector();
     void testDocumentRouteSelectorIgnore();
     void remove_document_messages_are_sent_to_the_route_handling_the_given_document_type();
-    void remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes();
     void get_document_messages_are_sent_to_the_route_handling_the_given_document_type();
-    void get_document_messages_with_legacy_document_ids_are_sent_to_all_routes();
     void testExternSend();
     void testExternMultipleSlobroks();
     void testLoadBalancer();
@@ -109,9 +107,7 @@ Test::Main() {
     testDocumentRouteSelector();        TEST_FLUSH();
     testDocumentRouteSelectorIgnore();  TEST_FLUSH();
     remove_document_messages_are_sent_to_the_route_handling_the_given_document_type(); TEST_FLUSH();
-    remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes();        TEST_FLUSH();
     get_document_messages_are_sent_to_the_route_handling_the_given_document_type(); TEST_FLUSH();
-    get_document_messages_with_legacy_document_ids_are_sent_to_all_routes();        TEST_FLUSH();
     testExternSend();                   TEST_FLUSH();
     testExternMultipleSlobroks();       TEST_FLUSH();
     testLoadBalancer();                 TEST_FLUSH();
@@ -710,18 +706,6 @@ Test::remove_document_messages_are_sent_to_the_route_handling_the_given_document
 }
 
 void
-Test::remove_document_messages_with_legacy_document_ids_are_sent_to_all_routes()
-{
-    auto frame = createFrameWithTwoRoutes(_repo);
-
-    frame->setMessage(makeRemove("userdoc:testdoc:1234:1"));
-    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
-
-    frame->setMessage(makeRemove("userdoc:other:1234:1"));
-    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
-}
-
-void
 Test::get_document_messages_are_sent_to_the_route_handling_the_given_document_type()
 {
     auto frame = createFrameWithTwoRoutes(_repo);
@@ -731,18 +715,6 @@ Test::get_document_messages_are_sent_to_the_route_handling_the_given_document_ty
 
     frame->setMessage(makeGet("id:ns:other::1"));
     EXPECT_TRUE(frame->testSelect({"other-route"}));
-}
-
-void
-Test::get_document_messages_with_legacy_document_ids_are_sent_to_all_routes()
-{
-    auto frame = createFrameWithTwoRoutes(_repo);
-
-    frame->setMessage(makeGet("userdoc:testdoc:1234:1"));
-    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
-
-    frame->setMessage(makeGet("userdoc:other:1234:1"));
-    EXPECT_TRUE(frame->testSelect({"testdoc-route", "other-route"}));
 }
 
 namespace {

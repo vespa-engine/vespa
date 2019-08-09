@@ -193,7 +193,7 @@ TEST_F(DistributorTest, operation_generation) {
 
     EXPECT_EQ("Remove", testOp(std::make_shared<api::RemoveCommand>(
             makeDocumentBucket(bid),
-            document::DocumentId("userdoc:m:1:foo"),
+            document::DocumentId("id:m:test:n=1:foo"),
             api::Timestamp(1234))));
 
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "foo", "bar", "");

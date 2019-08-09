@@ -161,7 +161,6 @@ Messages60Test::testCreateVisitorMessage()
     tmp.getBuckets().push_back(document::BucketId(16, 1234));
     tmp.setVisitRemoves(true);
     tmp.setFieldSet("foo bar");
-    tmp.setVisitorOrdering(document::OrderingSpecification::DESCENDING);
     tmp.setMaxBucketsPerVisitor(2);
     tmp.setBucketSpace("bjarne");
 
@@ -185,7 +184,6 @@ Messages60Test::testCreateVisitorMessage()
             EXPECT_EQUAL(document::BucketId(16, 1234), ref.getBuckets()[0]);
             EXPECT_EQUAL(string("somevalue"), ref.getParameters().get("myvar"));
             EXPECT_EQUAL(uint64_t(34), ref.getParameters().get("anothervar", uint64_t(1)));
-            EXPECT_EQUAL(document::OrderingSpecification::DESCENDING, ref.getVisitorOrdering());
             EXPECT_EQUAL(uint32_t(2), ref.getMaxBucketsPerVisitor());
             EXPECT_EQUAL(string("bjarne"), ref.getBucketSpace());
         }
@@ -214,20 +212,20 @@ bool
 Messages60Test::testDocumentListMessage()
 {
     document::Document::SP doc =
-        createDoc(getTypeRepo(), "testdoc", "userdoc:scheme:1234:");
+        createDoc(getTypeRepo(), "testdoc", "id:scheme:testdoc:n=1234:1");
     DocumentListMessage::Entry entry(1234, doc, false);
 
     DocumentListMessage tmp(document::BucketId(16, 1234));
     tmp.getDocuments().push_back(entry);
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)63, serialize("DocumentListMessage", tmp));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)69, serialize("DocumentListMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("DocumentListMessage", DocumentProtocol::MESSAGE_DOCUMENTLIST, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             DocumentListMessage &ref = static_cast<DocumentListMessage&>(*obj);
 
-            EXPECT_EQUAL("userdoc:scheme:1234:", ref.getDocuments()[0].getDocument()->getId().toString());
+            EXPECT_EQUAL("id:scheme:testdoc:n=1234:1", ref.getDocuments()[0].getDocument()->getId().toString());
             EXPECT_EQUAL(1234, ref.getDocuments()[0].getTimestamp());
             EXPECT_TRUE(!ref.getDocuments()[0].isRemoveEntry());
         }

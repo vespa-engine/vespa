@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespavisit;
 
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;

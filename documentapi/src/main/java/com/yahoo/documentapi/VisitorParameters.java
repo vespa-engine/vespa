@@ -356,7 +356,7 @@ public class VisitorParameters extends Parameters {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("VisitorParameters(\n")
                 .append("  Document selection: ").append(documentSelection).append('\n')
                 .append("  Bucket space:       ").append(bucketSpace).append('\n')
@@ -382,7 +382,6 @@ public class VisitorParameters extends Parameters {
         sb.append("  Weight:             ").append(weight).append('\n');
         sb.append("  Max firstpass hits: ").append(maxFirstPassHits).append('\n');
         sb.append("  Max total hits:     ").append(maxTotalHits).append('\n');
-        sb.append("  Visitor ordering:   ").append(visitorOrdering).append('\n');
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');
         if (dynamicallyIncreaseMaxBucketsPerVisitor) {
