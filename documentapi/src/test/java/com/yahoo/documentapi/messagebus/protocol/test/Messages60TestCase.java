@@ -463,12 +463,12 @@ public class Messages60TestCase extends MessagesTestBase {
 
         @Override
         public void run() {
-            GetDocumentMessage msg = new GetDocumentMessage(new DocumentId("doc:scheme:"), "foo bar");
+            GetDocumentMessage msg = new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "foo bar");
             assertEquals(BASE_MESSAGE_LENGTH + 27, serialize("GetDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 msg = (GetDocumentMessage)deserialize("GetDocumentMessage", DocumentProtocol.MESSAGE_GETDOCUMENT, lang);
-                assertEquals("doc:scheme:", msg.getDocumentId().toString());
+                assertEquals("id:ns:testdoc::", msg.getDocumentId().toString());
                 assertEquals("foo bar", msg.getFieldSet());
             }
         }
@@ -479,7 +479,7 @@ public class Messages60TestCase extends MessagesTestBase {
 
         @Override
         public void run() {
-            final RemoveDocumentMessage msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
+            final RemoveDocumentMessage msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
 
             assertEquals(BASE_MESSAGE_LENGTH + 16 + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
@@ -607,7 +607,7 @@ public class Messages60TestCase extends MessagesTestBase {
 
         @Override
         public void run() {
-            PutDocumentMessage msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "doc:scheme:")));
+            PutDocumentMessage msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
 
             msg.setTimestamp(666);
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
@@ -646,7 +646,7 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             DocumentType docType = protocol.getDocumentTypeManager().getDocumentType("testdoc");
-            DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:scheme:"));
+            DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:ns:testdoc::"));
             update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
 
             final UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
@@ -860,8 +860,8 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testGetBucketStateReply implements RunnableTest {
 
         public void run() {
-            GlobalId foo = new GlobalId(IdString.createIdString("doc:scheme:foo"));
-            GlobalId bar = new GlobalId(IdString.createIdString("doc:scheme:bar"));
+            GlobalId foo = new GlobalId(IdString.createIdString("id:ns:testdoc::foo"));
+            GlobalId bar = new GlobalId(IdString.createIdString("id:ns:testdoc::bar"));
 
             GetBucketStateReply reply = new GetBucketStateReply();
             List<DocumentState> state = new ArrayList<>(2);
@@ -885,13 +885,13 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testGetDocumentReply implements RunnableTest {
 
         public void run() {
-            GetDocumentReply reply = new GetDocumentReply(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "doc:scheme:"));
+            GetDocumentReply reply = new GetDocumentReply(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::"));
             assertEquals(43, serialize("GetDocumentReply", reply));
 
             for (Language lang : LANGUAGES) {
                 reply = (GetDocumentReply)deserialize("GetDocumentReply", DocumentProtocol.REPLY_GETDOCUMENT, lang);
                 assertEquals("testdoc", reply.getDocument().getDataType().getName());
-                assertEquals("doc:scheme:", reply.getDocument().getId().toString());
+                assertEquals("id:ns:testdoc::", reply.getDocument().getId().toString());
             }
         }
     }
