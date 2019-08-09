@@ -81,51 +81,39 @@ using namespace document::select;
                      const select::Operator& op)
         {
             if (node.getType() == IdValueNode::ALL) {
-                const StringValueNode* val(
-                        dynamic_cast<const StringValueNode*>(&valnode));
+                auto val = dynamic_cast<const StringValueNode*>(&valnode);
                 if (!val) return;
                 vespalib::string docId(val->getValue());
-                if (op == FunctionOperator::EQ ||
-                    !GlobOperator::containsVariables(docId))
-                {
+                if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(docId)) {
                     IdString::UP id(IdString::createIdString(docId));
                     _buckets.push_back(BucketId(58, id->getLocation()));
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::USER) {
-                const IntegerValueNode* val(
-                        dynamic_cast<const IntegerValueNode*>(&valnode));
+                auto val = dynamic_cast<const IntegerValueNode*>(&valnode);
                 if (!val) return;
-                UserDocIdString id(vespalib::make_string("userdoc::%" PRIu64 ":", val->getValue()));
-                _buckets.push_back(BucketId(32, id.getLocation()));
+                IdIdString id(vespalib::make_string("id::test:n=%" PRIu64 ":", val->getValue()));
+                _buckets.push_back(BucketId(32, id.getNumber()));
                 _unknown = false;
             } else if (node.getType() == IdValueNode::GROUP) {
-                const StringValueNode* val(
-                        dynamic_cast<const StringValueNode*>(&valnode));
+                auto val = dynamic_cast<const StringValueNode*>(&valnode);
                 if (!val) return;
                 vespalib::string group(val->getValue());
-                if (op == FunctionOperator::EQ ||
-                    !GlobOperator::containsVariables(group))
-                {
-                    GroupDocIdString id("groupdoc::" + group + ":");
-                    _buckets.push_back(BucketId(32, id.getLocation()));
+                if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(group)) {
+                    _buckets.push_back(BucketId(32, IdString::makeLocation(group)));
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::GID) {
-                const StringValueNode* val(
-                        dynamic_cast<const StringValueNode*>(&valnode));
+                auto val = dynamic_cast<const StringValueNode*>(&valnode);
 
                 vespalib::string gid(val->getValue());
-                if (op == FunctionOperator::EQ ||
-                    !GlobOperator::containsVariables(gid))
-                {
+                if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(gid)) {
                     BucketId bid = document::GlobalId::parse(gid).convertToBucketId();
                     _buckets.push_back(BucketId(32, bid.getRawId()));
                     _unknown = false;
                 }
             } else if (node.getType() == IdValueNode::BUCKET) {
-                const IntegerValueNode* val(
-                        dynamic_cast<const IntegerValueNode*>(&valnode));
+                auto val = dynamic_cast<const IntegerValueNode*>(&valnode);
                 if (!val) return;
 
                 BucketId bid(val->getValue());
@@ -143,13 +131,11 @@ using namespace document::select;
             {
                 return;
             }
-            const IdValueNode* lid(dynamic_cast<const IdValueNode*>(
-                        &node.getLeft()));
+            auto lid = dynamic_cast<const IdValueNode*>(&node.getLeft());
             if (lid) {
                 compare(*lid, node.getRight(), node.getOperator());
             } else {
-                const IdValueNode* rid(dynamic_cast<const IdValueNode*>(
-                            &node.getRight()));
+                auto rid = dynamic_cast<const IdValueNode*>(&node.getRight());
                 if (rid) {
                     compare(*rid, node.getLeft(), node.getOperator());
                 }

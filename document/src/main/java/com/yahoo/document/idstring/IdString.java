@@ -4,9 +4,6 @@ package com.yahoo.document.idstring;
 import com.yahoo.text.Text;
 import com.yahoo.text.Utf8String;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.OptionalInt;
 
 /**
@@ -40,42 +37,11 @@ public abstract class IdString {
         return "";
     }
 
-    public class GidModifier {
-        public int usedBits;
-        public long value;
-    }
-
-    public enum Scheme { doc, userdoc, groupdoc, orderdoc, id }
-    final Scheme scheme;
-    final String namespace;
-    final String namespaceSpecific;
-    Utf8String cache;
-
-    public static int[] generateOrderDocParams(String scheme) {
-        int parenPos = scheme.indexOf("(");
-        int endParenPos = scheme.indexOf(")");
-
-        if (parenPos == -1 || endParenPos == -1) {
-            throw new IllegalArgumentException("Unparseable scheme " + scheme + ": Must be on the form orderdoc(width, division)");
-        }
-
-        String params = scheme.substring(parenPos + 1, endParenPos);
-        String[] vals = params.split(",");
-
-        if (vals.length != 2) {
-            throw new IllegalArgumentException("Unparseable scheme " + scheme + ": Must be on the form orderdoc(width, division)");
-        }
-
-        int[] retVal = new int[2];
-
-        try {
-            retVal[0] = Integer.parseInt(vals[0]);
-            retVal[1] = Integer.parseInt(vals[1]);
-            return retVal;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Unparseable scheme " + scheme + ": Must be on the form orderdoc(width, division)");
-        }
-    }
+    public enum Scheme { doc, id }
+    private final Scheme scheme;
+    private final String namespace;
+    private final String namespaceSpecific;
+    private Utf8String cache;
 
     /**
      * Creates a IdString based on the given document id string.
@@ -113,11 +79,9 @@ public abstract class IdString {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static IdString parseAndCreate(String id) {
         String namespace;
-        long userId;
-        String group;
-        long ordering;
 
         int schemePos = id.indexOf(":");
         if (schemePos < 0) {
@@ -158,58 +122,8 @@ public abstract class IdString {
             currPos = colonPos + 1;
             return new IdIdString(namespace, type, keyValues, id.substring(currPos));
 
-        } if (schemeStr.equals("doc")) {
+        } else if (schemeStr.equals("doc")) {
             return new DocIdString(namespace, id.substring(currPos));
-        } else if (schemeStr.equals("userdoc")) {
-            colonPos = id.indexOf(":", currPos);
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': User id missing");
-            }
-
-            try {
-                userId = new BigInteger(id.substring(currPos, colonPos)).longValue();
-            } catch (IllegalArgumentException iae) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': " + iae.getMessage(), iae.getCause());
-            }
-
-            currPos = colonPos + 1;
-            return new UserDocIdString(namespace, userId, id.substring(currPos));
-        } else if (schemeStr.equals("groupdoc")) {
-            colonPos = id.indexOf(":", currPos);
-
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': Group id missing");
-            }
-
-            group = id.substring(currPos, colonPos);
-            currPos = colonPos + 1;
-            return new GroupDocIdString(namespace, group, id.substring(currPos));
-        } else if (schemeStr.indexOf("orderdoc") == 0) {
-            int[] params = generateOrderDocParams(schemeStr);
-
-            colonPos = id.indexOf(":", currPos);
-
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': Group id missing");
-            }
-
-            group = id.substring(currPos, colonPos);
-
-            currPos = colonPos + 1;
-
-            colonPos = id.indexOf(":", currPos);
-            if (colonPos < 0) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': Ordering missing");
-            }
-
-            try {
-                ordering = Long.parseLong(id.substring(currPos, colonPos));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unparseable id '" + id + "': " + e.getMessage(), e.getCause());
-            }
-
-            currPos = colonPos + 1;
-            return new OrderDocIdString(namespace, group, params[0], params[1], ordering, id.substring(currPos));
         } else {
             throw new IllegalArgumentException("Unknown id scheme '" + schemeStr + "'");
         }
@@ -228,7 +142,6 @@ public abstract class IdString {
     public abstract long getLocation();
     public String getSchemeParameters() { return ""; }
     public abstract String getSchemeSpecific();
-    public GidModifier getGidModifier() { return null; }
 
     public boolean equals(Object o) {
         return (o instanceof IdString && o.toString().equals(toString()));
