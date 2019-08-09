@@ -290,7 +290,7 @@ bool NearQueryNode::evaluate() const
 void NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AndQueryNode::visitMembers(visitor);
-    visit(visitor, "distance", _distance);
+    visit(visitor, "distance", static_cast<uint64_t>(_distance));
 }
 
 
