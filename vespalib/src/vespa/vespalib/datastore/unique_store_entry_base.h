@@ -7,7 +7,7 @@
 namespace search::datastore {
 
 /*
- * class containing common metadata for entries in unique store.
+ * Class containing common metadata for entries in unique store.
  */
 class UniqueStoreEntryBase {
 protected:
