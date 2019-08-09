@@ -6,6 +6,8 @@
 #include "bufferstate.h"
 #include "datastore.h"
 #include "entryref.h"
+#include "entry_comparator_wrapper.h"
+#include "unique_store_comparator.h"
 #include "i_compaction_context.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/btree/btree.h>
@@ -31,40 +33,12 @@ public:
     using RefType = RefT;
     using Saver = UniqueStoreSaver<EntryT, RefT>;
     using Builder = UniqueStoreBuilder<EntryT, RefT>;
-    /*
-     * Compare two values in data store based on reference.  Invalid
-     * reference is mapped to local value reference to support
-     * comparing with new value candidate outside data store.
-     */
-    class Compare {
-        const DataStoreType &_store;
-        const EntryType &_value;
-public:
-        Compare(const DataStoreType &store, const EntryType &value)
-            : _store(store),
-              _value(value)
-        {
-        }
-        inline const EntryType &get(EntryRef ref) const {
-            if (ref.valid()) {
-                RefType iRef(ref);
-                return *_store.template getEntry<EntryType>(iRef);
-            } else {
-                return _value;
-            }
-        }
-        inline bool operator()(const EntryRef lhs, const EntryRef rhs) const
-        {
-            const EntryType &lhsValue = get(lhs);
-            const EntryType &rhsValue = get(rhs);
-            return lhsValue < rhsValue;
-        }
-    };
+    using Compare = UniqueStoreComparator<EntryType, RefType>;
     using UniqueStoreBufferType = BufferType<EntryType>;
     using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
     using Dictionary = btree::BTree<EntryRef, uint32_t,
                                     btree::NoAggregated,
-                                    Compare,
+                                    EntryComparatorWrapper,
                                     DictionaryTraits>;
     class AddResult {
         EntryRef _ref;

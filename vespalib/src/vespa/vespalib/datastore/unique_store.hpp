@@ -4,16 +4,11 @@
 
 #include "unique_store.h"
 #include "datastore.hpp"
-#include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/util/bufferwriter.h>
 #include "unique_store_builder.hpp"
 #include "unique_store_saver.hpp"
 #include <atomic>
+#include <algorithm>
 
 namespace search::datastore {
 

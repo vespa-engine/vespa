@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
+namespace vespalib { class asciistream; }
+
 namespace search::datastore {
 
 class EntryRef {
@@ -60,5 +62,7 @@ public:
     static size_t pad(size_t val) { return (-val & PadConstant); }
     static constexpr bool isAlignedType = true;
 };
+
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const EntryRef& ref);
 
 }

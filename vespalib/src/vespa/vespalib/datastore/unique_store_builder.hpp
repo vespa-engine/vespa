@@ -4,12 +4,12 @@
 
 #include "unique_store_builder.h"
 #include "datastore.hpp"
-#include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreebuilder.h>
+#include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/btree/btreenodeallocator.h>
+#include <vespa/vespalib/btree/btreeiterator.h>
+#include <vespa/vespalib/btree/btreenode.h>
 
 namespace search::datastore {
 
