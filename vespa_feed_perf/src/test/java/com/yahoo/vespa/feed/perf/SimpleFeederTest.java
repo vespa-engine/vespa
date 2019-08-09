@@ -192,7 +192,7 @@ public class SimpleFeederTest {
     public void requireThatParseFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
                                            "<vespafeed>" +
-                                           "    <document documenttype='unknown' documentid='id:scheme:simple:0'/>" +
+                                           "    <document documenttype='unknown' documentid='id:scheme:simple::0'/>" +
                                            "</vespafeed>",
                                            null);
         try {
@@ -209,7 +209,7 @@ public class SimpleFeederTest {
     public void requireThatSyncFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
                                            "<vespafeed>" +
-                                           "    <document documenttype='simple' documentid='id:scheme:simple:0'/>" +
+                                           "    <document documenttype='simple' documentid='id:scheme:simple::0'/>" +
                                            "</vespafeed>",
                                            null);
         driver.feeder.getSourceSession().close();
@@ -225,7 +225,7 @@ public class SimpleFeederTest {
     @Test
     public void requireThatAsyncFailuresThrowInMainThread() throws Throwable {
         TestDriver driver = new TestDriver(new FeederParams(),
-                                           "<vespafeed><document documenttype='simple' documentid='id:scheme:simple:0'/></vespafeed>",
+                                           "<vespafeed><document documenttype='simple' documentid='id:scheme:simple::0'/></vespafeed>",
                                            new MessageHandler() {
 
                                                @Override
