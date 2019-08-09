@@ -87,40 +87,6 @@ public class StateResource implements StateClient {
                         applicationIdentifier(tenantName, applicationName, environmentName, regionName, instanceName));
     }
 
-
-    @Produces(MediaType.TEXT_HTML)
-    public interface HtmlProxyHack {
-        @GET
-        String proxy();
-    }
-
-    @GET
-    @Path("v1/legacy/tenant/{tenantName}/application/{applicationName}/environment/{environmentName}/region/{regionName}/instance/{instanceName}/service/{serviceIdentifier}/{apiParams: .*}")
-    @Produces(MediaType.TEXT_HTML)
-    public String htmlProxy(@PathParam("tenantName") String tenantName,
-            @PathParam("applicationName") String applicationName,
-            @PathParam("environmentName") String environmentName,
-            @PathParam("regionName") String regionName,
-            @PathParam("instanceName") String instanceName,
-            @PathParam("serviceIdentifier") String identifier,
-            @PathParam("apiParams") String apiParams) {
-        ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
-        Service s = model.getService(identifier);
-        int requestedPort = s.matchIdentifierWithPort(identifier);
-        Client client = client();
-        try {
-            final StringBuilder uriBuffer = new StringBuilder("http://").append(s.host).append(':').append(requestedPort).append('/')
-                    .append(apiParams);
-            addQuery(uriBuffer);
-            String uri = uriBuffer.toString();
-            WebTarget target = client.target(uri);
-            HtmlProxyHack resource = WebResourceFactory.newResource(HtmlProxyHack.class, target);
-            return resource.proxy();
-        } finally {
-            client.close();
-        }
-    }
-
     private String getBaseUri() {
         String baseUri = uriInfo.getBaseUri().toString();
         if (baseUri.endsWith("/")) {
