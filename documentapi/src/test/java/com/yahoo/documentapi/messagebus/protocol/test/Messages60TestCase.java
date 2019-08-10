@@ -464,7 +464,7 @@ public class Messages60TestCase extends MessagesTestBase {
         @Override
         public void run() {
             GetDocumentMessage msg = new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "foo bar");
-            assertEquals(BASE_MESSAGE_LENGTH + 27, serialize("GetDocumentMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 31, serialize("GetDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 msg = (GetDocumentMessage)deserialize("GetDocumentMessage", DocumentProtocol.MESSAGE_GETDOCUMENT, lang);

@@ -321,7 +321,7 @@ Messages60Test::testDocumentSummaryMessage()
 bool
 Messages60Test::testGetDocumentMessage()
 {
-    GetDocumentMessage tmp(document::DocumentId("doc:scheme:"), "foo bar");
+    GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)27, serialize("GetDocumentMessage", tmp));
 
@@ -329,7 +329,7 @@ Messages60Test::testGetDocumentMessage()
         mbus::Routable::UP obj = deserialize("GetDocumentMessage", DocumentProtocol::MESSAGE_GETDOCUMENT, lang);
         if (EXPECT_TRUE(obj.get() != NULL)) {
             GetDocumentMessage &ref = static_cast<GetDocumentMessage&>(*obj);
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocumentId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocumentId().toString());
             EXPECT_EQUAL(string("foo bar"), ref.getFieldSet());
         }
     }
@@ -394,7 +394,7 @@ Messages60Test::testCreateVisitorReply()
 bool
 Messages60Test::testPutDocumentMessage()
 {
-    auto doc = createDoc(getTypeRepo(), "testdoc", "doc:scheme:");
+    auto doc = createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     PutDocumentMessage msg(doc);
 
     msg.setTimestamp(666);
@@ -481,7 +481,7 @@ Messages60Test::testUpdateDocumentReply()
 bool
 Messages60Test::testRemoveDocumentMessage()
 {
-    RemoveDocumentMessage msg(document::DocumentId("doc:scheme:"));
+    RemoveDocumentMessage msg(document::DocumentId("id:ns:testdoc::"));
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
@@ -492,7 +492,7 @@ Messages60Test::testRemoveDocumentMessage()
 
         if (EXPECT_TRUE(routablePtr.get() != nullptr)) {
             auto & ref = static_cast<RemoveDocumentMessage &>(*routablePtr);
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocumentId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocumentId().toString());
             EXPECT_EQUAL(msg.getCondition().getSelection(), ref.getCondition().getSelection());
         }
     }
@@ -653,7 +653,7 @@ Messages60Test::testUpdateDocumentMessage()
     const DocumentTypeRepo & repo = getTypeRepo();
     const document::DocumentType & docType = *repo.getDocumentType("testdoc");
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("doc:scheme:"));
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
 
     docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
@@ -882,7 +882,7 @@ bool
 Messages60Test::testGetDocumentReply()
 {
     document::Document::SP doc =
-        createDoc(getTypeRepo(), "testdoc", "doc:scheme:");
+        createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     GetDocumentReply tmp(doc);
 
     EXPECT_EQUAL((size_t)43, serialize("GetDocumentReply", tmp));
@@ -893,7 +893,7 @@ Messages60Test::testGetDocumentReply()
             GetDocumentReply &ref = static_cast<GetDocumentReply&>(*obj);
 
             EXPECT_EQUAL(string("testdoc"), ref.getDocument().getType().getName());
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocument().getId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocument().getId().toString());
         }
     }
     return true;
@@ -978,8 +978,8 @@ Messages60Test::testGetBucketListReply()
 bool
 Messages60Test::testGetBucketStateReply()
 {
-    document::GlobalId foo = document::DocumentId("doc:scheme:foo").getGlobalId();
-    document::GlobalId bar = document::DocumentId("doc:scheme:bar").getGlobalId();
+    document::GlobalId foo = document::DocumentId("id:ns:testdoc::foo").getGlobalId();
+    document::GlobalId bar = document::DocumentId("id:ns:testdoc::bar").getGlobalId();
 
     GetBucketStateReply reply;
     reply.getBucketState().push_back(DocumentState(foo, 777, false));
