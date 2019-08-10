@@ -66,7 +66,7 @@ public class ContainerDocprocTest {
             ChainRegistry<DocumentProcessor> chains = docProc.getChains();
             assertTrue(chains.allComponentsById().containsKey(new ComponentId(CHAIN_NAME)));
 
-            Document doc = new Document(type, "doc:this:is:a:great:album");
+            Document doc = new Document(type, "id:this:music:is:a:great:album");
             doc.setFieldValue("title", "Great Album!");
             com.yahoo.docproc.Processing processing;
             DocumentProcessor.Progress progress;
@@ -97,7 +97,7 @@ public class ContainerDocprocTest {
             ChainRegistry<DocumentProcessor> chains = docProc.getChains();
             assertTrue(chains.allComponentsById().containsKey(new ComponentId(CHAIN_NAME)));
 
-            Document doc = new Document(type, "doc:this:is:a:great:album");
+            Document doc = new Document(type, "id:this:music:is:a:great:album");
             doc.setFieldValue("title", "Great Album!");
             com.yahoo.docproc.Processing processing;
             DocumentProcessor.Progress progress;

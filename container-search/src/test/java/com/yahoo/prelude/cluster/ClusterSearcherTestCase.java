@@ -148,7 +148,7 @@ public class ClusterSearcherTestCase {
         public static final String ATTRIBUTE_PREFETCH = "attributeprefetch";
 
         private String getId(String type, int i) {
-            return "doc:" + type + ":" + i;
+            return "id:ns:" + type + "::" + i;
         }
 
         private Hit createHit(String id, double relevancy) {
