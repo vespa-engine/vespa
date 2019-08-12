@@ -91,7 +91,7 @@ public class ProvisioningTester {
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider, flagSource);
-        this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+        this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors, new InMemoryFlagSource());
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
