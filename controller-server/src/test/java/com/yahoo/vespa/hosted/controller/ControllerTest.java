@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.Sets;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -358,6 +359,7 @@ public class ControllerTest {
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
                 .endpoint("all", "qrs")
+                .endpoint("west", "qrs", "us-west-1")
                 .region("us-west-1")
                 .region("us-central-1")
                 .build();
@@ -365,26 +367,27 @@ public class ControllerTest {
         tester.deployCompletely(application, applicationPackage);
         Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
         assertFalse(deployments.isEmpty());
+
+        var notWest = Set.of(
+                "rotation-id-01", "foobar--app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-02", "app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-04", "all--app1--tenant1.global.vespa.oath.cloud"
+        );
+        var west = Sets.union(notWest, Set.of("rotation-id-03", "west--app1--tenant1.global.vespa.oath.cloud"));
+
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
-                    Set.of(
-                            "rotation-id-01",
-                            "rotation-id-02",
-                            "rotation-id-03",
-                            "app1--tenant1.global.vespa.oath.cloud",
-                            "foobar--app1--tenant1.global.vespa.oath.cloud",
-                            "all--app1--tenant1.global.vespa.oath.cloud"
-                    ),
+                    ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
                     tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
 
-        assertEquals(3, tester.controllerTester().nameService().records().size());
+        assertEquals(4, tester.controllerTester().nameService().records().size());
 
         var record1 = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record1.isPresent());
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record1.get().name().asString());
-        assertEquals("rotation-fqdn-03.", record1.get().data().asString());
+        assertEquals("rotation-fqdn-04.", record1.get().data().asString());
 
         var record2 = tester.controllerTester().findCname("foobar--app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record2.isPresent());
@@ -395,6 +398,11 @@ public class ControllerTest {
         assertTrue(record3.isPresent());
         assertEquals("all--app1--tenant1.global.vespa.oath.cloud", record3.get().name().asString());
         assertEquals("rotation-fqdn-02.", record3.get().data().asString());
+
+        var record4 = tester.controllerTester().findCname("west--app1--tenant1.global.vespa.oath.cloud");
+        assertTrue(record4.isPresent());
+        assertEquals("west--app1--tenant1.global.vespa.oath.cloud", record4.get().name().asString());
+        assertEquals("rotation-fqdn-03.", record4.get().data().asString());
     }
 
     @Test

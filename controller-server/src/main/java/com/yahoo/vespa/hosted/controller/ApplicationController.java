@@ -353,7 +353,7 @@ public class ApplicationController {
                                         assignedRotation.clusterId().value(),
                                         Stream.concat(
                                                 app.endpointsIn(controller.system(), assignedRotation.endpointId()).legacy(false).asList().stream().map(Endpoint::dnsName),
-                                                app.rotations().stream().map(RotationId::asString)
+                                                Stream.of(assignedRotation.rotationId().asString())
                                         ).collect(Collectors.toList())
                                 );
                             })
