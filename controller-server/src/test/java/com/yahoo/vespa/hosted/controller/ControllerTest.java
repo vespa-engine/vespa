@@ -367,18 +367,15 @@ public class ControllerTest {
         tester.deployCompletely(application, applicationPackage);
         Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
         assertFalse(deployments.isEmpty());
+
+        var notWest = Set.of(
+                "rotation-id-01", "foobar--app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-02", "app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-04", "all--app1--tenant1.global.vespa.oath.cloud"
+        );
+        var west = Sets.union(notWest, Set.of("rotation-id-03", "west--app1--tenant1.global.vespa.oath.cloud"));
+
         for (Deployment deployment : deployments) {
-            var notWest = Set.of(
-                    "rotation-id-01",
-                    "rotation-id-02",
-                    "rotation-id-03",
-                    "app1--tenant1.global.vespa.oath.cloud",
-                    "foobar--app1--tenant1.global.vespa.oath.cloud",
-                    "all--app1--tenant1.global.vespa.oath.cloud"
-            );
-
-            var west = Sets.union(notWest, Set.of("rotation-id-04", "west--app1--tenant1.global.vespa.oath.cloud"));
-
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
                     ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
                     tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
