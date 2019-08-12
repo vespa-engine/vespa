@@ -4,6 +4,10 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
@@ -39,7 +43,15 @@ public final class ApplicationContainer extends Container {
             server.addConnector(new ConnectorFactory(connectorName, 4443,
                                                      new ConfiguredDirectSslProvider(server.getComponentId().getName(), tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
         }
+        addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }
+
+    private static Component<?, ComponentModel> getFS4ResourcePool() {
+        BundleInstantiationSpecification spec = BundleInstantiationSpecification.
+                getInternalSearcherSpecificationFromStrings(FS4ResourcePool.class.getName(), null);
+        return new Component<>(new ComponentModel(spec));
+    }
+
 
     @Override
     protected ContainerServiceType myServiceType() {
