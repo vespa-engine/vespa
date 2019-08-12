@@ -56,6 +56,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private ContainerModelEvaluation modelEvaluation;
 
     private Optional<TlsSecrets> tlsSecrets;
+    private Optional<String> tlsClientAuthority;
     private final boolean enableGroupingSessionCache;
 
     private MbusParams mbusParams;
@@ -65,6 +66,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super(parent, subId, name, deployState);
 
         this.tlsSecrets = deployState.tlsSecrets();
+        this.tlsClientAuthority = deployState.tlsClientAuthority();
         this.enableGroupingSessionCache = deployState.getProperties().enableGroupingSessionCache();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
@@ -181,6 +183,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     public Optional<TlsSecrets> getTlsSecrets() {
         return tlsSecrets;
+    }
+
+    public Optional<String> getTlsClientAuthority() {
+        return tlsClientAuthority;
     }
 
     public boolean enableGroupingSessionCache() {

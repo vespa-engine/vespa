@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 /**
  * Represents an application package, that is, used as input when creating a VespaModel and as
@@ -72,6 +71,8 @@ public interface ApplicationPackage {
 
     Path DEPLOYMENT_FILE = Path.fromString("deployment.xml");
     Path VALIDATION_OVERRIDES = Path.fromString("validation-overrides.xml");
+
+    Path SECURITY_DIR = Path.fromString("security");
 
     String SD_NAME_SUFFIX = ".sd";
     String RANKEXPRESSION_NAME_SUFFIX = ".expression";
@@ -177,6 +178,9 @@ public interface ApplicationPackage {
 
     /** Does {@link #getFiles} on the page template directory and gets all xml files */
     default List<NamedReader> getPageTemplateFiles() { return getFiles(PAGE_TEMPLATES_DIR,".xml"); }
+
+    /** Returns handle for the file containing client certificate authorities */
+    default ApplicationFile getClientSecurityFile() { return getFile(SECURITY_DIR.append("clients.pem")); }
 
     //For generating error messages
     String getHostSource();

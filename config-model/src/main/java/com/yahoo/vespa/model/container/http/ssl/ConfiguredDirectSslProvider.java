@@ -26,9 +26,10 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
     private final String privateKey;
     private final String certificate;
     private final String caCertificatePath;
+    private final String caCertificate;
     private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
 
-    public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String clientAuthentication) {
+    public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, String clientAuthentication) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
                                                      fromString(COMPONENT_CLASS),
@@ -36,6 +37,7 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
         this.privateKey = privateKey;
         this.certificate = certificate;
         this.caCertificatePath = caCertificatePath;
+        this.caCertificate = caCertificate;
         this.clientAuthentication = mapToConfigEnum(clientAuthentication);
     }
 
@@ -45,6 +47,7 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
         builder.ssl.privateKey(privateKey);
         builder.ssl.certificate(certificate);
         builder.ssl.caCertificateFile(Optional.ofNullable(caCertificatePath).orElse(""));
+        builder.ssl.caCertificate(Optional.ofNullable(caCertificate).orElse(""));
         builder.ssl.clientAuth(clientAuthentication);
     }
 

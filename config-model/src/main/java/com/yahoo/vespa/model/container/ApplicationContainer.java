@@ -22,11 +22,11 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
-        this(parent, name, false, index, isHostedVespa, tlsSecrets);
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
+        this(parent, name, false, index, isHostedVespa, tlsSecrets, tlsCa);
     }
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
 
@@ -36,8 +36,17 @@ public final class ApplicationContainer extends Container {
             JettyHttpServer server = Optional.ofNullable(getHttp())
                                              .map(Http::getHttpServer)
                                              .orElse(getDefaultHttpServer());
-            server.addConnector(new ConnectorFactory(connectorName, 4443,
-                                                     new ConfiguredDirectSslProvider(server.getComponentId().getName(), tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
+
+            var sslProvider = new ConfiguredDirectSslProvider(
+                    server.getComponentId().getName(),
+                    tlsSecrets.get().key(),
+                    tlsSecrets.get().certificate(),
+                    null,
+                    tlsCa.orElse(null),
+                    null
+            );
+
+            server.addConnector(new ConnectorFactory(connectorName, 4443, sslProvider));
         }
     }
 
