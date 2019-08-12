@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
 import com.yahoo.document.select.OrderingSpecification;
+import com.yahoo.document.select.Result;
 import com.yahoo.document.select.Visitor;
 
 import java.util.List;
@@ -88,6 +89,8 @@ public class ArithmeticNode implements ExpressionNode {
                 }
                 buf.push(new ValueItem(item.operator, (Number)val));
                 continue;
+            } else if (val == Result.INVALID) {
+                return val;
             }
             throw new IllegalStateException("Term '" + item.node + " with class " + val.getClass() + "' does not evaluate to a number.");
         }
