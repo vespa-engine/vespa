@@ -8,6 +8,8 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,10 +23,12 @@ public class CapacityPolicies {
 
     private final Zone zone;
     private final NodeFlavors flavors;
+    private final FlagSource flagSource;
 
-    public CapacityPolicies(Zone zone, NodeFlavors flavors) {
+    public CapacityPolicies(Zone zone, NodeFlavors flavors, FlagSource flagSource) {
         this.zone = zone;
         this.flavors = flavors;
+        this.flagSource = flagSource;
     }
 
     public int decideSize(Capacity requestedCapacity, ClusterSpec.Type clusterType) {
@@ -105,7 +109,7 @@ public class CapacityPolicies {
     }
 
     private NodeResources nodeResourcesForAdminCluster() {
-        double memoryInGb = (zone.system().isCd() ? 2 : 3);
+        double memoryInGb = Flags.MEMORY_FOR_ADMIN_CLUSTER_NODES.bindTo(flagSource).value();
         return new NodeResources(0.5, memoryInGb, 50);
     }
 
