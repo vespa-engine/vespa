@@ -2,16 +2,12 @@
 package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
@@ -50,15 +46,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         super(chains);
         this.options = options;
 
-        // TODO: Should be added to container instead of cluster to get proper configId for qr config.
-        cluster.addComponent(getFS4ResourcePool());
         this.enableGroupingSessionCache = cluster.enableGroupingSessionCache();
-    }
-
-    private static Component<?, ComponentModel> getFS4ResourcePool() {
-        BundleInstantiationSpecification spec = BundleInstantiationSpecification.
-                getInternalSearcherSpecificationFromStrings(FS4ResourcePool.class.getName(), null);
-        return new Component<>(new ComponentModel(spec));
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
