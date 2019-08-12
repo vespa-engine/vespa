@@ -19,7 +19,7 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
  *
  * <ol>
  *     <li>The unbound flag</li>
- *     <li>A {@link FlagSource}. The flag source is typically available as an injectible component. Binding
+ *     <li>A {@link FlagSource}. The flag source is typically available as an injectable component. Binding
  *     an unbound flag to a flag source produces a (bound) flag, e.g. {@link BooleanFlag} and {@link StringFlag}.</li>
  *     <li>If you would like your flag value to be dependent on e.g. the application ID, then 1. you should
  *     declare this in the unbound flag definition in this file (referring to
@@ -141,7 +141,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag PROVISION_APPLICATION_CERTIFICATE = defineFeatureFlag(
             "provision-application-certificate", false,
-            "Privision certificate from CA and include reference in deployment",
+            "Provision certificate from CA and include reference in deployment",
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
@@ -154,6 +154,12 @@ public class Flags {
     public static final UnboundBooleanFlag ENABLE_GROUPING_SESSION_CACHE = defineFeatureFlag(
             "enable-grouping-session-cache", false,
             "Enable grouping session cache",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundDoubleFlag MEMORY_FOR_ADMIN_CLUSTER_NODES = defineDoubleFlag(
+            "memory-for-admin-cluster-nodes", 3,
+            "Node resource memory in Gb for admin cluster nodes",
             "Takes effect at redeployment",
             APPLICATION_ID);
 
