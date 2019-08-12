@@ -7,16 +7,30 @@
 namespace search::datastore {
 
 template <typename EntryT, typename RefT>
-UniqueStoreSaver<EntryT, RefT>::UniqueStoreSaver(const Dictionary &dict, const DataStoreBase &store)
-    : _itr(),
-      _store(store)
+UniqueStoreSaver<EntryT, RefT>::UniqueStoreSaver(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store)
+    : _dict(dict),
+      _root(_dict.get_frozen_root()),
+      _store(store),
+      _next_enum_val(1)
 {
-    _itr = dict.getFrozenView().begin();
 }
 
 template <typename EntryT, typename RefT>
 UniqueStoreSaver<EntryT, RefT>::~UniqueStoreSaver()
 {
+}
+
+template <typename EntryT, typename RefT>
+void
+UniqueStoreSaver<EntryT, RefT>::enumerateValue(EntryRef ref)
+{
+    RefType iRef(ref);
+    assert(iRef.valid());
+    assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
+    uint32_t &enumVal = _enumValues[iRef.bufferId()][iRef.offset()];
+    assert(enumVal == 0u);
+    enumVal = _next_enum_val;
+    ++_next_enum_val;
 }
 
 template <typename EntryT, typename RefT>
@@ -30,18 +44,8 @@ UniqueStoreSaver<EntryT, RefT>::enumerateValues()
             _enumValues[bufferId].resize(state.size());
         }
     }
-    ConstIterator it = _itr;
-    uint32_t nextEnumVal = 1;
-    while (it.valid()) {
-        RefType ref(it.getKey());
-        assert(ref.valid());
-        assert(ref.offset() < _enumValues[ref.bufferId()].size());
-        uint32_t &enumVal = _enumValues[ref.bufferId()][ref.offset()];
-        assert(enumVal == 0u);
-        enumVal = nextEnumVal;
-        ++it;
-        ++nextEnumVal;
-    }
+    _next_enum_val = 1;
+    _dict.foreach_key(_root, [this](EntryRef ref) { enumerateValue(ref); });
 }
 
 }

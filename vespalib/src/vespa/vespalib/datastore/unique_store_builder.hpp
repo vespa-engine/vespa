@@ -14,9 +14,8 @@
 namespace search::datastore {
 
 template <typename EntryT, typename RefT>
-UniqueStoreBuilder<EntryT, RefT>::UniqueStoreBuilder(DataStoreType &store, uint32_t typeId, Dictionary &dict, uint32_t uniqueValuesHint)
+UniqueStoreBuilder<EntryT, RefT>::UniqueStoreBuilder(UniqueStoreType &store, UniqueStoreDictionaryBase &dict, uint32_t uniqueValuesHint)
     : _store(store),
-      _typeId(typeId),
       _dict(dict),
       _refs(),
       _refCounts()
@@ -42,17 +41,7 @@ template <typename EntryT, typename RefT>
 void
 UniqueStoreBuilder<EntryT, RefT>::makeDictionary()
 {
-    assert(_refs.size() == _refCounts.size());
-    assert(!_refs.empty());
-    typename Dictionary::Builder builder(_dict.getAllocator());
-    for (size_t i = 1; i < _refs.size(); ++i) {
-        if (_refCounts[i] != 0u) {
-            builder.insert(_refs[i], _refCounts[i]);
-        } else {
-            _store.holdElem(_refs[i], 1);
-        }
-    }
-    _dict.assign(builder);
+    _dict.build(_refs, _refCounts, [this](EntryRef ref) { _store.hold(ref); });
 }
 
 }

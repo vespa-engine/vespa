@@ -19,7 +19,6 @@ struct Fixture
 {
     using EntryRefType = RefT;
     using UniqueStoreType = UniqueStore<EntryT, RefT>;
-    using UniqueStoreAddResult = typename UniqueStoreType::AddResult;
     using value_type = EntryT;
     using ReferenceStore = std::map<EntryRef, std::pair<EntryT,uint32_t>>;
 

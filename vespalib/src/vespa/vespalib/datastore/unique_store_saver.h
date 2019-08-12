@@ -14,25 +14,25 @@ namespace search::datastore {
  */
 template <typename EntryT, typename RefT>
 class UniqueStoreSaver {
-    using UniqueStoreType = UniqueStore<EntryT, RefT>;
-    using Dictionary = typename UniqueStoreType::Dictionary;
-    using ConstIterator = typename Dictionary::ConstIterator;
     using EntryType = EntryT;
     using RefType = RefT;
 
-    ConstIterator _itr;
+    const UniqueStoreDictionaryBase &_dict;
+    EntryRef _root;
     const DataStoreBase &_store;
     std::vector<std::vector<uint32_t>> _enumValues;
+    uint32_t _next_enum_val;
 public:
-    UniqueStoreSaver(const Dictionary &dict, const DataStoreBase &store);
+    UniqueStoreSaver(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
     ~UniqueStoreSaver();
+    void enumerateValue(EntryRef ref);
     void enumerateValues();
 
     template <typename Function>
     void
     foreach_key(Function &&func) const
     {
-        _itr.foreach_key(func);
+        _dict.foreach_key(_root, func);
     }
 
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {
