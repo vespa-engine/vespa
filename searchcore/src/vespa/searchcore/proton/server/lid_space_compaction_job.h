@@ -45,6 +45,7 @@ private:
     void compactLidSpace(const search::LidUsageStats &stats);
     void refreshRunnable();
     void refreshAndConsiderRunnable();
+    bool remove_batch_is_ongoing(const search::LidUsageStats& stats) const;
 
 public:
     LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,

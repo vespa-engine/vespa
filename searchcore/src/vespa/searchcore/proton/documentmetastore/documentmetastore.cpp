@@ -450,7 +450,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _bucketDB(bucketDB),
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
-      _trackDocumentSizes(true)
+      _trackDocumentSizes(true),
+      _last_remove_batch()
 {
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
@@ -665,6 +666,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         (void) removed;
     }
     incGeneration();
+    _last_remove_batch = std::chrono::steady_clock::now();
 }
 
 void
@@ -772,7 +774,8 @@ DocumentMetaStore::getLidUsageStats() const
     return LidUsageStats(docIdLimit,
                          numDocs,
                          lowestFreeLid,
-                         highestUsedLid);
+                         highestUsedLid,
+                         _last_remove_batch);
 }
 
 Blueprint::UP

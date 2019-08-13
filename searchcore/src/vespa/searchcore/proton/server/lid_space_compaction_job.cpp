@@ -89,6 +89,13 @@ LidSpaceCompactionJob::compactLidSpace(const LidUsageStats &stats)
     _shouldCompactLidSpace = false;
 }
 
+bool
+LidSpaceCompactionJob::remove_batch_is_ongoing(const LidUsageStats& stats) const
+{
+    LidUsageStats::TimePoint now = std::chrono::steady_clock::now();
+    return (now - stats.get_last_remove_batch()) < std::chrono::duration<double>(_cfg.get_remove_batch_block_delay());
+}
+
 LidSpaceCompactionJob::LidSpaceCompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                                              ILidSpaceCompactionHandler &handler,
                                              IOperationStorer &opStorer,
@@ -129,6 +136,11 @@ LidSpaceCompactionJob::run()
         return true; // indicate work is done since no work can be done
     }
     LidUsageStats stats = _handler.getLidStatus();
+    if (remove_batch_is_ongoing(stats)) {
+        // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
+        LOG(info, "run(): Lid space compaction is disabled while remove batch (delete buckets) is ongoing");
+        return true;
+    }
     if (_scanItr) {
         return scanDocuments(stats);
     } else if (_shouldCompactLidSpace) {
