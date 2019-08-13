@@ -133,7 +133,7 @@ public class ProtobufSerialization {
             mergeQueryDataToDocsumRequest(query, builder);
         }
         if (query.getTraceLevel() >= 3) {
-            query.trace((includeQueryData ? "Resending " : "Not resending ") + "query during document summary fetching", 3);
+            query.trace((includeQueryData ? "ProtoBuf: Resending " : "Not resending ") + "query during document summary fetching", 3);
         }
 
         return builder;
