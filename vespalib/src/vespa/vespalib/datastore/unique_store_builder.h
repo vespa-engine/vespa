@@ -16,25 +16,20 @@ namespace search::datastore {
 template <typename EntryT, typename RefT>
 class UniqueStoreBuilder {
     using UniqueStoreType = UniqueStore<EntryT, RefT>;
-    using DataStoreType = typename UniqueStoreType::DataStoreType;
-    using Dictionary = typename UniqueStoreType::Dictionary;
     using EntryType = EntryT;
-    using WrappedEntryType = UniqueStoreEntry<EntryType>;
-    using RefType = RefT;
 
-    DataStoreType &_store;
-    uint32_t _typeId;
-    Dictionary &_dict;
+    UniqueStoreType &_store;
+    UniqueStoreDictionaryBase &_dict;
     std::vector<EntryRef> _refs;
     std::vector<uint32_t> _refCounts;
 public:
-    UniqueStoreBuilder(DataStoreType &store, uint32_t typeId,
-                       Dictionary &dict, uint32_t uniqueValuesHint);
+    UniqueStoreBuilder(UniqueStoreType &store,
+                       UniqueStoreDictionaryBase &dict, uint32_t uniqueValuesHint);
     ~UniqueStoreBuilder();
     void setupRefCounts();
     void makeDictionary();
     void add(const EntryType &value) {
-        EntryRef newRef = _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
+        EntryRef newRef = _store.allocate(value);
         _refs.push_back(newRef);
     }
     EntryRef mapEnumValueToEntryRef(uint32_t enumValue) {
