@@ -34,4 +34,10 @@ public class ApplicationCertificate {
     public int hashCode() {
         return Objects.hash(secretsKeyNamePrefix);
     }
+
+    @Override
+    public String toString() {
+        return "application certificate '" + secretsKeyNamePrefix + "'";
+    }
+
 }

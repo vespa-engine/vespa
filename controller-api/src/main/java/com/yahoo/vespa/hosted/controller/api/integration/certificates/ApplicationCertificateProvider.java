@@ -8,5 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
  * @author andreer
  */
 public interface ApplicationCertificateProvider {
+
     ApplicationCertificate requestCaSignedCertificate(ApplicationId applicationId);
+
 }
