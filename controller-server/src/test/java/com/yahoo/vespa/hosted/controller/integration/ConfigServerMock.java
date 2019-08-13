@@ -205,8 +205,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         disallowConvergenceCheckApplications.add(applicationId);
     }
 
-    @Override
-    public List<LoadBalancer> getLoadBalancers(ZoneId zone) {
+    private List<LoadBalancer> getLoadBalancers(ZoneId zone) {
         return loadBalancers.getOrDefault(zone, Collections.emptyList());
     }
 
