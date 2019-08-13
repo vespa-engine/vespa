@@ -164,6 +164,13 @@ public class ProvisioningTester {
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
     }
 
+    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), Version.fromString("6.42"), false);
+        Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
+        activate(application, hostSpecs);
+    }
+
     public void deactivate(ApplicationId applicationId) {
         NestedTransaction deactivateTransaction = new NestedTransaction();
         nodeRepository.deactivate(applicationId, deactivateTransaction);
@@ -233,17 +240,14 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, NodeResources resources) {
-        return makeReadyNodes(n, resources, NodeType.tenant);
+        return makeReadyNodes(n, resources, NodeType.tenant, 0);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type);
+        return makeReadyNodes(n, asFlavor(flavor, type), type, 0);
     }
-    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
-        return makeReadyNodes(n, new Flavor(resources), type, 0);
-    }
-    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type) {
-        return makeReadyNodes(n, flavor, type, 0);
+    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, new Flavor(resources), type, ipAddressPoolSize);
     }
 
     public List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -363,41 +367,32 @@ public class ProvisioningTester {
         return flavor.get();
     }
 
-    /** Creates a set of virtual docker hosts */
-    public List<Node> makeDockerHosts(int n, NodeResources resources) {
-        return makeDockerHosts(n, resources, "dockerHost");
-    }
-
-    public List<Node> makeDockerHosts(int n, NodeResources resources, String namePrefix) {
-        return makeReadyVirtualNodes(n, 1, resources, Optional.empty(), i -> namePrefix + i, NodeType.host);
-    }
-
     /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
     public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources resources, String dockerHostId) {
         return makeReadyVirtualNodes(n, 1, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+                                     i -> String.format("%s-%03d", dockerHostId, i));
     }
 
     /** Creates a single of virtual docker node on a single parent host */
     public List<Node> makeReadyVirtualDockerNode(int index, NodeResources resources, String dockerHostId) {
         return makeReadyVirtualNodes(1, index, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+                                     i -> String.format("%s-%03d", dockerHostId, i));
     }
 
     /** Creates a set of virtual nodes without a parent host */
     public List<Node> makeReadyVirtualNodes(int n, NodeResources resources) {
         return makeReadyVirtualNodes(n, 0, resources, Optional.empty(),
-                                     i -> UUID.randomUUID().toString(), NodeType.tenant);
+                                     i -> UUID.randomUUID().toString());
     }
 
     /** Creates a set of virtual nodes on a single parent host */
     private List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources flavor, Optional<String> parentHostId,
-                                             Function<Integer, String> nodeNamer, NodeType nodeType) {
+                                             Function<Integer, String> nodeNamer) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                                                new Flavor(flavor), nodeType));
+                                                new Flavor(flavor), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());

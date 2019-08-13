@@ -7,9 +7,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
@@ -74,7 +74,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeDockerHosts(10, new NodeResources(2, 2, 2));
+        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 2, 2), NodeType.host, 1);
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 

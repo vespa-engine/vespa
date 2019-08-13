@@ -143,11 +143,11 @@ public class ProvisioningTest {
     public void nodeVersionIsReturnedIfSet() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = tester.makeApplicationId();
-
-        tester.makeReadyNodes(4, "d-1-1-1");
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         // deploy
+        ApplicationId application1 = tester.makeApplicationId();
         SystemState state1 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1), tester);
         tester.activate(application1, state1.allHosts);
 
@@ -366,11 +366,13 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void dev_deployment_size() {
+    public void dev_deployment_node_size() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-1-1-1");
         SystemState state = prepare(application, 2, 2, 3, 3,
                                     new NodeResources(1, 1, 1), tester);
         assertEquals(4, state.allHosts.size());
@@ -381,8 +383,10 @@ public class ProvisioningTest {
     public void deploy_specific_vespa_version() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-1-1-1");
         SystemState state = prepare(application, 2, 2, 3, 3, new NodeResources(1, 1, 1), Version.fromString("6.91"), tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
@@ -415,8 +419,10 @@ public class ProvisioningTest {
     public void dev_deployment_flavor() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(2, 2, 2), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-2-2-2");
         SystemState state = prepare(application, 2, 2, 3, 3,
                                     new NodeResources(2, 2, 2), tester);
         assertEquals(4, state.allHosts.size());
