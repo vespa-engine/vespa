@@ -59,7 +59,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
     @Override
     public Optional<Item> extractSingleChild() {
         if (getItemCount() == 1) {
-            WordItem child = (WordItem) getItem(0);
+            TermItem child = (TermItem) getItem(0);
             child.setIndexName(getFieldName() + "." + child.getIndexName());
             return Optional.of(child);
         }
