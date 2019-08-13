@@ -4,15 +4,14 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +54,8 @@ public interface ConfigServer {
      * @param deployment The application/zone pair
      * @param endpoint The endpoint to modify
      * @param status The new status with metadata
-     * @throws IOException If trouble contacting the server
      */
-    // TODO: Remove checked exception from signature
-    void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status) throws IOException;
+    void setGlobalRotationStatus(DeploymentId deployment, String endpoint, EndpointStatus status);
 
     /**
      * Get the endpoint status for an app in one zone
@@ -66,10 +63,8 @@ public interface ConfigServer {
      * @param deployment The application/zone pair
      * @param endpoint The endpoint to modify
      * @return The endpoint status with metadata
-     * @throws IOException If trouble contacting the server
      */
-    // TODO: Remove checked exception from signature
-    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) throws IOException;
+    EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint);
 
     /** The node repository on this config server */
     NodeRepository nodeRepository();

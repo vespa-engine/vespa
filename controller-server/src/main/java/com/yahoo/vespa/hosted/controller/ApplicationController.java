@@ -78,8 +78,6 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.Principal;
 import java.time.Clock;
@@ -214,8 +212,8 @@ public class ApplicationController {
             try {
                 configServer.setGlobalRotationStatus(deployment, endpoint.upstreamName(), status);
                 return endpoint;
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to set rotation status of " + deployment, e);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to set rotation status of " + deployment, e);
             }
         }).orElseThrow(() -> new IllegalArgumentException("No global endpoint exists for " + deployment));
     }
@@ -226,8 +224,8 @@ public class ApplicationController {
             try {
                 EndpointStatus status = configServer.getGlobalRotationStatus(deployment, endpoint.upstreamName());
                 return Map.of(endpoint, status);
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to get rotation status of " + deployment, e);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to get rotation status of " + deployment, e);
             }
         }).orElseGet(Collections::emptyMap);
     }
