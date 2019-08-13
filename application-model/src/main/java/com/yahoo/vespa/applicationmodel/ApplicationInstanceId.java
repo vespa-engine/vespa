@@ -10,6 +10,7 @@ import java.util.Objects;
  */
 // TODO: Remove this and use ApplicationName/InstanceName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 public class ApplicationInstanceId {
+    public static final ApplicationInstanceId CONFIG_SERVER = new ApplicationInstanceId("zone-config-servers");
 
     private final String id;
 

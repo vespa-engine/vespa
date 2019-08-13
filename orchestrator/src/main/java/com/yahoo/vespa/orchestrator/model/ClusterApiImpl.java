@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
+import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -17,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class ClusterApiImpl implements ClusterApi {
     private final ApplicationApi applicationApi;
@@ -28,6 +31,15 @@ class ClusterApiImpl implements ClusterApi {
     private final Set<ServiceInstance> servicesDownInGroup;
     private final Set<ServiceInstance> servicesNotInGroup;
     private final Set<ServiceInstance> servicesDownAndNotInGroup;
+
+    /**
+     * There are supposed to be (at least) 3 config servers in a production-like environment.
+     * However the number of config servers in the zone-config-servers application/cluster may only be 2,
+     * if only 2 have been provisioned so far, or 1 is being reprovisioned. In these cases it is
+     * important for the Orchestrator to count that third config server as down.
+     */
+    private final int missingServices;
+    private final String descriptionOfMissingServices;
 
     public ClusterApiImpl(ApplicationApi applicationApi,
                           ServiceCluster serviceCluster,
@@ -51,6 +63,15 @@ class ClusterApiImpl implements ClusterApi {
 
         servicesDownInGroup = servicesInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
         servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
+
+        int serviceInstances = serviceCluster.serviceInstances().size();
+        if (serviceCluster.isConfigServerCluster() && serviceInstances < 3) {
+            missingServices = 3 - serviceInstances;
+            descriptionOfMissingServices = missingServices + " missing config server" + (missingServices > 1 ? "s" : "");
+        } else {
+            missingServices = 0;
+            descriptionOfMissingServices = "NA";
+        }
     }
 
     @Override
@@ -83,29 +104,31 @@ class ClusterApiImpl implements ClusterApi {
         return servicesDownInGroup.size() == servicesInGroup.size();
     }
 
+    int missingServices() { return missingServices; }
+
     @Override
     public boolean noServicesOutsideGroupIsDown() {
-        return servicesDownAndNotInGroup.size() == 0;
+        return servicesDownAndNotInGroup.size() + missingServices == 0;
     }
 
     @Override
     public int percentageOfServicesDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + servicesDownInGroup.size();
-        return numberOfServicesDown * 100 / serviceCluster.serviceInstances().size();
+        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesDownInGroup.size();
+        return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
     @Override
     public int percentageOfServicesDownIfGroupIsAllowedToBeDown() {
-        int numberOfServicesDown = servicesDownAndNotInGroup.size() + servicesInGroup.size();
-        return numberOfServicesDown * 100 / serviceCluster.serviceInstances().size();
+        int numberOfServicesDown = servicesDownAndNotInGroup.size() + missingServices + servicesInGroup.size();
+        return numberOfServicesDown * 100 / (serviceCluster.serviceInstances().size() + missingServices);
     }
 
     @Override
     public String servicesDownAndNotInGroupDescription() {
         // Sort these for readability and testing stability
-        return servicesDownAndNotInGroup.stream()
-                .map(service -> service.toString())
-                .sorted()
+        return Stream
+                .concat(servicesDownAndNotInGroup.stream().map(ServiceInstance::toString).sorted(),
+                        missingServices > 0 ? Stream.of(descriptionOfMissingServices) : Stream.of())
                 .collect(Collectors.toList())
                 .toString();
     }
