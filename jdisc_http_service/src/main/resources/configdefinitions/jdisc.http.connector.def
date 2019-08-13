@@ -79,5 +79,5 @@ ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  def
 # 401 status code is returned for requests from non-authenticated clients.
 tlsClientAuthEnforcer.enable          bool   default=false
 
-# Paths where client authentication should not be enforced. To be used in combination with NEED_AUTH. Typically used for health checks.
+# Paths where client authentication should not be enforced. To be used in combination with WANT_AUTH. Typically used for health checks.
 tlsClientAuthEnforcer.pathWhitelist[]  string
