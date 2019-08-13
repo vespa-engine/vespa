@@ -55,7 +55,9 @@ UniqueStoreAddResult
 UniqueStore<EntryT, RefT>::add(const EntryType &value)
 {
     Compare comp(_store, value);
-    return _dict->add(comp, [this, &value]() -> EntryRef { return allocate(value); });
+    UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return allocate(value); });
+    getWrapped(result.ref()).inc_ref_count();
+    return result;
 }
 
 template <typename EntryT, typename RefT>
@@ -77,10 +79,15 @@ template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
-    EntryType unused{};
-    Compare comp(_store, unused);
-    if (_dict->remove(comp, ref)) {
-        hold(ref);
+    auto &wrapped_entry = getWrapped(ref);
+    if (wrapped_entry.get_ref_count() > 1u) {
+        wrapped_entry.dec_ref_count();
+    } else {
+        EntryType unused{};
+        Compare comp(_store, unused);
+        if (_dict->remove(comp, ref)) {
+            hold(ref);
+        }
     }
 }
 

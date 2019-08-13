@@ -4,7 +4,13 @@
 #include "unique_store_add_result.h"
 #include "entry_comparator_wrapper.h"
 #include "i_compactable.h"
-#include <vespa/vespalib/btree/btreebuilder.h>
+#include "datastore.hpp"
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
 
 namespace search::datastore {
 
@@ -40,14 +46,11 @@ UniqueStoreDictionary::add(const EntryComparator &comp,
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
-        uint32_t refCount = itr.getData();
-        assert(refCount != std::numeric_limits<uint32_t>::max());
-        itr.writeData(refCount + 1);
         return UniqueStoreAddResult(itr.getKey(), false);
 
     } else {
         EntryRef newRef = insertEntry();
-        _dict.insert(itr, newRef, 1u);
+        _dict.insert(itr, newRef, btree::BTreeNoLeafData());
         return UniqueStoreAddResult(newRef, true);
     }
 }
@@ -69,14 +72,8 @@ UniqueStoreDictionary::remove(const EntryComparator &comp, EntryRef ref)
     assert(ref.valid());
     auto itr = _dict.lowerBound(ref, comp);
     if (itr.valid() && itr.getKey() == ref) {
-        uint32_t refCount = itr.getData();
-        if (refCount > 1) {
-            itr.writeData(refCount - 1);
-            return false;
-        } else {
-            _dict.remove(itr);
-            return true;
-        }
+        _dict.remove(itr);
+        return true;
     }
     return false;
 }
@@ -116,7 +113,7 @@ UniqueStoreDictionary::build(const std::vector<EntryRef> &refs, const std::vecto
     typename Dictionary::Builder builder(_dict.getAllocator());
     for (size_t i = 1; i < refs.size(); ++i) {
         if (ref_counts[i] != 0u) {
-            builder.insert(refs[i], ref_counts[i]);
+            builder.insert(refs[i], btree::BTreeNoLeafData());
         } else {
             hold(refs[i]);
         }
