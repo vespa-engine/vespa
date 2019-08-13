@@ -86,8 +86,6 @@ public class ApplicationSerializer {
     private final String assignedRotationEndpointField = "endpointId";
     private final String assignedRotationClusterField = "clusterId";
     private final String assignedRotationRotationField = "rotationId";
-    private final String rotationsField = "endpoints";
-    private final String deprecatedRotationField = "rotation";
     private final String rotationStatusField = "rotationStatus";
     private final String applicationCertificateField = "applicationCertificate";
 
@@ -180,8 +178,6 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
-        application.legacyRotation().ifPresent(rotation -> root.setString(deprecatedRotationField, rotation.asString()));
-        rotationsToSlime(application.assignedRotations(), root, rotationsField);
         assignedRotationsToSlime(application.assignedRotations(), root, assignedRotationsField);
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
         application.applicationCertificate().ifPresent(cert -> root.setString(applicationCertificateField, cert.secretsKeyNamePrefix()));
