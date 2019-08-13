@@ -192,7 +192,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
+        addTlsClientAuthority(deployState, spec, cluster);
+
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
+    }
+
+    private void addTlsClientAuthority(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        var clientAuthorized = XML.getChild(spec, "client-authorize");
+        if (clientAuthorized != null && deployState.tlsClientAuthority().isEmpty()) {
+            if (deployState.tlsClientAuthority().isEmpty()) {
+                throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
+            }
+            cluster.useTlsClientAuthority(true);
+        }
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {

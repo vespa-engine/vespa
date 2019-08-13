@@ -57,6 +57,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private Optional<TlsSecrets> tlsSecrets;
     private Optional<String> tlsClientAuthority;
+    private boolean useTlsClientAuthority = false;
     private final boolean enableGroupingSessionCache;
 
     private MbusParams mbusParams;
@@ -209,6 +210,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    public void useTlsClientAuthority(boolean value) {
+        this.useTlsClientAuthority = value;
     }
 
     public static class MbusParams {
