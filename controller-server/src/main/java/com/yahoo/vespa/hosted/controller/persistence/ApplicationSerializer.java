@@ -332,14 +332,14 @@ public class ApplicationSerializer {
     }
 
     private void rotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        final var rotationsArray = parent.setArray(fieldName);
+        var rotationsArray = parent.setArray(fieldName);
         rotations.forEach(rot -> rotationsArray.addString(rot.rotationId().asString()));
     }
 
     private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        final var rotationsArray = parent.setArray(fieldName);
+        var rotationsArray = parent.setArray(fieldName);
         for (var rotation : rotations) {
-            final var object = rotationsArray.addObject();
+            var object = rotationsArray.addObject();
             object.setString(assignedRotationEndpointField, rotation.endpointId().id());
             object.setString(assignedRotationRotationField, rotation.rotationId().asString());
             object.setString(assignedRotationClusterField, rotation.clusterId().value());
@@ -469,17 +469,17 @@ public class ApplicationSerializer {
         if ( ! object.valid()) return ApplicationVersion.unknown;
         OptionalLong applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
-        if ( ! sourceRevision.isPresent() || ! applicationBuildNumber.isPresent()) {
+        if (sourceRevision.isEmpty() || applicationBuildNumber.isEmpty()) {
             return ApplicationVersion.unknown;
         }
         Optional<String> authorEmail = optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = optionalString(object.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = optionalInstant(object.field(buildTimeField));
 
-        if ( ! authorEmail.isPresent())
+        if (authorEmail.isEmpty())
             return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
 
-        if ( ! compileVersion.isPresent() || ! buildTime.isPresent())
+        if (compileVersion.isEmpty() || buildTime.isEmpty())
             return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get());
 
         return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get(),
@@ -525,7 +525,7 @@ public class ApplicationSerializer {
         // if the job type has since been removed, ignore it
         Optional<JobType> jobType =
                 JobType.fromOptionalJobName(object.field(jobTypeField).asString());
-        if (! jobType.isPresent()) return Optional.empty();
+        if (jobType.isEmpty()) return Optional.empty();
 
         Optional<JobError> jobError = Optional.empty();
         if (object.field(errorField).valid())
@@ -552,16 +552,16 @@ public class ApplicationSerializer {
     }
 
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, Inspector root) {
-        final var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
+        var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
 
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
-            final var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
-            final var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
-            final var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
-            final var regions = deploymentSpec.endpoints().stream()
-                    .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
-                    .flatMap(endpoint -> endpoint.regions().stream())
-                    .collect(Collectors.toSet());
+            var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
+            var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
+            var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
+            var regions = deploymentSpec.endpoints().stream()
+                                        .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
+                                        .flatMap(endpoint -> endpoint.regions().stream())
+                                        .collect(Collectors.toSet());
             assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
