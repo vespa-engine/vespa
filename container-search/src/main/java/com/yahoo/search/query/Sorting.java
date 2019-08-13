@@ -176,7 +176,7 @@ public class Sorting implements Cloneable {
                 buffer.put((byte) '-');
             }
             usedBytes++;
-            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toString());
+            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toSerialForm());
             buffer.put(nameBuffer);
             usedBytes += nameBuffer.length;
             // If this isn't the last element, append a separating space
