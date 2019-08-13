@@ -1,5 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/net/state_server.h>
@@ -491,4 +496,10 @@ TEST("require that generic state can be explored") {
     check_json(json_list_two, state_handler.get(host_tag, root_path + "list/two", empty_params));
 }
 
-TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
+TEST_MAIN_WITH_PROCESS_PROXY() {
+    mkdir("var", S_IRWXU);
+    mkdir("var/run", S_IRWXU);
+    TEST_RUN_ALL();
+    rmdir("var/run");
+    rmdir("var");
+}
