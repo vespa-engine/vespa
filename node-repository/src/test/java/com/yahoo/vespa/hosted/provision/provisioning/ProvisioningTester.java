@@ -279,7 +279,7 @@ public class ProvisioningTester {
             hostIps.add(ipv6);
 
             Set<String> ipAddressPool = new LinkedHashSet<>();
-            for (int poolIp = 1; poolIp < ipAddressPoolSize; poolIp++) {
+            for (int poolIp = 1; poolIp <= ipAddressPoolSize; poolIp++) {
                 nextIP++;
                 String ipv6Addr = String.format("::%d", nextIP);
                 ipAddressPool.add(ipv6Addr);
