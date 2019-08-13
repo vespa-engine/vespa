@@ -503,6 +503,24 @@ public class HttpServerTest {
     }
 
     @Test
+    public void requireThatTlsClientAuthenticationEnforcerAllowsRequestForWhitelistedPaths() throws IOException {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
+
+        SSLContext trustStoreOnlyCtx = new SslContextBuilder()
+                .withTrustStore(certificateFile)
+                .build();
+
+        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
+                .get("/status.html")
+                .expectStatusCode(is(OK));
+
+        assertThat(driver.close(), is(true));
+    }
+
+    @Test
     public void requireThatConnectedAtReturnsNonZero() throws Exception {
         final TestDriver driver = TestDrivers.newInstance(new ConnectedAtRequestHandler());
         driver.client().get("/status.html")
