@@ -82,7 +82,7 @@ public class Flags {
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_FDISPATCH_BY_DEFAULT = defineFeatureFlag(
-            "use-fdispatch-by-default", false,
+            "use-fdispatch-by-default", true,
             "Should fdispatch be used as the default instead of the java dispatcher",
             "Takes effect at redeployment",
             APPLICATION_ID);
@@ -94,7 +94,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISPATCH_WITH_PROTOBUF = defineFeatureFlag(
-            "dispatch-with-protobuf", true,
+            "dispatch-with-protobuf", false,
             "Should the java dispatcher use protobuf/jrt as the default",
             "Takes effect at redeployment",
             APPLICATION_ID);
