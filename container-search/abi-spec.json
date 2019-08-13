@@ -5230,6 +5230,7 @@
       "public void <init>(java.lang.String)",
       "public java.lang.String getName()",
       "public void setName(java.lang.String)",
+      "public java.lang.String toSerialForm()",
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -5270,7 +5271,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
-      "public java.lang.String toString()",
+      "public java.lang.String toSerialForm()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public int compare(java.lang.Comparable, java.lang.Comparable)"
@@ -5342,7 +5343,7 @@
       "public com.yahoo.search.query.Sorting$UcaSorter$Strength getStrength()",
       "public com.ibm.icu.text.Collator getCollator()",
       "public java.lang.String getDecomposition()",
-      "public java.lang.String toString()",
+      "public java.lang.String toSerialForm()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.search.query.Sorting$UcaSorter clone()",
