@@ -14,9 +14,10 @@ public class ApplicationCertificate {
     private final String secretsKeyNamePrefix;
 
     public ApplicationCertificate(String secretsKeyNamePrefix) {
-        this.secretsKeyNamePrefix = secretsKeyNamePrefix;
+        this.secretsKeyNamePrefix = Objects.requireNonNull(secretsKeyNamePrefix, "secretsKeyNamePrefix must be non-null");
     }
 
+    /** The prefix of keys identifying this certificate and its private key in a key store */
     public String secretsKeyNamePrefix() {
         return secretsKeyNamePrefix;
     }

@@ -695,6 +695,30 @@ public class ControllerTest {
                                      .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
     }
 
+    @Test
+    public void testDeployProvisionsCertificate() {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
+
+        // Create app1
+        Application app1 = tester.createApplication("app1", "tenant1", 1, 2L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
+                                                                               .region("us-west-1")
+                                                                               .build();
+        // Deploy app1 in production
+        tester.deployCompletely(app1, applicationPackage);
+        assertTrue("Provisions certificate in " + Environment.prod, tester.application(app1.id()).applicationCertificate().isPresent());
+
+        // Create app2
+        Application app2 = tester.createApplication("app2", "tenant2", 3, 4L);
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+
+        // Deploy app2 in dev
+        tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        assertTrue("Application deployed and activated",
+                   tester.controllerTester().configServer().application(app2.id()).get().activated());
+        assertTrue("Provisions certificate in " + Environment.dev, tester.application(app2.id()).applicationCertificate().isPresent());
+    }
+
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
         Version next = Version.fromString("6.2");
         tester.upgradeSystem(next);
