@@ -7,10 +7,10 @@ import java.util.List;
 
 import com.yahoo.foo.AppConfig;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.codegen.CNode;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  *
@@ -27,7 +27,6 @@ public class ConfigKeyTest {
         assertEquals(key1, key2);
 
         ConfigKey<?> key3 = new ConfigKey<>("foo", "a/b/c/d", namespace);
-        assertFalse(key1.equals(key3));
         assertNotEquals(key1, key3);
 
         assertEquals("a/b/c", new ConfigKey<>("foo", "a/b/c", namespace).getConfigId());
@@ -67,15 +66,10 @@ public class ConfigKeyTest {
     // Tests namespace and equals with combinations of namespace.
     @Test
     public void testNamespace() {
-        ConfigKey<?> noNamespace = new ConfigKey<>("name", "id", null);
         ConfigKey<?> namespaceFoo = new ConfigKey<>("name", "id", "foo");
         ConfigKey<?> namespaceBar = new ConfigKey<>("name", "id", "bar");
-        assertEquals(noNamespace, noNamespace);
         assertEquals(namespaceFoo, namespaceFoo);
-        assertNotEquals(noNamespace, namespaceFoo);
-        assertNotEquals(namespaceFoo, noNamespace);
         assertNotEquals(namespaceFoo, namespaceBar);
-        assertEquals(noNamespace.getNamespace(), CNode.DEFAULT_NAMESPACE);
         assertEquals(namespaceBar.getNamespace(), "bar");
     }
 
