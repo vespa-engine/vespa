@@ -72,6 +72,8 @@ public class ProtobufSerialization {
             builder.setCacheGrouping(true);
         }
 
+        builder.setTraceLevel(query.getTraceLevelForBackend());
+
         mergeToSearchRequestFromRanking(query.getRanking(), builder);
 
         return builder.build();

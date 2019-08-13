@@ -1093,7 +1093,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         return Collections.<String,Boolean>emptyMap();
     }
 
-    private int computeTraceLevelForBackend() {
+    public int getTraceLevelForBackend() {
         int traceLevel = getTraceLevel();
         if (model.getExecution().trace().getForceTimestamps()) {
             traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
@@ -1108,7 +1108,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         Map<String, String> m = new HashMap<>();
         if (model.getSearchPath() != null) m.put("searchpath", model.getSearchPath());
 
-        int traceLevel = computeTraceLevelForBackend();
+        int traceLevel = getTraceLevelForBackend();
         if (traceLevel > 0) m.put("tracelevel", String.valueOf(traceLevel));
 
         return m;
