@@ -16,8 +16,6 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -30,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -53,7 +50,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
     private final MetricUpdater metrics;
-    private final FlagSource flagSource;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final Executor zkWatcherExecutor;
@@ -70,7 +66,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
         this.metrics = registry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        this.flagSource = registry.getFlagSource();
         StripedExecutor<TenantName> zkWatcherExecutor = registry.getZkWatcherExecutor();
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
@@ -140,20 +135,15 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      * @param sessionId session id for the new session
      */
     private void sessionAdded(long sessionId) {
-        try {
-            log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
-            RemoteSession session = remoteSessionFactory.createSession(sessionId);
-            Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
-            Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
-            fileCache.addListener(this::nodeChanged);
-            loadSessionIfActive(session);
-            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
-            addSession(session);
-            metrics.incAddedSessions();
-        } catch (Exception e) {
-            if (Flags.CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED.bindTo(flagSource).value()) throw e;
-            log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
-        }
+        log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
+        RemoteSession session = remoteSessionFactory.createSession(sessionId);
+        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
+        Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+        fileCache.addListener(this::nodeChanged);
+        loadSessionIfActive(session);
+        sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
+        addSession(session);
+        metrics.incAddedSessions();
     }
 
     private void sessionRemoved(long sessionId) {
