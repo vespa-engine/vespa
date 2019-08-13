@@ -51,6 +51,13 @@ public class ServiceCluster {
         return applicationInstance.get();
     }
 
+    public boolean isConfigServerCluster() {
+        return Objects.equals(applicationInstance.map(ApplicationInstance::tenantId), Optional.of(TenantId.HOSTED_VESPA)) &&
+                Objects.equals(applicationInstance.map(ApplicationInstance::applicationInstanceId), Optional.of(ApplicationInstanceId.CONFIG_SERVER)) &&
+                Objects.equals(clusterId, ClusterId.CONFIG_SERVER) &&
+                Objects.equals(serviceType, ServiceType.CONFIG_SERVER);
+    }
+
     @Override
     public String toString() {
         return "ServiceCluster{" +
