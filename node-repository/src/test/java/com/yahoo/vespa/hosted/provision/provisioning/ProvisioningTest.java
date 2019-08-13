@@ -9,10 +9,10 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
@@ -143,11 +143,11 @@ public class ProvisioningTest {
     public void nodeVersionIsReturnedIfSet() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        ApplicationId application1 = tester.makeApplicationId();
-
-        tester.makeReadyNodes(4, "d-1-1-1");
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         // deploy
+        ApplicationId application1 = tester.makeApplicationId();
         SystemState state1 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1), tester);
         tester.activate(application1, state1.allHosts);
 
@@ -366,11 +366,13 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void dev_deployment_size() {
+    public void dev_deployment_node_size() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-1-1-1");
         SystemState state = prepare(application, 2, 2, 3, 3,
                                     new NodeResources(1, 1, 1), tester);
         assertEquals(4, state.allHosts.size());
@@ -381,8 +383,10 @@ public class ProvisioningTest {
     public void deploy_specific_vespa_version() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(1, 1, 1), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-1-1-1");
         SystemState state = prepare(application, 2, 2, 3, 3, new NodeResources(1, 1, 1), Version.fromString("6.91"), tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
@@ -415,8 +419,10 @@ public class ProvisioningTest {
     public void dev_deployment_flavor() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
+        tester.makeReadyNodes(4, new NodeResources(2, 2, 2), NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-2-2-2");
         SystemState state = prepare(application, 2, 2, 3, 3,
                                     new NodeResources(2, 2, 2), tester);
         assertEquals(4, state.allHosts.size());
@@ -819,13 +825,13 @@ public class ProvisioningTest {
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, NodeResources flavor, Version wantedVersion, ProvisioningTester tester) {
-        return prepare(application, container0Size, container1Size, content0Size, content1Size, false, flavor,
+                                int content1Size, NodeResources nodeResources, Version wantedVersion, ProvisioningTester tester) {
+        return prepare(application, container0Size, container1Size, content0Size, content1Size, false, nodeResources,
                        wantedVersion, tester);
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
-                                int content1Size, boolean required, NodeResources flavor, Version wantedVersion,
+                                int content1Size, boolean required, NodeResources nodeResources, Version wantedVersion,
                                 ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), wantedVersion, false);
@@ -833,10 +839,10 @@ public class ProvisioningTest {
         ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), wantedVersion, false);
         ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), wantedVersion, false);
 
-        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, flavor, tester);
-        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, flavor, tester);
-        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, required, flavor, tester);
-        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, required, flavor, tester);
+        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, required, nodeResources, tester);
+        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, required, nodeResources, tester);
+        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, required, nodeResources, tester);
+        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, required, nodeResources, tester);
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
@@ -868,9 +874,9 @@ public class ProvisioningTest {
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups,
-                                  boolean required, NodeResources flavor, ProvisioningTester tester) {
+                                  boolean required, NodeResources nodeResources, ProvisioningTester tester) {
         if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
-        return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, flavor));
+        return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, nodeResources));
     }
 
     private static class SystemState {

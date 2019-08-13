@@ -621,6 +621,7 @@
       "public int hashCode()",
       "public java.lang.String toString()",
       "public boolean satisfies(com.yahoo.config.provision.NodeResources)",
+      "public boolean compatibleWith(com.yahoo.config.provision.NodeResources)",
       "public static com.yahoo.config.provision.NodeResources fromLegacyName(java.lang.String)"
     ],
     "fields": []

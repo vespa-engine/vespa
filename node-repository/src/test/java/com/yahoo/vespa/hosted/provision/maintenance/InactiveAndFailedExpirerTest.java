@@ -139,7 +139,7 @@ public class InactiveAndFailedExpirerTest {
         {
             Node toRetire = tester.getNodes(applicationId, Node.State.active).asList().get(0);
             tester.patchNode(toRetire.with(toRetire.status().withWantToRetire(true)));
-            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+            List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
             tester.activate(applicationId, new HashSet<>(hostSpecs));
         }
 

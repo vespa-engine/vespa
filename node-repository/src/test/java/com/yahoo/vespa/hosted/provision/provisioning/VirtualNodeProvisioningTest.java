@@ -5,8 +5,9 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -83,7 +84,8 @@ public class VirtualNodeProvisioningTest {
         {
             NodeResources flavor = new NodeResources(1, 1, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
-            tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
+            tester.makeReadyNodes(4, flavor, NodeType.host, 1);
+            tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups, flavor);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups, flavor);
@@ -96,7 +98,8 @@ public class VirtualNodeProvisioningTest {
         // Allowed to use same parent host for several nodes in same cluster in CD (even if prod env)
         {
             tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).build();
-            tester.makeReadyVirtualDockerNodes(4, flavor, "parentHost1");
+            tester.makeReadyNodes(4, flavor, NodeType.host, 1);
+            tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
             List<HostSpec> containerHosts = prepare(containerClusterSpec, containerNodeCount, groups);
             List<HostSpec> contentHosts = prepare(contentClusterSpec, contentNodeCount, groups);

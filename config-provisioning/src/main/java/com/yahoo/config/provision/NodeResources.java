@@ -149,13 +149,26 @@ public class NodeResources {
         if (this.allocateByLegacyName || other.allocateByLegacyName) // resources are not available
             return Objects.equals(this.legacyName, other.legacyName);
 
-        if (this.vcpu < other.vcpu()) return false;
+        if (this.vcpu < other.vcpu) return false;
         if (this.memoryGb < other.memoryGb) return false;
         if (this.diskGb < other.diskGb) return false;
 
         // Why doesn't a fast disk satisfy a slow disk? Because if slow disk is explicitly specified
         // (i.e not "any"), you should not randomly, sometimes get a faster disk as that means you may
         // draw conclusions about performance on the basis of better resources than you think you have
+        if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
+
+        return true;
+    }
+
+    /** Returns true if all the resources of this are the same as or compatible with the given resources */
+    public boolean compatibleWith(NodeResources other) {
+        if (this.allocateByLegacyName || other.allocateByLegacyName) // resources are not available
+            return Objects.equals(this.legacyName, other.legacyName);
+
+        if (this.vcpu != other.vcpu) return false;
+        if (this.memoryGb != other.memoryGb) return false;
+        if (this.diskGb != other.diskGb) return false;
         if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
 
         return true;
