@@ -1782,7 +1782,7 @@ TEST(DocumentMetaStoreTest, get_lid_usage_stats_works)
 void
 assertLidBloat(uint32_t expBloat, uint32_t lidLimit, uint32_t usedLids)
 {
-    LidUsageStats stats(lidLimit, usedLids, 0, 0);
+    LidUsageStats stats(lidLimit, usedLids, 0, 0, LidUsageStats::TimePoint());
     EXPECT_EQ(expBloat, stats.getLidBloat());
 }
 
@@ -2082,6 +2082,23 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     assertLidGidFound(2, dms);
     assertLidGidNotFound(3, dms);
     assertLidGidFound(4, dms);
+}
+
+TEST(DocumentMetaStoreTest, tracks_time_of_last_call_to_remove_batch)
+{
+    DocumentMetaStore dms(createBucketDB());
+    dms.constructFreeList();
+    addLid(dms, 1);
+
+    LidUsageStats::TimePoint before = std::chrono::steady_clock::now();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    dms.removeBatch({1}, 5);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    LidUsageStats::TimePoint after = std::chrono::steady_clock::now();
+
+    auto stats = dms.getLidUsageStats();
+    EXPECT_LT(before, stats.get_last_remove_batch());
+    EXPECT_GT(after, stats.get_last_remove_batch());
 }
 
 }

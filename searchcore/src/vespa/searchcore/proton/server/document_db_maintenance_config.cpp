@@ -54,6 +54,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
       _interval(3600),
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
+      _remove_batch_block_delay(5.0),
       _disabled(false),
       _maxDocsToScan(10000)
 {
@@ -62,12 +63,14 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
 DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(double interval,
                                                                        uint32_t allowedLidBloat,
                                                                        double allowedLidBloatFactor,
+                                                                       double remove_batch_block_delay,
                                                                        bool disabled,
                                                                        uint32_t maxDocsToScan)
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
+      _remove_batch_block_delay(remove_batch_block_delay),
       _disabled(disabled),
       _maxDocsToScan(maxDocsToScan)
 {
