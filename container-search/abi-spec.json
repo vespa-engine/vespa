@@ -1806,7 +1806,6 @@
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
       "public boolean hasEncodableProperties()",
       "public int encodeAsProperties(java.nio.ByteBuffer, boolean)",
-      "public int getTraceLevelForBackend()",
       "public void prepare()",
       "public bridge synthetic com.yahoo.processing.Request clone()",
       "public bridge synthetic com.yahoo.processing.request.Properties properties()",
