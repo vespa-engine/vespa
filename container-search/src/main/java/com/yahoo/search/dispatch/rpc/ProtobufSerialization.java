@@ -72,9 +72,22 @@ public class ProtobufSerialization {
             builder.setCacheGrouping(true);
         }
 
+        builder.setTraceLevel(getTraceLevelForBackend(query));
+
         mergeToSearchRequestFromRanking(query.getRanking(), builder);
 
         return builder.build();
+    }
+
+    public static int getTraceLevelForBackend(Query query) {
+        int traceLevel = query.getTraceLevel();
+        if (query.getModel().getExecution().trace().getForceTimestamps()) {
+            traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
+        }
+        if (query.getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, query.getExplainLevel() + 5);
+        }
+        return traceLevel;
     }
 
     private static void mergeToSearchRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder) {

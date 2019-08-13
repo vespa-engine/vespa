@@ -13,6 +13,7 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.ParameterParser;
@@ -102,7 +103,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         WEB(4,"web"),
         PROGRAMMATIC(5, "prog"),
         YQL(6, "yql"),
-        SELECT(7, "select");;
+        SELECT(7, "select");
 
         private final int intValue;
         private final String stringValue;
@@ -495,7 +496,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private void appendQueryProfileProperties(CompiledQueryProfile profile,Set<String> mentioned,StringBuilder b) {
         for (Map.Entry<String,Object> property : profile.listValues("", requestProperties()).entrySet()) {
             if ( ! mentioned.contains(property.getKey()))
-                b.append(property.getKey() + "=" + property.getValue() + " (value from query profile)<br/>\n");
+                b.append(property.getKey()).append("=").append(property.getValue()).append(" (value from query profile)<br/>\n");
         }
     }
 
@@ -741,7 +742,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
         StringBuilder concatenated = new StringBuilder();
         for (Object message : messages)
-            concatenated.append(String.valueOf(message));
+            concatenated.append(message);
         trace(concatenated.toString(), includeQuery, traceLevel);
     }
 
@@ -1090,25 +1091,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             return Collections.singletonMap("grouping", true);
         if (ranking.getQueryCache())
             return Collections.singletonMap("query", true);
-        return Collections.<String,Boolean>emptyMap();
-    }
-
-    private int computeTraceLevelForBackend() {
-        int traceLevel = getTraceLevel();
-        if (model.getExecution().trace().getForceTimestamps()) {
-            traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
-        }
-        if (getExplainLevel() > 0) {
-            traceLevel = Math.max(traceLevel, getExplainLevel() + 5);
-        }
-        return traceLevel;
+        return Collections.emptyMap();
     }
 
     private Map<String, String> createModelMap() {
         Map<String, String> m = new HashMap<>();
         if (model.getSearchPath() != null) m.put("searchpath", model.getSearchPath());
 
-        int traceLevel = computeTraceLevelForBackend();
+        int traceLevel = ProtobufSerialization.getTraceLevelForBackend(this);
         if (traceLevel > 0) m.put("tracelevel", String.valueOf(traceLevel));
 
         return m;
