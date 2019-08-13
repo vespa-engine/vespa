@@ -25,6 +25,7 @@ import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.AbstractService;
@@ -39,9 +40,12 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -642,6 +646,41 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         SecretStore secretStore = getContainerCluster("container").getSecretStore().get();
         assertEquals("group1", secretStore.getGroups().get(0).name);
         assertEquals("env1", secretStore.getGroups().get(0).environment);
+    }
+
+    @Test
+    public void client_ca_carts_fail_with_missing_clients_pem() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <client-authorize />",
+                "</container>");
+        try {
+            createModel(root, clusterElem);
+        } catch (RuntimeException e) {
+            assertEquals(e.getMessage(), "client-authorize set, but security/clients.pem is missing");
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void client_ca_carts_succeeds_with_client_authorize_and_clients_pem() {
+        var applicationPackage = new MockApplicationPackage.Builder()
+                .withInMemoryFileSystem()
+                .build();
+
+        applicationPackage.getFile(Path.fromString("security")).createDirectory();
+        applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader("I am a very nice certificate"));
+
+        var deployState = DeployState.createTestState(applicationPackage);
+
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <client-authorize />",
+                "</container>");
+
+        createModel(root, deployState, null, clusterElem);
+        assertEquals(Optional.of("I am a very nice certificate"), getContainerCluster("container").getTlsClientAuthority());
     }
 
     @Test
