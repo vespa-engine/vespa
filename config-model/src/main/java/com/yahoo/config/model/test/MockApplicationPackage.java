@@ -17,23 +17,25 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.google.common.jimfs.Jimfs;
 
 /**
  * For testing purposes only
@@ -48,7 +50,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
     public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
 
-    private final File root;
+    private final java.nio.file.Path root;
     private final String hostsS;
     private final String servicesS;
     private final List<String> searchDefinitions;
@@ -59,7 +61,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
 
-    protected MockApplicationPackage(File root, String hosts, String services, List<String> searchDefinitions,
+    protected MockApplicationPackage(java.nio.file.Path root, String hosts, String services, List<String> searchDefinitions,
                                      String searchDefinitionDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
@@ -77,7 +79,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     /** Returns the root of this application package relative to the current dir */
-    protected File root() { return root; }
+    protected java.nio.file.Path root() { return root; }
 
     @Override
     public String getApplicationName() {
@@ -129,7 +131,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path file) {
-        return new MockApplicationFile(file, Path.fromString(root.toString()));
+        return new MockApplicationFile(file, root);
     }
 
     @Override
@@ -190,7 +192,8 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static class Builder {
 
-        private File root = new File("nonexisting");
+        private FileSystem fileSystem = FileSystems.getDefault();
+        private java.nio.file.Path root = fileSystem.getPath("nonexisting");
         private String hosts = null;
         private String services = null;
         private List<String> searchDefinitions = Collections.emptyList();
@@ -205,7 +208,13 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public Builder withRoot(File root) {
-            this.root = root;
+            this.root = this.fileSystem.getPath(root.getName());
+            return this;
+        }
+
+        public Builder withInMemoryFileSystem() {
+            this.fileSystem = Jimfs.newFileSystem();
+            this.root = this.fileSystem.getPath("/");
             return this;
         }
 
@@ -319,32 +328,32 @@ public class MockApplicationPackage implements ApplicationPackage {
     public static class MockApplicationFile extends ApplicationFile {
 
         /** The path to the application package root */
-        private final Path root;
+        private final java.nio.file.Path root;
 
         /** The File pointing to the actual file represented by this */
-        private final File file;
+        private final java.nio.file.Path file;
 
-        public MockApplicationFile(Path filePath, Path applicationPackagePath) {
+        public MockApplicationFile(Path filePath, java.nio.file.Path applicationPackagePath) {
             super(filePath);
             this.root = applicationPackagePath;
-            file = applicationPackagePath.append(filePath).toFile();
+            file = applicationPackagePath.resolve(path.toString());
         }
 
         @Override
         public boolean isDirectory() {
-            return file.isDirectory();
+            return Files.isDirectory(file);
         }
 
         @Override
         public boolean exists() {
-            return file.exists();
+            return Files.exists(file);
         }
 
         @Override
         public Reader createReader() {
             try {
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return IOUtils.createReader(file, "UTF-8");
+                return Files.newBufferedReader(file);
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -355,7 +364,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         public InputStream createInputStream() {
             try {
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return new BufferedInputStream(new FileInputStream(file));
+                return Files.newInputStream(file);
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -364,14 +373,18 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         @Override
         public ApplicationFile createDirectory() {
-            file.mkdirs();
+            try {
+                Files.createDirectories(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
             return this;
         }
 
         @Override
         public ApplicationFile writeFile(Reader input) {
             try {
-                IOUtils.writeFile(file, IOUtils.readAll(input), false);
+                Files.writeString(file, IOUtils.readAll(input), StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
                 return this;
             }
             catch (IOException e) {
@@ -382,7 +395,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         @Override
         public ApplicationFile appendFile(String value) {
             try {
-                IOUtils.writeFile(file, value, true);
+                Files.writeString(file, value, StandardOpenOption.APPEND);
                 return this;
             }
             catch (IOException e) {
@@ -393,15 +406,25 @@ public class MockApplicationPackage implements ApplicationPackage {
         @Override
         public List<ApplicationFile> listFiles(PathFilter filter) {
             if ( ! isDirectory()) return Collections.emptyList();
-            return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
-                         .map(f -> new MockApplicationFile(asApplicationRelativePath(f), root))
-                         .collect(Collectors.toList());
+            try {
+                return Files.list(file)
+                        .map(f -> Path.fromString(f.toString()))
+                        .filter(filter::accept)
+                        .map(f -> new MockApplicationFile(f, root))
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         @Override
         public ApplicationFile delete() {
-            file.delete();
-            return this;
+            try {
+                Files.delete(file);
+                return this;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         @Override
@@ -413,25 +436,6 @@ public class MockApplicationPackage implements ApplicationPackage {
         public int compareTo(ApplicationFile other) {
             return this.getPath().getName().compareTo((other).getPath().getName());
         }
-
-        /** Strips the application package root path prefix from the path of the given file */
-        private Path asApplicationRelativePath(File file) {
-            Path path = Path.fromString(file.toString());
-
-            Iterator<String> pathIterator = path.iterator();
-            // Skip the path elements this shares with the root
-            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
-                String rootElement = rootIterator.next();
-                String pathElement = pathIterator.next();
-                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
-            }
-            // Build a path from the remaining
-            Path relative = Path.fromString("");
-            while (pathIterator.hasNext())
-                relative = relative.append(pathIterator.next());
-            return relative;
-        }
-
     }
 
 }
