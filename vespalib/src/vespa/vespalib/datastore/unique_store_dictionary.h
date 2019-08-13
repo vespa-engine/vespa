@@ -16,7 +16,7 @@ class UniqueStoreDictionary : public UniqueStoreDictionaryBase
 {
 public:
     using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
-    using Dictionary = btree::BTree<EntryRef, uint32_t,
+    using Dictionary = btree::BTree<EntryRef, btree::BTreeNoLeafData,
                                     btree::NoAggregated,
                                     EntryComparatorWrapper,
                                     DictionaryTraits>;

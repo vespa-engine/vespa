@@ -41,6 +41,12 @@ template <typename EntryT, typename RefT>
 void
 UniqueStoreBuilder<EntryT, RefT>::makeDictionary()
 {
+    auto ref_count_itr = _refCounts.cbegin();
+    for (auto ref : _refs) {
+        auto &wrapped_entry = _store.getWrapped(ref);
+        wrapped_entry.set_ref_count(*ref_count_itr);
+        ++ref_count_itr;
+    }
     _dict.build(_refs, _refCounts, [this](EntryRef ref) { _store.hold(ref); });
 }
 
