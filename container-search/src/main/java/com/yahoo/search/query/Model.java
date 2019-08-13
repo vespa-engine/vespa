@@ -34,6 +34,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * @author bratseth
  */
 public class Model implements Cloneable {
+
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
     private static final CompoundName argumentTypeName;
@@ -67,7 +68,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
         argumentType.freeze();
-        argumentTypeName=new CompoundName(argumentType.getId().getName());
+        argumentTypeName = new CompoundName(argumentType.getId().getName());
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }

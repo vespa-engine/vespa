@@ -13,6 +13,7 @@ import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.query.Model;
@@ -220,6 +221,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
         argumentType.addField(new FieldDescription(Select.SELECT, new QueryProfileFieldType(Select.getArgumentType())));
+        argumentType.addField(new FieldDescription(Dispatcher.DISPATCH, new QueryProfileFieldType(Dispatcher.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
