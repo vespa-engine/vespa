@@ -99,7 +99,7 @@ public class ProtobufSerialization {
     private static void mergeToSearchRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder) {
         for (var field : sorting.fieldOrders()) {
             var sortField = SearchProtocol.SortField.newBuilder()
-                    .setField(field.getSorter().getName())
+                    .setField(field.getSorter().toSerialForm())
                     .setAscending(field.getSortOrder() == Order.ASCENDING).build();
             builder.addSorting(sortField);
         }

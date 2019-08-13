@@ -7,8 +7,10 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "entry_comparator_wrapper.h"
+#include "unique_store_add_result.h"
 #include "unique_store_entry.h"
 #include "unique_store_comparator.h"
+#include "unique_store_dictionary_base.h"
 #include "i_compaction_context.h"
 #include "i_compactable.h"
 #include <vespa/vespalib/util/array.h>
@@ -38,35 +40,21 @@ public:
     using Builder = UniqueStoreBuilder<EntryT, RefT>;
     using Compare = UniqueStoreComparator<EntryType, RefType>;
     using UniqueStoreBufferType = BufferType<WrappedEntryType>;
-    using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
-    using Dictionary = btree::BTree<EntryRef, uint32_t,
-                                    btree::NoAggregated,
-                                    EntryComparatorWrapper,
-                                    DictionaryTraits>;
-    class AddResult {
-        EntryRef _ref;
-        bool _inserted;
-    public:
-        AddResult(EntryRef ref_, bool inserted_)
-            : _ref(ref_),
-              _inserted(inserted_)
-        {
-        }
-        EntryRef ref() const { return _ref; }
-        bool inserted() { return _inserted; }
-    };
+    template <typename, typename> friend class UniqueStoreBuilder;
 private:
     DataStoreType _store;
     UniqueStoreBufferType _typeHandler;
     uint32_t _typeId;
-    Dictionary _dict;
+    std::unique_ptr<UniqueStoreDictionaryBase> _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
+    EntryRef allocate(const EntryType &value);
+    void hold(EntryRef ref);
 public:
     UniqueStore();
     ~UniqueStore();
     EntryRef move(EntryRef ref) override;
-    AddResult add(const EntryType &value);
+    UniqueStoreAddResult add(const EntryType &value);
     EntryRef find(const EntryType &value);
     const WrappedEntryType &getWrapped(EntryRef ref) const
     {

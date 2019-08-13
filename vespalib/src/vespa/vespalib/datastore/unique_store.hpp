@@ -3,6 +3,7 @@
 #pragma once
 
 #include "unique_store.h"
+#include "unique_store_dictionary.h"
 #include "datastore.hpp"
 #include <vespa/vespalib/util/bufferwriter.h>
 #include "unique_store_builder.hpp"
@@ -21,7 +22,7 @@ UniqueStore<EntryT, RefT>::UniqueStore()
       _store(),
       _typeHandler(1, 2u, RefT::offsetSize(), NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
       _typeId(0),
-      _dict()
+      _dict(std::make_unique<UniqueStoreDictionary>())
 {
     _typeId = _store.addType(&_typeHandler);
     assert(_typeId == 0u);
@@ -36,23 +37,25 @@ UniqueStore<EntryT, RefT>::~UniqueStore()
 }
 
 template <typename EntryT, typename RefT>
-typename UniqueStore<EntryT, RefT>::AddResult
+EntryRef
+UniqueStore<EntryT, RefT>::allocate(const EntryType &value)
+{
+    return _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
+}
+
+template <typename EntryT, typename RefT>
+void
+UniqueStore<EntryT, RefT>::hold(EntryRef ref)
+{
+    _store.holdElem(ref, 1);
+}
+
+template <typename EntryT, typename RefT>
+UniqueStoreAddResult
 UniqueStore<EntryT, RefT>::add(const EntryType &value)
 {
     Compare comp(_store, value);
-    auto itr = _dict.lowerBound(RefType(), comp);
-    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
-        uint32_t refCount = itr.getData();
-        assert(refCount != std::numeric_limits<uint32_t>::max());
-        itr.writeData(refCount + 1);
-        RefType iRef(itr.getKey());
-        return AddResult(itr.getKey(), false);
-
-    } else {
-        EntryRef newRef = _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
-        _dict.insert(itr, newRef, 1u);
-        return AddResult(newRef, true);
-    }
+    return _dict->add(comp, [this, &value]() -> EntryRef { return allocate(value); });
 }
 
 template <typename EntryT, typename RefT>
@@ -60,12 +63,7 @@ EntryRef
 UniqueStore<EntryT, RefT>::find(const EntryType &value)
 {
     Compare comp(_store, value);
-    auto itr = _dict.lowerBound(RefType(), comp);
-    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
-        return itr.getKey();
-    } else {
-        return EntryRef();
-    }
+    return _dict->find(comp);
 }
 
 template <typename EntryT, typename RefT>
@@ -79,25 +77,17 @@ template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::remove(EntryRef ref)
 {
-    assert(ref.valid());
     EntryType unused{};
     Compare comp(_store, unused);
-    auto itr = _dict.lowerBound(ref, comp);
-    if (itr.valid() && itr.getKey() == ref) {
-        uint32_t refCount = itr.getData();
-        if (refCount > 1) {
-            itr.writeData(refCount - 1);
-        } else {
-            _dict.remove(itr);
-            _store.holdElem(ref, 1);
-        }
+    if (_dict->remove(comp, ref)) {
+        hold(ref);
     }
 }
 
 namespace uniquestore {
 
 template <typename RefT>
-class CompactionContext : public ICompactionContext {
+class CompactionContext : public ICompactionContext, public ICompactable {
 private:
     using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
     using Dictionary = btree::BTree<EntryRef, uint32_t,
@@ -105,7 +95,7 @@ private:
                                     EntryComparatorWrapper,
                                     DictionaryTraits>;
     DataStoreBase &_dataStore;
-    Dictionary &_dict;
+    UniqueStoreDictionaryBase &_dict;
     ICompactable &_store;
     std::vector<uint32_t> _bufferIdsToCompact;
     std::vector<std::vector<EntryRef>> _mapping;
@@ -123,30 +113,33 @@ private:
         }
     }
 
-    void fillMapping() {
-        auto itr = _dict.begin();
-        while (itr.valid()) {
-            RefT iRef(itr.getKey());
-            assert(iRef.valid());
-            if (compactingBuffer(iRef.bufferId())) {
-                assert(iRef.offset() < _mapping[iRef.bufferId()].size());
-                EntryRef &mappedRef = _mapping[iRef.bufferId()][iRef.offset()];
-                assert(!mappedRef.valid());
-                EntryRef newRef = _store.move(itr.getKey());
-                mappedRef = newRef;
-                _dict.thaw(itr);
-                itr.writeKey(newRef);
-            }
-            ++itr;
+    EntryRef move(EntryRef oldRef) override {
+        RefT iRef(oldRef);
+        assert(iRef.valid());
+        if (compactingBuffer(iRef.bufferId())) {
+            assert(iRef.offset() < _mapping[iRef.bufferId()].size());
+            EntryRef &mappedRef = _mapping[iRef.bufferId()][iRef.offset()];
+            assert(!mappedRef.valid());
+            EntryRef newRef = _store.move(oldRef);
+            mappedRef = newRef;
+            return newRef;
+        } else {
+            return oldRef;
         }
+    }
+    
+    void fillMapping() {
+        _dict.move_entries(*this);
     }
 
 public:
     CompactionContext(DataStoreBase &dataStore,
-                      Dictionary &dict,
+                      UniqueStoreDictionaryBase &dict,
                       ICompactable &store,
                       std::vector<uint32_t> bufferIdsToCompact)
-        : _dataStore(dataStore),
+        : ICompactionContext(),
+          ICompactable(),
+          _dataStore(dataStore),
           _dict(dict),
           _store(store),
           _bufferIdsToCompact(std::move(bufferIdsToCompact)),
@@ -185,7 +178,7 @@ UniqueStore<EntryT, RefT>::compactWorst()
 {
     std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(true, true);
     return std::make_unique<uniquestore::CompactionContext<RefT>>
-        (_store, _dict, *this, std::move(bufferIdsToCompact));
+        (_store, *_dict, *this, std::move(bufferIdsToCompact));
 }
 
 template <typename EntryT, typename RefT>
@@ -193,7 +186,7 @@ vespalib::MemoryUsage
 UniqueStore<EntryT, RefT>::getMemoryUsage() const
 {
     vespalib::MemoryUsage usage = _store.getMemoryUsage();
-    usage.merge(_dict.getMemoryUsage());
+    usage.merge(_dict->get_memory_usage());
     return usage;
 }
 
@@ -210,7 +203,7 @@ template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::transferHoldLists(generation_t generation)
 {
-    _dict.getAllocator().transferHoldLists(generation);
+    _dict->transfer_hold_lists(generation);
     _store.transferHoldLists(generation);
 }
 
@@ -218,7 +211,7 @@ template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::trimHoldLists(generation_t firstUsed)
 {
-    _dict.getAllocator().trimHoldLists(firstUsed);
+    _dict->trim_hold_lists(firstUsed);
     _store.trimHoldLists(firstUsed);
 }
 
@@ -226,28 +219,28 @@ template <typename EntryT, typename RefT>
 void
 UniqueStore<EntryT, RefT>::freeze()
 {
-    _dict.getAllocator().freeze();
+    _dict->freeze();
 }
 
 template <typename EntryT, typename RefT>
 typename UniqueStore<EntryT, RefT>::Builder
 UniqueStore<EntryT, RefT>::getBuilder(uint32_t uniqueValuesHint)
 {
-    return Builder(_store, _typeId, _dict, uniqueValuesHint);
+    return Builder(*this, *_dict, uniqueValuesHint);
 }
 
 template <typename EntryT, typename RefT>
 typename UniqueStore<EntryT, RefT>::Saver
 UniqueStore<EntryT, RefT>::getSaver() const
 {
-    return Saver(_dict, _store);
+    return Saver(*_dict, _store);
 }
 
 template <typename EntryT, typename RefT>
 uint32_t
 UniqueStore<EntryT, RefT>::getNumUniques() const
 {
-    return _dict.getFrozenView().size();
+    return _dict->get_num_uniques();
 }
 
 }

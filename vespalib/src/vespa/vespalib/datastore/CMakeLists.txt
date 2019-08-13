@@ -8,5 +8,6 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     datastorebase.cpp
     entryref.cpp
     unique_store.cpp
+    unique_store_dictionary.cpp
     DEPENDS
 )
