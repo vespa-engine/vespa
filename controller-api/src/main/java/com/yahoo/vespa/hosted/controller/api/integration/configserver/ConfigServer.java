@@ -69,16 +69,8 @@ public interface ConfigServer {
     /** The node repository on this config server */
     NodeRepository nodeRepository();
 
-    /** Get service convergence status for given deployment */
-    default Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment) {
-        return serviceConvergence(deployment, Optional.empty());
-    }
-
     /** Get service convergence status for given deployment, using the nodes in the model at the given Vespa version. */
     Optional<ServiceConvergence> serviceConvergence(DeploymentId deployment, Optional<Version> version);
-
-    /** Get all load balancers in given zone */
-    List<LoadBalancer> getLoadBalancers(ZoneId zone);
 
     /** Get all load balancers for application in given zone */
     List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone);
