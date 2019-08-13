@@ -152,7 +152,7 @@ public class FS4FillInvoker extends FillInvoker {
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(result.getQuery());
         if (result.getQuery().getTraceLevel() >= 3)
-            result.getQuery().trace((summaryNeedsQuery ? "Resending " : "Not resending ") + "query during document summary fetching", 3);
+            result.getQuery().trace((summaryNeedsQuery ? "FS4: Resending " : "Not resending ") + "query during document summary fetching", 3);
 
         GetDocSumsPacket docsumsPacket = GetDocSumsPacket.create(result, summaryClass, summaryNeedsQuery);
         int compressionLimit = result.getQuery().properties().getInteger(FS4SearchInvoker.PACKET_COMPRESSION_LIMIT, 0);
