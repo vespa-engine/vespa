@@ -3,19 +3,14 @@
 #pragma once
 
 #include "unique_store_builder.h"
+#include "unique_store_dictionary_base.h"
 #include "datastore.hpp"
-#include <vespa/vespalib/btree/btree.h>
-#include <vespa/vespalib/btree/btreebuilder.h>
-#include <vespa/vespalib/btree/btreeroot.h>
-#include <vespa/vespalib/btree/btreenodeallocator.h>
-#include <vespa/vespalib/btree/btreeiterator.h>
-#include <vespa/vespalib/btree/btreenode.h>
 
 namespace search::datastore {
 
-template <typename EntryT, typename RefT>
-UniqueStoreBuilder<EntryT, RefT>::UniqueStoreBuilder(UniqueStoreType &store, UniqueStoreDictionaryBase &dict, uint32_t uniqueValuesHint)
-    : _store(store),
+template <typename Allocator>
+UniqueStoreBuilder<Allocator>::UniqueStoreBuilder(Allocator& allocator, UniqueStoreDictionaryBase& dict, uint32_t uniqueValuesHint)
+    : _allocator(allocator),
       _dict(dict),
       _refs(),
       _refCounts()
@@ -24,30 +19,29 @@ UniqueStoreBuilder<EntryT, RefT>::UniqueStoreBuilder(UniqueStoreType &store, Uni
     _refs.push_back(EntryRef());
 }
 
-template <typename EntryT, typename RefT>
-UniqueStoreBuilder<EntryT, RefT>::~UniqueStoreBuilder()
+template <typename Allocator>
+UniqueStoreBuilder<Allocator>::~UniqueStoreBuilder()
 {
 }
 
-template <typename EntryT, typename RefT>
+template <typename Allocator>
 void
-UniqueStoreBuilder<EntryT, RefT>::setupRefCounts()
+UniqueStoreBuilder<Allocator>::setupRefCounts()
 {
     _refCounts.resize(_refs.size());
 }
 
-
-template <typename EntryT, typename RefT>
+template <typename Allocator>
 void
-UniqueStoreBuilder<EntryT, RefT>::makeDictionary()
+UniqueStoreBuilder<Allocator>::makeDictionary()
 {
     auto ref_count_itr = _refCounts.cbegin();
     for (auto ref : _refs) {
-        auto &wrapped_entry = _store.getWrapped(ref);
+        auto& wrapped_entry = _allocator.getWrapped(ref);
         wrapped_entry.set_ref_count(*ref_count_itr);
         ++ref_count_itr;
     }
-    _dict.build(_refs, _refCounts, [this](EntryRef ref) { _store.hold(ref); });
+    _dict.build(_refs, _refCounts, [this](EntryRef ref) { _allocator.hold(ref); });
 }
 
 }

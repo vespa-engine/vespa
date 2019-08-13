@@ -6,6 +6,7 @@
 #include "unique_store_dictionary.h"
 #include "datastore.hpp"
 #include <vespa/vespalib/util/bufferwriter.h>
+#include "unique_store_allocator.hpp"
 #include "unique_store_builder.hpp"
 #include "unique_store_saver.hpp"
 #include <atomic>
@@ -13,80 +14,47 @@
 
 namespace search::datastore {
 
-constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
-constexpr float ALLOC_GROW_FACTOR = 0.2;
-
-template <typename EntryT, typename RefT>
-UniqueStore<EntryT, RefT>::UniqueStore()
-    : ICompactable(),
-      _store(),
-      _typeHandler(1, 2u, RefT::offsetSize(), NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR),
-      _typeId(0),
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
+    : _allocator(),
+      _store(_allocator.getDataStore()),
       _dict(std::make_unique<UniqueStoreDictionary>())
 {
-    _typeId = _store.addType(&_typeHandler);
-    assert(_typeId == 0u);
-    _store.initActiveBuffers();
 }
 
-template <typename EntryT, typename RefT>
-UniqueStore<EntryT, RefT>::~UniqueStore()
-{
-    _store.clearHoldLists();
-    _store.dropBuffers();
-}
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+UniqueStore<EntryT, RefT, Compare, Allocator>::~UniqueStore() = default;
 
-template <typename EntryT, typename RefT>
-EntryRef
-UniqueStore<EntryT, RefT>::allocate(const EntryType &value)
-{
-    return _store.template allocator<WrappedEntryType>(_typeId).alloc(value).ref;
-}
-
-template <typename EntryT, typename RefT>
-void
-UniqueStore<EntryT, RefT>::hold(EntryRef ref)
-{
-    _store.holdElem(ref, 1);
-}
-
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStoreAddResult
-UniqueStore<EntryT, RefT>::add(const EntryType &value)
+UniqueStore<EntryT, RefT, Compare, Allocator>::add(const EntryType &value)
 {
     Compare comp(_store, value);
-    UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return allocate(value); });
-    getWrapped(result.ref()).inc_ref_count();
+    UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return _allocator.allocate(value); });
+    _allocator.getWrapped(result.ref()).inc_ref_count();
     return result;
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 EntryRef
-UniqueStore<EntryT, RefT>::find(const EntryType &value)
+UniqueStore<EntryT, RefT, Compare, Allocator>::find(const EntryType &value)
 {
     Compare comp(_store, value);
     return _dict->find(comp);
 }
 
-template <typename EntryT, typename RefT>
-EntryRef
-UniqueStore<EntryT, RefT>::move(EntryRef ref)
-{
-    return _store.template allocator<WrappedEntryType>(_typeId).alloc(getWrapped(ref)).ref;
-}
-
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT>::remove(EntryRef ref)
+UniqueStore<EntryT, RefT, Compare, Allocator>::remove(EntryRef ref)
 {
-    auto &wrapped_entry = getWrapped(ref);
+    auto &wrapped_entry = _allocator.getWrapped(ref);
     if (wrapped_entry.get_ref_count() > 1u) {
         wrapped_entry.dec_ref_count();
     } else {
         EntryType unused{};
         Compare comp(_store, unused);
         if (_dict->remove(comp, ref)) {
-            hold(ref);
+            _allocator.hold(ref);
         }
     }
 }
@@ -179,73 +147,73 @@ public:
 
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 ICompactionContext::UP
-UniqueStore<EntryT, RefT>::compactWorst()
+UniqueStore<EntryT, RefT, Compare, Allocator>::compactWorst()
 {
     std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(true, true);
     return std::make_unique<uniquestore::CompactionContext<RefT>>
-        (_store, *_dict, *this, std::move(bufferIdsToCompact));
+        (_store, *_dict, _allocator, std::move(bufferIdsToCompact));
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 vespalib::MemoryUsage
-UniqueStore<EntryT, RefT>::getMemoryUsage() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
 {
     vespalib::MemoryUsage usage = _store.getMemoryUsage();
     usage.merge(_dict->get_memory_usage());
     return usage;
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 const BufferState &
-UniqueStore<EntryT, RefT>::bufferState(EntryRef ref) const
+UniqueStore<EntryT, RefT, Compare, Allocator>::bufferState(EntryRef ref) const
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
 }
 
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT>::transferHoldLists(generation_t generation)
+UniqueStore<EntryT, RefT, Compare, Allocator>::transferHoldLists(generation_t generation)
 {
     _dict->transfer_hold_lists(generation);
     _store.transferHoldLists(generation);
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT>::trimHoldLists(generation_t firstUsed)
+UniqueStore<EntryT, RefT, Compare, Allocator>::trimHoldLists(generation_t firstUsed)
 {
     _dict->trim_hold_lists(firstUsed);
     _store.trimHoldLists(firstUsed);
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
-UniqueStore<EntryT, RefT>::freeze()
+UniqueStore<EntryT, RefT, Compare, Allocator>::freeze()
 {
     _dict->freeze();
 }
 
-template <typename EntryT, typename RefT>
-typename UniqueStore<EntryT, RefT>::Builder
-UniqueStore<EntryT, RefT>::getBuilder(uint32_t uniqueValuesHint)
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+typename UniqueStore<EntryT, RefT, Compare, Allocator>::Builder
+UniqueStore<EntryT, RefT, Compare, Allocator>::getBuilder(uint32_t uniqueValuesHint)
 {
-    return Builder(*this, *_dict, uniqueValuesHint);
+    return Builder(_allocator, *_dict, uniqueValuesHint);
 }
 
-template <typename EntryT, typename RefT>
-typename UniqueStore<EntryT, RefT>::Saver
-UniqueStore<EntryT, RefT>::getSaver() const
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+typename UniqueStore<EntryT, RefT, Compare, Allocator>::Saver
+UniqueStore<EntryT, RefT, Compare, Allocator>::getSaver() const
 {
     return Saver(*_dict, _store);
 }
 
-template <typename EntryT, typename RefT>
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 uint32_t
-UniqueStore<EntryT, RefT>::getNumUniques() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::getNumUniques() const
 {
     return _dict->get_num_uniques();
 }

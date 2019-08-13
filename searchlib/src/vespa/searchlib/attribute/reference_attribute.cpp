@@ -476,8 +476,9 @@ namespace search::datastore {
 
 using Reference = attribute::Reference;
 
+template class UniqueStoreAllocator<Reference, EntryRefT<22>>;
 template class UniqueStore<Reference, EntryRefT<22>>;
-template class UniqueStoreBuilder<Reference, EntryRefT<22>>;
+template class UniqueStoreBuilder<UniqueStoreAllocator<Reference, EntryRefT<22>>>;
 template class UniqueStoreSaver<Reference, EntryRefT<22>>;
 
 }
