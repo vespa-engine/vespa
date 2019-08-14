@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.aws;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author freva
@@ -19,6 +20,7 @@ public class Ec2InstanceCounts {
         return totalCount;
     }
 
+    /** Returns map of counts by instance type, e.g. 'r5.2xlarge' */
     public Map<String, Integer> getInstanceCounts() {
         return instanceCounts;
     }
@@ -27,18 +29,14 @@ public class Ec2InstanceCounts {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Ec2InstanceCounts that = (Ec2InstanceCounts) o;
-
-        if (totalCount != that.totalCount) return false;
-        return instanceCounts.equals(that.instanceCounts);
+        return totalCount == that.totalCount &&
+                instanceCounts.equals(that.instanceCounts);
     }
 
     @Override
     public int hashCode() {
-        int result = totalCount;
-        result = 31 * result + instanceCounts.hashCode();
-        return result;
+        return Objects.hash(totalCount, instanceCounts);
     }
 
     @Override
