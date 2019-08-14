@@ -48,7 +48,7 @@ public class Flavor {
     public Flavor(NodeResources resources) {
         Objects.requireNonNull(resources, "Resources cannot be null");
         this.configured = false;
-        this.name = resources.legacyName().orElse(resources.toString());
+        this.name = resources.toString();
         this.cost = 0;
         this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
