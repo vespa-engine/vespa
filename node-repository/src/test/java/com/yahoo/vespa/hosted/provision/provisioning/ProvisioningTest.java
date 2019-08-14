@@ -587,43 +587,6 @@ public class ProvisioningTest {
         } catch (IllegalArgumentException ignored) {}
     }
 
-    private void assertCorrectBareMetalFlavorPreferences(boolean largeIsStock) {
-        FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
-        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
-        b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
-        b.addReplaces("large-variant", largeVariantVariant);
-
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(b.build()).build();
-        tester.makeReadyNodes(6, "large"); //cost = 10
-        tester.makeReadyNodes(6, "large-variant"); //cost = 9
-        tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
-
-        ApplicationId applicationId = tester.makeApplicationId();
-        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false);
-        ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false);
-
-        List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1,
-                                                       NodeResources.fromLegacyName("large"));
-        List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1,
-                                                     NodeResources.fromLegacyName("large"));
-
-        if (largeIsStock) { // 'large' is replaced by 'large-variant' when possible, as it is cheaper
-            tester.assertNumberOfNodesWithFlavor(containerNodes, "large-variant", 5);
-            tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 1);
-            tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 6);
-        }
-        else { // 'large' is preferred when available, as it is what is exactly specified
-            tester.assertNumberOfNodesWithFlavor(containerNodes, "large", 5);
-            tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 1);
-            tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 6);
-        }
-        // in both cases the most expensive, never exactly specified is least preferred
-        tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant-variant", 3);
-    }
-
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
                                 int content1Size, NodeResources flavor, ProvisioningTester tester) {
         return prepare(application, container0Size, container1Size, content0Size, content1Size, flavor,

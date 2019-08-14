@@ -83,10 +83,8 @@ public class Flavor {
 
     // TODO: Remove after August 2019
     public String canonicalName() { return name; }
-    
-    /**
-     * Returns whether this flavor satisfies the requested flavor
-     */
+
+    // TODO: Remove after August 2019
     public boolean satisfies(Flavor flavor) {
         return this.equals(flavor);
     }
