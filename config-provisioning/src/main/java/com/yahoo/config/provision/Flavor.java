@@ -47,9 +47,6 @@ public class Flavor {
     /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
         Objects.requireNonNull(resources, "Resources cannot be null");
-        if (resources.allocateByLegacyName())
-            throw new IllegalArgumentException("Can not create flavor '" + resources.legacyName() + "' from a flavor: " +
-                                               "Non-docker flavors must be of a configured flavor");
         this.configured = false;
         this.name = resources.legacyName().orElse(resources.toString());
         this.cost = 0;

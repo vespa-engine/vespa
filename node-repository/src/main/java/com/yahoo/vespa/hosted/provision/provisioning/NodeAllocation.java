@@ -287,7 +287,6 @@ class NodeAllocation {
                 .filter(NodeSpec.CountNodeSpec.class::isInstance)
                 .map(NodeSpec.CountNodeSpec.class::cast)
                 .map(spec -> new FlavorCount(spec.resources(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
-                .filter(flavorCount -> ! flavorCount.getFlavor().allocateByLegacyName())
                 .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 

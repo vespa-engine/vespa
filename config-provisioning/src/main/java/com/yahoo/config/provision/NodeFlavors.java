@@ -41,10 +41,7 @@ public class NodeFlavors {
             return Optional.of(configuredFlavors.get(name));
 
         NodeResources nodeResources = NodeResources.fromLegacyName(name);
-        if (nodeResources.allocateByLegacyName())
-            return Optional.empty();
-        else
-            return Optional.of(new Flavor(nodeResources));
+        return Optional.of(new Flavor(nodeResources));
     }
 
     /**

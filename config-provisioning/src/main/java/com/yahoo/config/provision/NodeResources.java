@@ -22,8 +22,6 @@ public class NodeResources {
     private final double diskGb;
     private final DiskSpeed diskSpeed;
 
-    private final boolean allocateByLegacyName;
-
     /** The legacy (flavor) name of this, or null if none */
     private final String legacyName;
 
@@ -37,17 +35,14 @@ public class NodeResources {
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
         this.diskSpeed = diskSpeed;
-        this.allocateByLegacyName = false;
         this.legacyName = null;
     }
 
-    private NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed,
-                          boolean allocateByLegacyName, String legacyName) {
+    private NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed, String legacyName) {
         this.vcpu = vcpu;
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
         this.diskSpeed = diskSpeed;
-        this.allocateByLegacyName = allocateByLegacyName;
         this.legacyName = legacyName;
     }
 
@@ -82,24 +77,14 @@ public class NodeResources {
                                  combine(this.diskSpeed, other.diskSpeed));
     }
 
-    /**
-     * If this is true, a non-docker legacy name was used to specify this and we'll respect that by mapping directly.
-     * The other getters of this will return 0.
-     */
-    public boolean allocateByLegacyName() { return allocateByLegacyName; }
-
     /** Returns the legacy name of this, or empty if none. */
     public Optional<String> legacyName() {
         return Optional.ofNullable(legacyName);
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
-        if (this.allocateByLegacyName != other.allocateByLegacyName) return false;
-        if (this.allocateByLegacyName) return legacyName.equals(other.legacyName);
-
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
             return false;
-
         return true;
     }
 
@@ -115,40 +100,26 @@ public class NodeResources {
         if (o == this) return true;
         if ( ! (o instanceof NodeResources)) return false;
         NodeResources other = (NodeResources)o;
-        if (allocateByLegacyName) {
-            return this.legacyName.equals(other.legacyName);
-        }
-        else {
-            if (this.vcpu != other.vcpu) return false;
-            if (this.memoryGb != other.memoryGb) return false;
-            if (this.diskGb != other.diskGb) return false;
-            if (this.diskSpeed != other.diskSpeed) return false;
-            return true;
-        }
+        if (this.vcpu != other.vcpu) return false;
+        if (this.memoryGb != other.memoryGb) return false;
+        if (this.diskGb != other.diskGb) return false;
+        if (this.diskSpeed != other.diskSpeed) return false;
+        return true;
     }
 
     @Override
     public int hashCode() {
-        if (allocateByLegacyName)
-            return legacyName.hashCode();
-        else
-            return (int)(2503 * vcpu + 22123 * memoryGb + 26987 * diskGb + diskSpeed.hashCode());
+        return (int)(2503 * vcpu + 22123 * memoryGb + 26987 * diskGb + diskSpeed.hashCode());
     }
 
     @Override
     public String toString() {
-        if (allocateByLegacyName)
-            return "flavor '" + legacyName + "'";
-        else
-            return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
-                   (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
+        return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
+               (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
     public boolean satisfies(NodeResources other) {
-        if (this.allocateByLegacyName || other.allocateByLegacyName) // resources are not available
-            return Objects.equals(this.legacyName, other.legacyName);
-
         if (this.vcpu < other.vcpu) return false;
         if (this.memoryGb < other.memoryGb) return false;
         if (this.diskGb < other.diskGb) return false;
@@ -163,9 +134,6 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same as or compatible with the given resources */
     public boolean compatibleWith(NodeResources other) {
-        if (this.allocateByLegacyName || other.allocateByLegacyName) // resources are not available
-            return Objects.equals(this.legacyName, other.legacyName);
-
         if (this.vcpu != other.vcpu) return false;
         if (this.memoryGb != other.memoryGb) return false;
         if (this.diskGb != other.diskGb) return false;
@@ -192,7 +160,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, false, string);
+        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, string);
     }
 
 }

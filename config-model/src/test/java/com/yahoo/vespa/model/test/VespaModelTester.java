@@ -81,10 +81,9 @@ public class VespaModelTester {
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
             String hostname = String.format("%s-%02d",
-                                            resources.allocateByLegacyName() ? resources.legacyName().get() : "node" +
-                                                                                                              "-" + Math.round(resources.vcpu()) +
-                                                                                                              "-" + Math.round(resources.memoryGb()) +
-                                                                                                              "-" + Math.round(resources.diskGb()),
+                                            "node" + "-" + Math.round(resources.vcpu()) +
+                                                     "-" + Math.round(resources.memoryGb()) +
+                                                     "-" + Math.round(resources.diskGb()),
                                             count - i);
             hosts.add(new Host(hostname, ImmutableList.of(), flavor));
         }

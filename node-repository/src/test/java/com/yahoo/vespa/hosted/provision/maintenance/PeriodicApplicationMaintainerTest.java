@@ -64,7 +64,7 @@ public class PeriodicApplicationMaintainerTest {
                                                  new MockNameResolver().mockAnyLookup(),
                                                  DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                  true);
-        this.fixture = new Fixture(zone, nodeRepository, nodeFlavors);
+        this.fixture = new Fixture(zone, nodeRepository);
 
         createReadyNodes(15, fixture.nodeResources, nodeRepository);
         createHostNodes(2, nodeRepository, nodeFlavors);
@@ -252,10 +252,12 @@ public class PeriodicApplicationMaintainerTest {
 
         private final TestablePeriodicApplicationMaintainer maintainer;
 
-        Fixture(Zone zone, NodeRepository nodeRepository, NodeFlavors flavors) {
+        Fixture(Zone zone, NodeRepository nodeRepository) {
             this.nodeRepository = nodeRepository;
-            NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(
-                    nodeRepository, flavors, zone, new MockProvisionServiceProvider(), new InMemoryFlagSource());
+            NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository,
+                                                                                  zone,
+                                                                                  new MockProvisionServiceProvider(),
+                                                                                  new InMemoryFlagSource());
 
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                     app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromCount(wantedNodesApp1, nodeResources), 1),
