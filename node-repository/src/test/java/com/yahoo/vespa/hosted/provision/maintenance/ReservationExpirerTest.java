@@ -48,7 +48,7 @@ public class ReservationExpirerTest {
                                                            new MockNameResolver().mockAnyLookup(),
                                                            DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                            true);
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
+        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
 
         List<Node> nodes = new ArrayList<>(2);
         nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), new Flavor(new NodeResources(2, 8, 50)), NodeType.tenant));

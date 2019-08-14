@@ -24,8 +24,11 @@ public class MockNodeFlavors extends NodeFlavors {
         b.addFlavor("docker", 0.2, 0.5, 100, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-2-8-100", 2, 8, 100, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("v-4-8-100", 4.0, 8.0, 100, Flavor.Type.VIRTUAL_MACHINE);
-        b.addFlavor("large-variant", 64, 128, 2000, Flavor.Type.BARE_METAL);
-        b.addFlavor("expensive", 6, 12, 500, Flavor.Type.BARE_METAL);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 64, 128, 2000, Flavor.Type.BARE_METAL);
+        b.addReplaces("large", largeVariant);
+        FlavorsConfig.Flavor.Builder expensiveFlavor = b.addFlavor("expensive", 6, 12, 500, Flavor.Type.BARE_METAL);
+        b.addReplaces("default", expensiveFlavor);
+        b.addCost(200, expensiveFlavor);
 
         return b.build();
     }

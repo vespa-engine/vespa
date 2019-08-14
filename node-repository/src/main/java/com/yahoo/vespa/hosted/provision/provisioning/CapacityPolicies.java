@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 
+import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -21,10 +22,12 @@ import java.util.Optional;
 public class CapacityPolicies {
 
     private final Zone zone;
+    private final NodeFlavors flavors;
     private final FlagSource flagSource;
 
-    public CapacityPolicies(Zone zone, FlagSource flagSource) {
+    public CapacityPolicies(Zone zone, NodeFlavors flavors, FlagSource flagSource) {
         this.zone = zone;
+        this.flavors = flavors;
         this.flagSource = flagSource;
     }
 
@@ -42,7 +45,9 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
-        NodeResources resources = requestedResources.orElse(defaultNodeResources(cluster.type()));
+        NodeResources resources = specifiedOrDefaultNodeResources(requestedResources, cluster);
+
+        if (resources.allocateByLegacyName()) return resources; // Modification not possible
 
         // Allow slow disks in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
@@ -53,6 +58,24 @@ public class CapacityPolicies {
             resources = resources.withVcpu(0.1);
 
         return resources;
+    }
+
+    private NodeResources specifiedOrDefaultNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+        if (requestedResources.isPresent() && ! requestedResources.get().allocateByLegacyName())
+            return requestedResources.get();
+
+        if (requestedResources.isEmpty())
+            return defaultNodeResources(cluster.type());
+
+        switch (zone.environment()) {
+            case dev: case test: case staging: return defaultNodeResources(cluster.type());
+            default:
+                flavors.getFlavorOrThrow(requestedResources.get().legacyName().get()); // verify existence
+                // Return this spec containing the legacy flavor name, not the flavor's capacity object
+                // which describes the flavors capacity, as the point of legacy allocation is to match
+                // by name, not by resources
+                return requestedResources.get();
+        }
     }
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {

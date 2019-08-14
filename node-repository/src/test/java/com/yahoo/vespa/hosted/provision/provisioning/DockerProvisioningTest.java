@@ -225,7 +225,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb]", nodes.asList().get(0).flavor().name());
+        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb]", nodes.asList().get(0).flavor().canonicalName());
     }
 
     private Set<String> hostsOf(NodeList nodes) {

@@ -30,6 +30,12 @@ public class FlavorConfigBuilder {
         return flavor;
     }
 
+    public void addReplaces(String replaces, FlavorsConfig.Flavor.Builder flavor) {
+        FlavorsConfig.Flavor.Replaces.Builder flavorReplaces = new FlavorsConfig.Flavor.Replaces.Builder();
+        flavorReplaces.name(replaces);
+        flavor.replaces(flavorReplaces);
+    }
+
     public void addCost(int cost, FlavorsConfig.Flavor.Builder flavor) {
         flavor.cost(cost);
     }

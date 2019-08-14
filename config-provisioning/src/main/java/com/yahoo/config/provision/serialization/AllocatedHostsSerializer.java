@@ -154,6 +154,7 @@ public class AllocatedHostsSerializer {
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
+        if ( ! diskSpeed.valid()) return NodeResources.DiskSpeed.fast; // TODO: Remove this line after June 2019
         switch (diskSpeed.asString()) {
             case "fast" : return NodeResources.DiskSpeed.fast;
             case "slow" : return NodeResources.DiskSpeed.slow;

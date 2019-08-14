@@ -33,8 +33,6 @@ import java.util.Set;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    private static final NodeResources defaultResources = new NodeResources(1, 3, 9);
-
     /**
      * If this is true an exception is thrown when all nodes are used.
      * If false this will simply return nodes best effort, preferring to satisfy the
@@ -56,27 +54,27 @@ public class InMemoryProvisioner implements HostProvisioner {
     /** Use this index as start index for all clusters */
     private final int startIndexForClusters;
 
-    /** Creates this with a number of nodes with resources 1, 3, 9 */
+    /** Creates this with a number of nodes of the flavor 'default' */
     public InMemoryProvisioner(int nodeCount) {
-        this(Collections.singletonMap(defaultResources,
+        this(Collections.singletonMap(NodeResources.fromLegacyName("default"),
                                       createHostInstances(nodeCount)), true, 0);
     }
 
     /** Creates this with a set of host names of the flavor 'default' */
     public InMemoryProvisioner(boolean failOnOutOfCapacity, String... hosts) {
-        this(Collections.singletonMap(defaultResources,
+        this(Collections.singletonMap(NodeResources.fromLegacyName("default"),
                                       toHostInstances(hosts)), failOnOutOfCapacity, 0);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        this(Collections.singletonMap(defaultResources,
+        this(Collections.singletonMap(NodeResources.fromLegacyName("default"),
                                       hosts.asCollection()), failOnOutOfCapacity, 0, retiredHostNames);
     }
 
     /** Creates this with a set of hosts of the flavor 'default' */
     public InMemoryProvisioner(Hosts hosts, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        this(Collections.singletonMap(defaultResources,
+        this(Collections.singletonMap(NodeResources.fromLegacyName("default"),
                                       hosts.asCollection()), failOnOutOfCapacity, startIndexForClusters, retiredHostNames);
     }
 
@@ -112,9 +110,9 @@ public class InMemoryProvisioner implements HostProvisioner {
     @Override
     public HostSpec allocateHost(String alias) {
         if (legacyMapping.containsKey(alias)) return legacyMapping.get(alias);
-        List<Host> defaultHosts = freeNodes.get(defaultResources);
-        if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts with default resources available");
-        Host newHost = freeNodes.removeValue(defaultResources, 0);
+        List<Host> defaultHosts = freeNodes.get(NodeResources.fromLegacyName("default"));
+        if (defaultHosts.isEmpty()) throw new IllegalArgumentException("No more hosts of default flavor available");
+        Host newHost = freeNodes.removeValue(NodeResources.fromLegacyName("default"), 0);
         HostSpec hostSpec = new HostSpec(newHost.hostname(), newHost.aliases(), newHost.flavor(), Optional.empty(), newHost.version());
         legacyMapping.put(alias, hostSpec);
         return hostSpec;
@@ -130,11 +128,11 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
                        ? requestedCapacity.nodeCount() 
-                       : Math.min(requestedCapacity.nodeCount(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
+                       : Math.min(requestedCapacity.nodeCount(), freeNodes.get(NodeResources.fromLegacyName("default")).size() + totalAllocatedTo(cluster));
         if (groups > capacity)
             groups = capacity;
 
-        NodeResources nodeResources = requestedCapacity.nodeResources().orElse(defaultResources);
+        NodeResources nodeResources = requestedCapacity.nodeResources().orElse(NodeResources.fromLegacyName("default"));
 
         List<HostSpec> allocation = new ArrayList<>();
         if (groups == 1) {

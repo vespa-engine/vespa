@@ -154,7 +154,7 @@ public class SerializationTest {
 
         Node node = nodeSerializer.fromJson(Node.State.provisioned, Utf8.toBytes(nodeData));
 
-        assertEquals("large", node.flavor().name());
+        assertEquals("large", node.flavor().canonicalName());
         assertEquals(1, node.status().reboot().wanted());
         assertEquals(2, node.status().reboot().current());
         assertEquals(3, node.allocation().get().restartGeneration().wanted());
