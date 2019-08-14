@@ -59,6 +59,19 @@ public class ApplicationIdTest {
     }
 
     @Test
+    public void require_string_formats_are_correct() {
+        ApplicationId id1 = applicationId("foo");
+        ApplicationId id2 = idFrom("bar", "baz", "default");
+        ApplicationId id3 = idFrom("tenant", "baz", "bim");
+        assertThat(id1.toShortString(), is("default.foo"));
+        assertThat(id1.toFullString(), is("default.foo.default"));
+        assertThat(id2.toShortString(), is("bar.baz"));
+        assertThat(id2.toFullString(), is("bar.baz.default"));
+        assertThat(id3.toShortString(), is("tenant.baz.bim"));
+        assertThat(id3.toFullString(), is("tenant.baz.bim"));
+    }
+
+    @Test
     public void require_that_idstring_can_be_parsed() {
         ApplicationId id = ApplicationId.fromSerializedForm("ten:foo:bim");
         assertThat(id.tenant().value(), is("ten"));
