@@ -2,12 +2,16 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * This contains validators for a {@link DeploymentSpec} that depend on a {@link Controller} to perform validation.
@@ -29,6 +33,7 @@ public class DeploymentSpecValidator {
      */
     public void validate(DeploymentSpec deploymentSpec) {
         validateSteps(deploymentSpec);
+        validateEndpoints(deploymentSpec);
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
@@ -42,6 +47,22 @@ public class DeploymentSpecValidator {
                               throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
                           }
                       });
+    }
+
+    /** Verify that no single endpoint contains regions in different clouds */
+    private void validateEndpoints(DeploymentSpec deploymentSpec) {
+        for (var endpoint : deploymentSpec.endpoints()) {
+            var clouds = new HashSet<CloudName>();
+            for (var region : endpoint.regions()) {
+                for (ZoneApi zone : controller.zoneRegistry().zones().all().in(region).zones()) {
+                    clouds.add(zone.getCloudName());
+                }
+            }
+            if (clouds.size() != 1) {
+                throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' cannot contain regions in different clouds: " +
+                                                   endpoint.regions().stream().sorted().collect(Collectors.toList()));
+            }
+        }
     }
 
 }
