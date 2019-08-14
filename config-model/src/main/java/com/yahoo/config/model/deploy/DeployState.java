@@ -24,6 +24,7 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -39,8 +40,10 @@ import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.search.SearchDefinition;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -262,6 +265,22 @@ public class DeployState implements ConfigDefinitionStore {
     public Instant now() { return now; }
 
     public Optional<TlsSecrets> tlsSecrets() { return properties.tlsSecrets(); }
+
+    public Optional<String> tlsClientAuthority() {
+        var caFile = applicationPackage.getClientSecurityFile();
+        if (caFile.exists()) {
+            try {
+                var caPem = IOUtils.readAll(caFile.createReader());
+                return Optional.of(caPem);
+            } catch (FileNotFoundException e) {
+                return Optional.empty();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed reading certificate from application: " + caFile.getPath(), e);
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
 
     public static class Builder {
 

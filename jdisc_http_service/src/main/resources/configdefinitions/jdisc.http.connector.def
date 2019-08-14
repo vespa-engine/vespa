@@ -69,7 +69,14 @@ ssl.certificateFile                 string   default=""
 ssl.certificate                     string   default=""
 
 # with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the name of a file on the local container file system
+#  - only one of caCertificateFile and caCertificate
 ssl.caCertificateFile               string default=""
+
+# with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the actual certificates instead of a pointer to the file
+#  - only one of caCertificateFile and caCertificate
+ssl.caCertificate                   string default=""
 
 # Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
 ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
