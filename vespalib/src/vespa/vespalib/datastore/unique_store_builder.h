@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "unique_store.h"
+#include "unique_store_allocator.h"
 
 namespace search::datastore {
+
+class UniqueStoreDictionaryBase;
 
 /**
  * Builder for related UniqueStore class.
@@ -13,23 +15,21 @@ namespace search::datastore {
  * from enum value to EntryRef value.  New unique values must be added
  * in sorted order.
  */
-template <typename EntryT, typename RefT>
+template <typename Allocator>
 class UniqueStoreBuilder {
-    using UniqueStoreType = UniqueStore<EntryT, RefT>;
-    using EntryType = EntryT;
+    using EntryType = typename Allocator::EntryType;
 
-    UniqueStoreType &_store;
+    Allocator &_allocator;
     UniqueStoreDictionaryBase &_dict;
     std::vector<EntryRef> _refs;
     std::vector<uint32_t> _refCounts;
 public:
-    UniqueStoreBuilder(UniqueStoreType &store,
-                       UniqueStoreDictionaryBase &dict, uint32_t uniqueValuesHint);
+    UniqueStoreBuilder(Allocator& allocator, UniqueStoreDictionaryBase& dict, uint32_t uniqueValuesHint);
     ~UniqueStoreBuilder();
     void setupRefCounts();
     void makeDictionary();
-    void add(const EntryType &value) {
-        EntryRef newRef = _store.allocate(value);
+    void add(const EntryType& value) {
+        EntryRef newRef = _allocator.allocate(value);
         _refs.push_back(newRef);
     }
     EntryRef mapEnumValueToEntryRef(uint32_t enumValue) {
