@@ -18,11 +18,7 @@ flavor[].replaces[].name string
 # the expected lifetime of the node (usually three years).
 flavor[].cost int default=0
 
-# A stock flavor is any flavor which we expect to buy more of in the future.
-# Stock flavors are assigned to applications by cost priority.
-# 
-# Non-stock flavors are used for nodes for which a fixed amount has already been purchased
-# for some historical reason. These nodes are assigned to applications by exact match and ignoring cost.
+# NOT USED
 flavor[].stock bool default=true
 
 # The type of node: BARE_METAL, VIRTUAL_MACHINE or DOCKER_CONTAINER

@@ -19,7 +19,6 @@ public class Flavor {
     private boolean configured;
     private final String name;
     private final int cost;
-    private final boolean isStock;
     private final Type type;
     private final double bandwidth;
     private final boolean retired;
@@ -33,7 +32,6 @@ public class Flavor {
         this.configured = true;
         this.name = flavorConfig.name();
         this.cost = flavorConfig.cost();
-        this.isStock = flavorConfig.stock();
         this.type = Type.valueOf(flavorConfig.environment());
         this.resources = new NodeResources(flavorConfig.minCpuCores(),
                                            flavorConfig.minMainMemoryAvailableGb(),
@@ -50,7 +48,6 @@ public class Flavor {
         this.configured = false;
         this.name = resources.toString();
         this.cost = 0;
-        this.isStock = true;
         this.type = Type.DOCKER_CONTAINER;
         this.bandwidth = 1;
         this.retired = false;
