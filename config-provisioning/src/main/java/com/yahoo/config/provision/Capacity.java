@@ -41,7 +41,7 @@ public final class Capacity {
     @Deprecated
     public Optional<String> flavor() {
         if (nodeResources().isEmpty()) return Optional.empty();
-        return nodeResources.get().legacyName();
+        return nodeResources.map(n -> n.toString());
     }
 
     /** Returns the resources requested for each node, or empty to leave this decision to provisioning */
