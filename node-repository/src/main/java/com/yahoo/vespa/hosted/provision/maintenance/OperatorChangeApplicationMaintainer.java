@@ -10,9 +10,11 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,11 +42,7 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                 .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.toList()));
 
         return nodesByApplication.entrySet().stream()
-                .filter(entry -> entry.getValue().stream()
-                        .flatMap(node -> node.history().events().stream())
-                        .filter(event -> event.agent() == Agent.operator)
-                        .map(History.Event::at)
-                        .anyMatch(getLastDeployTime(entry.getKey())::isBefore))
+                .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -58,6 +56,17 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
         deployWithLock(application);
         log.info("Redeployed application " + application.toShortString() +
                  " as a manual change was made to its nodes");
+    }
+
+    private boolean hasNodesWithChanges(ApplicationId applicationId, List<Node> nodes) {
+        Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
+        if (lastDeployTime.isEmpty()) return false;
+
+        return nodes.stream()
+                .flatMap(node -> node.history().events().stream())
+                .filter(event -> event.agent() == Agent.operator)
+                .map(History.Event::at)
+                .anyMatch(e -> lastDeployTime.get().isBefore(e));
     }
 
 }
