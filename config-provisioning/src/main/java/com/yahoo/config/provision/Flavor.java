@@ -69,8 +69,6 @@ public class Flavor {
      */
     public int cost() { return cost; }
     
-    public boolean isStock() { return isStock; }
-
     /**
      * True if this is a configured flavor used for hosts,
      * false if it is a virtual flavor created on the fly from node resources
