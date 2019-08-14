@@ -254,6 +254,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         public CloudName getCloudName() {
                             return CloudName.defaultName();
                         }
+
+                        @Override
+                        public String getCloudNativeRegionName() {
+                            return getId().region().value();
+                        }
                     }),
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
