@@ -298,7 +298,7 @@ public class ApplicationController {
             ApplicationPackage applicationPackage;
             Set<String> legacyRotations = new LinkedHashSet<>();
             Set<ContainerEndpoint> endpoints = new LinkedHashSet<>();
-            ApplicationCertificate applicationCertificate;
+            Optional<ApplicationCertificate> applicationCertificate;
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(require(applicationId), lock);
@@ -365,10 +365,8 @@ public class ApplicationController {
                     app.rotations().stream().map(RotationId::asString).forEach(legacyRotations::add);
                 }
 
-
                 // Get application certificate (provisions a new certificate if missing)
-                application = withApplicationCertificate(application);
-                applicationCertificate = application.get().applicationCertificate().orElse(null);
+                applicationCertificate = getApplicationCertificate(application.get());
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
@@ -380,11 +378,13 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, legacyRotations, endpoints, applicationCertificate);
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, legacyRotations, endpoints,
+                                           applicationCertificate.orElse(null));
 
             lockOrThrow(applicationId, application ->
                     store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
-                                                        warningsFrom(result))));
+                                                        warningsFrom(result))
+                                     .withApplicationCertificate(applicationCertificate)));
             return result;
         }
     }
@@ -534,16 +534,18 @@ public class ApplicationController {
         });
     }
 
-    private LockedApplication withApplicationCertificate(LockedApplication application) {
-        ApplicationId applicationId = application.get().id();
-
-        // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
-        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-        if (provisionCertificate) {
-            application = application.withApplicationCertificate(
-                    Optional.of(applicationCertificateProvider.requestCaSignedCertificate(applicationId)));
+    private Optional<ApplicationCertificate> getApplicationCertificate(Application application) {
+        // Re-use certificate if already provisioned
+        if (application.applicationCertificate().isPresent()) {
+            return application.applicationCertificate();
         }
-        return application;
+        // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
+        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
+                                                                            application.id().serializedForm()).value();
+        if (!provisionCertificate) {
+            return Optional.empty();
+        }
+        return Optional.of(applicationCertificateProvider.requestCaSignedCertificate(application.id()));
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {

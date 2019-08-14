@@ -19,6 +19,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -701,6 +702,36 @@ public class ControllerTest {
         tester.deployCompletely(application, applicationPackage);
         assertEquals(warnings, tester.applications().require(application.id()).deployments().get(zone)
                                      .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
+    }
+
+    @Test
+    public void testDeployProvisionsCertificate() {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
+        Function<Application, Optional<ApplicationCertificate>> certificate = (application) -> tester.application(application.id()).applicationCertificate();
+
+        // Create app1
+        var app1 = tester.createApplication("app1", "tenant1", 1, 2L);
+        var applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
+                                                                               .region("us-west-1")
+                                                                               .build();
+        // Deploy app1 in production
+        tester.deployCompletely(app1, applicationPackage);
+        var cert = certificate.apply(app1);
+        assertTrue("Provisions certificate in " + Environment.prod, cert.isPresent());
+
+        // Next deployment reuses certificate
+        tester.deployCompletely(app1, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        assertEquals(cert, certificate.apply(app1));
+
+        // Create app2
+        var app2 = tester.createApplication("app2", "tenant2", 3, 4L);
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+
+        // Deploy app2 in dev
+        tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        assertTrue("Application deployed and activated",
+                   tester.controllerTester().configServer().application(app2.id()).get().activated());
+        assertTrue("Provisions certificate in " + Environment.dev, certificate.apply(app2).isPresent());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
