@@ -42,9 +42,7 @@ public class RpcFillInvoker extends FillInvoker {
 
     private final DocumentDatabase documentDb;
     private final RpcResourcePool resourcePool;
-
     private GetDocsumsResponseReceiver responseReceiver;
-
 
     RpcFillInvoker(RpcResourcePool resourcePool, DocumentDatabase documentDb) {
         this.documentDb = documentDb;
@@ -54,12 +52,15 @@ public class RpcFillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
+        Query query = result.getQuery();
 
         CompressionType compression = CompressionType
-                .valueOf(result.getQuery().properties().getString(RpcResourcePool.dispatchCompression, "LZ4").toUpperCase());
+                .valueOf(query.properties().getString(RpcResourcePool.dispatchCompression, "LZ4").toUpperCase());
 
-        if (result.getQuery().getTraceLevel() >= 3)
-            result.getQuery().trace("Sending " + hitsByNode.size() + " summary fetch RPC requests", 3);
+        if (query.getTraceLevel() >= 3) {
+            query.trace("Sending " + hitsByNode.size() + " summary fetch RPC requests", 3);
+            query.trace("RpcSlime: Not resending query during document summary fetching", 3);
+        }
 
         responseReceiver = new GetDocsumsResponseReceiver(hitsByNode.size(), resourcePool.compressor(), result);
         for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
