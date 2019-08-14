@@ -182,8 +182,10 @@ public class NodeResources {
     public static NodeResources fromLegacyName(String string) {
         if ( ! string.startsWith("d-"))
             throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + string + "'");
-
         String[] parts = string.split("-");
+        if (parts.length != 4)
+            throw new IllegalArgumentException("A node specification string must contain three numbers separated by '-' but was '" + string + "'");
+
         double cpu = Integer.parseInt(parts[1]);
         double mem = Integer.parseInt(parts[2]);
         double dsk = Integer.parseInt(parts[3]);

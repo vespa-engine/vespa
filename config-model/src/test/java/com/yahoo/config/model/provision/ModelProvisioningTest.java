@@ -758,16 +758,6 @@ public class ModelProvisioningTest {
         assertEquals("Included in addition because it is retired", "node-1-3-9-03", model.getAdmin().getSlobroks().get(5).getHostName());
     }
 
-    private Set<String> getClusterHostnames(VespaModel model, String clusterId) {
-        return model.getHosts().stream()
-                .filter(host -> host.getServices().stream()
-                        .anyMatch(serviceInfo -> Objects.equals(
-                                serviceInfo.getProperty("clustername"),
-                                Optional.of(clusterId))))
-                .map(HostInfo::getHostname)
-                .collect(Collectors.toSet());
-    }
-
     @Test
     public void test2ContentNodesProduces1ClusterController() {
         String services =
