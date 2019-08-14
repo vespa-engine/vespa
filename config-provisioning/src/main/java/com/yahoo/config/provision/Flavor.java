@@ -21,7 +21,6 @@ public class Flavor {
     private final int cost;
     private final Type type;
     private final double bandwidth;
-    private final boolean retired;
 
     /** The hardware resources of this flavor */
     private NodeResources resources;
@@ -37,7 +36,6 @@ public class Flavor {
                                            flavorConfig.minDiskAvailableGb(),
                                            flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         this.bandwidth = flavorConfig.bandwidth();
-        this.retired = flavorConfig.retired();
     }
 
     /** Creates a *node* flavor from a node resources spec */
@@ -48,7 +46,6 @@ public class Flavor {
         this.cost = 0;
         this.type = Type.DOCKER_CONTAINER;
         this.bandwidth = 1;
-        this.retired = false;
         this.resources = resources;
     }
 
@@ -80,11 +77,6 @@ public class Flavor {
     public double getBandwidth() { return bandwidth; }
 
     public double getMinCpuCores() { return resources.vcpu(); }
-
-    /** Returns whether the flavor is retired */
-    public boolean isRetired() {
-        return retired;
-    }
 
     public Type getType() { return type; }
     

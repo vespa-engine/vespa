@@ -63,24 +63,7 @@ public class NodeFlavors {
     }
 
     private static Collection<Flavor> toFlavors(FlavorsConfig config) {
-        Map<String, Flavor> flavors = new HashMap<>();
-        // First pass, create all flavors, but do not include flavorReplacesConfig.
-        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
-            flavors.put(flavorConfig.name(), new Flavor(flavorConfig));
-        }
-
-        // Ensure that retired flavors have a replacement
-        for (Flavor flavor : flavors.values()) {
-            if (flavor.isRetired() && !hasReplacement(flavors.values(), flavor))
-                throw new IllegalStateException(String.format("Flavor '%s' is retired, but has no replacement", flavor.name()));
-        }
-        return flavors.values();
-    }
-
-    private static boolean hasReplacement(Collection<Flavor> flavors, Flavor flavor) {
-        return flavors.stream()
-                .filter(f -> !f.equals(flavor))
-                .anyMatch(f -> f.satisfies(flavor));
+        return config.flavor().stream().map(Flavor::new).collect(Collectors.toList());
     }
 
 }

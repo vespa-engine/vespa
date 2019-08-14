@@ -35,6 +35,6 @@ flavor[].fastDisk bool default=true
 # Expected network interface bandwidth available for this flavor, in Mbit/s.
 flavor[].bandwidth double default=0.0
 
-# The flavor is retired and should no longer be used.
+# NOT USED
 flavor[].retired bool default=false
 
