@@ -68,15 +68,9 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         return "tenant '" + tenant + "', application '" + application + "', instance '" + instance + "'";
     }
 
-    /** Returns "dotted" string (tenant.application.instance) with instance name omitted if it is "default" */
     public String toShortString() {
         return tenant().value() + "." + application().value() +
                ( instance().isDefault() ? "" : "." + instance().value() );
-    }
-
-    /** Returns "dotted" string (tenant.application.instance) with instance name always included */
-    public String toFullString() {
-        return tenant().value() + "." + application().value() + "." + instance().value();
     }
 
     private String toSerializedForm() {
