@@ -182,7 +182,7 @@ public final class Node {
 
     /** Returns a copy of this node which is retired */
     public Node retire(Instant retiredAt) {
-        if (flavor.isRetired() || status.wantToRetire())
+        if (status.wantToRetire())
             return retire(Agent.system, retiredAt);
         else
             return retire(Agent.application, retiredAt);

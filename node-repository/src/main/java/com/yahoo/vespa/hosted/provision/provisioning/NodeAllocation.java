@@ -111,7 +111,6 @@ class NodeAllocation {
                 // conditions on which we want to retire nodes that were allocated previously
                 if ( violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
                 if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
-                if ( offered.flavor().isRetired()) wantToRetireNode = true;
                 if ( offered.status().wantToRetire()) wantToRetireNode = true;
                 if ( requestedNodes.isExclusive() &&
                      ! hostsOnly(application.tenant(), offered.parentHostname())) wantToRetireNode = true;
@@ -131,9 +130,6 @@ class NodeAllocation {
                 }
                 if ( requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname())) {
                     ++rejectedDueToExclusivity;
-                    continue;
-                }
-                if (offered.flavor().isRetired()) {
                     continue;
                 }
                 if (offered.status().wantToRetire()) {
@@ -287,7 +283,6 @@ class NodeAllocation {
                 .filter(NodeSpec.CountNodeSpec.class::isInstance)
                 .map(NodeSpec.CountNodeSpec.class::cast)
                 .map(spec -> new FlavorCount(spec.resources(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
-                .filter(flavorCount -> ! flavorCount.getFlavor().allocateByLegacyName())
                 .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 

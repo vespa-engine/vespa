@@ -285,22 +285,6 @@ public class DynamicDockerAllocationTest {
     }
 
     @Test
-    public void legacy_bare_metal_allocations_are_not_altered() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeReadyNodes(5, "host-large", NodeType.tenant);
-        deployZoneApp(tester);
-
-        ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
-        NodeResources resources = NodeResources.fromLegacyName("host-large");
-
-        List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
-        assertEquals(2, hosts.size());
-        assertEquals("host-large", hosts.get(0).flavor().get().name());
-        tester.activate(application, hosts);
-    }
-
-    @Test
     public void provisioning_fast_disk_speed_do_not_get_slow_nodes() {
         provisionFastAndSlowThenDeploy(NodeResources.DiskSpeed.fast, true);
     }

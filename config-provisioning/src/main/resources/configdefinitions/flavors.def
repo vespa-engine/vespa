@@ -7,22 +7,14 @@ namespace=config.provisioning
 # If a certain flavor has no config it is not necessary to list it here to use it.
 flavor[].name string
 
-# Names of other flavors (whether mentioned in this config or not) which this flavor
-# is a replacement for: If one of these flavor names are requested, this flavor may
-# be assigned instead.
-# Replacements are transitive: If flavor a replaces b replaces c, then a request for flavor
-# c may be satisfied by assigning nodes of flavor a.
+# NOT USED: TODO: Remove after August 2019
 flavor[].replaces[].name string
 
 # The monthly Total Cost of Ownership (TCO) in USD. Typically calculated as TCO divided by
 # the expected lifetime of the node (usually three years).
 flavor[].cost int default=0
 
-# A stock flavor is any flavor which we expect to buy more of in the future.
-# Stock flavors are assigned to applications by cost priority.
-# 
-# Non-stock flavors are used for nodes for which a fixed amount has already been purchased
-# for some historical reason. These nodes are assigned to applications by exact match and ignoring cost.
+# NOT USED: TODO: Remove after August 2019
 flavor[].stock bool default=true
 
 # The type of node: BARE_METAL, VIRTUAL_MACHINE or DOCKER_CONTAINER
@@ -43,6 +35,6 @@ flavor[].fastDisk bool default=true
 # Expected network interface bandwidth available for this flavor, in Mbit/s.
 flavor[].bandwidth double default=0.0
 
-# The flavor is retired and should no longer be used.
+# NOT USED: TODO: Remove after August 2019
 flavor[].retired bool default=false
 

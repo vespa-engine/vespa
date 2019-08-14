@@ -92,19 +92,13 @@ public interface NodeSpec {
 
         @Override
         public boolean isCompatible(Flavor flavor, NodeFlavors flavors) {
-            if (requestedNodeResources.allocateByLegacyName() && flavor.isConfigured()) {
-                if (flavor.satisfies(flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get())))
+            if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
+                if (flavor.resources().compatibleWith(requestedNodeResources))
                     return true;
             }
-            else {
-                if (flavor.isDocker()) { // Docker nodes can satisfy a request for parts of their resources
-                    if (flavor.resources().compatibleWith(requestedNodeResources))
-                        return true;
-                }
-                else { // Other nodes must be matched exactly
-                    if (requestedNodeResources.equals(flavor.resources()))
-                        return true;
-                }
+            else { // Other nodes must be matched exactly
+                if (requestedNodeResources.equals(flavor.resources()))
+                    return true;
             }
             return requestedFlavorCanBeAchievedByResizing(flavor);
         }

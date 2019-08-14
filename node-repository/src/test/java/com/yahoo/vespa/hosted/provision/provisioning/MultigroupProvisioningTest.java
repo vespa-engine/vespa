@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -38,25 +39,25 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(21, "default");
+        tester.makeReadyNodes(21, "d-1-3-9");
 
-        deploy(application1, 6, 1, tester);
-        deploy(application1, 6, 2, tester);
-        deploy(application1, 6, 3, tester);
-        deploy(application1, 6, 6, tester);
-        deploy(application1, 6, 1, tester);
-        deploy(application1, 6, 6, tester);
-        deploy(application1, 6, 6, tester);
-        deploy(application1, 6, 2, tester);
-        deploy(application1, 8, 2, tester);
-        deploy(application1, 9, 3, tester);
-        deploy(application1, 9, 3, tester);
-        deploy(application1, 9, 3, tester);
-        deploy(application1,12, 4, tester);
-        deploy(application1, 8, 4, tester);
-        deploy(application1,12, 4, tester);
-        deploy(application1, 8, 2, tester);
-        deploy(application1, 6, 3, tester);
+        deploy(application1, 6, 1, "d-1-3-9", tester);
+        deploy(application1, 6, 2, "d-1-3-9", tester);
+        deploy(application1, 6, 3, "d-1-3-9", tester);
+        deploy(application1, 6, 6, "d-1-3-9", tester);
+        deploy(application1, 6, 1, "d-1-3-9", tester);
+        deploy(application1, 6, 6, "d-1-3-9", tester);
+        deploy(application1, 6, 6, "d-1-3-9", tester);
+        deploy(application1, 6, 2, "d-1-3-9", tester);
+        deploy(application1, 8, 2, "d-1-3-9", tester);
+        deploy(application1, 9, 3, "d-1-3-9", tester);
+        deploy(application1, 9, 3, "d-1-3-9", tester);
+        deploy(application1, 9, 3, "d-1-3-9", tester);
+        deploy(application1,12, 4, "d-1-3-9", tester);
+        deploy(application1, 8, 4, "d-1-3-9", tester);
+        deploy(application1,12, 4, "d-1-3-9", tester);
+        deploy(application1, 8, 2, "d-1-3-9", tester);
+        deploy(application1, 6, 3, "d-1-3-9", tester);
     }
 
     /**
@@ -70,7 +71,7 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(21, "default");
+        tester.makeReadyNodes(21, "d-1-3-9");
 
         deploy(application1, 12, 2, tester);
         deploy(application1, 9, 3, tester);
@@ -83,12 +84,12 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(10, "small");
-        tester.makeReadyNodes(10, "large");
+        tester.makeReadyNodes(10, "d-1-1-1");
+        tester.makeReadyNodes(10, "d-3-3-3");
 
-        deploy(application1, 8, 1, "small", tester);
-        deploy(application1, 8, 1, "large", tester);
-        deploy(application1, 8, 8, "large", tester);
+        deploy(application1, 8, 1, "d-1-1-1", tester);
+        deploy(application1, 8, 1, "d-3-3-3", tester);
+        deploy(application1, 8, 8, "d-3-3-3", tester);
     }
 
     @Test
@@ -97,10 +98,10 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(10, "small");
+        tester.makeReadyNodes(10, "d-1-1-1");
 
-        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true, true), 1, tester);
-        deploy(application1, Capacity.fromNodeCount(2, Optional.of("small"), true, true), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("d-1-1-1"), true, true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("d-1-1-1"), true, true), 2, tester);
     }
 
     @Test
@@ -109,11 +110,11 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(10, "small");
-        tester.makeReadyNodes(10, "large");
+        tester.makeReadyNodes(10, "d-1-1-1");
+        tester.makeReadyNodes(10, "d-3-3-3");
 
-        deploy(application1, Capacity.fromNodeCount(1, Optional.of("small"), true, true), 1, tester);
-        deploy(application1, Capacity.fromNodeCount(2, Optional.of("large"), true, true), 2, tester);
+        deploy(application1, Capacity.fromNodeCount(1, Optional.of("d-1-1-1"), true, true), 1, tester);
+        deploy(application1, Capacity.fromNodeCount(2, Optional.of("d-3-3-3"), true, true), 2, tester);
     }
 
     @Test
@@ -122,11 +123,11 @@ public class MultigroupProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(10, "small");
-        tester.makeReadyNodes(10, "large");
+        tester.makeReadyNodes(10, "d-1-1-1");
+        tester.makeReadyNodes(10, "d-3-3-3");
 
-        deploy(application1, 8, 1, "small", tester);
-        deploy(application1, 8, 1, "large", tester);
+        deploy(application1, 8, 1, "d-1-1-1", tester);
+        deploy(application1, 8, 1, "d-3-3-3", tester);
 
         // Expire small nodes
         tester.advanceTime(Duration.ofDays(7));
@@ -135,35 +136,36 @@ public class MultigroupProvisioningTest {
                              tester.clock(),
                              Collections.singletonMap(application1, 
                                                       new MockDeployer.ApplicationContext(application1, cluster(), 
-                                                                                          Capacity.fromNodeCount(8, Optional.of("large"), false, true), 1)));
+                                                                                          Capacity.fromNodeCount(8, Optional.of("d-3-3-3"), false, true), 1)));
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
                 Duration.ofHours(12)).run();
 
-        assertEquals(8, tester.getNodes(application1, Node.State.inactive).flavor("small").size());
-        deploy(application1, 8, 8, "large", tester);
+        assertEquals(8, tester.getNodes(application1, Node.State.inactive).resources(new NodeResources(1, 1, 1)).size());
+        deploy(application1, 8, 8, "d-3-3-3", tester);
     }
 
     private void deploy(ApplicationId application, int nodeCount, int groupCount, String flavor, ProvisioningTester tester) {
         deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of(flavor), false, true), groupCount, tester);
     }
     private void deploy(ApplicationId application, int nodeCount, int groupCount, ProvisioningTester tester) {
-        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("default"), false, true), groupCount, tester);
+        deploy(application, Capacity.fromNodeCount(nodeCount, Optional.of("d-3-3-3"), false, true), groupCount, tester);
     }
 
-    @SuppressWarnings("deprecation") // TODO: Remove
     private void deploy(ApplicationId application, Capacity capacity, int wantedGroups, ProvisioningTester tester) {
         int nodeCount = capacity.nodeCount();
-        String flavor = capacity.flavor().get();
+        NodeResources nodeResources = capacity.nodeResources().get();
 
-        int previousActiveNodeCount = tester.getNodes(application, Node.State.active).flavor(flavor).size();
+        int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
 
         tester.activate(application, prepare(application, capacity, wantedGroups, tester));
 
+        System.out.println("Active nodes ---------------");
+        tester.getNodes(application, Node.State.active).forEach(n -> System.out.println("  " + n.hostname() + ": Flavor : " + n.flavor() + " retired " + n.status().wantToRetire()));
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
                      Math.max(0, previousActiveNodeCount - capacity.nodeCount()),
-                     tester.getNodes(application, Node.State.active).retired().flavor(flavor).size());
+                     tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
         assertEquals("Other flavors are retired",
-                     0, tester.getNodes(application, Node.State.active).nonretired().notFlavor(capacity.flavor().get()).size());
+                     0, tester.getNodes(application, Node.State.active).nonretired().notResources(nodeResources).size());
 
         // Check invariants for all nodes
         Set<Integer> allIndexes = new HashSet<>();
@@ -179,7 +181,7 @@ public class MultigroupProvisioningTest {
         // Count unretired nodes and groups of the requested flavor
         Set<Integer> indexes = new HashSet<>();
         Map<ClusterSpec.Group, Integer> nonretiredGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).nonretired().flavor(flavor)) {
+        for (Node node : tester.getNodes(application, Node.State.active).nonretired().resources(nodeResources)) {
             indexes.add(node.allocation().get().membership().index());
 
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
@@ -194,7 +196,7 @@ public class MultigroupProvisioningTest {
             assertEquals("Group size", (long)nodeCount / wantedGroups, (long)groupSize);
 
         Map<ClusterSpec.Group, Integer> allGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).flavor(flavor)) {
+        for (Node node : tester.getNodes(application, Node.State.active).resources(nodeResources)) {
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
             allGroups.put(group, nonretiredGroups.getOrDefault(group, 0) + 1);
         }
