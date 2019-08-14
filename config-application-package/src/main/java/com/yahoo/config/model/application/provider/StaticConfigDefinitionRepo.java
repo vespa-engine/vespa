@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A global pool of all config definitions that this server knows about. These objects can be shared
@@ -48,8 +46,6 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
     private void addConfigDefinition(File def) {
         try {
             ConfigDefinitionKey key = ConfigUtils.createConfigDefinitionKeyFromDefFile(def);
-            if (key.getNamespace().isEmpty())
-                key = new ConfigDefinitionKey(key.getName(), CNode.DEFAULT_NAMESPACE);
             addConfigDefinition(key, def);
         } catch (IOException e) {
             log.log(LogLevel.WARNING, "Exception adding config definition " + def, e);
