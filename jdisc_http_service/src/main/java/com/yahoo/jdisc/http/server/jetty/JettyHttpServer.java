@@ -9,6 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.server.FilterBindings;
@@ -145,10 +146,13 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
+        List<ConnectorConfig> connectorConfigs = new ArrayList<>();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
-            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorFactory.getConnectorConfig().listenPort(), osgiFramework.bundleContext());
+            ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
+            connectorConfigs.add(connectorConfig);
+            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorConfig.listenPort(), osgiFramework.bundleContext());
             server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel));
-            listenedPorts.add(connectorFactory.getConnectorConfig().listenPort());
+            listenedPorts.add(connectorConfig.listenPort());
         }
 
         janitor = newJanitor(threadFactory);
@@ -168,6 +172,7 @@ public class JettyHttpServer extends AbstractServerProvider {
                 getHandlerCollection(
                         serverConfig,
                         servletPathsConfig,
+                        connectorConfigs,
                         jdiscServlet,
                         servletHolders,
                         jDiscFilterInvokerFilter));
@@ -217,6 +222,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private HandlerCollection getHandlerCollection(
             ServerConfig serverConfig,
             ServletPathsConfig servletPathsConfig,
+            List<ConnectorConfig> connectorConfigs,
             ServletHolder jdiscServlet,
             ComponentRegistry<ServletHolder> servletHolders,
             FilterHolder jDiscFilterInvokerFilter) {
@@ -231,8 +237,11 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
+        var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
+        authEnforcer.setHandler(servletContextHandler);
+
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
-        gzipHandler.setHandler(servletContextHandler);
+        gzipHandler.setHandler(authEnforcer);
 
         HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector();
         statisticsCollector.setHandler(gzipHandler);

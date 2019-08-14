@@ -55,8 +55,13 @@ public class TestDrivers {
                 newConfigModule(
                         new ServerConfig.Builder(),
                         new ConnectorConfig.Builder()
+                                .tlsClientAuthEnforcer(
+                                        new ConnectorConfig.TlsClientAuthEnforcer.Builder()
+                                                .enable(true)
+                                                .pathWhitelist("/status.html"))
                                 .ssl(new ConnectorConfig.Ssl.Builder()
                                              .enabled(true)
+                                             .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
                                              .privateKeyFile(privateKeyFile.toString())
                                              .certificateFile(certificateFile.toString())
                                              .caCertificateFile(certificateFile.toString())),
