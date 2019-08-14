@@ -22,9 +22,6 @@ public class NodeResources {
     private final double diskGb;
     private final DiskSpeed diskSpeed;
 
-    /** The legacy (flavor) name of this, or null if none */
-    private final String legacyName;
-
     /** Create node resources requiring fast disk */
     public NodeResources(double vcpu, double memoryGb, double diskGb) {
         this(vcpu, memoryGb, diskGb, DiskSpeed.fast);
@@ -35,15 +32,6 @@ public class NodeResources {
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
         this.diskSpeed = diskSpeed;
-        this.legacyName = null;
-    }
-
-    private NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed, String legacyName) {
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.diskSpeed = diskSpeed;
-        this.legacyName = legacyName;
     }
 
     public double vcpu() { return vcpu; }
@@ -78,8 +66,9 @@ public class NodeResources {
     }
 
     /** Returns the legacy name of this, or empty if none. */
+    // TODO: Remove after August 2019
     public Optional<String> legacyName() {
-        return Optional.ofNullable(legacyName);
+        return Optional.of(toString());
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
@@ -147,12 +136,12 @@ public class NodeResources {
      *
      * @throws IllegalArgumentException if the given string cannot be parsed as a serial form of this
      */
-    public static NodeResources fromLegacyName(String string) {
-        if ( ! string.startsWith("d-"))
-            throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + string + "'");
-        String[] parts = string.split("-");
+    public static NodeResources fromLegacyName(String name) {
+        if ( ! name.startsWith("d-"))
+            throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + name + "'");
+        String[] parts = name.split("-");
         if (parts.length != 4)
-            throw new IllegalArgumentException("A node specification string must contain three numbers separated by '-' but was '" + string + "'");
+            throw new IllegalArgumentException("A node specification string must contain three numbers separated by '-' but was '" + name + "'");
 
         double cpu = Integer.parseInt(parts[1]);
         double mem = Integer.parseInt(parts[2]);
@@ -160,7 +149,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, string);
+        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast);
     }
 
 }
