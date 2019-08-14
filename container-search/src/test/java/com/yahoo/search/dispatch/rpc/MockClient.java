@@ -71,6 +71,8 @@ public class MockClient implements Client {
             Cursor root = responseSlime.setObject();
             Cursor docsums = root.setArray("docsums");
             for (Map<String, Object> docsumFields : docsumsToReturn) {
+                if (docsumFields == null) continue;
+
                 Cursor docsumItem = docsums.addObject();
                 Cursor docsum = docsumItem.setObject("docsum");
                 for (Map.Entry<String, Object> field : docsumFields.entrySet()) {
