@@ -50,6 +50,7 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String serializedForm()",
       "public java.lang.String toShortString()",
+      "public java.lang.String toFullString()",
       "public java.lang.String toString()",
       "public com.yahoo.config.provision.TenantName tenant()",
       "public com.yahoo.config.provision.ApplicationName application()",
