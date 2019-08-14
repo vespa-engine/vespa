@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
 
+    private final GlobalComponentRegistry componentRegistry;
     private final Curator curator;
     private final Path sessionsPath;
     private final RemoteSessionFactory remoteSessionFactory;
@@ -54,22 +56,23 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final TenantApplications applicationRepo;
     private final Executor zkWatcherExecutor;
 
-    public RemoteSessionRepo(GlobalComponentRegistry registry,
+    public RemoteSessionRepo(GlobalComponentRegistry componentRegistry,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
-        this.curator = registry.getCurator();
+        this.componentRegistry = componentRegistry;
+        this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
-        this.metrics = registry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        StripedExecutor<TenantName> zkWatcherExecutor = registry.getZkWatcherExecutor();
+        this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        StripedExecutor<TenantName> zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
@@ -136,14 +139,19 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      */
     private void sessionAdded(long sessionId) {
         log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
-        RemoteSession session = remoteSessionFactory.createSession(sessionId);
-        Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
-        Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
-        fileCache.addListener(this::nodeChanged);
-        loadSessionIfActive(session);
-        sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
-        addSession(session);
-        metrics.incAddedSessions();
+        try {
+            RemoteSession session = remoteSessionFactory.createSession(sessionId);
+            Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
+            Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
+            fileCache.addListener(this::nodeChanged);
+            loadSessionIfActive(session);
+            sessionStateWatchers.put(sessionId, new RemoteSessionStateWatcher(fileCache, reloadHandler, session, metrics, zkWatcherExecutor));
+            addSession(session);
+            metrics.incAddedSessions();
+        } catch (Exception e) {
+            if (componentRegistry.getConfigserverConfig().throwIfActiveSessionCannotBeLoaded()) throw e;
+            log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
+        }
     }
 
     private void sessionRemoved(long sessionId) {
