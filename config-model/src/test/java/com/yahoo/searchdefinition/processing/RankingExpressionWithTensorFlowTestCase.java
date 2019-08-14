@@ -474,14 +474,14 @@ public class RankingExpressionWithTensorFlowTestCase {
         }
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
-            super(java.nio.file.Path.of(applicationPackageWritableRoot.toString()),
+            super(new File(applicationPackageWritableRoot.toString()),
                   null, null, Collections.emptyList(), null,
                   null, null, false, queryProfile, queryProfileType);
         }
 
         @Override
         public ApplicationFile getFile(Path file) {
-            return new MockApplicationFile(file, root());
+            return new MockApplicationFile(file, Path.fromString(root().toString()));
         }
 
         @Override
