@@ -36,7 +36,9 @@ import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -76,6 +78,8 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+    @Rule
+    public TemporaryFolder applicationFolder = new TemporaryFolder();
 
     @Test
     public void deprecated_jdisc_tag_is_allowed() {
@@ -666,7 +670,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void client_ca_carts_succeeds_with_client_authorize_and_clients_pem() {
         var applicationPackage = new MockApplicationPackage.Builder()
-                .withInMemoryFileSystem()
+                .withRoot(applicationFolder.getRoot())
                 .build();
 
         applicationPackage.getFile(Path.fromString("security")).createDirectory();
