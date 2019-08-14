@@ -58,6 +58,7 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this,
+                                                                              flavors,
                                                                               Zone.defaultZone(),
                                                                               new MockProvisionServiceProvider(),
                                                                               new InMemoryFlagSource());

@@ -90,8 +90,8 @@ public class ProvisioningTester {
                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
-        this.capacityPolicies = new CapacityPolicies(zone, new InMemoryFlagSource());
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider, flagSource);
+        this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors, new InMemoryFlagSource());
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
@@ -103,7 +103,15 @@ public class ProvisioningTester {
         b.addFlavor("dockerSmall", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("dockerLarge", 2., 1., 20, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
-        b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
+        b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
+        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
+        FlavorsConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
+        b.addReplaces("old-large1", large);
+        b.addReplaces("old-large2", large);
+        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
+        b.addReplaces("large", largeVariant);
+        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
+        b.addReplaces("large-variant", largeVariantVariant);
         return b.build();
     }
 

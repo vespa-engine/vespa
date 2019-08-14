@@ -49,13 +49,8 @@ import static org.junit.Assert.assertEquals;
 public class FailedExpirerTest {
 
     private static final ApplicationId tenantHostApplicationId = ApplicationId.from("vespa", "zone-app", "default");
-
-    private static final ClusterSpec tenantHostApplicationClusterSpec =
-            ClusterSpec.request(ClusterSpec.Type.container,
-                                ClusterSpec.Id.from("node-admin"),
-                                Version.fromString("6.42"),
-                                false);
-
+    private static final ClusterSpec tenantHostApplicationClusterSpec =  ClusterSpec.request(
+            ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin"), Version.fromString("6.42"), false);
     private static final Capacity tenantHostApplicationCapacity = Capacity.fromRequiredNodeType(NodeType.host);
 
     @Test
@@ -280,7 +275,7 @@ public class FailedExpirerTest {
                                                      new MockNameResolver().mockAnyLookup(),
                                                      DockerImage.fromString("docker-image"),
                                                      true);
-            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), new MockProvisionServiceProvider(), new InMemoryFlagSource());
             this.expirer = new FailedExpirer(nodeRepository, zone, clock, Duration.ofMinutes(30));
         }
 
