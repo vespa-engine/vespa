@@ -2,9 +2,7 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.config.provisioning.FlavorsConfig;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,18 +11,13 @@ import static org.junit.Assert.assertEquals;
 
 public class NodeFlavorsTest {
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
     public void testConfigParsing() {
         FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
         List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
         {
             FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
-            FlavorsConfig.Flavor.Replaces.Builder flavorReplacesBuilder = new FlavorsConfig.Flavor.Replaces.Builder();
-            flavorReplacesBuilder.name("banana");
-            flavorBuilder.name("strawberry").cost(2).replaces.add(flavorReplacesBuilder);
+            flavorBuilder.name("strawberry").cost(2);
             flavorBuilderList.add(flavorBuilder);
         }
         {
@@ -36,27 +29,6 @@ public class NodeFlavorsTest {
         FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
         assertEquals(3, nodeFlavors.getFlavor("banana").get().cost());
-    }
-
-    @Test
-    public void testRetiredFlavorWithoutReplacement() {
-        FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
-        List<FlavorsConfig.Flavor.Builder> flavorBuilderList = new ArrayList<>();
-        {
-            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
-            flavorBuilder.name("retired").retired(true);
-            flavorBuilderList.add(flavorBuilder);
-        }
-        {
-            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
-            flavorBuilder.name("chocolate");
-            flavorBuilderList.add(flavorBuilder);
-        }
-        builder.flavor(flavorBuilderList);
-        FlavorsConfig config = new FlavorsConfig(builder);
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("Flavor 'retired' is retired, but has no replacement");
-        new NodeFlavors(config);
     }
 
 }

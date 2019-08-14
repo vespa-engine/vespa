@@ -49,17 +49,12 @@ public class NodeFlavors {
      * and cannot be created on the fly.
      */
     public Flavor getFlavorOrThrow(String flavorName) {
-        return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName +
-                                                                                    "'. Flavors are " + canonicalFlavorNames()));
+        return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName + "'"));
     }
 
     /** Returns true if this flavor is configured or can be created on the fly */
     public boolean exists(String flavorName) {
         return getFlavor(flavorName).isPresent();
-    }
-
-    private List<String> canonicalFlavorNames() {
-        return configuredFlavors.values().stream().map(Flavor::canonicalName).distinct().sorted().collect(Collectors.toList());
     }
 
     private static Collection<Flavor> toFlavors(FlavorsConfig config) {

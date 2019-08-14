@@ -3,8 +3,6 @@ package com.yahoo.config.provision;
 
 import com.yahoo.config.provisioning.FlavorsConfig;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -83,9 +81,8 @@ public class Flavor {
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
 
-    public String canonicalName() {
-        return name;
-    }
+    // TODO: Remove after August 2019
+    public String canonicalName() { return name; }
     
     /**
      * Returns whether this flavor satisfies the requested flavor
