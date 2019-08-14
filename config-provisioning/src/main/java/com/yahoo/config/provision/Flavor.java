@@ -3,6 +3,8 @@ package com.yahoo.config.provision;
 
 import com.yahoo.config.provisioning.FlavorsConfig;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -85,9 +87,22 @@ public class Flavor {
     public String canonicalName() { return name; }
 
     // TODO: Remove after August 2019
-    public boolean satisfies(Flavor flavor) {
-        return this.equals(flavor);
-    }
+    public boolean satisfies(Flavor flavor) { return this.equals(flavor); }
+
+    // TODO: Remove after August 2019
+    public boolean isStock() { return false; }
+
+    // TODO: Remove after August 2019
+    public boolean isRetired() { return false; }
+
+    // TODO: Remove after August 2019
+    public boolean isCanonical() { return false; }
+
+    // TODO: Remove after August 2019
+    public List<Flavor> replaces() { return Collections.emptyList(); }
+
+    // TODO: Remove after August 2019
+    public void freeze() {}
 
     @Override
     public int hashCode() { return name.hashCode(); }

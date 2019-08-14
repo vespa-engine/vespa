@@ -64,11 +64,13 @@ public class NodeResources {
                                  combine(this.diskSpeed, other.diskSpeed));
     }
 
-    /** Returns the legacy name of this, or empty if none. */
     // TODO: Remove after August 2019
     public Optional<String> legacyName() {
         return Optional.of(toString());
     }
+
+    // TODO: Remove after August 2019
+    public boolean allocateByLegacyName() { return false; }
 
     private boolean isInterchangeableWith(NodeResources other) {
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
