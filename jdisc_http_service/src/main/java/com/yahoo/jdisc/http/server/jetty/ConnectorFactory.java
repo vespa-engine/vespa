@@ -53,7 +53,9 @@ public class ConnectorFactory {
 
     private List<ConnectionFactory> createConnectionFactories() {
         HttpConnectionFactory httpConnectionFactory = newHttpConnectionFactory();
-        if (connectorConfig.ssl().enabled()) {
+        if (connectorConfig.healthCheckProxy().enable()) {
+            return List.of(httpConnectionFactory);
+        } else if (connectorConfig.ssl().enabled()) {
             return List.of(newSslConnectionFactory(), httpConnectionFactory);
         } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
             SslConnectionFactory sslConnectionsFactory = newSslConnectionFactory();
