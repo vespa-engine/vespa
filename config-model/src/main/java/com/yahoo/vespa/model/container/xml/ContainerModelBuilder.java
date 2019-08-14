@@ -199,7 +199,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addTlsClientAuthority(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         var clientAuthorized = XML.getChild(spec, "client-authorize");
-        if (clientAuthorized != null && deployState.tlsClientAuthority().isEmpty()) {
+        if (clientAuthorized != null) {
             if (deployState.tlsClientAuthority().isEmpty()) {
                 throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
             }
