@@ -6,6 +6,7 @@
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
                 <surefireMemoryMb>5120</surefireMemoryMb>
+                <useAthenzCredentials>true</useAthenzCredentials>
             </config>
         </component>
 

@@ -1,4 +1,5 @@
 package=com.yahoo.vespa.hosted.testrunner
 
-artifactsPath       path
-surefireMemoryMb    int
+artifactsPath        path
+surefireMemoryMb     int
+useAthenzCredentials bool

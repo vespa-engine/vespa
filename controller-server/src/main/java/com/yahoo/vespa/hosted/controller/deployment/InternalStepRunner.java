@@ -588,7 +588,9 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
-        byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(), testerFlavorFor(id, spec));
+        byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
+                                         spec.athenzDomain().isPresent(),
+                                         testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
 
         ZoneId zone = id.type().zone(controller.system());
@@ -620,7 +622,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, Optional<String> testerFlavor) {
+    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, Optional<String> testerFlavor) {
         String flavor = testerFlavor.orElse("d-1-4-50");
         int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
@@ -635,6 +637,7 @@ public class InternalStepRunner implements StepRunner {
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
+                "                <useAthenzCredentials>" + useAthenzCredentials + "</useAthenzCredentials>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
