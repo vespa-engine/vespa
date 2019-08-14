@@ -11,7 +11,7 @@ public class Ec2InstanceCounts {
     private final int totalCount;
     private final Map<String, Integer> instanceCounts;
 
-    private Ec2InstanceCounts(int totalCount, Map<String, Integer> instanceCounts) {
+    public Ec2InstanceCounts(int totalCount, Map<String, Integer> instanceCounts) {
         this.totalCount = totalCount;
         this.instanceCounts = Map.copyOf(instanceCounts);
     }
