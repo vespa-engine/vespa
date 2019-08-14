@@ -200,13 +200,6 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns the global rotation id of this, if present */
-    public Optional<RotationId> legacyRotation() {
-        return rotations.stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst();
-    }
-
     /** Returns all rotations for this application */
     public List<RotationId> rotations() {
         return rotations.stream()
