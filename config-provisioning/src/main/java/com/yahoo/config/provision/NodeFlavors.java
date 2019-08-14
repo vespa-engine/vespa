@@ -68,25 +68,11 @@ public class NodeFlavors {
         for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
             flavors.put(flavorConfig.name(), new Flavor(flavorConfig));
         }
-        // Second pass, set flavorReplacesConfig to point to correct flavor.
-        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
-            Flavor flavor = flavors.get(flavorConfig.name());
-            for (FlavorsConfig.Flavor.Replaces flavorReplacesConfig : flavorConfig.replaces()) {
-                if (! flavors.containsKey(flavorReplacesConfig.name())) {
-                    throw new IllegalStateException("Replaces for " + flavor.name() + 
-                                                    " pointing to a non existing flavor: " + flavorReplacesConfig.name());
-                }
-                flavor.replaces().add(flavors.get(flavorReplacesConfig.name()));
-            }
-            flavor.freeze();
-        }
-        // Third pass, ensure that retired flavors have a replacement
+
+        // Ensure that retired flavors have a replacement
         for (Flavor flavor : flavors.values()) {
-            if (flavor.isRetired() && !hasReplacement(flavors.values(), flavor)) {
-                throw new IllegalStateException(
-                        String.format("Flavor '%s' is retired, but has no replacement", flavor.name())
-                );
-            }
+            if (flavor.isRetired() && !hasReplacement(flavors.values(), flavor))
+                throw new IllegalStateException(String.format("Flavor '%s' is retired, but has no replacement", flavor.name()));
         }
         return flavors.values();
     }

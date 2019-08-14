@@ -7,11 +7,7 @@ namespace=config.provisioning
 # If a certain flavor has no config it is not necessary to list it here to use it.
 flavor[].name string
 
-# Names of other flavors (whether mentioned in this config or not) which this flavor
-# is a replacement for: If one of these flavor names are requested, this flavor may
-# be assigned instead.
-# Replacements are transitive: If flavor a replaces b replaces c, then a request for flavor
-# c may be satisfied by assigning nodes of flavor a.
+# NOT USED
 flavor[].replaces[].name string
 
 # The monthly Total Cost of Ownership (TCO) in USD. Typically calculated as TCO divided by
