@@ -10,8 +10,7 @@ import java.util.Objects;
 /**
  * A host or node flavor.
  * *Host* flavors come from a configured set which corresponds to the actual flavors available in a zone.
- * *Node* flavors are simply a wrapper of a NodeResources object (for now (May 2019) with the exception of some
- *        legacy behavior where nodes are allocated by specifying a physical host flavor directly).
+ * *Node* flavors are simply a wrapper of a NodeResources object.
  *
  * @author bratseth
  */

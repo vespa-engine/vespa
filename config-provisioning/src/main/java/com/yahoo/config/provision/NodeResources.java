@@ -179,20 +179,18 @@ public class NodeResources {
      *
      * @throws IllegalArgumentException if the given string cannot be parsed as a serial form of this
      */
-    public static NodeResources fromLegacyName(String flavorString) {
-        if (flavorString.startsWith("d-")) { // A legacy docker flavor: We still allocate by numbers
-            String[] parts = flavorString.split("-");
-            double cpu = Integer.parseInt(parts[1]);
-            double mem = Integer.parseInt(parts[2]);
-            double dsk = Integer.parseInt(parts[3]);
-            if (cpu == 0) cpu = 0.5;
-            if (cpu == 2 && mem == 8 ) cpu = 1.5;
-            if (cpu == 2 && mem == 12 ) cpu = 2.3;
-            return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, false, flavorString);
-        }
-        else { // Another legacy flavor: Allocate by direct matching
-            return new NodeResources(0, 0, 0, DiskSpeed.fast, true, flavorString);
-        }
+    public static NodeResources fromLegacyName(String string) {
+        if ( ! string.startsWith("d-"))
+            throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + string + "'");
+
+        String[] parts = string.split("-");
+        double cpu = Integer.parseInt(parts[1]);
+        double mem = Integer.parseInt(parts[2]);
+        double dsk = Integer.parseInt(parts[3]);
+        if (cpu == 0) cpu = 0.5;
+        if (cpu == 2 && mem == 8 ) cpu = 1.5;
+        if (cpu == 2 && mem == 12 ) cpu = 2.3;
+        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, false, string);
     }
 
 }
