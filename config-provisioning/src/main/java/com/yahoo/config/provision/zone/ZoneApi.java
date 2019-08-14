@@ -17,4 +17,6 @@ public interface ZoneApi {
     default RegionName getRegionName() { return getId().region(); }
 
     CloudName getCloudName();
+
+    String getCloudNativeRegionName();
 }
