@@ -17,4 +17,7 @@ public interface ZoneApi {
     default RegionName getRegionName() { return getId().region(); }
 
     CloudName getCloudName();
+
+    /** Returns the region name within the cloud, e.g. 'us-east-1' in AWS */
+    String getCloudNativeRegionName();
 }
