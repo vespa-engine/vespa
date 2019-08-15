@@ -1,7 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,6 +46,7 @@ public class VersionTagger {
             BufferedReader in = new BufferedReader(new FileReader(path));
             String line;
             while ((line = in.readLine()) != null) {
+                if (line.isBlank()) continue;
                 String elements[] = line.split("\\s+", 2);
                 map.put(elements[0], elements[1]);
             }
@@ -52,6 +60,8 @@ public class VersionTagger {
             map.put("V_TAG_SYSTEM_REV", "NOTAG");
             map.put("V_TAG_BUILDER", "NOTAG");
             map.put("V_TAG_COMPONENT", "6.9999.0");
+            map.put("V_TAG_COMMIT_SHA", "badc0ffe");
+            map.put("V_TAG_COMMIT_DATE", "0");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -83,10 +93,11 @@ public class VersionTagger {
         writer.write(String.format("package %s;\n\n", packageName));
 
         if (format == Format.VTAG) {
+            writer.write("import java.time.Instant;\n");
             writer.write("import com.yahoo.component.Version;\n");
         }
 
-        writer.write(String.format("public class %s {\n", className));
+        writer.write(String.format("\npublic class %s {\n", className));
         if (!vtagMap.containsKey(V_TAG_PKG)) {
             throw new RuntimeException("V_TAG_PKG not present in map file");
         }
@@ -99,15 +110,22 @@ public class VersionTagger {
                 writer.write(String.format("    public static final int micro = %s;\n", elements[2]));
                 break;
             case VTAG:
-                vtagMap.forEach((key, value) -> {
+                long commitDateSecs = 0;
+                for (var entry : vtagMap.entrySet()) {
+                    var key = entry.getKey();
+                    var value = entry.getValue();
                     try {
                         writer.write(String.format("    public static final String %s = \"%s\";\n", key, value));
+                        if ("V_TAG_COMMIT_DATE".equals(key)) {
+                            commitDateSecs = Long.parseLong(value);
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                });
-
+                };
                 writer.write("    public static final Version currentVersion = new Version(V_TAG_COMPONENT);\n");
+                writer.write("    public static final String commitSha = V_TAG_COMMIT_SHA;\n");
+                writer.write("    public static final Instant commitDate = Instant.ofEpochSecond(" + commitDateSecs +");\n");
                 break;
         }
         writer.write("}\n");

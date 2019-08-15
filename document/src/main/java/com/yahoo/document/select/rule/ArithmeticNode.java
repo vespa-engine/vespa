@@ -87,6 +87,8 @@ public class ArithmeticNode implements ExpressionNode {
                 }
                 buf.push(new ValueItem(item.operator, (Number)val));
                 continue;
+            } else if (val == Result.INVALID) {
+                return val;
             }
             throw new IllegalStateException("Term '" + item.node + " with class " + val.getClass() + "' does not evaluate to a number.");
         }

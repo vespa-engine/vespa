@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * Tests VSM configuration deriving for structs
+ * Tests streaming search configuration deriving for structs
  *
  * @author  bratseth
  */

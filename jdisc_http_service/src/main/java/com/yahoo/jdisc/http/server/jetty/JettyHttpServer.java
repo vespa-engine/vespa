@@ -9,6 +9,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.OsgiFramework;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.server.FilterBindings;
@@ -45,6 +46,7 @@ import java.net.BindException;
 import java.net.MalformedURLException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -58,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Simon Thoresen Hult
@@ -145,10 +149,13 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         ((QueuedThreadPool)server.getThreadPool()).setMaxThreads(serverConfig.maxWorkerThreads());
 
+        List<ConnectorConfig> connectorConfigs = new ArrayList<>();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
-            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorFactory.getConnectorConfig().listenPort(), osgiFramework.bundleContext());
+            ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
+            connectorConfigs.add(connectorConfig);
+            ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorConfig.listenPort(), osgiFramework.bundleContext());
             server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel));
-            listenedPorts.add(connectorFactory.getConnectorConfig().listenPort());
+            listenedPorts.add(connectorConfig.listenPort());
         }
 
         janitor = newJanitor(threadFactory);
@@ -164,10 +171,15 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
 
+        List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
+                .map(JDiscServerConnector.class::cast)
+                .collect(toList());
+
         server.setHandler(
                 getHandlerCollection(
                         serverConfig,
                         servletPathsConfig,
+                        connectors,
                         jdiscServlet,
                         servletHolders,
                         jDiscFilterInvokerFilter));
@@ -217,6 +229,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private HandlerCollection getHandlerCollection(
             ServerConfig serverConfig,
             ServletPathsConfig servletPathsConfig,
+            List<JDiscServerConnector> connectors,
             ServletHolder jdiscServlet,
             ComponentRegistry<ServletHolder> servletHolders,
             FilterHolder jDiscFilterInvokerFilter) {
@@ -231,8 +244,15 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
+        var proxyHandler = new HealthCheckProxyHandler(connectors);
+        proxyHandler.setHandler(servletContextHandler);
+
+        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
+        var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
+        authEnforcer.setHandler(proxyHandler);
+
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
-        gzipHandler.setHandler(servletContextHandler);
+        gzipHandler.setHandler(authEnforcer);
 
         HttpResponseStatisticsCollector statisticsCollector = new HttpResponseStatisticsCollector();
         statisticsCollector.setHandler(gzipHandler);

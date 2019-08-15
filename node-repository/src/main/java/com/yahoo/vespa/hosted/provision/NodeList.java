@@ -49,6 +49,9 @@ public class NodeList implements Iterable<Node> {
     /** Returns the subset of nodes having exactly the given resources */
     public NodeList resources(NodeResources resources) { return filter(node -> node.flavor().resources().equals(resources)); }
 
+    /** Returns the subset of nodes not having exactly the given resources */
+    public NodeList notResources(NodeResources resources) { return filter(node ->  ! node.flavor().resources().equals(resources)); }
+
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
         return filter(node -> node.flavor().name().equals(flavor));

@@ -282,9 +282,7 @@ public class ApplicationSerializerTest {
                 application.rotations()
         );
 
-        assertEquals(
-                Optional.of(new RotationId("assigned-rotation")), application.legacyRotation()
-        );
+        assertEquals(new RotationId("assigned-rotation"), application.rotations().get(0));
 
         assertEquals(
                 List.of(

@@ -64,12 +64,6 @@ public class GetDocSumsPacket extends Packet {
     public static final int GDF_PROPERTIES = 0x00001000;
     public static final int GDF_FLAGS = 0x00002000;
 
-    /**
-     * flag bits, as given in fastserver4/src/network/transport.h
-     * definition of enum getdocsums_flags
-     */
-    public static final int GDFLAG_IGNORE_ROW  = 0x00000001;
-
     public void encodeBody(ByteBuffer buffer) {
         setFieldsFromHits();
 

@@ -164,15 +164,15 @@ public class AdjustPositionSummaryFieldsTestCase {
 
     static class SearchModel extends ParentChildSearchModel {
 
-        public SearchModel() {
+        SearchModel() {
             this(true);
         }
 
-        public SearchModel(boolean importedPos) {
+        SearchModel(boolean importedPos) {
             this(importedPos, true, false);
         }
 
-        public SearchModel(boolean importedPos, boolean setupPosAttr, boolean setupBadAttr) {
+        SearchModel(boolean importedPos, boolean setupPosAttr, boolean setupBadAttr) {
             super();
             if (importedPos) {
                 createPositionField(parentSearch, setupPosAttr, setupBadAttr);
@@ -193,7 +193,7 @@ public class AdjustPositionSummaryFieldsTestCase {
             }
         }
 
-        public void addSummaryField(String fieldName, DataType dataType, SummaryTransform transform, String source) {
+        void addSummaryField(String fieldName, DataType dataType, SummaryTransform transform, String source) {
             addSummaryField("my_summary", fieldName, dataType, transform, source);
         }
 

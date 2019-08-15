@@ -7,16 +7,16 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "entry_comparator_wrapper.h"
+#include "unique_store_add_result.h"
 #include "unique_store_entry.h"
+#include "unique_store_allocator.h"
 #include "unique_store_comparator.h"
+#include "unique_store_dictionary_base.h"
 #include "i_compaction_context.h"
-#include "i_compactable.h"
-#include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/btree/btree.h>
 
 namespace search::datastore {
 
-template <typename EntryT, typename RefT>
+template <typename Allocator>
 class UniqueStoreBuilder;
 
 template <typename EntryT, typename RefT>
@@ -26,57 +26,27 @@ class UniqueStoreSaver;
  * Datastore for unique values of type EntryT that is accessed via a
  * 32-bit EntryRef.
  */
-template <typename EntryT, typename RefT = EntryRefT<22> >
-class UniqueStore : public ICompactable
+template <typename EntryT, typename RefT = EntryRefT<22>, typename Compare = UniqueStoreComparator<EntryT, RefT>, typename Allocator = UniqueStoreAllocator<EntryT, RefT> >
+class UniqueStore
 {
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
-    using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
     using Saver = UniqueStoreSaver<EntryT, RefT>;
-    using Builder = UniqueStoreBuilder<EntryT, RefT>;
-    using Compare = UniqueStoreComparator<EntryType, RefType>;
-    using UniqueStoreBufferType = BufferType<WrappedEntryType>;
-    using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
-    using Dictionary = btree::BTree<EntryRef, uint32_t,
-                                    btree::NoAggregated,
-                                    EntryComparatorWrapper,
-                                    DictionaryTraits>;
-    class AddResult {
-        EntryRef _ref;
-        bool _inserted;
-    public:
-        AddResult(EntryRef ref_, bool inserted_)
-            : _ref(ref_),
-              _inserted(inserted_)
-        {
-        }
-        EntryRef ref() const { return _ref; }
-        bool inserted() { return _inserted; }
-    };
+    using Builder = UniqueStoreBuilder<Allocator>;
 private:
-    DataStoreType _store;
-    UniqueStoreBufferType _typeHandler;
-    uint32_t _typeId;
-    Dictionary _dict;
+    Allocator _allocator;
+    DataStoreType &_store;
+    std::unique_ptr<UniqueStoreDictionaryBase> _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
     UniqueStore();
     ~UniqueStore();
-    EntryRef move(EntryRef ref) override;
-    AddResult add(const EntryType &value);
+    UniqueStoreAddResult add(const EntryType &value);
     EntryRef find(const EntryType &value);
-    const WrappedEntryType &getWrapped(EntryRef ref) const
-    {
-        RefType iRef(ref);
-        return *_store.template getEntry<WrappedEntryType>(iRef);
-    }
-    const EntryType &get(EntryRef ref) const
-    {
-        return getWrapped(ref).value();
-    }
+    const EntryType &get(EntryRef ref) const { return _allocator.get(ref); }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
     vespalib::MemoryUsage getMemoryUsage() const;

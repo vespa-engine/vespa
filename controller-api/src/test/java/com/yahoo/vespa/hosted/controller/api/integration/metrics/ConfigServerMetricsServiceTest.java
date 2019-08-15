@@ -60,7 +60,7 @@ public class ConfigServerMetricsServiceTest {
         var deploymentMetrics = service.getDeploymentMetrics(applicationId, zoneId);
 
         assertEquals(23.0 + 11.0, deploymentMetrics.queriesPerSecond(), 0.001);
-        assertEquals(1337.0 + 12.0, deploymentMetrics.queryLatencyMillis(), 0.001); // TODO: again, this definition of combined latency makes no sense
+        assertEquals(908.323, deploymentMetrics.queryLatencyMillis(), 0.001);
         assertEquals(0, deploymentMetrics.documentCount());
         assertEquals(0.0, deploymentMetrics.writeLatencyMillis(), 0.001);
         assertEquals(0.0, deploymentMetrics.writesPerSecond(), 0.001);

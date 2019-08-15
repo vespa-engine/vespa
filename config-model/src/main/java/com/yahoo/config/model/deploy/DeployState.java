@@ -24,6 +24,7 @@ import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -39,8 +40,10 @@ import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.search.SearchDefinition;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -263,6 +266,22 @@ public class DeployState implements ConfigDefinitionStore {
 
     public Optional<TlsSecrets> tlsSecrets() { return properties.tlsSecrets(); }
 
+    public Optional<String> tlsClientAuthority() {
+        var caFile = applicationPackage.getClientSecurityFile();
+        if (caFile.exists()) {
+            try {
+                var caPem = IOUtils.readAll(caFile.createReader());
+                return Optional.of(caPem);
+            } catch (FileNotFoundException e) {
+                return Optional.empty();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed reading certificate from application: " + caFile.getPath(), e);
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public static class Builder {
 
         private ApplicationPackage applicationPackage = MockApplicationPackage.createEmpty();
@@ -400,15 +419,17 @@ public class DeployState implements ConfigDefinitionStore {
                     String searchName = builder.importReader(reader, readerName, logger);
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
                     names.put(searchName, sdName);
-                    if (!sdName.equals(searchName)) {
+                    if ( ! sdName.equals(searchName)) {
                         throw new IllegalArgumentException("Search definition file name ('" + sdName + "') and name of " +
                                                            "search element ('" + searchName +
                                                            "') are not equal for file '" + readerName + "'");
                     }
                 } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse search definition file '" + getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not parse search definition file '" +
+                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read search definition file '" + getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
+                    throw new IllegalArgumentException("Could not read search definition file '" +
+                                                       getSearchDefinitionRelativePath(reader.getName()) + "': " + e.getMessage(), e);
                 } finally {
                     closeIgnoreException(reader.getReader());
                 }

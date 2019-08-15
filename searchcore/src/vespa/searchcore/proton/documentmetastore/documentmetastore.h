@@ -71,6 +71,7 @@ private:
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
+    search::LidUsageStats::TimePoint _last_remove_batch;
 
     DocId getFreeLid();
     DocId peekFreeLid();

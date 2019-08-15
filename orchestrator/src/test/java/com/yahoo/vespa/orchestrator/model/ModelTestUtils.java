@@ -86,6 +86,9 @@ class ModelTestUtils {
                 new ApplicationInstanceId("application-name:foo:bar:default"),
                 serviceClusterSet);
         applications.put(application.reference(), application);
+
+        serviceClusters.forEach(cluster -> cluster.setApplicationInstance(application));
+
         return application;
     }
 

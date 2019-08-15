@@ -16,6 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
@@ -68,30 +69,7 @@ public class TestRunner {
              vespaHome.resolve("logs/vespa/maven.log"),
              vespaHome.resolve("tmp/config.json"),
              vespaHome.resolve("tmp/settings.xml"),
-                     profile -> { // Anything to make this testable! >_<
-                         String[] command = new String[]{
-                                 "mvn",
-                                 "test",
-
-                                 "--batch-mode", // Run in non-interactive (batch) mode (disables output color)
-                                 "--show-version", // Display version information WITHOUT stopping build
-                                 "--settings", // Need to override repository settings in ymaven config >_<
-                                 vespaHome.resolve("tmp/settings.xml").toString(),
-
-                                 // Disable maven download progress indication
-                                 "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn",
-                                 "-Dstyle.color=always", // Enable ANSI color codes again
-                                 "-DfailIfNoTests=" + profile.failIfNoTests(),
-                                 "-Dvespa.test.config=" + vespaHome.resolve("tmp/config.json"),
-                                 "-Dvespa.test.credentials.root=" + Defaults.getDefaults().vespaHome() + "/var/vespa/sia",
-                                 String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb())
-                         };
-                         ProcessBuilder builder = new ProcessBuilder(command);
-                         builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
-                         builder.directory(vespaHome.resolve("tmp/test").toFile());
-                         builder.redirectErrorStream(true);
-                         return builder;
-                     });
+             profile -> mavenProcessFrom(profile, config));
     }
 
     TestRunner(Path artifactsPath, Path testPath, Path logFile, Path configFile, Path settingsFile, Function<TestProfile, ProcessBuilder> testBuilder) {
@@ -101,6 +79,32 @@ public class TestRunner {
         this.configFile = configFile;
         this.settingsFile = settingsFile;
         this.testBuilder = testBuilder;
+    }
+
+    static ProcessBuilder mavenProcessFrom(TestProfile profile, TestRunnerConfig config) {
+        List<String> command = new ArrayList<>();
+        command.add("mvn");
+        command.add("test");
+
+        command.add("--batch-mode"); // Run in non-interactive (batch) mode (disables output color)
+        command.add("--show-version"); // Display version information WITHOUT stopping build
+        command.add("--settings"); // Need to override repository settings in ymaven config >_<
+        command.add(vespaHome.resolve("tmp/settings.xml").toString());
+
+        // Disable maven download progress indication
+        command.add("-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn");
+        command.add("-Dstyle.color=always"); // Enable ANSI color codes again
+        command.add("-DfailIfNoTests=" + profile.failIfNoTests());
+        command.add("-Dvespa.test.config=" + vespaHome.resolve("tmp/config.json"));
+        if (config.useAthenzCredentials())
+            command.add("-Dvespa.test.credentials.root=" + Defaults.getDefaults().vespaHome() + "/var/vespa/sia");
+        command.add(String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb()));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
+        builder.directory(vespaHome.resolve("tmp/test").toFile());
+        builder.redirectErrorStream(true);
+        return builder;
     }
 
     public synchronized void test(TestProfile testProfile, byte[] testConfig) {

@@ -280,24 +280,8 @@ public class DynamicDockerAllocationTest {
         tester.activate(application, hosts);
 
         List<Node> activeNodes = tester.nodeRepository().getNodes(application);
-        assertEquals(ImmutableSet.of("127.0.127.12", "::12"), activeNodes.get(0).ipAddresses());
+        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipAddresses());
         assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipAddresses());
-    }
-
-    @Test
-    public void legacy_bare_metal_allocations_are_not_altered() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeReadyNodes(5, "host-large", NodeType.tenant);
-        deployZoneApp(tester);
-
-        ApplicationId application = tester.makeApplicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("1"), false);
-        NodeResources resources = NodeResources.fromLegacyName("host-large");
-
-        List<HostSpec> hosts = tester.prepare(application, cluster, 2, 1, resources);
-        assertEquals(2, hosts.size());
-        assertEquals("host-large", hosts.get(0).flavor().get().name());
-        tester.activate(application, hosts);
     }
 
     @Test

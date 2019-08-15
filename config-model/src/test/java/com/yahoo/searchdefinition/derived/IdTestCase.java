@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNull;
 public class IdTestCase extends AbstractExportingTestCase {
 
     @Test
-    @SuppressWarnings({ "deprecation" })
     public void testExplicitUpperCaseIdField() {
         Search search = new Search("test", null);
         SDDocumentType document = new SDDocumentType("test");

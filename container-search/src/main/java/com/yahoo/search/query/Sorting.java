@@ -176,7 +176,7 @@ public class Sorting implements Cloneable {
                 buffer.put((byte) '-');
             }
             usedBytes++;
-            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toString());
+            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toSerialForm());
             buffer.put(nameBuffer);
             usedBytes += nameBuffer.length;
             // If this isn't the last element, append a separating space
@@ -203,8 +203,11 @@ public class Sorting implements Cloneable {
         public String getName() { return fieldName; }
         public void setName(String fieldName) { this.fieldName = fieldName; }
 
+        /** Returns the serial form of this which contains all information needed to reconstruct this sorter */
+        public String toSerialForm() { return fieldName; }
+
         @Override
-        public String toString() { return fieldName; }
+        public String toString() { return toSerialForm(); }
 
         @Override
         public int hashCode() { return fieldName.hashCode(); }
@@ -253,7 +256,7 @@ public class Sorting implements Cloneable {
         public LowerCaseSorter(String fieldName) { super(fieldName); }
 
         @Override
-        public String toString() { return "lowercase(" + getName() + ')'; }
+        public String toSerialForm() { return "lowercase(" + getName() + ')'; }
 
         @Override
         public int hashCode() { return 1 + 3*super.hashCode(); }
@@ -323,7 +326,7 @@ public class Sorting implements Cloneable {
         public String getDecomposition() { return (collator.getDecomposition() == Collator.CANONICAL_DECOMPOSITION) ? "CANONICAL_DECOMPOSITION" : "NO_DECOMPOSITION"; }
 
         @Override
-        public String toString() { return "uca(" + getName() + ',' + locale + ',' + ((strength != Strength.UNDEFINED) ? strength.toString() : "PRIMARY") + ')'; }
+        public String toSerialForm() { return "uca(" + getName() + ',' + locale + ',' + ((strength != Strength.UNDEFINED) ? strength.toString() : "PRIMARY") + ')'; }
 
         @Override
         public int hashCode() { return 1 + 3*locale.hashCode() + 5*strength.hashCode() + 7*super.hashCode(); }

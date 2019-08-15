@@ -17,7 +17,6 @@ import static org.junit.Assert.fail;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings({ "deprecation" })
 public class IndexSchemaTestCase {
 
     @Test

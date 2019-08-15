@@ -22,7 +22,14 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
 
     @Override
     protected ApplicationContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element nodeElem) {
-        return new ApplicationContainer(parent, id, index, deployState.isHosted(), deployState.tlsSecrets());
+        return new ApplicationContainer(
+                parent,
+                id,
+                index,
+                deployState.isHosted(),
+                deployState.tlsSecrets(),
+                deployState.tlsClientAuthority()
+        );
     }
 
 }

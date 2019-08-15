@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_unique_store_test_app TEST
     unique_store_test.cpp
     DEPENDS
     vespalib
+    gtest
 )
 vespa_add_test(NAME vespalib_unique_store_test_app COMMAND vespalib_unique_store_test_app)

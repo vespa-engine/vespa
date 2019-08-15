@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -22,11 +21,6 @@ public class NodeResources {
     private final double diskGb;
     private final DiskSpeed diskSpeed;
 
-    private final boolean allocateByLegacyName;
-
-    /** The legacy (flavor) name of this, or null if none */
-    private final String legacyName;
-
     /** Create node resources requiring fast disk */
     public NodeResources(double vcpu, double memoryGb, double diskGb) {
         this(vcpu, memoryGb, diskGb, DiskSpeed.fast);
@@ -37,18 +31,6 @@ public class NodeResources {
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
         this.diskSpeed = diskSpeed;
-        this.allocateByLegacyName = false;
-        this.legacyName = null;
-    }
-
-    private NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed,
-                          boolean allocateByLegacyName, String legacyName) {
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.diskSpeed = diskSpeed;
-        this.allocateByLegacyName = allocateByLegacyName;
-        this.legacyName = legacyName;
     }
 
     public double vcpu() { return vcpu; }
@@ -82,24 +64,17 @@ public class NodeResources {
                                  combine(this.diskSpeed, other.diskSpeed));
     }
 
-    /**
-     * If this is true, a non-docker legacy name was used to specify this and we'll respect that by mapping directly.
-     * The other getters of this will return 0.
-     */
-    public boolean allocateByLegacyName() { return allocateByLegacyName; }
-
-    /** Returns the legacy name of this, or empty if none. */
+    // TODO: Remove after August 2019
     public Optional<String> legacyName() {
-        return Optional.ofNullable(legacyName);
+        return Optional.of(toString());
     }
 
-    private boolean isInterchangeableWith(NodeResources other) {
-        if (this.allocateByLegacyName != other.allocateByLegacyName) return false;
-        if (this.allocateByLegacyName) return legacyName.equals(other.legacyName);
+    // TODO: Remove after August 2019
+    public boolean allocateByLegacyName() { return false; }
 
+    private boolean isInterchangeableWith(NodeResources other) {
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
             return false;
-
         return true;
     }
 
@@ -115,41 +90,27 @@ public class NodeResources {
         if (o == this) return true;
         if ( ! (o instanceof NodeResources)) return false;
         NodeResources other = (NodeResources)o;
-        if (allocateByLegacyName) {
-            return this.legacyName.equals(other.legacyName);
-        }
-        else {
-            if (this.vcpu != other.vcpu) return false;
-            if (this.memoryGb != other.memoryGb) return false;
-            if (this.diskGb != other.diskGb) return false;
-            if (this.diskSpeed != other.diskSpeed) return false;
-            return true;
-        }
+        if (this.vcpu != other.vcpu) return false;
+        if (this.memoryGb != other.memoryGb) return false;
+        if (this.diskGb != other.diskGb) return false;
+        if (this.diskSpeed != other.diskSpeed) return false;
+        return true;
     }
 
     @Override
     public int hashCode() {
-        if (allocateByLegacyName)
-            return legacyName.hashCode();
-        else
-            return (int)(2503 * vcpu + 22123 * memoryGb + 26987 * diskGb + diskSpeed.hashCode());
+        return (int)(2503 * vcpu + 22123 * memoryGb + 26987 * diskGb + diskSpeed.hashCode());
     }
 
     @Override
     public String toString() {
-        if (allocateByLegacyName)
-            return "flavor '" + legacyName + "'";
-        else
-            return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
-                   (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
+        return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
+               (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
     public boolean satisfies(NodeResources other) {
-        if (this.allocateByLegacyName || other.allocateByLegacyName) // resources are not available
-            return Objects.equals(this.legacyName, other.legacyName);
-
-        if (this.vcpu < other.vcpu()) return false;
+        if (this.vcpu < other.vcpu) return false;
         if (this.memoryGb < other.memoryGb) return false;
         if (this.diskGb < other.diskGb) return false;
 
@@ -161,25 +122,35 @@ public class NodeResources {
         return true;
     }
 
+    /** Returns true if all the resources of this are the same as or compatible with the given resources */
+    public boolean compatibleWith(NodeResources other) {
+        if (this.vcpu != other.vcpu) return false;
+        if (this.memoryGb != other.memoryGb) return false;
+        if (this.diskGb != other.diskGb) return false;
+        if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
+
+        return true;
+    }
+
     /**
      * Create this from serial form.
      *
      * @throws IllegalArgumentException if the given string cannot be parsed as a serial form of this
      */
-    public static NodeResources fromLegacyName(String flavorString) {
-        if (flavorString.startsWith("d-")) { // A legacy docker flavor: We still allocate by numbers
-            String[] parts = flavorString.split("-");
-            double cpu = Integer.parseInt(parts[1]);
-            double mem = Integer.parseInt(parts[2]);
-            double dsk = Integer.parseInt(parts[3]);
-            if (cpu == 0) cpu = 0.5;
-            if (cpu == 2 && mem == 8 ) cpu = 1.5;
-            if (cpu == 2 && mem == 12 ) cpu = 2.3;
-            return new NodeResources(cpu, mem, dsk, DiskSpeed.fast, false, flavorString);
-        }
-        else { // Another legacy flavor: Allocate by direct matching
-            return new NodeResources(0, 0, 0, DiskSpeed.fast, true, flavorString);
-        }
+    public static NodeResources fromLegacyName(String name) {
+        if ( ! name.startsWith("d-"))
+            throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + name + "'");
+        String[] parts = name.split("-");
+        if (parts.length != 4)
+            throw new IllegalArgumentException("A node specification string must contain three numbers separated by '-' but was '" + name + "'");
+
+        double cpu = Integer.parseInt(parts[1]);
+        double mem = Integer.parseInt(parts[2]);
+        double dsk = Integer.parseInt(parts[3]);
+        if (cpu == 0) cpu = 0.5;
+        if (cpu == 2 && mem == 8 ) cpu = 1.5;
+        if (cpu == 2 && mem == 12 ) cpu = 2.3;
+        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast);
     }
 
 }

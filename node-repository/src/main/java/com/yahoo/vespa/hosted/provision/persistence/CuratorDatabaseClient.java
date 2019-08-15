@@ -207,8 +207,7 @@ public class CuratorDatabaseClient {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName());
-            curatorTransaction.add(CuratorOperations.delete(toPath(node).getAbsolute()))
-                              .add(CuratorOperations.create(toPath(toState, newNode.hostname()).getAbsolute(), nodeSerializer.toJson(newNode)));
+            writeNode(toState, curatorTransaction, node, newNode);
             writtenNodes.add(newNode);
         }
 
@@ -219,6 +218,18 @@ public class CuratorDatabaseClient {
             }
         });
         return writtenNodes;
+    }
+
+    private void writeNode(Node.State toState, CuratorTransaction curatorTransaction, Node node, Node newNode) {
+        byte[] nodeData = nodeSerializer.toJson(newNode);
+        String currentNodePath = toPath(node).getAbsolute();
+        String newNodePath = toPath(toState, newNode.hostname()).getAbsolute();
+        if (newNodePath.equals(currentNodePath)) {
+            curatorTransaction.add(CuratorOperations.setData(currentNodePath, nodeData));
+        } else {
+            curatorTransaction.add(CuratorOperations.delete(currentNodePath))
+                              .add(CuratorOperations.create(newNodePath, nodeData));
+        }
     }
 
     private Status newNodeStatus(Node node, Node.State toState) {

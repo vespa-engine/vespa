@@ -23,6 +23,7 @@ import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import org.apache.http.entity.ContentType;
@@ -32,7 +33,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.SSLContext;
 import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.BindException;
 import java.net.URI;
@@ -58,6 +61,7 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.Response.Status.REQUEST_URI_TOO_LONG;
+import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONNECTION;
 import static com.yahoo.jdisc.http.HttpHeaders.Names.CONTENT_TYPE;
@@ -470,20 +474,49 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanRespondToSslRequest() throws Exception {
-        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
         Path privateKeyFile = tmpFolder.newFile().toPath();
-        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
-
-        X509Certificate certificate = X509CertificateBuilder
-                .fromKeypair(
-                        keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_RSA, BigInteger.ONE)
-                .build();
         Path certificateFile = tmpFolder.newFile().toPath();
-        Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
         final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
+        assertThat(driver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatTlsClientAuthenticationEnforcerRejectsRequestsForNonWhitelistedPaths() throws IOException {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
+
+        SSLContext trustStoreOnlyCtx = new SslContextBuilder()
+                .withTrustStore(certificateFile)
+                .build();
+
+        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
+                .get("/dummy.html")
+                .expectStatusCode(is(UNAUTHORIZED));
+
+        assertThat(driver.close(), is(true));
+    }
+
+    @Test
+    public void requireThatTlsClientAuthenticationEnforcerAllowsRequestForWhitelistedPaths() throws IOException {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile);
+
+        SSLContext trustStoreOnlyCtx = new SslContextBuilder()
+                .withTrustStore(certificateFile)
+                .build();
+
+        new SimpleHttpClient(trustStoreOnlyCtx, driver.server().getListenPort(), false)
+                .get("/status.html")
+                .expectStatusCode(is(OK));
+
         assertThat(driver.close(), is(true));
     }
 
@@ -524,6 +557,17 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
+    }
+
+    private static void generatePrivateKeyAndCertificate(Path privateKeyFile, Path certificateFile) throws IOException {
+        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
+        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+
+        X509Certificate certificate = X509CertificateBuilder
+                .fromKeypair(
+                        keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_RSA, BigInteger.ONE)
+                .build();
+        Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
     }
 
     private static RequestHandler mockRequestHandler() {

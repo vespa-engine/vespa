@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * tests importing of document containing array type fields and weighted set type fields, new syntax.
  *
- * @author <a href="einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class ArraysWeightedSetsTestCase extends SearchDefinitionTestCase {
     @Test

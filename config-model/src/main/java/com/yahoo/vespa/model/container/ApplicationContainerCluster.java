@@ -56,6 +56,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private ContainerModelEvaluation modelEvaluation;
 
     private Optional<TlsSecrets> tlsSecrets;
+    private Optional<String> tlsClientAuthority;
+    private boolean useTlsClientAuthority = false;
     private final boolean enableGroupingSessionCache;
 
     private MbusParams mbusParams;
@@ -65,6 +67,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super(parent, subId, name, deployState);
 
         this.tlsSecrets = deployState.tlsSecrets();
+        this.tlsClientAuthority = deployState.tlsClientAuthority();
         this.enableGroupingSessionCache = deployState.getProperties().enableGroupingSessionCache();
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
@@ -183,6 +186,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return tlsSecrets;
     }
 
+    public Optional<String> getTlsClientAuthority() {
+        return tlsClientAuthority;
+    }
+
     public boolean enableGroupingSessionCache() {
         return enableGroupingSessionCache;
     }
@@ -203,6 +210,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    public void useTlsClientAuthority(boolean value) {
+        this.useTlsClientAuthority = value;
     }
 
     public static class MbusParams {

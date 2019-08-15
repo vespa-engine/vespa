@@ -57,20 +57,20 @@ public class VespaModelTester {
         this.configModelRegistry = configModelRegistry;
     }
     
-    /** Adds some hosts of the 'default' flavor to this system */
-    public Hosts addHosts(int count) { return addHosts("default", count); }
+    /** Adds some nodes with resources 1, 3, 9 */
+    public Hosts addHosts(int count) { return addHosts(new NodeResources(1, 3, 9), count); }
 
     /** Adds some hosts to this system */
     public Hosts addHosts(String flavor, int count) { 
         return addHosts(Optional.empty(), NodeResources.fromLegacyName(flavor), count);
     }
 
-    public void addHosts(Flavor flavor, int count) {
-        addHosts(Optional.of(flavor), NodeResources.fromLegacyName(flavor.name()), count);
+    public Hosts addHosts(Flavor flavor, int count) {
+        return addHosts(Optional.of(flavor), NodeResources.fromLegacyName(flavor.name()), count);
     }
 
-    public void addHosts(NodeResources resources, int count) {
-        addHosts(Optional.of(new Flavor(resources)), resources, count);
+    public Hosts addHosts(NodeResources resources, int count) {
+        return addHosts(Optional.of(new Flavor(resources)), resources, count);
     }
 
     private Hosts addHosts(Optional<Flavor> flavor, NodeResources resources, int count) {
@@ -80,8 +80,10 @@ public class VespaModelTester {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster
             // (for e.g cluster controllers and slobrok nodes)
-            String hostname = String.format("%s%02d",
-                                            resources.allocateByLegacyName() ? resources.legacyName().get() : resources.toString(),
+            String hostname = String.format("%s-%02d",
+                                            "node" + "-" + Math.round(resources.vcpu()) +
+                                                     "-" + Math.round(resources.memoryGb()) +
+                                                     "-" + Math.round(resources.diskGb()),
                                             count - i);
             hosts.add(new Host(hostname, ImmutableList.of(), flavor));
         }

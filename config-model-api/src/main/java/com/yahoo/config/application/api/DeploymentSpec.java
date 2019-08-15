@@ -1,12 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 
 import java.io.BufferedReader;
@@ -69,12 +67,12 @@ public class DeploymentSpec {
         this.upgradePolicy = upgradePolicy;
         this.majorVersion = majorVersion;
         this.changeBlockers = changeBlockers;
-        this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
+        this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
-        this.endpoints = ImmutableList.copyOf(validateEndpoints(endpoints, this.steps));
+        this.endpoints = List.copyOf(validateEndpoints(endpoints, this.steps));
         validateZones(this.steps);
         validateAthenz();
         validateEndpoints(this.steps, globalServiceId, this.endpoints);
@@ -102,7 +100,7 @@ public class DeploymentSpec {
             }
         }
 
-        return ImmutableList.copyOf(rebuiltEndpointsList);
+        return List.copyOf(rebuiltEndpointsList);
     }
     
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
@@ -481,7 +479,7 @@ public class DeploymentSpec {
         private final List<DeclaredZone> zones;
 
         public ParallelZones(List<DeclaredZone> zones) {
-            this.zones = ImmutableList.copyOf(zones);
+            this.zones = List.copyOf(zones);
         }
 
         @Override

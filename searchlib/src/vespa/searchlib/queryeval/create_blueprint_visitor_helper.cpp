@@ -26,19 +26,18 @@ CreateBlueprintVisitorHelper::getResult()
 {
     return _result
         ? std::move(_result)
-        : Blueprint::UP(new EmptyBlueprint(_field));
+        : std::make_unique<EmptyBlueprint>(_field);
 }
 
 void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
-    SimplePhraseBlueprint *phrase = new SimplePhraseBlueprint(_field, _requestContext);
-    Blueprint::UP result(phrase);
+    auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, _requestContext);
     for (size_t i = 0; i < n.getChildren().size(); ++i) {
         FieldSpecList fields;
         fields.add(phrase->getNextChildField(_field));
         phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *n.getChildren()[i]));
     }
-    setResult(std::move(result));
+    setResult(std::move(phrase));
 }
 
 void
@@ -50,9 +49,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
         query::SimplePhrase phraseNode(n.getView(), n.getId(), n.getWeight());
         phraseNode.setStateFrom(n);
         for (size_t i = 0; i < splitter.parts(); ++i) {
-            query::Node::UP nn;
-            nn.reset(new query::SimpleStringTerm(splitter.getPart(i), "", 0, query::Weight(0)));
-            phraseNode.append(std::move(nn));
+            phraseNode.append(std::make_unique<query::SimpleStringTerm>(splitter.getPart(i), "", 0, query::Weight(0)));
         }
         visitPhrase(phraseNode);
     } else {

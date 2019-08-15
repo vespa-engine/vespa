@@ -12,15 +12,11 @@ import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
 
 public abstract class SearchDefinitionTestCase {
 
-    public static void assertConfigFile(String filename, String cfg) throws IOException {
+    protected static void assertConfigFile(String filename, String cfg) throws IOException {
         assertSerializedConfigFileEquals(filename, cfg);
     }
 
-    public static void assertConfigFiles(String expectedFile, String cfgFile) throws IOException {
-        assertConfigFiles(expectedFile, cfgFile, false);
-    }
-
-    public static void assertConfigFiles(String expectedFile, String cfgFile, boolean updateOnAssert) throws IOException {
+    protected static void assertConfigFiles(String expectedFile, String cfgFile, boolean updateOnAssert) throws IOException {
         try {
             assertSerializedConfigEquals(readAndCensorIndexes(expectedFile), readAndCensorIndexes(cfgFile));
         } catch (AssertionError e) {
@@ -40,7 +36,7 @@ public abstract class SearchDefinitionTestCase {
      * This is to avoid having to keep those pesky array index numbers in the config format up to date
      * as new entries are added and removed.
      */
-    public static String readAndCensorIndexes(String file) throws IOException {
+    private static String readAndCensorIndexes(String file) throws IOException {
         StringBuilder b = new StringBuilder();
         try (BufferedReader r = IOUtils.createReader(file)) {
             int character;

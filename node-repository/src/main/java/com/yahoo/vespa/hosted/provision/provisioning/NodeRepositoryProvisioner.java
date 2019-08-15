@@ -57,10 +57,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
     }
 
     @Inject
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, NodeFlavors flavors, Zone zone,
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
-        this.capacityPolicies = new CapacityPolicies(zone, flavors);
+        this.capacityPolicies = new CapacityPolicies(zone, flagSource);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.preparer = new Preparer(nodeRepository,

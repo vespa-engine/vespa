@@ -29,6 +29,7 @@ namespace {
 
 Memory SESSIONID("sessionid");
 Memory RANKING("ranking");
+Memory LOCATION("location");
 Memory SUMMARYCLASS("class");
 Memory DOCUMENTTYPE("doctype");
 Memory GIDS("gids");
@@ -79,6 +80,7 @@ DocsumBySlime::slimeToRequest(const Inspector & request)
     }
 
     docsumRequest->ranking = request[RANKING].asString().make_string();
+    docsumRequest->location = request[LOCATION].asString().make_string();
     Inspector & gids = request[GIDS];
     docsumRequest->hits.reserve(gids.entries());
     GidTraverser gidFiller(docsumRequest->hits);

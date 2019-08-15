@@ -12,8 +12,7 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 
 /**
- * @author <a href="mailto:lesters@yahoo-inc.com">Lester Solbakken</a>
- * @since 5.2
+ * @author Lester Solbakken
  */
 
 public class PredicateDataTypeTestCase {
@@ -69,11 +68,11 @@ public class PredicateDataTypeTestCase {
         for (SDField field : sb.getSearch().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
-                    assertEquals(true, index.getBooleanIndexDefiniton().hasArity());
+                    assertTrue(index.getBooleanIndexDefiniton().hasArity());
                     assertEquals(arity, index.getBooleanIndexDefiniton().getArity());
-                    assertEquals(true, index.getBooleanIndexDefiniton().hasLowerBound());
+                    assertTrue(index.getBooleanIndexDefiniton().hasLowerBound());
                     assertEquals(lowerBound, index.getBooleanIndexDefiniton().getLowerBound());
-                    assertEquals(true, index.getBooleanIndexDefiniton().hasUpperBound());
+                    assertTrue(index.getBooleanIndexDefiniton().hasUpperBound());
                     assertEquals(upperBound, index.getBooleanIndexDefiniton().getUpperBound());
                 }
             }
@@ -114,9 +113,9 @@ public class PredicateDataTypeTestCase {
         for (SDField field : sb.getSearch().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
-                    assertEquals(true, index.getBooleanIndexDefiniton().hasArity());
-                    assertEquals(false, index.getBooleanIndexDefiniton().hasLowerBound());
-                    assertEquals(false, index.getBooleanIndexDefiniton().hasUpperBound());
+                    assertTrue(index.getBooleanIndexDefiniton().hasArity());
+                    assertFalse(index.getBooleanIndexDefiniton().hasLowerBound());
+                    assertFalse(index.getBooleanIndexDefiniton().hasUpperBound());
                 }
             }
         }
@@ -129,7 +128,7 @@ public class PredicateDataTypeTestCase {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Missing arity value in predicate field.");
         SearchBuilder.createFromString(sd);
-        assertTrue(false);
+        fail();
     }
 
     @Test

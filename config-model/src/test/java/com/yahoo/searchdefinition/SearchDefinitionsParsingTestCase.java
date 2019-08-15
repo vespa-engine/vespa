@@ -80,4 +80,10 @@ public class SearchDefinitionsParsingTestCase extends SearchDefinitionTestCase {
         }
     }
 
+    // TODO: Remove in Vespa 8
+    @Test
+    public void requireThatParserHandlesHeadAndBody() throws IOException, ParseException {
+        assertNotNull(SearchBuilder.buildFromFile("src/test/examples/header_body.sd"));
+    }
+
 }

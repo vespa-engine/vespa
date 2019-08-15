@@ -1,12 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.Sets;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -18,6 +20,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -358,6 +361,7 @@ public class ControllerTest {
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
                 .endpoint("all", "qrs")
+                .endpoint("west", "qrs", "us-west-1")
                 .region("us-west-1")
                 .region("us-central-1")
                 .build();
@@ -365,26 +369,27 @@ public class ControllerTest {
         tester.deployCompletely(application, applicationPackage);
         Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
         assertFalse(deployments.isEmpty());
+
+        var notWest = Set.of(
+                "rotation-id-01", "foobar--app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-02", "app1--tenant1.global.vespa.oath.cloud",
+                "rotation-id-04", "all--app1--tenant1.global.vespa.oath.cloud"
+        );
+        var west = Sets.union(notWest, Set.of("rotation-id-03", "west--app1--tenant1.global.vespa.oath.cloud"));
+
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
-                    Set.of(
-                            "rotation-id-01",
-                            "rotation-id-02",
-                            "rotation-id-03",
-                            "app1--tenant1.global.vespa.oath.cloud",
-                            "foobar--app1--tenant1.global.vespa.oath.cloud",
-                            "all--app1--tenant1.global.vespa.oath.cloud"
-                    ),
+                    ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
                     tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
 
-        assertEquals(3, tester.controllerTester().nameService().records().size());
+        assertEquals(4, tester.controllerTester().nameService().records().size());
 
         var record1 = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record1.isPresent());
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record1.get().name().asString());
-        assertEquals("rotation-fqdn-03.", record1.get().data().asString());
+        assertEquals("rotation-fqdn-04.", record1.get().data().asString());
 
         var record2 = tester.controllerTester().findCname("foobar--app1--tenant1.global.vespa.oath.cloud");
         assertTrue(record2.isPresent());
@@ -395,6 +400,11 @@ public class ControllerTest {
         assertTrue(record3.isPresent());
         assertEquals("all--app1--tenant1.global.vespa.oath.cloud", record3.get().name().asString());
         assertEquals("rotation-fqdn-02.", record3.get().data().asString());
+
+        var record4 = tester.controllerTester().findCname("west--app1--tenant1.global.vespa.oath.cloud");
+        assertTrue(record4.isPresent());
+        assertEquals("west--app1--tenant1.global.vespa.oath.cloud", record4.get().name().asString());
+        assertEquals("rotation-fqdn-03.", record4.get().data().asString());
     }
 
     @Test
@@ -693,6 +703,70 @@ public class ControllerTest {
         tester.deployCompletely(application, applicationPackage);
         assertEquals(warnings, tester.applications().require(application.id()).deployments().get(zone)
                                      .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
+    }
+
+    @Test
+    public void testDeployProvisionsCertificate() {
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
+        Function<Application, Optional<ApplicationCertificate>> certificate = (application) -> tester.application(application.id()).applicationCertificate();
+
+        // Create app1
+        var app1 = tester.createApplication("app1", "tenant1", 1, 2L);
+        var applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
+                                                                               .region("us-west-1")
+                                                                               .build();
+        // Deploy app1 in production
+        tester.deployCompletely(app1, applicationPackage);
+        var cert = certificate.apply(app1);
+        assertTrue("Provisions certificate in " + Environment.prod, cert.isPresent());
+
+        // Next deployment reuses certificate
+        tester.deployCompletely(app1, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        assertEquals(cert, certificate.apply(app1));
+
+        // Create app2
+        var app2 = tester.createApplication("app2", "tenant2", 3, 4L);
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+
+        // Deploy app2 in dev
+        tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        assertTrue("Application deployed and activated",
+                   tester.controllerTester().configServer().application(app2.id()).get().activated());
+        assertTrue("Provisions certificate in " + Environment.dev, certificate.apply(app2).isPresent());
+    }
+
+    @Test
+    public void testDeployWithCrossCloudEndpoints() {
+        tester.controllerTester().zoneRegistry().setZones(
+                ZoneApiMock.fromId("prod.us-west-1"),
+                ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
+        );
+        var application = tester.createApplication("app1", "tenant1", 1L, 1L);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region("aws-us-east-1")
+                .region("us-west-1")
+                .endpoint("default", "default") // Contains to all regions by default
+                .build();
+
+        try {
+            tester.deployCompletely(application, applicationPackage);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+        }
+
+        var applicationPackage2 = new ApplicationPackageBuilder()
+                .region("aws-us-east-1")
+                .region("us-west-1")
+                .endpoint("aws", "default", "aws-us-east-1")
+                .endpoint("foo", "default", "aws-us-east-1", "us-west-1")
+                .build();
+        try {
+            tester.deployCompletely(application, applicationPackage2);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+        }
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

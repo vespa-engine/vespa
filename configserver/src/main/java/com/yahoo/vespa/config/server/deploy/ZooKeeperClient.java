@@ -202,6 +202,9 @@ public class ZooKeeperClient {
         writeDir(app.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
                  getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR),
                  true);
+        writeDir(app.getFile(ApplicationPackage.SECURITY_DIR),
+                 getZooKeeperAppPath(ConfigCurator.USERAPP_ZK_SUBPATH).append(ApplicationPackage.SECURITY_DIR),
+                 true);
     }
 
     private void writeDir(ApplicationFile file, Path zooKeeperAppPath, boolean recurse) throws IOException {

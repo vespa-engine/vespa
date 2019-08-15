@@ -69,7 +69,28 @@ ssl.certificateFile                 string   default=""
 ssl.certificate                     string   default=""
 
 # with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the name of a file on the local container file system
+#  - only one of caCertificateFile and caCertificate
 ssl.caCertificateFile               string default=""
+
+# with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the actual certificates instead of a pointer to the file
+#  - only one of caCertificateFile and caCertificate
+ssl.caCertificate                   string default=""
 
 # Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
 ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
+
+# Enforce TLS client authentication for https requests at the http layer.
+# Intended to be used with connectors with optional client authentication enabled.
+# 401 status code is returned for requests from non-authenticated clients.
+tlsClientAuthEnforcer.enable          bool   default=false
+
+# Paths where client authentication should not be enforced. To be used in combination with WANT_AUTH. Typically used for health checks.
+tlsClientAuthEnforcer.pathWhitelist[]  string
+
+# Use connector only for proxying '/status.html' health checks. Any ssl configuration will be ignored if this option is enabled.
+healthCheckProxy.enable        bool    default=false
+
+# Which port to proxy
+healthCheckProxy.port          int     default=8080

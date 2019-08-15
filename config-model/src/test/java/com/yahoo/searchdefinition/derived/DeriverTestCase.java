@@ -7,7 +7,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -21,10 +21,10 @@ public class DeriverTestCase extends SearchDefinitionTestCase {
     @Test
     public void testDeriveDocManager() {
         DocumentTypeManager dtm = new DocumentTypeManager(new DocumentmanagerConfig(
-                Deriver.getDocumentManagerConfig(new ArrayList<String>() 
-                        {{ add("src/test/derived/deriver/child.sd"); 
-                           add("src/test/derived/deriver/parent.sd");
-                           add("src/test/derived/deriver/grandparent.sd");}})));
+                Deriver.getDocumentManagerConfig(List.of(
+                        "src/test/derived/deriver/child.sd",
+                        "src/test/derived/deriver/parent.sd",
+                        "src/test/derived/deriver/grandparent.sd"))));
         assertEquals(dtm.getDocumentType("child").getField("a").getDataType(), DataType.STRING);
     }
 

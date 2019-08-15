@@ -28,6 +28,11 @@ struct MemStats
         _dead += val;
         return *this;
     }
+    MemStats &decUsed(size_t val) {
+        assert(_used >= val);
+        _used -= val;
+        return *this;
+    }
     MemStats &decHold(size_t val) {
         assert(_hold >= val);
         _hold -= val;

@@ -63,5 +63,6 @@ sleepTimeWhenRedeployingFails long default=30
 # Features (to be overridden in configserver-config.xml if needed)
 buildMinimalSetOfConfigModels bool default=true
 throwIfBootstrappingTenantRepoFails bool default=true
+throwIfActiveSessionCannotBeLoaded bool default=true
 canReturnEmptySentinelConfig bool default=false
 serverNodeType enum {config, controller} default=config

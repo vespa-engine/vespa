@@ -6,7 +6,7 @@
   "hostname": "parent2.yahoo.com",
   "openStackId": "parent2.yahoo.com",
   "flavor": "large-variant",
-  "canonicalFlavor": "large",
+  "canonicalFlavor": "large-variant",
   "minDiskAvailableGb": 2000.0,
   "minMainMemoryAvailableGb": 128.0,
   "minCpuCores": 64.0,

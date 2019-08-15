@@ -31,15 +31,8 @@ public class FS4FillInvoker extends FillInvoker {
 
     private int expectedFillResults = 0;
 
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port) {
-        this.searcher = searcher;
-        Backend backend = fs4ResourcePool.getBackend(hostname, port);
-        this.channel = backend.openChannel();
-        channel.setQuery(query);
-    }
-
     // fdispatch code path
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
+    FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
         this.searcher = searcher;
         this.channel = backend.openChannel();
         channel.setQuery(query);
@@ -152,7 +145,7 @@ public class FS4FillInvoker extends FillInvoker {
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(result.getQuery());
         if (result.getQuery().getTraceLevel() >= 3)
-            result.getQuery().trace((summaryNeedsQuery ? "Resending " : "Not resending ") + "query during document summary fetching", 3);
+            result.getQuery().trace((summaryNeedsQuery ? "FS4: Resending " : "Not resending ") + "query during document summary fetching", 3);
 
         GetDocSumsPacket docsumsPacket = GetDocSumsPacket.create(result, summaryClass, summaryNeedsQuery);
         int compressionLimit = result.getQuery().properties().getInteger(FS4SearchInvoker.PACKET_COMPRESSION_LIMIT, 0);

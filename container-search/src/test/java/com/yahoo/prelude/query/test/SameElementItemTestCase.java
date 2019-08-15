@@ -2,11 +2,17 @@
 package com.yahoo.prelude.query.test;
 
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.SameElementItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SameElementItemTestCase {
@@ -83,6 +89,29 @@ public class SameElementItemTestCase {
             assertEquals("Child item (AND ) should be an instance of class com.yahoo.prelude.query.TermItem but is class com.yahoo.prelude.query.AndItem",
                          e.getMessage());
         }
+    }
+
+    private void verifyExtractSingle(TermItem term) {
+        String subFieldName = term.getIndexName();
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(term);
+        Optional<Item> single =s.extractSingleChild();
+        assertTrue(single.isPresent());
+        assertEquals(((TermItem)single.get()).getIndexName(), s.getFieldName() + "." + subFieldName);
+    }
+
+    @Test
+    public void requireExtractSingleItemToExtractSingles() {
+        verifyExtractSingle(new WordItem("b", "f1"));
+        verifyExtractSingle(new IntItem("7", "f1"));
+    }
+
+    @Test
+    public void requireExtractSingleItemToExtractSinglesOnly() {
+        SameElementItem s = new SameElementItem("structa");
+        s.addItem(new WordItem("b", "f1"));
+        s.addItem(new WordItem("c", "f2"));
+        assertTrue(s.extractSingleChild().isEmpty());
     }
 
 }

@@ -31,6 +31,7 @@ class JDiscServerConnector extends ServerConnector {
     private final Metric.Context metricCtx;
     private final Map<RequestDimensions, Metric.Context> requestMetricContextCache = new ConcurrentHashMap<>();
     private final ServerConnectionStatistics statistics;
+    private final ConnectorConfig config;
     private final boolean tcpKeepAlive;
     private final boolean tcpNoDelay;
     private final ServerSocketChannel channelOpenedByActivator;
@@ -42,6 +43,7 @@ class JDiscServerConnector extends ServerConnector {
                          ServerSocketChannel channelOpenedByActivator, ConnectionFactory... factories) {
         super(server, factories);
         this.channelOpenedByActivator = channelOpenedByActivator;
+        this.config = config;
         this.tcpKeepAlive = config.tcpKeepAliveEnabled();
         this.tcpNoDelay = config.tcpNoDelay();
         this.metric = metric;
@@ -137,6 +139,14 @@ class JDiscServerConnector extends ServerConnector {
 
     public static JDiscServerConnector fromRequest(ServletRequest request) {
         return (JDiscServerConnector) request.getAttribute(REQUEST_ATTRIBUTE);
+    }
+
+    ConnectorConfig connectorConfig() {
+        return config;
+    }
+
+    int listenPort() {
+        return listenPort;
     }
 
     private static Map<String, Object> createConnectorDimensions(int listenPort, String connectorName) {

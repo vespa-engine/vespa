@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AnnotationsTestCase extends AbstractExportingTestCase {
 
@@ -58,8 +58,6 @@ public class AnnotationsTestCase extends AbstractExportingTestCase {
     
     /**
      * An annotation declared before document {} won't work, no doc type to add it to.
-     * @throws IOException
-     * @throws ParseException
      */
     @Test(expected = IllegalArgumentException.class)    
     public void testAnnotationOutsideOfDocumment() throws IOException, ParseException {

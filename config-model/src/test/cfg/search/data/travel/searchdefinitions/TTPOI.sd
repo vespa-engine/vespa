@@ -5,14 +5,12 @@ document TTPOI {
     field Categories type array<string> {
         indexing: summary | index
         # index-to: Categories
-        header
     }
 
 # sub catagories associated with the POI
     field SubCategories type array<string> {
         indexing: summary | index
         # index-to: SubCategories
-        header
     }
 }
 

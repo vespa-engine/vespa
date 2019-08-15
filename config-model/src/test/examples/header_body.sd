@@ -1,0 +1,18 @@
+# Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Search definition with (ignored) header and body statements
+# TODO: Remove in Vespa 8
+search header_body {
+
+  document header_body {
+
+    field title type string {
+      indexing: summary | index
+      header
+    }
+
+    field description type string {
+      indexing: summary | index
+      body
+    }
+  }
+}

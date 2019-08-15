@@ -90,8 +90,8 @@ public class ProvisioningTester {
                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"), true);
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, provisionServiceProvider, flagSource);
-        this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
+        this.capacityPolicies = new CapacityPolicies(zone, new InMemoryFlagSource());
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
@@ -103,15 +103,7 @@ public class ProvisioningTester {
         b.addFlavor("dockerSmall", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("dockerLarge", 2., 1., 20, Flavor.Type.DOCKER_CONTAINER).cost(3);
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
-        b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
-        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
-        FlavorsConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
-        b.addReplaces("old-large1", large);
-        b.addReplaces("old-large2", large);
-        FlavorsConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
-        b.addReplaces("large", largeVariant);
-        FlavorsConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
-        b.addReplaces("large-variant", largeVariantVariant);
+        b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
         return b.build();
     }
 
@@ -162,6 +154,13 @@ public class ProvisioningTester {
         provisioner.activate(transaction, application, hosts);
         transaction.commit();
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
+    }
+
+    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), Version.fromString("6.42"), false);
+        Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
+        List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
+        activate(application, hostSpecs);
     }
 
     public void deactivate(ApplicationId applicationId) {
@@ -233,17 +232,14 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, NodeResources resources) {
-        return makeReadyNodes(n, resources, NodeType.tenant);
+        return makeReadyNodes(n, resources, NodeType.tenant, 0);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type);
+        return makeReadyNodes(n, asFlavor(flavor, type), type, 0);
     }
-    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
-        return makeReadyNodes(n, new Flavor(resources), type, 0);
-    }
-    public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type) {
-        return makeReadyNodes(n, flavor, type, 0);
+    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, new Flavor(resources), type, ipAddressPoolSize);
     }
 
     public List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -279,7 +275,7 @@ public class ProvisioningTester {
             hostIps.add(ipv6);
 
             Set<String> ipAddressPool = new LinkedHashSet<>();
-            for (int poolIp = 1; poolIp < ipAddressPoolSize; poolIp++) {
+            for (int poolIp = 1; poolIp <= ipAddressPoolSize; poolIp++) {
                 nextIP++;
                 String ipv6Addr = String.format("::%d", nextIP);
                 ipAddressPool.add(ipv6Addr);
@@ -363,41 +359,32 @@ public class ProvisioningTester {
         return flavor.get();
     }
 
-    /** Creates a set of virtual docker hosts */
-    public List<Node> makeDockerHosts(int n, NodeResources resources) {
-        return makeDockerHosts(n, resources, "dockerHost");
-    }
-
-    public List<Node> makeDockerHosts(int n, NodeResources resources, String namePrefix) {
-        return makeReadyVirtualNodes(n, 1, resources, Optional.empty(), i -> namePrefix + i, NodeType.host);
-    }
-
     /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
     public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources resources, String dockerHostId) {
         return makeReadyVirtualNodes(n, 1, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+                                     i -> String.format("%s-%03d", dockerHostId, i));
     }
 
     /** Creates a single of virtual docker node on a single parent host */
     public List<Node> makeReadyVirtualDockerNode(int index, NodeResources resources, String dockerHostId) {
         return makeReadyVirtualNodes(1, index, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i), NodeType.tenant);
+                                     i -> String.format("%s-%03d", dockerHostId, i));
     }
 
     /** Creates a set of virtual nodes without a parent host */
     public List<Node> makeReadyVirtualNodes(int n, NodeResources resources) {
         return makeReadyVirtualNodes(n, 0, resources, Optional.empty(),
-                                     i -> UUID.randomUUID().toString(), NodeType.tenant);
+                                     i -> UUID.randomUUID().toString());
     }
 
     /** Creates a set of virtual nodes on a single parent host */
     private List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources flavor, Optional<String> parentHostId,
-                                             Function<Integer, String> nodeNamer, NodeType nodeType) {
+                                             Function<Integer, String> nodeNamer) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                                                new Flavor(flavor), nodeType));
+                                                new Flavor(flavor), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());

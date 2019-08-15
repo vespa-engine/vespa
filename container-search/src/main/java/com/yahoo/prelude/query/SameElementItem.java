@@ -50,6 +50,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
     @Override
     protected void adding(Item item) {
         super.adding(item);
+        //TODO See if we can require only SimpleIndexedItem instead of TermItem
         Validator.ensureInstanceOf("Child item", item, TermItem.class);
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
@@ -59,7 +60,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
     @Override
     public Optional<Item> extractSingleChild() {
         if (getItemCount() == 1) {
-            WordItem child = (WordItem) getItem(0);
+            SimpleIndexedItem child = (SimpleIndexedItem)getItem(0);
             child.setIndexName(getFieldName() + "." + child.getIndexName());
             return Optional.of(child);
         }

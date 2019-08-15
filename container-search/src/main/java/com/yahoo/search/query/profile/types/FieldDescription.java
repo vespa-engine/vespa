@@ -41,7 +41,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     }
 
     public FieldDescription(String name, String type, String aliases) {
-        this(name,type,aliases,false,true);
+        this(name, type, aliases, false, true);
     }
 
     public FieldDescription(String name, FieldType type, String aliases) {

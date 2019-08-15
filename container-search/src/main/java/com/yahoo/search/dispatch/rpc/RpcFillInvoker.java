@@ -7,6 +7,7 @@ import com.yahoo.compress.Compressor;
 import com.yahoo.container.protect.Error;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.prelude.Location;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -42,9 +43,7 @@ public class RpcFillInvoker extends FillInvoker {
 
     private final DocumentDatabase documentDb;
     private final RpcResourcePool resourcePool;
-
     private GetDocsumsResponseReceiver responseReceiver;
-
 
     RpcFillInvoker(RpcResourcePool resourcePool, DocumentDatabase documentDb) {
         this.documentDb = documentDb;
@@ -54,12 +53,15 @@ public class RpcFillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
+        Query query = result.getQuery();
 
         CompressionType compression = CompressionType
-                .valueOf(result.getQuery().properties().getString(RpcResourcePool.dispatchCompression, "LZ4").toUpperCase());
+                .valueOf(query.properties().getString(RpcResourcePool.dispatchCompression, "LZ4").toUpperCase());
 
-        if (result.getQuery().getTraceLevel() >= 3)
-            result.getQuery().trace("Sending " + hitsByNode.size() + " summary fetch RPC requests", 3);
+        if (query.getTraceLevel() >= 3) {
+            query.trace("Sending " + hitsByNode.size() + " summary fetch RPC requests", 3);
+            query.trace("RpcSlime: Not resending query during document summary fetching", 3);
+        }
 
         responseReceiver = new GetDocsumsResponseReceiver(hitsByNode.size(), resourcePool.compressor(), result);
         for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
@@ -112,13 +114,14 @@ public class RpcFillInvoker extends FillInvoker {
         Query query = result.getQuery();
         String rankProfile = query.getRanking().getProfile();
         byte[] serializedSlime = BinaryFormat
-                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(), query.getSessionId(), hits));
+                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(),
+                                query.getSessionId(), query.getRanking().getLocation(), hits));
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compress(query, serializedSlime);
         node.getDocsums(hits, compressionResult.type(), serializedSlime.length, compressionResult.data(), responseReceiver, timeoutSeconds);
     }
 
-    static private Slime toSlime(String rankProfile, String summaryClass, String docType, SessionId sessionId, List<FastHit> hits) {
+    static private Slime toSlime(String rankProfile, String summaryClass, String docType, SessionId sessionId, Location location, List<FastHit> hits) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         if (summaryClass != null) {
@@ -132,6 +135,9 @@ public class RpcFillInvoker extends FillInvoker {
         }
         if (rankProfile != null) {
             root.setString("ranking", rankProfile);
+        }
+        if (location != null) {
+            root.setString("location", location.toString());
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {
@@ -239,7 +245,7 @@ public class RpcFillInvoker extends FillInvoker {
             int skippedHits = 0;
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
-                if (summary.fieldCount() != 0) {
+                if (summary.valid()) {
                     hits.get(i).setField(Hit.SDDOCNAME_FIELD, documentDb.getName());
                     hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hits.get(i).setFilled(summaryClass);

@@ -72,9 +72,22 @@ public class ProtobufSerialization {
             builder.setCacheGrouping(true);
         }
 
+        builder.setTraceLevel(getTraceLevelForBackend(query));
+
         mergeToSearchRequestFromRanking(query.getRanking(), builder);
 
         return builder.build();
+    }
+
+    public static int getTraceLevelForBackend(Query query) {
+        int traceLevel = query.getTraceLevel();
+        if (query.getModel().getExecution().trace().getForceTimestamps()) {
+            traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
+        }
+        if (query.getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, query.getExplainLevel() + 5);
+        }
+        return traceLevel;
     }
 
     private static void mergeToSearchRequestFromRanking(Ranking ranking, SearchProtocol.SearchRequest.Builder builder) {
@@ -99,7 +112,7 @@ public class ProtobufSerialization {
     private static void mergeToSearchRequestFromSorting(Sorting sorting, SearchProtocol.SearchRequest.Builder builder) {
         for (var field : sorting.fieldOrders()) {
             var sortField = SearchProtocol.SortField.newBuilder()
-                    .setField(field.getSorter().getName())
+                    .setField(field.getSorter().toSerialForm())
                     .setAscending(field.getSortOrder() == Order.ASCENDING).build();
             builder.addSorting(sortField);
         }
@@ -127,10 +140,16 @@ public class ProtobufSerialization {
             builder.setCacheQuery(true);
             builder.setSessionKey(query.getSessionId(serverId).toString());
         }
-        builder.setRankProfile(query.getRanking().getProfile());
+        builder.setRankProfile(ranking.getProfile());
 
+        if (ranking.getLocation() != null) {
+            builder.setGeoLocation(ranking.getLocation().toString());
+        }
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
+        }
+        if (query.getTraceLevel() >= 3) {
+            query.trace((includeQueryData ? "ProtoBuf: Resending " : "Not resending ") + "query during document summary fetching", 3);
         }
 
         return builder;
@@ -149,9 +168,7 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
 
         builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
-        if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
-        }
+
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         if (query.getPresentation().getHighlight() != null) {

@@ -7,9 +7,9 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
@@ -74,7 +74,7 @@ public class DockerProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId zoneApplication = tester.makeApplicationId();
-        List<Node> parents = tester.makeDockerHosts(10, new NodeResources(2, 2, 2));
+        List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 2, 2), NodeType.host, 1);
         for (Node parent : parents)
             tester.makeReadyVirtualDockerNodes(1, dockerFlavor, parent.hostname());
 
@@ -225,7 +225,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb]", nodes.asList().get(0).flavor().canonicalName());
+        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb]", nodes.asList().get(0).flavor().name());
     }
 
     private Set<String> hostsOf(NodeList nodes) {

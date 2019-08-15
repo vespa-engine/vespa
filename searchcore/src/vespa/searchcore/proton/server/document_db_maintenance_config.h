@@ -47,6 +47,7 @@ private:
     double   _interval;
     uint32_t _allowedLidBloat;
     double   _allowedLidBloatFactor;
+    double   _remove_batch_block_delay;
     bool     _disabled;
     uint32_t _maxDocsToScan;
 
@@ -55,7 +56,8 @@ public:
     DocumentDBLidSpaceCompactionConfig(double interval,
                                        uint32_t allowedLidBloat,
                                        double allowwedLidBloatFactor,
-                                       bool disabled = false,
+                                       double remove_batch_block_delay,
+                                       bool disabled,
                                        uint32_t maxDocsToScan = 10000);
 
     static DocumentDBLidSpaceCompactionConfig createDisabled();
@@ -64,6 +66,7 @@ public:
     double getInterval() const { return _interval; }
     uint32_t getAllowedLidBloat() const { return _allowedLidBloat; }
     double getAllowedLidBloatFactor() const { return _allowedLidBloatFactor; }
+    double get_remove_batch_block_delay() const { return _remove_batch_block_delay; }
     bool isDisabled() const { return _disabled; }
     uint32_t getMaxDocsToScan() const { return _maxDocsToScan; }
 };

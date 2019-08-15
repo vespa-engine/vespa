@@ -13,7 +13,7 @@ import java.util.Iterator;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Tests attribute deriving
@@ -66,7 +66,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertEquals(Attribute.Type.INTEGER, attribute.getType());
         assertEquals(Attribute.CollectionType.SINGLE, attribute.getCollectionType());
 
-        assertTrue(!attributes.hasNext());
+        assertFalse(attributes.hasNext());
     }
 
     @Test
@@ -76,7 +76,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
 
         assertAttribute("elem_array.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertAttribute("elem_array.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
-        assertTrue(!attributes.hasNext());
+        assertFalse(attributes.hasNext());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertAttribute("str_elem_map.value.weight", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertAttribute("int_elem_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertAttribute("int_elem_map.value.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
-        assertTrue(!attributes.hasNext());
+        assertFalse(attributes.hasNext());
     }
 
     private static void assertAttribute(String name, Attribute.Type type, Attribute.CollectionType collection, boolean isFastSearch, Attribute attr) {
@@ -112,7 +112,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         Iterator<Attribute> attributes = new AttributeFields(search).attributeIterator();
 
         assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, true, attributes.next());
-        assertTrue(!attributes.hasNext());
+        assertFalse(attributes.hasNext());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AttributeListTestCase extends SearchDefinitionTestCase {
         assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
-        assertTrue(!attributes.hasNext());
+        assertFalse(attributes.hasNext());
     }
 
 }

@@ -16,6 +16,13 @@
   <packaging>container-plugin</packaging>
   <name>${project.artifactId}</name>
   <dependencies>
+    <!-- COMPILE SCOPE -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- PROVIDED SCOPE -->
     <dependency>
       <groupId>com.google.inject</groupId>
@@ -76,11 +83,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

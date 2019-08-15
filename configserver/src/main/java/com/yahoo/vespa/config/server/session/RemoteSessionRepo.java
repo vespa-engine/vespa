@@ -16,8 +16,6 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
@@ -46,6 +44,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
 
     private static final Logger log = Logger.getLogger(RemoteSessionRepo.class.getName());
 
+    private final GlobalComponentRegistry componentRegistry;
     private final Curator curator;
     private final Path sessionsPath;
     private final RemoteSessionFactory remoteSessionFactory;
@@ -53,28 +52,27 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
     private final ReloadHandler reloadHandler;
     private final TenantName tenantName;
     private final MetricUpdater metrics;
-    private final FlagSource flagSource;
     private final Curator.DirectoryCache directoryCache;
     private final TenantApplications applicationRepo;
     private final Executor zkWatcherExecutor;
 
-    public RemoteSessionRepo(GlobalComponentRegistry registry,
+    public RemoteSessionRepo(GlobalComponentRegistry componentRegistry,
                              RemoteSessionFactory remoteSessionFactory,
                              ReloadHandler reloadHandler,
                              TenantName tenantName,
                              TenantApplications applicationRepo) {
-        this.curator = registry.getCurator();
+        this.componentRegistry = componentRegistry;
+        this.curator = componentRegistry.getCurator();
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.applicationRepo = applicationRepo;
         this.remoteSessionFactory = remoteSessionFactory;
         this.reloadHandler = reloadHandler;
         this.tenantName = tenantName;
-        this.metrics = registry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        this.flagSource = registry.getFlagSource();
-        StripedExecutor<TenantName> zkWatcherExecutor = registry.getZkWatcherExecutor();
+        this.metrics = componentRegistry.getMetrics().getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
+        StripedExecutor<TenantName> zkWatcherExecutor = componentRegistry.getZkWatcherExecutor();
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         initializeSessions();
-        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, registry.getZkCacheExecutor());
+        this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, componentRegistry.getZkCacheExecutor());
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
     }
@@ -140,8 +138,8 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
      * @param sessionId session id for the new session
      */
     private void sessionAdded(long sessionId) {
+        log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
         try {
-            log.log(LogLevel.DEBUG, () -> "Adding session to RemoteSessionRepo: " + sessionId);
             RemoteSession session = remoteSessionFactory.createSession(sessionId);
             Path sessionPath = sessionsPath.append(String.valueOf(sessionId));
             Curator.FileCache fileCache = curator.createFileCache(sessionPath.append(ConfigCurator.SESSIONSTATE_ZK_SUBPATH).getAbsolute(), false);
@@ -151,7 +149,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> {
             addSession(session);
             metrics.incAddedSessions();
         } catch (Exception e) {
-            if (Flags.CONFIG_SERVER_FAIL_IF_ACTIVE_SESSION_CANNOT_BE_LOADED.bindTo(flagSource).value()) throw e;
+            if (componentRegistry.getConfigserverConfig().throwIfActiveSessionCannotBeLoaded()) throw e;
             log.log(Level.WARNING, "Failed loading session " + sessionId + ": No config for this session can be served", e);
         }
     }

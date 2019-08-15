@@ -4,6 +4,10 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
@@ -22,11 +26,11 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
-        this(parent, name, false, index, isHostedVespa, tlsSecrets);
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
+        this(parent, name, false, index, isHostedVespa, tlsSecrets, tlsCa);
     }
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
 
@@ -36,10 +40,27 @@ public final class ApplicationContainer extends Container {
             JettyHttpServer server = Optional.ofNullable(getHttp())
                                              .map(Http::getHttpServer)
                                              .orElse(getDefaultHttpServer());
-            server.addConnector(new ConnectorFactory(connectorName, 4443,
-                                                     new ConfiguredDirectSslProvider(server.getComponentId().getName(), tlsSecrets.get().key(), tlsSecrets.get().certificate(), null, null)));
+
+            var sslProvider = new ConfiguredDirectSslProvider(
+                    server.getComponentId().getName(),
+                    tlsSecrets.get().key(),
+                    tlsSecrets.get().certificate(),
+                    null,
+                    tlsCa.orElse(null),
+                    null
+            );
+
+            server.addConnector(new ConnectorFactory(connectorName, 4443, sslProvider));
         }
+        addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }
+
+    private static Component<?, ComponentModel> getFS4ResourcePool() {
+        BundleInstantiationSpecification spec = BundleInstantiationSpecification.
+                getInternalSearcherSpecificationFromStrings(FS4ResourcePool.class.getName(), null);
+        return new Component<>(new ComponentModel(spec));
+    }
+
 
     @Override
     protected ContainerServiceType myServiceType() {

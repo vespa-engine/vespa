@@ -356,6 +356,16 @@ lidspacecompaction.allowedlidbloat int default=1000
 ## The lid bloat factor must be >= allowedlidbloatfactor before considering compaction.
 lidspacecompaction.allowedlidbloatfactor double default=0.01
 
+## The delay (in seconds) for when the last remove batch operation would be considered to block lid space compaction.
+##
+## When considering compaction, if the document meta store has received a remove batch operation in the last delay seconds,
+## the lid space compaction job is blocked. It is considered again at the next regular interval (see above).
+##
+## Remove batch operations are used when deleting buckets on a content node.
+## This functionality ensures that during massive deleting of buckets (e.g. as part of redistribution of data to a new node),
+## lid space compaction do not interfere, but instead is applied after deleting of buckets is complete.
+lidspacecompaction.removebatchblockdelay double default=5.0
+
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
 maxvisibilitydelay double default=1.0
