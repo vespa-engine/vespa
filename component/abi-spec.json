@@ -194,11 +194,15 @@
       "public static final java.lang.String V_TAG_PKG",
       "public static final java.lang.String V_TAG_DATE",
       "public static final java.lang.String V_TAG_BUILDER",
+      "public static final java.lang.String V_TAG_COMMIT_SHA",
       "public static final java.lang.String V_TAG",
+      "public static final java.lang.String V_TAG_COMMIT_DATE",
       "public static final java.lang.String V_TAG_SYSTEM_REV",
       "public static final java.lang.String V_TAG_COMPONENT",
       "public static final java.lang.String V_TAG_ARCH",
-      "public static final com.yahoo.component.Version currentVersion"
+      "public static final com.yahoo.component.Version currentVersion",
+      "public static final java.lang.String commitSha",
+      "public static final java.time.Instant commitDate"
     ]
   },
   "com.yahoo.component.provider.ComponentRegistry": {

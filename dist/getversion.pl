@@ -55,7 +55,7 @@ if ($dateadd) {
 
 $tag = "HEAD";
 
-if (defined $ENV{FACTORY_VESPA_VERSION}) { 
+if (defined $ENV{FACTORY_VESPA_VERSION}) {
     $version = $ENV{FACTORY_VESPA_VERSION};
 } else {
     $version = $mainver . $dateadd;
@@ -67,6 +67,8 @@ if ($printmap) {
     chomp($ostype = `uname -s`);
     chomp($osver = `uname -r`);
     chomp($osarch = `uname -m`);
+    chomp($commit_sha = `sh -c "cd ${srcdir} && git rev-parse HEAD"`);
+    chomp($commit_date = `sh -c "cd ${srcdir} && git show -s --format=%ct ${commit_sha}"`);
 
     $vtag_system_rev = $ostype . "-" . $osver;
     chomp ($who = `(whoami || logname) 2>/dev/null`);
@@ -89,16 +91,18 @@ if ($printmap) {
 }
 
 if ($printmap) {
-    print "V_TAG            ${tag}\n";
-    print "V_TAG_DATE       ${vtag_date}\n";
-    print "V_TAG_PKG        ${version}\n";
-    print "V_TAG_ARCH       ${osarch}\n";
-    print "V_TAG_SYSTEM     ${ostype}\n";
-    print "V_TAG_SYSTEM_REV ${vtag_system_rev}\n";
-    print "V_TAG_BUILDER    ${who}\@${where}\n";
-    print "V_TAG_COMPONENT  ${cversion}\n";
+    print "V_TAG             ${tag}\n";
+    print "V_TAG_DATE        ${vtag_date}\n";
+    print "V_TAG_PKG         ${version}\n";
+    print "V_TAG_ARCH        ${osarch}\n";
+    print "V_TAG_SYSTEM      ${ostype}\n";
+    print "V_TAG_SYSTEM_REV  ${vtag_system_rev}\n";
+    print "V_TAG_BUILDER     ${who}\@${where}\n";
+    print "V_TAG_COMPONENT   ${cversion}\n";
+    print "V_TAG_COMMIT_SHA  ${commit_sha}\n";
+    print "V_TAG_COMMIT_DATE ${commit_date}\n";
     exit;
 }
-    
+
 print "$version\n";
 exit;

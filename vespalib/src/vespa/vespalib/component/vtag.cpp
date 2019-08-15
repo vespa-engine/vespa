@@ -12,6 +12,8 @@
 #define V_TAG_BUILDER "NOTAG"
 #define V_TAG_VERSION "0"
 #define V_TAG_ARCH "NOTAG"
+#define V_TAG_COMMIT_SHA "badc0ffe"
+#define V_TAG_COMMIT_DATE "0"
 #endif
 
 namespace vespalib {
@@ -24,6 +26,8 @@ char VersionTagBuilder[] = V_TAG_BUILDER;
 char VersionTagPkg[] = V_TAG_PKG;
 char VersionTagComponent[] = V_TAG_COMPONENT;
 char VersionTagArch[] = V_TAG_ARCH;
+char VersionTagCommitSha[] = V_TAG_COMMIT_SHA;
+char VersionTagCommitDate[] = V_TAG_COMMIT_DATE;
 
 Version Vtag::currentVersion(VersionTagComponent);
 
