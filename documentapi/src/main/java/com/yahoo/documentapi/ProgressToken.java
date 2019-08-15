@@ -690,9 +690,6 @@ public class ProgressToken {
      * sure if the bucket is still active until the buckets have been made
      * consistent.
      *
-     * <strong>FIXME: verify correctness with regards to orderdoc et al.
-     * Don't make this method public until this has been done!</strong>
-     *
      * @param bucket Bucket to check whether or not is finished.
      * @return <code>true</code> if <code>bucket</code>'s super-bucket is
      * finished, <code>false</code> otherwise.

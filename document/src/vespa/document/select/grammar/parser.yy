@@ -73,7 +73,7 @@
 %token <string_val>  FP_MAP_LOOKUP FP_ARRAY_LOOKUP
 %token <double_val>  FLOAT
 %token <i64_val>     INTEGER
-%token <string_val>  USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE ORDER
+%token <string_val>  USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
 
 %type <string_val> ident mangled_ident
 %type <abstract_node> bool_
@@ -84,7 +84,7 @@
 %type <field_expr_node> field_spec
 
 %destructor { delete $$; } IDENTIFIER STRING FP_MAP_LOOKUP FP_ARRAY_LOOKUP
-%destructor { delete $$; } USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE ORDER
+%destructor { delete $$; } USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
 %destructor { delete $$; } null_ bool_ number string doc_type ident id_arg id_spec
 %destructor { delete $$; } variable mangled_ident field_spec value arith_expr
 %destructor { delete $$; } comparison leaf logical_expr expression
@@ -227,7 +227,6 @@ ident
     | SPECIFIC   { $$ = $1; }
     | BUCKET     { $$ = $1; }
     | GID        { $$ = $1; }
-    | ORDER      { $$ = $1; }
     ;
 
 id_arg
@@ -245,7 +244,6 @@ id_spec
     : ID %prec NON_DOT { $$ = new IdValueNode(bucket_id_factory, "id", ""); } /* Prefer shifting instead of reducing */
     | ID "." id_arg    { $$ = new IdValueNode(bucket_id_factory, "id", *steal<string>($3)); }
     | ID "." IDENTIFIER "(" ")" { $$ = new FunctionValueNode(*steal<string>($3), std::make_unique<IdValueNode>(bucket_id_factory, "id", "")); }
-    | ID "." ORDER "(" INTEGER "," INTEGER ")" { $$ = new IdValueNode(bucket_id_factory, "id", *steal<string>($3), $5, $7); }
     ;
 
 variable

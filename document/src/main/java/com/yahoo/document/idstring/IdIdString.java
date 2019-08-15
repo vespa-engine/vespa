@@ -24,7 +24,7 @@ public class IdIdString extends IdString {
     }
 
 
-    private static long makeLocation(String s) {
+    public static long makeLocation(String s) {
         long result = 0;
         byte[] md5sum = MD5.md5.get().digest(Utf8.toBytes(s));
         for (int i=0; i<8; ++i) {

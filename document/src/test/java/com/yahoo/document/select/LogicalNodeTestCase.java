@@ -34,11 +34,6 @@ public class LogicalNodeTestCase {
         }
 
         @Override
-        public OrderingSpecification getOrdering(int order) {
-            return node.getOrdering(order);
-        }
-
-        @Override
         public void accept(Visitor visitor) {
             node.accept(visitor);
         }

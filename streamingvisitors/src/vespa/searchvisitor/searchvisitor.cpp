@@ -156,8 +156,7 @@ void SearchVisitor::GroupingEntry::aggregate(const document::Document & doc, sea
 
 SearchVisitor::~SearchVisitor() {
     if (! isCompletedCalled()) {
-        document::OrderingSpecification orderSpec;
-        HitCounter hc(&orderSpec);
+        HitCounter hc;
         completedVisitingInternal(hc);
     }
 }

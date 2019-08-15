@@ -465,8 +465,6 @@ IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory,
     case 'u':
         _type = USER;
         break;
-    case 'o':
-        _type = ORDER;
         break;
     }
 }
@@ -524,19 +522,6 @@ IdValueNode::getValue(const DocumentId& id) const
     case GID:
         value = id.getGlobalId().toString();
         break;
-    case ORDER:
-        if (id.getScheme().getType() == IdString::ORDERDOC) {
-            const OrderDocIdString& ods(
-                    static_cast<const OrderDocIdString&>(id.getScheme()));
-            if (ods.getWidthBits() == _widthBits
-                && ods.getDivisionBits() == _divisionBits)
-            {
-                return std::unique_ptr<Value>(new IntegerValue(
-                        static_cast<const OrderDocIdString&>(id.getScheme())
-                            .getOrdering(), false));
-            }
-        }
-        return std::unique_ptr<Value>(new InvalidValue());
     case USER:
         if (id.getScheme().hasNumber()) {
             return std::unique_ptr<Value>(
@@ -617,23 +602,6 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
         value = id.getGlobalId().toString();
         out << "Resolved gid to \"" << value << "\".\n";
         break;
-    case ORDER:
-        if (id.getScheme().getType() == IdString::ORDERDOC) {
-            const OrderDocIdString& ods(
-                    static_cast<const OrderDocIdString&>(id.getScheme()));
-            if (ods.getWidthBits() == _widthBits
-                && ods.getDivisionBits() == _divisionBits)
-            {
-                std::unique_ptr<Value> result(new IntegerValue(
-                        static_cast<const OrderDocIdString&>(id.getScheme())
-                            .getOrdering(), false));
-                out << "Resolved id.order to int " << *result << "\n";
-                return result;
-            }
-        }
-        out << "Could not resolve id.order(" << _widthBits << ", "
-            << _divisionBits << ") of doc " << id << ".\n";
-        return std::unique_ptr<Value>(new InvalidValue());
     case USER:
         if (id.getScheme().hasNumber()) {
             std::unique_ptr<Value> result(
@@ -667,9 +635,6 @@ IdValueNode::print(std::ostream& out, bool verbose,
     out << _id;
     if (_type != ALL) {
         out << '.' << _typestring;
-    }
-    if (_type == ORDER) {
-        out << "(" << _widthBits << "," << _divisionBits << ")";
     }
     if (hadParentheses()) out << ')';
 }

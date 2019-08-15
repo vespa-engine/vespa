@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.idstring.*;
+import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.math.BigInteger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
@@ -70,10 +72,6 @@ public class DocumentIdTestCase {
             //valid URIs
             new DocumentId("doc:blabla:something");
             new DocumentId("doc:doc:doc");
-            new DocumentId("userdoc:bla:2387:");
-            new DocumentId("userdoc:bar:0:");
-            new DocumentId("userdoc:bar:18446744073709551615:");
-            new DocumentId("userdoc:foo:15:bar");
             new DocumentId("id:namespace:type:n=42:whatever");
             new DocumentId("id:namespace:type::whatever");
         } catch (IllegalArgumentException iae) {
@@ -87,13 +85,6 @@ public class DocumentIdTestCase {
         checkInvalidUri("doc:::");
         checkInvalidUri("doc::/");
         checkInvalidUri("doc");
-        checkInvalidUri("userdoc:");
-        checkInvalidUri("userdoc::");
-        checkInvalidUri("userdoc:::");
-        checkInvalidUri("userdoc:::/");
-        checkInvalidUri("userdoc");
-        checkInvalidUri("userdoc:-87987//");
-        checkInvalidUri("userdoc:18446744073709551620/bar/");
         checkInvalidUri("id:namespace:type");
         checkInvalidUri("id:namespace:type:key-values");
         checkInvalidUri("id:namespace:type:n=0,n=1:foo");
@@ -118,7 +109,7 @@ public class DocumentIdTestCase {
     //Compares globalId with C++ implementation located in
     // ~document-HEAD/document/src/tests/cpp-globalidbucketids.txt
     @Test
-    public void testCalculateGlobalId() throws IOException{
+    public void testCalculateGlobalId() throws IOException {
 
         String file = "src/tests/cpp-globalidbucketids.txt";
         BufferedReader fr = new BufferedReader(new FileReader(file));
@@ -178,91 +169,8 @@ public class DocumentIdTestCase {
     }
 
     @Test
-    public void testGroupdoc() {
-        try {
-            //valid
-            new DocumentId("groupdoc:blabla:something:jkl");
-            new DocumentId("groupdoc:doc:doc:asd");
-            new DocumentId("groupdoc:bar:0:a");
-            new DocumentId("groupdoc:bar:18446744073709551615:");
-            new DocumentId("groupdoc:foo:15:bar");
-        } catch (IllegalArgumentException iae) {
-            fail(iae.getMessage());
-        }
-    }
-
-    @Test
-    public void testInvalidGroupdoc() {
-        checkInvalidUri("grouppdoc:blabla:something");
-        checkInvalidUri("groupdoc:blablasomething");
-    }
-
-    @Test
-    public void testUriNamespace() {
-        DocumentId docId = new DocumentId("doc:bar:foo");
-        assertEquals("doc:bar:foo", docId.toString());
-        assertEquals("doc", docId.getScheme().getType().toString());
-        assertEquals("bar", docId.getScheme().getNamespace());
-        assertEquals("foo", docId.getScheme().getNamespaceSpecific());
-
-        docId = new DocumentId("userdoc:ns:90:boo");
-        assertEquals("userdoc:ns:90:boo", docId.toString());
-        assertEquals("userdoc", docId.getScheme().getType().toString());
-        assertEquals("ns", docId.getScheme().getNamespace());
-        assertEquals("boo", docId.getScheme().getNamespaceSpecific());
-        assertEquals(90l, ((UserDocIdString) docId.getScheme()).getUserId());
-
-        docId = new DocumentId("userdoc:ns:18446744073709551615:boo");
-        assertEquals("userdoc:ns:18446744073709551615:boo", docId.toString());
-        assertEquals("userdoc", docId.getScheme().getType().toString());
-        assertEquals("ns", docId.getScheme().getNamespace());
-        assertEquals("boo", docId.getScheme().getNamespaceSpecific());
-        assertEquals(new BigInteger("18446744073709551615").longValue(), ((UserDocIdString) docId.getScheme()).getUserId());
-
-        docId = new DocumentId("userdoc:ns:9223372036854775808:boo");
-        assertEquals("userdoc:ns:9223372036854775808:boo", docId.toString());
-        assertEquals("userdoc", docId.getScheme().getType().toString());
-        assertEquals("ns", docId.getScheme().getNamespace());
-        assertEquals("boo", docId.getScheme().getNamespaceSpecific());
-        assertEquals(new BigInteger("9223372036854775808").longValue(), ((UserDocIdString) docId.getScheme()).getUserId());
-
-        BigInteger negativeUserId = new BigInteger("F00DCAFEDEADBABE", 16);
-        assertEquals(0xF00DCAFEDEADBABEl, negativeUserId.longValue());
-        docId = new DocumentId("userdoc:ns:"+negativeUserId+":bar");
-        assertEquals("userdoc:ns:17297704939806374590:bar", docId.toString());
-        assertEquals(negativeUserId.longValue(), ((UserDocIdString) docId.getScheme()).getUserId());
-
-        docId = new DocumentId("orderdoc(31,19):ns2:1234:1268182861:foo");
-        assertEquals("orderdoc(31,19):ns2:1234:1268182861:foo", docId.toString());
-        assertEquals("orderdoc", docId.getScheme().getType().toString());
-        assertEquals("ns2", docId.getScheme().getNamespace());
-        assertEquals("foo", docId.getScheme().getNamespaceSpecific());
-        assertEquals(31, ((OrderDocIdString)docId.getScheme()).getWidthBits());
-        assertEquals(19, ((OrderDocIdString)docId.getScheme()).getDivisionBits());
-        assertEquals("1234", ((OrderDocIdString)docId.getScheme()).getGroup());
-        assertEquals(1234, ((OrderDocIdString)docId.getScheme()).getUserId());
-        assertEquals(1268182861, ((OrderDocIdString)docId.getScheme()).getOrdering());
-    }
-
-    @Test
     public void testIdStrings() {
-        DocumentId docId;
-        docId = new DocumentId(new DocIdString("test", "baaaa"));
-        assertEquals("doc:test:baaaa", docId.toString());
-        assertFalse(docId.hasDocType());
-
-        docId = new DocumentId(new UserDocIdString("test", 54, "something"));
-        assertEquals("userdoc:test:54:something", docId.toString());
-        assertFalse(docId.hasDocType());
-
-        docId = new DocumentId(new UserDocIdString("test", 0xFFFFFFFFFFFFFFFFl, "something"));
-        assertEquals("userdoc:test:18446744073709551615:something", docId.toString());
-
-        //sign flipped
-        docId = new DocumentId(new UserDocIdString("test", -8193, "something"));
-        assertEquals("userdoc:test:18446744073709543423:something", docId.toString());
-
-        docId = new DocumentId(new IdIdString("namespace", "type", "g=group", "foobar"));
+        DocumentId docId = new DocumentId(new IdIdString("namespace", "type", "g=group", "foobar"));
         assertEquals("id:namespace:type:g=group:foobar", docId.toString());
         assertTrue(docId.hasDocType());
         assertEquals("type", docId.getDocType());
@@ -283,26 +191,15 @@ public class DocumentIdTestCase {
         assertTrue(user.getScheme().hasNumber());
         assertEquals(42, user.getScheme().getNumber());
 
-        user = new DocumentId("userdoc:ns:42:foo");
-        assertFalse(user.getScheme().hasGroup());
-        assertTrue(user.getScheme().hasNumber());
-        assertEquals(42, user.getScheme().getNumber());
-
         DocumentId group = new DocumentId("id:ns:type:g=mygroup:foo");
         assertTrue(group.getScheme().hasGroup());
         assertFalse(group.getScheme().hasNumber());
         assertEquals("mygroup", group.getScheme().getGroup());
 
-        group = new DocumentId("groupdoc:ns:mygroup:foo");
+        group = new DocumentId("id:ns:type:g=mygroup:foo");
         assertTrue(group.getScheme().hasGroup());
         assertFalse(group.getScheme().hasNumber());
         assertEquals("mygroup", group.getScheme().getGroup());
-
-        DocumentId order = new DocumentId("orderdoc(5,2):ns:42:007:foo");
-        assertTrue(order.getScheme().hasGroup());
-        assertTrue(order.getScheme().hasNumber());
-        assertEquals("42", order.getScheme().getGroup());
-        assertEquals(42, order.getScheme().getNumber());
     }
 
     @Test

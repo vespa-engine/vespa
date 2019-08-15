@@ -3,10 +3,8 @@ package com.yahoo.document.select.rule;
 
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.idstring.OrderDocIdString;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
@@ -41,20 +39,8 @@ public class IdNode implements ExpressionNode {
         return this;
     }
 
-    public short getWidthBits() {
-        return widthBits;
-    }
-
-    public short getDivisionBits() {
-        return divisionBits;
-    }
-
     @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
-        return null;
-    }
-
-    public OrderingSpecification getOrdering(int ordering) {
         return null;
     }
 
@@ -87,17 +73,9 @@ public class IdNode implements ExpressionNode {
                 return id.getScheme().getDocType();
             }
             throw new IllegalStateException("Document id doesn't have doc type.");
-        } else if (field.equalsIgnoreCase("order")) {
-            if (id.getScheme() instanceof OrderDocIdString) {
-                OrderDocIdString ods = (OrderDocIdString)id.getScheme();
-                if (ods.getWidthBits() == widthBits && ods.getDivisionBits() == divisionBits) {
-                    return ods.getOrdering();
-                }
-            }
-        } else{
+        } else {
             throw new IllegalStateException("Identifier field '" + field + "' is not supported.");
         }
-        return null;
     }
 
     @Override

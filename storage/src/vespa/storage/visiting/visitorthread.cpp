@@ -3,7 +3,6 @@
 #include "visitorthread.h"
 #include "messages.h"
 #include <vespa/document/select/bodyfielddetector.h>
-#include <vespa/document/select/orderingselector.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/storage/common/statusmessages.h>
@@ -531,12 +530,6 @@ VisitorThread::onCreateVisitor(
     if (result.success()) {
         _visitors[cmd->getVisitorId()] = visitor;
         try{
-            std::unique_ptr<document::OrderingSpecification> order;
-            if (docSelection.get()) {
-                document::OrderingSelector selector;
-                order = selector.select(*docSelection,
-                                        cmd->getVisitorOrdering());
-            }
             VisitorMessageSession::UP messageSession(
                     _messageSessionFactory.createSession(*visitor, *this));
             documentapi::Priority::Value documentPriority =
@@ -549,7 +542,6 @@ VisitorThread::onCreateVisitor(
                            framework::MicroSecTime(cmd->getToTime()),
                            std::move(docSelection),
                            cmd->getDocumentSelection(),
-                           std::move(order),
                            _messageSender,
                            std::move(messageSession),
                            documentPriority);

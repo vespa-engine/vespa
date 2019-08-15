@@ -388,7 +388,7 @@ TEST(DocumentTest, testSimpleUsage)
     std::unique_ptr<ByteBuffer> buffer(value.serialize());
     buffer->flip();
     Document value2(*repo.getDocumentType("test"),
-                    DocumentId("userdoc::3:foo"));
+                    DocumentId("id::test:n=3:foo"));
     EXPECT_TRUE(value != value2);
     value2.deserialize(repo, *buffer);
     EXPECT_TRUE(value2.hasValue(intF));

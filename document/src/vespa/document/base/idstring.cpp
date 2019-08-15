@@ -276,24 +276,15 @@ union LocationUnion {
     IdString::LocationType _location[2];
 };
 
-IdString::LocationType makeLocation(stringref s) {
-    LocationUnion location;
-    fastc_md5sum(reinterpret_cast<const unsigned char*>(s.data()), s.size(), location._key);
-    return location._location[0];
-}
-
 uint64_t parseNumber(stringref number) {
     char* errPos = NULL;
     errno = 0;
     uint64_t n = strtoul(number.data(), &errPos, 10);
     if (*errPos) {
-        throw IdParseException(
-                "'n'-value must be a 64-bit number. It was " +
-                number, VESPA_STRLOC);
+        throw IdParseException("'n'-value must be a 64-bit number. It was " + number, VESPA_STRLOC);
     }
     if (errno == ERANGE) {
-        throw IdParseException("'n'-value out of range "
-                               "(" + number + ")", VESPA_STRLOC);
+        throw IdParseException("'n'-value out of range (" + number + ")", VESPA_STRLOC);
     }
     return n;
 }
@@ -301,8 +292,7 @@ uint64_t parseNumber(stringref number) {
 void setLocation(IdString::LocationType &loc, IdString::LocationType val,
                  bool &has_set_location, stringref key_values) {
     if (has_set_location) {
-        throw IdParseException("Illegal key combination in "
-                               + key_values);
+        throw IdParseException("Illegal key combination in " + key_values);
     }
     loc = val;
     has_set_location = true;
@@ -310,6 +300,13 @@ void setLocation(IdString::LocationType &loc, IdString::LocationType val,
 
 
 }  // namespace
+
+IdString::LocationType
+IdString::makeLocation(stringref s) {
+    LocationUnion location;
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(s.data()), s.size(), location._key);
+    return location._location[0];
+}
 
 IdIdString::IdIdString(stringref id)
     : IdString(4, 3, id),

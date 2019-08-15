@@ -70,10 +70,9 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
     SearchVisitorFactory sFactory(dir);
     VisitorFactory & factory(sFactory);
     std::unique_ptr<Visitor> sv(static_cast<SearchVisitor *>(factory.makeVisitor(*_component, _env, params)));
-    document::OrderingSpecification orderSpec;
     document::BucketId bucketId;
     std::vector<spi::DocEntry::UP> documents(createDocuments(dir));
-    Visitor::HitCounter hitCounter(&orderSpec);
+    Visitor::HitCounter hitCounter;
     sv->handleDocuments(bucketId, documents, hitCounter);
 }
 

@@ -41,7 +41,6 @@ public class VisitorParameters extends Parameters {
     private float weight = 1;
     private long maxFirstPassHits = -1;
     private long maxTotalHits = -1;
-    private int visitorOrdering = 0;
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
     private float dynamicMaxBucketsIncreaseFactor = 2;
@@ -92,7 +91,6 @@ public class VisitorParameters extends Parameters {
         setControlHandler(params.getControlHandler());
         setMaxFirstPassHits(params.getMaxFirstPassHits());
         setMaxTotalHits(params.getMaxTotalHits());
-        setVisitorOrdering(params.getVisitorOrdering());
         setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
         setLoadType(params.getLoadType());
         setPriority(params.getPriority());
@@ -299,10 +297,6 @@ public class VisitorParameters extends Parameters {
     public Set<BucketId> getBucketsToVisit() { return bucketsToVisit; }
 
     public void setBucketsToVisit(Set<BucketId> buckets) { bucketsToVisit = buckets; }
-
-    public int getVisitorOrdering() { return visitorOrdering; }
-
-    public void setVisitorOrdering(int order) { visitorOrdering = order; }
 
     public int getMaxBucketsPerVisitor() { return maxBucketsPerVisitor; }
 

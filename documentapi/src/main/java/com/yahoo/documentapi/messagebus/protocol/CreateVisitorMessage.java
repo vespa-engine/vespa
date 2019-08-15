@@ -4,7 +4,11 @@ package com.yahoo.documentapi.messagebus.protocol;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class CreateVisitorMessage extends DocumentMessage {
 
@@ -22,8 +26,6 @@ public class CreateVisitorMessage extends DocumentMessage {
     private String fieldSet = "[all]";
     private boolean visitInconsistentBuckets = false;
     private Map<String, byte[]> params = new TreeMap<>();
-    private int version = 42;
-    private int ordering = 0;
     private int maxBucketsPerVisitor = 1;
 
     CreateVisitorMessage() {
@@ -148,22 +150,6 @@ public class CreateVisitorMessage extends DocumentMessage {
 
     public long getToTimestamp() {
         return toTime;
-    }
-
-    public void setVisitorDispatcherVersion(int version) {
-        this.version = version;
-    }
-
-    public int getVisitorDispatcherVersion() {
-        return version;
-    }
-
-    public void setVisitorOrdering(int ordering) {
-        this.ordering = ordering;
-    }
-
-    public int getVisitorOrdering() {
-        return ordering;
     }
 
     public void setMaxBucketsPerVisitor(int max) {
