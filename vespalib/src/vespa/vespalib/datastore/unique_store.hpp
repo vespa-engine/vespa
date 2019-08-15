@@ -48,14 +48,14 @@ void
 UniqueStore<EntryT, RefT, Compare, Allocator>::remove(EntryRef ref)
 {
     auto &wrapped_entry = _allocator.getWrapped(ref);
-    if (wrapped_entry.get_ref_count() > 1u) {
-        wrapped_entry.dec_ref_count();
-    } else {
+    auto ref_count = wrapped_entry.get_ref_count();
+    assert(ref_count > 0u);
+    wrapped_entry.dec_ref_count();
+    if (ref_count == 1u) {
         EntryType unused{};
         Compare comp(_store, unused);
-        if (_dict->remove(comp, ref)) {
-            _allocator.hold(ref);
-        }
+        _dict->remove(comp, ref);
+        _allocator.hold(ref);
     }
 }
 

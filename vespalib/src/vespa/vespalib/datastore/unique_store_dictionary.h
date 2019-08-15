@@ -32,7 +32,7 @@ public:
     void trim_hold_lists(generation_t firstUsed) override;
     UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) override;
     EntryRef find(const EntryComparator& comp) override;
-    bool remove(const EntryComparator& comp, EntryRef ref) override;
+    void remove(const EntryComparator& comp, EntryRef ref) override;
     void move_entries(ICompactable& compactable) override;
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;

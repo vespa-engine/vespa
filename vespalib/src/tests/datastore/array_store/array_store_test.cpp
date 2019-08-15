@@ -317,7 +317,7 @@ TEST_F("require that used, onHold and dead memory usage is tracked for large arr
     f.remove({3,3,3});
     TEST_DO(f.assertMemoryUsage(exp.hold(f.largeArraySize() + f.entrySize() * 3)));
     f.trimHoldLists();
-    TEST_DO(f.assertMemoryUsage(exp.decHold(f.largeArraySize() + f.entrySize() * 3).
+    TEST_DO(f.assertMemoryUsage(exp.decUsed(f.entrySize() * 3).decHold(f.largeArraySize() + f.entrySize() * 3).
                                     dead(f.largeArraySize())));
 }
 
