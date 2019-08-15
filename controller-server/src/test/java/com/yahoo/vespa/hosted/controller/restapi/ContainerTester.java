@@ -13,6 +13,7 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
 
@@ -22,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -58,10 +60,11 @@ public class ContainerTester {
     }
 
     public void upgradeSystem(Version version) {
-        controller().curator().writeControllerVersion(controller().hostname(), version);
+        var controllerVersion = new ControllerVersion(version, "badc0ffee", Instant.EPOCH);
+        controller().curator().writeControllerVersion(controller().hostname(), controllerVersion);
         for (ZoneApi zone : controller().zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
-                configServer().setVersion(application.id(), zone.getId(), version);
+                configServer().setVersion(application.id(), zone.getId(), controllerVersion.version());
                 configServer().convergeServices(application.id(), zone.getId());
             }
         }

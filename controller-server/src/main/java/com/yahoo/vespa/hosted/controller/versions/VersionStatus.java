@@ -5,7 +5,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
@@ -96,14 +95,19 @@ public class VersionStatus {
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
         ListMultimap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
-        ListMultimap<Version, HostName> controllerVersions = findControllerVersions(controller);
+        ListMultimap<ControllerVersion, HostName> controllerVersions = findControllerVersions(controller);
 
         ListMultimap<Version, HostName> infrastructureVersions = ArrayListMultimap.create();
-        infrastructureVersions.putAll(controllerVersions);
+        for (var kv : controllerVersions.asMap().entrySet()) {
+            infrastructureVersions.putAll(kv.getKey().version(), kv.getValue());
+        }
         infrastructureVersions.putAll(systemApplicationVersions);
 
         // The controller version is the lowest controller version of all controllers
-        Version controllerVersion = controllerVersions.keySet().stream().min(Comparator.naturalOrder()).get();
+        Version controllerVersion = controllerVersions.keySet().stream()
+                                                      .min(Comparator.naturalOrder())
+                                                      .map(ControllerVersion::version)
+                                                      .get();
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
@@ -177,10 +181,10 @@ public class VersionStatus {
         return versions;
     }
 
-    private static ListMultimap<Version, HostName> findControllerVersions(Controller controller) {
-        ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
+    private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {
+        ListMultimap<ControllerVersion, HostName> versions = ArrayListMultimap.create();
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
-            versions.put(Vtag.currentVersion, controller.hostname());
+            versions.put(ControllerVersion.CURRENT, controller.hostname());
         } else {
             for (HostName hostname : controller.curator().cluster()) {
                 versions.put(controller.curator().readControllerVersion(hostname), hostname);

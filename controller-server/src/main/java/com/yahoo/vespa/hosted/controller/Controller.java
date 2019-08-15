@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
+import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -141,7 +142,7 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
 
         // Record the version of this controller
-        curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
+        curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
 
         jobController.updateStorage();
     }
