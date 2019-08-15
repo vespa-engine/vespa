@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <map>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext)
     : ComplexLeafBlueprint(field),
@@ -53,12 +52,11 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                                        bool strict) const
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,bool strict) const
 {
     assert(tfmda.size() == 1);
     fef::MatchData::UP md = _layout.createMatchData();
-    search::fef::TermFieldMatchDataArray childMatch;
+    fef::TermFieldMatchDataArray childMatch;
     SimplePhraseSearch::Children children(_terms.size());
     std::multimap<uint32_t, uint32_t> order_map;
     for (size_t i = 0; i < _terms.size(); ++i) {
@@ -69,9 +67,8 @@ SimplePhraseBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArr
         order_map.insert(std::make_pair(childState.estimate().estHits, i));
     }
     std::vector<uint32_t> eval_order;
-    for (std::multimap<uint32_t, uint32_t>::iterator
-             it = order_map.begin(); it != order_map.end(); ++it) {
-        eval_order.push_back(it->second);
+    for (const auto & child : order_map) {
+        eval_order.push_back(child.second);
     }
     
     SimplePhraseSearch * phrase = new SimplePhraseSearch(children, std::move(md), childMatch,
@@ -84,8 +81,8 @@ SimplePhraseBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArr
 void
 SimplePhraseBlueprint::fetchPostings(bool strict)
 {
-    for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(strict);
+    for (auto & term : _terms) {
+        term->fetchPostings(strict);
     }
 }
 
@@ -96,5 +93,4 @@ SimplePhraseBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "terms", _terms);
 }
 
-}  // namespace search::queryeval
-}  // namespace search
+}

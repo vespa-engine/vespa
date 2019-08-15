@@ -3,7 +3,6 @@
 #include "simple_phrase_search.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
-#include <algorithm>
 #include <functional>
 
 using search::fef::TermFieldMatchData;
@@ -12,8 +11,7 @@ using std::transform;
 using std::vector;
 using vespalib::ObjectVisitor;
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 namespace {
 // Helper class
@@ -79,7 +77,9 @@ public:
                   vector<TermFieldMatchData::PositionsIterator> &iterators)
         : _tmds(tmds),
           _eval_order(eval_order),
-          _iterators(iterators)
+          _iterators(iterators),
+          _element_id(0),
+          _position(0)
     {
         for (size_t i = 0; i < _tmds.size(); ++i) {
             _iterators[i] = _tmds[i]->begin();
@@ -150,7 +150,7 @@ SimplePhraseSearch::SimplePhraseSearch(const Children &children,
     : AndSearch(children),
       _md(std::move(md)),
       _childMatch(childMatch),
-      _eval_order(eval_order),
+      _eval_order(std::move(eval_order)),
       _tmd(tmd),
       _doom(nullptr),
       _strict(strict),
@@ -192,5 +192,4 @@ void SimplePhraseSearch::visitMembers(ObjectVisitor &visitor) const {
     visit(visitor, "strict", _strict);
 }
 
-}  // namespace search::queryeval
-}  // namespace search
+}

@@ -25,9 +25,7 @@ GroupingSession::GroupingSession(const SessionId &sessionId,
     init(groupingContext, attrCtx);
 }
 
-GroupingSession::~GroupingSession()
-{
-}
+GroupingSession::~GroupingSession() = default;
 
 using search::expression::ExpressionNode;
 using search::expression::AttributeNode;
@@ -82,10 +80,11 @@ void
 GroupingSession::continueExecution(GroupingContext & groupingContext)
 {
     GroupingList &orig(groupingContext.getGroupingList());
-    for (GroupingList::iterator it(orig.begin()), mt(orig.end()); it != mt; it++) {
-        Grouping &origGrouping(**it);
-        if (_groupingMap.find((*it)->getId()) != _groupingMap.end()) {
-            Grouping &cachedGrouping(*_groupingMap[(*it)->getId()]);
+    for (const auto & groupingPtr : orig) {
+        Grouping &origGrouping(*groupingPtr);
+        auto found = _groupingMap.find(origGrouping.getId());
+        if (found != _groupingMap.end()) {
+            Grouping &cachedGrouping(*found->second);
             cachedGrouping.prune(origGrouping);
             origGrouping.mergePartial(cachedGrouping);
             // No use in keeping it for the next round

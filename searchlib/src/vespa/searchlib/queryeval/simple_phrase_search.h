@@ -10,9 +10,7 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * Search iterator for a phrase, based on a set of child search iterators.
@@ -54,5 +52,4 @@ public:
     SimplePhraseSearch & setDoom(const vespalib::Doom * doom) { _doom = doom; return *this; }
 };
 
-}  // namespace search::queryeval
-}  // namespace search
+}

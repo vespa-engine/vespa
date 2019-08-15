@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("simple_phrase_test");
 
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
@@ -9,13 +7,12 @@ LOG_SETUP("simple_phrase_test");
 #include <vespa/searchlib/queryeval/simple_phrase_search.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/weight.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <algorithm>
-#include <string>
-#include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP("simple_phrase_test");
 
 using namespace search::queryeval;
 
