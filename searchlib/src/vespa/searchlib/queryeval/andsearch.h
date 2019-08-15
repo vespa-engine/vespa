@@ -5,8 +5,7 @@
 #include "multisearch.h"
 #include "unpackinfo.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the And search operation.
@@ -34,6 +33,4 @@ private:
     uint32_t  _estimate;
 };
 
-} // namespace queryeval
-} // namespace search
-
+}
