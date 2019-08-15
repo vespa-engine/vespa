@@ -52,6 +52,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.DeploymentSpecValidator;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
@@ -61,7 +62,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
@@ -132,6 +132,7 @@ public class ApplicationController {
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
     private final ApplicationCertificateProvider applicationCertificateProvider;
+    private final DeploymentSpecValidator deploymentSpecValidator;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
@@ -154,6 +155,7 @@ public class ApplicationController {
 
         this.provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
         this.applicationCertificateProvider = controller.applicationCertificateProvider();
+        this.deploymentSpecValidator = new DeploymentSpecValidator(controller);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -413,7 +415,7 @@ public class ApplicationController {
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
     public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        validate(applicationPackage.deploymentSpec());
+        deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
@@ -811,19 +813,6 @@ public class ApplicationController {
      */
     private Lock lockForDeployment(ApplicationId application, ZoneId zone) {
         return curator.lockForDeployment(application, zone);
-    }
-
-    /** Verify that each of the production zones listed in the deployment spec exist in this system. */
-    private void validate(DeploymentSpec deploymentSpec) {
-        new DeploymentSteps(deploymentSpec, controller::system).jobs();
-        deploymentSpec.zones().stream()
-                .filter(zone -> zone.environment() == Environment.prod)
-                .forEach(zone -> {
-                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
-                                                                         zone.region().orElse(null)))) {
-                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
-                    }
-                });
     }
 
     /** Verify that we don't downgrade an existing production deployment. */

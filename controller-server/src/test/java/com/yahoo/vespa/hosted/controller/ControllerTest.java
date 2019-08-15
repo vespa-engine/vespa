@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -732,6 +733,40 @@ public class ControllerTest {
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().application(app2.id()).get().activated());
         assertTrue("Provisions certificate in " + Environment.dev, certificate.apply(app2).isPresent());
+    }
+
+    @Test
+    public void testDeployWithCrossCloudEndpoints() {
+        tester.controllerTester().zoneRegistry().setZones(
+                ZoneApiMock.fromId("prod.us-west-1"),
+                ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
+        );
+        var application = tester.createApplication("app1", "tenant1", 1L, 1L);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region("aws-us-east-1")
+                .region("us-west-1")
+                .endpoint("default", "default") // Contains to all regions by default
+                .build();
+
+        try {
+            tester.deployCompletely(application, applicationPackage);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+        }
+
+        var applicationPackage2 = new ApplicationPackageBuilder()
+                .region("aws-us-east-1")
+                .region("us-west-1")
+                .endpoint("aws", "default", "aws-us-east-1")
+                .endpoint("foo", "default", "aws-us-east-1", "us-west-1")
+                .build();
+        try {
+            tester.deployCompletely(application, applicationPackage2);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+        }
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

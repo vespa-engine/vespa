@@ -50,6 +50,10 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         this(SystemName.main);
     }
 
+    /**
+     * This sets the default list of zones contained in this. If your test need a particular set of zones, use
+     * {@link #setZones(List)}  instead of changing the default set.}
+     */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
         setZones(List.of(
