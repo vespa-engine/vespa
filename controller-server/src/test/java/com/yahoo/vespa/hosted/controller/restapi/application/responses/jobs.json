@@ -2,7 +2,7 @@
   "lastVersions": {
     "platform": {
       "platform": "6.1",
-      "at": 0,
+      "at": "(ignore)",
       "pending": "Waiting for current deployment to complete"
     },
     "application": {

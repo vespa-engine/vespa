@@ -11,14 +11,12 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,9 +44,6 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobEr
 public class VersionStatus {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
-
-    private static final String VESPA_REPO = "vespa-yahoo";
-    private static final String VESPA_REPO_OWNER = "vespa";
 
     private final ImmutableList<VespaVersion> versions;
     
@@ -104,10 +99,9 @@ public class VersionStatus {
         infrastructureVersions.putAll(systemApplicationVersions);
 
         // The controller version is the lowest controller version of all controllers
-        Version controllerVersion = controllerVersions.keySet().stream()
-                                                      .min(Comparator.naturalOrder())
-                                                      .map(ControllerVersion::version)
-                                                      .get();
+        ControllerVersion controllerVersion = controllerVersions.keySet().stream()
+                                                                .min(Comparator.naturalOrder())
+                                                                .get();
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
@@ -139,8 +133,8 @@ public class VersionStatus {
             try {
                 boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
-                                                          statistics.version().equals(controllerVersion),
-                                                          statistics.version().equals(systemVersion),
+                                                          controllerVersion,
+                                                          systemVersion,
                                                           isReleased,
                                                           systemApplicationVersions.get(statistics.version()),
                                                           controller);
@@ -243,13 +237,13 @@ public class VersionStatus {
     }
 
     private static VespaVersion createVersion(DeploymentStatistics statistics,
-                                              boolean isControllerVersion,
-                                              boolean isSystemVersion,
+                                              ControllerVersion controllerVersion,
+                                              Version systemVersion,
                                               boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
-        GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
-        Instant committedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
+        boolean isSystemVersion = statistics.version().equals(systemVersion);
+        boolean isControllerVersion = statistics.version().equals(controllerVersion.version());
         VespaVersion.Confidence confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
         // Compute confidence if there's no override
         if (confidence == null) {
@@ -261,7 +255,8 @@ public class VersionStatus {
             }
         }
         return new VespaVersion(statistics,
-                                gitSha.sha, committedAt,
+                                controllerVersion.commitSha(),
+                                controllerVersion.commitDate(),
                                 isControllerVersion,
                                 isSystemVersion,
                                 isReleased,
