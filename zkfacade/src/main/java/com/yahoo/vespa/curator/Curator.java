@@ -21,11 +21,11 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -115,7 +115,7 @@ public class Curator implements AutoCloseable {
         this.zooKeeperEnsembleCount = zooKeeperEnsembleConnectionSpec.split(",").length;
     }
 
-    static String createConnectionSpec(ConfigserverConfig config) {
+    private static String createConnectionSpec(ConfigserverConfig config) {
         StringBuilder connectionSpec = new StringBuilder();
         for (int i = 0; i < config.zookeeperserver().size(); i++) {
             if (connectionSpec.length() > 0) {
@@ -263,10 +263,10 @@ public class Curator implements AutoCloseable {
      * If the path does not exists nothing is done.
      */
     public void delete(Path path) {
-        if ( ! exists(path)) return;
-
         try {
             framework().delete().guaranteed().deletingChildrenIfNeeded().forPath(path.getAbsolute());
+        } catch (KeeperException.NoNodeException e) {
+            // Do nothing
         } catch (Exception e) {
             throw new RuntimeException("Could not delete " + path.getAbsolute(), e);
         }
@@ -277,10 +277,10 @@ public class Curator implements AutoCloseable {
      * If the path does not exist or have no children an empty list (never null) is returned.
      */
     public List<String> getChildren(Path path) {
-        if ( ! exists(path)) return Collections.emptyList();
-
         try {
             return framework().getChildren().forPath(path.getAbsolute());
+        } catch (KeeperException.NoNodeException e) {
+                return List.of();
         } catch (Exception e) {
             throw new RuntimeException("Could not get children of " + path.getAbsolute(), e);
         }
@@ -291,10 +291,11 @@ public class Curator implements AutoCloseable {
      * Empty is returned if the path does not exist.
      */
     public Optional<byte[]> getData(Path path) {
-        if ( ! exists(path)) return Optional.empty();
-
         try {
             return Optional.of(framework().getData().forPath(path.getAbsolute()));
+        }
+        catch (KeeperException.NoNodeException e) {
+            return Optional.empty();
         }
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
@@ -306,10 +307,11 @@ public class Curator implements AutoCloseable {
      * Empty is returned if the path does not exist.
      */
     public Optional<Stat> getStat(Path path) {
-        if ( ! exists(path)) return Optional.empty();
-
         try {
             return Optional.of(framework().checkExists().forPath(path.getAbsolute()));
+        }
+        catch (KeeperException.NoNodeException e) {
+            return Optional.empty();
         }
         catch (Exception e) {
             throw new RuntimeException("Could not get data at " + path.getAbsolute(), e);
