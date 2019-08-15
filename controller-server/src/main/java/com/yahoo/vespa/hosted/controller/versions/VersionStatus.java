@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.yahoo.collections.ListMap;
+import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
@@ -24,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
@@ -96,19 +95,19 @@ public class VersionStatus {
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        ListMap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
-        ListMap<Version, HostName> controllerVersions = findControllerVersions(controller);
+        ListMultimap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
+        ListMultimap<Version, HostName> controllerVersions = findControllerVersions(controller);
 
-        Set<Version> infrastructureVersions = new HashSet<>();
-        infrastructureVersions.addAll(controllerVersions.keySet());
-        infrastructureVersions.addAll(systemApplicationVersions.keySet());
+        ListMultimap<Version, HostName> infrastructureVersions = ArrayListMultimap.create();
+        infrastructureVersions.putAll(controllerVersions);
+        infrastructureVersions.putAll(systemApplicationVersions);
 
         // The controller version is the lowest controller version of all controllers
         Version controllerVersion = controllerVersions.keySet().stream().min(Comparator.naturalOrder()).get();
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
-        Version newSystemVersion = infrastructureVersions.stream().min(Comparator.naturalOrder()).get();
+        Version newSystemVersion = infrastructureVersions.keySet().stream().min(Comparator.naturalOrder()).get();
         Version systemVersion = controller.versionStatus().systemVersion()
                                           .map(VespaVersion::versionNumber)
                                           .orElse(newSystemVersion);
@@ -118,15 +117,14 @@ public class VersionStatus {
                         " to " +
                         newSystemVersion +
                         ", nodes on " + newSystemVersion + ": " +
-                        Stream.concat(systemApplicationVersions.get(newSystemVersion).stream(),
-                                      controllerVersions.get(newSystemVersion).stream())
-                              .map(HostName::value)
-                              .collect(Collectors.joining(", ")));
+                        infrastructureVersions.get(newSystemVersion).stream()
+                                              .map(HostName::value)
+                                              .collect(Collectors.joining(", ")));
         } else {
             systemVersion = newSystemVersion;
         }
 
-        Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
+        Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions.keySet(),
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
@@ -140,7 +138,7 @@ public class VersionStatus {
                                                           statistics.version().equals(controllerVersion),
                                                           statistics.version().equals(systemVersion),
                                                           isReleased,
-                                                          systemApplicationVersions.getList(statistics.version()),
+                                                          systemApplicationVersions.get(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
             } catch (IllegalArgumentException e) {
@@ -154,8 +152,8 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static ListMap<Version, HostName> findSystemApplicationVersions(Controller controller) {
-        ListMap<Version, HostName> versions = new ListMap<>();
+    private static ListMultimap<Version, HostName> findSystemApplicationVersions(Controller controller) {
+        ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
         for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
                 List<Node> eligibleForUpgradeApplicationNodes = controller.configServer().nodeRepository()
@@ -179,8 +177,8 @@ public class VersionStatus {
         return versions;
     }
 
-    private static ListMap<Version, HostName> findControllerVersions(Controller controller) {
-        ListMap<Version, HostName> versions = new ListMap<>();
+    private static ListMultimap<Version, HostName> findControllerVersions(Controller controller) {
+        ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
             versions.put(Vtag.currentVersion, controller.hostname());
         } else {
