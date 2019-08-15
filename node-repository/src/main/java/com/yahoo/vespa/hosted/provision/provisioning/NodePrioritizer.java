@@ -215,8 +215,7 @@ class NodePrioritizer {
     private PrioritizableNode toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
         PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
                 .withSurplusNode(isSurplusNode)
-                .withNewNode(isNewNode)
-                .withPreferredOnFlavor(preferredOnLegacyFlavor(node));
+                .withNewNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
             builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
@@ -227,18 +226,6 @@ class NodePrioritizer {
         });
 
         return builder.build();
-    }
-
-    /** Needed to handle requests for legacy non-docker nodes only */
-    private boolean preferredOnLegacyFlavor(Node node) {
-        if (requestedNodes instanceof NodeSpec.CountNodeSpec) {
-            NodeResources requestedNodeResources = ((NodeSpec.CountNodeSpec)requestedNodes).resources();
-            if (requestedNodeResources.allocateByLegacyName()) {
-                Flavor requestedFlavor = flavors.getFlavorOrThrow(requestedNodeResources.legacyName().get());
-                return ! requestedFlavor.isStock() && node.flavor().equals(requestedFlavor);
-            }
-        }
-        return false;
     }
 
     static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
@@ -261,8 +248,7 @@ class NodePrioritizer {
     }
 
     private boolean isDocker() {
-        NodeResources flavor = resources(requestedNodes);
-        return (flavor != null) && ! flavor.allocateByLegacyName();
+        return resources(requestedNodes) != null;
     }
 
     private static int compareForRelocation(Node a, Node b) {

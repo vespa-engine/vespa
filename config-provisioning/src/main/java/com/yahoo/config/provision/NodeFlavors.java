@@ -41,10 +41,7 @@ public class NodeFlavors {
             return Optional.of(configuredFlavors.get(name));
 
         NodeResources nodeResources = NodeResources.fromLegacyName(name);
-        if (nodeResources.allocateByLegacyName())
-            return Optional.empty();
-        else
-            return Optional.of(new Flavor(nodeResources));
+        return Optional.of(new Flavor(nodeResources));
     }
 
     /**
@@ -52,8 +49,7 @@ public class NodeFlavors {
      * and cannot be created on the fly.
      */
     public Flavor getFlavorOrThrow(String flavorName) {
-        return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName +
-                                                                                    "'. Flavors are " + canonicalFlavorNames()));
+        return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName + "'"));
     }
 
     /** Returns true if this flavor is configured or can be created on the fly */
@@ -61,43 +57,8 @@ public class NodeFlavors {
         return getFlavor(flavorName).isPresent();
     }
 
-    private List<String> canonicalFlavorNames() {
-        return configuredFlavors.values().stream().map(Flavor::canonicalName).distinct().sorted().collect(Collectors.toList());
-    }
-
     private static Collection<Flavor> toFlavors(FlavorsConfig config) {
-        Map<String, Flavor> flavors = new HashMap<>();
-        // First pass, create all flavors, but do not include flavorReplacesConfig.
-        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
-            flavors.put(flavorConfig.name(), new Flavor(flavorConfig));
-        }
-        // Second pass, set flavorReplacesConfig to point to correct flavor.
-        for (FlavorsConfig.Flavor flavorConfig : config.flavor()) {
-            Flavor flavor = flavors.get(flavorConfig.name());
-            for (FlavorsConfig.Flavor.Replaces flavorReplacesConfig : flavorConfig.replaces()) {
-                if (! flavors.containsKey(flavorReplacesConfig.name())) {
-                    throw new IllegalStateException("Replaces for " + flavor.name() + 
-                                                    " pointing to a non existing flavor: " + flavorReplacesConfig.name());
-                }
-                flavor.replaces().add(flavors.get(flavorReplacesConfig.name()));
-            }
-            flavor.freeze();
-        }
-        // Third pass, ensure that retired flavors have a replacement
-        for (Flavor flavor : flavors.values()) {
-            if (flavor.isRetired() && !hasReplacement(flavors.values(), flavor)) {
-                throw new IllegalStateException(
-                        String.format("Flavor '%s' is retired, but has no replacement", flavor.name())
-                );
-            }
-        }
-        return flavors.values();
-    }
-
-    private static boolean hasReplacement(Collection<Flavor> flavors, Flavor flavor) {
-        return flavors.stream()
-                .filter(f -> !f.equals(flavor))
-                .anyMatch(f -> f.satisfies(flavor));
+        return config.flavor().stream().map(Flavor::new).collect(Collectors.toList());
     }
 
 }
