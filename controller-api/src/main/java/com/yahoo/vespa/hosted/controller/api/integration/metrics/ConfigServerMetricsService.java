@@ -10,7 +10,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Retrieves metrics from the configuration server.
@@ -35,17 +36,13 @@ public class ConfigServerMetricsService implements MetricsService {
         var deploymentId = new DeploymentId(application, zone);
         var metrics = configServerClient.getMetrics(deploymentId);
 
-        // TODO(ogronnesby): We probably want something more intelligent than just using .sum(), but it's better to
-        // TODO(ogronnesby): get some values populated and then fix the formula later.
-
         // The field names here come from the MetricsResponse class.
-
         return new DeploymentMetrics(
-                doubleStream(metrics, "queriesPerSecond").mapToDouble(Double::doubleValue).sum(),
-                doubleStream(metrics, "feedPerSecond").mapToDouble(Double::doubleValue).sum(),
-                doubleStream(metrics, "documentCount").mapToLong(Double::longValue).sum(),
-                doubleStream(metrics, "queryLatency").mapToDouble(Double::doubleValue).sum(),
-                doubleStream(metrics, "feedLatency").mapToDouble(Double::doubleValue).sum()
+                metrics.stream().flatMap(m -> m.queriesPerSecond().stream()).mapToDouble(Double::doubleValue).sum(),
+                metrics.stream().flatMap(m -> m.feedPerSecond().stream()).mapToDouble(Double::doubleValue).sum(),
+                metrics.stream().flatMap(m -> m.documentCount().stream()).mapToLong(Double::longValue).sum(),
+                weightedAverageLatency(metrics, ClusterMetrics::queriesPerSecond, ClusterMetrics::queryLatency),
+                weightedAverageLatency(metrics, ClusterMetrics::feedPerSecond, ClusterMetrics::feedLatency)
         );
     }
 
@@ -62,7 +59,22 @@ public class ConfigServerMetricsService implements MetricsService {
         return Map.of();
     }
 
-    private Stream<Double> doubleStream(List<ClusterMetrics> metrics, String name) {
-        return metrics.stream().map(m -> m.getMetrics().getOrDefault(name, 0.0));
+    private double weightedAverageLatency(List<ClusterMetrics> metrics,
+                                          Function<ClusterMetrics, Optional<Double>> rateExtractor,
+                                          Function<ClusterMetrics, Optional<Double>> latencyExtractor)
+    {
+        var rateSum = metrics.stream().flatMap(m -> rateExtractor.apply(m).stream()).mapToDouble(Double::longValue).sum();
+        if (rateSum == 0) {
+            return 0.0;
+        }
+
+        var weightedLatency = metrics.stream()
+                .flatMap(m -> {
+                    return latencyExtractor.apply(m).flatMap(l -> rateExtractor.apply(m).map(r -> l * r)).stream();
+                })
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        return weightedLatency / rateSum;
     }
 }
