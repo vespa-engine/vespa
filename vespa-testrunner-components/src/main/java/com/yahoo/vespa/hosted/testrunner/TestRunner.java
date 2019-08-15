@@ -102,7 +102,6 @@ public class TestRunner {
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.environment().merge("MAVEN_OPTS", " -Djansi.force=true", String::concat);
-        builder.environment().merge("PATH", ":" + vespaHome.resolve("local/maven/bin/"), String::concat);
         builder.directory(vespaHome.resolve("tmp/test").toFile());
         builder.redirectErrorStream(true);
         return builder;
