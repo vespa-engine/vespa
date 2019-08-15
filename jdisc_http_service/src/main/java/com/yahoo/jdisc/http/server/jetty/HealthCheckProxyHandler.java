@@ -66,7 +66,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         SslContextFactory sslContextFactory =
                 Optional.ofNullable(targetConnector.getConnectionFactory(SslConnectionFactory.class))
                         .map(SslConnectionFactory::getSslContextFactory)
-                        .orElse(null);
+                        .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
         return new ProxyTarget(targetPort, sslContextFactory);
     }
 
@@ -120,8 +120,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         }
 
         CloseableHttpResponse requestStatusHtml() throws IOException {
-            String scheme = sslContextFactory != null ? "https" : "http";
-            HttpGet request = new HttpGet(scheme + "://localhost:" + port + HEALTH_CHECK_PATH);
+            HttpGet request = new HttpGet("https://localhost:" + port + HEALTH_CHECK_PATH);
             request.setHeader("Connection", "Close");
             return client().execute(request);
         }
@@ -134,7 +133,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                         client = HttpClientBuilder.create()
                                 .disableAutomaticRetries()
                                 .setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE)
-                                .setSslcontext(sslContextFactory != null ? sslContextFactory.getSslContext() : null)
+                                .setSslcontext(sslContextFactory.getSslContext())
                                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
                                 .build();
