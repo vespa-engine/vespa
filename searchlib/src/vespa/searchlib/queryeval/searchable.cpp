@@ -12,17 +12,16 @@ Searchable::createBlueprint(const IRequestContext & requestContext,
                             const search::query::Node &term)
 {
     if (fields.empty()) {
-        return Blueprint::UP(new EmptyBlueprint());
+        return std::make_unique<EmptyBlueprint>();
     }
     if (fields.size() == 1) {
         return createBlueprint(requestContext, fields[0], term);
     }
-    OrBlueprint *b = new OrBlueprint();
-    Blueprint::UP result(b);
+    auto b = std::make_unique<OrBlueprint>();
     for (size_t i = 0; i < fields.size(); ++i) {
         b->addChild(createBlueprint(requestContext, fields[i], term));
     }
-    return result;
+    return b;
 }
 
 }

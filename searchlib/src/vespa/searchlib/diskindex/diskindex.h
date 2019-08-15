@@ -27,7 +27,7 @@ public:
     struct LookupResult {
         uint32_t                         indexId;
         uint64_t                         wordNum;
-        index::PostingListCounts counts;
+        index::PostingListCounts         counts;
         uint64_t                         bitOffset;
         typedef std::unique_ptr<LookupResult> UP;
         LookupResult();
@@ -45,7 +45,11 @@ public:
     class Key {
     public:
         Key();
-        Key(const IndexList & indexes, vespalib::stringref word);
+        Key(IndexList indexes, vespalib::stringref word);
+        Key(const Key &);
+        Key & operator = (const Key &);
+        Key(Key &&) = default;
+        Key & operator = (Key &&) = default;
         ~Key();
         uint32_t hash() const {
             return vespalib::hashValue(_word.c_str(), _word.size());
@@ -89,8 +93,8 @@ public:
      * @param indexDir the directory where the disk index is located.
      * @param cacheSize optional size (in bytes) of the disk dictionary lookup cache.
      */
-    DiskIndex(const vespalib::string &indexDir, size_t cacheSize=0);
-    ~DiskIndex();
+    explicit DiskIndex(const vespalib::string &indexDir, size_t cacheSize=0);
+    ~DiskIndex() override;
 
     /**
      * Setup this instance by opening and loading relevant index files.

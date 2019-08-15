@@ -47,12 +47,11 @@ SimplePhraseBlueprint::addTerm(Blueprint::UP term)
         _estimate = childEst;
     }
     setEstimate(_estimate);
-    _terms.push_back(term.get());
-    term.release();
+    _terms.push_back(term.release());
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,bool strict) const
+SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {
     assert(tfmda.size() == 1);
     fef::MatchData::UP md = _layout.createMatchData();
@@ -71,10 +70,10 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
         eval_order.push_back(child.second);
     }
     
-    SimplePhraseSearch * phrase = new SimplePhraseSearch(children, std::move(md), childMatch,
-                                                         eval_order, *tfmda[0], strict);
+    auto phrase = std::make_unique<SimplePhraseSearch>(children, std::move(md), childMatch,
+                                                       eval_order, *tfmda[0], strict);
     phrase->setDoom(& _doom);
-    return SearchIterator::UP(phrase);
+    return phrase;
 }
 
 

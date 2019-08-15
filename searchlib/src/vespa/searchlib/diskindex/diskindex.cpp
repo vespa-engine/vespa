@@ -36,12 +36,14 @@ DiskIndex::LookupResult::LookupResult()
 }
 
 DiskIndex::Key::Key() = default;
-DiskIndex::Key::Key(const IndexList & indexes, vespalib::stringref word) :
+DiskIndex::Key::Key(IndexList indexes, vespalib::stringref word) :
     _word(word),
-    _indexes(indexes)
+    _indexes(std::move(indexes))
 {
 }
 
+DiskIndex::Key::Key(const Key &) = default;
+DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
 DiskIndex::Key::~Key() = default;
 
 DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
@@ -203,11 +205,11 @@ DiskIndex::lookup(uint32_t index, vespalib::stringref word)
     /** Only used for testing */
     IndexList indexes;
     indexes.push_back(index);
-    Key key(indexes, word);
-    LookupResultVector resultV(indexes.size());
+    Key key(std::move(indexes), word);
+    LookupResultVector resultV(1);
     LookupResult::UP result;
     if ( read(key, resultV)) {
-        result.reset(new LookupResult());
+        result = std::make_unique<LookupResult>();
         result->swap(resultV[0]);
     }
     return result;
@@ -282,8 +284,7 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
         SchemaUtil::IndexIterator it(_schema, lr.indexId);
         uint32_t fieldId = it.getIndex();
         if (fieldId < _dicts.size()) {
-            (void) _dicts[fieldId]->lookup(key.getWord(), wordNum,
-                                           offsetAndCounts);
+            (void) _dicts[fieldId]->lookup(key.getWord(), wordNum,offsetAndCounts);
         }
         lr.wordNum = wordNum;
         lr.counts.swap(offsetAndCounts._counts);
@@ -305,10 +306,7 @@ DiskIndex::readPostingList(const LookupResult &lookupRes) const
     }
     const uint32_t firstSegment = 0;
     const uint32_t numSegments = 0; // means all segments
-    handle->_file->readPostingList(lookupRes.counts,
-                                   firstSegment,
-                                   numSegments,
-                                   *handle);
+    handle->_file->readPostingList(lookupRes.counts, firstSegment, numSegments,*handle);
     return handle;
 }
 
@@ -349,9 +347,9 @@ public:
             _cache[word] = _diskIndex.lookup(_fieldIds, word);
             it = _cache.find(word);
         }
-        for (size_t i(0); i < it->second.size(); i++) {
-            if (it->second[i].indexId == fieldId) {
-                return it->second[i];
+        for (const auto & result : it->second) {
+            if (result.indexId == fieldId) {
+                return result;
             }
         }
         return _G_nothing;
@@ -390,10 +388,9 @@ public:
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
-            DiskIndex::LookupResult::UP copy(new DiskIndex::LookupResult(lookupRes));
-            setResult(make_UP(new DiskTermBlueprint(_field, _diskIndex, std::move(copy), useBitVector)));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, std::make_unique<DiskIndex::LookupResult>(lookupRes), useBitVector));
         } else {
-            setResult(make_UP(new EmptyBlueprint(_field)));
+            setResult(std::make_unique<EmptyBlueprint>(_field));
         }
     }
 
@@ -420,7 +417,7 @@ createBlueprintHelper(LookupCache & cache, DiskIndex & diskIndex, const IRequest
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     }
-    return Blueprint::UP(new EmptyBlueprint(field));
+    return std::make_unique<EmptyBlueprint>(field);
 }
 
 }
@@ -438,7 +435,7 @@ Blueprint::UP
 DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term)
 {
     if (fields.empty()) {
-        return Blueprint::UP(new EmptyBlueprint());
+        return std::make_unique<EmptyBlueprint>();
     }
 
     std::vector<uint32_t> fieldIds;
@@ -450,17 +447,16 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
             fieldIds.push_back(_schema.getIndexFieldId(field.getName()));
         }
     }
-    Blueprint::UP result(new OrBlueprint());
-    OrBlueprint & orbp(static_cast<OrBlueprint &>(*result));
+    auto orbp = std::make_unique<OrBlueprint>();
     LookupCache cache(*this, fieldIds);
     for (size_t i(0); i< fields.size(); i++) {
         const FieldSpec & field = fields[i];
-        orbp.addChild(createBlueprintHelper(cache, *this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
+        orbp->addChild(createBlueprintHelper(cache, *this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
     }
-    if (orbp.childCnt() == 1) {
-        return orbp.removeChild(0);
+    if (orbp->childCnt() == 1) {
+        return orbp->removeChild(0);
     } else {
-        return result;
+        return orbp;
     }
 }
 
