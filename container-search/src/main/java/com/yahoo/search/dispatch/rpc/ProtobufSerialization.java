@@ -140,7 +140,7 @@ public class ProtobufSerialization {
             builder.setCacheQuery(true);
             builder.setSessionKey(query.getSessionId(serverId).toString());
         }
-        builder.setRankProfile(query.getRanking().getProfile());
+        builder.setRankProfile(ranking.getProfile());
 
         if (ranking.getLocation() != null) {
             builder.setGeoLocation(ranking.getLocation().toString());
