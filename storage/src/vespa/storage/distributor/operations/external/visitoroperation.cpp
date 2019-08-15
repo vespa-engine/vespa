@@ -566,20 +566,10 @@ VisitorOperation::pickTargetNode(
     return potentialNodes.front().getNode();
 }
 
-bool
-VisitorOperation::parseDocumentSelection(DistributorMessageSender& )
-{
-    return true;
-}
-
 void
 VisitorOperation::onStart(DistributorMessageSender& sender)
 {
     if (!verifyCreateVisitorCommand(sender)) {
-        return;
-    }
-
-    if (!parseDocumentSelection(sender)) {
         return;
     }
 

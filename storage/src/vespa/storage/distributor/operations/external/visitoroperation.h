@@ -100,7 +100,6 @@ private:
             const std::vector<uint16_t>& triedNodes);
     void attemptToParseOrderingSelector();
     bool documentSelectionMayHaveOrdering() const;
-    bool parseDocumentSelection(DistributorMessageSender& sender);
     bool maySendNewStorageVisitors() const noexcept;
     void startNewVisitors(DistributorMessageSender& sender);
     void initializeActiveNodes();

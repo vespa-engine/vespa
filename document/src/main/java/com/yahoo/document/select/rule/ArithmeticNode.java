@@ -5,6 +5,7 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
+import com.yahoo.document.select.Result;
 import com.yahoo.document.select.Visitor;
 
 import java.util.List;

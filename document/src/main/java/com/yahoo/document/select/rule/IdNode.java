@@ -39,14 +39,6 @@ public class IdNode implements ExpressionNode {
         return this;
     }
 
-    public short getWidthBits() {
-        return widthBits;
-    }
-
-    public short getDivisionBits() {
-        return divisionBits;
-    }
-
     @Override
     public BucketSet getBucketSet(BucketIdFactory factory) {
         return null;
@@ -81,12 +73,9 @@ public class IdNode implements ExpressionNode {
                 return id.getScheme().getDocType();
             }
             throw new IllegalStateException("Document id doesn't have doc type.");
-        } else if (field.equalsIgnoreCase("order")) {
-            // TODO Remove from grammar on VESPA 8
         } else {
             throw new IllegalStateException("Identifier field '" + field + "' is not supported.");
         }
-        return null;
     }
 
     @Override
