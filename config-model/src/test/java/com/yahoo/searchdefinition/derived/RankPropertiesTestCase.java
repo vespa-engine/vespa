@@ -7,7 +7,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:jon@zenior.no">Jon Bratseth</a>
+ * @author bratseth
  */
 public class RankPropertiesTestCase extends AbstractExportingTestCase {
     @Test

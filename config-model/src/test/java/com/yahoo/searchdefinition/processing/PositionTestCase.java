@@ -102,8 +102,8 @@ public class PositionTestCase {
         Attribute attribute = search.getAttribute(PositionDataType.getZCurveFieldName(fieldName));
         assertNotNull(attribute);
         assertTrue(attribute.isPosition());
-        assertTrue(attribute.getCollectionType().equals(type));
-        assertTrue(attribute.getType().equals(Attribute.Type.LONG));
+        assertEquals(attribute.getCollectionType(), type);
+        assertEquals(attribute.getType(), Attribute.Type.LONG);
     }
 
     private static void assertPositionSummary(Search search, String fieldName, boolean isArray) {

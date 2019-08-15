@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.util.Iterator;
 
 import static org.junit.Assert.*;
+
 /**
  * Testing stuff related to native rank type definitions
  *

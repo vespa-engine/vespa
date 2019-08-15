@@ -18,73 +18,73 @@ import static org.junit.Assert.assertNull;
 /**
  * Tests summary extraction
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class SummaryTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testDeriving() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
-        SummaryClass summary=new SummaryClass(search,search.getSummary("default"), new BaseDeployLogger());
-        assertEquals("default",summary.getName());
+        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        assertEquals("default", summary.getName());
 
-        Iterator<SummaryClassField> fields=summary.fieldIterator();
+        Iterator<SummaryClassField> fields = summary.fieldIterator();
 
         SummaryClassField field;
 
         assertEquals(13, summary.getFieldCount());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("exactemento",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("exactemento", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("exact",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("exact", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("title",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("title", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("description",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("description", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("dyndesc",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("dyndesc", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("longdesc",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("longdesc", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("longstat",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("longstat", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("dynlong",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("dynlong", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("dyndesc2",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("dyndesc2", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("measurement",field.getName());
-        assertEquals(SummaryClassField.Type.INTEGER,field.getType());
+        field = fields.next();
+        assertEquals("measurement", field.getName());
+        assertEquals(SummaryClassField.Type.INTEGER, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("rankfeatures",field.getName());
+        field = fields.next();
+        assertEquals("rankfeatures", field.getName());
         assertEquals(SummaryClassField.Type.FEATUREDATA, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("summaryfeatures",field.getName());
+        field = fields.next();
+        assertEquals("summaryfeatures", field.getName());
         assertEquals(SummaryClassField.Type.FEATUREDATA, field.getType());
 
-        field=(SummaryClassField)fields.next();
-        assertEquals("documentid",field.getName());
-        assertEquals(SummaryClassField.Type.LONGSTRING,field.getType());
+        field = fields.next();
+        assertEquals("documentid", field.getName());
+        assertEquals(SummaryClassField.Type.LONGSTRING, field.getType());
     }
 
     @Test
