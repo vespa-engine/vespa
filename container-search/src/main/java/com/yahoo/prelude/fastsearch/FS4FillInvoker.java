@@ -31,15 +31,8 @@ public class FS4FillInvoker extends FillInvoker {
 
     private int expectedFillResults = 0;
 
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port) {
-        this.searcher = searcher;
-        Backend backend = fs4ResourcePool.getBackend(hostname, port);
-        this.channel = backend.openChannel();
-        channel.setQuery(query);
-    }
-
     // fdispatch code path
-    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
+    FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
         this.searcher = searcher;
         this.channel = backend.openChannel();
         channel.setQuery(query);
