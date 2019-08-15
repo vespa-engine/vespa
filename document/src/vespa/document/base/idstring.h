@@ -20,7 +20,7 @@ public:
     typedef std::unique_ptr<IdString> UP;
     typedef vespalib::CloneablePtr<IdString> CP;
     typedef uint64_t LocationType;
-    enum Type { DOC=0, USERDOC, GROUPDOC, ORDERDOC, ID, NULLID };
+    enum Type { DOC=0, ID, NULLID };
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
@@ -138,91 +138,4 @@ private:
     vespalib::stringref getNamespaceSpecific() const override { return getComponent(1); }
 };
 
-/**
- * \class document::UserDocIdString
- * \ingroup base
- *
- * \brief Scheme for distributing documents based on a 64 bit number.
- *
- * The location of a userdoc identifier is the 64 bit id given. The
- * name "userdoc" is purely syntactical; Vespa does not care what the source
- * of the number is.
- */
-class UserDocIdString final : public IdString {
-public:
-    UserDocIdString(vespalib::stringref rawId);
-
-    virtual int64_t getUserId() const { return _userId; }
-    bool hasNumber() const override { return true; }
-    uint64_t getNumber() const override { return _userId; }
-    LocationType getLocation() const override { return _userId; }
-
-private:
-    UserDocIdString* clone() const override { return new UserDocIdString(*this); }
-    Type getType() const override { return USERDOC; }
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
-
-    int64_t _userId;
-};
-
-/**
- * \class document::OrderDocIdString
- * \ingroup base
- * \brief Scheme for distributing documents based on a group and a parametrized ordering.
- */
-class OrderDocIdString final : public IdString {
-public:
-    OrderDocIdString(vespalib::stringref rawId);
-
-    int64_t  getUserId() const { return _location; }
-    uint16_t getWidthBits() const { return _widthBits; }
-    uint16_t getDivisionBits() const { return _divisionBits; }
-    uint64_t getOrdering() const { return _ordering; }
-    std::pair<int16_t, int64_t> getGidBitsOverride() const override;
-    vespalib::string getSchemeName() const override;
-    bool hasNumber() const override { return true; }
-    uint64_t getNumber() const override { return _location; }
-    bool hasGroup() const override { return true; }
-    vespalib::stringref getGroup() const override { return getComponent(1); }
-
-private:
-    LocationType getLocation() const override { return _location; }
-    OrderDocIdString* clone() const override { return new OrderDocIdString(*this); }
-    Type getType() const override { return ORDERDOC; }
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(3); }
-
-    LocationType _location;
-    uint16_t _widthBits;
-    uint16_t _divisionBits;
-    uint64_t _ordering;
-};
-
-/**
- * \class document::GroupDocIdString
- * \ingroup base
- *
- * \brief Scheme for distributing documents based on a group string.
- *
- * The location of a groupdoc identifier is a hash of the group string.
- */
-class GroupDocIdString : public IdString {
-public:
-    GroupDocIdString(vespalib::stringref rawId);
-    bool hasGroup() const override { return true; }
-    vespalib::stringref getGroup() const override { return getComponent(1); }
-    LocationType getLocation() const override;
-
-    /**
-     * Extract the location for the group-specific part of a document ID.
-     * i.e. `name` here must match the `group` in ID "id::foo:g=group:".
-     */
-    static LocationType locationFromGroupName(vespalib::stringref name);
-
-private:
-    vespalib::stringref getNamespaceSpecific() const override { return getComponent(2); }
-    GroupDocIdString* clone() const override { return new GroupDocIdString(*this); }
-    Type getType() const override { return GROUPDOC; }
-};
-
 } // document
-

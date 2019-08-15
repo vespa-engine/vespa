@@ -12,6 +12,8 @@ import java.security.NoSuchAlgorithmException;
  *
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+//TODO Remove no later than Vespa 8
+@Deprecated
 public class DocIdString extends IdString {
     /**
      * Create a doc scheme object.

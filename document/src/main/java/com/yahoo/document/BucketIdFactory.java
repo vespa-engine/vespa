@@ -89,14 +89,7 @@ public class BucketIdFactory {
     public BucketId getBucketId(DocumentId doc) {
         long location = doc.getScheme().getLocation();
         byte[] gid = doc.getGlobalId();
-
         long gidContribution = getGidContribution(gid);
-
-        IdString.GidModifier gm = doc.getScheme().getGidModifier();
-        if (gm != null && gm.usedBits != 0) {
-            gidContribution &= (0xFFFFFFFFFFFFFFFFl << (gm.usedBits + getLocationBitCount()));
-            gidContribution |= (gm.value << getLocationBitCount());
-        }
 
         return new BucketId(64 - BucketId.COUNT_BITS, initialCount | (gidMask & gidContribution) | (locationMask & location));
     }
