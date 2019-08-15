@@ -122,7 +122,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
-    public static final String ROOT_HANDLER_BINDING = "http://*/";
+    public static final String ROOT_HANDLER_PATH = "/";
+    public static final String ROOT_HANDLER_BINDING = "http://*" + ROOT_HANDLER_PATH;
 
     private final String name;
 
