@@ -195,8 +195,10 @@ rm -rf $RPM_BUILD_ROOT
 %pre
 getent group vespa >/dev/null || groupadd -r vespa
 getent passwd vespa >/dev/null || \
-    useradd -r -g vespa -d %{_prefix} -s /sbin/nologin \
+    useradd -r -g vespa --home-dir %{_prefix} --create-home -s /sbin/nologin \
     -c "Create owner of all Vespa data files" vespa
+# Home dir created with rwx on user only.
+chmod a+rx %{_prefix}
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
 chmod +x /etc/profile.d/vespa.sh
