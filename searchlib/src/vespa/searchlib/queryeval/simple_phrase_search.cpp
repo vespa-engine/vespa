@@ -102,9 +102,8 @@ public:
 
     void fillPositions(TermFieldMatchData &tmd) {
         if (_tmds.size() == 1) {
-            for (TermFieldMatchData::PositionsIterator
-                     it = _tmds[0]->begin(); it != _tmds[0]->end(); ++it) {
-                tmd.appendPosition(*it);
+            for (const fef::TermFieldMatchDataPosition & pos : *_tmds[0]) {
+                tmd.appendPosition(pos);
             }
         } else {
             while (iterator(_eval_order[0]) != end(_eval_order[0])) {
@@ -117,8 +116,8 @@ public:
     }
 };
 
-bool allTermsHaveMatch(const SimplePhraseSearch::Children &terms,
-                       const vector<uint32_t> &eval_order, uint32_t doc_id) {
+bool
+allTermsHaveMatch(const SimplePhraseSearch::Children &terms, const vector<uint32_t> &eval_order, uint32_t doc_id) {
     for (uint32_t i = 0; i < terms.size(); ++i) {
         if (!terms[eval_order[i]]->seek(doc_id)) {
             return false;
@@ -128,9 +127,10 @@ bool allTermsHaveMatch(const SimplePhraseSearch::Children &terms,
 }
 }  // namespace
 
-void SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
+void
+SimplePhraseSearch::phraseSeek(uint32_t doc_id) {
     if (allTermsHaveMatch(getChildren(), _eval_order, doc_id)) {
-        if ((_doom != nullptr) && _doom->doom()) {
+        if (doom()) {
             setAtEnd();
         } else {
             AndSearch::doUnpack(doc_id);
@@ -161,7 +161,8 @@ SimplePhraseSearch::SimplePhraseSearch(const Children &children,
     assert(children.size() == _eval_order.size());
 }
 
-void SimplePhraseSearch::doSeek(uint32_t doc_id) {
+void
+SimplePhraseSearch::doSeek(uint32_t doc_id) {
     phraseSeek(doc_id);
     if (_strict) {
         uint32_t next_candidate = doc_id;
@@ -180,14 +181,16 @@ void SimplePhraseSearch::doSeek(uint32_t doc_id) {
     }
 }
 
-void SimplePhraseSearch::doUnpack(uint32_t doc_id) {
+void
+SimplePhraseSearch::doUnpack(uint32_t doc_id) {
     // All children has already been unpacked before this call is made.
 
     _tmd.reset(doc_id);
     PhraseMatcher(_childMatch, _eval_order, _iterators).fillPositions(_tmd);
 }
 
-void SimplePhraseSearch::visitMembers(ObjectVisitor &visitor) const {
+void
+SimplePhraseSearch::visitMembers(ObjectVisitor &visitor) const {
     AndSearch::visitMembers(visitor);
     visit(visitor, "strict", _strict);
 }

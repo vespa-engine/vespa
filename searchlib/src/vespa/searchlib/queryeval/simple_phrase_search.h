@@ -29,6 +29,7 @@ class SimplePhraseSearch : public AndSearch
     std::vector<It> _iterators;
 
     void phraseSeek(uint32_t doc_id);
+    bool doom() const { return ((_doom != nullptr) && _doom->doom()); }
 
 public:
     /**
