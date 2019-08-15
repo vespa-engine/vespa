@@ -32,9 +32,10 @@ protected:
 public:
     class CleanContext {
     private:
-        size_t &_extraBytes;
+        size_t &_extraUsedBytes;
+        size_t &_extraHoldBytes;
     public:
-        CleanContext(size_t &extraBytes) : _extraBytes(extraBytes) {}
+        CleanContext(size_t &extraUsedBytes, size_t &extraHoldBytes) : _extraUsedBytes(extraUsedBytes), _extraHoldBytes(extraHoldBytes) {}
         void extraBytesCleaned(size_t value);
     };
     
