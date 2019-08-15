@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -56,7 +57,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         field=(SDField) document.getField("title");
         assertEquals(DataType.STRING,field.getDataType());
         assertEquals("{ input title | tokenize normalize stem:\"BEST\" | summary title | index title; }", field.getIndexingScript().toString());
-        assertTrue(!search.getIndex("default").isPrefix());
+        assertFalse(search.getIndex("default").isPrefix());
         assertTrue(search.getIndex("title").isPrefix());
         Iterator<String> titleAliases=search.getIndex("title").aliasIterator();
         assertEquals("aliaz",titleAliases.next());
@@ -64,7 +65,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals("analias.todefault",
                      search.getIndex("default").aliasIterator().next());
         assertEquals(RankType.IDENTITY, field.getRankType());
-        assertTrue(field.getAttributes().size() == 0);
+        assertEquals(0, field.getAttributes().size());
         assertNull(field.getStemming());
         assertTrue(field.getNormalizing().doRemoveAccents());
         assertTrue(field.isHeader());
@@ -90,7 +91,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         field=(SDField) document.getField("category");
         assertEquals(0, field.getAttributes().size());
         assertEquals(Stemming.NONE, field.getStemming());
-        assertTrue(!field.getNormalizing().doRemoveAccents());
+        assertFalse(field.getNormalizing().doRemoveAccents());
 
         // Fifth field
         field=(SDField) document.getField("popularity");
@@ -142,8 +143,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         RankProfile profile=rankProfileRegistry.get(search, "default");
         assertNotNull(profile);
         assertNull(profile.getInheritedName());
-        assertEquals(null,profile.getDeclaredRankSetting("measurement",
-                          RankProfile.RankSetting.Type.RANKTYPE));
+        assertNull(profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
         profile=rankProfileRegistry.get(search, "experimental");
@@ -161,7 +161,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertNotNull("Extra field was parsed",exact);
         assertEquals("exact",exact.getName());
         assertEquals(Stemming.NONE,exact.getStemming());
-        assertTrue(!exact.getNormalizing().doRemoveAccents());
+        assertFalse(exact.getNormalizing().doRemoveAccents());
         assertEquals("{ input title . \" \" . input category | tokenize | summary exact | index exact; }",
                      exact.getIndexingScript().toString());
         assertEquals(RankType.IDENTITY, exact.getRankType());

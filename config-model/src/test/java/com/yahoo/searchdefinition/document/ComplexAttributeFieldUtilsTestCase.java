@@ -13,11 +13,11 @@ import static org.junit.Assert.assertTrue;
 public class ComplexAttributeFieldUtilsTestCase {
 
     private static class FixtureBase {
-        private final Search search;
+
         private final ImmutableSDField field;
 
-        public FixtureBase(String fieldName, String sdContent) throws ParseException {
-            search = SearchBuilder.createFromString(sdContent).getSearch();
+        FixtureBase(String fieldName, String sdContent) throws ParseException {
+            Search search = SearchBuilder.createFromString(sdContent).getSearch();
             field = search.getConcreteField(fieldName);
         }
 
@@ -25,30 +25,30 @@ public class ComplexAttributeFieldUtilsTestCase {
             return field;
         }
 
-        public boolean isSupportedComplexField() {
+        boolean isSupportedComplexField() {
             return ComplexAttributeFieldUtils.isSupportedComplexField(field());
         }
 
-        public boolean isArrayOfSimpleStruct() {
+        boolean isArrayOfSimpleStruct() {
             return ComplexAttributeFieldUtils.isArrayOfSimpleStruct(field());
         }
 
-        public boolean isMapOfSimpleStruct() {
+        boolean isMapOfSimpleStruct() {
             return ComplexAttributeFieldUtils.isMapOfSimpleStruct(field());
         }
 
-        public boolean isMapOfPrimitiveType() {
+        boolean isMapOfPrimitiveType() {
             return ComplexAttributeFieldUtils.isMapOfPrimitiveType(field());
         }
 
-        public boolean isComplexFieldWithOnlyStructFieldAttributes() {
+        boolean isComplexFieldWithOnlyStructFieldAttributes() {
             return ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes(field());
         }
     }
 
     private static class Fixture extends FixtureBase {
 
-        public Fixture(String fieldName, String sdFieldContent) throws ParseException {
+        Fixture(String fieldName, String sdFieldContent) throws ParseException {
             super(fieldName, joinLines("search test {",
                     "  document test {",
                     "    struct elem {",
@@ -63,7 +63,7 @@ public class ComplexAttributeFieldUtilsTestCase {
 
     private static class ComplexFixture extends FixtureBase {
 
-        public ComplexFixture(String fieldName, String sdFieldContent) throws ParseException {
+        ComplexFixture(String fieldName, String sdFieldContent) throws ParseException {
             super(fieldName, joinLines("search test {",
                     "  document test {",
                     "    struct elem {",
