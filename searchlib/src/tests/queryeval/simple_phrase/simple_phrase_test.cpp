@@ -34,9 +34,7 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     {
         setEstimate(HitEstimate(hits, (hits == 0)));
     }
-    virtual SearchIterator::UP createLeafSearch(
-            const search::fef::TermFieldMatchDataArray &, bool) const override
-    {
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const override {
         return SearchIterator::UP();
     }
 };
@@ -163,10 +161,8 @@ public:
             for (size_t i = 0; i < _children.size(); ++i) {
                 children.push_back(_children[i]->createSearch(*_md, _strict).release());
             }
-            search.reset(new SimplePhraseSearch(children, MatchData::UP(),
-                                                childMatch, _order,
-                                                *_md->resolveTermField(phrase_handle),
-                                                _strict));
+            search = std::make_unique<SimplePhraseSearch>(children, MatchData::UP(), childMatch, _order,
+                                                      *_md->resolveTermField(phrase_handle), _strict);
         }
         search->initFullRange();
         return search.release();
@@ -184,7 +180,7 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
       _pos(1),
       _strict(false)
 {}
-PhraseSearchTest::~PhraseSearchTest() {}
+PhraseSearchTest::~PhraseSearchTest() = default;
 
 void Test::requireThatIteratorFindsSimplePhrase(bool useBlueprint) {
     PhraseSearchTest test;
