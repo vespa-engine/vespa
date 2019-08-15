@@ -7,6 +7,7 @@ import com.yahoo.compress.Compressor;
 import com.yahoo.container.protect.Error;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.prelude.Location;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -113,13 +114,14 @@ public class RpcFillInvoker extends FillInvoker {
         Query query = result.getQuery();
         String rankProfile = query.getRanking().getProfile();
         byte[] serializedSlime = BinaryFormat
-                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(), query.getSessionId(), hits));
+                .encode(toSlime(rankProfile, summaryClass, query.getModel().getDocumentDb(),
+                                query.getSessionId(), query.getRanking().getLocation(), hits));
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compress(query, serializedSlime);
         node.getDocsums(hits, compressionResult.type(), serializedSlime.length, compressionResult.data(), responseReceiver, timeoutSeconds);
     }
 
-    static private Slime toSlime(String rankProfile, String summaryClass, String docType, SessionId sessionId, List<FastHit> hits) {
+    static private Slime toSlime(String rankProfile, String summaryClass, String docType, SessionId sessionId, Location location, List<FastHit> hits) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         if (summaryClass != null) {
@@ -133,6 +135,9 @@ public class RpcFillInvoker extends FillInvoker {
         }
         if (rankProfile != null) {
             root.setString("ranking", rankProfile);
+        }
+        if (location != null) {
+            root.setString("location", location.toString());
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {

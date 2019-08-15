@@ -140,8 +140,11 @@ public class ProtobufSerialization {
             builder.setCacheQuery(true);
             builder.setSessionKey(query.getSessionId(serverId).toString());
         }
-        builder.setRankProfile(query.getRanking().getProfile());
+        builder.setRankProfile(ranking.getProfile());
 
+        if (ranking.getLocation() != null) {
+            builder.setGeoLocation(ranking.getLocation().toString());
+        }
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
         }
@@ -165,9 +168,7 @@ public class ProtobufSerialization {
         var featureMap = ranking.getFeatures().asMap();
 
         builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree()));
-        if (ranking.getLocation() != null) {
-            builder.setGeoLocation(ranking.getLocation().toString());
-        }
+
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(featureMap, builder::addTensorFeatureOverrides);
         if (query.getPresentation().getHighlight() != null) {

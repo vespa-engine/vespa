@@ -95,7 +95,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (rankProfile == null) return true; // stay safe
         if (rankProfile.hasSummaryFeatures()) return true;
         if (query.getRanking().getListFeatures()) return true;
-        if (query.getRanking().getLocation() != null) return true;
 
         // (Don't just add other checks here as there is a return false above)
 
