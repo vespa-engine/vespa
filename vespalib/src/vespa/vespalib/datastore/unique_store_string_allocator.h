@@ -104,7 +104,7 @@ public:
     EntryRef allocate(const char *value);
     void hold(EntryRef ref);
     EntryRef move(EntryRef ref) override;
-    const UniqueStoreEntryBase& getWrapped(EntryRef ref) const {
+    const UniqueStoreEntryBase& get_wrapped(EntryRef ref) const {
         RefType iRef(ref);
         auto &state = _store.getBufferState(iRef.bufferId());
         auto type_id = state.getTypeId();
@@ -114,8 +114,7 @@ public:
             return *_store.template getEntry<WrappedExternalEntryType>(iRef);
         }
     }
-    const char *get(EntryRef ref) const
-    {
+    const char *get(EntryRef ref) const {
         RefType iRef(ref);
         auto &state = _store.getBufferState(iRef.bufferId());
         auto type_id = state.getTypeId();
@@ -125,8 +124,8 @@ public:
             return _store.template getEntry<WrappedExternalEntryType>(iRef)->value().c_str();
         }
     }
-    DataStoreType& getDataStore() { return _store; }
-    const DataStoreType& getDataStore() const { return _store; }
+    DataStoreType& get_data_store() { return _store; }
+    const DataStoreType& get_data_store() const { return _store; }
 };
 
 }

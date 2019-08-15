@@ -17,7 +17,7 @@ namespace search::datastore {
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
     : _allocator(),
-      _store(_allocator.getDataStore()),
+      _store(_allocator.get_data_store()),
       _dict(std::make_unique<UniqueStoreDictionary>())
 {
 }
@@ -31,7 +31,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::add(const EntryType &value)
 {
     Compare comp(_store, value);
     UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return _allocator.allocate(value); });
-    _allocator.getWrapped(result.ref()).inc_ref_count();
+    _allocator.get_wrapped(result.ref()).inc_ref_count();
     return result;
 }
 
@@ -47,7 +47,7 @@ template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 void
 UniqueStore<EntryT, RefT, Compare, Allocator>::remove(EntryRef ref)
 {
-    auto &wrapped_entry = _allocator.getWrapped(ref);
+    auto &wrapped_entry = _allocator.get_wrapped(ref);
     auto ref_count = wrapped_entry.get_ref_count();
     assert(ref_count > 0u);
     wrapped_entry.dec_ref_count();
