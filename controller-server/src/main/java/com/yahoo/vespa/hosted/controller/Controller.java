@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -75,7 +74,6 @@ public class Controller extends AbstractComponent {
     private final TenantController tenantController;
     private final JobController jobController;
     private final Clock clock;
-    private final GitHub gitHub;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
@@ -92,21 +90,21 @@ public class Controller extends AbstractComponent {
      * @param curator the curator instance storing the persistent state of the controller.
      */
     @Inject
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
                       RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
                       MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider) {
-        this(curator, rotationsConfig, gitHub, zoneRegistry,
+        this(curator, rotationsConfig, zoneRegistry,
              configServer, metricsService, routingGenerator,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
              mavenRepository, applicationCertificateProvider);
     }
 
-    public Controller(CuratorDb curator, RotationsConfig rotationsConfig, GitHub gitHub,
+    public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService,
                       RoutingGenerator routingGenerator, Clock clock,
@@ -117,7 +115,6 @@ public class Controller extends AbstractComponent {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
-        this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
@@ -274,10 +271,6 @@ public class Controller extends AbstractComponent {
     /** Returns the hostname of this controller */
     public HostName hostname() {
         return HostName.from(hostnameSupplier.get());
-    }
-
-    public GitHub gitHub() {
-        return gitHub;
     }
 
     public MetricsService metricsService() {

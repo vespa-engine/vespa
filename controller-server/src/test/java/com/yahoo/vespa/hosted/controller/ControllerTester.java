@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -80,7 +79,6 @@ public final class ControllerTester {
     private final ManualClock clock;
     private final ConfigServerMock configServer;
     private final ZoneRegistryMock zoneRegistry;
-    private final GitHubMock gitHub;
     private final CuratorDb curator;
     private final MemoryNameService nameService;
     private final RotationsConfig rotationsConfig;
@@ -96,7 +94,7 @@ public final class ControllerTester {
     public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb,
                             MetricsServiceMock metricsService) {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
-             new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
+             new ZoneRegistryMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new ApplicationStoreMock(), new MockBuildService(),
              metricsService, new RoutingGeneratorMock(), new MockContactRetriever());
     }
@@ -119,7 +117,7 @@ public final class ControllerTester {
 
     private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
                              ConfigServerMock configServer, ZoneRegistryMock zoneRegistry,
-                             GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
+                             CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              ApplicationStoreMock appStoreMock, MockBuildService buildService,
                              MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
@@ -128,7 +126,6 @@ public final class ControllerTester {
         this.clock = clock;
         this.configServer = configServer;
         this.zoneRegistry = zoneRegistry;
-        this.gitHub = gitHub;
         this.curator = curator;
         this.nameService = nameService;
         this.rotationsConfig = rotationsConfig;
@@ -138,7 +135,7 @@ public final class ControllerTester {
         this.metricsService = metricsService;
         this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
-        this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
+        this.controller = createController(curator, rotationsConfig, configServer, clock, zoneRegistry,
                                            athenzDb, artifactRepository, appStoreMock, buildService,
                                            metricsService, routingGenerator);
 
@@ -196,7 +193,7 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
+        controller = createController(curator, rotationsConfig, configServer, clock, zoneRegistry, athenzDb,
                                       artifactRepository, applicationStore, buildService, metricsService,
                                       routingGenerator);
     }
@@ -328,14 +325,13 @@ public final class ControllerTester {
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                ConfigServerMock configServer, ManualClock clock,
-                                               GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
+                                               ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb,
                                                ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                                                BuildService buildService, MetricsServiceMock metricsService,
                                                RoutingGenerator routingGenerator) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
-                                               gitHub,
                                                zoneRegistryMock,
                                                configServer,
                                                metricsService,
