@@ -88,3 +88,9 @@ tlsClientAuthEnforcer.enable          bool   default=false
 
 # Paths where client authentication should not be enforced. To be used in combination with WANT_AUTH. Typically used for health checks.
 tlsClientAuthEnforcer.pathWhitelist[]  string
+
+# Use connector only for proxying '/status.html' health checks. Any ssl configuration will be ignored if this option is enabled.
+healthCheckProxy.enable        bool    default=false
+
+# Which port to proxy
+healthCheckProxy.port          int     default=8080

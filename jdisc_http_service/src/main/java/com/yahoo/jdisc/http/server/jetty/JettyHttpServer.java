@@ -46,6 +46,7 @@ import java.net.BindException;
 import java.net.MalformedURLException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -59,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Simon Thoresen Hult
@@ -168,11 +171,15 @@ public class JettyHttpServer extends AbstractServerProvider {
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
         FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
 
+        List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
+                .map(JDiscServerConnector.class::cast)
+                .collect(toList());
+
         server.setHandler(
                 getHandlerCollection(
                         serverConfig,
                         servletPathsConfig,
-                        connectorConfigs,
+                        connectors,
                         jdiscServlet,
                         servletHolders,
                         jDiscFilterInvokerFilter));
@@ -222,7 +229,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private HandlerCollection getHandlerCollection(
             ServerConfig serverConfig,
             ServletPathsConfig servletPathsConfig,
-            List<ConnectorConfig> connectorConfigs,
+            List<JDiscServerConnector> connectors,
             ServletHolder jdiscServlet,
             ComponentRegistry<ServletHolder> servletHolders,
             FilterHolder jDiscFilterInvokerFilter) {
@@ -237,8 +244,12 @@ public class JettyHttpServer extends AbstractServerProvider {
 
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
+        var proxyHandler = new HealthCheckProxyHandler(connectors);
+        proxyHandler.setHandler(servletContextHandler);
+
+        List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
         var authEnforcer = new TlsClientAuthenticationEnforcer(connectorConfigs);
-        authEnforcer.setHandler(servletContextHandler);
+        authEnforcer.setHandler(proxyHandler);
 
         GzipHandler gzipHandler = newGzipHandler(serverConfig);
         gzipHandler.setHandler(authEnforcer);
