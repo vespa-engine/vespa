@@ -561,7 +561,7 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
                  .addRecipient("bar"));
     frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::yarn")));
     std::vector<mbus::RoutingNode*> selected;
-    EXPECT_TRUE(frame.select(selected, 2));
+    EXPECT_TRUE(frame.select(selected, 1));
     for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
         Document::SP doc;
         if (i == 0) {
@@ -612,14 +612,14 @@ Test::testDocumentRouteSelector()
                  .addRecipient("bar"));
 
     frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::"), 0));
-    EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
+    EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     mbus::Message::UP put = make_unique<PutDocumentMessage>(make_shared<Document>(*_docType, DocumentId("id:ns:testdoc::")));
     frame.setMessage(std::move(put));
     EXPECT_TRUE(frame.testSelect( StringList().add("foo")));
 
     frame.setMessage(mbus::Message::UP(new RemoveDocumentMessage(DocumentId("id:ns:testdoc::"))));
-    EXPECT_TRUE(frame.testSelect(StringList().add("foo").add("bar")));
+    EXPECT_TRUE(frame.testSelect(StringList().add("foo")));
 
     frame.setMessage(make_unique<UpdateDocumentMessage>(
             make_shared<DocumentUpdate>(*_repo, *_docType, DocumentId("id:ns:testdoc::"))));
