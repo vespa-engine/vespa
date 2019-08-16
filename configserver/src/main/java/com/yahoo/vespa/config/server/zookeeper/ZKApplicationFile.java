@@ -15,8 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * @author Ulf Lilleengen
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  */
 class ZKApplicationFile extends ApplicationFile {
 

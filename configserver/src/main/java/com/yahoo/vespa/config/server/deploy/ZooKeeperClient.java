@@ -42,12 +42,7 @@ public class ZooKeeperClient {
     /* This is the generation that will be used for reading and writing application data. (1 more than last deployed application) */
     private final Path rootPath;
 
-    static final ApplicationFile.PathFilter xmlFilter = new ApplicationFile.PathFilter() {
-        @Override
-        public boolean accept(Path path) {
-            return path.getName().endsWith(".xml");
-        }
-    };
+    private static final ApplicationFile.PathFilter xmlFilter = path -> path.getName().endsWith(".xml");
 
     public ZooKeeperClient(ConfigCurator configCurator, DeployLogger logger, boolean logFine, Path rootPath) {
         this.configCurator = configCurator;
@@ -116,23 +111,15 @@ public class ZooKeeperClient {
         logFine("Feeding application config into ZooKeeper");
         // gives lots and lots of debug output: // BasicConfigurator.configure();
         try {
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
             logFine("Feeding user def files into ZooKeeper");
             writeUserDefs(app);
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
             logFine("Feeding application package into ZooKeeper");
-            // TODO 1200 zk operations done in the below method
             writeSomeOf(app);
             writeSearchDefinitions(app);
             writeUserIncludeDirs(app, app.getUserIncludeDirs());
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
-            logFine("zk read operations: " + configCurator.getNumberOfReadOperations());
-            logFine("zk write operations: " + configCurator.getNumberOfWriteOperations());
             logFine("Feeding sd from docproc bundle into ZooKeeper");
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
             logFine("Write application metadata into ZooKeeper");
             write(app.getMetaData());
-            logFine("zk operations: " + configCurator.getNumberOfOperations());
         } catch (Exception e) {
             throw new IllegalStateException("Unable to write vespa model to config server(s) " + System.getProperty("configsources") + "\n" +
                     "Please ensure that cloudconfig_server is started on the config server node(s), " +
@@ -164,7 +151,7 @@ public class ZooKeeperClient {
      * @param app The application package to use as input.
      * @throws java.io.IOException  if not able to write to Zookeeper
      */
-    void writeSomeOf(ApplicationPackage app) throws IOException {
+    private void writeSomeOf(ApplicationPackage app) throws IOException {
         ApplicationFile.PathFilter srFilter = new ApplicationFile.PathFilter() {
             @Override
             public boolean accept(Path path) {
@@ -342,7 +329,7 @@ public class ZooKeeperClient {
      * @param trailingPath trailing part of path to be appended to ZK app path
      * @return a String with the full ZK application path including trailing path, if set
      */
-    Path getZooKeeperAppPath(String trailingPath) {
+    private Path getZooKeeperAppPath(String trailingPath) {
         if (trailingPath != null) {
             return rootPath.append(trailingPath);
         } else {
@@ -350,7 +337,7 @@ public class ZooKeeperClient {
         }
     }
 
-    void logFine(String msg) {
+    private void logFine(String msg) {
         if (logFine) {
             logger.log(LogLevel.FINE, msg);
         }

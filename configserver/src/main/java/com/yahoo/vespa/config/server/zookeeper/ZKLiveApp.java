@@ -9,11 +9,10 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Responsible for providing data from the currently live application subtree in zookeeper.
- * (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/).
+ * (i.e. /config/v2/tenants/x/&lt;id of currently active app&gt;/).
  *
  * Note: The application revision ("session") stored in this tree is not necessarily live, just complete,
  * preparable, prepared or active.
@@ -22,12 +21,10 @@ import java.util.logging.Logger;
  */
 public class ZKLiveApp {
 
-    private static final Logger log = Logger.getLogger(ZKLiveApp.class.getName());
-
     private final ConfigCurator zk;
     private final Path appPath;
 
-    public ZKLiveApp(ConfigCurator zk, Path appPath) {
+    ZKLiveApp(ConfigCurator zk, Path appPath) {
         this.zk = zk;
         this.appPath = appPath;
     }
@@ -37,13 +34,13 @@ public class ZKLiveApp {
      * be closed by the caller.
      *
      * @param path           a path relative to the currently active application
-     *                       (i.e. /vespa/config/apps/&lt;id of currently active app&gt;/).
+     *                       (i.e. /config/v2/tenants/x/applications/&lt;id of currently active app&gt;/).
      * @param fileNameSuffix the suffix of files to return, or null to return all
      * @param recursive      if true, all files from all subdirectories of this will also be returned
      * @return the files in the given path, or an empty list (never null) if the directory does not exist or is empty.
      *         The list gets owned by the caller and can be modified freely.
      */
-    public List<NamedReader> getAllDataFromDirectory(String path, String fileNameSuffix, boolean recursive) {
+    List<NamedReader> getAllDataFromDirectory(String path, String fileNameSuffix, boolean recursive) {
         return getAllDataFromDirectory(path, "", fileNameSuffix, recursive);
     }
 
@@ -73,14 +70,13 @@ public class ZKLiveApp {
     }
 
     /**
-     * Retrieves a node relative to the node of the live application,
-     * e.g. /vespa/config/apps/$lt;app_id&gt;/&lt;path&gt;/&lt;node&gt;
+     * Retrieves a node relative to the node of the live application
      *
      * @param path a path relative to the currently active application
      * @param node a path relative to the path above
      * @return a Reader that can be used to get the data
      */
-    public Reader getDataReader(String path, String node) {
+    Reader getDataReader(String path, String node) {
         String data = getData(path, node);
         if (data == null) {
             throw new IllegalArgumentException("No node for " + getFullPath(path) + "/" + node + " exists");
@@ -113,7 +109,7 @@ public class ZKLiveApp {
         }
     }
 
-    public void putData(String path, String data) {
+    void putData(String path, String data) {
         try {
             zk.putData(getFullPath(path), data);
         } catch (RuntimeException e) {
@@ -164,7 +160,7 @@ public class ZKLiveApp {
      *
      * @param path path to delete
      */
-    public void deleteRecurse(String path) {
+    void deleteRecurse(String path) {
         zk.deleteRecurse(getFullPath(path));
     }
 
@@ -193,7 +189,7 @@ public class ZKLiveApp {
         }
     }
 
-    public Reader getDataReader(String path) {
+    Reader getDataReader(String path) {
         final String data = getData(path);
         if (data == null) {
             throw new IllegalArgumentException("No node for " + getFullPath(path) + " exists");

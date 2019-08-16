@@ -155,7 +155,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     private Optional<PreGeneratedFileRegistry> getPreGeneratedFileRegistry(Version vespaVersion) {
         // Assumes at least one file registry, which we always have.
         Optional<PreGeneratedFileRegistry> fileRegistry = Optional.ofNullable(fileRegistryMap.get(vespaVersion));
-        if ( ! fileRegistry.isPresent()) {
+        if (fileRegistry.isEmpty()) {
             fileRegistry = Optional.of(fileRegistryMap.values().iterator().next());
         }
         return fileRegistry;
