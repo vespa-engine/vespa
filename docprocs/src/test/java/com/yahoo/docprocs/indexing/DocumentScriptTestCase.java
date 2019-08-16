@@ -180,7 +180,7 @@ public class DocumentScriptTestCase {
         }
 
         DocumentUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
-            DocumentUpdate update = new DocumentUpdate(type, "doc:scheme:");
+            DocumentUpdate update = new DocumentUpdate(type, "id:ns:documentType::");
             update.addFieldPathUpdate(updateIn);
             return newScript(type, fieldName).execute(ADAPTER_FACTORY, update);
         }
@@ -240,7 +240,7 @@ public class DocumentScriptTestCase {
     private static FieldValue processDocument(FieldValue fieldValue) {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myField", fieldValue.getDataType());
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:ns:myDocumentType::");
         doc.setFieldValue("myField", fieldValue.clone());
         doc = newScript(docType).execute(ADAPTER_FACTORY, doc);
         return doc.getFieldValue("myField");
@@ -249,7 +249,7 @@ public class DocumentScriptTestCase {
     private static ValueUpdate<?> processFieldUpdate(FieldValue fieldValue) {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myField", fieldValue.getDataType());
-        DocumentUpdate update = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldUpdate(FieldUpdate.createAssign(docType.getField("myField"), fieldValue));
         update = newScript(docType).execute(ADAPTER_FACTORY, update);
         return update.getFieldUpdate("myField").getValueUpdate(0);
@@ -258,7 +258,7 @@ public class DocumentScriptTestCase {
     private static ValueUpdate<?> processPathUpdate(FieldValue fieldValue) {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myField", fieldValue.getDataType());
-        DocumentUpdate update = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "myField", fieldValue));
         update = newScript(docType).execute(ADAPTER_FACTORY, update);
         return update.getFieldUpdate("myField").getValueUpdate(0);
@@ -299,7 +299,7 @@ public class DocumentScriptTestCase {
     }
 
     private static Document newDocument(FieldValue documentFieldValue, FieldValue extraFieldValue) {
-        Document document = new Document(newDocumentType(), "doc:scheme:");
+        Document document = new Document(newDocumentType(), "id:ns:documentType::");
         if (documentFieldValue != null) {
             document.setFieldValue("documentField", documentFieldValue);
         }
@@ -311,7 +311,7 @@ public class DocumentScriptTestCase {
 
     private static DocumentUpdate newFieldUpdate(FieldValue documentFieldValue, FieldValue extraFieldValue) {
         DocumentType type = newDocumentType();
-        DocumentUpdate update = new DocumentUpdate(type, "doc:scheme:");
+        DocumentUpdate update = new DocumentUpdate(type, "id:ns:documentType::");
         if (documentFieldValue != null) {
             update.addFieldUpdate(FieldUpdate.createAssign(type.getField("documentField"), documentFieldValue));
         }
@@ -323,7 +323,7 @@ public class DocumentScriptTestCase {
 
     private static DocumentUpdate newPathUpdate(FieldValue documentFieldValue, FieldValue extraFieldValue) {
         DocumentType type = newDocumentType();
-        DocumentUpdate update = new DocumentUpdate(type, "doc:scheme:");
+        DocumentUpdate update = new DocumentUpdate(type, "id:ns:documentType::");
         if (documentFieldValue != null) {
             update.addFieldPathUpdate(new AssignFieldPathUpdate(type, "documentField", documentFieldValue));
         }

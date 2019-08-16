@@ -322,7 +322,7 @@ public class SchemaMappingAndAccessesTest {
         assertNull(doc.getFieldValue("title"));
         try {
             mapped.setDataType(new DocumentType("newType"));
-            fail("Should not be bale to set new type");
+            fail("Should not be able to set new type");
         } catch (IllegalArgumentException e) {
             assertEquals("Trying to set a document type (newType) that doesn't match the document id (id:map:album::2).", e.getMessage());
         }
