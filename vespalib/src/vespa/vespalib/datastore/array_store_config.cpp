@@ -6,7 +6,8 @@
 namespace search::datastore {
 
 ArrayStoreConfig::ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &defaultSpec)
-    : _allocSpecs()
+    : _allocSpecs(),
+      _enable_free_lists(false)
 {
     for (size_t i = 0; i < (maxSmallArraySize + 1); ++i) {
         _allocSpecs.push_back(defaultSpec);
@@ -14,7 +15,8 @@ ArrayStoreConfig::ArrayStoreConfig(size_t maxSmallArraySize, const AllocSpec &de
 }
 
 ArrayStoreConfig::ArrayStoreConfig(const AllocSpecVector &allocSpecs)
-    : _allocSpecs(allocSpecs)
+    : _allocSpecs(allocSpecs),
+      _enable_free_lists(false)
 {
 }
 

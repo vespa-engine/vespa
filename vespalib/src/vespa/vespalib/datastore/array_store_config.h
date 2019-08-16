@@ -39,6 +39,7 @@ public:
 
 private:
     AllocSpecVector _allocSpecs;
+    bool _enable_free_lists;
 
     /**
      * Setup an array store with arrays of size [1-(allocSpecs.size()-1)] allocated in buffers and
@@ -56,6 +57,15 @@ public:
 
     size_t maxSmallArraySize() const { return _allocSpecs.size() - 1; }
     const AllocSpec &specForSize(size_t arraySize) const;
+    ArrayStoreConfig& enable_free_lists(bool enable) & noexcept {
+        _enable_free_lists = enable;
+        return *this;
+    }
+    ArrayStoreConfig&& enable_free_lists(bool enable) && noexcept {
+        _enable_free_lists = enable;
+        return std::move(*this);
+    }
+    [[nodiscard]] bool enable_free_lists() const noexcept { return _enable_free_lists; }
 
     /**
      * Generate a config that is optimized for the given memory huge page size.

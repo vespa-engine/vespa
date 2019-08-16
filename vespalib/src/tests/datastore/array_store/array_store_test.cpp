@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/datastore/memstats.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -12,6 +13,7 @@ using vespalib::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using MemStats = search::datastore::test::MemStats;
+using BufferStats = search::datastore::test::BufferStats;
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
@@ -29,10 +31,10 @@ struct Fixture
     ArrayStoreType store;
     ReferenceStore refStore;
     generation_t generation;
-    Fixture(uint32_t maxSmallArraySize)
+    Fixture(uint32_t maxSmallArraySize, bool enable_free_lists = true)
         : store(ArrayStoreConfig(maxSmallArraySize,
                                  ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8 * 1024,
-                                                             ALLOC_GROW_FACTOR))),
+                                                             ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists)),
           refStore(),
           generation(1)
     {}
@@ -66,10 +68,18 @@ struct Fixture
     uint32_t getBufferId(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
-    void assertBufferState(EntryRef ref, const MemStats expStats) const {
+    void assertBufferState(EntryRef ref, const MemStats& expStats) const {
         EXPECT_EQUAL(expStats._used, store.bufferState(ref).size());
         EXPECT_EQUAL(expStats._hold, store.bufferState(ref).getHoldElems());
         EXPECT_EQUAL(expStats._dead, store.bufferState(ref).getDeadElems());
+    }
+    void assert_buffer_stats(EntryRef ref, const BufferStats& exp_stats) const {
+        auto& state = store.bufferState(ref);
+        EXPECT_EQUAL(exp_stats._used, state.size());
+        EXPECT_EQUAL(exp_stats._hold, state.getHoldElems());
+        EXPECT_EQUAL(exp_stats._dead, state.getDeadElems());
+        EXPECT_EQUAL(exp_stats._extra_used, state.getExtraUsedBytes());
+        EXPECT_EQUAL(exp_stats._extra_hold, state.getExtraHoldBytes());
     }
     void assertMemoryUsage(const MemStats expStats) const {
         MemoryUsage act = store.getMemoryUsage();
@@ -81,6 +91,14 @@ struct Fixture
         for (const auto &elem : refStore) {
             TEST_DO(assertGet(elem.first, elem.second));
         }
+    }
+    void assert_ref_reused(const EntryVector& first, const EntryVector& second, bool should_reuse) {
+        EntryRef ref1 = add(first);
+        remove(ref1);
+        trimHoldLists();
+        EntryRef ref2 = add(second);
+        EXPECT_EQUAL(should_reuse, (ref2 == ref1));
+        assertGet(ref2, second);
     }
     EntryRef getEntryRef(const EntryVector &input) {
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
@@ -166,10 +184,37 @@ TEST_F("require that elements are put on hold when a small array is removed", Nu
 TEST_F("require that elements are put on hold when a large array is removed", NumberFixture(3))
 {
     EntryRef ref = f.add({1,2,3,4});
-    // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
+    // Note: The first buffer has the first element reserved -> we expect 2 elements used here.
     TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(0).dead(1)));
     f.store.remove(ref);
     TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(1).dead(1)));
+}
+
+TEST_F("small arrays are allocated from free-lists when enabled", NumberFixture(3, true)) {
+    f.assert_ref_reused({1,2,3}, {4,5,6}, true);
+}
+
+TEST_F("small arrays are NOT allocated from free-lists when disabled", NumberFixture(3, false)) {
+    f.assert_ref_reused({1,2,3}, {4,5,6}, false);
+}
+
+TEST_F("large arrays are allocated from free-lists when enabled", NumberFixture(3, true)) {
+    f.assert_ref_reused({1,2,3,4}, {5,6,7,8}, true);
+}
+
+TEST_F("large arrays are NOT allocated from free-lists when disabled", NumberFixture(3, false)) {
+    f.assert_ref_reused({1,2,3,4}, {5,6,7,8}, false);
+}
+
+TEST_F("track size of large array allocations with free-lists enabled", NumberFixture(3, true)) {
+    EntryRef ref = f.add({1,2,3,4});
+    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(16)));
+    f.remove({1,2,3,4});
+    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(1).dead(1).extra_hold(16).extra_used(16)));
+    f.trimHoldLists();
+    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(2).extra_used(0)));
+    f.add({5,6,7,8,9});
+    TEST_DO(f.assert_buffer_stats(ref, BufferStats().used(2).hold(0).dead(1).extra_used(20)));
 }
 
 TEST_F("require that new underlying buffer is allocated when current is full", SmallOffsetNumberFixture(3))
