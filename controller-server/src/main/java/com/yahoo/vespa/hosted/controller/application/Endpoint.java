@@ -234,11 +234,12 @@ public class Endpoint {
         }
 
         /** Sets the cluster target for this */
-        public EndpointBuilder target(ClusterSpec.Id cluster) {
+        public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
             if (endpointId != null || wildcard) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
+            this.zone = zone;
             return this;
         }
 
@@ -246,18 +247,26 @@ public class Endpoint {
         public EndpointBuilder named(EndpointId endpointId) {
             if (cluster != null || wildcard) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
-            } else if (zone != null) {
-                throw new IllegalArgumentException("Cannot set zone for rotation target");
             }
             this.endpointId = endpointId;
             return this;
         }
 
-        /** Sets the wildcard target for this */
+        /** Sets the global wildcard target for this */
         public EndpointBuilder wildcard() {
             if (endpointId != null || cluster != null) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
+            this.wildcard = true;
+            return this;
+        }
+
+        /** Sets the zone wildcard target for this */
+        public EndpointBuilder wildcard(ZoneId zone) {
+            if(endpointId != null || cluster != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
+            }
+            this.zone = zone;
             this.wildcard = true;
             return this;
         }
@@ -280,16 +289,6 @@ public class Endpoint {
             return this;
         }
 
-        public EndpointBuilder zone(ZoneId zone) {
-            if (endpointId != null) {
-                throw new IllegalArgumentException("Cannot set zone for endpoint target");
-            } else if (this.zone != null) {
-                throw new IllegalArgumentException("Cannot set multiple zones");
-            }
-            this.zone = zone;
-            return this;
-        }
-
         /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
             String name;
@@ -299,7 +298,6 @@ public class Endpoint {
                 name = endpointId.id();
             } else if (cluster != null) {
                 name = cluster.value();
-                if(zone == null) throw new IllegalArgumentException("Must set zone for cluster target");
             } else {
                 throw new IllegalArgumentException("Must set either cluster, rotation or wildcard target");
             }

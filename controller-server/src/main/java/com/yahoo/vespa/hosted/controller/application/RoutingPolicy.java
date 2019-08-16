@@ -71,7 +71,7 @@ public class RoutingPolicy {
 
     /** Returns the endpoint of this */
     public Endpoint endpointIn(SystemName system) {
-        return Endpoint.of(owner).target(cluster).zone(zone).on(Port.tls()).directRouting().in(system);
+        return Endpoint.of(owner).target(cluster, zone).on(Port.tls()).directRouting().in(system);
     }
 
     /** Returns rotation endpoints of this */
