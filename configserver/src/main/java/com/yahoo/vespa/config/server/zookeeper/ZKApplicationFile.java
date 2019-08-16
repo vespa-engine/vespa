@@ -20,10 +20,10 @@ import java.util.logging.Logger;
 class ZKApplicationFile extends ApplicationFile {
 
     private static final Logger log = Logger.getLogger("ZKApplicationFile");
-    private final ZKLiveApp zkApp;
+    private final ZKApplication zkApp;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ZKApplicationFile(Path path, ZKLiveApp app) {
+    public ZKApplicationFile(Path path, ZKApplication app) {
         super(path);
         this.zkApp = app;
     }

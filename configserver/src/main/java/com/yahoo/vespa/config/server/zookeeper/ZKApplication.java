@@ -11,20 +11,20 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Responsible for providing data from the currently live application subtree in zookeeper.
- * (i.e. /config/v2/tenants/x/&lt;id of currently active app&gt;/).
+ * Responsible for providing data from an application subtree in zookeeper.
+ * (i.e. /config/v2/tenants/x/session/&lt;session id for an application&gt;/).
  *
- * Note: The application revision ("session") stored in this tree is not necessarily live, just complete,
- * preparable, prepared or active.
+ * Takes care of
+ *
  *
  * @author Tony Vaagenes
  */
-public class ZKLiveApp {
+public class ZKApplication {
 
     private final ConfigCurator zk;
     private final Path appPath;
 
-    ZKLiveApp(ConfigCurator zk, Path appPath) {
+    ZKApplication(ConfigCurator zk, Path appPath) {
         this.zk = zk;
         this.appPath = appPath;
     }
@@ -33,11 +33,11 @@ public class ZKLiveApp {
      * Returns a list of the files (as readers) in the given path. The readers <b>must</b>
      * be closed by the caller.
      *
-     * @param path           a path relative to the currently active application
-     *                       (i.e. /config/v2/tenants/x/applications/&lt;id of currently active app&gt;/).
+     * @param path           a path relative to the session
+     *                       (i.e. /config/v2/tenants/x/sessions/&lt;session id&gt;/).
      * @param fileNameSuffix the suffix of files to return, or null to return all
      * @param recursive      if true, all files from all subdirectories of this will also be returned
-     * @return the files in the given path, or an empty list (never null) if the directory does not exist or is empty.
+     * @return the files in the given path, or an empty list if the directory does not exist or is empty.
      *         The list gets owned by the caller and can be modified freely.
      */
     List<NamedReader> getAllDataFromDirectory(String path, String fileNameSuffix, boolean recursive) {
@@ -114,15 +114,6 @@ public class ZKLiveApp {
             zk.putData(getFullPath(path), data);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not put data to node '" + getFullPath(path) + "' in zookeeper", e);
-        }
-    }
-
-    public void create(String path, String node) {
-        if (path != null && !path.startsWith("/")) path = "/" + path;
-        try {
-            zk.createNode(getFullPath(path), node);
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException(e);
         }
     }
 
