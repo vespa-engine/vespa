@@ -177,8 +177,6 @@ make %{_smp_mflags}
 %endif
 
 %install
-rm -rf %{buildroot}
-
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
 %else
