@@ -555,13 +555,13 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
                                "route[0].selector \"testdoc\"\n"
                                "route[0].feed \"myfeed\"\n"
                                "route[1].name \"bar\"\n"
-                               "route[1].selector \"other\"\n"
+                               "route[1].selector \"testdoc\"\n"
                                "route[1].feed \"myfeed\"\n]")
                  .addRecipient("foo")
                  .addRecipient("bar"));
     frame.setMessage(make_unique<GetDocumentMessage>(DocumentId("id:ns:testdoc::yarn")));
     std::vector<mbus::RoutingNode*> selected;
-    EXPECT_TRUE(frame.select(selected, 1));
+    EXPECT_TRUE(frame.select(selected, 2));
     for (uint32_t i = 0, len = selected.size(); i < len; ++i) {
         Document::SP doc;
         if (i == 0) {
