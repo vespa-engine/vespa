@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author smorgrav
@@ -69,8 +70,7 @@ public class NodePrioritizerTest {
     }
 
     private static Node createNode(Node parent, String hostname, NodeResources resources) {
-        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.of(parent.hostname()),
-                                     resources, NodeType.tenant);
+        return Node.createDockerNode(Set.of("127.0.0.1"), hostname, parent.hostname(), resources, NodeType.tenant);
     }
 
     private static Node createParent(String hostname) {

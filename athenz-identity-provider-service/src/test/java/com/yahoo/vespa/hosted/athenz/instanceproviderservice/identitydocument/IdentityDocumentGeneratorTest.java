@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.TestUtils.getAthenzProviderConfig;
 import static org.junit.Assert.assertEquals;
@@ -65,10 +66,9 @@ public class IdentityDocumentGeneratorTest {
                                       Optional.empty(),
                                       new MockNodeFlavors().getFlavorOrThrow("default"),
                                       NodeType.host);
-        Node containerNode = Node.createDockerNode(ImmutableSet.of("::1"),
-                                                   new HashSet<>(),
+        Node containerNode = Node.createDockerNode(Set.of("::1"),
                                                    containerHostname,
-                                                   Optional.of(parentHostname),
+                                                   parentHostname,
                                                    new MockNodeFlavors().getFlavorOrThrow("default").resources(),
                                                    NodeType.tenant)
                 .with(allocation);
