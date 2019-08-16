@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +34,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
-        return Node.create(id, Set.of(), Set.of(), hostHostname, Optional.empty(), Optional.empty(), hostFlavor, NodeType.host);
+        return Node.create(id, IP.Config.EMPTY, hostHostname, Optional.empty(), Optional.empty(), hostFlavor, NodeType.host);
     }
 
     /** Generate {@link Node} instance representing the node running on this physical host */

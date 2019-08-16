@@ -53,8 +53,8 @@ public final class Node {
     }
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
-        return new Node(openStackId, new IP.Config(ipAddresses, ipAddressPool), hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, IP.Config ipConfig, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipConfig, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                 Optional.empty(), History.empty(), type, new Reports(), modelName);
     }
 

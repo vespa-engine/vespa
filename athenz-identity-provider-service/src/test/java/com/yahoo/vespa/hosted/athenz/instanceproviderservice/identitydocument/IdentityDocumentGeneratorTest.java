@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument;
 
-
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -24,6 +22,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -59,8 +58,7 @@ public class IdentityDocumentGeneratorTest {
                                                Generation.initial(),
                                                false);
         Node parentNode = Node.create("ostkid",
-                                      ImmutableSet.of("127.0.0.1"),
-                                      new HashSet<>(),
+                                      new IP.Config(Set.of("127.0.0.1"), Set.of()),
                                       parentHostname,
                                       Optional.empty(),
                                       Optional.empty(),

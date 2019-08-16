@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
@@ -22,6 +21,7 @@ import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import org.junit.Test;
 
@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -219,7 +220,7 @@ public class InstanceValidatorTest {
         MockNodeFlavors flavors = new MockNodeFlavors();
         List<Node> nodeList = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            Node node = Node.create("foo" + i, ImmutableSet.of("::1" + i, "::2" + i, "::3" + i), Collections.emptySet(), "foo" + i, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
+            Node node = Node.create("foo" + i, new IP.Config(Set.of("::1" + i, "::2" + i, "::3" + i), Set.of()), "foo" + i, Optional.empty(), Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant);
             nodeList.add(node);
         }
         return nodeList;
