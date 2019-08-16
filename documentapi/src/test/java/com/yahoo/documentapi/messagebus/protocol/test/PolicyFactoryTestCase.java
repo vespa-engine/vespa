@@ -76,7 +76,7 @@ public class PolicyFactoryTestCase {
     }
 
     private static Message createMessage() {
-        Message msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
+        Message msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
         msg.getTrace().setLevel(9);
         return msg;
     }

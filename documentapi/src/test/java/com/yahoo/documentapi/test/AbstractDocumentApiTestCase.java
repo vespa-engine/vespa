@@ -46,21 +46,21 @@ public abstract class AbstractDocumentApiTestCase {
         SyncSession session = access().createSyncSession(new SyncParameters.Builder().build());
 
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
-        Document doc1 = new Document(type, new DocumentId("doc:music:1"));
-        Document doc2 = new Document(type, new DocumentId("doc:music:2"));
+        Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
+        Document doc2 = new Document(type, new DocumentId("id:ns:music::2"));
 
         session.put(new DocumentPut(doc1));
         session.put(new DocumentPut(doc2));
-        assertEquals(doc1, session.get(new DocumentId("doc:music:1")));
-        assertEquals(doc2, session.get(new DocumentId("doc:music:2")));
+        assertEquals(doc1, session.get(new DocumentId("id:ns:music::1")));
+        assertEquals(doc2, session.get(new DocumentId("id:ns:music::2")));
 
-        session.remove(new DocumentRemove(new DocumentId("doc:music:1")));
-        assertNull(session.get(new DocumentId("doc:music:1")));
-        assertEquals(doc2, session.get(new DocumentId("doc:music:2")));
+        session.remove(new DocumentRemove(new DocumentId("id:ns:music::1")));
+        assertNull(session.get(new DocumentId("id:ns:music::1")));
+        assertEquals(doc2, session.get(new DocumentId("id:ns:music::2")));
 
-        session.remove(new DocumentRemove(new DocumentId("doc:music:2")));
-        assertNull(session.get(new DocumentId("doc:music:1")));
-        assertNull(session.get(new DocumentId("doc:music:2")));
+        session.remove(new DocumentRemove(new DocumentId("id:ns:music::2")));
+        assertNull(session.get(new DocumentId("id:ns:music::1")));
+        assertNull(session.get(new DocumentId("id:ns:music::2")));
 
         session.destroy();
     }
@@ -71,8 +71,8 @@ public abstract class AbstractDocumentApiTestCase {
         HashMap<Long, Response> results = new LinkedHashMap<>();
         Result result;
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
-        Document doc1 = new Document(type, new DocumentId("doc:music:1"));
-        Document doc2 = new Document(type, new DocumentId("doc:music:2"));
+        Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
+        Document doc2 = new Document(type, new DocumentId("id:ns:music::2"));
 
         result = session.put(doc1);
         assertTrue(result.isSuccess());
@@ -84,37 +84,37 @@ public abstract class AbstractDocumentApiTestCase {
         List<Response> responses = new ArrayList<>();
         waitForAcks(session, 2, responses);
 
-        result = session.get(new DocumentId("doc:music:1"));
+        result = session.get(new DocumentId("id:ns:music::1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc1));
-        result = session.get(new DocumentId("doc:music:2"));
+        result = session.get(new DocumentId("id:ns:music::2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc2));
         // These Gets shall observe the ACKed Puts sent for the same document IDs.
         waitForAcks(session, 2, responses);
 
-        result = session.remove(new DocumentId("doc:music:1"));
+        result = session.remove(new DocumentId("id:ns:music::1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new Response(result.getRequestId()));
         waitForAcks(session, 1, responses);
 
-        result = session.get(new DocumentId("doc:music:1"));
+        result = session.get(new DocumentId("id:ns:music::1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
-        result = session.get(new DocumentId("doc:music:2"));
+        result = session.get(new DocumentId("id:ns:music::2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId(), doc2));
         waitForAcks(session, 2, responses);
 
-        result = session.remove(new DocumentId("doc:music:2"));
+        result = session.remove(new DocumentId("id:ns:music::2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new Response(result.getRequestId()));
         waitForAcks(session, 1, responses);
 
-        result = session.get(new DocumentId("doc:music:1"));
+        result = session.get(new DocumentId("id:ns:music::1"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
-        result = session.get(new DocumentId("doc:music:2"));
+        result = session.get(new DocumentId("id:ns:music::2"));
         assertTrue(result.isSuccess());
         results.put(result.getRequestId(), new DocumentResponse(result.getRequestId()));
         waitForAcks(session, 2, responses);
@@ -132,7 +132,7 @@ public abstract class AbstractDocumentApiTestCase {
         MyHandler handler = new MyHandler();
         AsyncSession session = access().createAsyncSession(new AsyncParameters().setResponseHandler(handler));
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
-        Document doc1 = new Document(type, new DocumentId("doc:music:1"));
+        Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
         assertTrue(session.put(doc1).isSuccess());
         assertTrue(handler.latch.await(60, TimeUnit.SECONDS));
         assertNotNull(handler.response);
