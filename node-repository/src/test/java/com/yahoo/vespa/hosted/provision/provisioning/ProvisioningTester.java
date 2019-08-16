@@ -290,7 +290,6 @@ public class ProvisioningTester {
                                                 hostname,
                                                 new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
-                                                Optional.empty(),
                                                 flavor,
                                                 type));
         }
@@ -310,7 +309,6 @@ public class ProvisioningTester {
             Node node = nodeRepository.createNode(hostname,
                     hostname,
                     new IP.Config(Set.of(ipv4), Set.of()),
-                    Optional.empty(),
                     Optional.empty(),
                     nodeFlavors.getFlavorOrThrow(flavor),
                     NodeType.config);

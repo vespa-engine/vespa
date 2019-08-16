@@ -133,7 +133,7 @@ public class CapacityCheckerTester {
                     excessCapacity);
             Node node = nodeRepository.createNode(hostname, hostname,
                     new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    Optional.empty(), new Flavor(nr), NodeType.host);
+                    new Flavor(nr), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -152,7 +152,7 @@ public class CapacityCheckerTester {
                     .collect(Collectors.toSet());
             Node node = nodeRepository.createNode(hostname, hostname,
                     new IP.Config(Set.of("::"), availableIps), Optional.empty(),
-                    Optional.empty(), new Flavor(capacity), NodeType.host);
+                    new Flavor(capacity), NodeType.host);
             hosts.add(node);
         }
         return hosts;
@@ -268,7 +268,7 @@ public class CapacityCheckerTester {
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
                 new IP.Config(nodeModel.ipAddresses, nodeModel.additionalIpAddresses),
-                nodeModel.parentHostname, Optional.empty(), f, nodeModel.type);
+                nodeModel.parentHostname, f, nodeModel.type);
 
         if (membership != null) {
             return node.allocate(owner, membership, Instant.now());
