@@ -47,7 +47,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStoreAllocator<EntryT, RefT>::move(EntryRef ref)
 {
-    return _store.template allocator<WrappedEntryType>(0).alloc(getWrapped(ref)).ref;
+    return _store.template allocator<WrappedEntryType>(0).alloc(get_wrapped(ref)).ref;
 }
 
 }

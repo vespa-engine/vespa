@@ -51,7 +51,7 @@ struct TestBase : public ::testing::Test {
         return EntryRefType(ref).bufferId();
     }
     const BufferState &buffer_state(EntryRef ref) const {
-        return allocator.getDataStore().getBufferState(get_buffer_id(ref));
+        return allocator.get_data_store().getBufferState(get_buffer_id(ref));
     }
     void assert_buffer_state(EntryRef ref, const BufferStats expStats) const {
         EXPECT_EQ(expStats._used, buffer_state(ref).size());
@@ -61,8 +61,8 @@ struct TestBase : public ::testing::Test {
         EXPECT_EQ(expStats._extra_hold, buffer_state(ref).getExtraHoldBytes());
     }
     void trim_hold_lists() {
-        allocator.getDataStore().transferHoldLists(generation++);
-        allocator.getDataStore().trimHoldLists(generation);
+        allocator.get_data_store().transferHoldLists(generation++);
+        allocator.get_data_store().trimHoldLists(generation);
     }
 };
 
@@ -122,7 +122,7 @@ TEST_F(StringTest, string_length_determines_buffer)
 
 TEST_F(StringTest, free_list_is_used_when_enabled)
 {
-    allocator.getDataStore().enableFreeLists();
+    allocator.get_data_store().enableFreeLists();
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
     remove(ref1);
@@ -138,7 +138,7 @@ TEST_F(StringTest, free_list_is_used_when_enabled)
 
 TEST_F(StringTest, free_list_is_not_used_when_disabled)
 {
-    allocator.getDataStore().disableFreeLists();
+    allocator.get_data_store().disableFreeLists();
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
     remove(ref1);
@@ -154,7 +154,7 @@ TEST_F(StringTest, free_list_is_not_used_when_disabled)
 
 TEST_F(StringTest, free_list_is_never_used_for_move)
 {
-    allocator.getDataStore().enableFreeLists();
+    allocator.get_data_store().enableFreeLists();
     EntryRef ref1 = add(small.c_str());
     EntryRef ref2 = add(spaces1000.c_str());
     EntryRef ref3 = add(small.c_str());
