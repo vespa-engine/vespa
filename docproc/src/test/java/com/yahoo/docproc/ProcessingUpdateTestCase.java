@@ -44,10 +44,10 @@ public class ProcessingUpdateTestCase {
         dtm = new DocumentTypeManager();
         dtm.registerDocumentType(articleType);
 
-        put = new DocumentPut(articleType, "doc:banana:apple");
+        put = new DocumentPut(articleType, "id:banana:article::1");
         put.getDocument().setFieldValue("body", "this is the body of the article, blah blah blah");
         FieldUpdate upd = FieldUpdate.createAssign(articleType.getField("body"), new StringFieldValue("this is the updated body of the article, blahdi blahdi blahdi"));
-        update = new DocumentUpdate(articleType, new DocumentId("doc:grape:orange"));
+        update = new DocumentUpdate(articleType, new DocumentId("id:grape:article::2"));
         update.addFieldUpdate(upd);
 
         DocprocService service = new DocprocService("update");

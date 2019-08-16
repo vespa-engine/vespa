@@ -26,7 +26,7 @@ public class FailingWithErrorTestCase {
 
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);
-        DocumentPut put = new DocumentPut(type, new DocumentId("doc:failing:test:1"));
+        DocumentPut put = new DocumentPut(type, new DocumentId("id:failing:test::1"));
         put.getDocument().setFieldValue("test", "foobar");
 
         service.process(put);
