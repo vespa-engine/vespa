@@ -193,11 +193,7 @@ public final class Version implements Comparable<Version> {
 
     /** Returns new Version(versionString), or Version.emptyVersion if the input string is null or "" */
     public static Version fromString(String versionString) {
-        if (versionString == null) {
-            return emptyVersion;
-        } else {
-            return new Version(versionString);
-        }
+        return (versionString == null) ? emptyVersion :new Version(versionString);
     }
 
     /**
@@ -225,23 +221,11 @@ public final class Version implements Comparable<Version> {
     private String toStringValue() {
         StringBuilder b = new StringBuilder();
         if (! qualifier.isEmpty()) {
-            b.append(getMajor());
-            b.append(".");
-            b.append(getMinor());
-            b.append(".");
-            b.append(getMicro());
-            b.append(".");
-            b.append(qualifier);
+            b.append(getMajor()).append(".").append(getMinor()).append(".").append(getMicro()).append(".").append(qualifier);
         } else if (getMicro() != 0) {
-            b.append(getMajor());
-            b.append(".");
-            b.append(getMinor());
-            b.append(".");
-            b.append(getMicro());
+            b.append(getMajor()).append(".").append(getMinor()).append(".").append(getMicro());
         } else if (getMinor() != 0) {
-            b.append(getMajor());
-            b.append(".");
-            b.append(getMinor());
+            b.append(getMajor()).append(".").append(getMinor());
         } else if (getMajor() != 0) {
             b.append(getMajor());
         }
@@ -256,11 +240,7 @@ public final class Version implements Comparable<Version> {
      */
     public String toFullString() {
         StringBuilder b = new StringBuilder();
-        b.append(getMajor());
-        b.append(".");
-        b.append(getMinor());
-        b.append(".");
-        b.append(getMicro());
+        b.append(getMajor()).append(".").append(getMinor()).append(".").append(getMicro());
 
         if (! qualifier.isEmpty()) {
             b.append(".");
@@ -382,11 +362,9 @@ public final class Version implements Comparable<Version> {
 
     /** Creates a version specification that only matches this version */
     public VersionSpecification toSpecification() {
-        if (this == emptyVersion)
-            return VersionSpecification.emptyVersionSpecification;
-        else {
-            return new VersionSpecification(getMajor(), getMinor(), getMicro(), getQualifier());
-        }
+        return (this == emptyVersion)
+                ? VersionSpecification.emptyVersionSpecification
+                : new VersionSpecification(getMajor(), getMinor(), getMicro(), getQualifier());
     }
 
 }
