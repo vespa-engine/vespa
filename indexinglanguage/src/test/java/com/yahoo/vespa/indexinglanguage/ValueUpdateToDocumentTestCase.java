@@ -21,7 +21,7 @@ public class ValueUpdateToDocumentTestCase {
         docType.addField(field);
 
         ValueUpdate update = ValueUpdate.createAssign(new IntegerFieldValue(42));
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         assertEquals(42, ((IntegerFieldValue)doc.getFieldValue("my_int")).getInteger());
@@ -35,7 +35,7 @@ public class ValueUpdateToDocumentTestCase {
         docType.addField(field);
 
         ValueUpdate update = ValueUpdate.createClear();
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         assertNotNull(doc.getFieldValue("my_int"));
@@ -50,7 +50,7 @@ public class ValueUpdateToDocumentTestCase {
         docType.addField(field);
 
         ValueUpdate update = ValueUpdate.createAssign(new StringFieldValue("42"));
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         assertEquals("42", ((StringFieldValue)doc.getFieldValue("my_str")).getString());
@@ -69,7 +69,7 @@ public class ValueUpdateToDocumentTestCase {
         arrVal.add(new IntegerFieldValue(9));
         ValueUpdate update = ValueUpdate.createAssign(arrVal);
 
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         FieldValue obj = doc.getFieldValue("my_arr");
@@ -89,7 +89,7 @@ public class ValueUpdateToDocumentTestCase {
 
         ValueUpdate update = ValueUpdate.createMap(new StringFieldValue("69"), ValueUpdate.createAssign(new IntegerFieldValue(96)));
 
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         FieldValue obj = doc.getFieldValue("my_wset");
@@ -108,7 +108,7 @@ public class ValueUpdateToDocumentTestCase {
         docType.addField(field);
 
         ValueUpdate update = ValueUpdate.createMap(new StringFieldValue("b"), ValueUpdate.createAssign(new IntegerFieldValue(42)));
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         FieldValue obj = doc.getFieldValue("a");
@@ -127,7 +127,7 @@ public class ValueUpdateToDocumentTestCase {
 
         ValueUpdate update = ValueUpdate.createMap(new IntegerFieldValue(0), ValueUpdate.createAdd(new IntegerFieldValue(6)));
 
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         FieldValue obj = doc.getFieldValue("my_arr");
@@ -146,7 +146,7 @@ public class ValueUpdateToDocumentTestCase {
 
         ValueUpdate update = ValueUpdate.createClear();
 
-        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("doc:foo:1"), field, update);
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
         assertNotNull(doc);
 
         FieldValue obj = doc.getFieldValue("my_arr");

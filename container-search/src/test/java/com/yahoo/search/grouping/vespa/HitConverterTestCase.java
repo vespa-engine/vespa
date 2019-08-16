@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 public class HitConverterTestCase {
 
     private GlobalId createGlobalId(int docId) {
-        return new GlobalId((new DocumentId("doc:test:" + docId)).getGlobalId());
+        return new GlobalId((new DocumentId("id:ns:type::" + docId)).getGlobalId());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class HitConverterTestCase {
     public void requireThatVdsHitCanBeConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         GroupingListHit context = new GroupingListHit(null, new DocsumDefinitionSet(sixtynine()));
-        VdsHit lowHit = new VdsHit("doc:scheme:", new byte[] { 0x55, 0x55, 0x55, 0x55 }, 1);
+        VdsHit lowHit = new VdsHit("id:ns:type::", new byte[] { 0x55, 0x55, 0x55, 0x55 }, 1);
         lowHit.setContext(context);
         Hit hit = converter.toSearchHit("69", lowHit);
         assertNotNull(hit);

@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documentid="doc:test:foo" documenttype="news"/>
-    <update documentid="doc:test:foo" documenttype="news"/>
-    <remove documentid="doc:test:foo"/>
+    <document documentid="id:test:news::foo" documenttype="news"/>
+    <update documentid="id:test:news::foo" documenttype="news"/>
+    <remove documentid="id:test:news::foo"/>
 </vespafeed>

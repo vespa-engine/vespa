@@ -384,11 +384,11 @@ public class VdsVisitorTestCase {
 
     private void supplyResults(VdsVisitor visitor) {
         AckToken ackToken = null;
-        visitor.onMessage(createQRM("doc:0", 0.3), ackToken);
-        visitor.onMessage(createSRM("doc:1", 1.0), ackToken);
-        visitor.onMessage(createSRM("doc:2", 0.5), ackToken);
-        visitor.onMessage(createDSM("doc:1"), ackToken);
-        visitor.onMessage(createDSM("doc:2"), ackToken);
+        visitor.onMessage(createQRM("id:ns:type::0", 0.3), ackToken);
+        visitor.onMessage(createSRM("id:ns:type::1", 1.0), ackToken);
+        visitor.onMessage(createSRM("id:ns:type::2", 0.5), ackToken);
+        visitor.onMessage(createDSM("id:ns:type::1"), ackToken);
+        visitor.onMessage(createDSM("id:ns:type::2"), ackToken);
         try {
             visitor.onMessage(createM(), ackToken);
             assertTrue("Unsupported message did not cause exception", false);
@@ -408,13 +408,13 @@ public class VdsVisitorTestCase {
             SearchResult.Hit hit = visitor.getHits().get(i);
             int index = qa.offset + i;
             if (index==0) {
-                assertEquals("doc:1", hit.getDocId());
+                assertEquals("id:ns:type::1", hit.getDocId());
                 assertEquals(1.0, hit.getRank(), 0.01);
             } else if (index==1) {
-                assertEquals("doc:2", hit.getDocId());
+                assertEquals("id:ns:type::2", hit.getDocId());
                 assertEquals(0.5, hit.getRank(), 0.01);
             } else if (index==2) {
-                assertEquals("doc:0", hit.getDocId());
+                assertEquals("id:ns:type::0", hit.getDocId());
                 assertEquals(0.3, hit.getRank(), 0.01);
             } else {
                 assertTrue("Got too many hits", false);

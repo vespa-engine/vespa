@@ -382,8 +382,8 @@ public class GroupingExecutorTestCase {
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
                 .addAggregationResult(new HitsAggregationResult(1, "baz"))
         ));
-        GlobalId gid1 = new GlobalId((new DocumentId("doc:test:1")).getGlobalId());
-        GlobalId gid2 = new GlobalId((new DocumentId("doc:test:2")).getGlobalId());
+        GlobalId gid1 = new GlobalId((new DocumentId("id:ns:type::1")).getGlobalId());
+        GlobalId gid2 = new GlobalId((new DocumentId("id:ns:type::2")).getGlobalId());
         Grouping pass1A = new Grouping(0);
         pass1A.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))
@@ -464,7 +464,7 @@ public class GroupingExecutorTestCase {
         ));
         GroupingListHit pass0 = new GroupingListHit(Arrays.asList(grp), null);
 
-        GlobalId gid = new GlobalId((new DocumentId("doc:test:1")).getGlobalId());
+        GlobalId gid = new GlobalId((new DocumentId("id:ns:type::1")).getGlobalId());
         grp = new Grouping(0);
         grp.setRoot(new com.yahoo.searchlib.aggregation.Group()
                 .addChild(new com.yahoo.searchlib.aggregation.Group().setId(new StringResultNode("foo"))

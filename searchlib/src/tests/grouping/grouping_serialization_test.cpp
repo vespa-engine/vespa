@@ -23,7 +23,7 @@ using namespace search::expression;
 namespace {
 
 document::GlobalId getGlobalId(uint32_t docId) {
-    return document::DocumentId(vespalib::make_string("doc:test:%u", docId))
+    return document::DocumentId(vespalib::make_string("id:test:type::%u", docId))
         .getGlobalId();
 }
 

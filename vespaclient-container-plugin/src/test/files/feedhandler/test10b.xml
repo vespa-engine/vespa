@@ -11,7 +11,7 @@
 
 <vespafeed>
 
-    <document documenttype="news" documentid="doc:news:http://news10a">
+    <document documenttype="news" documentid="id:ns:news::http://news10a">
         <url>testUrl</url>
         <title>testTitle</title>
         <last_downloaded>1</last_downloaded>
@@ -47,7 +47,7 @@
         </weightedsetstring>
     </document>
 
-    <document documenttype="news" documentid="doc:news:http://news10b">
+    <document documenttype="news" documentid="id:ns:news::http://news10b">
         <url>testUrl2</url>
     </document>
 </vespafeed>

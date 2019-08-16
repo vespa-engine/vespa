@@ -96,7 +96,7 @@ Messages60Test::testGetBucketListMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketListMessage", DocumentProtocol::MESSAGE_GETBUCKETLIST, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetBucketListMessage &ref = static_cast<GetBucketListMessage&>(*obj);
             EXPECT_EQUAL(string("foo"), ref.getLoadType().getName());
             EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
@@ -120,7 +120,7 @@ Messages60Test::testEmptyBucketsMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("EmptyBucketsMessage", DocumentProtocol::MESSAGE_EMPTYBUCKETS, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             EmptyBucketsMessage &ref = static_cast<EmptyBucketsMessage&>(*obj);
             for (size_t i=0; i < 13; ++i) {
                 EXPECT_EQUAL(document::BucketId(16, i), ref.getBucketIds()[i]);
@@ -141,7 +141,7 @@ Messages60Test::testStatBucketMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("StatBucketMessage", DocumentProtocol::MESSAGE_STATBUCKET, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             StatBucketMessage &ref = static_cast<StatBucketMessage&>(*obj);
             EXPECT_EQUAL(document::BucketId(16, 123), ref.getBucketId());
             EXPECT_EQUAL("id.user=123", ref.getDocumentSelection());
@@ -200,7 +200,7 @@ Messages60Test::testDestroyVisitorMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("DestroyVisitorMessage", DocumentProtocol::MESSAGE_DESTROYVISITOR, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             DestroyVisitorMessage &ref = static_cast<DestroyVisitorMessage&>(*obj);
             EXPECT_EQUAL(string("myvisitor"), ref.getInstanceId());
         }
@@ -222,7 +222,7 @@ Messages60Test::testDocumentListMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("DocumentListMessage", DocumentProtocol::MESSAGE_DOCUMENTLIST, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             DocumentListMessage &ref = static_cast<DocumentListMessage&>(*obj);
 
             EXPECT_EQUAL("id:scheme:testdoc:n=1234:1", ref.getDocuments()[0].getDocument()->getId().toString());
@@ -245,7 +245,7 @@ Messages60Test::testRemoveLocationMessage()
         EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 29u, serialize("RemoveLocationMessage", msg));
         for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
             mbus::Routable::UP obj = deserialize("RemoveLocationMessage", DocumentProtocol::MESSAGE_REMOVELOCATION, lang);
-            if (EXPECT_TRUE(obj.get() != NULL)) {
+            if (EXPECT_TRUE(obj)) {
                 RemoveLocationMessage &ref = static_cast<RemoveLocationMessage&>(*obj);
                 EXPECT_EQUAL(string("id.group == \"mygroup\""), ref.getDocumentSelection());
                 // FIXME add to wire format, currently hardcoded.
@@ -269,7 +269,7 @@ Messages60Test::testDocumentSummaryMessage()
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(12), serialize("DocumentSummaryMessage-1", srm));
 
     mbus::Routable::UP routable = deserialize("DocumentSummaryMessage-1", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     DocumentSummaryMessage * dm = static_cast<DocumentSummaryMessage *>(routable.get());
@@ -284,7 +284,7 @@ Messages60Test::testDocumentSummaryMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, serialize("DocumentSummaryMessage-2", srm));
     routable = deserialize("DocumentSummaryMessage-2", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<DocumentSummaryMessage *>(routable.get());
@@ -302,7 +302,7 @@ Messages60Test::testDocumentSummaryMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, serialize("DocumentSummaryMessage-3", srm));
     routable = deserialize("DocumentSummaryMessage-3", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<DocumentSummaryMessage *>(routable.get());
@@ -321,15 +321,15 @@ Messages60Test::testDocumentSummaryMessage()
 bool
 Messages60Test::testGetDocumentMessage()
 {
-    GetDocumentMessage tmp(document::DocumentId("doc:scheme:"), "foo bar");
+    GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)27, serialize("GetDocumentMessage", tmp));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetDocumentMessage", DocumentProtocol::MESSAGE_GETDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetDocumentMessage &ref = static_cast<GetDocumentMessage&>(*obj);
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocumentId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocumentId().toString());
             EXPECT_EQUAL(string("foo bar"), ref.getFieldSet());
         }
     }
@@ -347,7 +347,7 @@ Messages60Test::testMapVisitorMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("MapVisitorMessage", DocumentProtocol::MESSAGE_MAPVISITOR, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             MapVisitorMessage &ref = static_cast<MapVisitorMessage&>(*obj);
             EXPECT_EQUAL(3, ref.getData().get("foo", 0));
             EXPECT_EQUAL(5, ref.getData().get("bar", 0));
@@ -375,7 +375,7 @@ Messages60Test::testCreateVisitorReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("CreateVisitorReply", DocumentProtocol::REPLY_CREATEVISITOR, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             CreateVisitorReply &ref = static_cast<CreateVisitorReply&>(*obj);
 
             EXPECT_EQUAL(ref.getLastBucket(), document::BucketId(16, 123));
@@ -394,14 +394,14 @@ Messages60Test::testCreateVisitorReply()
 bool
 Messages60Test::testPutDocumentMessage()
 {
-    auto doc = createDoc(getTypeRepo(), "testdoc", "doc:scheme:");
+    auto doc = createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     PutDocumentMessage msg(doc);
 
     msg.setTimestamp(666);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH +
-                 41u +
+                 45u +
                  serializedLength(msg.getCondition().getSelection()),
                  serialize("PutDocumentMessage", msg));
 
@@ -413,7 +413,7 @@ Messages60Test::testPutDocumentMessage()
             EXPECT_EQUAL(msg.getDocument().getType().getName(), deserializedMsg.getDocument().getType().getName());
             EXPECT_EQUAL(msg.getDocument().getId().toString(), deserializedMsg.getDocument().getId().toString());
             EXPECT_EQUAL(msg.getTimestamp(), deserializedMsg.getTimestamp());
-            EXPECT_EQUAL(67u, deserializedMsg.getApproxSize());
+            EXPECT_EQUAL(71u, deserializedMsg.getApproxSize());
             EXPECT_EQUAL(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
         }
     }
@@ -430,7 +430,7 @@ Messages60Test::testGetBucketStateMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketStateMessage", DocumentProtocol::MESSAGE_GETBUCKETSTATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetBucketStateMessage &ref = static_cast<GetBucketStateMessage&>(*obj);
 
             EXPECT_EQUAL(16u, ref.getBucketId().getUsedBits());
@@ -450,7 +450,7 @@ Messages60Test::testPutDocumentReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("PutDocumentReply", DocumentProtocol::REPLY_PUTDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             WriteDocumentReply &ref = static_cast<WriteDocumentReply&>(*obj);
             EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
         }
@@ -469,7 +469,7 @@ Messages60Test::testUpdateDocumentReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("UpdateDocumentReply", DocumentProtocol::REPLY_UPDATEDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             UpdateDocumentReply &ref = static_cast<UpdateDocumentReply&>(*obj);
             EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
             EXPECT_EQUAL(false, ref.wasFound());
@@ -481,18 +481,18 @@ Messages60Test::testUpdateDocumentReply()
 bool
 Messages60Test::testRemoveDocumentMessage()
 {
-    RemoveDocumentMessage msg(document::DocumentId("doc:scheme:"));
+    RemoveDocumentMessage msg(document::DocumentId("id:ns:testdoc::"));
 
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(16) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(20) + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routablePtr = deserialize("RemoveDocumentMessage", DocumentProtocol::MESSAGE_REMOVEDOCUMENT, lang);
 
         if (EXPECT_TRUE(routablePtr.get() != nullptr)) {
             auto & ref = static_cast<RemoveDocumentMessage &>(*routablePtr);
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocumentId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocumentId().toString());
             EXPECT_EQUAL(msg.getCondition().getSelection(), ref.getCondition().getSelection());
         }
     }
@@ -511,7 +511,7 @@ Messages60Test::testRemoveDocumentReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("RemoveDocumentReply", DocumentProtocol::REPLY_REMOVEDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             RemoveDocumentReply &ref = static_cast<RemoveDocumentReply&>(*obj);
             EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
             EXPECT_EQUAL(false, ref.wasFound());
@@ -533,7 +533,7 @@ Messages60Test::testSearchResultMessage()
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(24), serialize("SearchResultMessage-1", srm));
 
     mbus::Routable::UP routable = deserialize("SearchResultMessage-1", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     SearchResultMessage * dm = static_cast<SearchResultMessage *>(routable.get());
@@ -545,7 +545,7 @@ Messages60Test::testSearchResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, serialize("SearchResultMessage-2", srm));
     routable = deserialize("SearchResultMessage-2", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<SearchResultMessage *>(routable.get());
@@ -563,7 +563,7 @@ Messages60Test::testSearchResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, serialize("SearchResultMessage-3", srm));
     routable = deserialize("SearchResultMessage-3", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<SearchResultMessage *>(routable.get());
@@ -582,7 +582,7 @@ Messages60Test::testSearchResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, serialize("SearchResultMessage-4", srm2));
     routable = deserialize("SearchResultMessage-4", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<SearchResultMessage *>(routable.get());
@@ -621,7 +621,7 @@ Messages60Test::testSearchResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, serialize("SearchResultMessage-5", srm2));
     routable = deserialize("SearchResultMessage-5", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<SearchResultMessage *>(routable.get());
@@ -653,7 +653,7 @@ Messages60Test::testUpdateDocumentMessage()
     const DocumentTypeRepo & repo = getTypeRepo();
     const document::DocumentType & docType = *repo.getDocumentType("testdoc");
 
-    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("doc:scheme:"));
+    auto docUpdate = std::make_shared<document::DocumentUpdate>(repo, docType, document::DocumentId("id:ns:testdoc::"));
 
     docUpdate->addFieldPathUpdate(document::FieldPathUpdate::CP(
         new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
@@ -663,7 +663,7 @@ Messages60Test::testUpdateDocumentMessage()
     msg.setNewTimestamp(777u);
     msg.setCondition(TestAndSetCondition("There's just one condition"));
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 89u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 93u + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         auto routableUp = deserialize("UpdateDocumentMessage", DocumentProtocol::MESSAGE_UPDATEDOCUMENT, lang);
@@ -673,7 +673,7 @@ Messages60Test::testUpdateDocumentMessage()
             EXPECT_EQUAL(msg.getDocumentUpdate(), deserializedMsg.getDocumentUpdate());
             EXPECT_EQUAL(msg.getOldTimestamp(), deserializedMsg.getOldTimestamp());
             EXPECT_EQUAL(msg.getNewTimestamp(), deserializedMsg.getNewTimestamp());
-            EXPECT_EQUAL(115u, deserializedMsg.getApproxSize());
+            EXPECT_EQUAL(119u, deserializedMsg.getApproxSize());
             EXPECT_EQUAL(msg.getCondition().getSelection(), deserializedMsg.getCondition().getSelection());
         }
     }
@@ -694,7 +694,7 @@ Messages60Test::testQueryResultMessage()
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(32), serialize("QueryResultMessage-1", srm));
 
     mbus::Routable::UP routable = deserialize("QueryResultMessage-1", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     QueryResultMessage * dm = static_cast<QueryResultMessage *>(routable.get());
@@ -707,7 +707,7 @@ Messages60Test::testQueryResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, serialize("QueryResultMessage-2", srm));
     routable = deserialize("QueryResultMessage-2", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<QueryResultMessage *>(routable.get());
@@ -726,7 +726,7 @@ Messages60Test::testQueryResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, serialize("QueryResultMessage-3", srm));
     routable = deserialize("QueryResultMessage-3", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<QueryResultMessage *>(routable.get());
@@ -747,7 +747,7 @@ Messages60Test::testQueryResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, serialize("QueryResultMessage-4", srm2));
     routable = deserialize("QueryResultMessage-4", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<QueryResultMessage *>(routable.get());
@@ -787,7 +787,7 @@ Messages60Test::testQueryResultMessage()
 
     EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, serialize("QueryResultMessage-5", srm2));
     routable = deserialize("QueryResultMessage-5", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
-    if (!EXPECT_TRUE(routable.get() != NULL)) {
+    if (!EXPECT_TRUE(routable)) {
         return false;
     }
     dm = static_cast<QueryResultMessage *>(routable.get());
@@ -835,7 +835,7 @@ Messages60Test::testVisitorInfoMessage()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("VisitorInfoMessage", DocumentProtocol::MESSAGE_VISITORINFO, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             VisitorInfoMessage &ref = static_cast<VisitorInfoMessage&>(*obj);
             EXPECT_EQUAL(document::BucketId(16, 1), ref.getFinishedBuckets()[0]);
             EXPECT_EQUAL(document::BucketId(16, 2), ref.getFinishedBuckets()[1]);
@@ -861,7 +861,7 @@ Messages60Test::testDocumentIgnoredReply()
         mbus::Routable::UP obj(
                 deserialize("DocumentIgnoredReply",
                             DocumentProtocol::REPLY_DOCUMENTIGNORED, lang));
-        EXPECT_TRUE(obj.get() != NULL);
+        EXPECT_TRUE(obj);
     }
     return true;
 }
@@ -882,18 +882,18 @@ bool
 Messages60Test::testGetDocumentReply()
 {
     document::Document::SP doc =
-        createDoc(getTypeRepo(), "testdoc", "doc:scheme:");
+        createDoc(getTypeRepo(), "testdoc", "id:ns:testdoc::");
     GetDocumentReply tmp(doc);
 
-    EXPECT_EQUAL((size_t)43, serialize("GetDocumentReply", tmp));
+    EXPECT_EQUAL((size_t)47, serialize("GetDocumentReply", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetDocumentReply", DocumentProtocol::REPLY_GETDOCUMENT, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetDocumentReply &ref = static_cast<GetDocumentReply&>(*obj);
 
             EXPECT_EQUAL(string("testdoc"), ref.getDocument().getType().getName());
-            EXPECT_EQUAL(string("doc:scheme:"), ref.getDocument().getId().toString());
+            EXPECT_EQUAL(string("id:ns:testdoc::"), ref.getDocument().getId().toString());
         }
     }
     return true;
@@ -921,7 +921,7 @@ Messages60Test::testStatBucketReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("StatBucketReply", DocumentProtocol::REPLY_STATBUCKET, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             StatBucketReply &ref = static_cast<StatBucketReply&>(*obj);
             EXPECT_EQUAL("These are the votes of the Norwegian jury", ref.getResults());
         }
@@ -944,7 +944,7 @@ Messages60Test::testWrongDistributionReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("WrongDistributionReply", DocumentProtocol::REPLY_WRONGDISTRIBUTION, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             WrongDistributionReply &ref = static_cast<WrongDistributionReply&>(*obj);
             EXPECT_EQUAL(string("distributor:3 storage:2"), ref.getSystemState());
         }
@@ -964,7 +964,7 @@ Messages60Test::testGetBucketListReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketListReply", DocumentProtocol::REPLY_GETBUCKETLIST, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetBucketListReply &ref = static_cast<GetBucketListReply&>(*obj);
 
             EXPECT_EQUAL(ref.getBuckets()[0], GetBucketListReply::BucketInfo(document::BucketId(16, 123), "foo"));
@@ -978,8 +978,8 @@ Messages60Test::testGetBucketListReply()
 bool
 Messages60Test::testGetBucketStateReply()
 {
-    document::GlobalId foo = document::DocumentId("doc:scheme:foo").getGlobalId();
-    document::GlobalId bar = document::DocumentId("doc:scheme:bar").getGlobalId();
+    document::GlobalId foo = document::DocumentId("id:ns:testdoc::foo").getGlobalId();
+    document::GlobalId bar = document::DocumentId("id:ns:testdoc::bar").getGlobalId();
 
     GetBucketStateReply reply;
     reply.getBucketState().push_back(DocumentState(foo, 777, false));
@@ -988,7 +988,7 @@ Messages60Test::testGetBucketStateReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("GetBucketStateReply", DocumentProtocol::REPLY_GETBUCKETSTATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             GetBucketStateReply &ref = static_cast<GetBucketStateReply&>(*obj);
 
             EXPECT_EQUAL(777u, ref.getBucketState()[0].getTimestamp());
@@ -1017,7 +1017,7 @@ Messages60Test::testRemoveLocationReply()
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize("RemoveLocationReply", DocumentProtocol::REPLY_REMOVELOCATION, lang);
-        EXPECT_TRUE(obj.get() != NULL);
+        EXPECT_TRUE(obj);
     }
     return true;
 }
@@ -1039,7 +1039,7 @@ Messages60Test::tryDocumentReply(const string &filename, uint32_t type)
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize(filename, type, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             DocumentReply *ref = dynamic_cast<DocumentReply*>(obj.get());
             EXPECT_TRUE(ref != NULL);
         }
@@ -1056,7 +1056,7 @@ Messages60Test::tryVisitorReply(const string &filename, uint32_t type)
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
         mbus::Routable::UP obj = deserialize(filename, type, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
+        if (EXPECT_TRUE(obj)) {
             VisitorReply *ref = dynamic_cast<VisitorReply*>(obj.get());
             EXPECT_TRUE(ref != NULL);
         }

@@ -47,7 +47,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         AsyncSession session = access.createAsyncSession(new AsyncParameters());
 
         DocumentType type = access.getDocumentTypeManager().getDocumentType("music");
-        DocumentUpdate docUp = new DocumentUpdate(type, new DocumentId("doc:music:2"));
+        DocumentUpdate docUp = new DocumentUpdate(type, new DocumentId("id:ns:music::2"));
 
         Result result = session.update(docUp);
         assertTrue(result.isSuccess());
