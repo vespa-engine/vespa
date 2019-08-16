@@ -30,4 +30,5 @@ public class PomXmlGeneratorTest {
         String expected = IOUtils.toString(this.getClass().getResourceAsStream(resourceFile));
         assertEquals(resourceFile, expected, actual);
     }
+
 }
