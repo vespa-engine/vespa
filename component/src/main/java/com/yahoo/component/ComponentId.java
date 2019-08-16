@@ -87,9 +87,9 @@ public final class ComponentId implements Comparable<ComponentId> {
         if (namespace == null) {
             return this;
         } else {
-            ComponentId newNamespace = getNamespace() == null ?
-                    namespace :
-                    getNamespace().nestInNamespace(namespace);
+            ComponentId newNamespace = (getNamespace() == null)
+                    ? namespace
+                    : getNamespace().nestInNamespace(namespace);
             return new ComponentId(getName(), getVersion(), newNamespace);
         }
     }
