@@ -369,7 +369,7 @@ public class PolicyTestCase {
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
                 .addRecipient("foo").addRecipient("bar"));
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), "[all]"));
-        List<RoutingNode> selected = frame.select(2);
+        List<RoutingNode> selected = frame.select(1);
         for (int i = 0, len = selected.size(); i < len; ++i) {
             Document doc = null;
             if (i == 0) {
@@ -570,7 +570,7 @@ public class PolicyTestCase {
                                          "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.assertSelect(Arrays.asList("foo"));
 
         Message put = new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
                                                           new DocumentId("id:ns:testdoc::"))));
@@ -578,7 +578,7 @@ public class PolicyTestCase {
         frame.assertSelect(Arrays.asList("foo"));
 
         frame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::")));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.assertSelect(Arrays.asList("foo"));
 
         frame.setMessage(new UpdateDocumentMessage(new DocumentUpdate(manager.getDocumentType("testdoc"),
                                                                       new DocumentId("id:ns:testdoc::"))));
@@ -603,7 +603,7 @@ public class PolicyTestCase {
                 "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.assertSelect(Arrays.asList("foo"));
 
         Document doc = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::"));
         doc.setFieldValue("intfield", 3000);
