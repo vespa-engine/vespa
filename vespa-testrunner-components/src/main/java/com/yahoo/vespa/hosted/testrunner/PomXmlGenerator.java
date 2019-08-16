@@ -68,7 +68,6 @@ public class PomXmlGenerator {
             "%DEPENDENCIES_TO_SCAN%" +
             "                    </dependenciesToScan>\n" +
             "                    <groups>%GROUPS%</groups>\n" +
-            "                    <excludedGroups>com.yahoo.vespa.tenant.systemtest.base.impl.EmptyExcludeGroup.class</excludedGroups>\n" +
             "                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>\n" +
             "                    <redirectTestOutputToFile>false</redirectTestOutputToFile>\n" +
             "                    <trimStackTrace>false</trimStackTrace>\n" +
