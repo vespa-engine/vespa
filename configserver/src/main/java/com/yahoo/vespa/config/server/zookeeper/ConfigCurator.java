@@ -13,7 +13,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A (stateful) curator wrapper for the config server. This simplifies Curator method calls used by the config server
@@ -23,17 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Config ids are stored as foo#bar#c0 instead of foo/bar/c0, for simplicity.
  * Keep the amount of domain-specific logic here to a minimum.
  * Data for one application x is stored on this form:
- * /vespa/config/apps/x/defconfigs
- * /vespa/config/apps/x/userapp
- * The different types of configs are stored on this form (ie. names of the ZK nodes under their respective
- * paths):
+ * /config/v2/tenants/x/sessions/y/defconfigs
+ * /config/v2/tenants/x/sessions/y/userapp
  * <p>
- * Def configs are stored on the form        name,version
  * The user application structure is exactly the same as in the user's app dir during deploy.
- * The current live app id (for example x) is stored in the node /vespa/config/liveapp
- * It is updated outside this class, typically in config server during reload-config.
- * Some methods have retries and/or reconnect. This is necessary because ZK will throw on certain scenarios,
- * even though it will recover from it itself, @see http://wiki.apache.org/hadoop/ZooKeeper/ErrorHandling
+ * The current live app id (for example y) is stored in the node //config/v2/tenants/x/applications/&lt;application-id&gt;
+ * It is updated outside this class, typically in config server when activating config
  *
  * @author Vegard Havdal
  * @author bratseth
@@ -55,32 +49,14 @@ public class ConfigCurator {
     /** Path for session state */
     public static final String SESSIONSTATE_ZK_SUBPATH = "/sessionState";
 
-    protected static final FilenameFilter acceptsAllFileNameFilter = (dir, name) -> true;
+    private static final FilenameFilter acceptsAllFileNameFilter = (dir, name) -> true;
 
     private final Curator curator;
 
     public static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigCurator.class.getName());
 
-    /** The number of zookeeper operations done with this ZKFacade instance */
-    private final AtomicInteger operations = new AtomicInteger();
-
-    /** The number of zookeeper read operations done with this ZKFacade instance */
-    private final AtomicInteger readOperations = new AtomicInteger();
-
-    /** The number of zookeeper write operations done with this ZKFacade instance */
-    private final AtomicInteger writeOperations = new AtomicInteger();
-
     /** The maximum size of a ZooKeeper node */
     private final int maxNodeSize;
-
-    /**
-     * Sets up thread local zk access if not done before and returns a facade object
-     *
-     * @return a ZKFacade object
-     */
-    public static ConfigCurator create(Curator curator, int juteMaxBuffer) {
-        return new ConfigCurator(curator, juteMaxBuffer);
-    }
 
     public static ConfigCurator create(Curator curator) {
         return new ConfigCurator(curator, 1024*1024*10);
@@ -102,10 +78,8 @@ public class ConfigCurator {
     public Curator curator() { return curator; }
 
     /** Cleans and creates a zookeeper completely */
-    public void initAndClear(String path) {
+    void initAndClear(String path) {
         try {
-            operations.incrementAndGet();
-            readOperations.incrementAndGet();
             if (exists(path))
                 deleteRecurse(path);
             createRecurse(path);
@@ -151,8 +125,6 @@ public class ConfigCurator {
     public byte[] getBytes(String path) {
         try {
             if ( ! exists(path)) return null; // TODO: Ugh
-            operations.incrementAndGet();
-            readOperations.incrementAndGet();
             return curator.framework().getData().forPath(path);
         }
         catch (Exception e) {
@@ -179,8 +151,6 @@ public class ConfigCurator {
     public void createNode(String path) {
         if ( ! exists(path))
             createRecurse(path);
-        operations.incrementAndGet();
-        writeOperations.incrementAndGet();
     }
 
     /** Creates a Zookeeper node synchronously. Replaces / by # in node names. */
@@ -210,7 +180,7 @@ public class ConfigCurator {
     }
 
     /** Sets data at a given path and name. Replaces / by # in node names. Creates the node if it doesn't exist */
-    public void putData(String path, String node, byte[] data) {
+    private void putData(String path, String node, byte[] data) {
         putData(createFullPath(path, node), data);
     }
 
@@ -218,35 +188,10 @@ public class ConfigCurator {
     public void putData(String path, byte[] data) {
         try {
             ensureDataIsNotTooLarge(data, path);
-            operations.incrementAndGet();
-            writeOperations.incrementAndGet();
             if (exists(path))
                 curator.framework().setData().forPath(path, data);
             else
                 curator.framework().create().creatingParentsIfNeeded().forPath(path, data);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Exception writing to path " + path + " in ZooKeeper", e);
-        }
-    }
-
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, String node, String data) {
-        setData(path, node, Utf8.toBytes(data));
-    }
-
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, String node, byte[] data) {
-        setData(createFullPath(path, node), data);
-    }
-
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, byte[] data) {
-        try {
-            ensureDataIsNotTooLarge(data, path);
-            operations.incrementAndGet();
-            writeOperations.incrementAndGet();
-            curator.framework().setData().forPath(path, data);
         }
         catch (Exception e) {
             throw new RuntimeException("Exception writing to path " + path + " in ZooKeeper", e);
@@ -259,7 +204,7 @@ public class ConfigCurator {
      * @param node a zookeeper node name
      * @return a config server node name
      */
-    protected String toConfigserverName(String node) {
+    private String toConfigserverName(String node) {
         if (node.startsWith("/")) node = node.substring(1);
         return node.replaceAll("/", "#");
     }
@@ -271,8 +216,6 @@ public class ConfigCurator {
      */
     public List<String> getChildren(String path) {
         try {
-            operations.incrementAndGet();
-            readOperations.incrementAndGet();
             return curator.framework().getChildren().forPath(path);
         }
         catch (Exception e) {
@@ -300,7 +243,7 @@ public class ConfigCurator {
      * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
      * @param recurse        recurse subdirectories
      */
-    public void feedZooKeeper(File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
+    void feedZooKeeper(File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
         try {
             if (filenameFilter == null) {
                 filenameFilter = acceptsAllFileNameFilter;
@@ -347,7 +290,7 @@ public class ConfigCurator {
                 }
             }
         }
-        return ret.toArray(new File[ret.size()]);
+        return ret.toArray(new File[0]);
     }
 
     /** Deletes the node at the given path, and any children it may have. If the node does not exist this does nothing */
@@ -360,17 +303,6 @@ public class ConfigCurator {
             throw new RuntimeException("Exception deleting path " + path, e);
         }
     }
-
-    public Integer getNumberOfOperations() { return operations.intValue(); }
-
-    public Integer getNumberOfReadOperations() {
-        return readOperations.intValue();
-    }
-
-    public Integer getNumberOfWriteOperations() {
-        return writeOperations.intValue();
-    }
-
 
     private void testZkConnection() { // This is not necessary, but allows us to give a useful error message
         if (curator.connectionSpec().isEmpty()) return;
