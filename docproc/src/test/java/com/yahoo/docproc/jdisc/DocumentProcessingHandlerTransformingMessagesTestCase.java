@@ -83,28 +83,28 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
 
     private void put() throws InterruptedException {
         {
-            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "doc:nodocstatus:put:to:put")));
+            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:put")));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
             assertThat(outputMsg.getDocumentPut().getDocument().getFieldValue("foostring").toString(), is("banana"));
         }
         {
-            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "doc:nodocstatus:put:to:remove")));
+            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:remove")));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertThat(outputMsg.getDocumentId().toString(), is("doc:nodocstatus:put:to:remove"));
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::put:to:remove"));
         }
         {
-            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "doc:nodocstatus:put:to:update")));
+            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:update")));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("doc:nodocstatus:put:to:update"));
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::put:to:update"));
         }
         {
-            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "doc:nodocstatus:put:to:nothing")));
+            PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(new Document(getType(), "id:nodocstatus:foo::put:to:nothing")));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
@@ -115,29 +115,29 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
 
     private void remove() throws InterruptedException {
         {
-            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("doc:nodocstatus:remove:to:put"));
+            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:put"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
-            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("doc:nodocstatus:remove:to:put"));
+            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("id:nodocstatus:foo::remove:to:put"));
         }
 
         {
-            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("doc:nodocstatus:remove:to:remove"));
+            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:remove"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertThat(outputMsg.getDocumentId().toString(), is("doc:nodocstatus:remove:to:remove"));
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::remove:to:remove"));
         }
         {
-            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("doc:nodocstatus:remove:to:update"));
+            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:update"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("doc:nodocstatus:remove:to:update"));
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::remove:to:update"));
         }
         {
-            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("doc:nodocstatus:remove:to:nothing"));
+            RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:nodocstatus:foo::remove:to:nothing"));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
@@ -148,29 +148,29 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
 
     private void update() throws InterruptedException {
         {
-            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "doc:nodocstatus:update:to:put"));
+            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:put"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(PutDocumentMessage.class));
             PutDocumentMessage outputMsg = (PutDocumentMessage)result;
-            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("doc:nodocstatus:update:to:put"));
+            assertThat(outputMsg.getDocumentPut().getDocument().getId().toString(), is("id:nodocstatus:foo::update:to:put"));
         }
 
         {
-            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "doc:nodocstatus:update:to:remove"));
+            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:remove"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(RemoveDocumentMessage.class));
             RemoveDocumentMessage outputMsg = (RemoveDocumentMessage)result;
-            assertThat(outputMsg.getDocumentId().toString(), is("doc:nodocstatus:update:to:remove"));
+            assertThat(outputMsg.getDocumentId().toString(), is("id:nodocstatus:foo::update:to:remove"));
         }
         {
-            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "doc:nodocstatus:update:to:update"));
+            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:update"));
             Routable result = sendMessageAndGetResult(message);
             assertThat(result, instanceOf(UpdateDocumentMessage.class));
             UpdateDocumentMessage outputMsg = (UpdateDocumentMessage)result;
-            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("doc:nodocstatus:update:to:update"));
+            assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:nodocstatus:foo::update:to:update"));
         }
         {
-            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "doc:nodocstatus:update:to:nothing"));
+            UpdateDocumentMessage message = new UpdateDocumentMessage(new DocumentUpdate(getType(), "id:nodocstatus:foo::update:to:nothing"));
             assertTrue(sendMessage(FOOBAR, message));
             Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
             assertNotNull(reply);
@@ -187,30 +187,30 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
             while (it.hasNext()) {
                 DocumentOperation op = it.next();
                 String id = op.getId().toString();
-                if ("doc:nodocstatus:put:to:put".equals(id)) {
+                if ("id:nodocstatus:foo::put:to:put".equals(id)) {
                     Document doc = ((DocumentPut)op).getDocument();
                     doc.setFieldValue("foostring", new StringFieldValue("banana"));
-                } else if ("doc:nodocstatus:put:to:remove".equals(id)) {
+                } else if ("id:nodocstatus:foo::put:to:remove".equals(id)) {
                     it.set(new DocumentRemove(new DocumentId(id)));
-                } else if ("doc:nodocstatus:put:to:update".equals(id)) {
+                } else if ("id:nodocstatus:foo::put:to:update".equals(id)) {
                     it.set(new DocumentUpdate(getType(), id));
-                } else if ("doc:nodocstatus:put:to:nothing".equals(id)) {
+                } else if ("id:nodocstatus:foo::put:to:nothing".equals(id)) {
                     it.remove();
-                } else if ("doc:nodocstatus:remove:to:put".equals(id)) {
+                } else if ("id:nodocstatus:foo::remove:to:put".equals(id)) {
                     it.set(new DocumentPut(getType(), op.getId()));
-                } else if ("doc:nodocstatus:remove:to:remove".equals(id)) {
+                } else if ("id:nodocstatus:foo::remove:to:remove".equals(id)) {
                     //nada
-                } else if ("doc:nodocstatus:remove:to:update".equals(id)) {
+                } else if ("id:nodocstatus:foo::remove:to:update".equals(id)) {
                     it.set(new DocumentUpdate(getType(), id));
-                } else if ("doc:nodocstatus:remove:to:nothing".equals(id)) {
+                } else if ("id:nodocstatus:foo::remove:to:nothing".equals(id)) {
                     it.remove();
-                } else if ("doc:nodocstatus:update:to:put".equals(id)) {
+                } else if ("id:nodocstatus:foo::update:to:put".equals(id)) {
                     it.set(new DocumentPut(getType(), op.getId()));
-                } else if ("doc:nodocstatus:update:to:remove".equals(id)) {
+                } else if ("id:nodocstatus:foo::update:to:remove".equals(id)) {
                     it.set(new DocumentRemove(new DocumentId(id)));
-                } else if ("doc:nodocstatus:update:to:update".equals(id)) {
+                } else if ("id:nodocstatus:foo::update:to:update".equals(id)) {
                     //nada
-                } else if ("doc:nodocstatus:update:to:nothing".equals(id)) {
+                } else if ("id:nodocstatus:foo::update:to:nothing".equals(id)) {
                     it.remove();
                 } else if ("id:12345:6789:multiop:nodocstatus:keep:this".equals(id)) {
                     //nada

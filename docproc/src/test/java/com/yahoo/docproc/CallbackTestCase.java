@@ -34,10 +34,10 @@ public class CallbackTestCase {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("status", DataType.STRING);
-        put1 = new DocumentPut(type, new DocumentId("doc:callback:test:1"));
-        put2 = new DocumentPut(type, new DocumentId("doc:callback:test:2"));
-        operations.add(new DocumentPut(type, new DocumentId("doc:callback:test:3")));
-        operations.add(new DocumentPut(type, new DocumentId("doc:callback:test:4")));
+        put1 = new DocumentPut(type, new DocumentId("id:callback:test::1"));
+        put2 = new DocumentPut(type, new DocumentId("id:callback:test::2"));
+        operations.add(new DocumentPut(type, new DocumentId("id:callback:test::3")));
+        operations.add(new DocumentPut(type, new DocumentId("id:callback:test::4")));
     }
 
     @Test

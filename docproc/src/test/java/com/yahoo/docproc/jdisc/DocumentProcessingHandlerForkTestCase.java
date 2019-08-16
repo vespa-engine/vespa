@@ -60,28 +60,28 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
     private void putToManySomeInSameBucket() throws InterruptedException {
         assertPutMessages(createPutDocumentMessage(), TOMANYSOMEINSAMEBUCKET,
                           "id:123456:baz:n=7890:bar:er:bra",
-                          "doc:foo:bar:er:ja",
+                          "id:foo:baz::er:ja",
                           "id:567890:baz:n=1234:a",
-                          "doc:foo:bar:hahahhaa",
+                          "id:foo:baz::hahahhaa",
                           "id:123456:baz:n=7890:a:a",
-                          "doc:foo:bar:aa",
+                          "id:foo:baz::aa",
                           "id:567890:baz:n=1234:bar:ala",
-                          "doc:foo:bar:sdfgsaa",
+                          "id:foo:baz::sdfgsaa",
                           "id:123456:baz:n=7890:bar:tralsfa",
-                          "doc:foo:bar:dfshaa");
+                          "id:foo:baz::dfshaa");
     }
 
     private void putToFourPuts() throws InterruptedException {
         assertPutMessages(createPutDocumentMessage(), TOMANY,
-                          "doc:foo:bar:er:bra",
-                          "doc:foo:bar:er:ja",
-                          "doc:foo:bar:hahahhaa",
-                          "doc:foo:bar:trallala");
+                          "id:foo:baz::er:bra",
+                          "id:foo:baz::er:ja",
+                          "id:foo:baz::hahahhaa",
+                          "id:foo:baz::trallala");
     }
 
     private void putToOne() throws InterruptedException {
         assertPutMessages(createPutDocumentMessage(), TOONE,
-                          "doc:baz:bar");
+                          "id:ns:baz::bar");
     }
 
     private void putToZero() throws InterruptedException {
@@ -104,7 +104,7 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
     }
 
     protected PutDocumentMessage createPutDocumentMessage() {
-        Document document = new Document(getType(), "doc:baz:bar");
+        Document document = new Document(getType(), "id:ns:baz::bar");
         document.setFieldValue("blahblah", new StringFieldValue("This is a test."));
         return new PutDocumentMessage(new DocumentPut(document));
     }
@@ -158,10 +158,10 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
         public Progress process(Processing processing) {
             List<DocumentOperation> operations = processing.getDocumentOperations();
             operations.clear();
-            operations.add(new DocumentPut(type, "doc:foo:bar:er:bra"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:er:ja"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:trallala"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:hahahhaa"));
+            operations.add(new DocumentPut(type, "id:foo:baz::er:bra"));
+            operations.add(new DocumentPut(type, "id:foo:baz::er:ja"));
+            operations.add(new DocumentPut(type, "id:foo:baz::trallala"));
+            operations.add(new DocumentPut(type, "id:foo:baz::hahahhaa"));
             return Progress.DONE;
         }
     }
@@ -182,15 +182,15 @@ public class DocumentProcessingHandlerForkTestCase extends DocumentProcessingHan
             List<DocumentOperation> operations = processing.getDocumentOperations();
             operations.clear();
             operations.add(new DocumentPut(type, "id:123456:baz:n=7890:bar:er:bra"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:er:ja"));
+            operations.add(new DocumentPut(type, "id:foo:baz::er:ja"));
             operations.add(new DocumentPut(type, "id:567890:baz:n=1234:a"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:hahahhaa"));
+            operations.add(new DocumentPut(type, "id:foo:baz::hahahhaa"));
             operations.add(new DocumentPut(type, "id:123456:baz:n=7890:a:a"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:aa"));
+            operations.add(new DocumentPut(type, "id:foo:baz::aa"));
             operations.add(new DocumentPut(type, "id:567890:baz:n=1234:bar:ala"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:sdfgsaa"));
+            operations.add(new DocumentPut(type, "id:foo:baz::sdfgsaa"));
             operations.add(new DocumentPut(type, "id:123456:baz:n=7890:bar:tralsfa"));
-            operations.add(new DocumentPut(type, "doc:foo:bar:dfshaa"));
+            operations.add(new DocumentPut(type, "id:foo:baz::dfshaa"));
             return Progress.DONE;
         }
 

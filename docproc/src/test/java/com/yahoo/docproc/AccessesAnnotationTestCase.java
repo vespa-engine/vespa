@@ -24,7 +24,7 @@ public class AccessesAnnotationTestCase {
         type.addField("title", DataType.STRING);
         type.addField("artist", DataType.STRING);
         type.addField("year", DataType.INT);
-        Document doc = new Document(type, new DocumentId("doc:map:test:1"));
+        Document doc = new Document(type, new DocumentId("id:map:album::1"));
 
         MyDocProc docProc = new MyDocProc();
         DocumentPut put = new DocumentPut(doc);

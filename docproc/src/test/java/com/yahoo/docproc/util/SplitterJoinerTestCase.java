@@ -42,10 +42,10 @@ public class SplitterJoinerTestCase {
 
         /**** Create documents: ****/
 
-        Document inner1 = new Document(manager.getDocumentType("docindoc"), "doc:inner:number:one");
+        Document inner1 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::one");
         inner1.setFieldValue("name", new StringFieldValue("Donald Duck"));
         inner1.setFieldValue("content", new StringFieldValue("Lives in Duckburg"));
-        Document inner2 = new Document(manager.getDocumentType("docindoc"), "doc:inner:number:two");
+        Document inner2 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::number:two");
         inner2.setFieldValue("name", new StringFieldValue("Uncle Scrooge"));
         inner2.setFieldValue("content", new StringFieldValue("Lives in Duckburg, too."));
 
@@ -53,7 +53,7 @@ public class SplitterJoinerTestCase {
         innerArray.add(inner1);
         innerArray.add(inner2);
 
-        Document outer = new Document(manager.getDocumentType("outerdoc"), "doc:outer:the:only:one");
+        Document outer = new Document(manager.getDocumentType("outerdoc"), "id:outer:outerdoc::the:only:one");
         outer.setFieldValue("innerdocuments", innerArray);
 
         /**** End create documents ****/
