@@ -10,7 +10,7 @@
 -->
 
 <vespafeed>
-    <update documenttype="news" documentid="doc:news:http://news8a"> 
+    <update documenttype="news" documentid="id:ns:news::http://news8a"> 
         <remove field="stringarr">
             <item>removeString1</item>
             <item>removeString2</item>

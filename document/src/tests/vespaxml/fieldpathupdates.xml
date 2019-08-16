@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <update documenttype="news" documentid="doc:test:http://www.ntnu.no/">
+    <update documenttype="news" documentid="id:ns:news::http://www.ntnu.no/">
         <assign fieldpath="url">assignUrl</assign>
         <assign fieldpath="title">assignTitle</assign>
         <assign fieldpath="last_downloaded">1</assign>

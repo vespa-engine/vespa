@@ -18,8 +18,7 @@ VESPA_IMPLEMENT_EXCEPTION(IdParseException, vespalib::Exception);
 
 namespace {
 
-string _G_typeName[6] = {
-    "doc",
+string _G_typeName[2] = {
     "id",
     "null"
 };
@@ -185,12 +184,10 @@ IdString::UP
 IdString::createIdString(const char * id, size_t sz_)
 {
     if (sz_ > 4) {
-        if (_G_doc.as32 == *reinterpret_cast<const uint32_t *>(id)) {
-            return IdString::UP(new DocIdString(stringref(id, sz_)));
+        if (_G_id.as16 == *reinterpret_cast<const uint16_t *>(id) && id[2] == ':') {
+            return std::make_unique<IdIdString>(stringref(id, sz_));
         } else if ((sz_ == 6) && (_G_null.as32 == *reinterpret_cast<const uint32_t *>(id)) && (id[4] == ':') && (id[5] == ':')) {
-            return IdString::UP(new NullIdString());
-        } else if (_G_id.as16 == *reinterpret_cast<const uint16_t *>(id) && id[2] == ':') {
-            return IdString::UP(new IdIdString(stringref(id, sz_)));
+            return std::make_unique<NullIdString>();
         } else if (sz_ > 8) {
             reportNoSchemeSeparator(id);
         } else {
@@ -281,24 +278,6 @@ IdIdString::IdIdString(stringref id)
     if (!has_set_location) {
         _location = makeLocation(getNamespaceSpecific());
     }
-}
-
-IdString::LocationType
-DocIdString::getLocation() const
-{
-    return makeLocation(toString());
-}
-
-DocIdString::DocIdString(stringref ns, stringref id) :
-    IdString(2, 4, "doc:" + ns + ":" + id)
-{
-    validate();
-}
-
-DocIdString::DocIdString(stringref rawId) :
-    IdString(2, 4, rawId)
-{
-    validate();
 }
 
 } // document

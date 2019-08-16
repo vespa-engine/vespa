@@ -65,7 +65,7 @@ public class DocumentTestCaseBase {
     }
 
     public Document getTestDocument() {
-        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.ntnu.no/"));
+        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::http://www.ntnu.no/"));
         doc.setFieldValue(byteField.getName(), (byte) 30);
         doc.setFieldValue(byteField.getName(), (byte)30);
         doc.setFieldValue(intField.getName(), 50);

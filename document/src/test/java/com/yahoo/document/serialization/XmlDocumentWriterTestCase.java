@@ -19,7 +19,7 @@ public class XmlDocumentWriterTestCase {
         DocumentType docType = new DocumentType("my_type");
         Field field = new Field("my_predicate", DataType.PREDICATE);
         docType.addField(field);
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:ns:my_type::");
         PredicateFieldValue predicate = Mockito.mock(PredicateFieldValue.class);
         doc.setFieldValue("my_predicate", predicate);
 

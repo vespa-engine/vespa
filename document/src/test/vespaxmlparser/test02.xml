@@ -5,7 +5,7 @@
 -->
 
 <vespafeed>
-    <document documenttype="news" documentid="doc:news:http://news2"> 
+    <document documenttype="news" documentid="id:ns:news::http://news2"> 
         <url>testUrl2</url>
         <title>testTitle2</title>
         <weightedsetint>

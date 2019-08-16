@@ -73,11 +73,11 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testRemoveField() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strfoo"));
         doc.setFieldValue("strfoo", "cocacola");
         assertEquals(new StringFieldValue("cocacola"), doc.getFieldValue("strfoo"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::foooo"));
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strfoo", null));
         docUp.applyTo(doc);
         assertNull(doc.getFieldValue("strfoo"));
@@ -85,7 +85,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyRemoveMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("crouching tiger, hidden value"));
@@ -93,7 +93,7 @@ public class DocumentPathUpdateTestCase {
         strArray.add(new StringFieldValue("hello hello"));
         doc.setFieldValue("strarray", strArray);
         assertNotNull(doc.getFieldValue("strarray"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::foooo"));
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strarray[$x]", "foobar.strarray[$x] == \"remove val 1\""));
         docUp.applyTo(doc);
         assertEquals(2, ((List) doc.getFieldValue("strarray")).size());
@@ -104,7 +104,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyRemoveMultiList2() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("remove val 0 and 1"));
@@ -112,7 +112,7 @@ public class DocumentPathUpdateTestCase {
         strArray.add(new StringFieldValue("hello hello"));
         doc.setFieldValue("strarray", strArray);
         assertNotNull(doc.getFieldValue("strarray"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::foooo"));
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strarray[$x]", "foobar.strarray[$x] == \"remove val 0 and 1\""));
         docUp.applyTo(doc);
         assertEquals(1, ((List) doc.getFieldValue("strarray")).size());
@@ -122,14 +122,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyRemoveEntireListField() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("this list"));
         strArray.add(new StringFieldValue("should be"));
         strArray.add(new StringFieldValue("totally removed"));
         doc.setFieldValue("strarray", strArray);
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:toast:jam"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:toast:foobar::jam"));
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strarray", null));
         docUp.applyTo(doc);
         assertNull(doc.getFieldValue("strarray"));
@@ -137,14 +137,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyRemoveMultiWset() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
         strwset.put(new StringFieldValue("hello hello"), 10);
         strwset.put(new StringFieldValue("remove val 1"), 20);
         doc.setFieldValue("strwset", strwset);
         assertNotNull(doc.getFieldValue("strwset"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strwset{remove val 1}", ""));
         docUp.applyTo(doc);
         assertEquals(1, ((WeightedSet) doc.getFieldValue("strwset")).size());
@@ -154,9 +154,9 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyAssignSingle() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strfoo"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strfoo", "", new StringFieldValue("something")));
         docUp.applyTo(doc);
         assertEquals(new StringFieldValue("something"), doc.getFieldValue("strfoo"));
@@ -164,9 +164,9 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyAssignMath() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(34));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "($value * 2) / $value"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(2), doc.getFieldValue(doc.getField("num")));
@@ -174,9 +174,9 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testDivideByZero() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "100 / ($value - 10)"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
@@ -184,9 +184,9 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMathFieldNotSet() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "100 + foobar.num2"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
@@ -194,9 +194,9 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMathMissingField() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         doc.setFieldValue(doc.getField("num"), new IntegerFieldValue(10));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "100 + foobar.bogus"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(10), doc.getFieldValue(doc.getField("num")));
@@ -204,8 +204,8 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMathTargetFieldNotSet() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "100"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(100), doc.getFieldValue(doc.getField("num")));
@@ -213,8 +213,8 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMathTargetFieldNotSetWithValue() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "num", "", "$value + 5"));
         docUp.applyTo(doc);
         assertEquals(new IntegerFieldValue(5), doc.getFieldValue(doc.getField("num")));
@@ -222,7 +222,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyAssignMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
         Array<StringFieldValue> strArray = new Array<StringFieldValue>(doc.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("hello hello"));
@@ -232,7 +232,7 @@ public class DocumentPathUpdateTestCase {
         Array<StringFieldValue> array = new Array<>(doc.getField("strarray").getDataType());
         array.add(new StringFieldValue("assigned val 0"));
         array.add(new StringFieldValue("assigned val 1"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strarray", "", array));
         docUp.applyTo(doc);
         assertEquals(2, ((List) doc.getFieldValue("strarray")).size());
@@ -243,7 +243,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyAssignMultiWlist() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strwset"));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
         strwset.put(new StringFieldValue("hello hello"), 164);
@@ -253,7 +253,7 @@ public class DocumentPathUpdateTestCase {
         WeightedSet<StringFieldValue> assignWset = new WeightedSet<>(docType.getField("strwset").getDataType());
         assignWset.put(new StringFieldValue("assigned val 0"), 5);
         assignWset.put(new StringFieldValue("assigned val 1"), 10);
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strwset", "", assignWset));
         docUp.applyTo(doc);
         assertEquals(2, ((WeightedSet) doc.getFieldValue("strwset")).size());
@@ -264,14 +264,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignWsetRemoveIfZero() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue(doc.getField("strwset")));
         WeightedSet<StringFieldValue> strwset = new WeightedSet<>(doc.getDataType().getField("strwset").getDataType());
         strwset.put(new StringFieldValue("hello hello"), 164);
         strwset.put(new StringFieldValue("blahdi blahdi"), 243);
         doc.setFieldValue(doc.getField("strwset"), strwset);
         assertNotNull(doc.getFieldValue(doc.getField("strwset")));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         AssignFieldPathUpdate upd = new AssignFieldPathUpdate(doc.getDataType(), "strwset{hello hello}", "", "$value - 164");
         upd.setRemoveIfZero(true);
         docUp.addFieldPathUpdate(upd);
@@ -283,14 +283,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testApplyAddMultiList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
 
         Array<StringFieldValue> addList = new Array<StringFieldValue>(doc.getField("strarray").getDataType());
         addList.add(new StringFieldValue("bo"));
         addList.add(new StringFieldValue("ba"));
         addList.add(new StringFieldValue("by"));
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AddFieldPathUpdate(doc.getDataType(), "strarray", "", addList));
         docUp.applyTo(doc);
         List<StringFieldValue> values = new ArrayList<>();
@@ -302,7 +302,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAddAndAssignList() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));
 
         Array strArray = new Array(doc.getField("strarray").getDataType());
@@ -311,7 +311,7 @@ public class DocumentPathUpdateTestCase {
         doc.setFieldValue("strarray", strArray);
         assertNotNull(doc.getFieldValue("strarray"));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strarray[1]", "", new StringFieldValue("assigned val 1")));
 
         Array adds = new Array(doc.getField("strarray").getDataType());
@@ -329,7 +329,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignSimpleMapValueWithVariable() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("strmap").getDataType());
 
         mfv.put(new StringFieldValue("foo"), new StringFieldValue("bar"));
@@ -337,7 +337,7 @@ public class DocumentPathUpdateTestCase {
         doc.setFieldValue("strmap", mfv);
 
         // Select on map value, not key
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:hargl:bargl"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::hargl:bargl"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strmap{$x}",
                 "foobar.strmap{$x} == \"bar\"", new StringFieldValue("shinyvalue")));
         docUp.applyTo(doc);
@@ -404,7 +404,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testKeyWithEscapedChars() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("strmap").getDataType());
 
         mfv.put(new StringFieldValue("here is a \"fancy\" :-} map key :-{"), new StringFieldValue("bar"));
@@ -412,7 +412,7 @@ public class DocumentPathUpdateTestCase {
         doc.setFieldValue("strmap", mfv);
 
         // Select on map value, not key
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:hargl:bargl"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::hargl:bargl"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "strmap{\"here is a \\\"fancy\\\" :-} map key :-{\"}",
                 "", new StringFieldValue("shinyvalue")));
         docUp.applyTo(doc);
@@ -425,7 +425,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMap() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
         fv1.setFieldValue("title", new StringFieldValue("thomas"));
@@ -451,7 +451,7 @@ public class DocumentPathUpdateTestCase {
         fv4.setFieldValue("title", new StringFieldValue("tor brede"));
         fv4.setFieldValue("rating", new IntegerFieldValue(48));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "structmap{bar}", "", fv4));
         docUp.applyTo(doc);
 
@@ -463,7 +463,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMapStruct() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
         fv1.setFieldValue("title", new StringFieldValue("thomas"));
@@ -489,7 +489,7 @@ public class DocumentPathUpdateTestCase {
         fv4.setFieldValue("title", new StringFieldValue("cyril"));
         fv4.setFieldValue("rating", new IntegerFieldValue(48));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "structmap{bar}.rating", "", new IntegerFieldValue(48)));
         docUp.applyTo(doc);
 
@@ -501,7 +501,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMapStructVariable() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
         fv1.setFieldValue(fv1.getField("title"), new StringFieldValue("thomas"));
@@ -527,7 +527,7 @@ public class DocumentPathUpdateTestCase {
         fv4.setFieldValue(fv4.getField("title"), new StringFieldValue("cyril"));
         fv4.setFieldValue(fv4.getField("rating"), new IntegerFieldValue(48));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "structmap{$x}.rating", "foobar.structmap{$x}.title == \"cyril\"", new IntegerFieldValue(48)));
         docUp.applyTo(doc);
 
@@ -539,14 +539,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMapNoexist() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
 
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
         fv1.setFieldValue("title", new StringFieldValue("thomas"));
         fv1.setFieldValue("rating", new IntegerFieldValue(32));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         docUp.addFieldPathUpdate(new AssignFieldPathUpdate(doc.getDataType(), "structmap{foo}", "", fv1));
         docUp.applyTo(doc);
 
@@ -556,14 +556,14 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignMapNoexistNocreate() {
-        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         MapFieldValue mfv = new MapFieldValue((MapDataType)doc.getField("structmap").getDataType());
 
         Struct fv1 = new Struct(mfv.getDataType().getValueType());
         fv1.setFieldValue("title", new StringFieldValue("thomas"));
         fv1.setFieldValue("rating", new IntegerFieldValue(32));
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         AssignFieldPathUpdate ass = new AssignFieldPathUpdate(doc.getDataType(), "structmap{foo}", "", fv1);
         ass.setCreateMissingPath(false);
         docUp.addFieldPathUpdate(ass);
@@ -575,7 +575,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAssignSerialization() {
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         AssignFieldPathUpdate ass = new AssignFieldPathUpdate(docType, "num", "", "3");
         ass.setCreateMissingPath(false);
         docUp.addFieldPathUpdate(ass);
@@ -590,7 +590,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testAddSerialization() {
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         Array strArray = new Array(docType.getField("strarray").getDataType());
         strArray.add(new StringFieldValue("hello hello"));
         strArray.add(new StringFieldValue("blah blah"));
@@ -608,7 +608,7 @@ public class DocumentPathUpdateTestCase {
 
     @Test
     public void testRemoveSerialization() {
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
         RemoveFieldPathUpdate remove = new RemoveFieldPathUpdate(docType, "num", "foobar.num > 0");
         docUp.addFieldPathUpdate(remove);
 
@@ -633,7 +633,7 @@ public class DocumentPathUpdateTestCase {
         docMan = DocumentTestCase.setUpCppDocType();
         docType = docMan.getDocumentType("serializetest");
 
-        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:serialization:xlanguage"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:serializetest::xlanguage"));
 
         AssignFieldPathUpdate ass = new AssignFieldPathUpdate(docType, "intfield", "", "3");
         ass.setCreateMissingPath(false);

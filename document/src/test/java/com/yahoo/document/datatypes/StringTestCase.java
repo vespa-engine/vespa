@@ -203,7 +203,7 @@ public class StringTestCase extends AbstractTypesTest {
                 .configure(manager, "file:src/test/java/com/yahoo/document/datatypes/documentmanager.blog.sd");
 
         DocumentType blogType = manager.getDocumentType("blog");
-        Document doc = new Document(blogType, "doc:blog:http://blogs.sun.com/praveenm");
+        Document doc = new Document(blogType, "id:ns:blog::http://blogs.sun.com/praveenm");
         doc.setFieldValue("url", new StringFieldValue("http://blogs.sun.com/praveenm"));
         doc.setFieldValue("title", new StringFieldValue("Beginning JavaFX"));
         doc.setFieldValue("author", new StringFieldValue("Praveen Mohan"));

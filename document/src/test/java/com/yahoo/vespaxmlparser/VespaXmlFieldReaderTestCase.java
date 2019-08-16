@@ -41,21 +41,21 @@ public class VespaXmlFieldReaderTestCase {
     public void requireThatArrayItemDeserializeExceptionIncludesFieldName() throws Exception {
         assertThrows(new Field("my_field", DataType.getArray(DataType.BYTE)),
                      "<item>-129</item>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 70)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 74)");
     }
 
     @Test
     public void requireThatMapKeyDeserializeExceptionIncludesFieldName() throws Exception {
         assertThrows(new Field("my_field", DataType.getMap(DataType.BYTE, DataType.STRING)),
                      "<item><key>-129</key><value>foo</value></item>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 74)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 78)");
     }
 
     @Test
     public void requireThatMapValueDeserializeExceptionIncludesFieldName() throws Exception {
         assertThrows(new Field("my_field", DataType.getMap(DataType.STRING, DataType.BYTE)),
                      "<item><key>foo</key><value>-129</value></item>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 92)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 96)");
     }
 
     @Test
@@ -64,14 +64,14 @@ public class VespaXmlFieldReaderTestCase {
         structType.addField(new Field("my_byte", DataType.BYTE));
         assertThrows(new Field("my_field", structType),
                      "<my_byte>-129</my_byte>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 76)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 80)");
     }
 
     @Test
     public void requireThatWSetItemDeserializeExceptionIncludesFieldName() throws Exception {
         assertThrows(new Field("my_field", DataType.getWeightedSet(DataType.BYTE)),
                      "<item>-129</item>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 70)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 74)");
     }
 
     @Test
@@ -141,10 +141,10 @@ public class VespaXmlFieldReaderTestCase {
         docType.addField(field);
         docManager.register(docType);
 
-        String documentXml = "<document id='doc:scheme:' type='my_type'><" + field.getName() + ">" +
+        String documentXml = "<document id='id:ns:my_type::' type='my_type'><" + field.getName() + ">" +
                              fieldXml + "</" + field.getName() + "></document>";
         InputStream in = new ByteArrayInputStream(documentXml.getBytes(StandardCharsets.UTF_8));
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:ns:my_type::");
         try {
             new VespaXMLFieldReader(in, docManager).read(null, doc);
             fail();
@@ -155,11 +155,11 @@ public class VespaXmlFieldReaderTestCase {
 
     private static void assertReadable(Predicate predicate) throws Exception {
         assertRead(predicate,
-                   "<document id='doc:scheme:' type='my_type'>" +
+                   "<document id='id:ns:my_type::' type='my_type'>" +
                    "  <my_predicate>" + predicate + "</my_predicate>" +
                    "</document>");
         assertRead(predicate,
-                   "<document id='doc:scheme:' type='my_type'>" +
+                   "<document id='id:ns:my_type::' type='my_type'>" +
                    "  <my_predicate binaryencoding='base64'>" +
                    Base64.encodeBase64String(BinaryFormat.encode(predicate)) +
                    "  </my_predicate>" +
@@ -173,7 +173,7 @@ public class VespaXmlFieldReaderTestCase {
         docManager.register(docType);
 
         InputStream in = new ByteArrayInputStream(documentXml.getBytes(StandardCharsets.UTF_8));
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:ns:my_type::");
         new VespaXMLFieldReader(in, docManager).read(null, doc);
         FieldValue value = doc.getFieldValue("my_predicate");
         assertTrue(value instanceof PredicateFieldValue);

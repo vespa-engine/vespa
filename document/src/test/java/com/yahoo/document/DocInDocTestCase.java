@@ -23,10 +23,10 @@ public class DocInDocTestCase {
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/documentmanager.docindoc.cfg");
 
-        Document inner1 = new Document(manager.getDocumentType("docindoc"), "doc:inner:number:one");
+        Document inner1 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::one");
         inner1.setFieldValue("name", new StringFieldValue("Donald Duck"));
         inner1.setFieldValue("content", new StringFieldValue("Lives in Duckburg"));
-        Document inner2 = new Document(manager.getDocumentType("docindoc"), "doc:inner:number:two");
+        Document inner2 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::two");
         inner2.setFieldValue("name", new StringFieldValue("Uncle Scrooge"));
         inner2.setFieldValue("content", new StringFieldValue("Lives in Duckburg, too."));
 
@@ -34,7 +34,7 @@ public class DocInDocTestCase {
         innerArray.add(inner1);
         innerArray.add(inner2);
 
-        Document outer = new Document(manager.getDocumentType("outerdoc"), "doc:outer:the:only:one");
+        Document outer = new Document(manager.getDocumentType("outerdoc"), "id:outer:outerdoc::the:only:one");
         outer.setFieldValue("innerdocuments", innerArray);
 
         DocumentSerializer serializer = DocumentSerializerFactory.create6();

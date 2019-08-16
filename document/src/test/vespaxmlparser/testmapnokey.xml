@@ -6,7 +6,7 @@
 
 <vespafeed>
     
-    <document documenttype="news" documentid="doc:news:http://news1">
+    <document documenttype="news" documentid="id:ns:news::http://news1">
 
         <arrmap>
            <item> 
