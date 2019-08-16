@@ -369,7 +369,7 @@ public class PolicyTestCase {
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
                 .addRecipient("foo").addRecipient("bar"));
         frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), "[all]"));
-        List<RoutingNode> selected = frame.select(1);
+        List<RoutingNode> selected = frame.select(2);
         for (int i = 0, len = selected.size(); i < len; ++i) {
             Document doc = null;
             if (i == 0) {
@@ -394,7 +394,7 @@ public class PolicyTestCase {
                 "route[0].selector \"testdoc\"\n" +
                 "route[0].feed \"myfeed\"\n" +
                 "route[1].name \"bar\"\n" +
-                "route[1].selector \"other\"\n" +
+                "route[1].selector \"testdoc\"\n" +
                 "route[1].feed \"myfeed\"\n]";
     }
 
