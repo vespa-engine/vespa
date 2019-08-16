@@ -50,7 +50,8 @@ public class Endpoint {
 
     /** Returns the DNS name of this */
     public String dnsName() {
-        return url.getHost();
+        // because getHost returns "null" for wildcard endpoints
+        return url.getAuthority();
     }
 
     /** Returns the scope of this */
