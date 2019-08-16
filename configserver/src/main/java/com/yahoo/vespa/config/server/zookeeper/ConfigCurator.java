@@ -180,7 +180,7 @@ public class ConfigCurator {
     }
 
     /** Sets data at a given path and name. Replaces / by # in node names. Creates the node if it doesn't exist */
-    public void putData(String path, String node, byte[] data) {
+    private void putData(String path, String node, byte[] data) {
         putData(createFullPath(path, node), data);
     }
 
@@ -198,34 +198,13 @@ public class ConfigCurator {
         }
     }
 
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, String node, String data) {
-        setData(path, node, Utf8.toBytes(data));
-    }
-
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, String node, byte[] data) {
-        setData(createFullPath(path, node), data);
-    }
-
-    /** Sets data at an existing node. Replaces / by # in node names. */
-    public void setData(String path, byte[] data) {
-        try {
-            ensureDataIsNotTooLarge(data, path);
-            curator.framework().setData().forPath(path, data);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Exception writing to path " + path + " in ZooKeeper", e);
-        }
-    }
-
     /**
      * Replaces / with # in the given node.
      *
      * @param node a zookeeper node name
      * @return a config server node name
      */
-    protected String toConfigserverName(String node) {
+    private String toConfigserverName(String node) {
         if (node.startsWith("/")) node = node.substring(1);
         return node.replaceAll("/", "#");
     }
@@ -264,7 +243,7 @@ public class ConfigCurator {
      * @param filenameFilter A FilenameFilter which decides which files in dir are fed to zookeeper
      * @param recurse        recurse subdirectories
      */
-    public void feedZooKeeper(File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
+    void feedZooKeeper(File dir, String path, FilenameFilter filenameFilter, boolean recurse) {
         try {
             if (filenameFilter == null) {
                 filenameFilter = acceptsAllFileNameFilter;
@@ -311,7 +290,7 @@ public class ConfigCurator {
                 }
             }
         }
-        return ret.toArray(new File[ret.size()]);
+        return ret.toArray(new File[0]);
     }
 
     /** Deletes the node at the given path, and any children it may have. If the node does not exist this does nothing */
