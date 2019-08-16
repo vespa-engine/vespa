@@ -577,7 +577,7 @@ struct FixtureBase
     }
 
     DocumentContext doc1(uint64_t timestamp = 10) {
-        return doc("doc:test:1", timestamp);
+        return doc("id:ns:searchdocument::1", timestamp);
     }
 
     void performPut(FeedToken token, PutOperation &op) {
@@ -661,7 +661,7 @@ struct FixtureBase
             uint32_t id = first + i;
             uint64_t ts = tsfirst + i;
             vespalib::asciistream os;
-            os << "doc:test:" << id;
+            os << "id:ns:searchdocument::" << id;
             docs.push_back(doc(os.str(), ts));
         }
         return docs;
@@ -822,7 +822,7 @@ TEST_F("require that put() calls attribute adapter", SearchableFeedViewFixture)
     f.putAndWait(dc);
 
     EXPECT_EQUAL(1u, f.maw._putSerial);
-    EXPECT_EQUAL(DocumentId("doc:test:1"), f.maw._putDocId);
+    EXPECT_EQUAL(DocumentId("id:ns:searchdocument::1"), f.maw._putDocId);
     EXPECT_EQUAL(1u, f.maw._putLid);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
 }
@@ -861,7 +861,7 @@ TEST_F("require that update() calls attribute adapter", SearchableFeedViewFixtur
     f.putAndWait(dc1);
     f.updateAndWait(dc2);
 
-    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1u, f.maw);
+    assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1u, f.maw);
 }
 
 TEST_F("require that remove() updates document meta store with bucket info",
@@ -1064,7 +1064,7 @@ void putDocumentAndUpdate(Fixture &f, const vespalib::string &fieldName)
     f.putAndWait(dc1);
     EXPECT_EQUAL(1u, f.msa._store._lastSyncToken);
 
-    DocumentContext dc2("doc:test:1", 20, f.getBuilder());
+    DocumentContext dc2("id:ns:searchdocument::1", 20, f.getBuilder());
     dc2.addFieldUpdate(f.getBuilder(), fieldName);
     f.updateAndWait(dc2);
 }
@@ -1076,7 +1076,7 @@ void requireThatUpdateOnlyUpdatesAttributeAndNotDocumentStore(Fixture &f,
     putDocumentAndUpdate(f, fieldName);
 
     EXPECT_EQUAL(1u, f.msa._store._lastSyncToken); // document store not updated
-    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
+    assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1, f.maw);
 }
 
 template <typename Fixture>
@@ -1086,7 +1086,7 @@ void requireThatUpdateUpdatesAttributeAndDocumentStore(Fixture &f,
     putDocumentAndUpdate(f, fieldName);
 
     EXPECT_EQUAL(2u, f.msa._store._lastSyncToken); // document store updated
-    assertAttributeUpdate(2u, DocumentId("doc:test:1"), 1, f.maw);
+    assertAttributeUpdate(2u, DocumentId("id:ns:searchdocument::1"), 1, f.maw);
 }
 
 TEST_F("require that update() to fast-access attribute only updates attribute and not document store",

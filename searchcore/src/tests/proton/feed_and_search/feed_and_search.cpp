@@ -105,7 +105,7 @@ Schema getSchema() {
 Document::UP buildDocument(DocBuilder & doc_builder, int id,
                            const string &word) {
     ostringstream ost;
-    ost << "doc::" << id;
+    ost << "id:ns:searchdocument::" << id;
     doc_builder.startDocument(ost.str());
     doc_builder.startIndexField(field_name)
         .addStr(noise).addStr(word).endField();

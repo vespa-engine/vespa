@@ -22,7 +22,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
     void SetUp() override {
         createLinks();
 
-        docId = document::DocumentId(document::DocIdString("test", "uri"));
+        docId = document::DocumentId("id:test:test::uri");
         bucketId = getExternalOperationHandler().getBucketId(docId);
         enableDistributorClusterState("distributor:1 storage:4");
     };
@@ -57,8 +57,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         std::unique_ptr<api::StorageReply> reply(removec->makeReply());
         auto* removeR = static_cast<api::RemoveReply*>(reply.get());
         removeR->setOldTimestamp(oldTimestamp);
-        callback.onReceive(_sender,
-                           std::shared_ptr<api::StorageReply>(reply.release()));
+        callback.onReceive(_sender, std::shared_ptr<api::StorageReply>(reply.release()));
     }
 
     void sendRemove() {
@@ -71,13 +70,13 @@ TEST_F(RemoveOperationTest, simple) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 1",
             _sender.getLastCommand());
 
     replyToMessage(*op, -1, 34);
 
-    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, "
               "timestamp 100, removed doc from 34) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -87,13 +86,13 @@ TEST_F(RemoveOperationTest, not_found) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 1",
               _sender.getLastCommand());
 
     replyToMessage(*op, -1, 0);
 
-    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, "
               "timestamp 100, not found) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -103,13 +102,13 @@ TEST_F(RemoveOperationTest, storage_failure) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 1",
               _sender.getLastCommand());
 
     sendReply(*op, -1, api::ReturnCode::INTERNAL_FAILURE);
 
-    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), id:test:test::uri, "
               "timestamp 100, not found) ReturnCode(INTERNAL_FAILURE)",
               _sender.getLastReply());
 }
@@ -118,7 +117,7 @@ TEST_F(RemoveOperationTest, not_in_db) {
     sendRemove();
 
     ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "doc:test:uri, timestamp 100, not found) ReturnCode(NONE)",
+              "id:test:test::uri, timestamp 100, not found) ReturnCode(NONE)",
               _sender.getLastReply());
 }
 
@@ -127,11 +126,11 @@ TEST_F(RemoveOperationTest, multiple_copies) {
 
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 1,"
-              "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 2,"
-              "Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+              "Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 3",
               _sender.getCommands(true, true));
 
@@ -140,7 +139,7 @@ TEST_F(RemoveOperationTest, multiple_copies) {
     replyToMessage(*op, 2, 75);
 
     ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
-              "doc:test:uri, timestamp 100, removed doc from 75) ReturnCode(NONE)",
+              "id:test:test::uri, timestamp 100, removed doc from 75) ReturnCode(NONE)",
               _sender.getLastReply());
 }
 
@@ -149,7 +148,7 @@ TEST_F(RemoveOperationTest, can_send_remove_when_all_replica_nodes_retired) {
     addNodesToBucketDB(bucketId, "0=123");
     sendRemove();
 
-    ASSERT_EQ("Remove(BucketId(0x4000000000002a52), doc:test:uri, "
+    ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, "
               "timestamp 100) => 0",
               _sender.getLastCommand());
 }

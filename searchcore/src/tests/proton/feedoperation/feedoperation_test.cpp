@@ -145,7 +145,7 @@ TEST("require that toString() on derived classes are meaningful")
     uint32_t sub_db_id = 1;
     MyStreamHandler stream_handler;
     DocumentIdT doc_id_limit = 15;
-    DocumentId doc_id("doc:foo:bar");
+    DocumentId doc_id("id:ns:foo:::bar");
     DocumentUpdate::SP update(new DocumentUpdate(repo, *DataType::DOCUMENT, doc_id));
 
     EXPECT_EQUAL("DeleteBucket(BucketId(0x0000000000000000), serialNum=0)",
@@ -196,7 +196,7 @@ TEST("require that toString() on derived classes are meaningful")
     EXPECT_EQUAL("Remove(null::, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  RemoveOperation().toString());
-    EXPECT_EQUAL("Remove(doc:foo:bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
+    EXPECT_EQUAL("Remove(id:ns:foo:::bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  RemoveOperation(bucket_id1, timestamp, doc_id).toString());
 
@@ -214,7 +214,7 @@ TEST("require that toString() on derived classes are meaningful")
     EXPECT_EQUAL("Update(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  UpdateOperation().toString());
-    EXPECT_EQUAL("Update(doc:foo:bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
+    EXPECT_EQUAL("Update(id:ns:foo:::bar, BucketId(0x000000000000002a), timestamp=10, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  UpdateOperation(bucket_id1, timestamp, update).toString());
 

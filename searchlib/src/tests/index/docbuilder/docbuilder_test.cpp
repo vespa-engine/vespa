@@ -77,11 +77,11 @@ Test::testBuilder()
     std::string xml;
 
     { // empty
-        doc = b.startDocument("doc::0").endDocument();
+        doc = b.startDocument("id:ns:searchdocument::0").endDocument();
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
-        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::0\"/>", *itr++);
+        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::0\"/>", *itr++);
         EXPECT_EQUAL("", *itr++);
         EXPECT_TRUE(itr == lines.end());
     }
@@ -105,7 +105,7 @@ Test::testBuilder()
                               &binaryBlob[0] + binaryBlob.size());
         raw1w1 += std::string(&binaryBlob[0],
                               &binaryBlob[0] + binaryBlob.size());
-        b.startDocument("doc::1");
+        b.startDocument("id:ns:searchdocument::1");
         b.startIndexField("ia").addStr("foo").addStr("bar").addStr("baz").addTermAnnotation("altbaz").endField();
         b.startIndexField("ib").startElement().addStr("foo").endElement().
             startElement(1).addStr("bar").addStr("baz").endElement().endField();
@@ -289,7 +289,7 @@ Test::testBuilder()
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
-        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::1\">", *itr++);
+        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::1\">", *itr++);
         EXPECT_EQUAL("<sj>", *itr++);
         EXPECT_EQUAL(empty +"<item weight=\"46\" binaryencoding=\"base64\">" +
                    vespalib::Base64::encode(raw1w1) +
@@ -425,7 +425,7 @@ Test::testBuilder()
 #endif
     }
     { // create one more to see that everything is cleared
-        b.startDocument("doc::2");
+        b.startDocument("id:ns:searchdocument::2");
         b.startIndexField("ia").addStr("yes").endField();
         b.startAttributeField("aa").addInt(20).endField();
         b.startSummaryField("sa").addInt(10).endField();
@@ -433,7 +433,7 @@ Test::testBuilder()
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
-        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::2\">", *itr++);
+        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::2\">", *itr++);
         EXPECT_EQUAL("<sa>10</sa>", *itr++);
         EXPECT_EQUAL("<aa>20</aa>", *itr++);
         EXPECT_EQUAL("<ia>yes</ia>", *itr++);
@@ -441,7 +441,7 @@ Test::testBuilder()
         EXPECT_TRUE(itr == lines.end());
     }
     { // create field with cjk chars
-        b.startDocument("doc::3");
+        b.startDocument("id:ns:searchdocument::3");
         b.startIndexField("ia").
             addStr("我就是那个").
             setAutoSpace(false).
@@ -452,7 +452,7 @@ Test::testBuilder()
         xml = doc->toXml("");
         boost::split(lines, xml, boost::is_any_of("\n"));
         itr = lines.begin();
-        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"doc::3\">", *itr++);
+        EXPECT_EQUAL("<document documenttype=\"searchdocument\" documentid=\"id:ns:searchdocument::3\">", *itr++);
         EXPECT_EQUAL("<ia>我就是那个大灰狼</ia>", *itr++);
         EXPECT_EQUAL("</document>", *itr++);
         EXPECT_TRUE(itr == lines.end());

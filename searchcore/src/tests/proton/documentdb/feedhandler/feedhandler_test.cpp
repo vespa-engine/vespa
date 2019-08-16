@@ -537,7 +537,7 @@ TEST_F("require that heartBeat calls FeedView's heartBeat",
 
 TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 {
-    DocumentContext doc_context("doc:test:foo", *f.schema.builder);
+    DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op(new RemoveOperation(doc_context.bucketId, Timestamp(10), doc_context.doc->getId()));
     static_cast<DocumentOperation &>(*op).setPrevDbDocumentId(DbDocumentId(4));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
@@ -549,7 +549,7 @@ TEST_F("require that outdated remove is ignored", FeedHandlerFixture)
 
 TEST_F("require that outdated put is ignored", FeedHandlerFixture)
 {
-    DocumentContext doc_context("doc:test:foo", *f.schema.builder);
+    DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
     FeedOperation::UP op(new PutOperation(doc_context.bucketId,
                                           Timestamp(10), doc_context.doc));
     static_cast<DocumentOperation &>(*op).setPrevTimestamp(Timestamp(10000));
@@ -570,7 +570,7 @@ addLidToRemove(RemoveDocumentsOperation &op)
 
 TEST_F("require that handleMove calls FeedView", FeedHandlerFixture)
 {
-    DocumentContext doc_context("doc:test:foo", *f.schema.builder);
+    DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
     MoveOperation op(doc_context.bucketId, Timestamp(2), doc_context.doc, DbDocumentId(0, 2), 1);
     op.setDbDocumentId(DbDocumentId(1, 2));
     f.runAsMaster([&]() { f.handler.handleMove(op, IDestructorCallback::SP()); });
@@ -806,7 +806,7 @@ TEST_F("require that tensor update with wrong tensor type fails", FeedHandlerFix
 TEST_F("require that put with different document type repo is ok", FeedHandlerFixture)
 {
     TwoFieldsSchemaContext schema;
-    DocumentContext doc_context("doc:test:foo", *schema.builder);
+    DocumentContext doc_context("id:ns:searchdocument::foo", *schema.builder);
     auto op = std::make_unique<PutOperation>(doc_context.bucketId,
                                              Timestamp(10), doc_context.doc);
     FeedTokenContext token_context;

@@ -350,7 +350,7 @@ StringFieldValue Test::makeAnnotatedChineseString() {
 }
 
 Document Test::makeDocument() {
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
     doc.setValue("string", makeAnnotatedString());
 
@@ -667,7 +667,7 @@ Test::requireThatPredicateIsPrinted()
     Cursor &arr = obj.setArray(Predicate::SET);
     arr.addString("bar");
 
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
     doc.setValue("predicate", PredicateFieldValue(std::move(input)));
 
@@ -687,7 +687,7 @@ Test::requireThatTensorIsNotConverted()
     TensorFieldValue tensorFieldValue(tensorDataType);
     tensorFieldValue = make_tensor(TensorSpec("tensor(x{},y{})")
                                    .add({{"x", "4"}, {"y", "5"}}, 7));
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
     doc.setValue("tensor", tensorFieldValue);
 
@@ -712,7 +712,7 @@ const ReferenceDataType& Test::getAsRefType(const string& name) const {
 }
 
 void Test::requireThatNonEmptyReferenceIsConvertedToStringWithId() {
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
     doc.setValue("ref", ReferenceFieldValue(
             getAsRefType("Reference<target_dummy_document>"),
@@ -723,7 +723,7 @@ void Test::requireThatNonEmptyReferenceIsConvertedToStringWithId() {
 }
 
 void Test::requireThatEmptyReferenceIsConvertedToEmptyString() {
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
     doc.setValue("ref", ReferenceFieldValue(
             getAsRefType("Reference<target_dummy_document>")));
@@ -735,7 +735,7 @@ void Test::requireThatEmptyReferenceIsConvertedToEmptyString() {
 // Own test for this to ensure that SlimeFiller code path is executed,
 // as this only triggers for composite field types.
 void Test::requireThatReferenceInCompositeTypeEmitsSlimeData() {
-    Document doc(getDocType(), DocumentId("doc:scheme:"));
+    Document doc(getDocType(), DocumentId("id:ns:indexingdocument::"));
     doc.setRepo(*_documentRepo);
 
     StructFieldValue sfv(getDataType("indexingdocument.header.nested"));

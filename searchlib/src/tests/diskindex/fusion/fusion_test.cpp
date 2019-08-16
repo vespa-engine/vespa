@@ -100,7 +100,7 @@ toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeight
 std::unique_ptr<Document>
 make_doc10(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     b.startIndexField("f0").
         addStr("a").addStr("b").addStr("c").addStr("d").
         addStr("e").addStr("f").addStr("z").
@@ -325,7 +325,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     myPushDocument(inv);
     pushThreads.sync();
 
-    b.startDocument("doc::11").
+    b.startDocument("id:ns:searchdocument::11").
         startIndexField("f3").
         startElement(-27).addStr("zz").endElement().
         endField();
@@ -335,7 +335,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     myPushDocument(inv);
     pushThreads.sync();
 
-    b.startDocument("doc::12").
+    b.startDocument("id:ns:searchdocument::12").
         startIndexField("f3").
         startElement(0).addStr("zz0").endElement().
         endField();

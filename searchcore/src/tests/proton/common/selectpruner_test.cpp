@@ -36,8 +36,7 @@ using search::AttributeFactory;
 
 typedef Node::UP NodeUP;
 
-namespace
-{
+namespace {
 
 const int32_t doc_type_id = 787121340;
 const string type_name = "test";
@@ -56,9 +55,6 @@ const string rvalid2_name("test.ab <= 4999");
 const string invalid_name("test_2.ac > 3999");
 const string invalid2_name("test_2.ac > 4999");
 const string empty("");
-
-const document::DocumentId docId("doc:test:1");
-
 
 std::unique_ptr<const DocumentTypeRepo>
 makeDocTypeRepo()
@@ -135,23 +131,12 @@ public:
     bool _hasDocuments;
 
     TestFixture();
-
     ~TestFixture();
 
-    void
-    testParse(const string &selection);
-
-    void
-    testParseFail(const string &selection);
-
-    void
-    testPrune(const string &selection,
-              const string &exp);
-
-    void
-    testPrune(const string &selection,
-              const string &exp,
-              const string &docTypeName);
+    void testParse(const string &selection);
+    void testParseFail(const string &selection);
+    void testPrune(const string &selection, const string &exp);
+    void testPrune(const string &selection, const string &exp, const string &docTypeName);
 };
 
 
@@ -169,28 +154,22 @@ TestFixture::TestFixture()
 }
 
 
-TestFixture::~TestFixture()
-{
-}
+TestFixture::~TestFixture() = default;
 
 
 void
 TestFixture::testParse(const string &selection)
 {
     const DocumentTypeRepo &repo(*_repoUP);
-    document::select::Parser parser(repo,
-                                    document::BucketIdFactory());
+    document::select::Parser parser(repo,document::BucketIdFactory());
 
     NodeUP select;
 
     try {
-        LOG(info,
-            "Trying to parse '%s'",
-            selection.c_str());
+        LOG(info, "Trying to parse '%s'", selection.c_str());
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info,
-            "Parse failed: %s", e.what());
+        LOG(info, "Parse failed: %s", e.what());
         select.reset(0);
     }
     ASSERT_TRUE(select.get() != NULL);
@@ -201,20 +180,15 @@ void
 TestFixture::testParseFail(const string &selection)
 {
     const DocumentTypeRepo &repo(*_repoUP);
-    document::select::Parser parser(repo,
-                                    document::BucketIdFactory());
+    document::select::Parser parser(repo,document::BucketIdFactory());
 
     NodeUP select;
 
     try {
-        LOG(info,
-            "Trying to parse '%s'",
-            selection.c_str());
+        LOG(info, "Trying to parse '%s'", selection.c_str());
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info,
-            "Parse failed: %s",
-            e.getMessage().c_str());
+        LOG(info, "Parse failed: %s", e.getMessage().c_str());
         select.reset(0);
     }
     ASSERT_TRUE(select.get() == NULL);
@@ -222,25 +196,18 @@ TestFixture::testParseFail(const string &selection)
 
 
 void
-TestFixture::testPrune(const string &selection,
-                       const string &exp,
-                       const string &docTypeName)
+TestFixture::testPrune(const string &selection, const string &exp, const string &docTypeName)
 {
     const DocumentTypeRepo &repo(*_repoUP);
-    document::select::Parser parser(repo,
-                                    document::BucketIdFactory());
+    document::select::Parser parser(repo,document::BucketIdFactory());
 
     NodeUP select;
 
     try {
-        LOG(info,
-            "Trying to parse '%s' with docType=%s",
-            selection.c_str(),
-            docTypeName.c_str());
+        LOG(info, "Trying to parse '%s' with docType=%s", selection.c_str(), docTypeName.c_str());
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info,
-            "Parse failed: %s", e.what());
+        LOG(info, "Parse failed: %s", e.what());
         select.reset(0);
     }
     ASSERT_TRUE(select.get() != NULL);
@@ -249,7 +216,7 @@ TestFixture::testPrune(const string &selection,
     LOG(info, "ParseTree: '%s'", os.str().c_str());
     const DocumentType *docType = repo.getDocumentType(docTypeName);
     ASSERT_TRUE(docType != NULL);
-    Document::UP emptyDoc(new Document(*docType, docId));
+    Document::UP emptyDoc(new Document(*docType, document::DocumentId("id:ns:" + docTypeName + "::1")));
     emptyDoc->setRepo(repo);
     SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _hasDocuments);
     pruner.process(*select);

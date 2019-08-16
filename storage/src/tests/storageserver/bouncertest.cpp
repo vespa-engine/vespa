@@ -100,7 +100,7 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
 {
     auto cmd = std::make_shared<api::RemoveCommand>(
             makeDocumentBucket(document::BucketId(0)),
-            document::DocumentId("doc:foo:bar"),
+            document::DocumentId("id:ns:foo::bar"),
             timestamp);
     cmd->setPriority(priority);
     return cmd;
@@ -112,7 +112,7 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
 {
     auto cmd = std::make_shared<api::RemoveCommand>(
             document::Bucket(bucketSpace, document::BucketId(0)),
-            document::DocumentId("doc:foo:bar"),
+            document::DocumentId("id:ns:foo::bar"),
             timestamp);
     cmd->setPriority(Priority(0));
     return cmd;

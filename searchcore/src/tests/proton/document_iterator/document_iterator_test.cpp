@@ -416,17 +416,17 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
 
 TEST("require that custom retrievers work as expected") {
     IDocumentRetriever::SP dr =
-        cat(cat(doc("doc:foo:1", Timestamp(2), bucket(5)),
-                rem("doc:foo:2", Timestamp(3), bucket(5))),
-            cat(doc("doc:foo:3", Timestamp(7), bucket(6)),
+        cat(cat(doc("id:ns:document::1", Timestamp(2), bucket(5)),
+                rem("id:ns:document::2", Timestamp(3), bucket(5))),
+            cat(doc("id:ns:document::3", Timestamp(7), bucket(6)),
                 nil()));
-    EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("doc:foo:bogus")).valid());
+    EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("id:ns:document::bogus")).valid());
     EXPECT_TRUE(dr->getDocument(1).get() == 0);
     EXPECT_TRUE(dr->getDocument(2).get() == 0);
     EXPECT_TRUE(dr->getDocument(3).get() != 0);
-    TEST_DO(checkDoc(*dr, "doc:foo:1", 2, 5, false));
-    TEST_DO(checkDoc(*dr, "doc:foo:2", 3, 5, true));
-    TEST_DO(checkDoc(*dr, "doc:foo:3", 7, 6, false));
+    TEST_DO(checkDoc(*dr, "id:ns:document::1", 2, 5, false));
+    TEST_DO(checkDoc(*dr, "id:ns:document::2", 3, 5, true));
+    TEST_DO(checkDoc(*dr, "id:ns:document::3", 7, 6, false));
     DocumentMetaData::Vector b5;
     DocumentMetaData::Vector b6;
     dr->getBucketMetaData(bucket(5), b5);
@@ -456,19 +456,19 @@ TEST("require that a list of empty retrievers can be iterated") {
 
 TEST("require that normal documents can be iterated") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(doc("doc:foo:2", Timestamp(3), bucket(5)),
-                doc("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:1")), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, Document(*DataType::DOCUMENT, DocumentId("doc:foo:3")), Timestamp(4)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
+    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(3)));
+    TEST_DO(checkEntry(res, 2, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::3")), Timestamp(4)));
 }
 
 void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
@@ -488,14 +488,14 @@ TEST("require that iterator ignoring maxbytes stops at the end, and does not aut
 }
 
 void verifyReadConsistency(DocumentIterator & itr, Committer & committer) {
-    IDocumentRetriever::SP retriever = doc("doc:foo:1", Timestamp(2), bucket(5));
+    IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
     IDocumentRetriever::SP commitAndWaitRetriever(new CommitAndWaitDocumentRetriever(retriever, committer));
     itr.add(commitAndWaitRetriever);
 
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:1")), Timestamp(2)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
     EXPECT_EQUAL(0u, committer._commitCount);
 }
 
@@ -516,7 +516,7 @@ TEST("require that readconsistency::strong does commit") {
 }
 
 TEST("require that docid limit is honoured") {
-    IDocumentRetriever::SP retriever = doc("doc:foo:1", Timestamp(2), bucket(5));
+    IDocumentRetriever::SP retriever = doc("id:ns:document::1", Timestamp(2), bucket(5));
     UnitDR & udr = dynamic_cast<UnitDR &>(*retriever);
     udr.docid = 7;
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
@@ -524,7 +524,7 @@ TEST("require that docid limit is honoured") {
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:1")), Timestamp(2)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
 
     udr.setDocIdLimit(7);
     DocumentIterator limited(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
@@ -536,46 +536,46 @@ TEST("require that docid limit is honoured") {
 
 TEST("require that remove entries can be iterated") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
-    itr.add(rem("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(rem("doc:foo:2", Timestamp(3), bucket(5)),
-                rem("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
+                rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, DocumentId("doc:foo:1"), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, DocumentId("doc:foo:2"), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, DocumentId("doc:foo:3"), Timestamp(4)));
+    TEST_DO(checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2)));
+    TEST_DO(checkEntry(res, 1, DocumentId("id:ns:document::2"), Timestamp(3)));
+    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4)));
 }
 
 TEST("require that remove entries can be ignored") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), docV(), -1, false);
-    itr.add(rem("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(doc("doc:foo:2", Timestamp(3), bucket(5)),
-                rem("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(3)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(3)));
 }
 
 TEST("require that iterating all versions returns both documents and removes") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), allV(), -1, false);
-    itr.add(rem("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(doc("doc:foo:2", Timestamp(3), bucket(5)),
-                rem("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(rem("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, DocumentId("doc:foo:1"), Timestamp(2)));
-    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(3)));
-    TEST_DO(checkEntry(res, 2, DocumentId("doc:foo:3"), Timestamp(4)));
+    TEST_DO(checkEntry(res, 0, DocumentId("id:ns:document::1"), Timestamp(2)));
+    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(3)));
+    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4)));
 }
 
 TEST("require that using an empty field set returns meta-data only") {
     DocumentIterator itr(bucket(5), document::NoFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(doc("doc:foo:2", Timestamp(3), bucket(5)),
-                rem("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                rem("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
@@ -586,30 +586,30 @@ TEST("require that using an empty field set returns meta-data only") {
 
 TEST("require that entries in other buckets are skipped") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
-    itr.add(rem("doc:foo:1", Timestamp(2), bucket(6)));
-    itr.add(cat(doc("doc:foo:2", Timestamp(3), bucket(5)),
-                doc("doc:foo:3", Timestamp(4), bucket(6))));
+    itr.add(rem("id:ns:document::1", Timestamp(2), bucket(6)));
+    itr.add(cat(doc("id:ns:document::2", Timestamp(3), bucket(5)),
+                doc("id:ns:document::3", Timestamp(4), bucket(6))));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(3)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(3)));
 }
 
 TEST("require that maxBytes splits iteration results") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(rem("doc:foo:2", Timestamp(3), bucket(5)),
-                doc("doc:foo:3", Timestamp(4), bucket(5))));
-    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("doc:foo:1"))) +
-                                     getSize(DocumentId("doc:foo:2")));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
+                doc("id:ns:document::3", Timestamp(4), bucket(5))));
+    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1"))) +
+                                     getSize(DocumentId("id:ns:document::2")));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
-    TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:1")), Timestamp(2)));
-    TEST_DO(checkEntry(res1, 1, DocumentId("doc:foo:2"), Timestamp(3)));
+    TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
+    TEST_DO(checkEntry(res1, 1, DocumentId("id:ns:document::2"), Timestamp(3)));
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    TEST_DO(checkEntry(res2, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:3")), Timestamp(4)));
+    TEST_DO(checkEntry(res2, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::3")), Timestamp(4)));
 
     IterateResult res3 = itr.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
@@ -618,9 +618,9 @@ TEST("require that maxBytes splits iteration results") {
 
 TEST("require that maxBytes splits iteration results for meta-data only iteration") {
     DocumentIterator itr(bucket(5), document::NoFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(rem("doc:foo:2", Timestamp(3), bucket(5)),
-                doc("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
+                doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(getSize() + getSize());
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
@@ -638,122 +638,122 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
 
 TEST("require that at least one document is returned by visit") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(2), bucket(5)));
-    itr.add(cat(rem("doc:foo:2", Timestamp(3), bucket(5)),
-                doc("doc:foo:3", Timestamp(4), bucket(5))));
+    itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
+    itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
+                doc("id:ns:document::3", Timestamp(4), bucket(5))));
     IterateResult res1 = itr.iterate(0);
     EXPECT_TRUE(1u <= res1.getEntries().size());
-    TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT,DocumentId("doc:foo:1")), Timestamp(2)));
+    TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT,DocumentId("id:ns:document::1")), Timestamp(2)));
 }
 
 TEST("require that documents outside the timestamp limits are ignored") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectTimestampRange(100, 200), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(99),  bucket(5)));
-    itr.add(doc("doc:foo:2", Timestamp(100), bucket(5)));
-    itr.add(doc("doc:foo:3", Timestamp(200), bucket(5)));
-    itr.add(doc("doc:foo:4", Timestamp(201), bucket(5)));
-    itr.add(rem("doc:foo:5", Timestamp(99),  bucket(5)));
-    itr.add(rem("doc:foo:6", Timestamp(100), bucket(5)));
-    itr.add(rem("doc:foo:7", Timestamp(200), bucket(5)));
-    itr.add(rem("doc:foo:8", Timestamp(201), bucket(5)));
+    itr.add(doc("id:ns:document::1", Timestamp(99),  bucket(5)));
+    itr.add(doc("id:ns:document::2", Timestamp(100), bucket(5)));
+    itr.add(doc("id:ns:document::3", Timestamp(200), bucket(5)));
+    itr.add(doc("id:ns:document::4", Timestamp(201), bucket(5)));
+    itr.add(rem("id:ns:document::5", Timestamp(99),  bucket(5)));
+    itr.add(rem("id:ns:document::6", Timestamp(100), bucket(5)));
+    itr.add(rem("id:ns:document::7", Timestamp(200), bucket(5)));
+    itr.add(rem("id:ns:document::8", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(4u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(100)));
-    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("doc:foo:3")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("doc:foo:6"), Timestamp(100)));
-    TEST_DO(checkEntry(res, 3, DocumentId("doc:foo:7"), Timestamp(200)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(100)));
+    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::3")), Timestamp(200)));
+    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(100)));
+    TEST_DO(checkEntry(res, 3, DocumentId("id:ns:document::7"), Timestamp(200)));
 }
 
 TEST("require that timestamp subset returns the appropriate documents") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectTimestampSet(200, 350, 400), newestV(), -1, false);
-    itr.add(doc("doc:foo:1", Timestamp(500),  bucket(5)));
-    itr.add(doc("doc:foo:2", Timestamp(400), bucket(5)));
-    itr.add(doc("doc:foo:3", Timestamp(300), bucket(5)));
-    itr.add(doc("doc:foo:4", Timestamp(200), bucket(5)));
-    itr.add(rem("doc:foo:5", Timestamp(250),  bucket(5)));
-    itr.add(rem("doc:foo:6", Timestamp(350), bucket(5)));
-    itr.add(rem("doc:foo:7", Timestamp(450), bucket(5)));
-    itr.add(rem("doc:foo:8", Timestamp(550), bucket(5)));
+    itr.add(doc("id:ns:document::1", Timestamp(500),  bucket(5)));
+    itr.add(doc("id:ns:document::2", Timestamp(400), bucket(5)));
+    itr.add(doc("id:ns:document::3", Timestamp(300), bucket(5)));
+    itr.add(doc("id:ns:document::4", Timestamp(200), bucket(5)));
+    itr.add(rem("id:ns:document::5", Timestamp(250),  bucket(5)));
+    itr.add(rem("id:ns:document::6", Timestamp(350), bucket(5)));
+    itr.add(rem("id:ns:document::7", Timestamp(450), bucket(5)));
+    itr.add(rem("id:ns:document::8", Timestamp(550), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:2")), Timestamp(400)));
-    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("doc:foo:4")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("doc:foo:6"), Timestamp(350)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::2")), Timestamp(400)));
+    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::4")), Timestamp(200)));
+    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::6"), Timestamp(350)));
 }
 
 TEST("require that document selection will filter results") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("id=\"doc:foo:xxx*\""), newestV(), -1, false);
-    itr.add(doc("doc:foo:xxx1", Timestamp(99),  bucket(5)));
-    itr.add(doc("doc:foo:yyy1", Timestamp(100), bucket(5)));
-    itr.add(doc("doc:foo:xxx2", Timestamp(200), bucket(5)));
-    itr.add(doc("doc:foo:yyy2", Timestamp(201), bucket(5)));
-    itr.add(rem("doc:foo:xxx3", Timestamp(99),  bucket(5)));
-    itr.add(rem("doc:foo:yyy3", Timestamp(100), bucket(5)));
-    itr.add(rem("doc:foo:xxx4", Timestamp(200), bucket(5)));
-    itr.add(rem("doc:foo:yyy4", Timestamp(201), bucket(5)));
+    DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("id=\"id:ns:document::xxx*\""), newestV(), -1, false);
+    itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
+    itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
+    itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
+    itr.add(doc("id:ns:document::yyy2", Timestamp(201), bucket(5)));
+    itr.add(rem("id:ns:document::xxx3", Timestamp(99),  bucket(5)));
+    itr.add(rem("id:ns:document::yyy3", Timestamp(100), bucket(5)));
+    itr.add(rem("id:ns:document::xxx4", Timestamp(200), bucket(5)));
+    itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(4u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:xxx1")), Timestamp(99)));
-    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("doc:foo:xxx2")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 2, DocumentId("doc:foo:xxx3"), Timestamp(99)));
-    TEST_DO(checkEntry(res, 3, DocumentId("doc:foo:xxx4"), Timestamp(200)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::xxx1")), Timestamp(99)));
+    TEST_DO(checkEntry(res, 1, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::xxx2")), Timestamp(200)));
+    TEST_DO(checkEntry(res, 2, DocumentId("id:ns:document::xxx3"), Timestamp(99)));
+    TEST_DO(checkEntry(res, 3, DocumentId("id:ns:document::xxx4"), Timestamp(200)));
 }
 
 TEST("require that document selection handles 'field == null'") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("foo.aa == null"), newestV(), -1, false);
-    itr.add(doc_with_null_fields("doc:foo:xxx1", Timestamp(99),  bucket(5)));
-    itr.add(doc_with_null_fields("doc:foo:xxx2", Timestamp(100),  bucket(5)));
+    itr.add(doc_with_null_fields("id:ns:foo::xxx1", Timestamp(99),  bucket(5)));
+    itr.add(doc_with_null_fields("id:ns:foo::xxx2", Timestamp(100),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     ASSERT_EQUAL(2u, res.getEntries().size());
-    Document expected1(getAttrDocType(), DocumentId("doc:foo:xxx1"));
+    Document expected1(getAttrDocType(), DocumentId("id:ns:foo::xxx1"));
     TEST_DO(checkEntry(res, 0, expected1, Timestamp(99)));
-    Document expected2(getAttrDocType(), DocumentId("doc:foo:xxx2"));
+    Document expected2(getAttrDocType(), DocumentId("id:ns:foo::xxx2"));
     TEST_DO(checkEntry(res, 1, expected2, Timestamp(100)));
 }
 
 TEST("require that invalid document selection returns no documents") {
     DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("=="), newestV(), -1, false);
-    itr.add(doc("doc:foo:xxx1", Timestamp(99),  bucket(5)));
-    itr.add(doc("doc:foo:yyy1", Timestamp(100), bucket(5)));
-    itr.add(doc("doc:foo:xxx2", Timestamp(200), bucket(5)));
-    itr.add(doc("doc:foo:yyy2", Timestamp(201), bucket(5)));
-    itr.add(rem("doc:foo:xxx3", Timestamp(99),  bucket(5)));
-    itr.add(rem("doc:foo:yyy3", Timestamp(100), bucket(5)));
-    itr.add(rem("doc:foo:xxx4", Timestamp(200), bucket(5)));
-    itr.add(rem("doc:foo:yyy4", Timestamp(201), bucket(5)));
+    itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
+    itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
+    itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
+    itr.add(doc("id:ns:document::yyy2", Timestamp(201), bucket(5)));
+    itr.add(rem("id:ns:document::xxx3", Timestamp(99),  bucket(5)));
+    itr.add(rem("id:ns:document::yyy3", Timestamp(100), bucket(5)));
+    itr.add(rem("id:ns:document::xxx4", Timestamp(200), bucket(5)));
+    itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(0u, res.getEntries().size());
 }
 
 TEST("require that document selection and timestamp range works together") {
-    DocumentIterator itr(bucket(5), document::AllFields(), selectDocsWithinRange("id=\"doc:foo:xxx*\"", 100, 200), newestV(), -1, false);
-    itr.add(doc("doc:foo:xxx1", Timestamp(99),  bucket(5)));
-    itr.add(doc("doc:foo:yyy1", Timestamp(100), bucket(5)));
-    itr.add(doc("doc:foo:xxx2", Timestamp(200), bucket(5)));
-    itr.add(doc("doc:foo:yyy2", Timestamp(201), bucket(5)));
-    itr.add(rem("doc:foo:xxx3", Timestamp(99),  bucket(5)));
-    itr.add(rem("doc:foo:yyy3", Timestamp(100), bucket(5)));
-    itr.add(rem("doc:foo:xxx4", Timestamp(200), bucket(5)));
-    itr.add(rem("doc:foo:yyy4", Timestamp(201), bucket(5)));
+    DocumentIterator itr(bucket(5), document::AllFields(), selectDocsWithinRange("id=\"id:ns:document::xxx*\"", 100, 200), newestV(), -1, false);
+    itr.add(doc("id:ns:document::xxx1", Timestamp(99),  bucket(5)));
+    itr.add(doc("id:ns:document::yyy1", Timestamp(100), bucket(5)));
+    itr.add(doc("id:ns:document::xxx2", Timestamp(200), bucket(5)));
+    itr.add(doc("id:ns:document::yyy2", Timestamp(201), bucket(5)));
+    itr.add(rem("id:ns:document::xxx3", Timestamp(99),  bucket(5)));
+    itr.add(rem("id:ns:document::yyy3", Timestamp(100), bucket(5)));
+    itr.add(rem("id:ns:document::xxx4", Timestamp(200), bucket(5)));
+    itr.add(rem("id:ns:document::yyy4", Timestamp(201), bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(2u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("doc:foo:xxx2")), Timestamp(200)));
-    TEST_DO(checkEntry(res, 1, DocumentId("doc:foo:xxx4"), Timestamp(200)));
+    TEST_DO(checkEntry(res, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::xxx2")), Timestamp(200)));
+    TEST_DO(checkEntry(res, 1, DocumentId("id:ns:document::xxx4"), Timestamp(200)));
 }
 
 TEST("require that fieldset limits fields returned") {
     DocumentIterator itr(bucket(5), document::HeaderFields(), selectAll(), newestV(), -1, false);
-    itr.add(doc_with_fields("doc:foo:xxx1", Timestamp(1),  bucket(5)));
+    itr.add(doc_with_fields("id:ns:foo::xxx1", Timestamp(1),  bucket(5)));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(1u, res.getEntries().size());
-    Document expected(getDocType(), DocumentId("doc:foo:xxx1"));
+    Document expected(getDocType(), DocumentId("id:ns:foo::xxx1"));
     expected.set("header", "foo");
     TEST_DO(checkEntry(res, 0, expected, Timestamp(1)));
 }
@@ -798,26 +798,26 @@ TEST("require that attributes are used")
 {
     UnitDR::reset();
     DocumentIterator itr(bucket(5), document::AllFields(), selectDocs("foo.aa == 45"), docV(), -1, false);
-    itr.add(doc_with_attr_fields("doc:foo:xx1", Timestamp(1), bucket(5),
+    itr.add(doc_with_attr_fields("id:ns:foo::xx1", Timestamp(1), bucket(5),
                                  27, 28, 27, 2.7, 2.8, "x27", "x28"));
-    itr.add(doc_with_attr_fields("doc:foo:xx2", Timestamp(2), bucket(5),
+    itr.add(doc_with_attr_fields("id:ns:foo::xx2", Timestamp(2), bucket(5),
                                  27, 28, 45, 2.7, 4.5, "x27", "x45"));
-    itr.add(doc_with_attr_fields("doc:foo:xx3", Timestamp(3), bucket(5),
+    itr.add(doc_with_attr_fields("id:ns:foo::xx3", Timestamp(3), bucket(5),
                                  45, 46, 27, 4.5, 2.7, "x45", "x27"));
-    itr.add(doc_with_attr_fields("doc:foo:xx4", Timestamp(4), bucket(5),
+    itr.add(doc_with_attr_fields("id:ns:foo::xx4", Timestamp(4), bucket(5),
                                  45, 46, 45, 4.5, 4.5, "x45", "x45"));
     
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(2u, res.getEntries().size());
-    Document expected1(getAttrDocType(), DocumentId("doc:foo:xx2"));
+    Document expected1(getAttrDocType(), DocumentId("id:ns:foo::xx2"));
     expected1.set("header", "foo");
     expected1.set("body", "bar");
     expected1.set("aa", 27);
     expected1.set("ab", 28);
     expected1.set("dd", 2.7);
     expected1.set("ss", "x27");
-    Document expected2(getAttrDocType(), DocumentId("doc:foo:xx4"));
+    Document expected2(getAttrDocType(), DocumentId("id:ns:foo::xx4"));
     expected2.set("header", "foo");
     expected2.set("body", "bar");
     expected2.set("aa", 45);
@@ -828,26 +828,26 @@ TEST("require that attributes are used")
     TEST_DO(checkEntry(res, 1, expected2, Timestamp(4)));
 
     DocumentIterator itr2(bucket(5), document::AllFields(), selectDocs("foo.dd == 4.5"), docV(), -1, false);
-    itr2.add(doc_with_attr_fields("doc:foo:xx5", Timestamp(5), bucket(5),
+    itr2.add(doc_with_attr_fields("id:ns:foo::xx5", Timestamp(5), bucket(5),
                                   27, 28, 27, 2.7, 2.8, "x27", "x28"));
-    itr2.add(doc_with_attr_fields("doc:foo:xx6", Timestamp(6), bucket(5),
+    itr2.add(doc_with_attr_fields("id:ns:foo::xx6", Timestamp(6), bucket(5),
                                   27, 28, 45, 2.7, 4.5, "x27", "x45"));
-    itr2.add(doc_with_attr_fields("doc:foo:xx7", Timestamp(7), bucket(5),
+    itr2.add(doc_with_attr_fields("id:ns:foo::xx7", Timestamp(7), bucket(5),
                                   45, 46, 27, 4.5, 2.7, "x45", "x27"));
-    itr2.add(doc_with_attr_fields("doc:foo:xx8", Timestamp(8), bucket(5),
+    itr2.add(doc_with_attr_fields("id:ns:foo::xx8", Timestamp(8), bucket(5),
                                   45, 46, 45, 4.5, 4.5, "x45", "x45"));
     
     IterateResult res2 = itr2.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
     EXPECT_EQUAL(2u, res2.getEntries().size());
-    Document expected3(getAttrDocType(), DocumentId("doc:foo:xx6"));
+    Document expected3(getAttrDocType(), DocumentId("id:ns:foo::xx6"));
     expected3.set("header", "foo");
     expected3.set("body", "bar");
     expected3.set("aa", 27);
     expected3.set("ab", 28);
     expected3.set("dd", 2.7);
     expected3.set("ss", "x27");
-    Document expected4(getAttrDocType(), DocumentId("doc:foo:xx8"));
+    Document expected4(getAttrDocType(), DocumentId("id:ns:foo::xx8"));
     expected4.set("header", "foo");
     expected4.set("body", "bar");
     expected4.set("aa", 45);
@@ -858,26 +858,26 @@ TEST("require that attributes are used")
     TEST_DO(checkEntry(res2, 1, expected4, Timestamp(8)));
 
     DocumentIterator itr3(bucket(5), document::AllFields(), selectDocs("foo.ss == \"x45\""), docV(), -1, false);
-    itr3.add(doc_with_attr_fields("doc:foo:xx9", Timestamp(9), bucket(5),
+    itr3.add(doc_with_attr_fields("id:ns:foo::xx9", Timestamp(9), bucket(5),
                                   27, 28, 27, 2.7, 2.8, "x27", "x28"));
-    itr3.add(doc_with_attr_fields("doc:foo:xx10", Timestamp(10), bucket(5),
+    itr3.add(doc_with_attr_fields("id:ns:foo::xx10", Timestamp(10), bucket(5),
                                   27, 28, 45, 2.7, 4.5, "x27", "x45"));
-    itr3.add(doc_with_attr_fields("doc:foo:xx11", Timestamp(11), bucket(5),
+    itr3.add(doc_with_attr_fields("id:ns:foo::xx11", Timestamp(11), bucket(5),
                                   45, 46, 27, 4.5, 2.7, "x45", "x27"));
-    itr3.add(doc_with_attr_fields("doc:foo:xx12", Timestamp(12), bucket(5),
+    itr3.add(doc_with_attr_fields("id:ns:foo::xx12", Timestamp(12), bucket(5),
                                   45, 46, 45, 4.5, 4.5, "x45", "x45"));
     
     IterateResult res3 = itr3.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());
     EXPECT_EQUAL(2u, res3.getEntries().size());
-    Document expected5(getAttrDocType(), DocumentId("doc:foo:xx10"));
+    Document expected5(getAttrDocType(), DocumentId("id:ns:foo::xx10"));
     expected5.set("header", "foo");
     expected5.set("body", "bar");
     expected5.set("aa", 27);
     expected5.set("ab", 28);
     expected5.set("dd", 2.7);
     expected5.set("ss", "x27");
-    Document expected6(getAttrDocType(), DocumentId("doc:foo:xx12"));
+    Document expected6(getAttrDocType(), DocumentId("id:ns:foo::xx12"));
     expected6.set("header", "foo");
     expected6.set("body", "bar");
     expected6.set("aa", 45);
