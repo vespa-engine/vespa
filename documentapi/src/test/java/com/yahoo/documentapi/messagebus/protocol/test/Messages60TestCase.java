@@ -482,7 +482,7 @@ public class Messages60TestCase extends MessagesTestBase {
             final RemoveDocumentMessage msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
 
-            assertEquals(BASE_MESSAGE_LENGTH + 16 + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 20 + serializedLength(msg.getCondition().getSelection()), serialize("RemoveDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 final RemoveDocumentMessage deserializedMsg = (RemoveDocumentMessage)deserialize("RemoveDocumentMessage", DocumentProtocol.MESSAGE_REMOVEDOCUMENT, lang);
@@ -612,7 +612,7 @@ public class Messages60TestCase extends MessagesTestBase {
             msg.setTimestamp(666);
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
 
-            assertEquals(BASE_MESSAGE_LENGTH + 41 + serializedLength(msg.getCondition().getSelection()), serialize("PutDocumentMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 45 + serializedLength(msg.getCondition().getSelection()), serialize("PutDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 final PutDocumentMessage deserializedMsg = (PutDocumentMessage)deserialize("PutDocumentMessage", DocumentProtocol.MESSAGE_PUTDOCUMENT, lang);
@@ -654,7 +654,7 @@ public class Messages60TestCase extends MessagesTestBase {
             msg.setOldTimestamp(666);
             msg.setCondition(new TestAndSetCondition(CONDITION_STRING));
 
-            assertEquals(BASE_MESSAGE_LENGTH + 89 + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
+            assertEquals(BASE_MESSAGE_LENGTH + 93 + serializedLength(msg.getCondition().getSelection()), serialize("UpdateDocumentMessage", msg));
 
             for (Language lang : LANGUAGES) {
                 final UpdateDocumentMessage deserializedMsg = (UpdateDocumentMessage) deserialize("UpdateDocumentMessage", DocumentProtocol.MESSAGE_UPDATEDOCUMENT, lang);
@@ -886,7 +886,7 @@ public class Messages60TestCase extends MessagesTestBase {
 
         public void run() {
             GetDocumentReply reply = new GetDocumentReply(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::"));
-            assertEquals(43, serialize("GetDocumentReply", reply));
+            assertEquals(47, serialize("GetDocumentReply", reply));
 
             for (Language lang : LANGUAGES) {
                 reply = (GetDocumentReply)deserialize("GetDocumentReply", DocumentProtocol.REPLY_GETDOCUMENT, lang);
