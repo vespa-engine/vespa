@@ -75,12 +75,12 @@ assertIterator(const std::string &exp, SearchIterator &it,
     return true;
 }
 
+using AttributePtr = AttributeVector::SP;
 
 class PostingListAttributeTest : public vespalib::TestApp
 {
 private:
     typedef IntegerAttribute::largeint_t     largeint_t;
-    typedef AttributeVector::SP              AttributePtr;
     typedef std::set<AttributeVector::DocId> DocSet;
 
     typedef SingleValueNumericPostingAttribute<
@@ -142,8 +142,7 @@ private:
     void checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
-    void testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
-                         uint32_t numDocs, const std::vector<BufferType> & values);
+    void testPostingList(const AttributePtr& ptr1, uint32_t numDocs, const std::vector<BufferType>& values);
     void testPostingList();
     void testPostingList(bool enableBitVector);
     void testPostingList(bool enableBitVector, uint32_t numDocs, uint32_t numUniqueValues);
@@ -506,15 +505,20 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
     EXPECT_EQUAL(docEnd, lastDocId+1);
 }
 
+AttributePtr
+create_as(const AttributeVector& attr, const std::string& name_suffix)
+{
+    return AttributeFactory::createAttribute(attr.getName() + name_suffix, attr.getConfig());
+}
+
 template <typename VectorType, typename BufferType>
 void
-PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const AttributePtr & ptr2,
-                                          uint32_t numDocs, const std::vector<BufferType> & values)
+PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t numDocs,
+                                          const std::vector<BufferType>& values)
 {
     LOG(info, "testPostingList: vector '%s'", ptr1->getName().c_str());
 
-    VectorType & vec1 = static_cast<VectorType &>(*ptr1.get());
-    VectorType & vec2 = static_cast<VectorType &>(*ptr2.get());
+    auto& vec1 = static_cast<VectorType &>(*ptr1.get());
     addDocs(ptr1, numDocs);
 
     uint32_t part = numDocs / values.size();
@@ -526,28 +530,14 @@ PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const Attri
     }
     vec1.commit();
 
-#if 0
-    std::cout << "***** printBuffer 0 ***** " << std::endl;
-    vec1.getEnumStore().printBuffer(std::cout, 0);
-    std::cout << "***** printBuffer 1 ***** " << std::endl;
-    vec1.getEnumStore().printBuffer(std::cout, 1);
-    std::cout << "***** printCurrentContent ***** " << std::endl;
-    vec1.getEnumStore().printCurrentContent(std::cout);
-    std::cout << "***** printPostingListContent *****" << std::endl;
-    vec1.printPostingListContent(std::cout);
-#endif
-
     // check posting list for correct content
     checkPostingList(vec1, values, RangeAlpha(part));
 
     // load and save vector
+    auto ptr2 = create_as(*ptr1, "_2");
     ptr1->save(ptr2->getBaseFileName());
     ptr2->load();
-#if 0
-    std::cout << "***** vec2.printPostingListContent *****" << std::endl;
-    vec2.printPostingListContent(std::cout);
-#endif
-    checkPostingList(vec2, values, RangeAlpha(part));
+    checkPostingList(static_cast<VectorType&>(*ptr2.get()), values, RangeAlpha(part));
 
     // insert values in another order
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
@@ -560,9 +550,10 @@ PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const Attri
     checkPostingList(vec1, values, RangeBeta(part, values.size()));
 
     // load and save vector
-    ptr1->save(ptr2->getBaseFileName());
-    ptr2->load();
-    checkPostingList(vec2, values, RangeBeta(part, values.size()));
+    auto ptr3 = create_as(*ptr1, "_3");
+    ptr1->save(ptr3->getBaseFileName());
+    ptr3->load();
+    checkPostingList(static_cast<VectorType&>(*ptr3.get()), values, RangeBeta(part, values.size()));
 }
 
 void
@@ -592,25 +583,22 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sint32_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sint32_2", cfg);
-            testPostingList<Int32PostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("sint32", cfg);
+            testPostingList<Int32PostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("aint32_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("aint32_2", cfg);
-            testPostingList<Int32ArrayPostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("aint32", cfg);
+            testPostingList<Int32ArrayPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::INT32, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("wsint32_2", cfg);
-            testPostingList<Int32WsetPostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32", cfg);
+            testPostingList<Int32WsetPostingListAttribute>(ptr1, numDocs, values);
         }
     }
 
@@ -623,25 +611,22 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sfloat_2", cfg);
-            testPostingList<FloatPostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat", cfg);
+            testPostingList<FloatPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("afloat_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("afloat_2", cfg);
-            testPostingList<FloatArrayPostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("afloat", cfg);
+            testPostingList<FloatArrayPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsfloat_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("wsfloat_2", cfg);
-            testPostingList<FloatWsetPostingListAttribute>(ptr1, ptr2, numDocs, values);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("wsfloat", cfg);
+            testPostingList<FloatWsetPostingListAttribute>(ptr1, numDocs, values);
         }
     }
 
@@ -660,25 +645,22 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sstr_2", cfg);
-            testPostingList<StringPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("sstr", cfg);
+            testPostingList<StringPostingListAttribute>(ptr1, numDocs, charValues);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("astr_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("astr_2", cfg);
-            testPostingList<StringArrayPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("astr", cfg);
+            testPostingList<StringArrayPostingListAttribute>(ptr1, numDocs, charValues);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsstr_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("wsstr_2", cfg);
-            testPostingList<StringWsetPostingListAttribute>(ptr1, ptr2, numDocs, charValues);
+            AttributePtr ptr1 = AttributeFactory::createAttribute("wsstr", cfg);
+            testPostingList<StringWsetPostingListAttribute>(ptr1, numDocs, charValues);
         }
     }
 }

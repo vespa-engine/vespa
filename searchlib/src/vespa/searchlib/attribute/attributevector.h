@@ -583,7 +583,6 @@ private:
     uint64_t               _compactLidSpaceGeneration; 
     bool                   _hasEnum;
     bool                   _loaded;
-    bool                   _enableEnumeratedSave;
     fastos::TimeStamp      _nextStatUpdateTime;
 
 ////// Locking strategy interface. only available from the Guards.
@@ -631,8 +630,7 @@ public:
      * Add reserved initial document with docId 0 and undefined value.
      */
     void addReservedDoc();
-    void enableEnumeratedSave(bool enable = true);
-    bool getEnumeratedSave() const { return _hasEnum && _enableEnumeratedSave; }
+    bool getEnumeratedSave() const { return _hasEnum; }
 
     virtual attribute::IPostingListAttributeBase * getIPostingListAttributeBase();
     virtual const attribute::IPostingListAttributeBase * getIPostingListAttributeBase() const;

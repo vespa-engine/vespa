@@ -15,7 +15,6 @@ AttributeVector::SP
 AttributeFactory::create(const vespalib::string &name, const search::attribute::Config &cfg) const
 {
     AttributeVector::SP v(search::AttributeFactory::createAttribute(name, cfg));
-    v->enableEnumeratedSave(true);
     return v;
 }
 

@@ -158,7 +158,7 @@ private:
     template <typename V, typename T>
     void testMultiValueSearchHelper(V & vec, const std::vector<T> & values);
     template <typename V, typename T>
-    void testMultiValueSearch(V & first, V & second, const std::vector<T> & values);
+    void testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T> & values);
     void testSearch();
 
     class IteratorTester {
@@ -555,22 +555,30 @@ SearchContextTest::testMultiValueSearchHelper(V & vec, const std::vector<T> & va
     }
 }
 
+AttributePtr
+create_as(const AttributeVector& attr, const std::string& name_suffix)
+{
+    return AttributeFactory::createAttribute(attr.getName() + name_suffix, attr.getConfig());
+}
+
+
 template <typename V, typename T>
 void
-SearchContextTest::testMultiValueSearch(V & first, V & second, const std::vector<T> & values)
+SearchContextTest::testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T> & values)
 {
-    addDocs(first, second.getNumDocs());
+    addDocs(attr, num_docs);
     LOG(info, "testMultiValueSearch: vector '%s' with %u documents and %lu unique values",
-        first.getName().c_str(), first.getNumDocs(), values.size());
+        attr.getName().c_str(), attr.getNumDocs(), values.size());
 
-    fillAttribute(first, values);
+    fillAttribute(attr, values);
 
-    testMultiValueSearchHelper(first, values);
+    testMultiValueSearchHelper(attr, values);
 
-    ASSERT_TRUE(first.save(second.getBaseFileName()));
-    ASSERT_TRUE(second.load());
+    auto attr2 = create_as(attr, "_2");
+    ASSERT_TRUE(attr.save(attr2->getBaseFileName()));
+    ASSERT_TRUE(attr2->load());
 
-    testMultiValueSearchHelper(second, values);
+    testMultiValueSearchHelper(static_cast<V&>(*attr2.get()), values);
 
     size_t sz = values.size();
     ASSERT_TRUE(sz > 2);
@@ -581,18 +589,19 @@ SearchContextTest::testMultiValueSearch(V & first, V & second, const std::vector
         subset.push_back(values[i]);
     }
 
-    fillAttribute(first, subset);
+    fillAttribute(attr, subset);
 
-    ASSERT_TRUE(1u < first.getNumDocs());
-    EXPECT_TRUE(first.append(1u, values[sz - 1], 1));
-    first.commit(true);
+    ASSERT_TRUE(1u < attr.getNumDocs());
+    EXPECT_TRUE(attr.append(1u, values[sz - 1], 1));
+    attr.commit(true);
 
-    testMultiValueSearchHelper(first, values);
+    testMultiValueSearchHelper(attr, values);
 
-    ASSERT_TRUE(first.save(second.getBaseFileName()));
-    ASSERT_TRUE(second.load());
+    auto attr3 = create_as(attr, "_3");
+    ASSERT_TRUE(attr.save(attr3->getBaseFileName()));
+    ASSERT_TRUE(attr3->load());
 
-    testMultiValueSearchHelper(second, values);
+    testMultiValueSearchHelper(static_cast<V&>(*attr3.get()), values);
 }
 
 template<typename T, typename A>
@@ -606,8 +615,7 @@ void SearchContextTest::testSearch(const ConfigMap & cfgs) {
         testSearch(*(dynamic_cast<A *>(second.get())), numDocs, values);
         if (second->hasMultiValue()) {
             AttributePtr first = AttributeFactory::createAttribute(cfg.first + "-1", cfg.second);
-            testMultiValueSearch(*(dynamic_cast<A *>(first.get())),
-                                 *(dynamic_cast<A *>(second.get())), values);
+            testMultiValueSearch(*(dynamic_cast<A *>(first.get())), second->getNumDocs(), values);
         }
     }
 }
@@ -707,8 +715,7 @@ SearchContextTest::testSearch()
             AttributePtr second = AttributeFactory::createAttribute("flags-2", cfg);
             testSearch(*(dynamic_cast<IntegerAttribute *>(second.get())), numDocs, values);
             AttributePtr first = AttributeFactory::createAttribute("flags-1", cfg);
-            testMultiValueSearch(*(dynamic_cast<IntegerAttribute *>(first.get())),
-                                 *(dynamic_cast<IntegerAttribute *>(second.get())), values);
+            testMultiValueSearch(*(dynamic_cast<IntegerAttribute *>(first.get())), second->getNumDocs(), values);
         }
     }
 
