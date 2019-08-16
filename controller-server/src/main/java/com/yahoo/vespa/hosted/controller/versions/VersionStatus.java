@@ -1,30 +1,27 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.yahoo.collections.ListMap;
+import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.github.GitSha;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +29,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
@@ -48,9 +44,6 @@ import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobEr
 public class VersionStatus {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
-
-    private static final String VESPA_REPO = "vespa-yahoo";
-    private static final String VESPA_REPO_OWNER = "vespa";
 
     private final ImmutableList<VespaVersion> versions;
     
@@ -96,19 +89,23 @@ public class VersionStatus {
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        ListMap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
-        ListMap<Version, HostName> controllerVersions = findControllerVersions(controller);
+        ListMultimap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
+        ListMultimap<ControllerVersion, HostName> controllerVersions = findControllerVersions(controller);
 
-        Set<Version> infrastructureVersions = new HashSet<>();
-        infrastructureVersions.addAll(controllerVersions.keySet());
-        infrastructureVersions.addAll(systemApplicationVersions.keySet());
+        ListMultimap<Version, HostName> infrastructureVersions = ArrayListMultimap.create();
+        for (var kv : controllerVersions.asMap().entrySet()) {
+            infrastructureVersions.putAll(kv.getKey().version(), kv.getValue());
+        }
+        infrastructureVersions.putAll(systemApplicationVersions);
 
         // The controller version is the lowest controller version of all controllers
-        Version controllerVersion = controllerVersions.keySet().stream().min(Comparator.naturalOrder()).get();
+        ControllerVersion controllerVersion = controllerVersions.keySet().stream()
+                                                                .min(Comparator.naturalOrder())
+                                                                .get();
 
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
-        Version newSystemVersion = infrastructureVersions.stream().min(Comparator.naturalOrder()).get();
+        Version newSystemVersion = infrastructureVersions.keySet().stream().min(Comparator.naturalOrder()).get();
         Version systemVersion = controller.versionStatus().systemVersion()
                                           .map(VespaVersion::versionNumber)
                                           .orElse(newSystemVersion);
@@ -118,15 +115,14 @@ public class VersionStatus {
                         " to " +
                         newSystemVersion +
                         ", nodes on " + newSystemVersion + ": " +
-                        Stream.concat(systemApplicationVersions.get(newSystemVersion).stream(),
-                                      controllerVersions.get(newSystemVersion).stream())
-                              .map(HostName::value)
-                              .collect(Collectors.joining(", ")));
+                        infrastructureVersions.get(newSystemVersion).stream()
+                                              .map(HostName::value)
+                                              .collect(Collectors.joining(", ")));
         } else {
             systemVersion = newSystemVersion;
         }
 
-        Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
+        Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions.keySet(),
                                                                                             controller.applications().asList());
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
@@ -137,10 +133,10 @@ public class VersionStatus {
             try {
                 boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
-                                                          statistics.version().equals(controllerVersion),
-                                                          statistics.version().equals(systemVersion),
+                                                          controllerVersion,
+                                                          systemVersion,
                                                           isReleased,
-                                                          systemApplicationVersions.getList(statistics.version()),
+                                                          systemApplicationVersions.get(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
             } catch (IllegalArgumentException e) {
@@ -154,8 +150,8 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static ListMap<Version, HostName> findSystemApplicationVersions(Controller controller) {
-        ListMap<Version, HostName> versions = new ListMap<>();
+    private static ListMultimap<Version, HostName> findSystemApplicationVersions(Controller controller) {
+        ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
         for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
                 List<Node> eligibleForUpgradeApplicationNodes = controller.configServer().nodeRepository()
@@ -179,10 +175,10 @@ public class VersionStatus {
         return versions;
     }
 
-    private static ListMap<Version, HostName> findControllerVersions(Controller controller) {
-        ListMap<Version, HostName> versions = new ListMap<>();
+    private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {
+        ListMultimap<ControllerVersion, HostName> versions = ArrayListMultimap.create();
         if (controller.curator().cluster().isEmpty()) { // Use vtag if we do not have cluster
-            versions.put(Vtag.currentVersion, controller.hostname());
+            versions.put(ControllerVersion.CURRENT, controller.hostname());
         } else {
             for (HostName hostname : controller.curator().cluster()) {
                 versions.put(controller.curator().readControllerVersion(hostname), hostname);
@@ -241,13 +237,13 @@ public class VersionStatus {
     }
 
     private static VespaVersion createVersion(DeploymentStatistics statistics,
-                                              boolean isControllerVersion,
-                                              boolean isSystemVersion,
+                                              ControllerVersion controllerVersion,
+                                              Version systemVersion,
                                               boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
-        GitSha gitSha = controller.gitHub().getCommit(VESPA_REPO_OWNER, VESPA_REPO, statistics.version().toFullString());
-        Instant committedAt = Instant.ofEpochMilli(gitSha.commit.author.date.getTime());
+        boolean isSystemVersion = statistics.version().equals(systemVersion);
+        boolean isControllerVersion = statistics.version().equals(controllerVersion.version());
         VespaVersion.Confidence confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
         // Compute confidence if there's no override
         if (confidence == null) {
@@ -259,7 +255,8 @@ public class VersionStatus {
             }
         }
         return new VespaVersion(statistics,
-                                gitSha.sha, committedAt,
+                                controllerVersion.commitSha(),
+                                controllerVersion.commitDate(),
                                 isControllerVersion,
                                 isSystemVersion,
                                 isReleased,

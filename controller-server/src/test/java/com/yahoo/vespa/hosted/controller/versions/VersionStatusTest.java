@@ -11,15 +11,16 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -82,16 +83,16 @@ public class VersionStatusTest {
                                                    .collect(Collectors.joining(",")));
         ControllerTester tester = new ControllerTester(db);
 
-        db.writeControllerVersion(controller1, Version.fromString("6.2"));
-        db.writeControllerVersion(controller2, Version.fromString("6.1"));
-        db.writeControllerVersion(controller3, Version.fromString("6.2"));
+        writeControllerVersion(controller1, Version.fromString("6.2"), db);
+        writeControllerVersion(controller2, Version.fromString("6.1"), db);
+        writeControllerVersion(controller3, Version.fromString("6.2"), db);
 
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
         assertEquals("Controller version is oldest version", Version.fromString("6.1"),
                      versionStatus.controllerVersion().get().versionNumber());
 
         // Last controller upgrades
-        db.writeControllerVersion(controller2, Version.fromString("6.2"));
+        writeControllerVersion(controller2, Version.fromString("6.2"), db);
         versionStatus = VersionStatus.compute(tester.controller());
         assertEquals(Version.fromString("6.2"), versionStatus.controllerVersion().get().versionNumber());
     }
@@ -328,6 +329,10 @@ public class VersionStatusTest {
         // Stale override was removed
         assertFalse("Stale override removed", tester.controller().curator().readConfidenceOverrides()
                                                     .keySet().contains(version0));
+    }
+
+    private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {
+        db.writeControllerVersion(hostname, new ControllerVersion(version, "badc0ffee", Instant.EPOCH));
     }
 
     private Confidence confidence(Controller controller, Version version) {

@@ -113,8 +113,8 @@ public class NameServiceQueueSerializer {
 
     private RemoveRecords removeRecordsFromSlime(Inspector object) {
         var type = Record.Type.valueOf(object.field(typeField).asString());
-        var name = Serializers.optionalField(object.field(nameField), RecordName::from);
-        var data = Serializers.optionalField(object.field(dataField), RecordData::from);
+        var name = Serializers.optionalString(object.field(nameField)).map(RecordName::from);
+        var data = Serializers.optionalString(object.field(dataField)).map(RecordData::from);
         return new RemoveRecords(type, name, data);
     }
 

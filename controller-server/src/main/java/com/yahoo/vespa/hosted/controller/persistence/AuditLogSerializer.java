@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Slime serializer for {@link AuditLog}.
@@ -57,7 +56,7 @@ public class AuditLogSerializer {
                     entryObject.field(principalField).asString(),
                     methodFrom(entryObject.field(methodField)),
                     entryObject.field(resourceField).asString(),
-                    Serializers.optionalField(entryObject.field(dataField), Function.identity())
+                    Serializers.optionalString(entryObject.field(dataField))
             ));
         });
         return new AuditLog(entries);
