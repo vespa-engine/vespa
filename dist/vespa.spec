@@ -178,7 +178,7 @@ make %{_smp_mflags}
 
 %install
 %if 0%{?installdir:1}
-cp -r %{installdir} %{buildroot}
+cp -r %{installdir}/* %{buildroot}
 %else
 make install DESTDIR=%{buildroot}
 %endif
