@@ -90,6 +90,7 @@ class UniqueStoreStringAllocator : public ICompactable
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = const char *;
+    using EntryConstRefType = const char *;
     using WrappedExternalEntryType = UniqueStoreEntry<std::string>;
     using RefType = RefT;
 private:

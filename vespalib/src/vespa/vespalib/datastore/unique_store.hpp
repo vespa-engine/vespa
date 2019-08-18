@@ -27,7 +27,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::~UniqueStore() = default;
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStoreAddResult
-UniqueStore<EntryT, RefT, Compare, Allocator>::add(const EntryType &value)
+UniqueStore<EntryT, RefT, Compare, Allocator>::add(EntryConstRefType value)
 {
     Compare comp(_store, value);
     UniqueStoreAddResult result = _dict->add(comp, [this, &value]() -> EntryRef { return _allocator.allocate(value); });
@@ -37,7 +37,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::add(const EntryType &value)
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 EntryRef
-UniqueStore<EntryT, RefT, Compare, Allocator>::find(const EntryType &value)
+UniqueStore<EntryT, RefT, Compare, Allocator>::find(EntryConstRefType value)
 {
     Compare comp(_store, value);
     return _dict->find(comp);
