@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockResourceSnapshotConsumer;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -22,7 +22,7 @@ public class ResourceMeterMaintainerTest {
 
     private final double DELTA = Double.MIN_VALUE;
     private NodeRepositoryClientMock nodeRepository = new NodeRepositoryClientMock();
-    private MockResourceSnapshotConsumer snapshotConsumer = new MockResourceSnapshotConsumer();
+    private MockMeteringClient snapshotConsumer = new MockMeteringClient();
     private MetricsMock metrics = new MetricsMock();
 
     @Test

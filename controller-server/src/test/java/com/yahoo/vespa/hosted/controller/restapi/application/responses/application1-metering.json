@@ -16,17 +16,17 @@
   },
   "details": {
     "cpu": {
-      "dummy": {
+      "default": {
         "data": []
       }
     },
     "mem": {
-      "dummy": {
+      "default": {
         "data": []
       }
     },
     "disk": {
-      "dummy": {
+      "default": {
         "data": []
       }
     }
