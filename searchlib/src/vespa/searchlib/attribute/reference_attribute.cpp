@@ -48,7 +48,6 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
     setEnum(true);
-    enableEnumeratedSave(true);
 }
 
 ReferenceAttribute::~ReferenceAttribute()

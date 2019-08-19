@@ -127,9 +127,9 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
       _createSerialNum(0u),
       _compactLidSpaceGeneration(0u),
       _hasEnum(false),
-      _loaded(false),
-      _enableEnumeratedSave(false)
-{ }
+      _loaded(false)
+{
+}
 
 AttributeVector::~AttributeVector() = default;
 
@@ -593,13 +593,6 @@ AttributeVector::addReservedDoc()
         }
         commit();
     }
-}
-
-
-void
-AttributeVector::enableEnumeratedSave(bool enable) {
-    if (hasEnum() || !enable)
-        _enableEnumeratedSave = enable;
 }
 
 attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }

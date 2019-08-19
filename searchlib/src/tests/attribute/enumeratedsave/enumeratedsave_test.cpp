@@ -150,7 +150,7 @@ private:
     SearchContextPtr getSearch(const V & vec);
 
     MemAttr::SP saveMem(AttributeVector &v);
-    void checkMem(AttributeVector &v, const MemAttr &e, bool enumerated);
+    void checkMem(AttributeVector &v, const MemAttr &e);
     MemAttr::SP saveBoth(AttributePtr v);
     AttributePtr make(Config cfg, const vespalib::string &pref, bool fastSearch = false);
     void load(AttributePtr v, const vespalib::string &name);
@@ -513,13 +513,10 @@ EnumeratedSaveTest::saveMem(AttributeVector &v)
 
 
 void
-EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e,
-                             bool enumerated)
+EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
 {
     MemAttr m;
-    v.enableEnumeratedSave(enumerated);
     EXPECT_TRUE(v.save(m, v.getBaseFileName()));
-    v.enableEnumeratedSave(false);
     ASSERT_TRUE(m == e);
 }
 
@@ -531,16 +528,14 @@ EnumeratedSaveTest::saveBoth(AttributePtr v)
     vespalib::string basename = v->getBaseFileName();
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
-    v2->enableEnumeratedSave(true);
     EXPECT_TRUE(v2->save(basename + "_e"));
-    if ((v->getConfig().basicType() == BasicType::INT32 &&
-         v->getConfig().collectionType() == CollectionType::WSET) || true) {
-        search::AttributeMemorySaveTarget ms;
-        search::TuneFileAttributes tune;
-        search::index::DummyFileHeaderContext fileHeaderContext;
-        EXPECT_TRUE(v2->save(ms, basename + "_ee"));
-        EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
-    }
+
+    search::AttributeMemorySaveTarget ms;
+    search::TuneFileAttributes tune;
+    search::index::DummyFileHeaderContext fileHeaderContext;
+    EXPECT_TRUE(v2->save(ms, basename + "_ee"));
+    EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
+
     return saveMem(*v2);
 }
 
@@ -602,34 +597,24 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0", v0)));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1", v1)));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2", v2)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0", v0)));
 
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0", v0)));
-    TEST_DO(checkMem(*v, *mv0, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1", v1)));
-    TEST_DO(checkMem(*v, *mv1, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2", v2)));
-    TEST_DO(checkMem(*v, *mv2, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
 
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0_e", v0)));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1_e", v1)));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2_e", v2)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1_e", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0_e", v0)));
 
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0_e", v0)));
-    TEST_DO(checkMem(*v, *mv0, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1_e", v1)));
-    TEST_DO(checkMem(*v, *mv1, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2_e", v2)));
-    TEST_DO(checkMem(*v, *mv2, false));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2, true));
+    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
 
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(v));

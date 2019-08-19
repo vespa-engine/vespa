@@ -5,6 +5,7 @@
 #include "collectiontype.h"
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <ostream>
 #include <vector>
 
 namespace search {
@@ -47,6 +48,14 @@ public:
         return _value == rhs._value && _weight == rhs._weight;
     }
 };
+
+template <typename T>
+std::ostream&
+operator<<(std::ostream& os, const WeightedType<T>& value)
+{
+    os << "{" << value.value() << "," << value.weight() << "}";
+    return os;
+}
 
 /**
  * This is a read interface used to access the content of an attribute vector.
