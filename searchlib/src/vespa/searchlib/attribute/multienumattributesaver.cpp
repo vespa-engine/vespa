@@ -21,15 +21,15 @@ class DatWriter
     std::vector<EnumStoreIndex>           _indexes;
     const EnumStoreBase                  &_enumStore;
     std::unique_ptr<search::BufferWriter> _datWriter;
-    bool                                  _enumerated;
+
 public:
     DatWriter(IAttributeSaveTarget &saveTarget,
               const EnumStoreBase &enumStore)
         : _indexes(),
           _enumStore(enumStore),
-          _datWriter(saveTarget.datWriter().allocBufferWriter()),
-          _enumerated(saveTarget.getEnumerated())
+          _datWriter(saveTarget.datWriter().allocBufferWriter())
     {
+        assert(saveTarget.getEnumerated());
         _indexes.reserve(1000);
     }
 
@@ -42,13 +42,8 @@ public:
     void flush()
     {
         if (!_indexes.empty()) {
-            if (_enumerated) {
-                _enumStore.writeEnumValues(*_datWriter,
-                                           &_indexes[0], _indexes.size());
-            } else {
-                _enumStore.writeValues(*_datWriter,
+            _enumStore.writeEnumValues(*_datWriter,
                                        &_indexes[0], _indexes.size());
-            }
             _indexes.clear();
         }
     }
