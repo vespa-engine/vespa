@@ -91,9 +91,6 @@ private:
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
-    template <typename T>
-    void loadAllAtOnce(T & loaded, LoadedBufferUP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx);
-
 protected:
     class StringSearchContext : public SearchContext {
     public:
