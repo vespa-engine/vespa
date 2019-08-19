@@ -90,6 +90,26 @@ WriteRes half_close(CryptoSocket &socket) {
     }
 }
 
+/**
+ * Emit a basic set of HTTP security headers meant to minimize any impact
+ * in the case of unsanitized/unescaped data making its way to an internal
+ * status page.
+ */
+void emit_http_security_headers(OutputWriter &dst) {
+    // Reject detected cross-site scripting attacks
+    dst.printf("X-XSS-Protection: 1; mode=block\r\n");
+    // Do not allow embedding via iframe (clickjacking prevention)
+    dst.printf("X-Frame-Options: DENY\r\n");
+    // Do not allow _anything_ to be externally loaded, nor inline scripts
+    // etc to be executed.
+    dst.printf("Content-Security-Policy: default-src 'none'\r\n");
+    // No heuristic auto-inference of content-type based on payload.
+    dst.printf("X-Content-Type-Options: nosniff\r\n");
+    // Don't store any potentially sensitive data in any caches.
+    dst.printf("Cache-Control: no-store\r\n");
+    dst.printf("Pragma: no-cache\r\n");
+}
+
 } // namespace vespalib::portal::<unnamed>
 
 void
@@ -223,6 +243,7 @@ HttpConnection::respond_with_content(const vespalib::string &content_type,
         dst.printf("Connection: close\r\n");
         dst.printf("Content-Type: %s\r\n", content_type.c_str());
         dst.printf("Content-Length: %zu\r\n", content.size());
+        emit_http_security_headers(dst);
         dst.printf("\r\n");
         dst.write(content.data(), content.size());
     }
