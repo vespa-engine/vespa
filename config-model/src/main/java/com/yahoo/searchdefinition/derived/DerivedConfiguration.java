@@ -42,16 +42,14 @@ public class DerivedConfiguration {
 
     /**
      * Creates a complete derived configuration from a search definition.
+     * Only used in tests.
      *
      * @param search The search to derive a configuration from. Derived objects will be snapshots, but this argument is
      *               live. Which means that this object will be inconsistent when the given search definition is later
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      */
-    public DerivedConfiguration(Search search,
-                                RankProfileRegistry rankProfileRegistry,
-                                QueryProfileRegistry queryProfiles,
-                                ImportedMlModels importedModels) {
+    DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
         this(search, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, importedModels);
     }
 

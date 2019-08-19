@@ -61,8 +61,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
      * Only for testing
      */
     public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
-        this.name = rankProfile.getName();
-        compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties()).derive());
+        this(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties());
     }
     
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
