@@ -370,7 +370,6 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                                           new MockProvisioner(),
                                           new OrchestratorMock(),
                                           clock),
-                tenantRepository,
                 componentRegistry.getConfigserverConfig());
 
     }

@@ -8,7 +8,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
@@ -21,15 +20,12 @@ import com.yahoo.vespa.config.server.http.Utils;
  */
 public class SessionContentHandler extends SessionHandler {
 
-    private final TenantRepository tenantRepository;
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
-    public SessionContentHandler(SessionHandler.Context ctx,
-                                 ApplicationRepository applicationRepository,
-                                 TenantRepository tenantRepository) {
+    public SessionContentHandler(Context ctx,
+                                 ApplicationRepository applicationRepository) {
         super(ctx, applicationRepository);
-        this.tenantRepository = tenantRepository;
     }
 
     @Override
@@ -48,7 +44,7 @@ public class SessionContentHandler extends SessionHandler {
     }
 
     private void validateRequest(TenantName tenantName) {
-        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        Utils.checkThatTenantExists(applicationRepository.tenantRepository(), tenantName);
     }
 
     private SessionContentRequestV2 getContentRequest(HttpRequest request) {

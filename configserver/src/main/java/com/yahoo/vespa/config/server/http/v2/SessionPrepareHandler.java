@@ -27,12 +27,11 @@ public class SessionPrepareHandler extends SessionHandler {
     private final Duration zookeeperBarrierTimeout;
 
     @Inject
-    public SessionPrepareHandler(SessionHandler.Context ctx,
+    public SessionPrepareHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 TenantRepository tenantRepository,
                                  ConfigserverConfig configserverConfig) {
         super(ctx, applicationRepository);
-        this.tenantRepository = tenantRepository;
+        this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 

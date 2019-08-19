@@ -44,7 +44,7 @@ public class TenantHandlerTest {
                                           new SessionHandlerTest.MockProvisioner(),
                                           new OrchestratorMock(),
                                           Clock.systemUTC());
-        handler = new TenantHandler(TenantHandler.testOnlyContext(), tenantRepository, applicationRepository);
+        handler = new TenantHandler(TenantHandler.testOnlyContext(), applicationRepository);
     }
 
     @After
