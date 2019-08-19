@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attributemanager.h"
+#include "attribute_read_guard.h"
 #include "attributecontext.h"
 #include "attributefactory.h"
-#include "attribute_read_guard.h"
+#include "attributemanager.h"
 #include "attrvector.h"
-#include "attributefile.h"
 #include "interlock.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>

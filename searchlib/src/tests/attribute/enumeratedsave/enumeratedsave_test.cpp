@@ -3,24 +3,23 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributefile.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
+#include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/parsequery/parse.h>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
@@ -45,13 +44,6 @@ using search::fef::TermFieldMatchData;
 
 typedef std::unique_ptr<AttributeVector::SearchContext> SearchContextPtr;
 typedef std::unique_ptr<search::queryeval::SearchIterator> SearchBasePtr;
-
-bool
-FastOS_UNIX_File::Sync()
-{
-    // LOG(info, "Skip sync");
-    return true;
-}
 
 
 class MemAttrFileWriter : public IAttributeFileWriter
