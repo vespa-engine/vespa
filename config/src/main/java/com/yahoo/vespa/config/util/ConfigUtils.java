@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.util;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
@@ -302,9 +301,6 @@ public class ConfigUtils {
      */
     static ConfigDefinitionKey createConfigDefinitionKeyFromDefContent(String name, byte[] content) {
         String namespace = ConfigUtils.getDefNamespace(new StringReader(Utf8.toString(content)));
-        if (namespace.isEmpty()) {
-            namespace = CNode.DEFAULT_NAMESPACE;
-        }
         return new ConfigDefinitionKey(name, namespace);
     }
 

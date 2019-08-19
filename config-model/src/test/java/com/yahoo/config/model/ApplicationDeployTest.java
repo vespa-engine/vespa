@@ -5,9 +5,10 @@ import com.google.common.io.Files;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.codegen.CNode;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.application.provider.*;
+import com.yahoo.config.model.application.provider.Bundle;
+import com.yahoo.config.model.application.provider.DeployData;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.document.DataType;
@@ -338,19 +339,16 @@ public class ApplicationDeployTest {
 
         DeployState deployState = new DeployState.Builder().applicationPackage(app).build();
 
-        ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", CNode.DEFAULT_NAMESPACE)).get();
-        assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
-
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", "xyzzy")).get();
+        ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", "xyzzy")).get();
         assertThat(def.getNamespace(), is("xyzzy"));
 
         def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", "qux")).get();
         assertThat(def.getNamespace(), is("qux"));
 
         // A config def without version in filename and version in file header
-        def = deployState.getConfigDefinition(new ConfigDefinitionKey("xyzzy", CNode.DEFAULT_NAMESPACE)).get();
-        assertThat(def.getNamespace(), is(CNode.DEFAULT_NAMESPACE));
-        assertThat(def.getName(), is("xyzzy"));
+        def = deployState.getConfigDefinition(new ConfigDefinitionKey("bar", "xyzzy")).get();
+        assertThat(def.getNamespace(), is("xyzzy"));
+        assertThat(def.getName(), is("bar"));
     }
 
     @Test(expected=IllegalArgumentException.class)

@@ -23,11 +23,10 @@ import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
  */
 public class JavaClassBuilder implements ClassBuilder {
 
-    public static final String INDENTATION = "  ";
+    static final String INDENTATION = "  ";
 
     private final InnerCNode root;
     private final NormalizedDefinition nd;
-    private final String packagePrefix;
     private final String javaPackage;
     private final String className;
     private final File destDir;
@@ -35,7 +34,7 @@ public class JavaClassBuilder implements ClassBuilder {
     public JavaClassBuilder(InnerCNode root, NormalizedDefinition nd, File destDir, String rawPackagePrefix) {
         this.root = root;
         this.nd = nd;
-        this.packagePrefix = (rawPackagePrefix != null) ? rawPackagePrefix : DEFAULT_PACKAGE_PREFIX;
+        String packagePrefix = (rawPackagePrefix != null) ? rawPackagePrefix : DEFAULT_PACKAGE_PREFIX;
         this.javaPackage = (root.getPackage() != null) ? root.getPackage() : packagePrefix + root.getNamespace();
         this.className = createClassName(root.getName());
         this.destDir = destDir;
@@ -74,15 +73,7 @@ public class JavaClassBuilder implements ClassBuilder {
                 "import java.io.File;\n" + //
                 "import java.nio.file.Path;\n" + //
                 "import edu.umd.cs.findbugs.annotations.NonNull;\n" + //
-                getImportFrameworkClasses(root.getNamespace());
-    }
-
-    private String getImportFrameworkClasses(String namespace) {
-        if (CNode.DEFAULT_NAMESPACE.equals(namespace) == false) {
-            return "import " + packagePrefix + CNode.DEFAULT_NAMESPACE + ".*;";
-        } else {
-            return "";
-        }
+                "import com.yahoo.config.*;";
     }
 
     // TODO: remove the extra comment line " *" if root.getCommentBlock is empty
@@ -96,7 +87,7 @@ public class JavaClassBuilder implements ClassBuilder {
                 "  public final static String CONFIG_DEF_MD5 = \"" + root.getMd5() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAME = \"" + root.getName() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAMESPACE = \"" + root.getNamespace() + "\";\n" + //
-                "  public final static String CONFIG_DEF_VERSION = \"" + root.getVersion() + "\";\n" + // TODO: Remove on Vespa 8
+                "  public final static String CONFIG_DEF_VERSION = \"" + root.getVersion() + "\";\n" + // TODO: Remove in Vespa 8
                 "  public final static String[] CONFIG_DEF_SCHEMA = {\n" + //
                 "" + indentCode(INDENTATION + INDENTATION, getDefSchema()) + "\n" + //
                 "  };\n" + //

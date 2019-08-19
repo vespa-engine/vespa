@@ -135,8 +135,7 @@ class InstanceResolver {
     }
 
     static String packageName(ConfigDefinitionKey cKey, PackagePrefix packagePrefix) {
-        String prefix = packagePrefix.value;
-        return prefix + (cKey.getNamespace().isEmpty() ? CNode.DEFAULT_NAMESPACE : cKey.getNamespace());
+        return packagePrefix.value + cKey.getNamespace();
     }
 
 

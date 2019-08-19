@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder;
 
-import com.yahoo.test.ArraytypesConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.deploy.ConfigDefinitionStore;
-import com.yahoo.test.SimpletypesConfig;
-import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.ConfigDefinitionStore;
+import com.yahoo.config.model.producer.UserConfigRepo;
+import com.yahoo.test.ArraytypesConfig;
+import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -22,7 +22,9 @@ import java.io.StringReader;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen

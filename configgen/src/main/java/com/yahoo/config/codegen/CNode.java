@@ -3,16 +3,12 @@ package com.yahoo.config.codegen;
 
 import java.util.StringTokenizer;
 
-import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
-
 /**
- * Abstract superclass for all nodes representing a definition file.
+ * Abstract superclass for all nodes representing a config definition.
  *
  * @author gjoranv
  */
 public abstract class CNode {
-
-    public static final String DEFAULT_NAMESPACE = "config";
 
     // TODO: replace by "type" enum
     public final boolean isArray;

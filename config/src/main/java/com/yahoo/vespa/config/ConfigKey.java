@@ -3,7 +3,6 @@ package com.yahoo.vespa.config;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.codegen.CNode;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -48,11 +47,13 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
     }
 
     public ConfigKey(String name, String configIdString, String namespace, String defMd5, Class<CONFIGCLASS> clazz) {
-        if (name == null)
-            throw new ConfigurationRuntimeException("Config name must be non-null!");
+        if (name == null || name.isEmpty())
+            throw new ConfigurationRuntimeException("Config name cannot be null or empty!");
+        if (namespace == null || namespace.isEmpty())
+            throw new ConfigurationRuntimeException("Config namespace cannot be null or empty!");
         this.name = name;
         this.configId = (configIdString == null) ? "" : configIdString;
-        this.namespace = (namespace == null) ? CNode.DEFAULT_NAMESPACE : namespace;
+        this.namespace = namespace;
         this.md5 = (defMd5 == null) ? "" : defMd5;
         this.configClass = clazz;
     }
