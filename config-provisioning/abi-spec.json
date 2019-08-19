@@ -608,9 +608,11 @@
     "methods": [
       "public void <init>(double, double, double)",
       "public void <init>(double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public void <init>(double, double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public double vcpu()",
       "public double memoryGb()",
       "public double diskGb()",
+      "public double bandwidthMbps()",
       "public com.yahoo.config.provision.NodeResources$DiskSpeed diskSpeed()",
       "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public com.yahoo.config.provision.NodeResources withVcpu(double)",

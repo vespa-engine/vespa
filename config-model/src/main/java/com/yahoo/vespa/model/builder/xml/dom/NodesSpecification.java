@@ -184,11 +184,11 @@ public class NodesSpecification {
         if (byteAmount.endsWith("B"))
             byteAmount = byteAmount.substring(0, byteAmount.length() -1);
 
-        double multiplier = 1/Math.pow(1000, 3);
+        double multiplier = Math.pow(1000, -3);
         if (byteAmount.endsWith("K"))
-            multiplier = 1/Math.pow(1000, 2);
+            multiplier = Math.pow(1000, -2);
         else if (byteAmount.endsWith("M"))
-            multiplier = 1/1000;
+            multiplier = Math.pow(1000, -1);
         else if (byteAmount.endsWith("G"))
             multiplier = 1;
         else if (byteAmount.endsWith("T"))

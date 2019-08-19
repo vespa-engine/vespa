@@ -52,6 +52,7 @@ public class AllocatedHostsSerializer {
     private static final String vcpuKey = "vcpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
+    private static final String bandwidthKey = "bandwidth";
     private static final String diskSpeedKey = "diskSpeed";
 
     /** Wanted version */
@@ -143,9 +144,14 @@ public class AllocatedHostsSerializer {
         }
         else if (object.field(resourcesKey).valid()) {
             Inspector resources = object.field(resourcesKey);
+            double bandwidth = Optional.of(resources.field(bandwidthKey))
+                    .filter(Inspector::valid)
+                    .map(Inspector::asDouble)
+                    .orElse(0d);
             return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                             resources.field(memoryKey).asDouble(),
                                                             resources.field(diskKey).asDouble(),
+                                                            bandwidth,
                                                             diskSpeedFromSlime(resources.field(diskSpeedKey)))));
         }
         else {
