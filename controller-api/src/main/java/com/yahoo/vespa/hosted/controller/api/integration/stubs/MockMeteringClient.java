@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class MockMeteringClient implements MeteringClient {
 
-    private List<ResourceSnapshot> resources;
+    private List<ResourceSnapshot> resources = new ArrayList<>();
 
     @Override
     public void consume(List<ResourceSnapshot> resources){

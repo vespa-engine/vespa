@@ -20,7 +20,7 @@ public class ResourceSnapshot {
 
     public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, Instant timestamp) {
         this.applicationId = applicationId;
-        resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb);
+        this.resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb);
         this.timestamp = timestamp;
     }
 
