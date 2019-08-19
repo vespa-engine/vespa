@@ -1,29 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 
-#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributefile.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
-#include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/multistringpostattribute.hpp>
+#include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
+#include <vespa/searchlib/attribute/multistringattribute.h>
+#include <vespa/searchlib/attribute/multistringpostattribute.hpp>
+#include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_weight_iterator_test");
