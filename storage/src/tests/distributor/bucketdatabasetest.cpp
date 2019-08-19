@@ -175,7 +175,7 @@ BucketDatabaseTest::doFindParents(const std::vector<document::BucketId>& ids,
 
     std::vector<BucketDatabase::Entry> checked_entries;
     db().acquire_read_guard()->find_parents_and_self(searchId, checked_entries);
-    if(entries != checked_entries) {
+    if (entries != checked_entries) {
         return "Mismatch between results from getParents() and ReadGuard!";
     }
 
