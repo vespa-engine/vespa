@@ -42,7 +42,7 @@ class Activator {
     public void activate(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction) {
         try (Mutex lock = nodeRepository.lock(application)) {
             activateNodes(application, hosts, transaction, lock);
-            activateLoadBalancers(application, hosts, lock);
+            activateLoadBalancers(application, hosts, transaction, lock);
         }
     }
 
@@ -91,17 +91,17 @@ class Activator {
     }
 
     /** Activate load balancers */
-    private void activateLoadBalancers(ApplicationId application, Collection<HostSpec> hosts,
+    private void activateLoadBalancers(ApplicationId application, Collection<HostSpec> hosts, NestedTransaction transaction,
                                        @SuppressWarnings("unused") Mutex applicationLock) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, clustersOf(hosts)));
+        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(application, clustersOf(hosts), applicationLock, transaction));
     }
 
-    private static List<ClusterSpec> clustersOf(Collection<HostSpec> hosts) {
+    private static Set<ClusterSpec> clustersOf(Collection<HostSpec> hosts) {
         return hosts.stream()
                     .map(HostSpec::membership)
                     .flatMap(Optional::stream)
                     .map(ClusterMembership::cluster)
-                    .collect(Collectors.toUnmodifiableList());
+                    .collect(Collectors.toUnmodifiableSet());
     }
 
     private static void validateParentHosts(ApplicationId application, NodeList nodes, List<Node> potentialChildren) {
