@@ -6,7 +6,8 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.IndexingScript;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 
 /**
  * @author <a href="mailto:mlidal@yahoo-inc.com">Mathias M Lidal</a>

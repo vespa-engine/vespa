@@ -140,7 +140,6 @@ public class DocumentTypes {
                     new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder();
             builder.name(field.getName()).
                     id(field.getId()).
-                    id_v6(field.getIdV6()).
                     datatype(field.getDataType().getId());
             if (field.getDataType() instanceof TensorDataType) {
                 builder.detailedtype(((TensorDataType) field.getDataType()).getTensorType().toString());

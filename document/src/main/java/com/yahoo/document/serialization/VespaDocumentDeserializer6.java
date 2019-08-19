@@ -11,7 +11,6 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.Span;
 import com.yahoo.document.annotation.SpanList;
 import com.yahoo.document.annotation.SpanNode;
-import com.yahoo.document.annotation.SpanNodeParent;
 import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
@@ -105,23 +104,16 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     public void read(FieldBase field, Document doc) {
         // Verify that we have correct version
         version = getShort(null);
-        if (version < 6 || version > Document.SERIALIZED_VERSION) {
+        if (version < 8 || version > Document.SERIALIZED_VERSION) {
             throw new DeserializationException("Unknown version " + version + ", expected " + 
                                                Document.SERIALIZED_VERSION + ".");
         }
 
-        int dataLength = 0;
-        int dataPos = 0;
-
-        if (version < 7) {
-            getInt2_4_8Bytes(null); // Total document size.. Ignore
-        } else {
-            dataLength = getInt(null);
-            dataPos = position();
-        }
+        int dataLength = getInt(null);
+        int dataPos = position();
 
         DocumentId documentId = readDocumentId();
-        Byte content = getByte(null);
+        byte content = getByte(null);
         doc.setDataType(readDocumentType());
         doc.setId(documentId);
 
@@ -136,14 +128,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             readHeaderBody(b, h);
         }
 
-        if (version < 8) {
-            int crcVal = getInt(null);
-        }
-
-        if (version > 6) {
-            if (dataLength != (position() - dataPos)) {
-                throw new DeserializationException("Length mismatch");
-            }
+        if (dataLength != (position() - dataPos)) {
+            throw new DeserializationException("Length mismatch");
         }
     }
     public void read(FieldBase field, FieldValue value) {
@@ -152,12 +138,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public <T extends FieldValue> void read(FieldBase field, Array<T> array) {
         int numElements = getNumCollectionElems();
-        ArrayList<T> list = new ArrayList<T>(numElements);
+        ArrayList<T> list = new ArrayList<>(numElements);
         ArrayDataType type = array.getDataType();
         for (int i = 0; i < numElements; i++) {
-            if (version < 7) {
-                getInt(null); // We don't need size for anything
-            }
             FieldValue fv = type.getNestedType().createFieldValue();
             fv.deserialize(null, this);
             list.add((T) fv);
@@ -171,9 +154,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         Map<K,V> hash = new HashMap<>();
         MapDataType type = map.getDataType();
         for (int i = 0; i < numElements; i++) {
-            if (version < 7) {
-                getInt(null); // We don't need size for anything
-            }
             K key = (K) type.getKeyType().createFieldValue();
             V val = (V) type.getValueType().createFieldValue();
             key.deserialize(null, this);
@@ -185,13 +165,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     }
 
     private int getNumCollectionElems() {
-        int numElements;
-        if (version < 7) {
-            getInt(null); // We already know the nested type, so ignore that..
-            numElements = getInt(null);
-        } else {
-            numElements = getInt1_2_4Bytes(null);
-        }
+        int numElements = getInt1_2_4Bytes(null);
         if (numElements < 0) {
             throw new DeserializationException("Bad number of array/map elements, " + numElements);
         }
@@ -290,24 +264,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(FieldBase fieldDef, Struct s) {
         s.setVersion(version);
-        int startPos = position();
 
-        if (version < 6) {
+        if (version < 8) {
             throw new DeserializationException("Illegal document serialization version " + version);
         }
 
-        int dataSize;
-        if (version < 7) {
-            long rSize = getInt2_4_8Bytes(null);
-            //TODO: Look into how to support data segments larger than INT_MAX bytes
-            if (rSize > Integer.MAX_VALUE) {
-                throw new DeserializationException("Raw size of data block is too large.");
-            }
-            dataSize = (int)rSize;
-        } else {
-            dataSize = getInt(null);
-        }
-
+        int dataSize = getInt(null);
         byte comprCode = getByte(null);
         CompressionType compression = CompressionType.valueOf(comprCode);
 
@@ -335,11 +297,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         // save a reference to the big buffer we're reading from:
         GrowableByteBuffer bigBuf = buf;
 
-        if (version < 7) {
-            // In V6 and earlier, the length included the header.
-            int headerSize = position() - startPos;
-            dataSize -= headerSize;
-        }
         byte[] destination = compressor.decompress(compression, getBuf().array(), position(), uncompressedSize, Optional.of(dataSize));
 
         // set position in original buffer to after data
@@ -351,7 +308,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         s.clear();
         StructDataType type = s.getDataType();
         for (int i=0; i<numberOfFields; ++i) {
-            Field structField = type.getField(fieldIdsAndLengths.get(i).first, version);
+            Field structField = type.getField(fieldIdsAndLengths.get(i).first);
             if (structField == null) {
                 //ignoring unknown field:
                 position(position() + fieldIdsAndLengths.get(i).second.intValue());
@@ -371,23 +328,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     private void readHeaderBody(Struct primary, Struct alternate) {
         primary.setVersion(version);
-        int startPos = position();
 
-        if (version < 6) {
+        if (version < 8) {
             throw new DeserializationException("Illegal document serialization version " + version);
         }
 
-        int dataSize;
-        if (version < 7) {
-            long rSize = getInt2_4_8Bytes(null);
-            //TODO: Look into how to support data segments larger than INT_MAX bytes
-            if (rSize > Integer.MAX_VALUE) {
-                throw new DeserializationException("Raw size of data block is too large.");
-            }
-            dataSize = (int)rSize;
-        } else {
-            dataSize = getInt(null);
-        }
+        int dataSize = getInt(null);
 
         byte comprCode = getByte(null);
         CompressionType compression = CompressionType.valueOf(comprCode);
@@ -416,11 +362,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         // save a reference to the big buffer we're reading from:
         GrowableByteBuffer bigBuf = buf;
 
-        if (version < 7) {
-            // In V6 and earlier, the length included the header.
-            int headerSize = position() - startPos;
-            dataSize -= headerSize;
-        }
         byte[] destination = compressor.decompress(compression, getBuf().array(), position(), uncompressedSize, Optional.of(dataSize));
 
         // set position in original buffer to after data
@@ -435,11 +376,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             int posBefore = position();
             Struct s = null;
             Integer f_id = fieldIdsAndLengths.get(i).first;
-            Field structField = priType.getField(f_id, version);
+            Field structField = priType.getField(f_id);
             if (structField != null) {
                 s = primary;
             } else {
-                structField = altType.getField(f_id, version);
+                structField = altType.getField(f_id);
                 if (structField != null) {
                   s = alternate;
                 }
@@ -471,7 +412,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         ws.clearAndReserve(numElements * 2); // Avoid resizing
         for (int i = 0; i < numElements; i++) {
-            int size = getInt(null);
+            int unusedSize = getInt(null);
             FieldValue value = type.getNestedType().createFieldValue();
             value.deserialize(null, this);
             IntegerFieldValue weight = new IntegerFieldValue(getInt(null));
@@ -490,13 +431,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
-    private Utf8String deserializeAttributeString() throws DeserializationException {
-        int length = getByte(null);
-        return new Utf8String(parseNullTerminatedString(length));
-    }
-
     private Utf8Array parseNullTerminatedString() { return parseNullTerminatedString(getBuf().getByteBuffer()); }
-    private Utf8Array parseNullTerminatedString(int lengthExcludingNull) { return parseNullTerminatedString(getBuf().getByteBuffer(), lengthExcludingNull); }
 
     static Utf8Array parseNullTerminatedString(ByteBuffer buf, int lengthExcludingNull) throws DeserializationException {
         Utf8Array utf8 = new Utf8Array(buf, lengthExcludingNull);
@@ -504,7 +439,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         return utf8;
     }
 
-    static  Utf8Array parseNullTerminatedString(ByteBuffer buf) throws DeserializationException {
+    static Utf8Array parseNullTerminatedString(ByteBuffer buf) throws DeserializationException {
         //search for 0-byte
         int end = getFirstNullByte(buf);
 
@@ -542,7 +477,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         int size = getInt(null);
 
         for (int i = 0; i < size; i++) {
-            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), 8));
+            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType()));
         }
 
         int sizeAndFlags = getInt(null);
@@ -666,7 +601,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public void read(FieldUpdate fieldUpdate) {
         int fieldId = getInt(null);
-        Field field = fieldUpdate.getDocumentType().getField(fieldId, fieldUpdate.getSerializationVersion());
+        Field field = fieldUpdate.getDocumentType().getField(fieldId);
         if (field == null) {
             throw new DeserializationException(
                     "Cannot deserialize FieldUpdate, field fieldId " + fieldId + " not found in " + fieldUpdate.getDocumentType());
@@ -692,7 +627,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     public DocumentType readDocumentType() {
         Utf8Array docTypeName = parseNullTerminatedString();
-        int ignored = getShort(null); // used to hold the version
+        int ignoredVersion = getShort(null); // used to hold the version
 
         DocumentType docType = manager.getDocumentType(new DataTypeName(docTypeName));
         if (docType == null) {
@@ -738,8 +673,8 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         //we're going to write a new SpanTree, create a new Map for nodes:
-        spanNodes = new ArrayList<SpanNode>();
-        annotations = new ArrayList<Annotation>();
+        spanNodes = new ArrayList<>();
+        annotations = new ArrayList<>();
 
         try {
             if (readName) {
@@ -845,7 +780,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         if ((type & SpanList.ID) != SpanList.ID) {
             throw new DeserializationException("Cannot deserialize SpanList with type " + type);
         }
-        List<SpanNode> nodes = readSpanList(spanList);
+        List<SpanNode> nodes = readSpanList();
         for (SpanNode node : nodes) {
             spanList.add(node);
         }
@@ -860,7 +795,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         for (int i = 0; i < numSubTrees; i++) {
             double prob = buf.getDouble();
-            List<SpanNode> list = readSpanList(altSpanList);
+            List<SpanNode> list = readSpanList();
 
             if (i == 0) {
                 for (SpanNode node : list) {
@@ -873,9 +808,9 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
-    private List<SpanNode> readSpanList(SpanNodeParent parent) {
+    private List<SpanNode> readSpanList() {
         int size = buf.getInt1_2_4Bytes();
-        List<SpanNode> spanList = new ArrayList<SpanNode>();
+        List<SpanNode> spanList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             spanList.add(readSpanNode());
         }

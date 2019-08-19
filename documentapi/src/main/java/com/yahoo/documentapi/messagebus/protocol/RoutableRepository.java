@@ -49,13 +49,8 @@ final class RoutableRepository {
             log.log(LogLevel.ERROR, "Received empty byte array for deserialization.");
             return null;
         }
-        DocumentDeserializer in;
+        DocumentDeserializer in = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
 
-        if (version.getMajor() >= 5) {
-            in = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
-        } else {
-            in = DocumentDeserializerFactory.create42(docMan, GrowableByteBuffer.wrap(data));
-        }
 
         int type = in.getInt(null);
         RoutableFactory factory = getFactory(version, type);
