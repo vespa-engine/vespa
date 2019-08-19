@@ -304,6 +304,7 @@ public class IndexedSearchCluster extends SearchCluster
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
                                                            new DerivedConfiguration(search, deployState.getDeployLogger(),
+                                                                                    deployState.getProperties(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
                                                                                     deployState.getImportedModels()));

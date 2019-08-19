@@ -3,8 +3,10 @@ package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
@@ -50,7 +52,7 @@ public class DerivedConfiguration {
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
                                 ImportedMlModels importedModels) {
-        this(search, new BaseDeployLogger(), rankProfileRegistry, queryProfiles, importedModels);
+        this(search, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, importedModels);
     }
 
     /**
@@ -59,13 +61,14 @@ public class DerivedConfiguration {
      * @param search             The search to derive a configuration from. Derived objects will be snapshots, but this
      *                           argument is live. Which means that this object will be inconsistent when the given
      *                           search definition is later modified.
-     * @param deployLogger       a {@link DeployLogger} for logging when
-     *                           doing operations on this
+     * @param deployLogger       a {@link DeployLogger} for logging when doing operations on this
+     * @param deployProperties   Properties set on deploy.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles      the query profiles of this application
      */
     public DerivedConfiguration(Search search,
                                 DeployLogger deployLogger,
+                                ModelContext.Properties deployProperties,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
                                 ImportedMlModels importedModels) {
@@ -80,7 +83,7 @@ public class DerivedConfiguration {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search);
             juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, search.rankingConstants(), attributeFields, rankProfileRegistry, queryProfiles, importedModels);
+            rankProfileList = new RankProfileList(search, search.rankingConstants(), attributeFields, rankProfileRegistry, queryProfiles, importedModels, deployProperties);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);

@@ -501,10 +501,10 @@ public class RankProfile implements Serializable, Cloneable {
                 : numSearchPartitions;
     }
 
-    public double getTermwiseLimit() {
+    public Optional<Double> getTermwiseLimit() {
         return ((termwiseLimit == null) && (getInherited() != null))
                 ?  getInherited().getTermwiseLimit()
-                : (termwiseLimit != null) ? termwiseLimit : 1.0;
+                : (termwiseLimit != null) ? Optional.of(termwiseLimit) : Optional.empty();
     }
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
 

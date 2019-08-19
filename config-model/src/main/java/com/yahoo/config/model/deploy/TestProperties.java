@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties {
     private boolean useFdispatchByDefault = true;
     private boolean dispatchWithProtobuf = true;
     private boolean useAdaptiveDispatch = false;
+    private double defaultTermwiseLimit = 1.0;
     private Optional<TlsSecrets> tlsSecrets = Optional.empty();
 
 
@@ -62,7 +63,12 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
     @Override public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
+    @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 
+    public TestProperties setDefaultTermwiseLimit(double limit) {
+        defaultTermwiseLimit = limit;
+        return this;
+    }
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
         return this;
