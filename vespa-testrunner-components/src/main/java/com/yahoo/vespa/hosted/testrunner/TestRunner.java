@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.ERROR;
+import static java.util.logging.Level.INFO;
 
 /**
  * @author valerijf
@@ -82,8 +83,12 @@ public class TestRunner {
     }
 
     static ProcessBuilder mavenProcessFrom(TestProfile profile, TestRunnerConfig config) {
+        logger.log(INFO, System.getenv().toString());
         List<String> command = new ArrayList<>();
-        command.add("mvn");
+        if (Path.of("/opt/vespa").equals(Path.of(Defaults.getDefaults().vespaHome())))
+            command.add("/opt/vespa/local/maven/bin/mvn");
+        else
+            command.add("mvn");
         command.add("test");
 
         command.add("--batch-mode"); // Run in non-interactive (batch) mode (disables output color)
