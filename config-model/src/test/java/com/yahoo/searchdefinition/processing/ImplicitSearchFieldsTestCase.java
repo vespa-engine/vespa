@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -88,7 +90,7 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
         sb.importFile("src/test/examples/nextgen/simple.sd");
         sb.build();
         assertNotNull(sb.getSearch());
-        new DerivedConfiguration(sb.getSearch(), sb.getRankProfileRegistry(), new QueryProfileRegistry(), new ImportedMlModels());
+        new DerivedConfiguration(sb.getSearch(), new BaseDeployLogger(), new TestProperties(), sb.getRankProfileRegistry(), new QueryProfileRegistry(), new ImportedMlModels());
     }
 
 }

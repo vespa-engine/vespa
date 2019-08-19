@@ -2,6 +2,8 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
@@ -62,7 +64,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile", registry).getSearch();
-        new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
+        new DerivedConfiguration(search, new BaseDeployLogger(), new TestProperties(), registry, new QueryProfileRegistry(), new ImportedMlModels()); // rank profile parsing happens during deriving
     }
 
 }

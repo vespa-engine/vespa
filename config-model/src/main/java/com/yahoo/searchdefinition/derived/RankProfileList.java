@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
@@ -45,29 +46,29 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            AttributeFields attributeFields,
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
-                           ImportedMlModels importedModels) {
+                           ImportedMlModels importedModels,
+                           ModelContext.Properties deployProperties) {
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
-        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields);
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
                                     QueryProfileRegistry queryProfiles,
                                     ImportedMlModels importedModels,
                                     Search search,
-                                    AttributeFields attributeFields) {
+                                    AttributeFields attributeFields,
+                                    ModelContext.Properties deployProperties) {
         if (search != null) { // profiles belonging to a search have a default profile
             RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.get(search, "default"),
-                                                               queryProfiles,
-                                                               importedModels,
-                                                               attributeFields);
+                                                               queryProfiles, importedModels, attributeFields, deployProperties);
             rankProfiles.put(defaultProfile.getName(), defaultProfile);
         }
 
         for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
             if (search != null && "default".equals(rank.getName())) continue;
 
-            RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields);
+            RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields, deployProperties);
             rankProfiles.put(rawRank.getName(), rawRank);
         }
     }

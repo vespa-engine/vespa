@@ -5,6 +5,8 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
@@ -16,7 +18,7 @@ import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -50,20 +52,27 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /**
      * Creates a raw rank profile from the given rank profile
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
+    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.getName();
-        compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields).derive());
+        compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields, deployProperties).derive());
+    }
+
+    /**
+     * Only for testing
+     */
+    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
+        this(rankProfile, queryProfiles, importedModels, attributeFields, new TestProperties());
     }
     
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
         for (Pair<String, String> property : properties)
             b.append(property.getFirst()).append(keyEndMarker).append(property.getSecond()).append(valueEndMarker);
-        return compressor.compress(b.toString().getBytes(Charset.forName("utf8")));
+        return compressor.compress(b.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     private List<Pair<String, String>> decompress(Compressor.Compression compression) {
-        String propertiesString = new String(compressor.decompress(compression), Charset.forName("utf8"));
+        String propertiesString = new String(compressor.decompress(compression), StandardCharsets.UTF_8);
         if (propertiesString.isEmpty()) return ImmutableList.of();
 
         ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
@@ -148,11 +157,13 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels, AttributeFields attributeFields) {
+        Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
+                       AttributeFields attributeFields, ModelContext.Properties deployProperties)
+        {
             RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
-            deriveRankingFeatures(compiled);
+            deriveRankingFeatures(compiled, deployProperties);
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
             deriveWeightProperties(compiled);
@@ -162,7 +173,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             filterFields.addAll(rp.allFilterFields());
         }
 
-        public void deriveRankingFeatures(RankProfile rankProfile) {
+        private void deriveRankingFeatures(RankProfile rankProfile, ModelContext.Properties deployProperties) {
             firstPhaseRanking = rankProfile.getFirstPhaseRanking();
             secondPhaseRanking = rankProfile.getSecondPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(rankProfile.getSummaryFeatures());
@@ -172,7 +183,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             numThreadsPerSearch = rankProfile.getNumThreadsPerSearch();
             minHitsPerThread = rankProfile.getMinHitsPerThread();
             numSearchPartitions = rankProfile.getNumSearchPartitions();
-            termwiseLimit = rankProfile.getTermwiseLimit();
+            termwiseLimit = rankProfile.getTermwiseLimit().orElse(deployProperties.defaultTermwiseLimit());
             keepRankCount = rankProfile.getKeepRankCount();
             rankScoreDropLimit = rankProfile.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = rankProfile.getIgnoreDefaultRankFeatures();
@@ -263,7 +274,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
         }
 
-        public void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields, boolean isDefaultSetting) {
+        private void deriveNativeRankTypeSetting(String fieldName, RankType rankType, AttributeFields attributeFields, boolean isDefaultSetting) {
             if (isDefaultSetting) return;
 
             NativeRankTypeDefinition definition = nativeRankTypeDefinitions.getRankTypeDefinition(rankType);
@@ -290,7 +301,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             return setting != null && setting.getValue().equals(RankType.DEFAULT);
         }
 
-        public FieldRankSettings deriveFieldRankSettings(String fieldName) {
+        private FieldRankSettings deriveFieldRankSettings(String fieldName) {
             FieldRankSettings settings = fieldRankSettings.get(fieldName);
             if (settings == null) {
                 settings = new FieldRankSettings(fieldName);

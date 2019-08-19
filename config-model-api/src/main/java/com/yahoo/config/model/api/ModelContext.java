@@ -60,6 +60,7 @@ public interface ModelContext {
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
         default boolean enableGroupingSessionCache() { return false; }
+        double defaultTermwiseLimit();
     }
 
 }
