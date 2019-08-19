@@ -1,6 +1,6 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.api.EndpointAuthenticator;
+import ai.vespa.hosted.api.Authenticator;
 import ai.vespa.hosted.cd.TestDeployment;
 import ai.vespa.hosted.cd.TestEndpoint;
 import com.yahoo.config.provision.Environment;
@@ -22,7 +22,7 @@ public class HttpDeployment implements TestDeployment {
     private final Map<String, HttpEndpoint> endpoints;
 
     /** Creates a representation of the given deployment endpoints, using the authenticator for data plane access. */
-    public HttpDeployment(Map<String, URI> endpoints, ZoneId zone, EndpointAuthenticator authenticator) {
+    public HttpDeployment(Map<String, URI> endpoints, ZoneId zone, Authenticator authenticator) {
         this.zone = zone;
         this.endpoints = endpoints.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
