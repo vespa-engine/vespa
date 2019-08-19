@@ -584,4 +584,14 @@ MapBucketDatabase::print(std::ostream& out, bool verbose,
     out << ')';
 }
 
+std::unique_ptr<BucketDatabase::ReadGuard> MapBucketDatabase::acquire_read_guard() const {
+    return std::make_unique<ReadGuardImpl>(*this);
+}
+
+void MapBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket,
+                                                             std::vector<Entry>& entries) const
+{
+    _db->getParents(bucket, entries);
+}
+
 } // storage

@@ -232,6 +232,23 @@ public:
             const document::BucketId& bid);
 
     virtual uint32_t childCount(const document::BucketId&) const = 0;
+
+    struct ReadGuard {
+        ReadGuard() = default;
+        virtual ~ReadGuard() = default;
+        
+        ReadGuard(ReadGuard&&) = delete;
+        ReadGuard& operator=(ReadGuard&&) = delete;
+        ReadGuard(const ReadGuard&) = delete;
+        ReadGuard& operator=(const ReadGuard&) = delete;
+
+        virtual void find_parents_and_self(const document::BucketId& bucket,
+                                           std::vector<Entry>& entries) const = 0;
+    };
+
+    virtual std::unique_ptr<ReadGuard> acquire_read_guard() const {
+        return std::unique_ptr<ReadGuard>();
+    }
 };
 
 template <typename BucketInfoType>

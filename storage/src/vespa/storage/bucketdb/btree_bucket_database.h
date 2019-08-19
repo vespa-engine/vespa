@@ -17,13 +17,9 @@ namespace storage {
  * this is an uint32 we cheekily mangle it into the value, i.e. each bucket key maps to a
  * composite key of (gc_timestamp_u32 << 32) | array_ref_u32.
  *
- * This is _not_ yet production ready, for several reasons:
- *   - Underlying ArrayStore does not have freelists enabled for replica entry reuse
- *   - Current API design for mutable forEach requires O(n) tree structure mutations instead
- *     of changing the tree in bulk and reusing ArrayStore refs et al. Needs a redesign.
- *
- * Also note that the DB is currently _not_ thread safe, as read snapshotting is not yet defined
- * or exposed.
+ * Readers from contexts that are not guaranteed to be the main distributor thread MUST
+ * only access the database via an acquired read guard.
+ * Writing MUST only take place from the main distributor thread.
  */
 // TODO create and use a new DB interface with better bulk loading, snapshot and iteration support
 class BTreeBucketDatabase : public BucketDatabase {
@@ -66,11 +62,34 @@ private:
     ConstEntryRef const_entry_ref_from_iterator(const BTree::ConstIterator& iter) const;
     document::BucketId bucket_from_valid_iterator(const BTree::ConstIterator& iter) const;
     void commit_tree_changes();
-    BTree::ConstIterator find_parents_internal(const document::BucketId& bucket,
+    BTree::ConstIterator find_parents_internal(const BTree::FrozenView& frozen_view,
+                                               const document::BucketId& bucket,
                                                std::vector<Entry>& entries) const;
+    void find_parents_and_self_internal(const BTree::FrozenView& frozen_view,
+                                        const document::BucketId& bucket,
+                                        std::vector<Entry>& entries) const;
+
+    static search::datastore::ArrayStoreConfig make_default_array_store_config();
+
+    class ReadGuardImpl : public ReadGuard {
+        const BTreeBucketDatabase* _db;
+        GenerationHandler::Guard   _guard;
+        BTree::FrozenView          _frozen_view;
+    public:
+        explicit ReadGuardImpl(const BTreeBucketDatabase& db);
+        ~ReadGuardImpl() override;
+
+        void find_parents_and_self(const document::BucketId& bucket,
+                                   std::vector<Entry>& entries) const override;
+    };
+
+    friend class ReadGuardImpl;
+
+    std::unique_ptr<ReadGuard> acquire_read_guard() const override {
+        return std::make_unique<ReadGuardImpl>(*this);
+    }
 
     friend struct BTreeBuilderMerger;
-    friend struct BTreeMergingBuilder;
     friend struct BTreeTrailingInserter;
 };
 

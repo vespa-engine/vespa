@@ -28,6 +28,8 @@ public:
 
     document::BucketId getAppropriateBucket(uint16_t minBits, const document::BucketId& bid) override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+    std::unique_ptr<ReadGuard> acquire_read_guard() const override;
 private:
     struct E {
         E() : value(-1), e_0(-1), e_1(-1) {};
@@ -61,6 +63,17 @@ private:
     void findAll(int index, uint8_t bitCount, const document::BucketId& bid, std::vector<Entry>& entries) const;
     uint8_t getHighestSplitBit(int index, uint8_t bitCount, const document::BucketId& bid, uint8_t minCount);
     uint32_t childCountImpl(int index, uint8_t bitCount, const document::BucketId& b) const;
+
+    // NOT thread-safe for concurrent reads!
+    class ReadGuardImpl : public ReadGuard {
+        const MapBucketDatabase* _db;
+    public:
+        explicit ReadGuardImpl(const MapBucketDatabase& db) : _db(&db) {}
+        ~ReadGuardImpl() override = default;
+
+        void find_parents_and_self(const document::BucketId& bucket,
+                                   std::vector<Entry>& entries) const override;
+    };
 
     uint32_t allocate();
     uint32_t allocateValue(const document::BucketId& bid);
