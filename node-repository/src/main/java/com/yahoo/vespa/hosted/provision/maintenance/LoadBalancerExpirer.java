@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
@@ -49,7 +48,7 @@ public class LoadBalancerExpirer extends Maintainer {
     }
 
     private void expireReserved() {
-        try (Lock lock = db.lockLoadBalancers()) {
+        try (var lock = db.lockLoadBalancers()) {
             var now = nodeRepository().clock().instant();
             var expirationTime = now.minus(reservedExpiry);
             var expired = nodeRepository().loadBalancers()
@@ -62,7 +61,7 @@ public class LoadBalancerExpirer extends Maintainer {
     private void removeInactive() {
         List<LoadBalancerId> failed = new ArrayList<>();
         Exception lastException = null;
-        try (Lock lock = db.lockLoadBalancers()) {
+        try (var lock = db.lockLoadBalancers()) {
             var now = nodeRepository().clock().instant();
             var expirationTime = now.minus(inactiveExpiry);
             var expired = nodeRepository().loadBalancers()

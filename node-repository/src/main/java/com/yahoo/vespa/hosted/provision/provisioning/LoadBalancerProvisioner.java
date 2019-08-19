@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
@@ -14,16 +15,18 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
-import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerService;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -70,7 +73,9 @@ public class LoadBalancerProvisioner {
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
         if (requestedNodes.type() != NodeType.tenant) return; // Nothing to provision for this node type
         if (cluster.type() != ClusterSpec.Type.container) return; // Nothing to provision for this cluster type
-        provision(application, cluster.id(), false);
+        try (var loadBalancersLock = db.lockLoadBalancers()) {
+            provision(application, cluster.id(), false, loadBalancersLock);
+        }
     }
 
     /**
@@ -79,12 +84,21 @@ public class LoadBalancerProvisioner {
      * If a load balancer for the cluster already exists, it will be reconfigured based on the currently allocated
      * nodes and the load balancer itself will be moved to {@link LoadBalancer.State#active}.
      *
+     * Load balancers for clusters that are no longer in given clusters are deactivated.
+     *
      * Calling this when no load balancer has been prepared for given cluster is a no-op.
      */
-    public void activate(ApplicationId application, List<ClusterSpec> clusters) {
-        for (var clusterId : containerClusterIdsOf(clusters)) {
-            // Provision again to ensure that load balancer instance re-configured with correct nodes
-            provision(application, clusterId, true);
+    public void activate(ApplicationId application, Set<ClusterSpec> clusters,
+                         @SuppressWarnings("unused") Mutex applicationLock, NestedTransaction transaction) {
+        try (var loadBalancersLock = db.lockLoadBalancers()) {
+            var containerClusters = containerClusterOf(clusters);
+            for (var clusterId : containerClusters) {
+                // Provision again to ensure that load balancer instance is re-configured with correct nodes
+                provision(application, clusterId, true, loadBalancersLock);
+            }
+            // Deactivate any surplus load balancers, i.e. load balancers for clusters that have been removed
+            var surplusLoadBalancers = surplusLoadBalancersOf(application, containerClusters);
+            deactivate(surplusLoadBalancers, transaction);
         }
     }
 
@@ -93,38 +107,57 @@ public class LoadBalancerProvisioner {
      * load balancer(s).
      */
     public void deactivate(ApplicationId application, NestedTransaction transaction) {
-        try (Mutex applicationLock = nodeRepository.lock(application)) {
+        try (var applicationLock = nodeRepository.lock(application)) {
             try (Mutex loadBalancersLock = db.lockLoadBalancers()) {
-                var now = nodeRepository.clock().instant();
-                var deactivatedLoadBalancers = nodeRepository.loadBalancers().owner(application).asList().stream()
-                                                             .map(lb -> lb.with(LoadBalancer.State.inactive, now))
-                                                             .collect(Collectors.toList());
-                db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
+                deactivate(nodeRepository.loadBalancers().owner(application).asList(), transaction);
             }
         }
     }
 
-    /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(ApplicationId application, ClusterSpec.Id clusterId, boolean activate) {
-        try (var applicationLock = nodeRepository.lock(application)) {
-            try (var loadBalancersLock = db.lockLoadBalancers()) {
-                var id = new LoadBalancerId(application, clusterId);
-                var now = nodeRepository.clock().instant();
-                var loadBalancer = db.readLoadBalancer(id);
-                if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
-
-                var force = loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
-                var instance = create(application, clusterId, allocatedContainers(application, clusterId), force);
-                LoadBalancer newLoadBalancer;
-                if (loadBalancer.isEmpty()) {
-                    newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
-                } else {
-                    var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
-                    newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
-                }
-                db.writeLoadBalancer(newLoadBalancer);
-            }
+    /** Returns load balancers of given application that are no longer referenced by wantedClusters */
+    private List<LoadBalancer> surplusLoadBalancersOf(ApplicationId application, Set<ClusterSpec.Id> activeClusters) {
+        var activeLoadBalancersByCluster = nodeRepository.loadBalancers()
+                                                         .owner(application)
+                                                         .in(LoadBalancer.State.active)
+                                                         .asList()
+                                                         .stream()
+                                                         .collect(Collectors.toMap(lb -> lb.id().cluster(),
+                                                                                   Function.identity()));
+        var surplus = new ArrayList<LoadBalancer>();
+        for (var kv : activeLoadBalancersByCluster.entrySet()) {
+            if (activeClusters.contains(kv.getKey())) continue;
+            surplus.add(kv.getValue());
         }
+        return Collections.unmodifiableList(surplus);
+    }
+
+    private void deactivate(List<LoadBalancer> loadBalancers, NestedTransaction transaction) {
+        var now = nodeRepository.clock().instant();
+        var deactivatedLoadBalancers = loadBalancers.stream()
+                                                    .map(lb -> lb.with(LoadBalancer.State.inactive, now))
+                                                    .collect(Collectors.toList());
+        db.writeLoadBalancers(deactivatedLoadBalancers, transaction);
+    }
+
+
+    /** Idempotently provision a load balancer for given application and cluster */
+    private void provision(ApplicationId application, ClusterSpec.Id clusterId, boolean activate,
+                           @SuppressWarnings("unused") Mutex loadBalancersLock) {
+        var id = new LoadBalancerId(application, clusterId);
+        var now = nodeRepository.clock().instant();
+        var loadBalancer = db.readLoadBalancer(id);
+        if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
+
+        var force = loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
+        var instance = create(application, clusterId, allocatedContainers(application, clusterId), force);
+        LoadBalancer newLoadBalancer;
+        if (loadBalancer.isEmpty()) {
+            newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
+        } else {
+            var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
+            newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
+        }
+        db.writeLoadBalancer(newLoadBalancer);
     }
 
     private LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes, boolean force) {
@@ -171,11 +204,11 @@ public class LoadBalancerProvisioner {
         return reachable;
     }
 
-    private static List<ClusterSpec.Id> containerClusterIdsOf(List<ClusterSpec> clusters) {
+    private static Set<ClusterSpec.Id> containerClusterOf(Set<ClusterSpec> clusters) {
         return clusters.stream()
                        .filter(c -> c.type() == ClusterSpec.Type.container)
                        .map(ClusterSpec::id)
-                       .collect(Collectors.toUnmodifiableList());
+                       .collect(Collectors.toUnmodifiableSet());
     }
 
 }
