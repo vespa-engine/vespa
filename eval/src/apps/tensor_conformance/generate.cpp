@@ -211,6 +211,8 @@ void generate_xw_product(TestBuilder &dst) {
     dst.add("reduce(a*b,sum,x)",
             {{"a", spec(float_cells({x(2)}), Seq({ 1, 2 }))}, {"b", matrix}},
             spec(y(3), Seq({(1*3+2*11),(1*5+2*13),(1*7+2*17)})));
+    dst.add("reduce(a*b,sum,x)", {{"a", spec(x(2), Seq({ 1, 2 }))}, {"b", fmatrix}},
+            spec(y(3), Seq({(1*3+2*11),(1*5+2*13),(1*7+2*17)})));
     dst.add("reduce(a*b,sum,x)",
             {{"a", spec(float_cells({x(2)}), Seq({ 1, 2 }))}, {"b", fmatrix}},
             spec(float_cells({y(3)}), Seq({(1*3+2*11),(1*5+2*13),(1*7+2*17)})));
@@ -223,9 +225,6 @@ void generate_xw_product(TestBuilder &dst) {
 void generate_tensor_concat(TestBuilder &dst) {
     dst.add("concat(a,b,x)", {{"a", spec(10.0)}, {"b", spec(20.0)}}, spec(x(2), Seq({10.0, 20.0})));
     dst.add("concat(a,b,x)", {{"a", spec(x(1), Seq({10.0}))}, {"b", spec(20.0)}}, spec(x(2), Seq({10.0, 20.0})));
-    dst.add("concat(a,b,x)", {{"a", spec(float_cells({x(1)}), Seq({10.0}))},
-            {"b", spec(20.0)}},
-            spec(float_cells({x(2)}), Seq({10.0, 20.0})));
     dst.add("concat(a,b,x)", {{"a", spec(10.0)}, {"b", spec(x(1), Seq({20.0}))}}, spec(x(2), Seq({10.0, 20.0})));
     dst.add("concat(a,b,x)", {{"a", spec(x(3), Seq({1.0, 2.0, 3.0}))}, {"b", spec(x(2), Seq({4.0, 5.0}))}},
             spec(x(5), Seq({1.0, 2.0, 3.0, 4.0, 5.0})));
