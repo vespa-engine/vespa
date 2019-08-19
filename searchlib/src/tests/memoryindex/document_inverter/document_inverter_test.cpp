@@ -28,7 +28,7 @@ namespace {
 Document::UP
 makeDoc10(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     b.startIndexField("f0").
         addStr("a").addStr("b").addStr("c").addStr("d").
         endField();
@@ -38,7 +38,7 @@ makeDoc10(DocBuilder &b)
 Document::UP
 makeDoc11(DocBuilder &b)
 {
-    b.startDocument("doc::11");
+    b.startDocument("id:ns:searchdocument::11");
     b.startIndexField("f0").
         addStr("a").addStr("b").addStr("e").addStr("f").
         endField();
@@ -51,7 +51,7 @@ makeDoc11(DocBuilder &b)
 Document::UP
 makeDoc12(DocBuilder &b)
 {
-    b.startDocument("doc::12");
+    b.startDocument("id:ns:searchdocument::12");
     b.startIndexField("f0").
         addStr("h").addStr("doc12").
         endField();
@@ -61,7 +61,7 @@ makeDoc12(DocBuilder &b)
 Document::UP
 makeDoc13(DocBuilder &b)
 {
-    b.startDocument("doc::13");
+    b.startDocument("id:ns:searchdocument::13");
     b.startIndexField("f0").
         addStr("i").addStr("doc13").
         endField();
@@ -71,7 +71,7 @@ makeDoc13(DocBuilder &b)
 Document::UP
 makeDoc14(DocBuilder &b)
 {
-    b.startDocument("doc::14");
+    b.startDocument("id:ns:searchdocument::14");
     b.startIndexField("f0").
         addStr("j").addStr("doc14").
         endField();
@@ -81,7 +81,7 @@ makeDoc14(DocBuilder &b)
 Document::UP
 makeDoc15(DocBuilder &b)
 {
-    b.startDocument("doc::15");
+    b.startDocument("id:ns:searchdocument::15");
     return b.endDocument();
 }
 

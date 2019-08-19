@@ -85,7 +85,7 @@ public:
     }
 
     Document::SP createDummyDocument(const char* ns, const char* id) const {
-        return std::make_shared<Document>(doc_type(), DocumentId(DocIdString(ns, id)));
+        return std::make_shared<Document>(doc_type(), DocumentId(vespalib::make_string("id:%s:testdoctype1::%s", ns, id)));
     }
 
     std::shared_ptr<api::PutCommand> createPut(Document::SP doc) const {
@@ -97,7 +97,7 @@ PutOperationTest::~PutOperationTest() = default;
 
 document::BucketId
 PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
-    auto doc = std::make_shared<Document>(doc_type(), DocumentId(DocIdString("test", "test")));
+    auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
 
     document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
     addIdealNodes(id);
@@ -123,13 +123,13 @@ TEST_F(PutOperationTest, simple) {
     setupDistributor(1, 1, "storage:1 distributor:1");
     createAndSendSampleDocument(180);
 
-    ASSERT_EQ("Put(BucketId(0x4000000000008b13), "
-              "doc:test:test, timestamp 100, size 36) => 0",
+    ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
+              "id:test:testdoctype1::, timestamp 100, size 45) => 0",
               _sender.getCommands(true, true));
 
     sendReply();
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -141,7 +141,7 @@ TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_se
     sendPut(createPut(doc));
 
     // Database updated before CreateBucket is sent
-    ASSERT_EQ("BucketId(0x4000000000008b13) : "
+    ASSERT_EQ("BucketId(0x4000000000008f09) : "
               "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)",
               dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 
@@ -153,16 +153,16 @@ TEST_F(PutOperationTest, send_inline_split_before_put_if_bucket_too_large) {
     getConfig().setSplitCount(1024);
     getConfig().setSplitSize(1000000);
 
-    addNodesToBucketDB(document::BucketId(0x4000000000002a52), "0=10000/10000/10000/t");
+    addNodesToBucketDB(document::BucketId(0x4000000000000593), "0=10000/10000/10000/t");
 
     sendPut(createPut(createDummyDocument("test", "uri")));
 
-    ASSERT_EQ("SplitBucketCommand(BucketId(0x4000000000002a52)Max doc count: "
+    ASSERT_EQ("SplitBucketCommand(BucketId(0x4000000000000593)Max doc count: "
               "1024, Max total doc size: 1000000) Reasons to start: "
               "[Splitting bucket because its maximum size (10000 b, 10000 docs, 10000 meta, 10000 b total) is "
               "higher than the configured limit of (1000000, 1024)] => 0,"
-              "Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
-              "size 35) => 0",
+              "Put(BucketId(0x4000000000000593), id:test:testdoctype1::uri, timestamp 100, "
+              "size 48) => 0",
               _sender.getCommands(true, true));
 }
 
@@ -171,12 +171,12 @@ TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
     getConfig().setSplitCount(1024);
     getConfig().setDoInlineSplit(false);
 
-    addNodesToBucketDB(document::BucketId(0x4000000000002a52), "0=10000/10000/10000/t");
+    addNodesToBucketDB(document::BucketId(0x4000000000000593), "0=10000/10000/10000/t");
 
     sendPut(createPut(createDummyDocument("test", "uri")));
 
-    ASSERT_EQ("Put(BucketId(0x4000000000002a52), doc:test:uri, timestamp 100, "
-              "size 35) => 0",
+    ASSERT_EQ("Put(BucketId(0x4000000000000593), id:test:testdoctype1::uri, timestamp 100, "
+              "size 48) => 0",
               _sender.getCommands(true, true));
 }
 
@@ -184,22 +184,22 @@ TEST_F(PutOperationTest, node_removed_on_reply) {
     setupDistributor(2, 2, "storage:2 distributor:1");
     createAndSendSampleDocument(180);
 
-    ASSERT_EQ("Put(BucketId(0x4000000000008b13), "
-              "doc:test:test, timestamp 100, size 36) => 1,"
-              "Put(BucketId(0x4000000000008b13), "
-              "doc:test:test, timestamp 100, size 36) => 0",
+    ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
+              "id:test:testdoctype1::, timestamp 100, size 45) => 0,"
+              "Put(BucketId(0x4000000000001dd4), "
+              "id:test:testdoctype1::, timestamp 100, size 45) => 1",
               _sender.getCommands(true, true));
 
-    getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x8b13)), 0);
+    getExternalOperationHandler().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
 
     sendReply(0);
     sendReply(1);
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(BUCKET_DELETED, "
-              "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000008b13)) was deleted from nodes [0] "
+              "Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000001dd4)) was deleted from nodes [0] "
               "after message was sent but before it was done. "
-              "Sent to [1,0])",
+              "Sent to [0,1])",
               _sender.getLastReply());
 }
 
@@ -210,7 +210,7 @@ TEST_F(PutOperationTest, storage_failed) {
 
     sendReply(-1, api::ReturnCode::INTERNAL_FAILURE);
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(INTERNAL_FAILURE)",
               _sender.getLastReply(true));
 }
@@ -221,22 +221,22 @@ TEST_F(PutOperationTest, multiple_copies) {
     Document::SP doc(createDummyDocument("test", "test"));
     sendPut(createPut(doc));
 
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 6; i++) {
         sendReply(i);
     }
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply(true));
 
-    ASSERT_EQ("BucketId(0x4000000000008b13) : "
+    ASSERT_EQ("BucketId(0x4000000000008f09) : "
               "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
-              "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
-              "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
+              "node(idx=2,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
+              "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
               dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
@@ -245,8 +245,8 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
     // Reply to 2 CreateBucket, including primary
@@ -258,7 +258,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
         sendReply(3 + i);
     }
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -268,8 +268,8 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
     // Reply only to 2 nodes (but not the primary)
@@ -280,7 +280,7 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_not_required) {
         sendReply(3 + i); // Put
     }
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -290,8 +290,8 @@ TEST_F(PutOperationTest, multiple_copies_early_return_primary_required_not_done)
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
     // Reply only to 2 nodes (but not the primary)
@@ -309,8 +309,8 @@ TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
 
     sendPut(createPut(createDummyDocument("test", "test")));
 
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 3; i++) {
@@ -320,14 +320,14 @@ TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
         sendReply(3 + i); // Put
     }
 
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 
     sendReply(5, api::ReturnCode::INTERNAL_FAILURE);
     // Should not be any revert commands sent
-    ASSERT_EQ("Create bucket => 3,Create bucket => 1,"
-              "Create bucket => 0,Put => 3,Put => 1,Put => 0",
+    ASSERT_EQ("Create bucket => 3,Create bucket => 2,"
+              "Create bucket => 1,Put => 3,Put => 2,Put => 1",
               _sender.getCommands(true));
 }
 
@@ -336,7 +336,7 @@ TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
 
     createAndSendSampleDocument(180);
 
-    ASSERT_EQ("Put => 3,Put => 1,Put => 0", _sender.getCommands(true));
+    ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 2; i++) {
         sendReply(i);
@@ -344,12 +344,12 @@ TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
 
     sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
 
-    ASSERT_EQ("PutReply(doc:test:test, "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, "
               "BucketId(0x0000000000000000), timestamp 100) "
               "ReturnCode(INTERNAL_FAILURE)",
               _sender.getLastReply(true));
 
-    ASSERT_EQ("Revert => 3,Revert => 1", _sender.getCommands(true, false, 3));
+    ASSERT_EQ("Revert => 0,Revert => 2", _sender.getCommands(true, false, 3));
 }
 
 TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
@@ -361,7 +361,7 @@ TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
 
     createAndSendSampleDocument(180);
 
-    ASSERT_EQ("Put => 3,Put => 1,Put => 0", _sender.getCommands(true));
+    ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
 
     for (uint32_t i = 0;  i < 2; i++) {
         sendReply(i);
@@ -369,7 +369,7 @@ TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
 
     sendReply(2, api::ReturnCode::INTERNAL_FAILURE);
 
-    ASSERT_EQ("PutReply(doc:test:test, "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, "
               "BucketId(0x0000000000000000), timestamp 100) "
               "ReturnCode(INTERNAL_FAILURE)",
               _sender.getLastReply(true));
@@ -405,7 +405,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
 TEST_F(PutOperationTest, no_storage_nodes) {
     setupDistributor(2, 1, "storage:0 distributor:1");
     createAndSendSampleDocument(180);
-    ASSERT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NOT_CONNECTED, "
               "Can't store document: No storage nodes available)",
               _sender.getLastReply(true));
@@ -492,10 +492,10 @@ PutOperationTest::getNodes(const std::string& infoString) {
 TEST_F(PutOperationTest, target_nodes) {
     setupDistributor(2, 6, "storage:6 distributor:1");
 
-    // Ideal state of bucket is 1,3.
-    ASSERT_EQ("target( 1 3 ) create( 1 3 )", getNodes(""));
-    ASSERT_EQ("target( 1 3 ) create( 3 )",   getNodes("1-1-true"));
-    ASSERT_EQ("target( 1 3 ) create( 3 )",   getNodes("1-1-false"));
+    // Ideal state of bucket is 1,2.
+    ASSERT_EQ("target( 1 2 ) create( 1 2 )", getNodes(""));
+    ASSERT_EQ("target( 1 2 ) create( 2 )",   getNodes("1-1-true"));
+    ASSERT_EQ("target( 1 2 ) create( 2 )",   getNodes("1-1-false"));
     ASSERT_EQ("target( 3 4 5 ) create( )",   getNodes("3-1-true,4-1-true,5-1-true"));
     ASSERT_EQ("target( 3 4 ) create( )",     getNodes("3-2-true,4-2-true,5-1-false"));
     ASSERT_EQ("target( 1 3 4 ) create( )",   getNodes("3-2-true,4-2-true,1-1-false"));
@@ -513,7 +513,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
 
     sendPut(createPut(doc));
 
-    ASSERT_EQ("Put => 1,Put => 0,Put => 2", _sender.getCommands(true));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", _sender.getCommands(true));
 
     enableDistributorClusterState("distributor:1 storage:3 .1.s:d .2.s:m");
     addNodesToBucketDB(bId, "0=1/2/3/t"); // This will actually remove node #1.
@@ -522,8 +522,8 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
     sendReply(1, api::ReturnCode::OK, api::BucketInfo(5, 6, 7));
     sendReply(2, api::ReturnCode::OK, api::BucketInfo(7, 8, 9));
 
-    ASSERT_EQ("BucketId(0x4000000000002a52) : "
-              "node(idx=0,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)",
+    ASSERT_EQ("BucketId(0x4000000000000593) : "
+              "node(idx=0,crc=0x7,docs=8/8,bytes=9/9,trusted=true,active=false,ready=false)",
               dumpBucket(getExternalOperationHandler().getBucketId(doc->getId())));
 }
 
@@ -535,7 +535,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     sendPut(createPut(doc));
 
-    ASSERT_EQ("Put => 1,Put => 0,Put => 2", _sender.getCommands(true));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", _sender.getCommands(true));
     // Trigger a pending (but not completed) cluster state transition where content
     // node 0 is down. This will prune its replica from the DB. We assume that the
     // downed node managed to send off a reply to the Put before it went down, and
@@ -555,7 +555,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
     sendReply(1, api::ReturnCode::OK, api::BucketInfo(6, 7, 8));
     sendReply(2, api::ReturnCode::OK, api::BucketInfo(9, 8, 7));
 
-    ASSERT_EQ("BucketId(0x4000000000002a52) : "
+    ASSERT_EQ("BucketId(0x4000000000000593) : "
               "node(idx=1,crc=0x5,docs=6/6,bytes=7/7,trusted=true,active=false,ready=false)",
               dumpBucket(bucket));
 }
@@ -574,7 +574,7 @@ TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state
 
     sendPut(createPut(doc));
     EXPECT_EQ("", _sender.getCommands(true));
-    EXPECT_EQ("PutReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("PutReply(id:test:testdoctype1::test, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(BUSY, "
               "One or more target content nodes are unavailable in the pending cluster state)",
               _sender.getLastReply(true));

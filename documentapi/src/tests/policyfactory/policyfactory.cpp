@@ -60,7 +60,7 @@ MyFactory::createPolicy(const string &param) const
 mbus::Message::UP
 createMessage()
 {
-    auto ret = std::make_unique<RemoveDocumentMessage>(document::DocumentId("doc:scheme:"));
+    auto ret = std::make_unique<RemoveDocumentMessage>(document::DocumentId("id:ns:type::"));
     ret->getTrace().setLevel(9);
     return ret;
 }

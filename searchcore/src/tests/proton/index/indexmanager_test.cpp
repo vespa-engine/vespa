@@ -89,7 +89,7 @@ void removeTestData() {
 Document::UP buildDocument(DocBuilder &doc_builder, int id,
                            const string &word) {
     vespalib::asciistream ost;
-    ost << "doc::" << id;
+    ost << "id:ns:searchdocument::" << id;
     doc_builder.startDocument(ost.str());
     doc_builder.startIndexField(field_name).addStr(word).endField();
     return doc_builder.endDocument();

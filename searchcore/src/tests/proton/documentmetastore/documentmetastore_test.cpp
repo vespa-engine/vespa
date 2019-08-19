@@ -545,14 +545,14 @@ TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
 GlobalId
 createGid(uint32_t lid)
 {
-    DocumentId docId(vespalib::make_string("doc:id:%u", lid));
+    DocumentId docId(vespalib::make_string("id:ns:testdoc::%u", lid));
     return docId.getGlobalId();
 }
 
 GlobalId
 createGid(uint32_t userId, uint32_t lid)
 {
-    DocumentId docId(vespalib::make_string("id:id:testdoc:n=%u:%u", userId, lid));
+    DocumentId docId(vespalib::make_string("id:ns:testdoc:n=%u:%u", userId, lid));
     return docId.getGlobalId();
 }
 

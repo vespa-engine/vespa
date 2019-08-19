@@ -65,18 +65,18 @@ TEST("require that setting an environment variable turns on docid-specific"
      " debugging.") {
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
-    setenv(docid_env_name, "doc:test:foo,doc:test:bar,doc:test:baz", true);
+    setenv(docid_env_name, "id:ns:type::test:foo,id:ns:type::test:bar,id:ns:type::test:baz", true);
 
     FeedDebugger debugger;
     EXPECT_TRUE(debugger.isDebugging());
     EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("doc:test:foo")));
+                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:foo")));
     EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("doc:test:bar")));
+                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:bar")));
     EXPECT_EQUAL(ns_log::Logger::info,
-                 debugger.getDebugLevel(1, DocumentId("doc:test:baz")));
+                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:baz")));
     EXPECT_EQUAL(ns_log::Logger::spam,
-                 debugger.getDebugLevel(1, DocumentId("doc:test:qux")));
+                 debugger.getDebugLevel(1, DocumentId("id:ns:type::test:qux")));
 }
 
 }  // namespace

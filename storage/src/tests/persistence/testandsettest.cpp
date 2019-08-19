@@ -235,20 +235,6 @@ TEST_F(TestAndSetTest, conditional_put_to_non_existing_document_should_fail) {
     EXPECT_EQ("", dumpBucket(BUCKET_ID));
 }
 
-TEST_F(TestAndSetTest, document_with_no_type_should_fail) {
-    // Conditionally replace nonexisting document
-    // Fail since no document exists to match with test and set
-    api::Timestamp timestamp = 0;
-    document::DocumentId legacyDocId("doc:mail:3619.html");
-    api::RemoveCommand remove(makeDocumentBucket(BUCKET_ID), legacyDocId, timestamp);
-    setTestCondition(remove);
-
-    auto code = thread->handleRemove(remove)->getResult();
-    EXPECT_EQ(code.getResult(), api::ReturnCode::Result::ILLEGAL_PARAMETERS);
-    EXPECT_EQ(code.getMessage(), "Document id has no doctype");
-    EXPECT_EQ("", dumpBucket(BUCKET_ID));
-}
-
 document::Document::SP
 TestAndSetTest::createTestDocument()
 {

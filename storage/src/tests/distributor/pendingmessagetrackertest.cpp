@@ -173,7 +173,7 @@ TEST_F(PendingMessageTrackerTest, simple) {
         std::ostringstream ost;
         tracker.reportStatus(ost, framework::HttpUrlPath("/pendingmessages?order=bucket"));
 
-        EXPECT_THAT(ost.str(), Not(HasSubstr("doc:")));
+        EXPECT_THAT(ost.str(), Not(HasSubstr("id:")));
     }
 }
 

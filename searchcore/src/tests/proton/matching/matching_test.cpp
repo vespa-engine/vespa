@@ -192,7 +192,7 @@ struct MyWorld {
 
         // metaStore
         for (uint32_t i = 0; i < NUM_DOCS; ++i) {
-            document::DocumentId docId(vespalib::make_string("doc::%u", i));
+            document::DocumentId docId(vespalib::make_string("id:ns:searchdocument::%u", i));
             const document::GlobalId &gid = docId.getGlobalId();
             document::BucketId bucketId(BucketFactory::getBucketId(docId));
             uint32_t docSize = 1;
@@ -455,11 +455,11 @@ TEST("require that ranking is performed (multi-threaded)") {
         EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
         EXPECT_EQUAL(0u, world.matchingStats.docsReRanked());
         ASSERT_TRUE(reply->hits.size() == 9u);
-        EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::900").getGlobalId(),  reply->hits[0].gid);
         EXPECT_EQUAL(900.0, reply->hits[0].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::800").getGlobalId(),  reply->hits[1].gid);
         EXPECT_EQUAL(800.0, reply->hits[1].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::700").getGlobalId(),  reply->hits[2].gid);
         EXPECT_EQUAL(700.0, reply->hits[2].metric);
         EXPECT_GREATER(world.matchingStats.matchTimeAvg(), 0.0000001);
         EXPECT_EQUAL(0.0, world.matchingStats.rerankTimeAvg());
@@ -478,15 +478,15 @@ TEST("require that re-ranking is performed (multi-threaded)") {
         EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
         EXPECT_EQUAL(3u, world.matchingStats.docsReRanked());
         ASSERT_TRUE(reply->hits.size() == 9u);
-        EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::900").getGlobalId(),  reply->hits[0].gid);
         EXPECT_EQUAL(1800.0, reply->hits[0].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::800").getGlobalId(),  reply->hits[1].gid);
         EXPECT_EQUAL(1600.0, reply->hits[1].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::700").getGlobalId(),  reply->hits[2].gid);
         EXPECT_EQUAL(1400.0, reply->hits[2].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::600").getGlobalId(),  reply->hits[3].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::600").getGlobalId(),  reply->hits[3].gid);
         EXPECT_EQUAL(600.0, reply->hits[3].metric);
-        EXPECT_EQUAL(document::DocumentId("doc::500").getGlobalId(),  reply->hits[4].gid);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::500").getGlobalId(),  reply->hits[4].gid);
         EXPECT_EQUAL(500.0, reply->hits[4].metric);
         EXPECT_GREATER(world.matchingStats.matchTimeAvg(), 0.0000001);
         EXPECT_GREATER(world.matchingStats.rerankTimeAvg(), 0.0000001);
@@ -532,15 +532,15 @@ TEST("require that re-ranking is diverse with diversity = 1/1") {
     EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
     EXPECT_EQUAL(3u, world.matchingStats.docsReRanked());
     ASSERT_TRUE(reply->hits.size() == 9u);
-    EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::900").getGlobalId(),  reply->hits[0].gid);
     EXPECT_EQUAL(1800.0, reply->hits[0].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::800").getGlobalId(),  reply->hits[1].gid);
     EXPECT_EQUAL(1600.0, reply->hits[1].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::700").getGlobalId(),  reply->hits[2].gid);
     EXPECT_EQUAL(1400.0, reply->hits[2].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::600").getGlobalId(),  reply->hits[3].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::600").getGlobalId(),  reply->hits[3].gid);
     EXPECT_EQUAL(600.0, reply->hits[3].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::500").getGlobalId(),  reply->hits[4].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::500").getGlobalId(),  reply->hits[4].gid);
     EXPECT_EQUAL(500.0, reply->hits[4].metric);
 }
 
@@ -559,16 +559,16 @@ TEST("require that re-ranking is diverse with diversity = 1/10") {
     EXPECT_EQUAL(9u, world.matchingStats.docsRanked());
     EXPECT_EQUAL(1u, world.matchingStats.docsReRanked());
     ASSERT_TRUE(reply->hits.size() == 9u);
-    EXPECT_EQUAL(document::DocumentId("doc::900").getGlobalId(),  reply->hits[0].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::900").getGlobalId(),  reply->hits[0].gid);
     EXPECT_EQUAL(1800.0, reply->hits[0].metric);
     //TODO This is of course incorrect until the selectBest method sees everything.
-    EXPECT_EQUAL(document::DocumentId("doc::800").getGlobalId(),  reply->hits[1].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::800").getGlobalId(),  reply->hits[1].gid);
     EXPECT_EQUAL(800.0, reply->hits[1].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::700").getGlobalId(),  reply->hits[2].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::700").getGlobalId(),  reply->hits[2].gid);
     EXPECT_EQUAL(700.0, reply->hits[2].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::600").getGlobalId(),  reply->hits[3].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::600").getGlobalId(),  reply->hits[3].gid);
     EXPECT_EQUAL(600.0, reply->hits[3].metric);
-    EXPECT_EQUAL(document::DocumentId("doc::500").getGlobalId(),  reply->hits[4].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::500").getGlobalId(),  reply->hits[4].gid);
     EXPECT_EQUAL(500.0, reply->hits[4].metric);
 }
 
@@ -585,11 +585,11 @@ TEST("require that sortspec can be used (multi-threaded)") {
             }
             SearchReply::UP reply = world.performSearch(request, threads);
             ASSERT_EQUAL(9u, reply->hits.size());
-            EXPECT_EQUAL(document::DocumentId("doc::100").getGlobalId(),  reply->hits[0].gid);
+            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::100").getGlobalId(),  reply->hits[0].gid);
             EXPECT_EQUAL(zero_rank_value, reply->hits[0].metric);
-            EXPECT_EQUAL(document::DocumentId("doc::200").getGlobalId(),  reply->hits[1].gid);
+            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::200").getGlobalId(),  reply->hits[1].gid);
             EXPECT_EQUAL(zero_rank_value, reply->hits[1].metric);
-            EXPECT_EQUAL(document::DocumentId("doc::300").getGlobalId(),  reply->hits[2].gid);
+            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::300").getGlobalId(),  reply->hits[2].gid);
             EXPECT_EQUAL(zero_rank_value, reply->hits[2].metric);
             EXPECT_EQUAL(drop_sort_data, reply->sortIndex.empty());
             EXPECT_EQUAL(drop_sort_data, reply->sortData.empty());
@@ -911,7 +911,7 @@ TEST("require that same element search works (note that this does not test/use t
     SearchRequest::SP request = world.createSameElementRequest("foo", "bar");
     SearchReply::UP reply = world.performSearch(request, 1);
     ASSERT_EQUAL(1u, reply->hits.size());
-    EXPECT_EQUAL(document::DocumentId("doc::20").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -100,7 +100,7 @@ struct RemoveOperationContext
 };
 
 RemoveOperationContext::RemoveOperationContext(search::SerialNum serial)
-    : doc_id("doc:foo:bar"),
+    : doc_id("id:ns:doctypename::bar"),
       op(BucketFactory::getBucketId(doc_id), Timestamp(10), doc_id),
       str(), packet()
 {

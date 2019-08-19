@@ -22,7 +22,6 @@
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/test/test_utils.h>
 #include <vespa/persistence/spi/bucket.h>
-#include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
@@ -121,7 +120,7 @@ const char dyn_wset_field_i[] = "dynamic int wset field";
 const char dyn_wset_field_d[] = "dynamic double wset field";
 const char dyn_wset_field_s[] = "dynamic string wset field";
 const char dyn_wset_field_n[] = "dynamic null wset field";
-const DocumentId doc_id("doc:test:1");
+const DocumentId doc_id("id:ns:type_name::1");
 const int32_t static_value = 4;
 const int32_t dyn_value_i = 17;
 const double dyn_value_d = 42.42;
@@ -144,8 +143,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
 
     ~MyDocumentStore() override;
     
-    virtual Document::UP read(DocumentIdT lid,
-                              const DocumentTypeRepo &r) const override {
+    Document::UP read(DocumentIdT lid, const DocumentTypeRepo &r) const override {
         if (lid == 0) {
             return Document::UP();
         }
@@ -489,8 +487,7 @@ TEST_F("require that position fields are regenerated from zcurves", Fixture) {
     EXPECT_EQUAL(-123096000, static_cast<IntFieldValue&>(*x).getValue());
     EXPECT_EQUAL(49401000, static_cast<IntFieldValue&>(*y).getValue());
 
-    checkFieldValue<LongFieldValue>(doc->getValue(zcurve_field),
-                                    dynamic_zcurve_value);
+    checkFieldValue<LongFieldValue>(doc->getValue(zcurve_field), dynamic_zcurve_value);
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {

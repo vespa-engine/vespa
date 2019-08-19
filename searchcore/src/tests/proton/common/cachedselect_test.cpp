@@ -466,10 +466,10 @@ TEST_F("Test that basic select works", TestFixture)
 {
     MyDB &db(*f._db);
     
-    db.addDoc(1u, "doc:test:1", "hello", "null", 45, 37);
-    db.addDoc(2u, "doc:test:2", "gotcha", "foo", 3, 25);
-    db.addDoc(3u, "doc:test:3", "gotcha", "foo", noIntVal, noIntVal);
-    db.addDoc(4u, "doc:test:4", "null", "foo", noIntVal, noIntVal);
+    db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
+    db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
+    db.addDoc(3u, "id:ns:test::3", "gotcha", "foo", noIntVal, noIntVal);
+    db.addDoc(4u, "id:ns:test::4", "null", "foo", noIntVal, noIntVal);
     
     CachedSelect::SP cs;
 
@@ -566,9 +566,9 @@ struct PreDocSelectFixture : public TestFixture {
     PreDocSelectFixture()
         : TestFixture()
     {
-        db().addDoc(1u, "doc:test:1", "foo", "null", 3, 5);
-        db().addDoc(2u, "doc:test:1", "bar", "null", 3, 5);
-        db().addDoc(3u, "doc:test:2", "foo", "null", 7, 5);
+        db().addDoc(1u, "id:ns:test::1", "foo", "null", 3, 5);
+        db().addDoc(2u, "id:ns:test::1", "bar", "null", 3, 5);
+        db().addDoc(3u, "id:ns:test::2", "foo", "null", 7, 5);
     }
 };
 
@@ -602,10 +602,10 @@ TEST_F("Test performance when using attributes", TestFixture)
 {
     MyDB &db(*f._db);
     
-    db.addDoc(1u, "doc:test:1", "hello", "null", 45, 37);
-    db.addDoc(2u, "doc:test:2", "gotcha", "foo", 3, 25);
-    db.addDoc(3u, "doc:test:3", "gotcha", "foo", noIntVal, noIntVal);
-    db.addDoc(4u, "doc:test:4", "null", "foo", noIntVal, noIntVal);
+    db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
+    db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
+    db.addDoc(3u, "id:ns:test::3", "gotcha", "foo", noIntVal, noIntVal);
+    db.addDoc(4u, "id:ns:test::4", "null", "foo", noIntVal, noIntVal);
     
     CachedSelect::SP cs;
     cs = f.testParse("test.aa < 45", "test");

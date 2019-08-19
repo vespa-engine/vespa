@@ -81,7 +81,7 @@ struct Index {
     }
     Index &doc(uint32_t id) {
         docid = id;
-        builder.startDocument(vespalib::make_string("doc::%u", id));
+        builder.startDocument(vespalib::make_string("id:ns:searchdocument::%u", id));
         return *this;
     }
     Index &field(const std::string &name) {
