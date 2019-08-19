@@ -20,39 +20,39 @@ template <typename UniqueStoreT>
 struct TestBase : public ::testing::Test {
     using EntryRefType = typename UniqueStoreT::RefType;
     using UniqueStoreType = UniqueStoreT;
-    using value_type = typename UniqueStoreT::EntryType;
-    using value_const_ref_type = typename UniqueStoreT::EntryConstRefType;
-    using reference_store_value_type = std::conditional_t<std::is_same_v<value_type, const char *>, std::string, value_type>;
-    using ReferenceStore = std::map<EntryRef, std::pair<reference_store_value_type,uint32_t>>;
+    using ValueType = typename UniqueStoreT::EntryType;
+    using ValueConstRefType = typename UniqueStoreT::EntryConstRefType;
+    using ReferenceStoreValueType = std::conditional_t<std::is_same_v<ValueType, const char *>, std::string, ValueType>;
+    using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType,uint32_t>>;
 
     UniqueStoreType store;
     ReferenceStore refStore;
     generation_t generation;
 
-    static std::vector<value_type> values;
+    static std::vector<ValueType> values;
 
     TestBase()
         : store(),
           refStore(),
           generation(1)
     {}
-    void assertAdd(value_const_ref_type input) {
+    void assertAdd(ValueConstRefType input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
     }
-    EntryRef add(value_const_ref_type input) {
+    EntryRef add(ValueConstRefType input) {
         UniqueStoreAddResult addResult = store.add(input);
         EntryRef result = addResult.ref();
-        auto insres = refStore.insert(std::make_pair(result, std::make_pair(reference_store_value_type(input), 1u)));
+        auto insres = refStore.insert(std::make_pair(result, std::make_pair(ReferenceStoreValueType(input), 1u)));
         EXPECT_EQ(insres.second, addResult.inserted());
         if (!insres.second) {
             ++insres.first->second.second;
         }
         return result;
     }
-    void alignRefStore(EntryRef ref, value_const_ref_type input, uint32_t refcnt) {
+    void alignRefStore(EntryRef ref, ValueConstRefType input, uint32_t refcnt) {
         if (refcnt > 0) {
-            auto insres = refStore.insert(std::make_pair(ref, std::make_pair(reference_store_value_type(input), refcnt)));
+            auto insres = refStore.insert(std::make_pair(ref, std::make_pair(ReferenceStoreValueType(input), refcnt)));
             if (!insres.second) {
                 insres.first->second.second = refcnt;
             }
@@ -60,8 +60,8 @@ struct TestBase : public ::testing::Test {
             refStore.erase(ref);
         }
     }
-    void assertGet(EntryRef ref, reference_store_value_type exp) const {
-        reference_store_value_type act = store.get(ref);
+    void assertGet(EntryRef ref, ReferenceStoreValueType exp) const {
+        ReferenceStoreValueType act = store.get(ref);
         EXPECT_EQ(exp, act);
     }
     void remove(EntryRef ref) {
@@ -73,7 +73,7 @@ struct TestBase : public ::testing::Test {
             refStore.erase(ref);
         }
     }
-    void remove(value_const_ref_type input) {
+    void remove(ValueConstRefType input) {
         remove(getEntryRef(input));
     }
     uint32_t getBufferId(EntryRef ref) const {
@@ -89,7 +89,7 @@ struct TestBase : public ::testing::Test {
             assertGet(elem.first, elem.second.first);
         }
     }
-    EntryRef getEntryRef(value_const_ref_type input) {
+    EntryRef getEntryRef(ValueConstRefType input) {
         for (const auto &elem : refStore) {
             if (elem.second.first == input) {
                 return elem.first;
@@ -121,7 +121,7 @@ struct TestBase : public ::testing::Test {
         }
         refStore = compactedRefStore;
     }
-    size_t entrySize() const { return sizeof(value_type); }
+    size_t entrySize() const { return sizeof(ValueType); }
     auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
     auto getSaver() { return store.getSaver(); }
     size_t get_reserved(EntryRef ref) {
@@ -160,8 +160,8 @@ using SmallOffsetNumberTest = TestBase<SmallOffsetNumberUniqueStore>;
 
 TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
 {
-    EXPECT_TRUE(vespalib::can_skip_destruction<NumberTest::value_type>::value);
-    EXPECT_FALSE(vespalib::can_skip_destruction<StringTest::value_type>::value);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberTest::ValueType>::value);
+    EXPECT_FALSE(vespalib::can_skip_destruction<StringTest::ValueType>::value);
 }
 
 TYPED_TEST(TestBase, can_add_and_get_values)
