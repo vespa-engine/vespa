@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -501,10 +502,10 @@ public class RankProfile implements Serializable, Cloneable {
                 : numSearchPartitions;
     }
 
-    public Optional<Double> getTermwiseLimit() {
+    public OptionalDouble getTermwiseLimit() {
         return ((termwiseLimit == null) && (getInherited() != null))
                 ?  getInherited().getTermwiseLimit()
-                : (termwiseLimit != null) ? Optional.of(termwiseLimit) : Optional.empty();
+                : (termwiseLimit != null) ? OptionalDouble.of(termwiseLimit) : OptionalDouble.empty();
     }
     public void setTermwiseLimit(double termwiseLimit) { this.termwiseLimit = termwiseLimit; }
 
