@@ -35,6 +35,7 @@ public:
     using RefType = RefT;
     using Saver = UniqueStoreSaver<EntryT, RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
+    using EntryConstRefType = typename Allocator::EntryConstRefType;
 private:
     Allocator _allocator;
     DataStoreType &_store;
@@ -44,9 +45,9 @@ private:
 public:
     UniqueStore();
     ~UniqueStore();
-    UniqueStoreAddResult add(const EntryType &value);
-    EntryRef find(const EntryType &value);
-    const EntryType &get(EntryRef ref) const { return _allocator.get(ref); }
+    UniqueStoreAddResult add(EntryConstRefType value);
+    EntryRef find(EntryConstRefType value);
+    EntryConstRefType get(EntryRef ref) const { return _allocator.get(ref); }
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
     vespalib::MemoryUsage getMemoryUsage() const;
