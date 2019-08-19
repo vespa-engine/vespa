@@ -14,7 +14,6 @@ import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -34,16 +33,13 @@ public class SessionCreateHandler extends SessionHandler {
 
     private static final String fromPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*";
 
-    private final TenantRepository tenantRepository;
     private final Duration zookeeperBarrierTimeout;
 
     @Inject
-    public SessionCreateHandler(SessionHandler.Context ctx,
+    public SessionCreateHandler(Context ctx,
                                 ApplicationRepository applicationRepository,
-                                TenantRepository tenantRepository,
                                 ConfigserverConfig configserverConfig) {
         super(ctx, applicationRepository);
-        this.tenantRepository = tenantRepository;
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
@@ -51,7 +47,7 @@ public class SessionCreateHandler extends SessionHandler {
     protected HttpResponse handlePOST(HttpRequest request) {
         Slime deployLog = applicationRepository.createDeployLog();
         final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
-        Utils.checkThatTenantExists(tenantRepository, tenantName);
+        Utils.checkThatTenantExists(applicationRepository.tenantRepository(), tenantName);
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         DeployLogger logger = createLogger(request, deployLog, tenantName);
         long sessionId;

@@ -360,7 +360,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                                                   hostProvisioner,
                                                                   new OrchestratorMock(),
                                                                   componentRegistry.getClock()),
-                                        tenantRepository,
                                         Zone.defaultZone());
     }
 

@@ -619,6 +619,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Tenant operations ----------------------------------------------------------------
 
+
+    public TenantRepository tenantRepository() {
+        return tenantRepository;
+    }
+
     public Set<TenantName> deleteUnusedTenants(Duration ttlForUnusedTenant, Instant now) {
         return tenantRepository.getAllTenantNames().stream()
                 .filter(tenantName -> activeApplications(tenantName).isEmpty())

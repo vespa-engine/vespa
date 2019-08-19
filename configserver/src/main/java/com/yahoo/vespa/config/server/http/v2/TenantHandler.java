@@ -27,11 +27,11 @@ public class TenantHandler extends HttpHandler {
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
-    @SuppressWarnings("WeakerAccess") // instantiated by dependency injection
+    // instantiated by dependency injection
     @Inject
-    public TenantHandler(Context ctx, TenantRepository tenantRepository, ApplicationRepository applicationRepository) {
+    public TenantHandler(Context ctx, ApplicationRepository applicationRepository) {
         super(ctx);
-        this.tenantRepository = tenantRepository;
+        this.tenantRepository = applicationRepository.tenantRepository();
         this.applicationRepository = applicationRepository;
     }
 
