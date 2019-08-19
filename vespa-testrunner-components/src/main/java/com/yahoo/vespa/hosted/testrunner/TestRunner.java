@@ -83,7 +83,6 @@ public class TestRunner {
     }
 
     static ProcessBuilder mavenProcessFrom(TestProfile profile, TestRunnerConfig config) {
-        logger.log(INFO, System.getenv().toString());
         List<String> command = new ArrayList<>();
         if (Path.of("/opt/vespa").equals(Path.of(Defaults.getDefaults().vespaHome())))
             command.add("/opt/vespa/local/maven/bin/mvn");
@@ -134,8 +133,16 @@ public class TestRunner {
         ProcessBuilder builder = testBuilder.apply(testProfile);
         {
             LogRecord record = new LogRecord(Level.INFO,
-                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s",
-                                                           testProfile.name(), artifactsPath, configFile, String.join(" ", builder.command())));
+                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\n" +
+                                                                   "Command to run: %s\n" +
+                                                                   "Environment:\n%s",
+                                                           testProfile.name(), artifactsPath, configFile,
+                                                           String.join(" ", builder.command()),
+                                                           System.getenv().entrySet().stream()
+                                                                 .map(entry -> entry.getKey() + ": " + entry.getValue())
+                                                                 .collect(Collectors.joining("\n"))));
+            log.put(record.getSequenceNumber(), record);
+            logger.log(record);
             log.put(record.getSequenceNumber(), record);
             logger.log(record);
         }
