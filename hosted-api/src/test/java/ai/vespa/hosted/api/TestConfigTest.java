@@ -34,4 +34,14 @@ public class TestConfigTest {
                      config.deployments());
     }
 
+    @Test
+    public void testClustersOnly() throws IOException {
+        TestConfig config = TestConfig.fromJson(Files.readAllBytes(Paths.get("src/test/resources/clusters-only-config.json")));
+        assertEquals(ApplicationId.defaultId(),
+                     config.application());
+        assertEquals(Map.of("default", URI.create("https://localhost:8080/"),
+                            "container", URI.create("https://localhost:8081/")),
+                     config.deployments().get(ZoneId.defaultId()));
+    }
+
 }

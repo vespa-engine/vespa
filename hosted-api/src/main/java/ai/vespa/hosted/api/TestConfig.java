@@ -38,18 +38,42 @@ public class TestConfig {
                                                                             entry -> Map.copyOf(entry.getValue())));
     }
 
+    /**
+     * Parses the given test config JSON and returns a new config instance.
+     *
+     * If the given JSON has a "clusters" element, a config object with default values
+     * is returned, using {@link #fromEndpointsOnly}. Otherwise, all config attributes are parsed.
+     */
     public static TestConfig fromJson(byte[] jsonBytes) {
         Inspector config = new JsonDecoder().decode(new Slime(), jsonBytes).get();
+        if (config.field("clusters").valid())
+            return TestConfig.fromEndpointsOnly(toClusterMap(config.field("clusters")));
+
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
         SystemName system = SystemName.from(config.field("system").asString());
         Map<ZoneId, Map<String, URI>> deployments = new HashMap<>();
-        config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, endpointsObject) -> {
-            Map<String, URI> endpoints = new HashMap<>();
-            endpointsObject.traverse((ObjectTraverser) (cluster, uri) -> endpoints.put(cluster, URI.create(uri.asString())));
-            deployments.put(ZoneId.from(zoneId), endpoints);
+        config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, clustersObject) -> {
+            deployments.put(ZoneId.from(zoneId), toClusterMap(clustersObject));
         });
         return new TestConfig(application, zone, system, deployments);
+    }
+
+    static Map<String, URI> toClusterMap(Inspector clustersObject) {
+        Map<String, URI> clusters = new HashMap<>();
+        clustersObject.traverse((ObjectTraverser) (cluster, uri) -> clusters.put(cluster, URI.create(uri.asString())));
+        return clusters;
+    }
+
+    /**
+     * Returns a TestConfig with default values for everything except the endpoints.
+     * @param endpoints a set of cluster name -> URI mappings — one per services.xml container cluster
+     */
+    public static TestConfig fromEndpointsOnly(Map<String, URI> endpoints) {
+        return new TestConfig(ApplicationId.defaultId(),
+                              ZoneId.defaultId(),
+                              SystemName.defaultSystem(),
+                              Map.of(ZoneId.defaultId(), endpoints));
     }
 
     /** Returns the full id of the application to test. */
