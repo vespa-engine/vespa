@@ -45,6 +45,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -778,37 +781,61 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
+        MeteringInfo meteringInfo = controller.meteringClient().getResourceSnapshots(tenant, application);
+
+        ResourceAllocation currentSnapshot = meteringInfo.getCurrentSnapshot();
         Cursor currentRate = root.setObject("currentrate");
-        currentRate.setDouble("cpu", 0);
-        currentRate.setDouble("mem", 0);
-        currentRate.setDouble("disk", 0);
+        currentRate.setDouble("cpu", currentSnapshot.getCpuCores());
+        currentRate.setDouble("mem", currentSnapshot.getMemoryGb());
+        currentRate.setDouble("disk", currentSnapshot.getDiskGb());
 
+        ResourceAllocation thisMonth = meteringInfo.getThisMonth();
         Cursor thismonth = root.setObject("thismonth");
-        thismonth.setDouble("cpu", 0);
-        thismonth.setDouble("mem", 0);
-        thismonth.setDouble("disk", 0);
+        thismonth.setDouble("cpu", thisMonth.getCpuCores());
+        thismonth.setDouble("mem", thisMonth.getMemoryGb());
+        thismonth.setDouble("disk", thisMonth.getDiskGb());
 
+        ResourceAllocation lastMonth = meteringInfo.getLastMonth();
         Cursor lastmonth = root.setObject("lastmonth");
-        lastmonth.setDouble("cpu", 0);
-        lastmonth.setDouble("mem", 0);
-        lastmonth.setDouble("disk", 0);
+        lastmonth.setDouble("cpu", lastMonth.getCpuCores());
+        lastmonth.setDouble("mem", lastMonth.getMemoryGb());
+        lastmonth.setDouble("disk", lastMonth.getDiskGb());
 
+
+        Map<ApplicationId, List<ResourceSnapshot>> history = meteringInfo.getSnapshotHistory();
         Cursor details = root.setObject("details");
 
         Cursor detailsCpu = details.setObject("cpu");
-        Cursor detailsCpuDummyApp = detailsCpu.setObject("dummy");
-        Cursor detailsCpuDummyData = detailsCpuDummyApp.setArray("data");
-
-        // The data array should be filled with objects like: { unixms: <number>, valur: <number }
-
         Cursor detailsMem = details.setObject("mem");
-        Cursor detailsMemDummyApp = detailsMem.setObject("dummy");
-        Cursor detailsMemDummyData = detailsMemDummyApp.setArray("data");
-
         Cursor detailsDisk = details.setObject("disk");
-        Cursor detailsDiskDummyApp = detailsDisk.setObject("dummy");
-        Cursor detailsDiskDummyData = detailsDiskDummyApp.setArray("data");
 
+        history.entrySet().stream()
+                .forEach(entry -> {
+                    String instanceName = entry.getKey().instance().value();
+                    Cursor detailsCpuApp = detailsCpu.setObject(instanceName);
+                    Cursor detailsMemApp = detailsMem.setObject(instanceName);
+                    Cursor detailsDiskApp = detailsDisk.setObject(instanceName);
+                    Cursor detailsCpuData = detailsCpuApp.setArray("data");
+                    Cursor detailsMemData = detailsMemApp.setArray("data");
+                    Cursor detailsDiskData = detailsDiskApp.setArray("data");
+                    entry.getValue().stream()
+                            .forEach(resourceSnapshot -> {
+
+                                Cursor cpu = detailsCpuData.addObject();
+                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                                cpu.setDouble("value", resourceSnapshot.getCpuCores());
+
+                                Cursor mem = detailsMemData.addObject();
+                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                                cpu.setDouble("value", resourceSnapshot.getMemoryGb());
+
+                                Cursor disk = detailsDiskData.addObject();
+                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                                cpu.setDouble("value", resourceSnapshot.getDiskGb());
+
+                            });
+
+                });
 
         return new SlimeJsonResponse(slime);
     }

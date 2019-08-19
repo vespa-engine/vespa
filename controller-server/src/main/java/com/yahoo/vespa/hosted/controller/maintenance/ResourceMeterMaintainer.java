@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwne
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Creates a ResourceSnapshot per application, which is then passed on to a ResourceSnapshotConsumer
+ * Creates a ResourceSnapshot per application, which is then passed on to a MeteringClient
  *
  * @author olaa
  */
@@ -29,7 +29,7 @@ public class ResourceMeterMaintainer extends Maintainer {
     private final Clock clock;
     private final Metric metric;
     private final NodeRepository nodeRepository;
-    private final ResourceSnapshotConsumer resourceSnapshotConsumer;
+    private final MeteringClient meteringClient;
 
     private static final String METERING_LAST_REPORTED = "metering_last_reported";
     private static final String METERING_TOTAL_REPORTED = "metering_total_reported";
@@ -41,12 +41,12 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    NodeRepository nodeRepository,
                                    Clock clock,
                                    Metric metric,
-                                   ResourceSnapshotConsumer resourceSnapshotConsumer) {
+                                   MeteringClient meteringClient) {
         super(controller, interval, jobControl, null, SystemName.all());
         this.clock = clock;
         this.nodeRepository = nodeRepository;
         this.metric = metric;
-        this.resourceSnapshotConsumer = resourceSnapshotConsumer;
+        this.meteringClient = meteringClient;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class ResourceMeterMaintainer extends Maintainer {
         List<NodeRepositoryNode> nodes = getNodes();
         List<ResourceSnapshot> resourceSnapshots = getResourceSnapshots(nodes);
 
-        resourceSnapshotConsumer.consume(resourceSnapshots);
+        meteringClient.consume(resourceSnapshots);
 
         metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
         metric.set(METERING_TOTAL_REPORTED, resourceSnapshots.stream()

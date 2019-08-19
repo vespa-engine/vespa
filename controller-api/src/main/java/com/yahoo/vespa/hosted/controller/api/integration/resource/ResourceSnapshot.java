@@ -15,16 +15,12 @@ import java.util.stream.Collectors;
 public class ResourceSnapshot {
 
     private final ApplicationId applicationId;
-    private final double cpuCores;
-    private final double memoryGb;
-    private final double diskGb;
+    private final ResourceAllocation resourceAllocation;
     private final Instant timestamp;
 
     public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, Instant timestamp) {
         this.applicationId = applicationId;
-        this.cpuCores = cpuCores;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
+        resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb);
         this.timestamp = timestamp;
     }
 
@@ -49,15 +45,15 @@ public class ResourceSnapshot {
     }
 
     public double getCpuCores() {
-        return cpuCores;
+        return resourceAllocation.getCpuCores();
     }
 
     public double getMemoryGb() {
-        return memoryGb;
+        return resourceAllocation.getMemoryGb();
     }
 
     public double getDiskGb() {
-        return diskGb;
+        return resourceAllocation.getDiskGb();
     }
 
     public Instant getTimestamp() {
