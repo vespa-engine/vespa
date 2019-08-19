@@ -30,7 +30,7 @@ public class AllocatedHostsSerializerTest {
 
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
-        NodeFlavors configuredFlavors = configuredFlavorsFrom("C/12/45/100", 12, 45, 100, Flavor.Type.BARE_METAL);
+        NodeFlavors configuredFlavors = configuredFlavorsFrom("C/12/45/100", 12, 45, 100, 50, Flavor.Type.BARE_METAL);
 
         Set<HostSpec> hosts = new LinkedHashSet<>();
         hosts.add(new HostSpec("empty",
@@ -77,13 +77,14 @@ public class AllocatedHostsSerializerTest {
         throw new IllegalArgumentException("No host " + hostname + " is present");
     }
 
-    private NodeFlavors configuredFlavorsFrom(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
+    private NodeFlavors configuredFlavorsFrom(String flavorName, double cpu, double mem, double disk, double bandwidth, Flavor.Type type) {
         FlavorsConfig.Builder b = new FlavorsConfig.Builder();
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
         flavor.minCpuCores(cpu);
         flavor.minMainMemoryAvailableGb(mem);
+        flavor.bandwidth(bandwidth);
         flavor.environment(type.name());
         b.flavor(flavor);
         return new NodeFlavors(b.build());
