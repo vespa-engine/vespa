@@ -8,6 +8,7 @@
 #include "unique_store_entry.h"
 #include "i_compactable.h"
 #include <cassert>
+#include <string>
 
 namespace search::datastore {
 
