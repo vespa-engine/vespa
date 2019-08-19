@@ -326,15 +326,12 @@ DocumentId docId0;
 DocumentId docId1("id:type1:type1::1");
 DocumentId docId2("id:type2:type2::1");
 DocumentId docId3("id:type3:type3::1");
-DocumentId old_docId("doc:old:id-scheme"); 
 Document::SP doc1(createDoc(type1, docId1));
 Document::SP doc2(createDoc(type2, docId2));
 Document::SP doc3(createDoc(type3, docId3));
-Document::SP old_doc(createDoc(type1, old_docId));
 document::DocumentUpdate::SP upd1(createUpd(type1, docId1));
 document::DocumentUpdate::SP upd2(createUpd(type2, docId2));
 document::DocumentUpdate::SP upd3(createUpd(type3, docId3));
-document::DocumentUpdate::SP old_upd(createUpd(type1, old_docId));
 document::DocumentUpdate::SP bad_id_upd(createUpd(type1, docId2));
 PartitionId partId(0);
 BucketId bckId1(1);
@@ -474,14 +471,6 @@ TEST_F("require that puts are routed to handler", SimpleFixture)
 }
 
 
-TEST_F("require that puts with old id scheme are rejected", SimpleFixture) {
-    storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
-                 f.engine.put(bucket1, tstamp1, old_doc, context));
-}
-
-
 TEST_F("require that put is rejected if resource limit is reached", SimpleFixture)
 {
     f._writeFilter._acceptWriteOperation = false;
@@ -491,8 +480,8 @@ TEST_F("require that put is rejected if resource limit is reached", SimpleFixtur
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     EXPECT_EQUAL(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,
-                   "Put operation rejected for document 'doc:old:id-scheme': 'Disk is full'"),
-            f.engine.put(bucket1, tstamp1, old_doc, context));
+                   "Put operation rejected for document 'id:type3:type3::1': 'Disk is full'"),
+            f.engine.put(bucket1, tstamp1, doc3, context));
 }
 
 
@@ -514,16 +503,6 @@ TEST_F("require that updates are routed to handler", SimpleFixture)
 
     EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
                  f.engine.update(bucket1, tstamp1, upd3, context));
-}
-
-
-TEST_F("require that updates with old id scheme are rejected", SimpleFixture)
-{
-    storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-
-    EXPECT_EQUAL(UpdateResult(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
-                 f.engine.update(bucket1, tstamp1, old_upd, context));
 }
 
 TEST_F("require that updates with bad ids are rejected", SimpleFixture)
@@ -582,16 +561,6 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
     assertHandler(bucket1, tstamp1, docId2, f.hset.handler2);
     EXPECT_FALSE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
-}
-
-
-TEST_F("require that removes with old id scheme are rejected", SimpleFixture)
-{
-    storage::spi::LoadType loadType(0, "default");
-    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-
-    EXPECT_EQUAL(RemoveResult(Result::ErrorType::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
-                 f.engine.remove(bucket1, tstamp1, old_docId, context));
 }
 
 TEST_F("require that remove is NOT rejected if resource limit is reached", SimpleFixture)

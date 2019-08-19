@@ -40,7 +40,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
                                   FileSpec("../config-doctypes.cfg"))));
         createLinks();
 
-        docId = document::DocumentId(document::DocIdString("test", "uri"));
+        docId = document::DocumentId("id:ns:text/html::uri");
         bucketId = getExternalOperationHandler().getBucketId(docId);
     };
 
@@ -133,7 +133,7 @@ TEST_F(GetOperationTest, simple) {
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
-    EXPECT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    EXPECT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -149,7 +149,7 @@ TEST_F(GetOperationTest, ask_trusted_node_if_bucket_is_inconsistent) {
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
-    EXPECT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    EXPECT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -166,7 +166,7 @@ TEST_F(GetOperationTest, ask_all_nodes_if_bucket_is_inconsistent) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "oldauthor", 1));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -185,7 +185,7 @@ TEST_F(GetOperationTest, send_to_all_invalid_copies) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "oldauthor", 1));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -207,7 +207,7 @@ TEST_F(GetOperationTest, send_to_all_invalid_nodes_when_inconsistent) {
     ASSERT_NO_FATAL_FAILURE(sendReply(2, api::ReturnCode::OK, "oldauthor", 1));
     ASSERT_NO_FATAL_FAILURE(sendReply(3, api::ReturnCode::OK, "oldauthor", 1));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -217,8 +217,8 @@ TEST_F(GetOperationTest, send_to_all_invalid_nodes_when_inconsistent) {
 TEST_F(GetOperationTest, inconsistent_split) {
     setClusterState("distributor:1 storage:4");
 
-    addNodesToBucketDB(document::BucketId(16, 0x2a52), "0=100");
-    addNodesToBucketDB(document::BucketId(17, 0x2a52), "1=200");
+    addNodesToBucketDB(document::BucketId(16, 0x0593), "0=100");
+    addNodesToBucketDB(document::BucketId(17, 0x0593), "1=200");
 
     sendGet();
 
@@ -227,7 +227,7 @@ TEST_F(GetOperationTest, inconsistent_split) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "oldauthor", 1));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -246,7 +246,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_not_found) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "", 0));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -265,7 +265,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_not_found_deleted) {
     // at timestamp 3.
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "", 3));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 3) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -282,7 +282,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "oldauthor", 1));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 2) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -301,12 +301,12 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_fail) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 1));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::DISK_FAILURE, "", 0));
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 3",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 3",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -316,7 +316,7 @@ TEST_F(GetOperationTest, return_not_found_when_bucket_not_in_db) {
 
     sendGet();
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 0) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -328,12 +328,12 @@ TEST_F(GetOperationTest, not_found) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 0",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 0",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithNotFound());
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 0) ReturnCode(NONE)",
               _sender.getLastReply());
 
@@ -350,17 +350,17 @@ TEST_F(GetOperationTest, resend_on_storage_failure) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 1",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 2",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -374,17 +374,17 @@ TEST_F(GetOperationTest, resend_on_storage_failure_all_fail) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 1",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 2",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 0) ReturnCode(IO_FAILURE)",
               _sender.getLastReply());
 }
@@ -397,12 +397,12 @@ TEST_F(GetOperationTest, send_to_ideal_copy_if_bucket_in_sync) {
     sendGet();
 
     // Should always send to node 1 (follow bucket db order)
-    ASSERT_EQ("Get(BucketId(0x4000000000002a52), doc:test:uri) => 1",
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
               _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 100) ReturnCode(NONE)",
               _sender.getLastReply());
 }
@@ -412,7 +412,7 @@ TEST_F(GetOperationTest, multiple_copies_with_failure_on_local_node) {
 
     // Node 0 is local copy to distributor 0 and will be preferred when
     // sending initially.
-    addNodesToBucketDB(document::BucketId(16, 0x2a52), "2=100,0=100");
+    addNodesToBucketDB(document::BucketId(16, 0x0593), "2=100,0=100");
 
     sendGet();
 
@@ -427,7 +427,7 @@ TEST_F(GetOperationTest, multiple_copies_with_failure_on_local_node) {
 
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "newestauthor", 3));
 
-    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), doc:test:uri, "
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
               "timestamp 3) ReturnCode(NONE)",
               _sender.getLastReply());
 

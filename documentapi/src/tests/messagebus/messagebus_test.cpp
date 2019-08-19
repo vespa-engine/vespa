@@ -51,8 +51,8 @@ Test::Main()
     TEST_DONE();
 }
 
-Test::Test() {}
-Test::~Test() {}
+Test::Test() = default;
+Test::~Test() = default;
 
 void Test::testMessage() {
     const document::DataType *testdoc_type = _repo->getDocumentType("testdoc");
@@ -61,8 +61,7 @@ void Test::testMessage() {
     UpdateDocumentMessage upd1(
             document::DocumentUpdate::SP(
                     new document::DocumentUpdate(*_repo, *testdoc_type,
-                            document::DocumentId(document::DocIdString(
-                                            "testdoc", "testme1")))));
+                            document::DocumentId("id:ns:testdoc::testme1"))));
 
     EXPECT_TRUE(upd1.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
     EXPECT_TRUE(upd1.getProtocol() == "document");
@@ -82,8 +81,7 @@ void Test::testMessage() {
     UpdateDocumentMessage upd2(
             document::DocumentUpdate::SP(
                     new document::DocumentUpdate(*_repo, *testdoc_type,
-                            document::DocumentId(document::DocIdString(
-                                            "testdoc", "testme2")))));
+                            document::DocumentId("id:ns:testdoc::testme2"))));
     EXPECT_TRUE(!(upd1.getDocumentUpdate().getId() == upd2.getDocumentUpdate().getId()));
 
     DocumentMessage& msg2 = static_cast<DocumentMessage&>(upd2);

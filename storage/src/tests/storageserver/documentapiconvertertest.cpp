@@ -22,7 +22,6 @@ using document::Bucket;
 using document::BucketId;
 using document::BucketSpace;
 using document::DataType;
-using document::DocIdString;
 using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
@@ -124,7 +123,7 @@ TEST_F(DocumentApiConverterTest, put) {
 }
 
 TEST_F(DocumentApiConverterTest, forwarded_put) {
-    auto doc = std::make_shared<Document>(_html_type, DocumentId(DocIdString("test", "test")));
+    auto doc = std::make_shared<Document>(_html_type, DocumentId("id:ns:" + _html_type.getName() + "::test"));
 
     auto putmsg = std::make_unique<documentapi::PutDocumentMessage>(doc);
     auto* putmsg_raw = putmsg.get();
