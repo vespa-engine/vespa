@@ -39,7 +39,7 @@ public class TestDriver {
         ContainerBuilder builder = driver.newContainerBuilder();
         JettyHttpServer server = builder.getInstance(serverClass);
         builder.serverProviders().install(server);
-        builder.serverBindings().bind("*://*/*", requestHandler);
+        builder.serverBindings().bind("http://*/*", requestHandler);
         driver.activateContainer(builder);
         server.start();
 

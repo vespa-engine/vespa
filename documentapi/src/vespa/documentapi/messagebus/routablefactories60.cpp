@@ -95,7 +95,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doDecode(document::ByteBuffer 
     msg->setVisitInconsistentBuckets(decodeBoolean(buf));
     msg->getParameters().deserialize(_repo, buf);
     msg->setVisitorDispatcherVersion(50);
-    msg->setVisitorOrdering((document::OrderingSpecification::Order)decodeInt(buf));
+    decodeInt(buf); // Unused legacy visitor ordering
     msg->setMaxBucketsPerVisitor(decodeInt(buf));
     msg->setBucketSpace(decodeBucketSpace(buf));
 
@@ -131,7 +131,7 @@ RoutableFactories60::CreateVisitorMessageFactory::doEncode(const DocumentMessage
     document::ByteBuffer dbuf(tmp, len);
     msg.getParameters().serialize(dbuf);
 
-    buf.putInt(msg.getVisitorOrdering());
+    buf.putInt(0); // Unused legacy visitor ordering
     buf.putInt(msg.getMaxBucketsPerVisitor());
     return encodeBucketSpace(msg.getBucketSpace(), buf);
 }

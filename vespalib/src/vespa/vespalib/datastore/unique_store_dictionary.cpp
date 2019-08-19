@@ -66,16 +66,13 @@ UniqueStoreDictionary::find(const EntryComparator &comp)
     }
 }
 
-bool
+void
 UniqueStoreDictionary::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
     auto itr = _dict.lowerBound(ref, comp);
-    if (itr.valid() && itr.getKey() == ref) {
-        _dict.remove(itr);
-        return true;
-    }
-    return false;
+    assert(itr.valid() && itr.getKey() == ref);
+    _dict.remove(itr);
 }
 
 void

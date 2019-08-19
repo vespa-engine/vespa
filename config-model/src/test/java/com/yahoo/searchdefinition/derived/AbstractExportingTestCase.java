@@ -11,7 +11,8 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Superclass of tests needing file comparisons
@@ -20,10 +21,10 @@ import java.io.*;
  */
 public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase {
 
-    static final String tempDir = "temp/";
-    static final String searchDefRoot = "src/test/derived/";
+    private static final String tempDir = "temp/";
+    private static final String searchDefRoot = "src/test/derived/";
 
-    protected DerivedConfiguration derive(String dirName, String searchDefinitionName) throws IOException, ParseException {
+    private DerivedConfiguration derive(String dirName, String searchDefinitionName) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
         deleteContent(toDir);
@@ -40,7 +41,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         return export(dirName, builder, config);
     }
 
-    protected DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
+    DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
@@ -103,7 +104,7 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
      * @param name the local name of the directory containing the files to check
      * @throws IOException If file access failed.
      */
-    protected void assertCorrectConfigFiles(String name) throws IOException {
+    void assertCorrectConfigFiles(String name) throws IOException {
         File[] files = new File(searchDefRoot, name).listFiles();
         if (files == null) return;
         for (File file : files) {
@@ -112,12 +113,12 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         }
     }
 
-    public static void assertEqualFiles(String correctFileName, String checkFileName) throws IOException {
+    static void assertEqualFiles(String correctFileName, String checkFileName) throws IOException {
         // Set updateOnAssert to true if you want update the files with correct answer.
         assertConfigFiles(correctFileName, checkFileName, false);
     }
 
-    protected void deleteContent(File dir) {
+    void deleteContent(File dir) {
         File[] files = dir.listFiles();
         if (files == null) return;
 

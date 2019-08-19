@@ -7,21 +7,20 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -45,7 +44,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
@@ -355,15 +353,15 @@ public class ApplicationSerializer {
         DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Change deploying = changeFromSlime(root.field(deployingField));
         Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
-        Optional<IssueId> ownershipIssueId = optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
-        Optional<User> owner = optionalString(root.field(ownerField)).map(User::from);
-        OptionalInt majorVersion = optionalInteger(root.field(majorVersionField));
+        Optional<IssueId> ownershipIssueId = Serializers.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
+        Optional<User> owner = Serializers.optionalString(root.field(ownerField)).map(User::from);
+        OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        Optional<String> pemDeployKey = optionalString(root.field(pemDeployKeyField));
+        Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
-        Optional<ApplicationCertificate> applicationCertificate = optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
+        Optional<ApplicationCertificate> applicationCertificate = Serializers.optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
@@ -384,10 +382,10 @@ public class ApplicationSerializer {
                               clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
-                              DeploymentActivity.create(optionalInstant(deploymentObject.field(lastQueriedField)),
-                                                        optionalInstant(deploymentObject.field(lastWrittenField)),
-                                                        optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
-                                                        optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
+                              DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
+                                                        Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
+                                                        Serializers.optionalDouble(deploymentObject.field(lastQueriesPerSecondField)),
+                                                        Serializers.optionalDouble(deploymentObject.field(lastWritesPerSecondField))));
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
@@ -463,14 +461,14 @@ public class ApplicationSerializer {
 
     private ApplicationVersion applicationVersionFromSlime(Inspector object) {
         if ( ! object.valid()) return ApplicationVersion.unknown;
-        OptionalLong applicationBuildNumber = optionalLong(object.field(applicationBuildNumberField));
+        OptionalLong applicationBuildNumber = Serializers.optionalLong(object.field(applicationBuildNumberField));
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         if (sourceRevision.isEmpty() || applicationBuildNumber.isEmpty()) {
             return ApplicationVersion.unknown;
         }
-        Optional<String> authorEmail = optionalString(object.field(authorEmailField));
-        Optional<Version> compileVersion = optionalString(object.field(compileVersionField)).map(Version::fromString);
-        Optional<Instant> buildTime = optionalInstant(object.field(buildTimeField));
+        Optional<String> authorEmail = Serializers.optionalString(object.field(authorEmailField));
+        Optional<Version> compileVersion = Serializers.optionalString(object.field(compileVersionField)).map(Version::fromString);
+        Optional<Instant> buildTime = Serializers.optionalInstant(object.field(buildTimeField));
 
         if (authorEmail.isEmpty())
             return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
@@ -490,9 +488,9 @@ public class ApplicationSerializer {
     }
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        OptionalLong projectId = optionalLong(object.field(projectIdField));
+        OptionalLong projectId = Serializers.optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
-        Optional<IssueId> issueId = optionalString(object.field(issueIdField)).map(IssueId::from);
+        Optional<IssueId> issueId = Serializers.optionalString(object.field(issueIdField)).map(IssueId::from);
         boolean builtInternally = object.field(builtInternallyField).asBool();
 
         return new DeploymentJobs(projectId, jobStatusList, issueId, builtInternally);
@@ -533,7 +531,7 @@ public class ApplicationSerializer {
                                          jobRunFromSlime(object.field(lastCompletedField)),
                                          jobRunFromSlime(object.field(firstFailingField)),
                                          jobRunFromSlime(object.field(lastSuccessField)),
-                                         optionalLong(object.field(pausedUntilField))));
+                                         Serializers.optionalLong(object.field(pausedUntilField))));
     }
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
@@ -541,7 +539,7 @@ public class ApplicationSerializer {
         return Optional.of(new JobStatus.JobRun(object.field(jobRunIdField).asLong(),
                                                 new Version(object.field(versionField).asString()),
                                                 applicationVersionFromSlime(object.field(revisionField)),
-                                                optionalString(object.field(sourceVersionField)).map(Version::fromString),
+                                                Serializers.optionalString(object.field(sourceVersionField)).map(Version::fromString),
                                                 Optional.of(object.field(sourceApplicationField)).filter(Inspector::valid).map(this::applicationVersionFromSlime),
                                                 object.field(reasonField).asString(),
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
@@ -562,27 +560,6 @@ public class ApplicationSerializer {
         });
 
         return List.copyOf(assignedRotations.values());
-    }
-
-    private OptionalLong optionalLong(Inspector field) {
-        return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
-    }
-
-    private OptionalInt optionalInteger(Inspector field) {
-        return field.valid() ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
-    }
-
-    private OptionalDouble optionalDouble(Inspector field) {
-        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
-    }
-
-    private Optional<String> optionalString(Inspector field) {
-        return SlimeUtils.optionalString(field);
-    }
-
-    private Optional<Instant> optionalInstant(Inspector field) {
-        OptionalLong value = optionalLong(field);
-        return value.isPresent() ? Optional.of(Instant.ofEpochMilli(value.getAsLong())) : Optional.empty();
     }
 
 }

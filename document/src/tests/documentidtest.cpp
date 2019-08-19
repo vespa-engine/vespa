@@ -26,12 +26,6 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
         writeGlobalIdBucketId(ost, "doc:ns:specific");
         writeGlobalIdBucketId(ost, "doc:another:specific");
         writeGlobalIdBucketId(ost, "doc:ns:another");
-        writeGlobalIdBucketId(ost, "userdoc:ns:100:specific");
-        writeGlobalIdBucketId(ost, "userdoc:np:100:another");
-        writeGlobalIdBucketId(ost, "userdoc:ns:101:specific");
-        writeGlobalIdBucketId(ost, "groupdoc:ns:agroup:specific");
-        writeGlobalIdBucketId(ost, "groupdoc:np:agroup:another");
-        writeGlobalIdBucketId(ost, "groupdoc:ns:another:specific");
         for (uint32_t i=0; i<20; ++i) {
             std::ostringstream ost2;
             ost2 << i;
@@ -120,8 +114,7 @@ TEST(DocumentIdTest, testDocGlobalId)
     DocumentId did(id);
 
     unsigned char key[16];
-    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()),
-                 id.size(), key);
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);
 
     EXPECT_EQ(GlobalId(key), did.getGlobalId());
 }
@@ -130,10 +123,10 @@ TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)
 {
     EXPECT_EQ(
             DocumentId("id::foo:g=zoid:bar").getScheme().getLocation(),
-            GroupDocIdString::locationFromGroupName("zoid"));
+            IdString::makeLocation("zoid"));
     EXPECT_EQ(
             DocumentId("id::bar:g=doink:baz").getScheme().getLocation(),
-            GroupDocIdString::locationFromGroupName("doink"));
+            IdString::makeLocation("doink"));
 }
 
 } // document

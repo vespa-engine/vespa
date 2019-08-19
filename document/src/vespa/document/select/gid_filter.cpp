@@ -122,8 +122,7 @@ private:
     uint32_t location_from_string_literal_node(
             const StringValueNode& node) const
     {
-        auto full_location = GroupDocIdString::locationFromGroupName(
-                node.getValue());
+        auto full_location = IdString::makeLocation(node.getValue());
         return truncate_location(full_location);
     }
 

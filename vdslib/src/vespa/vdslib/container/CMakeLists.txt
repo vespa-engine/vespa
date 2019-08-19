@@ -6,6 +6,5 @@ vespa_add_library(vdslib_container OBJECT
     searchresult.cpp
     documentsummary.cpp
     visitorstatistics.cpp
-    visitorordering.cpp
     DEPENDS
 )

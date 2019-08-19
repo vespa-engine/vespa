@@ -40,7 +40,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
     private void addLogHandler() {
         Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
-        logHandler.addServerBindings("*://*/logs");
+        logHandler.addServerBindings("http://*/logs");
         addComponent(logHandler);
     }
 

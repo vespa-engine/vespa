@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 public class MergeTestCase {
 
     private GlobalId createGlobalId(int docId) {
-        return new GlobalId((new DocumentId("doc:test:" + docId)).getGlobalId());
+        return new GlobalId((new DocumentId("id:test:type::" + docId)).getGlobalId());
     }
 
     // Test merging of hits.

@@ -43,9 +43,9 @@ public class FailingPermanentlyDocumentProcessingTestCase {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);
-        DocumentPut put1 = new DocumentPut(type, new DocumentId("doc:permanentfailure:test:1"));
-        DocumentPut put2 = new DocumentPut(type, new DocumentId("doc:permanentfailure:test:2"));
-        DocumentPut put3 = new DocumentPut(type, new DocumentId("doc:permanentfailure:test:3"));
+        DocumentPut put1 = new DocumentPut(type, new DocumentId("id:permanentfailure:test::1"));
+        DocumentPut put2 = new DocumentPut(type, new DocumentId("id:permanentfailure:test::2"));
+        DocumentPut put3 = new DocumentPut(type, new DocumentId("id:permanentfailure:test::3"));
 
         // Process them
         service.process(put1);
@@ -93,7 +93,7 @@ public class FailingPermanentlyDocumentProcessingTestCase {
         public Progress process(Processing processing) {
             super.process(processing);
             for (DocumentOperation op : processing.getDocumentOperations()) {
-                if (op.getId().toString().equals("doc:permanentfailure:test:2")) {
+                if (op.getId().toString().equals("id:permanentfailure:test::2")) {
                     return DocumentProcessor.Progress.PERMANENT_FAILURE;
                 }
             }

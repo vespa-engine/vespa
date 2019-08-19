@@ -32,10 +32,10 @@ import static org.mockito.Mockito.when;
 public class OperationProcessorTest {
 
     final Queue<Result> queue = new ArrayDeque<>();
-    final Document doc1 = new Document("doc:a:b", null, "data doc 1", null);
-    final Document doc1b = new Document("doc:a:b", null, "data doc 1b", null);
-    final Document doc2 = new Document("doc:a:b2", null, "data doc 2", null);
-    final Document doc3 = new Document("doc:a:b3", null, "data doc 3", null);
+    final Document doc1 = new Document("id:a:type::b", null, "data doc 1", null);
+    final Document doc1b = new Document("id:a:type::b", null, "data doc 1b", null);
+    final Document doc2 = new Document("id:a:type::b2", null, "data doc 2", null);
+    final Document doc3 = new Document("id:a:type::b3", null, "data doc 3", null);
 
     @Test
     public void testBasic() {
@@ -76,7 +76,7 @@ public class OperationProcessorTest {
 
         //check a, b, c, d
         Result aggregated = queue.poll();
-        assertThat(aggregated.getDocumentId(), equalTo("doc:a:b"));
+        assertThat(aggregated.getDocumentId(), equalTo("id:a:type::b"));
         assertThat(aggregated.getDetails().size(), is(4));
         assertThat(aggregated.getDetails().get(0).getEndpoint().getHostname(), equalTo("a"));
         assertThat(aggregated.getDetails().get(1).getEndpoint().getHostname(), equalTo("b"));
@@ -107,7 +107,7 @@ public class OperationProcessorTest {
 
         //check a, b, c, d
         aggregated = queue.poll();
-        assertThat(aggregated.getDocumentId(), equalTo("doc:a:b2"));
+        assertThat(aggregated.getDocumentId(), equalTo("id:a:type::b2"));
         assertThat(aggregated.getDetails().size(), is(4));
         assertThat(aggregated.getDetails().get(0).getEndpoint().getHostname(), equalTo("a"));
         assertThat(aggregated.getDetails().get(1).getEndpoint().getHostname(), equalTo("b"));
@@ -203,7 +203,7 @@ public class OperationProcessorTest {
 
         Queue<Document> documentQueue = new ArrayDeque<>();
         for (int x = 0; x < 100; x++) {
-            Document document = new Document("doc:a:b", null, String.valueOf(x), null);
+            Document document = new Document("id:a:type::b", null, String.valueOf(x), null);
             operationProcessor.sendDocument(document);
             documentQueue.add(document);
         }

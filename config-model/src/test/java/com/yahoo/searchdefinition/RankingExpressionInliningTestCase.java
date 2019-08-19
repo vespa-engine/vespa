@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testFunctionInliningPreserveArithemticOrdering() throws ParseException {
+    public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(

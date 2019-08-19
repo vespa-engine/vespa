@@ -183,7 +183,7 @@ public class DocumentGenPluginTest {
 
     @Test
     public void testSetString() {
-        Book book = new Book(new DocumentId("doc:book:0"));
+        Book book = new Book(new DocumentId("id:book:book::0"));
         book.setFieldValue("author", "Herman Melville");
         assertNotEquals(null, book.authorSpanTrees());
     }
@@ -467,10 +467,10 @@ public class DocumentGenPluginTest {
         DocumentType somethingElse = new DocumentType("somethingElse");
         bookGeneric.addField("author", DataType.STRING);
         bookGeneric.addField("title", DataType.STRING);
-        Document genBook = new Document(bookGeneric, new DocumentId("doc:book:0"));
+        Document genBook = new Document(bookGeneric, new DocumentId("id:book:book::0"));
         genBook.setFieldValue("author", new StringFieldValue("Melville"));
         genBook.setFieldValue("title", new StringFieldValue("Moby Dick"));
-        Document notBook = new Document(somethingElse, new DocumentId("doc:notbook:0"));
+        Document notBook = new Document(somethingElse, new DocumentId("id:notbook:somethingElse::0"));
 
         assertNull(pack(notBook));
         Book book = pack(genBook);
@@ -551,7 +551,7 @@ public class DocumentGenPluginTest {
     }
 
     private Book newBookConcrete(int i) {
-        Book book = new Book(new DocumentId("doc:book:"+i));
+        Book book = new Book(new DocumentId("id:book:book::"+i));
         book.setAuthor("Melville");
         Date date = new Date().setExacttime(99l);
         book.setTitleSpanTrees(new HashMap<String, SpanTree>());
@@ -579,7 +579,7 @@ public class DocumentGenPluginTest {
     }
 
     private Document newBookGeneric(DocumentType bookT, int i, DocumentTypeManager mgr) {
-        Document bookGeneric = new Document(bookT, new DocumentId("doc:book:"+i));
+        Document bookGeneric = new Document(bookT, new DocumentId("id:book:book::"+i));
         bookGeneric.setFieldValue("author", new StringFieldValue("Melville"));
         StringFieldValue title = new StringFieldValue("Moby Dick");
         SpanTree titleTree = new SpanTree();
@@ -629,7 +629,7 @@ public class DocumentGenPluginTest {
     public void testPackComplex() {
         final DocumentTypeManager mgr = typeManagerForBookType();
         DocumentType bookT = mgr.getDocumentType("book");
-        Document bookGeneric = new Document(bookT, new DocumentId("doc:book:0"));
+        Document bookGeneric = new Document(bookT, new DocumentId("id:book:book::0"));
         bookGeneric.setFieldValue("author", new StringFieldValue("Melville"));
         StringFieldValue title = new StringFieldValue("Moby Dick");
         SpanTree titleTree = new SpanTree();
@@ -709,7 +709,7 @@ public class DocumentGenPluginTest {
 
     @Test
     public void testFactory() {
-        Book b = (Book) ConcreteDocumentFactory.getDocument("book", new DocumentId("doc:book:10"));
+        Book b = (Book) ConcreteDocumentFactory.getDocument("book", new DocumentId("id:book:book::10"));
         b.setAuthor("Per Ulv");
         final Date d = (Date) ConcreteDocumentFactory.getAnnotation("date");
         d.setExacttime(79l);
@@ -765,7 +765,7 @@ public class DocumentGenPluginTest {
     }
 
     private Music getMusicBasic() {
-        Music music = new Music(new DocumentId("doc:music:0"));
+        Music music = new Music(new DocumentId("id:music:music::0"));
         music.setArtist("Astroburger");
         music.setDisp_song("disp");
         music.setSong("Calling the sun");
@@ -776,7 +776,7 @@ public class DocumentGenPluginTest {
     }
 
     private Book getBook() {
-        Book book = new Book(new DocumentId("doc:book:0"));
+        Book book = new Book(new DocumentId("id:book:book::0"));
         book.setAuthor("Herman Melville");
         book.setTitle("Moby Dick - Or The Whale");
         book.setIsbn("234-33");
@@ -974,8 +974,8 @@ public class DocumentGenPluginTest {
     
     @Test
     public void testHashCode() {
-        Book book1 = new Book(new DocumentId("doc:book:0"));
-        Book book2 = new Book(new DocumentId("doc:book:0"));
+        Book book1 = new Book(new DocumentId("id:book:book::0"));
+        Book book2 = new Book(new DocumentId("id:book:book::0"));
         assertNull(book1.getAuthor());
         assertEquals(book1.hashCode(), book2.hashCode());
         book2.setAuthor("Bill");
@@ -985,7 +985,7 @@ public class DocumentGenPluginTest {
     
     @Test
     public void testFunnyDocName() {
-        com.yahoo.vespa.documentgen.test.Class c = new com.yahoo.vespa.documentgen.test.Class(new DocumentId("doc:class:0"));
+        com.yahoo.vespa.documentgen.test.Class c = new com.yahoo.vespa.documentgen.test.Class(new DocumentId("id:class:class::0"));
         c.setClassf("foo");
     }
 
@@ -999,7 +999,7 @@ public class DocumentGenPluginTest {
 
     @Test
     public void testTensorType() {
-        Book book = new Book(new DocumentId("doc:book:0"));
+        Book book = new Book(new DocumentId("id:book:book::0"));
         assertNull(book.getVector());
         book.setVector(Tensor.from("{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}"));
         assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", book.getVector().toString());
@@ -1007,7 +1007,7 @@ public class DocumentGenPluginTest {
 
     @Test
     public void testPositionType() {
-        Music4 book = new Music4(new DocumentId("doc:music4:0"));
+        Music4 book = new Music4(new DocumentId("id:music4:music4::0"));
         book.setPos(new Music4.Position().setX(7).setY(8));
         assertEquals(new Music4.Position().setX(7).setY(8), book.getPos());
     }

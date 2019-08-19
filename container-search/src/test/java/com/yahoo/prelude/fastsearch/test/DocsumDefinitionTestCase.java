@@ -88,7 +88,7 @@ public class DocsumDefinitionTestCase {
     }
 
     public static GlobalId createGlobalId(int docId) {
-        return new GlobalId((new DocumentId("doc:test:" + docId)).getGlobalId());
+        return new GlobalId((new DocumentId("id:ns:type::" + docId)).getGlobalId());
     }
 
     public static byte[] makeDocsum() {

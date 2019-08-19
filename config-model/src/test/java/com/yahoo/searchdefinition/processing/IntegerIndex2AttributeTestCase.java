@@ -14,6 +14,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,18 +44,18 @@ public class IntegerIndex2AttributeTestCase extends SearchDefinitionTestCase {
 
         f = search.getConcreteField("i1");
         assertEquals(f.getAttributes().size(), 1);
-        assertTrue( ! f.existsIndex("i1"));
+        assertFalse(f.existsIndex("i1"));
 
         f = search.getConcreteField("i2");
         assertEquals(f.getAttributes().size(), 1);
-        assertTrue( ! f.existsIndex("i2"));
+        assertFalse(f.existsIndex("i2"));
 
         f = search.getConcreteField("ai1");
         assertEquals(search.getConcreteField("ai1").getAttributes().size(), 1);
-        assertTrue( ! search.getConcreteField("ai1").existsIndex("ai1"));
+        assertFalse(search.getConcreteField("ai1").existsIndex("ai1"));
         f = search.getConcreteField("ai2");
         assertEquals(f.getAttributes().size(), 1);
-        assertTrue( ! f.existsIndex("ai2"));
+        assertFalse(f.existsIndex("ai2"));
     }
 
 }

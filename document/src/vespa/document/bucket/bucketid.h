@@ -12,8 +12,7 @@
  *   - The 32 LSB bits are the location. This part may be overridden by
  *     document id schemes to create a first level sorting criteria.
  *   - The remaining 28 bits are GID bits (calculated from MD5), used to split
- *     up buckets with the same location bits. Orderdoc overrides some of these
- *     bits to represent a secondary order.
+ *     up buckets with the same location bits.
  *
  * Bucket identifiers are created by the bucket id factory, such that some
  * non-static state can be kept to optimize the generation.

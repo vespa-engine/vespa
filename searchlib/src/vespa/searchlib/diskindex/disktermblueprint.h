@@ -10,17 +10,17 @@ namespace search::diskindex {
 /**
  * Blueprint implementation for term searching in a disk index.
  **/
-class DiskTermBlueprint : public search::queryeval::SimpleLeafBlueprint
+class DiskTermBlueprint : public queryeval::SimpleLeafBlueprint
 {
 private:
-    search::queryeval::FieldSpecBase             _field;
-    const search::diskindex::DiskIndex        &  _diskIndex;
-    DiskIndex::LookupResult::UP                  _lookupRes;
-    bool                                         _useBitVector;
-    bool                                         _fetchPostingsDone;
-    bool                                         _hasEquivParent;
-    search::index::PostingListHandle::UP         _postingHandle;
-    search::BitVector::UP                        _bitVector;
+    queryeval::FieldSpecBase         _field;
+    const DiskIndex               &  _diskIndex;
+    DiskIndex::LookupResult::UP      _lookupRes;
+    bool                             _useBitVector;
+    bool                             _fetchPostingsDone;
+    bool                             _hasEquivParent;
+    index::PostingListHandle::UP     _postingHandle;
+    BitVector::UP                    _bitVector;
 
 public:
     /**
@@ -31,9 +31,9 @@ public:
      * @param lookupRes    the result after disk dictionary lookup.
      * @param useBitVector whether or not we should use bit vector.
      **/
-    DiskTermBlueprint(const search::queryeval::FieldSpecBase & field,
-                      const search::diskindex::DiskIndex & diskIndex,
-                      search::diskindex::DiskIndex::LookupResult::UP lookupRes,
+    DiskTermBlueprint(const queryeval::FieldSpecBase & field,
+                      const DiskIndex & diskIndex,
+                      DiskIndex::LookupResult::UP lookupRes,
                       bool useBitVector);
 
     // Inherit doc from Blueprint.

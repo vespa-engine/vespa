@@ -147,7 +147,7 @@ public:
         _extraUsedBytes += extraBytes;
     }
     void cleanHold(void *buffer, size_t offset, size_t numElems) {
-        _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraHoldBytes));
+        _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
     }
     void dropBuffer(void *&buffer);
     uint32_t getTypeId() const { return _typeId; }
@@ -176,6 +176,7 @@ public:
         assert(_holdElems >= value);
         _holdElems -= value;
     }
+    void incExtraUsedBytes(size_t value) { _extraUsedBytes += value; }
     void incExtraHoldBytes(size_t value) {
         _extraHoldBytes += value;
     }

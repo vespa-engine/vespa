@@ -27,9 +27,10 @@ public class Endpoint {
     private final boolean legacy;
     private final boolean directRouting;
     private final boolean tls;
+    private final boolean wildcard;
 
     private Endpoint(String name, ApplicationId application, ZoneId zone, SystemName system, Port port, boolean legacy,
-                     boolean directRouting) {
+                     boolean directRouting, boolean wildcard) {
         Objects.requireNonNull(name, "name must be non-null");
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(system, "system must be non-null");
@@ -39,6 +40,7 @@ public class Endpoint {
         this.legacy = legacy;
         this.directRouting = directRouting;
         this.tls = port.tls;
+        this.wildcard = wildcard;
     }
 
     /** Returns the URL used to access this */
@@ -48,7 +50,8 @@ public class Endpoint {
 
     /** Returns the DNS name of this */
     public String dnsName() {
-        return url.getHost();
+        // because getHost returns "null" for wildcard endpoints
+        return url.getAuthority().replaceAll(":.*", "");
     }
 
     /** Returns the scope of this */
@@ -72,6 +75,11 @@ public class Endpoint {
     /** Returns whether this endpoint supports TLS connections */
     public boolean tls() {
         return tls;
+    }
+
+    /** Returns whether this is a wildcard endpoint (used only in certificates) */
+    public boolean wildcard() {
+        return wildcard;
     }
 
     @Override
@@ -219,14 +227,15 @@ public class Endpoint {
         private Port port;
         private boolean legacy = false;
         private boolean directRouting = false;
+        private boolean wildcard = false;
 
         private EndpointBuilder(ApplicationId application) {
             this.application = application;
         }
 
-        /** Sets the cluster and zone target of this  */
+        /** Sets the cluster target for this */
         public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
-            if (endpointId != null) {
+            if (endpointId != null || wildcard) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.cluster = cluster;
@@ -234,12 +243,31 @@ public class Endpoint {
             return this;
         }
 
-        /** Sets the endpoint ID as defines in deployments.xml */
+        /** Sets the endpoint target ID for this (as defined in deployments.xml) */
         public EndpointBuilder named(EndpointId endpointId) {
-            if (cluster != null || zone != null) {
+            if (cluster != null || wildcard) {
                 throw new IllegalArgumentException("Cannot set multiple target types");
             }
             this.endpointId = endpointId;
+            return this;
+        }
+
+        /** Sets the global wildcard target for this */
+        public EndpointBuilder wildcard() {
+            if (endpointId != null || cluster != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
+            }
+            this.wildcard = true;
+            return this;
+        }
+
+        /** Sets the zone wildcard target for this */
+        public EndpointBuilder wildcard(ZoneId zone) {
+            if(endpointId != null || cluster != null) {
+                throw new IllegalArgumentException("Cannot set multiple target types");
+            }
+            this.zone = zone;
+            this.wildcard = true;
             return this;
         }
 
@@ -264,12 +292,14 @@ public class Endpoint {
         /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
             String name;
-            if (cluster != null && zone != null) {
-                name = cluster.value();
+            if (wildcard) {
+                name = "*";
             } else if (endpointId != null) {
                 name = endpointId.id();
+            } else if (cluster != null) {
+                name = cluster.value();
             } else {
-                throw new IllegalArgumentException("Must set either cluster or rotation target");
+                throw new IllegalArgumentException("Must set either cluster, rotation or wildcard target");
             }
             if (system.isPublic() && !directRouting) {
                 throw new IllegalArgumentException("Public system only supports direct routing endpoints");
@@ -277,9 +307,7 @@ public class Endpoint {
             if (directRouting && !port.isDefault()) {
                 throw new IllegalArgumentException("Direct routing endpoints only support default port");
             }
-            return new Endpoint(name, application, zone, system, port, legacy, directRouting);
+            return new Endpoint(name, application, zone, system, port, legacy, directRouting, wildcard);
         }
-
     }
-
 }

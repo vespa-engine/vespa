@@ -52,7 +52,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
     }
 
     private void get() throws InterruptedException {
-        GetDocumentMessage message = new GetDocumentMessage(new DocumentId("doc:this:is:a:test"), "fieldset?");
+        GetDocumentMessage message = new GetDocumentMessage(new DocumentId("id:this:baz::is:a:test"), "fieldset?");
 
         assertTrue(sendMessage(FOOBAR, message));
 
@@ -69,7 +69,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
 
 
     private void put() throws InterruptedException {
-        Document document = new Document(getType(), "doc:baz:foo");
+        Document document = new Document(getType(), "id:ns:baz::foo");
         document.setFieldValue("blahblah", new StringFieldValue("This is a test."));
         PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(document));
 
@@ -89,7 +89,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
     }
 
     private void remove() throws InterruptedException {
-        RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("doc:12345:6789"));
+        RemoveDocumentMessage message = new RemoveDocumentMessage(new DocumentId("id:ns:baz::12345:6789"));
 
         assertTrue(sendMessage(FOOBAR, message));
 
@@ -101,13 +101,13 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
 
         assertThat(result, instanceOf(RemoveDocumentMessage.class));
         RemoveDocumentMessage outputMsg = (RemoveDocumentMessage) result;
-        assertThat(outputMsg.getDocumentId().toString(), is("doc:12345:6789"));
+        assertThat(outputMsg.getDocumentId().toString(), is("id:ns:baz::12345:6789"));
 
         assertFalse(reply.hasErrors());
     }
 
     private void update() throws InterruptedException {
-        DocumentUpdate documentUpdate = new DocumentUpdate(getType(), "doc:baz:foo");
+        DocumentUpdate documentUpdate = new DocumentUpdate(getType(), "id:ns:baz::foo");
         UpdateDocumentMessage message = new UpdateDocumentMessage(documentUpdate);
 
         assertTrue(sendMessage(FOOBAR, message));
@@ -120,7 +120,7 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
 
         assertThat(result, instanceOf(UpdateDocumentMessage.class));
         UpdateDocumentMessage outputMsg = (UpdateDocumentMessage) result;
-        assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("doc:baz:foo"));
+        assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("id:ns:baz::foo"));
 
         assertFalse(reply.hasErrors());
     }

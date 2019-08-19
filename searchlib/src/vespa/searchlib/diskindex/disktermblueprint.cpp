@@ -34,8 +34,8 @@ getName(uint32_t indexId)
 }
 
 DiskTermBlueprint::DiskTermBlueprint(const FieldSpecBase & field,
-                                     const search::diskindex::DiskIndex & diskIndex,
-                                     search::diskindex::DiskIndex::LookupResult::UP lookupRes,
+                                     const DiskIndex & diskIndex,
+                                     DiskIndex::LookupResult::UP lookupRes,
                                      bool useBitVector) :
     SimpleLeafBlueprint(field),
     _field(field),

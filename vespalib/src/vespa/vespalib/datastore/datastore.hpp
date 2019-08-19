@@ -19,9 +19,7 @@ DataStoreT<RefT>::DataStoreT()
 }
 
 template <typename RefT>
-DataStoreT<RefT>::~DataStoreT()
-{
-}
+DataStoreT<RefT>::~DataStoreT() = default;
 
 template <typename RefT>
 void
@@ -30,7 +28,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
     if (state.isActive()) {
-        if (state.freeListList() != NULL && numElems == state.getArraySize()) {
+        if (state.freeListList() != nullptr && numElems == state.getArraySize()) {
             if (state.freeList().empty()) {
                 state.addToFreeListList();
             }

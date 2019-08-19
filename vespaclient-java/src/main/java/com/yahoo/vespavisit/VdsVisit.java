@@ -12,7 +12,6 @@ import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.log.LogSetup;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
@@ -543,16 +542,6 @@ public class VdsVisit {
                 // Let bulk visitor jobs have a low priority by default to avoid stalling concurrent
                 // (real time) write and read operations.
                 params.setPriority(DocumentProtocol.Priority.LOW_1);
-            }
-            if (line.hasOption("ordering")) {
-                String opt = line.getOptionValue("ordering");
-                if (opt.equalsIgnoreCase("ascending")) {
-                    params.setVisitorOrdering(OrderingSpecification.ASCENDING);
-                } else if (opt.equalsIgnoreCase("descending")) {
-                    params.setVisitorOrdering(OrderingSpecification.DESCENDING);
-                } else {
-                    throw new IllegalArgumentException("Unknown ordering. Legal values are \"ascending\", \"descending\"");
-                }
             }
             if (line.hasOption("skipbucketsonfatalerrors")) {
                 params.skipBucketsOnFatalErrors(true);

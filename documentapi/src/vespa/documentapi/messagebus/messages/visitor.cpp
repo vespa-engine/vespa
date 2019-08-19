@@ -25,7 +25,6 @@ CreateVisitorMessage::CreateVisitorMessage() :
     _visitInconsistentBuckets(false),
     _params(),
     _version(42),
-    _ordering(document::OrderingSpecification::ASCENDING),
     _maxBucketsPerVisitor(1)
 {}
 
@@ -49,11 +48,10 @@ CreateVisitorMessage::CreateVisitorMessage(const string& libraryName,
     _visitInconsistentBuckets(false),
     _params(),
     _version(42),
-    _ordering(document::OrderingSpecification::ASCENDING),
     _maxBucketsPerVisitor(1)
 {}
 
-CreateVisitorMessage::~CreateVisitorMessage() {}
+CreateVisitorMessage::~CreateVisitorMessage() = default;
 
 DocumentReply::UP
 CreateVisitorMessage::doCreateReply() const

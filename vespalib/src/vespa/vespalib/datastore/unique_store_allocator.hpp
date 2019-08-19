@@ -19,6 +19,7 @@ UniqueStoreAllocator<EntryT, RefT>::UniqueStoreAllocator()
     auto typeId = _store.addType(&_typeHandler);
     assert(typeId == 0u);
     _store.initActiveBuffers();
+    _store.enableFreeLists();
 }
 
 template <typename EntryT, typename RefT>
@@ -32,7 +33,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStoreAllocator<EntryT, RefT>::allocate(const EntryType& value)
 {
-    return _store.template allocator<WrappedEntryType>(0).alloc(value).ref;
+    return _store.template freeListAllocator<WrappedEntryType,  UniqueStoreEntryReclaimer<WrappedEntryType>>(0).alloc(value).ref;
 }
 
 template <typename EntryT, typename RefT>
@@ -46,7 +47,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStoreAllocator<EntryT, RefT>::move(EntryRef ref)
 {
-    return _store.template allocator<WrappedEntryType>(0).alloc(getWrapped(ref)).ref;
+    return _store.template allocator<WrappedEntryType>(0).alloc(get_wrapped(ref)).ref;
 }
 
 }

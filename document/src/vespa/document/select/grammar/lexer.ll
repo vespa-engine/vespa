@@ -129,7 +129,6 @@ SQ_STRING \'(\\([\\tnfr']|x{HEXDIGIT}{2})|[^'\\])*\'
 (?i:"bucket")    STRING_TOKEN(BUCKET)
 (?i:"gid")       STRING_TOKEN(GID)
 (?i:"type")      STRING_TOKEN(TYPE)
-(?i:"order")     STRING_TOKEN(ORDER)
 
 "now\(\)" NAMED_TOKEN(NOW_FUNC) /* This _is_ case-sensitive in the legacy parser */
 

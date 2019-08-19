@@ -168,7 +168,7 @@ public abstract class Simulator extends StoragePolicyTestEnvironment {
             String docId[] = new String[params.getParallellRequests()];
             RoutingNode targets[] = new RoutingNode[params.getParallellRequests()];
             for (int i=0; i<params.getParallellRequests(); ++i) {
-                docId[i] = "doc:ns:" + (step * params.getParallellRequests() + i);
+                docId[i] = "id:ns:testdoc::" + (step * params.getParallellRequests() + i);
                 frame.setMessage(createMessage(docId[i]));
                 targets[i] = select();
             }

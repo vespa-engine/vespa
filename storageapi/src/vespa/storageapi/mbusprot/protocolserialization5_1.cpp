@@ -141,7 +141,7 @@ ProtocolSerialization5_1::onEncode(
 
     onEncodeCommand(buf, msg);
 
-    buf.putInt(msg.getVisitorOrdering());
+    buf.putInt(0);  // Unused
     buf.putInt(msg.getMaxBucketsPerVisitor());
 }
 
@@ -185,8 +185,7 @@ ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
     msg->getParameters().deserialize(getTypeRepo(), buf);
 
     onDecodeCommand(buf, *msg);
-    msg->setVisitorOrdering(
-            (document::OrderingSpecification::Order)SH::getInt(buf));
+    SH::getInt(buf); // Unused
     msg->setMaxBucketsPerVisitor(SH::getInt(buf));
     msg->setVisitorDispatcherVersion(50);
     return api::StorageCommand::UP(msg.release());

@@ -34,7 +34,7 @@ IndexCollection::IndexCollection(const ISourceSelector::SP & selector,
     setCurrentIndex(sources.getCurrentIndex());
 }
 
-IndexCollection::~IndexCollection() {}
+IndexCollection::~IndexCollection() = default;
 
 void
 IndexCollection::setSource(uint32_t docId)
@@ -49,12 +49,11 @@ IndexCollection::replaceAndRenumber(const ISourceSelector::SP & selector,
                                     uint32_t id_diff,
                                     const IndexSearchable::SP &new_source)
 {
-    ISearchableIndexCollection::UP new_fsc(new IndexCollection(selector));
+    auto new_fsc = std::make_unique<IndexCollection>(selector);
     new_fsc->append(0, new_source);
     for (size_t i = 0; i < fsc.getSourceCount(); ++i) {
         if (fsc.getSourceId(i) > id_diff) {
-            new_fsc->append(fsc.getSourceId(i) - id_diff,
-                            fsc.getSearchableSP(i));
+            new_fsc->append(fsc.getSourceId(i) - id_diff, fsc.getSearchableSP(i));
         }
     }
     return new_fsc;
@@ -148,17 +147,17 @@ struct Mixer {
         : _selector(selector), _blender() {}
 
     void addIndex(Blueprint::UP index) {
-        if (_blender.get() == NULL) {
-            _blender.reset(new SourceBlenderBlueprint(_selector));
+        if ( ! _blender) {
+            _blender = std::make_unique<SourceBlenderBlueprint>(_selector);
         }
         _blender->addChild(std::move(index));
     }
 
     Blueprint::UP mix() {
-        if (_blender.get() == NULL) {
-            return Blueprint::UP(new EmptyBlueprint());
+        if (_blender) {
+            return std::move(_blender);
         }
-        return Blueprint::UP(_blender.release());
+        return std::make_unique<EmptyBlueprint>();
     }
 };
 

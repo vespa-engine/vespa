@@ -24,7 +24,7 @@ public class SimpleAdapterFactoryTestCase {
     @Test
     public void requireThatCompleteUpdatesAreCombined() {
         DocumentType docType = new DocumentType("my_type");
-        DocumentUpdate update = new DocumentUpdate(docType, "doc:foo:1");
+        DocumentUpdate update = new DocumentUpdate(docType, "id:foo:my_type::1");
         Field field1 = new Field("int1", DataType.INT);
         Field field2 = new Field("int2", DataType.INT);
         Field field3 = new Field("int3", DataType.INT);
@@ -43,7 +43,7 @@ public class SimpleAdapterFactoryTestCase {
     @Test
     public void requireThatFieldUpdateCanHaveManyPartialUpdatesForOneField() {
         DocumentType docType = new DocumentType("my_type");
-        DocumentUpdate docUpdate = new DocumentUpdate(docType, "doc:foo:1");
+        DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:foo:my_type::1");
         Field field = new Field("my_int", DataType.INT);
         docType.addField(field);
         FieldUpdate fieldUpdate = FieldUpdate.create(field);

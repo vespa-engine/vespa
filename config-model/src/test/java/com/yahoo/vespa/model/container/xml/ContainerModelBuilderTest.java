@@ -189,7 +189,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         JdiscBindingsConfig config = root.getConfig(JdiscBindingsConfig.class, "default/container.0");
 
         JdiscBindingsConfig.Handlers defaultRootHandler = config.handlers(BindingsOverviewHandler.class.getName());
-        assertThat(defaultRootHandler.serverBindings(), contains("*://*/"));
+        assertThat(defaultRootHandler.serverBindings(), contains("http://*/"));
 
         JdiscBindingsConfig.Handlers applicationStatusHandler = config.handlers(ApplicationStatusHandler.class.getName());
         assertThat(applicationStatusHandler.serverBindings(),

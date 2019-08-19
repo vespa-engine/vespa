@@ -1106,7 +1106,7 @@ public class MessageBusVisitorSessionTestCase {
         mc.executor.expectAndProcessTasks(1);
 
         // Send a remove (so we don't have to create a new doc instance)
-        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("doc:foo:bar")));
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         mc.executor.expectAndProcessTasks(1);
 
         // Not yet ACKed
@@ -1868,7 +1868,7 @@ public class MessageBusVisitorSessionTestCase {
 
         mc.sender.getAndRemoveMessage(0);
         // Make a bogus reply that we never asked for
-        RemoveDocumentMessage msg = new RemoveDocumentMessage(new DocumentId("doc:foo:bar"));
+        RemoveDocumentMessage msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar"));
         DocumentReply reply = msg.createReply();
         mc.sender.reply(reply);
 
@@ -1936,7 +1936,7 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.executor.expectAndProcessTasks(1);
 
-        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("doc:foo:bar")));
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         mc.executor.expectAndProcessTasks(1);
         assertEquals(1, mc.dataHandler.getMessages().size());
 
@@ -2082,7 +2082,7 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.executor.expectAndProcessTasks(1);
 
-        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("doc:foo:bar")));
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         mc.executor.expectAndProcessTasks(1);
         assertEquals(1, mc.dataHandler.getMessages().size());
 
@@ -2442,7 +2442,7 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.executor.expectAndProcessTasks(1);
 
-        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("doc:foo:bar")));
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         mc.executor.expectAndProcessTasks(1);
 
         assertEquals("RemoveDocumentReply(APP_FATAL_ERROR: Visitor data with no local data destination)\n",

@@ -89,7 +89,6 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
         to->setVisitInconsistentBuckets(from.visitInconsistentBuckets());
         to->getBuckets() = from.getBuckets();
         to->setVisitorDispatcherVersion(from.getVisitorDispatcherVersion());
-        to->setVisitorOrdering(from.getVisitorOrdering());
         to->setMaxBucketsPerVisitor(from.getMaxBucketsPerVisitor());
         toMsg = std::move(to);
         break;
@@ -286,7 +285,6 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         to->setFieldSet(from.getFieldSet());
         to->setVisitInconsistentBuckets(from.visitInconsistentBuckets());
         to->getBuckets() = from.getBuckets();
-        to->setVisitorOrdering(from.getVisitorOrdering());
         to->setMaxBucketsPerVisitor(from.getMaxBucketsPerVisitor());
         toMsg = std::move(to);
         break;

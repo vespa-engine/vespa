@@ -56,7 +56,7 @@ public class GuardTestCase {
         docType.addField(new Field("my_lng", DataType.LONG));
         docType.addField(new Field("my_str", DataType.STRING));
 
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_input::");
         doc.setFieldValue("my_str", new StringFieldValue("69"));
         assertNotNull(doc = Expression.execute(Expression.fromString("guard { input my_str | to_int | attribute my_lng }"), doc));
         assertEquals(new LongFieldValue(69), doc.getFieldValue("my_lng"));
@@ -68,7 +68,7 @@ public class GuardTestCase {
         docType.addField(new Field("my_lng", DataType.LONG));
         docType.addField(new Field("my_str", DataType.STRING));
 
-        DocumentUpdate docUpdate = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("69")));
         assertNotNull(docUpdate = Expression.execute(Expression.fromString("guard { input my_str | to_int | attribute my_lng }"), docUpdate));
 
@@ -92,7 +92,7 @@ public class GuardTestCase {
         docType.addField(new Field("my_lng", DataType.LONG));
         docType.addField(new Field("my_str", DataType.STRING));
 
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_input::");
         doc.setFieldValue("my_str", new StringFieldValue("foo"));
         assertNotNull(doc = Expression.execute(Expression.fromString("guard { now | attribute my_lng }"), doc));
         assertTrue(doc.getFieldValue("my_lng") instanceof LongFieldValue);
@@ -104,7 +104,7 @@ public class GuardTestCase {
         docType.addField(new Field("my_int", DataType.INT));
         docType.addField(new Field("my_str", DataType.STRING));
 
-        DocumentUpdate docUpdate = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("foo")));
         assertNull(Expression.execute(Expression.fromString("guard { now | attribute my_int }"), docUpdate));
     }
@@ -113,7 +113,7 @@ public class GuardTestCase {
     public void requireThatLanguageCanBeSetByUpdate() throws ParseException {
         DocumentType docType = new DocumentType("my_input");
         docType.addField(new Field("my_str", DataType.STRING));
-        DocumentUpdate docUpdate = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("foo")));
 
         SimpleAdapterFactory factory = new SimpleAdapterFactory();

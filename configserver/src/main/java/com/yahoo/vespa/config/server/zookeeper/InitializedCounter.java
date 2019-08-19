@@ -17,10 +17,10 @@ import java.util.List;
 public class InitializedCounter {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(InitializedCounter.class.getName());
-    protected final CuratorCounter counter;
+    final CuratorCounter counter;
     private final String sessionsDirPath;
 
-    public InitializedCounter(ConfigCurator configCurator, String counterPath, String sessionsDirPath) {
+    InitializedCounter(ConfigCurator configCurator, String counterPath, String sessionsDirPath) {
         this.sessionsDirPath = sessionsDirPath;
         this.counter = new CuratorCounter(configCurator.curator(), counterPath);
         initializeCounterValue(getLatestSessionId(configCurator, sessionsDirPath));

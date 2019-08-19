@@ -37,7 +37,7 @@ UniqueStoreBuilder<Allocator>::makeDictionary()
 {
     auto ref_count_itr = _refCounts.cbegin();
     for (auto ref : _refs) {
-        auto& wrapped_entry = _allocator.getWrapped(ref);
+        auto& wrapped_entry = _allocator.get_wrapped(ref);
         wrapped_entry.set_ref_count(*ref_count_itr);
         ++ref_count_itr;
     }

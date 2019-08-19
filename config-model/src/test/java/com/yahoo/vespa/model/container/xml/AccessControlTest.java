@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -41,7 +42,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             "/status.html",
             "/statistics/",
             StateHandler.STATE_API_ROOT,
-            ContainerCluster.ROOT_HANDLER_BINDING);
+            ContainerCluster.ROOT_HANDLER_PATH);
 
     @Test
     public void access_control_filter_chain_is_set_up() {
@@ -137,9 +138,11 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertTrue("Access control chain was not bound to: " + CollectionUtil.mkString(missingRequiredBindings, ", "),
                    missingRequiredBindings.isEmpty());
 
-        FORBIDDEN_HANDLER_BINDINGS.forEach(forbiddenBinding -> http.getBindings().forEach(
-                binding -> assertFalse("Access control chain was bound to: " + binding.binding(),
-                                       binding.binding().contains(forbiddenBinding))));
+        FORBIDDEN_HANDLER_BINDINGS.forEach(forbiddenPath -> {
+            String forbiddenBinding = String.format("http://*%s", forbiddenPath);
+            http.getBindings().forEach(
+                    binding -> assertNotEquals("Access control chain was bound to: " + binding.binding(), binding.binding(), forbiddenBinding));
+        });
     }
 
     @Test

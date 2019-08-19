@@ -53,9 +53,9 @@ public class SimpleDocumentProcessorTestCase {
     public void requireThatProcessingMultipleOperationsWork() {
         DocumentType type = createTestType();
 
-        Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"),
-                                     new DocumentUpdate(type, "doc:this:is:an:update"),
-                                     new DocumentRemove(new DocumentId("doc:this:is:a:remove")));
+        Processing p = getProcessing(new DocumentPut(type, "id:this:foobar::is:a:document"),
+                                     new DocumentUpdate(type, "id:this:foobar::is:an:update"),
+                                     new DocumentRemove(new DocumentId("id:this:foobar::is:a:remove")));
 
         DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
         service.getExecutor().process(p);
@@ -74,7 +74,7 @@ public class SimpleDocumentProcessorTestCase {
     public void requireThatProcessingSingleOperationWorks() {
         DocumentType type = createTestType();
 
-        Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"));
+        Processing p = getProcessing(new DocumentPut(type, "id:this:foobar::is:a:document"));
         DocprocService service = setupDocprocService(new VerySimpleDocumentProcessor());
         service.getExecutor().process(p);
 
@@ -88,9 +88,9 @@ public class SimpleDocumentProcessorTestCase {
     public void requireThatThrowingTerminatesIteration() {
         DocumentType type = createTestType();
 
-        Processing p = getProcessing(new DocumentPut(type, "doc:this:is:a:document"),
-                                     new DocumentRemove(new DocumentId("doc:this:is:a:remove")),
-                                     new DocumentPut(type, "doc:this:is:a:document2"));
+        Processing p = getProcessing(new DocumentPut(type, "id:this:foobar::is:a:document"),
+                                     new DocumentRemove(new DocumentId("id:this:foobar::is:a:remove")),
+                                     new DocumentPut(type, "id:this:foobar::is:a:document2"));
 
         DocprocService service = setupDocprocService(new SimpleDocumentProcessorThrowingOnRemovesAndUpdates());
         try {
@@ -105,7 +105,7 @@ public class SimpleDocumentProcessorTestCase {
                    is("processed"));
         assertThat(p.getDocumentOperations().get(1) instanceof DocumentRemove, is(true));
         assertThat(p.getDocumentOperations().get(1).getId().toString(),
-                   is("doc:this:is:a:remove"));
+                   is("id:this:foobar::is:a:remove"));
         assertThat(p.getDocumentOperations().get(2) instanceof DocumentPut, is(true));
         assertThat(((DocumentPut) p.getDocumentOperations().get(2)).getDocument().getFieldValue("title"),
                    nullValue());

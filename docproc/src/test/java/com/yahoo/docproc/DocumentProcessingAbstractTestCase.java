@@ -24,9 +24,9 @@ public abstract class DocumentProcessingAbstractTestCase {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);
-        DocumentPut put1 = new DocumentPut(type, new DocumentId("doc:test:test:1"));
-        DocumentPut put2 = new DocumentPut(type, new DocumentId("doc:test:test:2"));
-        DocumentPut put3 = new DocumentPut(type, new DocumentId("doc:test:test:3"));
+        DocumentPut put1 = new DocumentPut(type, new DocumentId("id:test:test::1"));
+        DocumentPut put2 = new DocumentPut(type, new DocumentId("id:test:test::2"));
+        DocumentPut put3 = new DocumentPut(type, new DocumentId("id:test:test::3"));
 
         // Process them
         service.process(put1);

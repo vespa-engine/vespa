@@ -28,7 +28,7 @@ public class SimpleDocumentAdapterTestCase {
 
         DocumentType docType = new DocumentType("my_doc");
         docType.addField("foo", fooType);
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
         DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
@@ -41,7 +41,7 @@ public class SimpleDocumentAdapterTestCase {
     @Test
     public void requireThatUnknownFieldsReturnNull() {
         DocumentType docType = new DocumentType("my_doc");
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_doc::");
 
         DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
         try {

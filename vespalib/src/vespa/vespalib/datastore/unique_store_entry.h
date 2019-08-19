@@ -3,8 +3,16 @@
 #pragma once
 
 #include "unique_store_entry_base.h"
+#include <cassert>
 
 namespace search::datastore {
+
+template<typename EntryType>
+struct UniqueStoreEntryReclaimer {
+    static void reclaim(EntryType *entry) {
+        assert(entry->get_ref_count() == 0u);
+    }
+};
 
 /*
  * Class for entries in unique store.
@@ -31,6 +39,7 @@ public:
     }
 
     const EntryType& value() const { return _value; }
+    EntryType& value() { return _value; }
 };
 
 }

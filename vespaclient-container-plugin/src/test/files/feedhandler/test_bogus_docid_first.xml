@@ -5,7 +5,7 @@
         <url>testUrl2</url>
     </document>
 
-    <document documenttype="news" documentid="doc:news:http://news10a">
+    <document documenttype="news" documentid="id:ns:news::http://news10a">
         <url>testUrl</url>
         <title>testTitle</title>
         <last_downloaded>1</last_downloaded>

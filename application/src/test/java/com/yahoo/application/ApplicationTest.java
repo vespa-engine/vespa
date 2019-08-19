@@ -156,7 +156,7 @@ public class ApplicationTest {
     public void handler() throws Exception {
         try (
                 ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder().container("default", new Application.Builder.Container()
-                        .handler("http://*/*", MockHttpHandler.class))))
+                        .handler("http://*/", MockHttpHandler.class))))
         ) {
 
             RequestHandler handler = app.getRequestHandlerById(MockHttpHandler.class.getName());
@@ -174,7 +174,7 @@ public class ApplicationTest {
             assertEquals(response.getStatus(), 200);
             assertEquals(response.getBodyAsString(), "OK");
 
-            request = new Request("http://localhost/query=foo");
+            request = new Request("http://localhost/?query=foo");
             response = app.handleRequest(request);
             assertNotNull(response);
             assertEquals(response.getStatus(), 200);

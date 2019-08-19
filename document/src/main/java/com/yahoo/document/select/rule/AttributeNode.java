@@ -13,7 +13,6 @@ import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Result;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.Visitor;
@@ -181,11 +180,6 @@ public class AttributeNode implements ExpressionNode {
             ret.append(".").append(item);
         }
         return ret.toString();
-    }
-
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
     }
 
     public static class Item {

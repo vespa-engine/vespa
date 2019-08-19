@@ -39,9 +39,9 @@ public class FailingDocumentProcessingWithoutExceptionTestCase {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);
-        DocumentPut put1 = new DocumentPut(type, new DocumentId("doc:woexception:test:1"));
-        DocumentPut put2 = new DocumentPut(type, new DocumentId("doc:woexception:test:2"));
-        DocumentPut put3 = new DocumentPut(type, new DocumentId("doc:woexception:test:3"));
+        DocumentPut put1 = new DocumentPut(type, new DocumentId("id:woexception:test::1"));
+        DocumentPut put2 = new DocumentPut(type, new DocumentId("id:woexception:test::2"));
+        DocumentPut put3 = new DocumentPut(type, new DocumentId("id:woexception:test::3"));
 
         // Process them
         service.process(put1);
@@ -82,7 +82,7 @@ public class FailingDocumentProcessingWithoutExceptionTestCase {
         public Progress process(Processing processing) {
             super.process(processing);
             for (DocumentOperation op : processing.getDocumentOperations()) {
-                if (op.getId().toString().equals("doc:woexception:test:2")) {
+                if (op.getId().toString().equals("id:woexception:test::2")) {
                     return DocumentProcessor.Progress.FAILED;
                 }
             }

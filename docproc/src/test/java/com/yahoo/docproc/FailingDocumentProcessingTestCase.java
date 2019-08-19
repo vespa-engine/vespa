@@ -38,9 +38,9 @@ public class FailingDocumentProcessingTestCase {
         // Create documents
         DocumentType type = new DocumentType("test");
         type.addField("test", DataType.STRING);
-        DocumentPut put1 = new DocumentPut(type, new DocumentId("doc:failing:test:1"));
-        DocumentPut put2 = new DocumentPut(type, new DocumentId("doc:failing:test:2"));
-        DocumentPut put3 = new DocumentPut(type, new DocumentId("doc:failing:test:3"));
+        DocumentPut put1 = new DocumentPut(type, new DocumentId("id:failing:test::1"));
+        DocumentPut put2 = new DocumentPut(type, new DocumentId("id:failing:test::2"));
+        DocumentPut put3 = new DocumentPut(type, new DocumentId("id:failing:test::3"));
 
         // Process them
         service.process(put1);
@@ -77,7 +77,7 @@ public class FailingDocumentProcessingTestCase {
         @Override
         public void process(DocumentPut put) {
             super.process(put);
-            if (put.getId().toString().equals("doc:failing:test:2")) {
+            if (put.getId().toString().equals("id:failing:test::2")) {
                 throw new HandledProcessingException("Failed at receiving document test:2");
             }
         }

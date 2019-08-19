@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 import com.yahoo.document.select.parser.SelectParserUtils;
 
@@ -54,8 +53,4 @@ public class LiteralNode implements ExpressionNode {
         }
     }
 
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
 }

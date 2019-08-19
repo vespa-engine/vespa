@@ -33,8 +33,7 @@ public:
     void addTerm(Blueprint::UP term);
 
     SearchIteratorUP
-    createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                     bool strict) const override;
+    createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(bool strict) override;
 };

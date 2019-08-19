@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
@@ -23,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -78,7 +78,7 @@ public class CuratorDb {
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
-    private final VersionSerializer versionSerializer = new VersionSerializer();
+    private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
@@ -272,14 +272,14 @@ public class CuratorDb {
                                                    .orElseGet(Collections::emptyMap);
     }
 
-    public void writeControllerVersion(HostName hostname, Version version) {
-        curator.set(controllerPath(hostname.value()), asJson(versionSerializer.toSlime(version)));
+    public void writeControllerVersion(HostName hostname, ControllerVersion version) {
+        curator.set(controllerPath(hostname.value()), asJson(controllerVersionSerializer.toSlime(version)));
     }
 
-    public Version readControllerVersion(HostName hostname) {
+    public ControllerVersion readControllerVersion(HostName hostname) {
         return readSlime(controllerPath(hostname.value()))
-                .map(versionSerializer::fromSlime)
-                .orElse(Vtag.currentVersion);
+                .map(controllerVersionSerializer::fromSlime)
+                .orElse(ControllerVersion.CURRENT);
     }
 
     // Infrastructure upgrades

@@ -172,7 +172,7 @@ public:
 
     uint64_t getStaticMemoryFootprint() const { return _staticMemoryFootprint; }
 
-    search::index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
+    index::FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const;
 };
 
 }

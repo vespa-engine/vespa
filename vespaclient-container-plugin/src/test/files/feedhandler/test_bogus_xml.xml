@@ -2,7 +2,7 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
 
-    <document documenttype="news" documentid="doc:news:http://news10a">
+    <document documenttype="news" documentid="id:ns:news::http://news10a">
         <url>testUrl</url>
         <title>testTitle</title>
         <last_downloaded>1</last_downloaded>

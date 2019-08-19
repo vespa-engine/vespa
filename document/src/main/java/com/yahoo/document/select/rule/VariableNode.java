@@ -4,7 +4,6 @@ package com.yahoo.document.select.rule;
 import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.BucketSet;
 import com.yahoo.document.select.Context;
-import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.Visitor;
 
 /**
@@ -51,8 +50,4 @@ public class VariableNode implements ExpressionNode {
         return "$" + value;
     }
 
-    @Override
-    public OrderingSpecification getOrdering(int order) {
-        return null;
-    }
 }

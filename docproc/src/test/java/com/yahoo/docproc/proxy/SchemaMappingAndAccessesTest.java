@@ -54,7 +54,7 @@ public class SchemaMappingAndAccessesTest {
         type.addField("guitarist", DataType.STRING);
         type.addField("year", DataType.INT);
         type.addField("labels", DataType.getArray(DataType.STRING));
-        Document doc = new Document(type, new DocumentId("doc:map:test:1"));
+        Document doc = new Document(type, new DocumentId("id:map:album::1"));
         doc.setFieldValue("title", new StringFieldValue("Black Rock"));
         StringFieldValue joe = new StringFieldValue("Joe Bonamassa");
         joe.setSpanTree(new SpanTree("mytree").annotate(person));
@@ -291,7 +291,7 @@ public class SchemaMappingAndAccessesTest {
         assertEquals(mapped.getFieldValue(new com.yahoo.document.Field("title")), doc.getFieldValue((new com.yahoo.document.Field("title"))));
         mapped.setFieldValue("title", "foo");
         assertEquals(doc.getFieldValue("title").getWrappedValue(), "foo");
-        assertEquals(mapped.getWrappedDocumentOperation().getId().toString(), "doc:map:test:1");
+        assertEquals(mapped.getWrappedDocumentOperation().getId().toString(), "id:map:album::1");
         assertEquals(doc, mapped);
         assertEquals(doc.toString(), mapped.toString());
         assertEquals(doc.hashCode(), mapped.hashCode());
@@ -302,9 +302,9 @@ public class SchemaMappingAndAccessesTest {
         mapped.setLastModified(56l);
         assertEquals(doc.getLastModified(), (Long)56l);
         assertEquals(mapped.getLastModified(), (Long)56l);
-        mapped.setId(new DocumentId("doc:map:test:2"));
-        assertEquals(mapped.getId().toString(), "doc:map:test:2");
-        assertEquals(doc.getId().toString(), "doc:map:test:2");
+        mapped.setId(new DocumentId("id:map:album::2"));
+        assertEquals(mapped.getId().toString(), "id:map:album::2");
+        assertEquals(doc.getId().toString(), "id:map:album::2");
         assertEquals(doc.getHeader(), mapped.getHeader());
         assertEquals(doc.getBody(), mapped.getBody());
         assertEquals(doc.getSerializedSize(), mapped.getSerializedSize());
@@ -320,15 +320,20 @@ public class SchemaMappingAndAccessesTest {
         mapped.clear();
         assertNull(mapped.getFieldValue("title"));
         assertNull(doc.getFieldValue("title"));
-        mapped.setDataType(new DocumentType("newType"));
-        assertEquals(doc.getDataType().getName(), "newType");
+        try {
+            mapped.setDataType(new DocumentType("newType"));
+            fail("Should not be able to set new type");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Trying to set a document type (newType) that doesn't match the document id (id:map:album::2).", e.getMessage());
+        }
+        assertEquals(doc.getDataType().getName(), "album");
     }
 
     @Test
     public void testMappedDocUpdateAPI() {
         Document doc = getDoc();
         DocumentType type = doc.getDataType();
-        DocumentUpdate dud = new DocumentUpdate(type, new DocumentId("doc:map:test:1"));
+        DocumentUpdate dud = new DocumentUpdate(type, new DocumentId("id:map:album::1"));
         com.yahoo.document.Field title = type.getField("title");
         FieldUpdate assignSingle = FieldUpdate.createAssign(title, new StringFieldValue("something"));
         Map<String, String> fieldMap = new HashMap<>();
@@ -349,7 +354,7 @@ public class SchemaMappingAndAccessesTest {
         assertEquals(pup.hashCode(), dud.hashCode());
         assertEquals(pup.toString(), dud.toString());
         assertEquals(pup.size(), dud.size());
-        assertEquals(pup.getWrappedDocumentOperation().getId().toString(), "doc:map:test:1");
+        assertEquals(pup.getWrappedDocumentOperation().getId().toString(), "id:map:album::1");
     }
 
     @Test
@@ -367,7 +372,7 @@ public class SchemaMappingAndAccessesTest {
         storeStructType.addField(new com.yahoo.document.Field("materials", materialsStructType));
         docType.addField("store", storeStructType);
 
-        Document doc = new Document(docType, new DocumentId("doc:map:test:1"));
+        Document doc = new Document(docType, new DocumentId("id:map:album::1"));
         doc.setFieldValue("title", new StringFieldValue("Black Rock"));
         doc.setFieldValue("artist", new StringFieldValue("Joe Bonamassa"));
         Struct material = new Struct(materialsStructType);
@@ -581,7 +586,7 @@ public class SchemaMappingAndAccessesTest {
 
     public static class TestRemovingMappingStructInArrayProcessor extends DocumentProcessor {
         public Progress process(Processing processing) {
-            Document document = ((DocumentPut)processing.getDocumentOperations().get(0)).getDocument();;
+            Document document = ((DocumentPut)processing.getDocumentOperations().get(0)).getDocument();
             document.removeFieldValue("name");
             return Progress.DONE;
         }

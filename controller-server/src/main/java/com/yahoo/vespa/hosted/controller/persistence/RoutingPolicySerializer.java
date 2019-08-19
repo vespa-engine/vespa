@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Serializer and deserializer for a {@link RoutingPolicy}.
@@ -66,7 +65,7 @@ public class RoutingPolicySerializer {
                                            ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                            ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
-                                           Serializers.optionalField(inspect.field(dnsZoneField), Function.identity()),
+                                           Serializers.optionalString(inspect.field(dnsZoneField)),
                                            endpointIds));
         });
         return Collections.unmodifiableSet(policies);

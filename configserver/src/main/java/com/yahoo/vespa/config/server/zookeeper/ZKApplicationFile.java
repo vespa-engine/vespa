@@ -15,16 +15,15 @@ import java.util.logging.Logger;
 
 /**
  * @author Ulf Lilleengen
- * @author vegardh
- * @since 5.1
+ * @author Vegard Havdal
  */
 class ZKApplicationFile extends ApplicationFile {
 
     private static final Logger log = Logger.getLogger("ZKApplicationFile");
-    private final ZKLiveApp zkApp;
+    private final ZKApplication zkApp;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public ZKApplicationFile(Path path, ZKLiveApp app) {
+    public ZKApplicationFile(Path path, ZKApplication app) {
         super(path);
         this.zkApp = app;
     }

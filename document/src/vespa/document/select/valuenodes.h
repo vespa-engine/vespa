@@ -239,7 +239,7 @@ private:
 class IdValueNode : public ValueNode
 {
 public:
-    enum Type { SCHEME, NS, TYPE, USER, GROUP, GID, SPEC, BUCKET, ORDER, ALL };
+    enum Type { SCHEME, NS, TYPE, USER, GROUP, GID, SPEC, BUCKET, ALL };
 
     IdValueNode(const BucketIdFactory& bucketIdFactory,
                 vespalib::stringref name, vespalib::stringref type,

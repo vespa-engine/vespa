@@ -36,28 +36,28 @@ public class TransientFailureTestCase {
 
         DocumentPut put;
 
-        put = new DocumentPut(type, new DocumentId("doc:transfail:bad"));
+        put = new DocumentPut(type, new DocumentId("id:transfail:test::bad"));
         service.process(put, endpoint);
         while (service.doWork()) { }
         assertEquals(0, endpoint.numOk);
         assertEquals(1, endpoint.numTransientFail);
         assertEquals(0, endpoint.numFail);
 
-        put = new DocumentPut(type, new DocumentId("doc:transfail:verybad"));
+        put = new DocumentPut(type, new DocumentId("id:transfail:test::verybad"));
         service.process(put, endpoint);
         while (service.doWork()) { }
         assertEquals(0, endpoint.numOk);
         assertEquals(1, endpoint.numTransientFail);
         assertEquals(1, endpoint.numFail);
 
-        put = new DocumentPut(type, new DocumentId("doc:transfail:good"));
+        put = new DocumentPut(type, new DocumentId("id:transfail:test::good"));
         service.process(put, endpoint);
         while (service.doWork()) { }
         assertEquals(1, endpoint.numOk);
         assertEquals(1, endpoint.numTransientFail);
         assertEquals(1, endpoint.numFail);
 
-        put = new DocumentPut(type, new DocumentId("doc:transfail:veryverybad"));
+        put = new DocumentPut(type, new DocumentId("id:transfail:test::veryverybad"));
         service.process(put, endpoint);
         while (service.doWork()) { }
         assertEquals(1, endpoint.numOk);
@@ -72,11 +72,11 @@ public class TransientFailureTestCase {
         @Override
         public Progress process(Processing processing) {
             for (DocumentOperation op : processing.getDocumentOperations()) {
-                if (op.getId().toString().equals("doc:transfail:bad")) {
+                if (op.getId().toString().equals("id:transfail:test::bad")) {
                     throw new TransientFailureException("sorry, try again later");
-                } else if (op.getId().toString().equals("doc:transfail:verybad")) {
+                } else if (op.getId().toString().equals("id:transfail:test::verybad")) {
                     return Progress.FAILED;
-                } else if (op.getId().toString().equals("doc:transfail:veryverybad")) {
+                } else if (op.getId().toString().equals("id:transfail:test::veryverybad")) {
                     return Progress.PERMANENT_FAILURE;
                 }
             }

@@ -53,6 +53,9 @@ ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
 {
     initArrayTypes(cfg);
     _store.initActiveBuffers();
+    if (cfg.enable_free_lists()) {
+        _store.enableFreeLists();
+    }
 }
 
 template <typename EntryT, typename RefT>
@@ -81,23 +84,20 @@ EntryRef
 ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
 {
     uint32_t typeId = getTypeId(array.size());
-    return _store.template allocator<EntryT>(typeId).allocArray(array).ref;
+    using NoOpReclaimer = btree::DefaultReclaimer<EntryT>;
+    return _store.template freeListAllocator<EntryT, NoOpReclaimer>(typeId).allocArray(array).ref;
 }
 
 template <typename EntryT, typename RefT>
 EntryRef
 ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
 {
-    _store.ensureBufferCapacity(_largeArrayTypeId, 1);
-    uint32_t activeBufferId = _store.getActiveBufferId(_largeArrayTypeId);
-    BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldBufferSize = state.size();
-    RefT ref(oldBufferSize, activeBufferId);
-    LargeArray *buf = _store.template getEntry<LargeArray>(ref);
-    new (static_cast<void *>(buf)) LargeArray(array.cbegin(), array.cend());
-    state.pushed_back(1, sizeof(EntryT) * array.size());
-    return ref;
+    using NoOpReclaimer = btree::DefaultReclaimer<LargeArray>;
+    auto handle = _store.template freeListAllocator<LargeArray, NoOpReclaimer>(_largeArrayTypeId)
+            .alloc(array.cbegin(), array.cend());
+    auto& state = _store.getBufferState(RefT(handle.ref).bufferId());
+    state.incExtraUsedBytes(sizeof(EntryT) * array.size());
+    return handle.ref;
 }
 
 template <typename EntryT, typename RefT>

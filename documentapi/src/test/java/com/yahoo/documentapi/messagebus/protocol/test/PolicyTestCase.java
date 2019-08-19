@@ -111,7 +111,7 @@ public class PolicyTestCase {
     public void testAND() {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:")))));
+                                                             new DocumentId("id:ns:testdoc::")))));
         frame.setHop(new HopSpec("test", "[AND]")
                      .addRecipient("foo")
                      .addRecipient("bar"));
@@ -143,14 +143,14 @@ public class PolicyTestCase {
 
     @Test
     public void requireThatExternPolicyWithUnknownPatternSelectsNone() throws Exception {
-        PolicyTestFrame frame = newPutDocumentFrame("doc:scheme:");
+        PolicyTestFrame frame = newPutDocumentFrame("id:ns:testdoc::");
         setupExternPolicy(frame, new Slobrok(), "foo/bar");
         frame.assertSelect(null);
     }
 
     @Test
     public void requireThatExternPolicySelectsFromExternSlobrok() throws Exception {
-        PolicyTestFrame frame = newPutDocumentFrame("doc:scheme:");
+        PolicyTestFrame frame = newPutDocumentFrame("id:ns:testdoc::");
         Slobrok slobrok = new Slobrok();
         List<TestServer> servers = new ArrayList<>();
         for (int i = 0; i < 10; ++i) {
@@ -178,7 +178,7 @@ public class PolicyTestCase {
 
     @Test
     public void requireThatExternPolicyMergesOneReplyAsProtocol() throws Exception {
-        PolicyTestFrame frame = newPutDocumentFrame("doc:scheme:");
+        PolicyTestFrame frame = newPutDocumentFrame("id:ns:testdoc::");
         Slobrok slobrok = new Slobrok();
         TestServer server = new TestServer("docproc/cluster.default/0", null, slobrok,
                                            new DocumentProtocol(manager));
@@ -208,7 +208,7 @@ public class PolicyTestCase {
         DestinationSession ds = dst.mb.createDestinationSession("session", true, new Receptor());
 
         // Send message from local node to remote cluster and resolve route there.
-        Message msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
+        Message msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
         msg.getTrace().setLevel(9);
         msg.setRoute(Route.parse("[Extern:tcp/localhost:" + slobrok.port() + ";itr/session] default"));
 
@@ -246,7 +246,7 @@ public class PolicyTestCase {
         Receptor dstHandler = new Receptor();
         DestinationSession dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 
-        Message msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
+        Message msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
         msg.setRoute(Route.parse("[Extern:" + spec + ";dst/session]"));
         assertTrue(srcSession.send(msg).isAccepted());
         assertNotNull(msg = dstHandler.getMessage(TIMEOUT));
@@ -267,7 +267,7 @@ public class PolicyTestCase {
         dstHandler = new Receptor();
         dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 
-        msg = new RemoveDocumentMessage(new DocumentId("doc:scheme:"));
+        msg = new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::"));
         msg.setRoute(Route.parse("[Extern:" + spec + ";dst/session]"));
         assertTrue(srcSession.send(msg).isAccepted());
         assertNotNull(msg = dstHandler.getMessage(TIMEOUT));
@@ -289,7 +289,7 @@ public class PolicyTestCase {
         // Test select with proper address.
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:0")))));
+                                                             new DocumentId("id:ns:testdoc::0")))));
         for (int i = 0; i < 10; ++i) {
             frame.getNetwork().registerSession(i + "/chain.default");
         }
@@ -323,7 +323,7 @@ public class PolicyTestCase {
 
         // Test merge behavior.
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:")))));
+                                                             new DocumentId("id:ns:testdoc::")))));
         frame.setHop(new HopSpec("test", "[LocalService]"));
         frame.assertMergeOneReply("*");
 
@@ -334,12 +334,12 @@ public class PolicyTestCase {
     public void testLocalServiceCache() {
         PolicyTestFrame fooFrame = new PolicyTestFrame("docproc/cluster.default", manager);
         HopSpec fooHop = new HopSpec("foo", "docproc/cluster.default/[LocalService]/chain.foo");
-        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:foo")));
+        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::foo")));
         fooFrame.setHop(fooHop);
 
         PolicyTestFrame barFrame = new PolicyTestFrame(fooFrame);
         HopSpec barHop = new HopSpec("bar", "docproc/cluster.default/[LocalService]/chain.bar");
-        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:bar")));
+        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         barFrame.setHop(barHop);
 
         fooFrame.getMessageBus().setupRouting(
@@ -368,13 +368,13 @@ public class PolicyTestCase {
         PolicyTestFrame frame = new PolicyTestFrame(manager);
         frame.setHop(new HopSpec("test", getDocumentRouteSelectorRawConfig())
                 .addRecipient("foo").addRecipient("bar"));
-        frame.setMessage(new GetDocumentMessage(new DocumentId("doc:scheme:yarn"), "[all]"));
+        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::yarn"), "[all]"));
         List<RoutingNode> selected = frame.select(2);
         for (int i = 0, len = selected.size(); i < len; ++i) {
             Document doc = null;
             if (i == 0) {
                 doc = new Document(manager.getDocumentType("testdoc"),
-                                   new DocumentId("doc:scheme:yarn"));
+                                   new DocumentId("id:ns:testdoc::yarn"));
                 doc.setLastModified(123456L);
             }
             GetDocumentReply reply = new GetDocumentReply(null);
@@ -394,7 +394,7 @@ public class PolicyTestCase {
                 "route[0].selector \"testdoc\"\n" +
                 "route[0].feed \"myfeed\"\n" +
                 "route[1].name \"bar\"\n" +
-                "route[1].selector \"other\"\n" +
+                "route[1].selector \"testdoc\"\n" +
                 "route[1].feed \"myfeed\"\n]";
     }
 
@@ -450,7 +450,7 @@ public class PolicyTestCase {
     public void testSubsetService() {
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:"))))));
+                                                             new DocumentId("id:ns:testdoc::"))))));
 
         // Test requerying for adding nodes.
         frame.setHop(new HopSpec("test", "docproc/cluster.default/[SubsetService:2]/chain.default"));
@@ -509,12 +509,12 @@ public class PolicyTestCase {
     public void testSubsetServiceCache() {
         PolicyTestFrame fooFrame = new PolicyTestFrame("docproc/cluster.default", manager);
         HopSpec fooHop = new HopSpec("foo", "docproc/cluster.default/[SubsetService:2]/chain.foo");
-        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:foo")));
+        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::foo")));
         fooFrame.setHop(fooHop);
 
         PolicyTestFrame barFrame = new PolicyTestFrame(fooFrame);
         HopSpec barHop = new HopSpec("bar", "docproc/cluster.default/[SubsetService:2]/chain.bar");
-        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:bar")));
+        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         barFrame.setHop(barHop);
 
         fooFrame.getMessageBus().setupRouting(
@@ -569,19 +569,19 @@ public class PolicyTestCase {
                                          "route[1].selector \"other\"\n" +
                                          "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
-        frame.setMessage(new GetDocumentMessage(new DocumentId("doc:scheme:"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
+        frame.assertSelect(Arrays.asList("foo"));
 
         Message put = new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                          new DocumentId("doc:scheme:"))));
+                                                          new DocumentId("id:ns:testdoc::"))));
         frame.setMessage(put);
         frame.assertSelect(Arrays.asList("foo"));
 
-        frame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:")));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::")));
+        frame.assertSelect(Arrays.asList("foo"));
 
         frame.setMessage(new UpdateDocumentMessage(new DocumentUpdate(manager.getDocumentType("testdoc"),
-                                                                      new DocumentId("doc:scheme:"))));
+                                                                      new DocumentId("id:ns:testdoc::"))));
         frame.assertSelect(Arrays.asList("foo"));
 
         frame.setMessage(put);
@@ -602,10 +602,10 @@ public class PolicyTestCase {
                 "route[1].selector \"(other AND (other.intfield / 1000 > 0))\"\n" +
                 "route[1].feed \"myfeed\"\n]").addRecipient("foo").addRecipient("bar"));
 
-        frame.setMessage(new GetDocumentMessage(new DocumentId("doc:scheme:"), "fieldSet"));
-        frame.assertSelect(Arrays.asList("bar", "foo"));
+        frame.setMessage(new GetDocumentMessage(new DocumentId("id:ns:testdoc::"), "fieldSet"));
+        frame.assertSelect(Arrays.asList("foo"));
 
-        Document doc = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:scheme:"));
+        Document doc = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::"));
         doc.setFieldValue("intfield", 3000);
         Message put = new PutDocumentMessage(new DocumentPut(doc));
         frame.setMessage(put);
@@ -636,7 +636,7 @@ public class PolicyTestCase {
         assertEquals(0, reply.getNumErrors());
 
         frame.setMessage(new UpdateDocumentMessage(new DocumentUpdate(manager.getDocumentType("testdoc"),
-                                                                      new DocumentId("doc:scheme:"))));
+                                                                      new DocumentId("id:ns:testdoc::"))));
         frame.assertSelect(Arrays.asList("docproc/cluster.foo"));
 
         frame.destroy();
@@ -646,7 +646,7 @@ public class PolicyTestCase {
     public void testLoadBalancer() {
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:")))));
+                                                             new DocumentId("id:ns:testdoc::")))));
         frame.getNetwork().registerSession("0/chain.default");
         assertTrue(frame.waitSlobrok("docproc/cluster.default/*/chain.default", 1));
         frame.setHop(new HopSpec("test", "[LoadBalancer:cluster=docproc/cluster.default;session=chain.default]"));
@@ -659,7 +659,7 @@ public class PolicyTestCase {
         // Test select with proper address.
         PolicyTestFrame frame = new PolicyTestFrame("docproc/cluster.default", manager);
         frame.setMessage(new PutDocumentMessage(new DocumentPut(new Document(manager.getDocumentType("testdoc"),
-                                                             new DocumentId("doc:scheme:")))));
+                                                             new DocumentId("id:ns:testdoc::")))));
         for (int i = 0; i < 10; ++i) {
             frame.getNetwork().registerSession(i + "/chain.default");
         }
@@ -693,12 +693,12 @@ public class PolicyTestCase {
     public void testRoundRobinCache() {
         PolicyTestFrame fooFrame = new PolicyTestFrame("docproc/cluster.default", manager);
         HopSpec fooHop = new HopSpec("foo", "[RoundRobin]").addRecipient("docproc/cluster.default/0/chain.foo");
-        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:foo")));
+        fooFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::foo")));
         fooFrame.setHop(fooHop);
 
         PolicyTestFrame barFrame = new PolicyTestFrame(fooFrame);
         HopSpec barHop = new HopSpec("bar", "[RoundRobin]").addRecipient("docproc/cluster.default/0/chain.bar");
-        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("doc:scheme:bar")));
+        barFrame.setMessage(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
         barFrame.setHop(barHop);
 
         fooFrame.getMessageBus().setupRouting(

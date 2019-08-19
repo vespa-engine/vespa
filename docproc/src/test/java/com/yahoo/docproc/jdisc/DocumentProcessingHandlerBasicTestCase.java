@@ -39,7 +39,7 @@ public class DocumentProcessingHandlerBasicTestCase extends DocumentProcessingHa
 
     @Test
     public void testPut() throws InterruptedException {
-        Document document = new Document(getType(), "doc:yalla:balla");
+        Document document = new Document(getType(), "id:ns:yalla::balla");
         document.setFieldValue("blahblah", new StringFieldValue("This is a test."));
         PutDocumentMessage message = new PutDocumentMessage(new DocumentPut(document));
 

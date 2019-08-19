@@ -33,16 +33,14 @@ public:
     EntryRef allocate(const EntryType& value);
     void hold(EntryRef ref);
     EntryRef move(EntryRef ref) override;
-    const WrappedEntryType& getWrapped(EntryRef ref) const
-    {
+    const WrappedEntryType& get_wrapped(EntryRef ref) const {
         RefType iRef(ref);
         return *_store.template getEntry<WrappedEntryType>(iRef);
     }
-    const EntryType& get(EntryRef ref) const
-    {
-        return getWrapped(ref).value();
+    const EntryType& get(EntryRef ref) const {
+        return get_wrapped(ref).value();
     }
-    DataStoreType& getDataStore() { return _store; }
+    DataStoreType& get_data_store() { return _store; }
 };
 
 }

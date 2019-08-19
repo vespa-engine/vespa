@@ -33,7 +33,7 @@ public class IndexingProcessorTestCase {
 
     @Test
     public void requireThatIndexerProcessesDocuments() {
-        Document input = new Document(indexer.getDocumentTypeManager().getDocumentType("music"), "doc:scheme:");
+        Document input = new Document(indexer.getDocumentTypeManager().getDocumentType("music"), "id:ns:music::");
         input.setFieldValue("artist", new StringFieldValue("69"));
         DocumentOperation op = process(new DocumentPut(input));
         assertTrue(op instanceof DocumentPut);
@@ -45,7 +45,7 @@ public class IndexingProcessorTestCase {
 
     @Test
     public void requireThatIndexerForwardsDocumentsOfUnknownType() {
-        Document input = new Document(new DocumentType("unknown"), "doc:scheme:");
+        Document input = new Document(new DocumentType("unknown"), "id:ns:unknown::");
         DocumentOperation output = process(new DocumentPut(input));
         assertTrue(output instanceof DocumentPut);
         assertSame(input, ((DocumentPut)output).getDocument());
@@ -54,7 +54,7 @@ public class IndexingProcessorTestCase {
     @Test
     public void requireThatIndexerProcessesUpdates() {
         DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
-        DocumentUpdate input = new DocumentUpdate(inputType, "doc:scheme:");
+        DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
         input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("isbn"), new StringFieldValue("isbnmarker")));
         input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("69")));
         DocumentOperation output = process(input);
@@ -98,7 +98,7 @@ public class IndexingProcessorTestCase {
     @Test
     public void requireThatEmptyDocumentUpdateOutputDoesNotThrow() {
         DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
-        DocumentUpdate input = new DocumentUpdate(inputType, "doc:scheme:");
+        DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
         Processing proc = new Processing();
         proc.getDocumentOperations().add(input);
         indexer.process(proc);
@@ -107,7 +107,7 @@ public class IndexingProcessorTestCase {
 
     @Test
     public void requireThatIndexerForwardsUpdatesOfUnknownType() {
-        DocumentUpdate input = new DocumentUpdate(new DocumentType("unknown"), "doc:scheme:");
+        DocumentUpdate input = new DocumentUpdate(new DocumentType("unknown"), "id:ns:music::");
         DocumentOperation output = process(input);
         assertSame(input, output);
     }

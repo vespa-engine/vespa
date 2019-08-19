@@ -31,7 +31,7 @@ public class ZKApplicationFileTest extends ApplicationFileTest {
         File tmp = Files.createTempDir();
         writeAppTo(tmp);
         feed(configCurator, tmp);
-        return new ZKApplicationFile(path, new ZKLiveApp(configCurator, Path.fromString("/0")));
+        return new ZKApplicationFile(path, new ZKApplication(configCurator, Path.fromString("/0")));
     }
 
 }

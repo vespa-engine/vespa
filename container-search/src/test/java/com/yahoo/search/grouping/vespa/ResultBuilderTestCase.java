@@ -805,7 +805,7 @@ public class ResultBuilderTestCase {
         res.setTag(hitsTag);
         res.setSummaryClass("default");
         for (int i = 0; i < numHits; ++i) {
-            res.addHit(new FS4Hit(i + 1, new GlobalId(IdString.createIdString("doc:scheme:")), 1));
+            res.addHit(new FS4Hit(i + 1, new GlobalId(IdString.createIdString("id:ns:type::")), 1));
         }
         return res;
     }

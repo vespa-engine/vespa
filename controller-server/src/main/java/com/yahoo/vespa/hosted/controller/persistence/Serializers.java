@@ -2,9 +2,13 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.slime.Inspector;
+import com.yahoo.vespa.config.SlimeUtils;
 
+import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * Reusable serialization logic.
@@ -15,8 +19,25 @@ public class Serializers {
 
     private Serializers() {}
 
-    public static <T> Optional<T> optionalField(Inspector field, Function<String, T> fieldMapper) {
-        return Optional.of(field).filter(Inspector::valid).map(Inspector::asString).map(fieldMapper);
+    public static OptionalLong optionalLong(Inspector field) {
+        return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
+    }
+
+    public static OptionalInt optionalInteger(Inspector field) {
+        return field.valid() ? OptionalInt.of((int) field.asLong()) : OptionalInt.empty();
+    }
+
+    public static OptionalDouble optionalDouble(Inspector field) {
+        return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
+    }
+
+    public static Optional<String> optionalString(Inspector field) {
+        return SlimeUtils.optionalString(field);
+    }
+
+    public static Optional<Instant> optionalInstant(Inspector field) {
+        var value = optionalLong(field);
+        return value.isPresent() ? Optional.of(Instant.ofEpochMilli(value.getAsLong())) : Optional.empty();
     }
 
 }

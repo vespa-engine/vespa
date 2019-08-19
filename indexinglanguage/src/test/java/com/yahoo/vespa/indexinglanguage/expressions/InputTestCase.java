@@ -71,7 +71,7 @@ public class InputTestCase {
 
         DocumentType docType = new DocumentType("my_doc");
         docType.addField("foo", fooType);
-        Document doc = new Document(docType, "doc:scheme:");
+        Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
         ExecutionContext ctx = new ExecutionContext(new SimpleDocumentAdapter(doc));
