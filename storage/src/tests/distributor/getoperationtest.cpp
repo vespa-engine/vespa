@@ -218,7 +218,7 @@ TEST_F(GetOperationTest, inconsistent_split) {
     setClusterState("distributor:1 storage:4");
 
     addNodesToBucketDB(document::BucketId(16, 0x0593), "0=100");
-    addNodesToBucketDB(document::BucketId(17, 0x0593), "1=200");
+    addNodesToBucketDB(document::BucketId(17, 0x10593), "1=200");
 
     sendGet();
 
