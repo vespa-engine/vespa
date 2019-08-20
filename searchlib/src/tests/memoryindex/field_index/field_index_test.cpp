@@ -937,7 +937,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
 {
     Document::UP doc;
 
-    _b.startDocument("doc::10");
+    _b.startDocument("id:ns:searchdocument::10");
     _b.startIndexField("f0").
         addStr("a").addStr("b").addStr("c").addStr("d").
         endField();
@@ -947,7 +947,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myPushDocument(_inv);
     _pushThreads.sync();
 
-    _b.startDocument("doc::20");
+    _b.startDocument("id:ns:searchdocument::20");
     _b.startIndexField("f0").
         addStr("a").addStr("a").addStr("b").addStr("c").addStr("d").
         endField();
@@ -957,7 +957,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myPushDocument(_inv);
     _pushThreads.sync();
 
-    _b.startDocument("doc::30");
+    _b.startDocument("id:ns:searchdocument::30");
     _b.startIndexField("f0").
         addStr("a").addStr("b").addStr("c").addStr("d").
         addStr("e").addStr("f").
@@ -988,7 +988,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myPushDocument(_inv);
     _pushThreads.sync();
 
-    _b.startDocument("doc::40");
+    _b.startDocument("id:ns:searchdocument::40");
     _b.startIndexField("f0").
         addStr("a").addStr("a").addStr("b").addStr("c").addStr("a").
         addStr("e").addStr("f").
@@ -999,7 +999,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     myPushDocument(_inv);
     _pushThreads.sync();
 
-    _b.startDocument("doc::999");
+    _b.startDocument("id:ns:searchdocument::999");
     _b.startIndexField("f0").
         addStr("this").addStr("is").addStr("_a_").addStr("test").
         addStr("for").addStr("insertion").addStr("speed").addStr("with").
@@ -1137,7 +1137,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
 {
     Document::UP doc;
 
-    _b.startDocument("doc::1");
+    _b.startDocument("id:ns:searchdocument::1");
     _b.startIndexField("f0").addStr("a").addStr("b").endField();
     _b.startIndexField("f1").addStr("a").addStr("c").endField();
     Document::UP doc1 = _b.endDocument();
@@ -1146,7 +1146,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     myPushDocument(_inv);
     _pushThreads.sync();
 
-    _b.startDocument("doc::2");
+    _b.startDocument("id:ns:searchdocument::2");
     _b.startIndexField("f0").addStr("b").addStr("c").endField();
     Document::UP doc2 = _b.endDocument();
     _inv.invertDocument(2, *doc2.get());
@@ -1189,7 +1189,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
 {
     Document::UP doc;
 
-    _b.startDocument("doc::10");
+    _b.startDocument("id:ns:searchdocument::10");
     _b.startIndexField("iu").
         startSubField("all").
         addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
@@ -1378,7 +1378,7 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
 {
     Document::UP doc;
 
-    _b.startDocument("doc::10");
+    _b.startDocument("id:ns:searchdocument::10");
     _b.startIndexField("f0").
         addStr("我就是那个").
         setAutoSpace(false).

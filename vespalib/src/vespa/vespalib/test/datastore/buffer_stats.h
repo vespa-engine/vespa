@@ -46,6 +46,7 @@ struct BufferStats
         assert(_extra_hold >= val);
         _extra_used -= val;
         _extra_hold -= val;
+        return *this;
     }
 
 };

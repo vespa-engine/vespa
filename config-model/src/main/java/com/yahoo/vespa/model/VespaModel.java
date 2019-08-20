@@ -164,11 +164,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
                                  deployState.rankProfileRegistry(), deployState.getQueryProfiles());
         this.rankProfileList = new RankProfileList(null, // null search -> global
-                                                   rankingConstants,
-                                                   AttributeFields.empty,
+                                                   rankingConstants, AttributeFields.empty,
                                                    deployState.rankProfileRegistry(),
                                                    deployState.getQueryProfiles().getRegistry(),
-                                                   deployState.getImportedModels());
+                                                   deployState.getImportedModels(),
+                                                   deployState.getProperties());
 
 
 

@@ -89,7 +89,7 @@ struct Fixture
     {
     }
     Document::UP createDoc(uint32_t lid) {
-        builder.startDocument(vespalib::make_string("doc:test:%u", lid));
+        builder.startDocument(vespalib::make_string("id:ns:searchdocument::%u", lid));
         return builder.endDocument();
     }
     void put(SerialNum serialNum, const search::DocumentIdT lid) {

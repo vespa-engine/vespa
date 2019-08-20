@@ -271,10 +271,6 @@ protected:
 public:
     void reset(uint64_t initBufferSize);
 
-    virtual uint32_t getFixedSize() const = 0;
-    size_t getMaxEnumOffset() const {
-        return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).size();
-    }
     uint32_t getRefCount(Index idx) const { return getEntryBase(idx).getRefCount(); }
     uint32_t getEnum(Index idx)     const { return getEntryBase(idx).getEnum(); }
     void incRefCount(Index idx)           { getEntryBase(idx).incRefCount(); }

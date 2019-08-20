@@ -42,13 +42,17 @@ using document::BucketId;
 
 BTreeBucketDatabase::BTreeBucketDatabase()
     : _tree(),
-      _store(ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                      4 * 1024, 8 * 1024, 0.2)),
+      _store(make_default_array_store_config()),
       _generation_handler()
 {
 }
 
 BTreeBucketDatabase::~BTreeBucketDatabase() = default;
+
+search::datastore::ArrayStoreConfig BTreeBucketDatabase::make_default_array_store_config() {
+    return ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                    4 * 1024, 8 * 1024, 0.2).enable_free_lists(true);
+}
 
 namespace {
 
@@ -232,11 +236,11 @@ void BTreeBucketDatabase::remove(const BucketId& bucket) {
  * skip scanning through many disjoint subtrees.
  */
 BTreeBucketDatabase::BTree::ConstIterator
-BTreeBucketDatabase::find_parents_internal(const document::BucketId& bucket,
+BTreeBucketDatabase::find_parents_internal(const BTree::FrozenView& frozen_view,
+                                           const document::BucketId& bucket,
                                            std::vector<Entry>& entries) const
 {
     const uint64_t bucket_key = bucket.toKey();
-    const auto frozen_view = _tree.getFrozenView();
     auto iter = frozen_view.begin();
     // Start at the root level, descending towards the bucket itself.
     // Try skipping as many levels of the tree as possible as we go.
@@ -255,6 +259,16 @@ BTreeBucketDatabase::find_parents_internal(const document::BucketId& bucket,
     return iter;
 }
 
+void BTreeBucketDatabase::find_parents_and_self_internal(const BTree::FrozenView& frozen_view,
+                                                         const document::BucketId& bucket,
+                                                         std::vector<Entry>& entries) const
+{
+    auto iter = find_parents_internal(frozen_view, bucket, entries);
+    if (iter.valid() && iter.getKey() == bucket.toKey()) {
+        entries.emplace_back(entry_from_iterator(iter));
+    }
+}
+
 /*
  * Note: due to legacy API reasons, iff the requested bucket itself exists in the
  * tree, it will be returned in the result set. I.e. it returns all the nodes on
@@ -263,16 +277,15 @@ BTreeBucketDatabase::find_parents_internal(const document::BucketId& bucket,
 void BTreeBucketDatabase::getParents(const BucketId& bucket,
                                      std::vector<Entry>& entries) const
 {
-    auto iter = find_parents_internal(bucket, entries);
-    if (iter.valid() && iter.getKey() == bucket.toKey()) {
-        entries.emplace_back(entry_from_iterator(iter));
-    }
+    auto view = _tree.getFrozenView();
+    find_parents_and_self_internal(view, bucket, entries);
 }
 
 void BTreeBucketDatabase::getAll(const BucketId& bucket,
                                  std::vector<Entry>& entries) const
 {
-    auto iter = find_parents_internal(bucket, entries);
+    auto view = _tree.getFrozenView();
+    auto iter = find_parents_internal(view, bucket, entries);
     // `iter` is already pointing at, or beyond, one of the bucket's subtrees.
     for (; iter.valid(); ++iter) {
         auto candidate = BucketId(BucketId::keyToBucketId(iter.getKey()));
@@ -508,6 +521,20 @@ void BTreeBucketDatabase::print(std::ostream& out, bool verbose,
     out << "BTreeBucketDatabase(" << size() << " buckets)";
     (void)verbose;
     (void)indent;
+}
+
+BTreeBucketDatabase::ReadGuardImpl::ReadGuardImpl(const BTreeBucketDatabase& db)
+    : _db(&db),
+      _guard(_db->_generation_handler.takeGuard()),
+      _frozen_view(_db->_tree.getFrozenView())
+{}
+
+BTreeBucketDatabase::ReadGuardImpl::~ReadGuardImpl() = default;
+
+void BTreeBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket,
+                                                               std::vector<Entry>& entries) const
+{
+    _db->find_parents_and_self_internal(_frozen_view, bucket, entries);
 }
 
 }

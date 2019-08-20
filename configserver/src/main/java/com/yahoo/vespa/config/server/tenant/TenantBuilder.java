@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
-import com.yahoo.path.Path;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
@@ -9,8 +8,6 @@ import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
-import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.*;
 
 import java.util.Collections;
@@ -22,7 +19,6 @@ import java.util.Collections;
  */
 public class TenantBuilder {
 
-    private final Path tenantPath;
     private final GlobalComponentRegistry componentRegistry;
     private final TenantName tenant;
     private RemoteSessionRepo remoteSessionRepo;
@@ -37,7 +33,6 @@ public class TenantBuilder {
 
     private TenantBuilder(GlobalComponentRegistry componentRegistry, TenantName tenant) {
         this.componentRegistry = componentRegistry;
-        this.tenantPath = TenantRepository.getTenantPath(tenant);
         this.tenant = tenant;
     }
 
@@ -52,11 +47,6 @@ public class TenantBuilder {
 
     public TenantBuilder withLocalSessionRepo(LocalSessionRepo localSessionRepo) {
         this.localSessionRepo = localSessionRepo;
-        return this;
-    }
-
-    public TenantBuilder withRemoteSessionRepo(RemoteSessionRepo remoteSessionRepo) {
-        this.remoteSessionRepo = remoteSessionRepo;
         return this;
     }
 
@@ -83,7 +73,7 @@ public class TenantBuilder {
         createSessionFactory();
         createLocalSessionRepo();
         return new Tenant(tenant,
-                          tenantPath,
+                          TenantRepository.getTenantPath(tenant),
                           sessionFactory,
                           localSessionRepo,
                           remoteSessionRepo,
@@ -124,9 +114,7 @@ public class TenantBuilder {
                                                                  Collections.singletonList(componentRegistry.getReloadListener()),
                                                                  ConfigResponseFactory.create(componentRegistry.getConfigserverConfig()),
                                                                  componentRegistry);
-            if (hostValidator == null) {
-                this.hostValidator = impl;
-            }
+            this.hostValidator = impl;
             if (requestHandler == null) {
                 requestHandler = impl;
             }
@@ -141,14 +129,12 @@ public class TenantBuilder {
     }
 
     private void createRemoteSessionRepo() {
-        if (remoteSessionRepo == null) {
-            remoteSessionRepo = new RemoteSessionRepo(componentRegistry,
-                                                      remoteSessionFactory,
-                                                      reloadHandler,
-                                                      tenant,
-                                                      applicationRepo);
+        remoteSessionRepo = new RemoteSessionRepo(componentRegistry,
+                                                  remoteSessionFactory,
+                                                  reloadHandler,
+                                                  tenant,
+                                                  applicationRepo);
 
-        }
     }
 
     public TenantName getTenantName() { return tenant; }

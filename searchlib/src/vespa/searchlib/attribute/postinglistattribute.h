@@ -106,7 +106,6 @@ public:
 
     void handleFillPostings(LoadedVector &loaded);
     void updatePostings(PostingMap &changePost) override;
-    void printPostingListContent(vespalib::asciistream & os) const;
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid) override;
 };
 

@@ -27,7 +27,7 @@ const vespalib::string url = "url";
 Document::UP
 makeDoc10Single(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     b.startIndexField("url").
         startSubField("all").
         addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
@@ -58,7 +58,7 @@ makeDoc10Single(DocBuilder &b)
 Document::UP
 makeDoc10Array(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     b.startIndexField("url").
         startElement(1).
         startSubField("all").
@@ -114,7 +114,7 @@ makeDoc10Array(DocBuilder &b)
 Document::UP
 makeDoc10WeightedSet(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     b.startIndexField("url").
         startElement(4).
         startSubField("all").
@@ -170,7 +170,7 @@ makeDoc10WeightedSet(DocBuilder &b)
 Document::UP
 makeDoc10Empty(DocBuilder &b)
 {
-    b.startDocument("doc::10");
+    b.startDocument("id:ns:searchdocument::10");
     return b.endDocument();
 }
 

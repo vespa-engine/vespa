@@ -111,23 +111,19 @@ LoadAttribute::Main()
     bool doApplyUpdate = false;
     bool doSave = false;
     bool doFastSearch = false;
-    bool doEnableEnumeratedSave = false;
     bool doHuge = false;
 
     int idx = 1;
     char opt;
     const char * arg;
     bool optError = false;
-    while ((opt = GetOpt("pasf:eh", arg, idx)) != -1) {
+    while ((opt = GetOpt("pasf:h", arg, idx)) != -1) {
         switch (opt) {
         case 'p':
             doPrintContent = true;
             break;
         case 'a':
             doApplyUpdate = true;
-            break;
-        case 'e':
-            doEnableEnumeratedSave = true;
             break;
         case 'h':
             doHuge = true;
@@ -169,9 +165,6 @@ LoadAttribute::Main()
     c.setFastSearch(doFastSearch);
     c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
-    if (doEnableEnumeratedSave) {
-        ptr->enableEnumeratedSave();
-    }
     FastOS_Time timer;
     timer.SetNow();
     load(ptr);

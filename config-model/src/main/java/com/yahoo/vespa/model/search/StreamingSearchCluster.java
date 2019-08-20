@@ -103,6 +103,7 @@ public class StreamingSearchCluster extends SearchCluster implements
             throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSearch.getName() + ")");
         }
         this.sdConfig = new DerivedConfiguration(localSearch, deployState.getDeployLogger(),
+                                                 deployState.getProperties(),
                                                  deployState.rankProfileRegistry(),
                                                  deployState.getQueryProfiles().getRegistry(),
                                                  deployState.getImportedModels());

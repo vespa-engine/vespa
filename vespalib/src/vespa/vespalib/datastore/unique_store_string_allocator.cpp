@@ -4,6 +4,13 @@
 
 namespace search::datastore {
 
+namespace {
+
+constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
+constexpr float ALLOC_GROW_FACTOR = 0.2;
+
+}
+
 namespace string_allocator {
 
 std::vector<size_t> array_sizes = { 16, 24, 32, 40, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 256 };

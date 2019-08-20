@@ -3,7 +3,9 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -58,42 +60,55 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         assertEquals(RankType.DEFAULT, setting.getValue());
     }
 
+    private String createSD(Double termwiseLimit) {
+        return "search test {\n" +
+                "    document test { \n" +
+                "        field a type string { \n" +
+                "            indexing: index \n" +
+                "        }\n" +
+                "    }\n" +
+                "    \n" +
+                "    rank-profile parent {\n" +
+                (termwiseLimit != null ? ("        termwise-limit:" + termwiseLimit + "\n") : "") +
+                "        num-threads-per-search:8\n" +
+                "        min-hits-per-thread:70\n" +
+                "        num-search-partitions:1200\n" +
+                "    }\n" +
+                "    rank-profile child inherits parent { }\n" +
+                "}\n";
+    }
+
     @Test
-    public void testTermwiseLimitAndSomeMoreIncludingInheritance() throws ParseException {
+    public void testTermwiseLimitWithDeployOverride() throws ParseException {
+        verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties(), createSD(null), null);
+        verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties(), createSD(0.78), 0.78);
+        verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties().setDefaultTermwiseLimit(0.09), createSD(null), 0.09);
+        verifyTermwiseLimitAndSomeMoreIncludingInheritance(new TestProperties().setDefaultTermwiseLimit(0.09), createSD(0.37), 0.37);
+    }
+
+    private void verifyTermwiseLimitAndSomeMoreIncludingInheritance(ModelContext.Properties deployProperties, String sd, Double termwiseLimit) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
-        builder.importString(
-                "search test {\n" +
-                        "    document test { \n" +
-                        "        field a type string { \n" +
-                        "            indexing: index \n" +
-                        "        }\n" +
-                        "    }\n" +
-                        "    \n" +
-                        "    rank-profile parent {\n" +
-                        "        termwise-limit:0.78\n" +
-                        "        num-threads-per-search:8\n" +
-                        "        min-hits-per-thread:70\n" +
-                        "        num-search-partitions:1200\n" +
-                        "    }\n" +
-                        "    rank-profile child inherits parent { }" +
-                        "\n" +
-                        "}\n");
+        builder.importString(sd);
         builder.build();
         Search search = builder.getSearch();
         AttributeFields attributeFields = new AttributeFields(search);
-        verifyRankProfile(rankProfileRegistry.get(search, "parent"), attributeFields);
-        verifyRankProfile(rankProfileRegistry.get(search, "child"), attributeFields);
+        verifyRankProfile(rankProfileRegistry.get(search, "parent"), attributeFields, deployProperties, termwiseLimit);
+        verifyRankProfile(rankProfileRegistry.get(search, "child"), attributeFields, deployProperties, termwiseLimit);
     }
 
-    private void verifyRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
-        assertEquals(0.78, rankProfile.getTermwiseLimit(), 0.000001);
+    private void verifyRankProfile(RankProfile rankProfile, AttributeFields attributeFields, ModelContext.Properties deployProperties,
+                                   Double expectedTermwiseLimit) {
         assertEquals(8, rankProfile.getNumThreadsPerSearch());
         assertEquals(70, rankProfile.getMinHitsPerThread());
         assertEquals(1200, rankProfile.getNumSearchPartitions());
-        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields);
-        assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
-        assertEquals("0.78", findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").get());
+        RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, deployProperties);
+        if (expectedTermwiseLimit != null) {
+            assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
+            assertEquals(String.valueOf(expectedTermwiseLimit), findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").get());
+        } else {
+            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
+        }
         assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.numthreadspersearch").isPresent());
         assertEquals("8", findProperty(rawRankProfile.configProperties(), "vespa.matching.numthreadspersearch").get());
         assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.minhitsperthread").isPresent());

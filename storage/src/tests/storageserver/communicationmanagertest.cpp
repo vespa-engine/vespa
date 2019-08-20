@@ -32,7 +32,7 @@ struct CommunicationManagerTest : Test {
             api::StorageMessage::Priority priority)
     {
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
-                                                     document::DocumentId("doc::mydoc"),
+                                                     document::DocumentId("id:ns:mytype::mydoc"),
                                                      "[all]");
         cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
@@ -69,13 +69,13 @@ TEST_F(CommunicationManagerTest, simple) {
 
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(0)), document::DocumentId("doc::mydoc"), "[all]");
+            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), "[all]");
     cmd->setAddress(api::StorageMessageAddress("storage", lib::NodeType::STORAGE, 1));
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
     ASSERT_GT(storageLink->getNumCommands(), 0);
     auto cmd2 = std::dynamic_pointer_cast<api::StorageCommand>(storageLink->getCommand(0));
-    EXPECT_EQ("doc::mydoc", dynamic_cast<api::GetCommand&>(*cmd2).getDocumentId().toString());
+    EXPECT_EQ("id:ns:mytype::mydoc", dynamic_cast<api::GetCommand&>(*cmd2).getDocumentId().toString());
     // Reply to the message
     std::shared_ptr<api::StorageReply> reply(cmd2->makeReply().release());
     storageLink->sendUp(reply);

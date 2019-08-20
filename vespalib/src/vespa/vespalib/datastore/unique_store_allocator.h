@@ -20,6 +20,7 @@ class UniqueStoreAllocator : public ICompactable
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
+    using EntryConstRefType = const EntryType &;
     using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
     using UniqueStoreBufferType = BufferType<WrappedEntryType>;

@@ -34,13 +34,9 @@ SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     const EnumStoreBase &enumStore = _enumSaver.getEnumStore();
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().
                                                     allocBufferWriter());
-    if (saveTarget.getEnumerated()) {
-        enumStore.writeEnumValues(*datWriter,
-                                  &_indices[0], _indices.size());
-    } else {
-        enumStore.writeValues(*datWriter,
+    assert(saveTarget.getEnumerated());
+    enumStore.writeEnumValues(*datWriter,
                               &_indices[0], _indices.size());
-    }
     datWriter->flush();
     _enumSaver.enableReEnumerate();
     return true;

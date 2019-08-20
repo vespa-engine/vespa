@@ -4,15 +4,10 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using document::DocumentId;
 using document::GlobalId;
-
-namespace {
-
-const DocumentId docId("doc:test:1");
-
-}
 
 namespace proton {
 
@@ -30,13 +25,12 @@ DocumentRetrieverBase::DocumentRetrieverBase(
       _emptyDoc(),
       _hasFields(hasFields)
 {
-    const document::DocumentType *
-        docType(_repo.getDocumentType(_docTypeName.getName()));
-    _emptyDoc.reset(new document::Document(*docType, docId));
+    const document::DocumentType * docType(_repo.getDocumentType(_docTypeName.getName()));
+    _emptyDoc.reset(new document::Document(*docType, DocumentId("id:empty:" + _docTypeName.getName() + "::empty")));
     _emptyDoc->setRepo(_repo);
 }
 
-DocumentRetrieverBase::~DocumentRetrieverBase() { }
+DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
 const document::DocumentTypeRepo &
 DocumentRetrieverBase::getDocumentTypeRepo() const {

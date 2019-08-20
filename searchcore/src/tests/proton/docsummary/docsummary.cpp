@@ -429,7 +429,7 @@ Test::requireThatAdapterHandlesAllFieldTypes()
     s.addSummaryField(Schema::SummaryField("l", schema::DataType::STRING));
 
     BuildContext bc(s);
-    bc._bld.startDocument("doc::0");
+    bc._bld.startDocument("id:ns:searchdocument::0");
     bc._bld.startSummaryField("a").addInt(255).endField();
     bc._bld.startSummaryField("b").addInt(32767).endField();
     bc._bld.startSummaryField("c").addInt(2147483647).endField();
@@ -478,12 +478,12 @@ Test::requireThatAdapterHandlesMultipleDocuments()
     s.addSummaryField(Schema::SummaryField("a", schema::DataType::INT32));
 
     BuildContext bc(s);
-    bc._bld.startDocument("doc::0").
+    bc._bld.startDocument("id:ns:searchdocument::0").
         startSummaryField("a").
         addInt(1000).
         endField();
     bc.endDocument(0);
-    bc._bld.startDocument("doc::1").
+    bc._bld.startDocument("id:ns:searchdocument::1").
         startSummaryField("a").
         addInt(2000).endField();
     bc.endDocument(1);
@@ -519,7 +519,7 @@ Test::requireThatAdapterHandlesDocumentIdField()
     Schema s;
     s.addSummaryField(Schema::SummaryField("documentid", schema::DataType::STRING));
     BuildContext bc(s);
-    bc._bld.startDocument("doc::0").
+    bc._bld.startDocument("id:ns:searchdocument::0").
         startSummaryField("documentid").
         addStr("foo").
         endField();
@@ -528,16 +528,16 @@ Test::requireThatAdapterHandlesDocumentIdField()
                              bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class4"),
                              getMarkupFields());
     GeneralResultPtr res = getResult(dsa, 0);
-    EXPECT_EQUAL("doc::0", std::string(res->GetEntry("documentid")->_stringval,
+    EXPECT_EQUAL("id:ns:searchdocument::0", std::string(res->GetEntry("documentid")->_stringval,
                                      res->GetEntry("documentid")->_stringlen));
 }
 
 
-GlobalId gid1 = DocumentId("doc::1").getGlobalId(); // lid 1
-GlobalId gid2 = DocumentId("doc::2").getGlobalId(); // lid 2
-GlobalId gid3 = DocumentId("doc::3").getGlobalId(); // lid 3
-GlobalId gid4 = DocumentId("doc::4").getGlobalId(); // lid 4
-GlobalId gid9 = DocumentId("doc::9").getGlobalId(); // not existing
+GlobalId gid1 = DocumentId("id:ns:searchdocument::1").getGlobalId(); // lid 1
+GlobalId gid2 = DocumentId("id:ns:searchdocument::2").getGlobalId(); // lid 2
+GlobalId gid3 = DocumentId("id:ns:searchdocument::3").getGlobalId(); // lid 3
+GlobalId gid4 = DocumentId("id:ns:searchdocument::4").getGlobalId(); // lid 4
+GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not existing
 
 void
 Test::requireThatDocsumRequestIsProcessed()
@@ -547,31 +547,31 @@ Test::requireThatDocsumRequestIsProcessed()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("doc::1").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
            startSummaryField("a").
            addInt(10).
            endField().
            endDocument(),
            1);
-    dc.put(*bc._bld.startDocument("doc::2").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::2").
            startSummaryField("a").
            addInt(20).
            endField().
            endDocument(),
            2);
-    dc.put(*bc._bld.startDocument("doc::3").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::3").
            startSummaryField("a").
            addInt(30).
            endField().
            endDocument(),
            3);
-    dc.put(*bc._bld.startDocument("doc::4").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::4").
            startSummaryField("a").
            addInt(40).
            endField().
            endDocument(),
            4);
-    dc.put(*bc._bld.startDocument("doc::5").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::5").
            startSummaryField("a").
            addInt(50).
            endField().
@@ -607,7 +607,7 @@ Test::requireThatRewritersAreUsed()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("doc::1").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
            startSummaryField("aa").
            addInt(10).
            endField().
@@ -634,7 +634,7 @@ Test::requireThatSummariesTimeout()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("doc::1").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
                    startSummaryField("aa").
                    addInt(10).
                    endField().
@@ -686,10 +686,10 @@ Test::requireThatAttributesAreUsed()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    dc.put(*bc._bld.startDocument("doc::1").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::1").
            endDocument(),
            1); // empty doc
-    dc.put(*bc._bld.startDocument("doc::2").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::2").
            startAttributeField("ba").
            addInt(10).
            endField().
@@ -753,7 +753,7 @@ Test::requireThatAttributesAreUsed()
            endField().
            endDocument(),
            2);
-    dc.put(*bc._bld.startDocument("doc::3").
+    dc.put(*bc._bld.startDocument("id:ns:searchdocument::3").
            endDocument(),
            3); // empty doc
 
@@ -818,7 +818,7 @@ Test::requireThatSummaryAdapterHandlesPutAndRemove()
     s.addSummaryField(Schema::SummaryField("f1", schema::DataType::STRING, CollectionType::SINGLE));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("doc::1").
+    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::1").
                        startSummaryField("f1").
                        addStr("foo").
                        endField().
@@ -854,7 +854,7 @@ Test::requireThatAnnotationsAreUsed()
     s.addSummaryField(Schema::SummaryField("dynamicstring", schema::DataType::STRING, CollectionType::SINGLE));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("doc::0").
+    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
                        startIndexField("g").
                        addStr("foo").
                        addStr("bar").
@@ -908,7 +908,7 @@ Test::requireThatUrisAreUsed()
     s.addSummaryField(Schema::SummaryField("uriwset", schema::DataType::STRING, CollectionType::WEIGHTEDSET));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("doc::0").
+    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
                        startIndexField("urisingle").
                        startSubField("all").
                        addUrlTokenizedString("http://www.example.com:81/fluke?ab=2#4").
@@ -1074,7 +1074,7 @@ Test::requireThatPositionsAreUsed()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("doc::1").
+    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::1").
                        startAttributeField("sp2").
                        addPosition(1002, 1003).
                        endField().
@@ -1146,7 +1146,7 @@ Test::requireThatRawFieldsWorks()
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
-    Document::UP exp = bc._bld.startDocument("doc::0").
+    Document::UP exp = bc._bld.startDocument("id:ns:searchdocument::0").
                        startSummaryField("i").
                        addRaw(raw1s.c_str(), raw1s.size()).
                        endField().
@@ -1178,8 +1178,7 @@ Test::requireThatRawFieldsWorks()
                              bc.createFieldCacheRepo(getResultConfig())->getFieldCache("class0"),
                              getMarkupFields());
 
-    ASSERT_TRUE(assertString(raw1s,
-                            "i", dsa, 1));
+    ASSERT_TRUE(assertString(raw1s, "i", dsa, 1));
 
     GeneralResultPtr res = getResult(dsa, 1);
     {
@@ -1237,14 +1236,12 @@ Test::Test()
                 continue;
             // Assume just one argument: source field that must contain markup
             _markupFields.insert(markupField);
-            LOG(info,
-                "Field %s has markup",
-                markupField.c_str());
+            LOG(info, "Field %s has markup", markupField.c_str());
         }
     }
 }
 
-Test::~Test() {}
+Test::~Test() = default;
 
 int
 Test::Main()

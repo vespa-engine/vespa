@@ -64,7 +64,7 @@ SyncServer::getDocsums(DocsumRequest::Source request, DocsumClient &)
     LOG(info, "responding to docsum request...");
     ret.docsums.resize(1);
     ret.docsums[0].setData("data", strlen("data"));
-    ret.docsums[0].gid = DocumentId(vespalib::make_string("doc::100")).getGlobalId();
+    ret.docsums[0].gid = DocumentId(vespalib::make_string("id:ns:type::100")).getGlobalId();
     return reply;
 }
 
@@ -145,7 +145,7 @@ TEST("transportserver") {
                 ASSERT_TRUE(p != 0);
                 ASSERT_TRUE(p->GetPCODE() == PCODE_DOCSUM);
                 FS4Packet_DOCSUM *r = (FS4Packet_DOCSUM*)p;
-                EXPECT_EQUAL(r->getGid(), DocumentId("doc::100").getGlobalId());
+                EXPECT_EQUAL(r->getGid(), DocumentId("id:ns:type::100").getGlobalId());
                 p->Free();
                 p = q.DequeuePacket(60000, &ctx);
                 ASSERT_TRUE(p != 0);

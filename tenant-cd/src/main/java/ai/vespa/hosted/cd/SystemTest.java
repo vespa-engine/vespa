@@ -28,7 +28,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({TYPE, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-@Tag("ai.vespa.hosted.cd.SystemTest")
+@IntegrationTest
+@Tag("system")
 public @interface SystemTest {
 
     // Want to feed some documents.

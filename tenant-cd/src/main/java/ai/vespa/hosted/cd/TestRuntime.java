@@ -1,10 +1,10 @@
 package ai.vespa.hosted.cd;
 
-import ai.vespa.hosted.api.ApiAuthenticator;
-import ai.vespa.hosted.api.EndpointAuthenticator;
+import ai.vespa.hosted.api.Authenticator;
 import ai.vespa.hosted.api.ControllerHttpClient;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
+import ai.vespa.hosted.auth.CertificateAndKeyAuthenticator;
 import ai.vespa.hosted.cd.http.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -29,7 +29,7 @@ public class TestRuntime {
     private final Map<String, Deployment> productionDeployments;
     private final Deployment deploymentToTest;
 
-    private TestRuntime(TestConfig config, EndpointAuthenticator authenticator) {
+    private TestRuntime(TestConfig config, Authenticator authenticator) {
         this.config = config;
         this.productionDeployments = config.deployments().entrySet().stream()
                                            .filter(zoneDeployment -> zoneDeployment.getKey().environment() == Environment.prod)
@@ -41,7 +41,7 @@ public class TestRuntime {
     }
 
     /**
-     * Returns the config for this test, or null if it has not been provided.
+     * Returns the config and authenticator to use when running integration tests.
      *
      * If the system property {@code "vespa.test.config"} is set (to a file path), a file at that location
      * is attempted read, and config parsed from it.
@@ -55,13 +55,13 @@ public class TestRuntime {
             String configPath = System.getProperty("vespa.test.config");
             TestConfig config = configPath != null ? fromFile(configPath) : fromController();
             theRuntime = new TestRuntime(config,
-                                         new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
+                                         new CertificateAndKeyAuthenticator(config.system()));
         }
         return theRuntime;
     }
 
     /** Returns a copy of this runtime, with the given endpoint authenticator. */
-    public TestRuntime with(EndpointAuthenticator authenticator) {
+    public TestRuntime with(Authenticator authenticator) {
         return new TestRuntime(config, authenticator);
     }
 

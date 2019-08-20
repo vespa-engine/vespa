@@ -10,7 +10,6 @@ vespa_add_library(searchlib_attribute OBJECT
     attribute_weighted_set_blueprint.cpp
     attributecontext.cpp
     attributefactory.cpp
-    attributefile.cpp
     attributefilebufferwriter.cpp
     attributefilesavetarget.cpp
     attributefilewriter.cpp
@@ -76,8 +75,8 @@ vespa_add_library(searchlib_attribute OBJECT
     multivalueattributesaverutils.cpp
     not_implemented_attribute.cpp
     numericbase.cpp
-    postingchange.cpp
     posting_list_merger.cpp
+    postingchange.cpp
     postinglistattribute.cpp
     postinglistsearchcontext.cpp
     postinglisttraits.cpp
@@ -87,13 +86,13 @@ vespa_add_library(searchlib_attribute OBJECT
     reference_attribute.cpp
     reference_attribute_saver.cpp
     reference_mappings.cpp
+    singleboolattribute.cpp
     singleenumattribute.cpp
     singleenumattributesaver.cpp
     singlenumericattribute.cpp
     singlenumericattributesaver.cpp
     singlenumericenumattribute.cpp
     singlenumericpostattribute.cpp
-    singleboolattribute.cpp
     singlesmallnumericattribute.cpp
     singlestringattribute.cpp
     singlestringpostattribute.cpp

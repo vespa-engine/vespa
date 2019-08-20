@@ -26,7 +26,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Target({TYPE, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-@Tag("ai.vespa.hosted.cd.ProductionTest")
+@IntegrationTest
+@Tag("production")
 public @interface ProductionTest {
 
     // Want to verify metrics (Vespa).

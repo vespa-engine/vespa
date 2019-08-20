@@ -7,9 +7,6 @@
 
 namespace search::datastore {
 
-constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
-constexpr float ALLOC_GROW_FACTOR = 0.2;
-
 template <typename RefT>
 UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()
     : ICompactable(),

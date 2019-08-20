@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.*;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshotConsumer;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -62,7 +62,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  NameService nameService, NodeRepository nodeRepository,
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
-                                 ResourceSnapshotConsumer resourceSnapshotConsumer,
+                                 MeteringClient meteringClient,
                                  Billing billing,
                                  SelfHostedCostConfig selfHostedCostConfig,
                                  IssueHandler issueHandler,
@@ -86,7 +86,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepository, Clock.systemUTC(), selfHostedCostConfig);
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepository, Clock.systemUTC(), metric, resourceSnapshotConsumer);
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(60), jobControl, nodeRepository, Clock.systemUTC(), metric, meteringClient);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);

@@ -197,8 +197,7 @@ TwoPhaseUpdateOperationTest::replyToGet(
     std::shared_ptr<api::StorageReply> reply;
 
     if (haveDocument) {
-        auto doc(std::make_shared<Document>(
-                *_doc_type, DocumentId(DocIdString("test", "test"))));
+        auto doc(std::make_shared<Document>(*_doc_type, DocumentId("id:ns:" + _doc_type->getName() + "::1")));
         doc->setValue("headerval", IntFieldValue(oldTimestamp));
 
         reply = std::make_shared<api::GetReply>(get, doc, oldTimestamp);
@@ -229,7 +228,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     if (!options._withError) {
         update = std::make_shared<document::DocumentUpdate>(
                 *_repo, *_doc_type,
-                document::DocumentId(document::DocIdString("test", "test")));
+                document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
         document::FieldUpdate fup(_doc_type->getField("headerval"));
         fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
         update->addUpdate(fup);
@@ -239,7 +238,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
         auto* badDocType = _repo->getDocumentType("testdoctype2");
         update = std::make_shared<document::DocumentUpdate>(
                 *_repo, *badDocType,
-                document::DocumentId(document::DocIdString("test", "test")));
+                document::DocumentId("id:ns:" + _doc_type->getName() + "::1"));
         document::FieldUpdate fup(badDocType->getField("onlyinchild"));
         fup.addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 10));
         update->addUpdate(fup);
@@ -285,7 +284,7 @@ TEST_F(TwoPhaseUpdateOperationTest, simple) {
 
     replyToMessage(*cb, sender, 0, 90);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)",
               sender.getLastReply(true));
 }
@@ -297,7 +296,7 @@ TEST_F(TwoPhaseUpdateOperationTest, non_existing) {
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) ReturnCode(NONE)",
               sender.getLastReply(true));
 }
@@ -313,7 +312,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_failed) {
 
     replyToMessage(*cb, sender, 0, 90, api::ReturnCode::INTERNAL_FAILURE);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
               "ReturnCode(INTERNAL_FAILURE)",
               sender.getLastReply(true));
@@ -331,20 +330,18 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps) {
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
-              sender.getLastCommand(true));
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 1", sender.getLastCommand(true));
 
     replyToGet(*cb, sender, 2, 110);
 
-    ASSERT_EQ("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0",
-              sender.getCommands(true));
+    ASSERT_EQ("Update => 0,Update => 1,Get => 1,Put => 1,Put => 0", sender.getCommands(true));
 
     ASSERT_TRUE(sender.replies().empty());
 
     replyToPut(*cb, sender, 3);
     replyToPut(*cb, sender, 4);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
               "(best node 1)) ReturnCode(NONE)",
               sender.getLastReply(true));
@@ -362,13 +359,12 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_not_found)
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
-              sender.getLastCommand(true));
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 1", sender.getLastCommand(true));
     ASSERT_TRUE(sender.replies().empty());
 
     replyToGet(*cb, sender, 2, 110, false);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
               "(best node 1)) ReturnCode(INTERNAL_FAILURE)",
               sender.getLastReply(true));
@@ -387,7 +383,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_update_err
     ASSERT_TRUE(sender.replies().empty());
     replyToMessage(*cb, sender, 1, 110, api::ReturnCode::IO_FAILURE);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 90) "
               "ReturnCode(IO_FAILURE)",
               sender.getLastReply(true));
@@ -405,13 +401,13 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_get_error)
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 1",
               sender.getLastCommand(true));
 
     ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 2, 110, false, api::ReturnCode::IO_FAILURE);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
               "(best node 1)) ReturnCode(IO_FAILURE)",
               sender.getLastReply(true));
@@ -429,7 +425,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_error)
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 1",
               sender.getLastCommand(true));
 
     replyToGet(*cb, sender, 2, 110);
@@ -441,7 +437,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_error)
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
               "(best node 1)) ReturnCode(IO_FAILURE)",
               sender.getLastReply(true));
@@ -459,7 +455,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_not_st
     replyToMessage(*cb, sender, 0, 90);
     replyToMessage(*cb, sender, 1, 110);
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 1",
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 1",
               sender.getLastCommand(true));
     checkMessageSettingsPropagatedTo(sender.commands().back());
 
@@ -467,7 +463,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_put_not_st
     ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 2, 110);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 110 Was inconsistent "
               "(best node 1)) ReturnCode(NOT_CONNECTED, "
               "Can't store document: No storage nodes available)",
@@ -483,8 +479,8 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_inconsiste
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    std::string wanted("Get(BucketId(0x4000000000008b13), doc:test:test) => 0,"
-                       "Get(BucketId(0x4400000000008b13), doc:test:test) => 0");
+    std::string wanted("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 0,"
+                       "Get(BucketId(0x440000000000cac4), id:ns:testdoctype1::1) => 0");
 
     std::string text = sender.getCommands(true, true);
     ASSERT_EQ(wanted, text);
@@ -492,17 +488,17 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_inconsistent_timestamps_inconsiste
     replyToGet(*cb, sender, 0, 90);
     replyToGet(*cb, sender, 1, 120);
 
-    ASSERT_EQ("Put(BucketId(0x4400000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 1,"
-              "Put(BucketId(0x4400000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 0",
+    ASSERT_EQ("Put(BucketId(0x440000000000cac4), id:ns:testdoctype1::1, "
+              "timestamp 200000000, size 60) => 1,"
+              "Put(BucketId(0x440000000000cac4), id:ns:testdoctype1::1, "
+              "timestamp 200000000, size 60) => 0",
               sender.getCommands(true, true, 2));
 
     replyToPut(*cb, sender, 2);
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 3);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 120) "
               "ReturnCode(NONE)",
@@ -543,7 +539,7 @@ TEST_F(TwoPhaseUpdateOperationTest, n_of_m) {
     ASSERT_TRUE(sender.replies().empty());
     replyToMessage(*cb, sender, 0, 90);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 90) ReturnCode(NONE)",
               sender.getLastReply(true));
 
@@ -569,18 +565,15 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) 
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    ASSERT_EQ("Get(BucketId(0x4000000000008b13), doc:test:test) => 0,"
-              "Get(BucketId(0x4000000000008b13), doc:test:test) => 2",
+    ASSERT_EQ("Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 0,"
+              "Get(BucketId(0x400000000000cac4), id:ns:testdoctype1::1) => 2",
               sender.getCommands(true, true));
     replyToGet(*cb, sender, 0, 50);
     replyToGet(*cb, sender, 1, 70);
 
-    ASSERT_EQ("Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 1,"
-              "Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 0,"
-              "Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 2",
+    ASSERT_EQ("Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 1,"
+              "Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 2,"
+              "Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 0",
               sender.getCommands(true, true, 2));
     // Make sure Put contains an updated document (+10 arith. update on field
     // whose value equals gotten timestamp). In this case we want 70 -> 80.
@@ -591,7 +584,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_updates_newest_received_document) 
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 70) "
               "ReturnCode(NONE)",
@@ -612,12 +605,9 @@ TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_a
     replyToGet(*cb, sender, 1, 0, false);
     // Since create-if-non-existent is set, distributor should create doc from
     // scratch.
-    ASSERT_EQ("Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 1,"
-              "Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 0,"
-              "Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 2",
+    ASSERT_EQ("Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 1,"
+              "Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 2,"
+              "Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, timestamp 200000000, size 60) => 0",
               sender.getCommands(true, true, 2));
 
     ASSERT_EQ("10", getUpdatedValueFromLastPut(sender));
@@ -627,7 +617,7 @@ TEST_F(TwoPhaseUpdateOperationTest, create_if_non_existent_creates_document_if_a
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 200000000) "
               "ReturnCode(NONE)",
@@ -648,14 +638,14 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_has_failed_put) {
     replyToGet(*cb, sender, 1, 0, false);
     // Since create-if-non-existent is set, distributor should create doc from
     // scratch.
-    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
 
     replyToPut(*cb, sender, 2);
     replyToPut(*cb, sender, 3);
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 4, api::ReturnCode::IO_FAILURE);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 200000000) "
               "ReturnCode(IO_FAILURE)",
@@ -675,7 +665,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_safe_path_gets_fail) {
     replyToGet(*cb, sender, 0, 0, false, api::ReturnCode::IO_FAILURE);
     ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 0, false, api::ReturnCode::IO_FAILURE);
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
               "ReturnCode(IO_FAILURE)",
@@ -696,7 +686,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_apply_throws_exception) {
     ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 70);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 70) "
               "ReturnCode(INTERNAL_FAILURE, Can not apply a "
@@ -713,10 +703,10 @@ TEST_F(TwoPhaseUpdateOperationTest, non_existing_with_auto_create) {
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
-    ASSERT_EQ("CreateBucketCommand(BucketId(0x4000000000008b13), active) "
+    ASSERT_EQ("CreateBucketCommand(BucketId(0x400000000000cac4), active) "
               "Reasons to start:  => 0,"
-              "Put(BucketId(0x4000000000008b13), doc:test:test, "
-              "timestamp 200000000, size 52) => 0",
+              "Put(BucketId(0x400000000000cac4), id:ns:testdoctype1::1, "
+              "timestamp 200000000, size 60) => 0",
               sender.getCommands(true, true));
 
     ASSERT_EQ("10", getUpdatedValueFromLastPut(sender));
@@ -725,7 +715,7 @@ TEST_F(TwoPhaseUpdateOperationTest, non_existing_with_auto_create) {
     ASSERT_TRUE(sender.replies().empty());
     replyToPut(*cb, sender, 1);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 200000000) "
               "ReturnCode(NONE)",
@@ -745,7 +735,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_fails_update_when_mismatching_time
     replyToGet(*cb, sender, 0, 100);
     ASSERT_TRUE(sender.replies().empty());
     replyToGet(*cb, sender, 1, 110);
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
               "ReturnCode(NONE, No document with requested "
@@ -755,8 +745,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_fails_update_when_mismatching_time
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings_to_gets_and_puts) {
     setupDistributor(3, 3, "storage:3 distributor:1");
-    std::shared_ptr<TwoPhaseUpdateOperation> cb(
-            sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
@@ -765,7 +754,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings
     checkMessageSettingsPropagatedTo(sender.command(1));
     replyToGet(*cb, sender, 0, 50);
     replyToGet(*cb, sender, 1, 70);
-    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
     checkMessageSettingsPropagatedTo(sender.command(2));
     checkMessageSettingsPropagatedTo(sender.command(3));
     checkMessageSettingsPropagatedTo(sender.command(4));
@@ -776,16 +765,14 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_update_propagates_message_settings
 
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_propagates_mbus_traces_from_replies) {
     setupDistributor(3, 3, "storage:3 distributor:1");
-    std::shared_ptr<TwoPhaseUpdateOperation> cb(
-            sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=2/3/4"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
     ASSERT_EQ("Get => 0,Get => 2", sender.getCommands(true));
-    replyToGet(*cb, sender, 0, 50, true,
-               api::ReturnCode::OK, "hello earthlings");
+    replyToGet(*cb, sender, 0, 50, true, api::ReturnCode::OK, "hello earthlings");
     replyToGet(*cb, sender, 1, 70);
-    ASSERT_EQ("Put => 1,Put => 0,Put => 2", sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
     replyToPut(*cb, sender, 2, api::ReturnCode::OK, "fooo");
     replyToPut(*cb, sender, 3, api::ReturnCode::OK, "baaa");
     ASSERT_TRUE(sender.replies().empty());
@@ -803,8 +790,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_ownership_changes_between_ge
     setupDistributor(2, 2, "storage:2 distributor:1");
 
     // Update towards inconsistent bucket invokes safe path.
-    std::shared_ptr<TwoPhaseUpdateOperation> cb(
-            sendUpdate("0=1/2/3,1=2/3/4"));
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4"));
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 
@@ -823,7 +809,7 @@ TEST_F(TwoPhaseUpdateOperationTest, update_fails_if_ownership_changes_between_ge
     // BUCKET_NOT_FOUND is a transient error code which should cause the client
     // to re-send the operation, presumably to the correct distributor the next
     // time.
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 70) "
               "ReturnCode(BUCKET_NOT_FOUND, Distributor lost "
@@ -843,7 +829,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_mismatch_fails_with_tas_
     // Newest doc has headerval==110, not 120.
     replyToGet(*cb, sender, 0, 100);
     replyToGet(*cb, sender, 1, 110);
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
               "BucketId(0x0000000000000000), "
               "timestamp 0, timestamp of updated doc: 0) "
               "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
@@ -877,7 +863,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_parse_failure_fails_with
     // NOTE: condition is currently not attempted parsed until Gets have been
     // replied to. This may change in the future.
     // XXX reliance on parser/exception error message is very fragile.
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
                           "BucketId(0x0000000000000000), "
                           "timestamp 0, timestamp of updated doc: 0) "
                           "ReturnCode(ILLEGAL_PARAMETERS, "
@@ -899,7 +885,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_unknown_doc_type_fails_w
     replyToGet(*cb, sender, 1, 110);
     // NOTE: condition is currently not attempted parsed until Gets have been
     // replied to. This may change in the future.
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
                           "BucketId(0x0000000000000000), "
                           "timestamp 0, timestamp of updated doc: 0) "
                           "ReturnCode(ILLEGAL_PARAMETERS, "
@@ -920,7 +906,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_
     // Both Gets return nothing at all, nothing at all.
     replyToGet(*cb, sender, 0, 100, false);
     replyToGet(*cb, sender, 1, 110, false);
-    EXPECT_EQ("UpdateReply(doc:test:test, "
+    EXPECT_EQ("UpdateReply(id:ns:testdoctype1::1, "
                           "BucketId(0x0000000000000000), "
                           "timestamp 0, timestamp of updated doc: 0) "
                           "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
@@ -976,8 +962,7 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_close_edge_sends_correct_reply) {
 TEST_F(TwoPhaseUpdateOperationTest, safe_path_close_edge_sends_correct_reply) {
     setupDistributor(2, 2, "storage:2 distributor:1");
 
-    std::shared_ptr<TwoPhaseUpdateOperation> cb(
-            sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
     DistributorMessageSenderStub sender;
     cb->start(sender, framework::MilliSecTime(0));
 

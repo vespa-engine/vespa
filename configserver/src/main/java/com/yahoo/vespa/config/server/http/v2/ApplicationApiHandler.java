@@ -37,11 +37,10 @@ public class ApplicationApiHandler extends SessionHandler {
     @Inject
     public ApplicationApiHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 TenantRepository tenantRepository,
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
         super(ctx, applicationRepository);
-        this.tenantRepository = tenantRepository;
+        this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
         this.zone = zone;
     }

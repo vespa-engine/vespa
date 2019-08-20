@@ -86,11 +86,15 @@ public class DomConfigPayloadBuilder {
     }
 
     private static boolean validName(String name) {
+        if (name == null) return false;
+
         Matcher m = namePattern.matcher(name);
         return m.matches();
     }
 
     private static boolean validNamespace(String namespace) {
+        if (namespace == null) return false;
+
         Matcher m = namespacePattern.matcher(namespace);
         return m.matches();
     }

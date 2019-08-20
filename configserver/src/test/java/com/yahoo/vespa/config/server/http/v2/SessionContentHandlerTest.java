@@ -168,7 +168,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
                                           new OrchestratorMock(),
-                                          componentRegistry.getClock()),
-                tenantRepository);
+                                          componentRegistry.getClock())
+        );
     }
 }

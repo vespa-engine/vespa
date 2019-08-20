@@ -87,6 +87,12 @@ TEST_FF("require that non-empty known url returns expected headers", DummyHandle
                             "Connection: close\r\n"
                             "Content-Type: application/json\r\n"
                             "Content-Length: 5\r\n"
+                            "X-XSS-Protection: 1; mode=block\r\n"
+                            "X-Frame-Options: DENY\r\n"
+                            "Content-Security-Policy: default-src 'none'\r\n"
+                            "X-Content-Type-Options: nosniff\r\n"
+                            "Cache-Control: no-store\r\n"
+                            "Pragma: no-cache\r\n"
                             "\r\n"
                             "[123]");
     std::string actual = getFull(f2.port(), my_path);

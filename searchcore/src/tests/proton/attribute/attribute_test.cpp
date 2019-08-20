@@ -204,7 +204,7 @@ TEST_F("require that attribute writer handles put", Fixture)
     attribute::ConstCharContent sbuf;
     { // empty document should give default values
         EXPECT_EQUAL(1u, a1->getNumDocs());
-        f.put(1, *idb.startDocument("doc::1").endDocument(), 1);
+        f.put(1, *idb.startDocument("id:ns:searchdocument::1").endDocument(), 1);
         EXPECT_EQUAL(2u, a1->getNumDocs());
         EXPECT_EQUAL(2u, a2->getNumDocs());
         EXPECT_EQUAL(2u, a3->getNumDocs());
@@ -226,7 +226,7 @@ TEST_F("require that attribute writer handles put", Fixture)
         EXPECT_EQUAL(strcmp("", sbuf[0]), 0);
     }
     { // document with single value & multi value attribute
-        Document::UP doc = idb.startDocument("doc::2").
+        Document::UP doc = idb.startDocument("id:ns:searchdocument::2").
             startAttributeField("a1").addInt(10).endField().
             startAttributeField("a2").startElement().addInt(20).endElement().
                                       startElement().addInt(30).endElement().endField().endDocument();
@@ -246,7 +246,7 @@ TEST_F("require that attribute writer handles put", Fixture)
         EXPECT_EQUAL(30u, ibuf[1]);
     }
     { // replace existing document
-        Document::UP doc = idb.startDocument("doc::2").
+        Document::UP doc = idb.startDocument("id:ns:searchdocument::2").
             startAttributeField("a1").addInt(100).endField().
             startAttributeField("a2").startElement().addInt(200).endElement().
                                       startElement().addInt(300).endElement().
@@ -281,7 +281,7 @@ TEST_F("require that attribute writer handles predicate put", Fixture)
 
     // empty document should give default values
     EXPECT_EQUAL(1u, a1->getNumDocs());
-    f.put(1, *idb.startDocument("doc::1").endDocument(), 1);
+    f.put(1, *idb.startDocument("id:ns:searchdocument::1").endDocument(), 1);
     EXPECT_EQUAL(2u, a1->getNumDocs());
     EXPECT_EQUAL(1u, a1->getStatus().getLastSyncToken());
     EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
@@ -289,7 +289,7 @@ TEST_F("require that attribute writer handles predicate put", Fixture)
     // document with single value attribute
     PredicateSlimeBuilder builder;
     Document::UP doc =
-        idb.startDocument("doc::2").startAttributeField("a1")
+        idb.startDocument("id:ns:searchdocument::2").startAttributeField("a1")
         .addPredicate(builder.true_predicate().build())
         .endField().endDocument();
     f.put(2, *doc, 2);
@@ -301,7 +301,7 @@ TEST_F("require that attribute writer handles predicate put", Fixture)
     EXPECT_FALSE(it.valid());
 
     // replace existing document
-    doc = idb.startDocument("doc::2").startAttributeField("a1")
+    doc = idb.startDocument("id:ns:searchdocument::2").startAttributeField("a1")
           .addPredicate(builder.feature("foo").value("bar").build())
           .endField().endDocument();
     f.put(3, *doc, 2);
@@ -374,7 +374,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
     DocBuilder idb(s);
     EXPECT_EQUAL(1u, a1->getNumDocs());
     EXPECT_EQUAL(0u, a1->getStatus().getLastSyncToken());
-    Document::UP doc = idb.startDocument("doc::1")
+    Document::UP doc = idb.startDocument("id:ns:searchdocument::1")
                               .startAttributeField("a1").addStr("10").endField()
                           .endDocument();
     f.put(3, *doc, 1);
@@ -398,11 +398,11 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
     EXPECT_EQUAL(8u, a1->getStatus().getLastSyncToken());
 
     verifyAttributeContent(*a1, 2, "10");
-    awDelayed.put(9, *idb.startDocument("doc::1").startAttributeField("a1").addStr("11").endField().endDocument(),
+    awDelayed.put(9, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("11").endField().endDocument(),
             2, false, emptyCallback);
-    awDelayed.put(10, *idb.startDocument("doc::1").startAttributeField("a1").addStr("20").endField().endDocument(),
+    awDelayed.put(10, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("20").endField().endDocument(),
             2, false, emptyCallback);
-    awDelayed.put(11, *idb.startDocument("doc::1").startAttributeField("a1").addStr("30").endField().endDocument(),
+    awDelayed.put(11, *idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1").addStr("30").endField().endDocument(),
             2, false, emptyCallback);
     EXPECT_EQUAL(8u, a1->getStatus().getLastSyncToken());
     verifyAttributeContent(*a1, 2, "10");
@@ -422,7 +422,7 @@ TEST_F("require that attribute writer handles predicate remove", Fixture)
     DocBuilder idb(s);
     PredicateSlimeBuilder builder;
     Document::UP doc =
-        idb.startDocument("doc::1").startAttributeField("a1")
+        idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1")
         .addPredicate(builder.true_predicate().build())
         .endField().endDocument();
     f.put(1, *doc, 1);
@@ -447,7 +447,7 @@ TEST_F("require that attribute writer handles update", Fixture)
     schema.addAttributeField(Schema::AttributeField("a2", schema::DataType::INT32, CollectionType::SINGLE));
     DocBuilder idb(schema);
     const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 5)));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
@@ -484,14 +484,14 @@ TEST_F("require that attribute writer handles predicate update", Fixture)
     DocBuilder idb(schema);
     PredicateSlimeBuilder builder;
     Document::UP doc =
-        idb.startDocument("doc::1").startAttributeField("a1")
+        idb.startDocument("id:ns:searchdocument::1").startAttributeField("a1")
         .addPredicate(builder.true_predicate().build())
         .endField().endDocument();
     f.put(1, *doc, 1);
     EXPECT_EQUAL(2u, a1->getNumDocs());
 
     const document::DocumentType &dt(idb.getDocumentType());
-    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*idb.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
     PredicateFieldValue new_value(builder.feature("foo").value("bar").build());
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
                   .addUpdate(AssignValueUpdate(new_value)));
@@ -633,7 +633,7 @@ createTensorSchema() {
 
 Document::UP
 createTensorPutDoc(DocBuilder &builder, const Tensor &tensor) {
-    return builder.startDocument("doc::1").
+    return builder.startDocument("id:ns:searchdocument::1").
         startAttributeField("a1").
         addTensor(tensor.clone()).endField().endDocument();
 }
@@ -678,7 +678,7 @@ TEST_F("require that attribute writer handles tensor assign update", Fixture)
     EXPECT_TRUE(tensor->equals(*tensor2));
 
     const document::DocumentType &dt(builder.getDocumentType());
-    DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("doc::1"));
+    DocumentUpdate upd(*builder.getDocumentTypeRepo(), dt, DocumentId("id:ns:searchdocument::1"));
     auto new_tensor = make_tensor(TensorSpec("tensor(x{},y{})")
                                   .add({{"x", "8"}, {"y", "9"}}, 11));
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
@@ -728,7 +728,7 @@ putAttributes(Fixture &f, std::vector<uint32_t> expExecuteHistory)
     EXPECT_EQUAL(1u, a1->getNumDocs());
     EXPECT_EQUAL(1u, a2->getNumDocs());
     EXPECT_EQUAL(1u, a3->getNumDocs());
-    f.put(1, *idb.startDocument("doc::1").
+    f.put(1, *idb.startDocument("id:ns:searchdocument::1").
           startAttributeField("a1").addInt(10).endField().
           startAttributeField("a2").addInt(15).endField().
           startAttributeField("a3").addInt(20).endField().

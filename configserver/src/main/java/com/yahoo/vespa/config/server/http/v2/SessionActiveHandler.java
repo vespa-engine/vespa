@@ -33,12 +33,9 @@ public class SessionActiveHandler extends SessionHandler {
     private final Zone zone;
 
     @Inject
-    public SessionActiveHandler(SessionHandler.Context ctx,
-                                ApplicationRepository applicationRepository,
-                                TenantRepository tenantRepository,
-                                Zone zone) {
+    public SessionActiveHandler(Context ctx, ApplicationRepository applicationRepository, Zone zone) {
         super(ctx, applicationRepository);
-        this.tenantRepository = tenantRepository;
+        this.tenantRepository = applicationRepository.tenantRepository();
         this.zone = zone;
     }
 

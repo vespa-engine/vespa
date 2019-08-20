@@ -8,6 +8,7 @@
 #include "unique_store_entry.h"
 #include "i_compactable.h"
 #include <cassert>
+#include <string>
 
 namespace search::datastore {
 
@@ -90,6 +91,7 @@ class UniqueStoreStringAllocator : public ICompactable
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = const char *;
+    using EntryConstRefType = const char *;
     using WrappedExternalEntryType = UniqueStoreEntry<std::string>;
     using RefType = RefT;
 private:

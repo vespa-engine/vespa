@@ -243,12 +243,14 @@ StringAttribute::StringSearchContext::~StringSearchContext()
 }
 
 bool
-StringAttribute::StringSearchContext::valid() const {
+StringAttribute::StringSearchContext::valid() const
+{
     return (_queryTerm.get() && (!_queryTerm->empty()));
 }
 
 const QueryTermBase *
-StringAttribute::StringSearchContext::queryTerm() const {
+StringAttribute::StringSearchContext::queryTerm() const
+{
     return static_cast<const QueryTermBase *>(_queryTerm.get());
 }
 
@@ -309,36 +311,6 @@ bool StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const Arithm
 bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 {
     return false;
-}
-
-template <typename T>
-void StringAttribute::loadAllAtOnce(T & loaded, fileutil::LoadedBuffer::UP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx)
-{
-    if (dataBuffer->c_str()) {
-        const char *value = dataBuffer->c_str();
-        for(uint32_t docIdx(0), valueIdx(0); docIdx < numDocs; docIdx++) {
-            uint32_t currValueCount(hasIdx ? attrReader.getNextValueCount() : 1);
-            for(uint32_t subIdx(0); subIdx < currValueCount; subIdx++) {
-                loaded[valueIdx]._docId = docIdx;
-                loaded[valueIdx]._idx = subIdx;
-                loaded[valueIdx].setValue(value);
-                loaded[valueIdx].setWeight(hasWeight ? attrReader.getNextWeight() : 1);
-                valueIdx++;
-                while(*value++) { }
-            }
-        }
-    }
-
-    attribute::sortLoadedByValue(loaded);
-    fillPostings(loaded);
-    loaded.rewind();
-    fillEnum(loaded);
-
-    dataBuffer.reset();
-
-    attribute::sortLoadedByDocId(loaded);
-    loaded.rewind();
-    fillValues(loaded);
 }
 
 bool
@@ -434,37 +406,14 @@ bool StringAttribute::onLoad()
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());
 
-    if (!ok)
+    if (!ok) {
         return false;
+    }
 
     setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
-        return onLoadEnumerated(attrReader);
-    
-    fileutil::LoadedBuffer::UP dataBuffer(loadDAT());
-
-    bool hasIdx(attrReader.hasIdx());
-    size_t numDocs(0);
-    uint32_t numValues(0);
-    if (hasIdx) {
-        numDocs = attrReader.getNumIdx() - 1;
-        numValues = attrReader.getNumValues();
-    } else if (dataBuffer->c_str()) {
-        numValues = countZero(dataBuffer->c_str(), dataBuffer->size());
-        numDocs = numValues;
-    }
-
-    setNumDocs(numDocs);
-    setCommittedDocIdLimit(numDocs);
-    if (numDocs > 0) {
-        onAddDoc(numDocs - 1);
-    }
-
-    LoadedVectorR loaded(numValues);
-    loadAllAtOnce(loaded, std::move(dataBuffer), numDocs, attrReader, hasWeightedSetType(), hasIdx);
-
-    return true;
+    assert(attrReader.getEnumerated());
+    return onLoadEnumerated(attrReader);
 }
 
 bool

@@ -116,6 +116,22 @@ public class LoadBalancerProvisionerTest {
                                             .collect(Collectors.toList());
         assertEquals(activeContainers, reals);
 
+        // Cluster removal deactivates relevant load balancer
+        tester.activate(app1, prepare(app1, clusterRequest(ClusterSpec.Type.container, containerCluster1)));
+        assertEquals(2, lbApp1.get().size());
+        assertEquals("Deactivated load balancer for cluster " + containerCluster2, LoadBalancer.State.inactive,
+                     lbApp1.get().stream()
+                           .filter(lb -> lb.id().cluster().equals(containerCluster2))
+                           .map(LoadBalancer::state)
+                           .findFirst()
+                           .get());
+        assertEquals("Load balancer for cluster " + containerCluster1 + " remains active", LoadBalancer.State.active,
+                     lbApp1.get().stream()
+                           .filter(lb -> lb.id().cluster().equals(containerCluster1))
+                           .map(LoadBalancer::state)
+                           .findFirst()
+                           .get());
+
         // Application is removed, nodes and load balancer are deactivated
         NestedTransaction removeTransaction = new NestedTransaction();
         tester.provisioner().remove(removeTransaction, app1);

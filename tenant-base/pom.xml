@@ -37,6 +37,7 @@
         <compiler_plugin_version>3.8.0</compiler_plugin_version>
         <surefire_version>2.22.0</surefire_version>
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
+        <test.categories>!integration</test.categories>
     </properties>
 
     <dependencyManagement>
@@ -214,54 +215,6 @@
                 </plugins>
             </build>
         </profile>
-
-        <profile>
-            <id>system-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <groups>ai.vespa.hosted.cd.SystemTest</groups>
-                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>staging-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <groups>ai.vespa.hosted.cd.StagingTest</groups>
-                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>production-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <groups>ai.vespa.hosted.cd.ProductionTest</groups>
-                            <excludedGroups>ai.vespa.hosted.cd.EmptyGroup</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
     </profiles>
 
     <build>
@@ -273,7 +226,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire_version}</version>
                     <configuration>
-                        <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        <groups>${test.categories}</groups>
                         <redirectTestOutputToFile>false</redirectTestOutputToFile>
                         <trimStackTrace>false</trimStackTrace>
                         <systemPropertyVariables>
@@ -368,13 +321,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludedGroups>
-                        ai.vespa.hosted.cd.SystemTest,
-                        ai.vespa.hosted.cd.StagingTest,
-                        ai.vespa.hosted.cd.ProductionTest
-                    </excludedGroups>
-                </configuration>
             </plugin>
         </plugins>
     </build>

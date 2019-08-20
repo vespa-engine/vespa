@@ -474,7 +474,7 @@ TEST_F(FileStorManagerTest, flush) {
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
 
-    document::DocumentId docId("doc:crawler:http://www.ntnu.no/");
+    document::DocumentId docId("id:ns:testdoctype1::crawler:http://www.ntnu.no/");
     auto doc = std::make_shared<Document>(*_testdoctype1, docId);
     document::BucketId bid(4000);
 
@@ -1767,7 +1767,7 @@ TEST_F(FileStorManagerTest, no_timestamps) {
             "storage", lib::NodeType::STORAGE, 3);
     // Creating a document to test with
     Document::SP doc(createDocument(
-                "some content", "doc:crawler:http://www.ntnu.no/").release());
+                "some content", "id:ns:testdoctype1::crawler:http://www.ntnu.no/").release());
     document::BucketId bid(16, 4000);
 
     createBucket(bid, 0);

@@ -55,7 +55,7 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState)
 {
     auto update = std::make_shared<document::DocumentUpdate>(
             *_repo, *_html_type,
-            document::DocumentId(document::DocIdString("test", "test")));
+            document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
 
     _bId = getExternalOperationHandler().getBucketId(update->getId());
 
@@ -95,7 +95,7 @@ TEST_F(UpdateOperationTest, simple) {
 
     replyToMessage(*cb, sender, 0, 90);
 
-    ASSERT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
               "timestamp 100, timestamp of updated doc: 90) ReturnCode(NONE)",
               sender.getLastReply(true));
 
@@ -114,7 +114,7 @@ TEST_F(UpdateOperationTest, not_found) {
 
     replyToMessage(*cb, sender, 0, 0);
 
-    EXPECT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    EXPECT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
               "timestamp 100, timestamp of updated doc: 0) ReturnCode(NONE)",
               sender.getLastReply(true));
 }
@@ -130,7 +130,7 @@ TEST_F(UpdateOperationTest, multi_node) {
     replyToMessage(*cb, sender, 0, 120);
     replyToMessage(*cb, sender, 1, 120);
 
-    ASSERT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
               "timestamp 100, timestamp of updated doc: 120) ReturnCode(NONE)",
               sender.getLastReply(true));
 
@@ -154,7 +154,7 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
     replyToMessage(*cb, sender, 0, 119);
     replyToMessage(*cb, sender, 1, 120);
 
-    ASSERT_EQ("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
               "timestamp 100, timestamp of updated doc: 120 Was inconsistent "
               "(best node 1)) ReturnCode(NONE)",
               sender.getLastReply(true));

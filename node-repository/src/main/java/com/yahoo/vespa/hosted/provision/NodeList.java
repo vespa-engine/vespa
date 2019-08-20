@@ -64,7 +64,12 @@ public class NodeList implements Iterable<Node> {
 
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
-        return filter(node -> node.allocation().get().membership().cluster().type().equals(type));
+        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
+    }
+
+    /** Returns the subset of nodes assigned to the given cluster */
+    public NodeList cluster(ClusterSpec.Id cluster) {
+        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().id().equals(cluster));
     }
 
     /** Returns the subset of nodes owned by the given application */

@@ -1,24 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributefile.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/attrvector.h>
+#include <vespa/searchlib/attribute/multinumericattribute.h>
+#include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/vespalib/testkit/testapp.h>
 #include <cmath>
 #include <iostream>
 
@@ -107,9 +108,8 @@ statSize(const AttributeVector &a)
 bool
 preciseEstimatedSize(const AttributeVector &a)
 {
-    if (a.getBasicType() == BasicType::STRING &&
-        EXPECT_TRUE(a.hasEnum()) && !a.getEnumeratedSave()) {
-        return false; // Using average of string lens, can be somewhat off
+    if (a.getBasicType() == BasicType::STRING) {
+        return false; // Using average of string lengths, can be somewhat off
     }
     return true;
 }
@@ -217,7 +217,7 @@ private:
 
     template <typename VectorType, typename BufferType>
     void
-    testCompactLidSpace(const Config &config, bool fs, bool es);
+    testCompactLidSpace(const Config &config, bool fast_search);
 
     template <typename VectorType, typename BufferType>
     void
@@ -399,7 +399,7 @@ void AttributeTest::compare(VectorType & a, VectorType & b)
         EXPECT_EQUAL(static_cast<const AttributeVector &>(a).get(i, av, asz), static_cast<uint32_t>(a.getValueCount(i)));
         EXPECT_EQUAL(static_cast<const AttributeVector &>(b).get(i, bv, bsz), static_cast<uint32_t>(b.getValueCount(i)));
         for(size_t j(0), k(std::min(a.getValueCount(i), b.getValueCount(i))); j < k; j++) {
-            EXPECT_TRUE(av[j] == bv[j]);
+            EXPECT_EQUAL(av[j], bv[j]);
         }
     }
     delete [] bv;
@@ -463,48 +463,13 @@ void AttributeTest::testReload(const AttributePtr & a, const AttributePtr & b, c
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(c.get())));
 
-    if (isUnsignedSmallIntAttribute(*a))
+    if (isUnsignedSmallIntAttribute(*a)) {
         return;
+    }
     populate(static_cast<VectorType &>(*b.get()), 700);
     populate(static_cast<VectorType &>(*c.get()), 700);
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(b.get())), *(static_cast<VectorType *>(c.get())));
-
-    {
-        ReadAttributeFile readC(c->getBaseFileName(), c->getConfig());
-        WriteAttributeFile writeC(b->getBaseFileName(), b->getConfig(),
-                                  DummyFileHeaderContext(),
-                                  c->getNumDocs());
-        std::unique_ptr<AttributeFile::Record> record(readC.getRecord());
-        ASSERT_TRUE(record.get());
-        for (size_t i(0), m(c->getNumDocs()); i < m; i++) {
-            EXPECT_TRUE(readC.read(*record));
-            EXPECT_TRUE(writeC.write(*record));
-        }
-        EXPECT_TRUE( ! readC.read(*record));
-    }
-    EXPECT_TRUE( b->load() );
-    compare<VectorType, BufferType>
-        (*(static_cast<VectorType *>(a.get())),
-         *(static_cast<VectorType *>(b.get())));
-    {
-        ReadAttributeFile readC(c->getBaseFileName(), c->getConfig());
-        WriteAttributeFile writeC(b->getBaseFileName(), b->getConfig(),
-                                  DummyFileHeaderContext(),
-                                  c->getNumDocs());
-        readC.enableDirectIO();
-        writeC.enableDirectIO();
-        std::unique_ptr<AttributeFile::Record> record(readC.getRecord());
-        ASSERT_TRUE(record.get());
-        for (size_t i(0), m(c->getNumDocs()); i < m; i++) {
-            EXPECT_TRUE(readC.read(*record));
-            EXPECT_TRUE(writeC.write(*record));
-        }
-        EXPECT_TRUE( ! readC.read(*record));
-    }
-    EXPECT_TRUE( b->load() );
-    compare<VectorType, BufferType>
-        (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
 }
 
 
@@ -1949,28 +1914,24 @@ AttributeTest::testPredicateHeaderTags()
 template <typename VectorType, typename BufferType>
 void
 AttributeTest::testCompactLidSpace(const Config &config,
-                                   bool fs,
-                                   bool es)
+                                   bool fast_search)
 {
     uint32_t highDocs = 100;
     uint32_t trimmedDocs = 30;
     vespalib::string bts = config.basicType().asString();
     vespalib::string cts = config.collectionType().asString();
-    vespalib::string fas = fs ? "-fs" : "";
-    vespalib::string ess = es ? "-es" : "";
+    vespalib::string fas = fast_search ? "-fs" : "";
     Config cfg = config;
-    cfg.setFastSearch(fs);
+    cfg.setFastSearch(fast_search);
     
-    vespalib::string name = clsDir + "/" + bts + "-" + cts + fas + ess;
+    vespalib::string name = clsDir + "/" + bts + "-" + cts + fas;
     LOG(info, "testCompactLidSpace(%s)", name.c_str());
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
     auto &v = static_cast<VectorType &>(*attr.get());
-    attr->enableEnumeratedSave(es);
     attr->addDocs(highDocs);
     populate(v, 17);
     AttributePtr attr2 = AttributeFactory::createAttribute(name, cfg);
     auto &v2 = static_cast<VectorType &>(*attr2.get());
-    attr2->enableEnumeratedSave(es);
     attr2->addDocs(trimmedDocs);
     populate(v2, 17);
     EXPECT_EQUAL(trimmedDocs, attr2->getNumDocs());
@@ -1999,13 +1960,12 @@ template <typename VectorType, typename BufferType>
 void
 AttributeTest::testCompactLidSpace(const Config &config)
 {
-    testCompactLidSpace<VectorType, BufferType>(config, false, false);
-    testCompactLidSpace<VectorType, BufferType>(config, false, true);
+    testCompactLidSpace<VectorType, BufferType>(config, false);
     bool smallUInt = isUnsignedSmallIntAttribute(config.basicType().type());
-    if (smallUInt)
+    if (smallUInt) {
         return;
-    testCompactLidSpace<VectorType, BufferType>(config, true, false);
-    testCompactLidSpace<VectorType, BufferType>(config, true, true);
+    }
+    testCompactLidSpace<VectorType, BufferType>(config, true);
 }
 
 void

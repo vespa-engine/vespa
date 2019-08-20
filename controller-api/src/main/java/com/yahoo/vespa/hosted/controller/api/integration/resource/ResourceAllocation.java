@@ -16,7 +16,7 @@ public class ResourceAllocation {
     private final double memoryGb;
     private final double diskGb;
 
-    private ResourceAllocation(double cpuCores, double memoryGb, double diskGb) {
+    public ResourceAllocation(double cpuCores, double memoryGb, double diskGb) {
         this.cpuCores = cpuCores;
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;

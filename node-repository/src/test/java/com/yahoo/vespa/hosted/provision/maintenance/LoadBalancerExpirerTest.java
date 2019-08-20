@@ -14,9 +14,11 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,21 +34,23 @@ public class LoadBalancerExpirerTest {
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
     @Test
-    public void test_remove_inactive() {
+    public void expire_inactive() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
         Supplier<Map<LoadBalancerId, LoadBalancer>> loadBalancers = () -> tester.nodeRepository().database().readLoadBalancers();
 
-        // Deploy two applications with load balancers
-        ClusterSpec.Id cluster = ClusterSpec.Id.from("qrs");
+        // Deploy two applications with a total of three load balancers
+        ClusterSpec.Id cluster1 = ClusterSpec.Id.from("qrs");
+        ClusterSpec.Id cluster2 = ClusterSpec.Id.from("qrs2");
         ApplicationId app1 = tester.makeApplicationId();
         ApplicationId app2 = tester.makeApplicationId();
-        LoadBalancerId lb1 = new LoadBalancerId(app1, cluster);
-        LoadBalancerId lb2 = new LoadBalancerId(app2, cluster);
-        deployApplication(app1, cluster);
-        deployApplication(app2, cluster);
-        assertEquals(2, loadBalancers.get().size());
+        LoadBalancerId lb1 = new LoadBalancerId(app1, cluster1);
+        LoadBalancerId lb2 = new LoadBalancerId(app2, cluster1);
+        LoadBalancerId lb3 = new LoadBalancerId(app2, cluster2);
+        deployApplication(app1, cluster1);
+        deployApplication(app2, cluster1, cluster2);
+        assertEquals(3, loadBalancers.get().size());
 
         // Remove one application deactivates load balancers for that application
         removeApplication(app1);
@@ -55,8 +59,8 @@ public class LoadBalancerExpirerTest {
 
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
-        assertEquals(2, tester.loadBalancerService().instances().size());
-        dirtyNodesOf(app1);
+        assertEquals(3, tester.loadBalancerService().instances().size());
+        dirtyNodesOf(app1, cluster1);
 
         // Expirer defers removal until expiration time passes
         expirer.maintain();
@@ -70,10 +74,25 @@ public class LoadBalancerExpirerTest {
         // Active load balancer is left alone
         assertSame(LoadBalancer.State.active, loadBalancers.get().get(lb2).state());
         assertTrue("Active load balancer is not removed", tester.loadBalancerService().instances().containsKey(lb2));
+
+        // A single cluster is removed
+        deployApplication(app2, cluster1);
+        expirer.maintain();
+        assertEquals(LoadBalancer.State.inactive, loadBalancers.get().get(lb3).state());
+
+        // Expirer defers removal while nodes are still allocated to cluster
+        expirer.maintain();
+        assertEquals(2, tester.loadBalancerService().instances().size());
+        dirtyNodesOf(app2, cluster2);
+
+        // Expirer removes load balancer for removed cluster
+        tester.clock().advance(Duration.ofHours(1));
+        expirer.maintain();
+        assertFalse("Inactive load balancer removed", tester.loadBalancerService().instances().containsKey(lb3));
     }
 
     @Test
-    public void test_expire_reserved() {
+    public void expire_reserved() {
         LoadBalancerExpirer expirer = new LoadBalancerExpirer(tester.nodeRepository(),
                                                               Duration.ofDays(1),
                                                               tester.loadBalancerService());
@@ -84,7 +103,7 @@ public class LoadBalancerExpirerTest {
         ClusterSpec.Id cluster = ClusterSpec.Id.from("qrs");
         ApplicationId app = tester.makeApplicationId();
         LoadBalancerId lb = new LoadBalancerId(app, cluster);
-        deployApplication(app, cluster, false);
+        deployApplication(app, false, cluster);
 
         // Provisions load balancer in reserved
         assertSame(LoadBalancer.State.reserved, loadBalancers.get().get(lb).state());
@@ -94,7 +113,7 @@ public class LoadBalancerExpirerTest {
         assertSame(LoadBalancer.State.reserved, loadBalancers.get().get(lb).state());
 
         // Application never activates and nodes are dirtied. Expirer moves load balancer to inactive after timeout
-        dirtyNodesOf(app);
+        dirtyNodesOf(app, cluster);
         tester.clock().advance(Duration.ofHours(1));
         expirer.maintain();
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
@@ -109,8 +128,12 @@ public class LoadBalancerExpirerTest {
         assertFalse("Inactive load balancer removed", loadBalancers.get().containsKey(lb));
     }
 
-    private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
+    private void dirtyNodesOf(ApplicationId application, ClusterSpec.Id cluster) {
+        tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application).stream()
+                                               .filter(node -> node.allocation().isPresent())
+                                               .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
+                                               .collect(Collectors.toList()),
+                                         Agent.system, this.getClass().getSimpleName());
     }
 
     private void removeApplication(ApplicationId application) {
@@ -119,16 +142,19 @@ public class LoadBalancerExpirerTest {
         transaction.commit();
     }
 
-    private void deployApplication(ApplicationId application, ClusterSpec.Id cluster) {
-        deployApplication(application, cluster, true);
+    private void deployApplication(ApplicationId application, ClusterSpec.Id... clusters) {
+        deployApplication(application, true, clusters);
     }
 
-    private void deployApplication(ApplicationId application, ClusterSpec.Id cluster, boolean activate) {
+    private void deployApplication(ApplicationId application, boolean activate, ClusterSpec.Id... clusters) {
         tester.makeReadyNodes(10, "d-1-1-1");
-        List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
-                                                                               Vtag.currentVersion, false),
-                                              2, 1,
-                                              new NodeResources(1, 1, 1, 0.3));
+        List<HostSpec> hosts = new ArrayList<>();
+        for (var cluster : clusters) {
+            hosts.addAll(tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
+                                                                         Vtag.currentVersion, false),
+                                        2, 1,
+                                        new NodeResources(1, 1, 1, 0.3)));
+        }
         if (activate) {
             tester.activate(application, hosts);
         }

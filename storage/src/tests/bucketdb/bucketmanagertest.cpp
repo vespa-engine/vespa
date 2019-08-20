@@ -171,10 +171,8 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
         _top->push_back(std::move(bottom));
     }
     // Generate a doc to use for testing..
-    const DocumentType &type(*_node->getTypeRepo()
-                             ->getDocumentType("text/html"));
-    _document = std::make_shared<document::Document>(
-            type, document::DocumentId(document::DocIdString("test", "ntnu")));
+    const DocumentType &type(*_node->getTypeRepo()->getDocumentType("text/html"));
+    _document = std::make_shared<document::Document>(type, document::DocumentId("id:ns:text/html::ntnu"));
 }
 
 void BucketManagerTest::addBucketsToDB(uint32_t count)

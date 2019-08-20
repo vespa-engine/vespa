@@ -53,7 +53,7 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _bucketSpace(bucketSpace),
       _msg(std::move(msg)),
       _returnCode(api::ReturnCode::OK),
-      _doc((document::Document*)NULL),
+      _doc(),
       _lastModified(0),
       _metric(metric),
       _operationTimer(manager.getClock())
@@ -117,10 +117,8 @@ GetOperation::onStart(DistributorMessageSender& sender)
 {
     // Send one request for each unique group (BucketId/checksum)
     bool sent = false;
-    for (std::map<GroupId, GroupVector>::iterator iter = _responses.begin();
-         iter != _responses.end(); ++iter)
-    {
-        sent |= sendForChecksum(sender, iter->first.getBucketId(), iter->second);
+    for (auto& response : _responses) {
+        sent |= sendForChecksum(sender, response.first.getBucketId(), response.second);
     }
 
     // If nothing was sent (no useful copies), just return NOT_FOUND
@@ -133,24 +131,22 @@ GetOperation::onStart(DistributorMessageSender& sender)
 void
 GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
-    api::GetReply* getreply = dynamic_cast<api::GetReply*>(msg.get());
+    auto* getreply = dynamic_cast<api::GetReply*>(msg.get());
     assert(getreply != nullptr);
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
     _msg->getTrace().getRoot().addChild(getreply->getTrace().getRoot());
     bool allDone = true;
-    for (std::map<GroupId, GroupVector>::iterator iter = _responses.begin();
-         iter != _responses.end(); ++iter)
-    {
-        for (uint32_t i = 0; i < iter->second.size(); i++) {
-            if (iter->second[i].sent == getreply->getMsgId()) {
+    for (auto& response : _responses) {
+        for (uint32_t i = 0; i < response.second.size(); i++) {
+            if (response.second[i].sent == getreply->getMsgId()) {
                 LOG(debug, "Get on %s returned %s",
                     _msg->getDocumentId().toString().c_str(),
                     getreply->getResult().toString().c_str());
 
-                iter->second[i].received = true;
-                iter->second[i].returnCode = getreply->getResult();
+                response.second[i].received = true;
+                response.second[i].returnCode = getreply->getResult();
 
                 if (getreply->getResult().success()) {
                     if (getreply->getLastModifiedTimestamp() > _lastModified) {
@@ -164,14 +160,14 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                     }
 
                     // Try to send to another node in this checksum group.
-                    bool sent = sendForChecksum(sender, iter->first.getBucketId(), iter->second);
+                    bool sent = sendForChecksum(sender, response.first.getBucketId(), response.second);
                     if (sent) {
                         allDone = false;
                     }
                 }
             }
 
-            if (iter->second[i].sent && !iter->second[i].received) {
+            if (response.second[i].sent && !response.second[i].received) {
                 LOG(spam, "Have not received all replies yet, setting allDone = false");
                 allDone = false;
             }
@@ -223,7 +219,7 @@ GetOperation::assignTargetNodeGroups()
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
     std::vector<BucketDatabase::Entry> entries;
-    _bucketSpace.getBucketDatabase().getParents(bid, entries);
+    _bucketSpace.getBucketDatabase().acquire_read_guard()->find_parents_and_self(bid, entries);
 
     for (uint32_t j = 0; j < entries.size(); ++j) {
         const BucketDatabase::Entry& e = entries[j];

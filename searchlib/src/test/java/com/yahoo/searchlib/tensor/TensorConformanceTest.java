@@ -76,6 +76,9 @@ public class TensorConformanceTest {
             boolean equals = Tensor.equals(result, expect);
             if (!equals) {
                 System.out.println(count + " : Tensors not equal. Result: " + result.toString() + " Expected: " + expect.toString() + " -> expression \"" + expression + "\"");
+            } else if (! result.type().valueType().equals(expect.type().valueType())) {
+                System.out.println(count + " : Tensor cell value types not equal. Result: " + result.type() + " Expected: " + expect.type() + " -> expression \"" + expression + "\"");
+                equals = false;
             }
             return equals;
 

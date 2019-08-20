@@ -53,11 +53,7 @@
                     <dependenciesToScan>
                         <dependency>com.yahoo.vespa.testrunner.test:main.jar</dependency>
                     </dependenciesToScan>
-                    <groups>ai.vespa.hosted.cd.SystemTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest</groups>
-                    <excludedGroups>com.yahoo.vespa.tenant.systemtest.base.impl.EmptyExcludeGroup.class</excludedGroups>
-                    <excludes>
-                        <exclude>ai.vespa.hosted.cd.SystemTest, com.yahoo.vespa.tenant.systemtest.base.SystemTest</exclude>
-                    </excludes>
+                    <groups>system, com.yahoo.vespa.tenant.systemtest.base.SystemTest</groups>
                     <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
                     <trimStackTrace>false</trimStackTrace>
