@@ -19,16 +19,30 @@ public class SystemPollerProvider implements Provider<SystemPoller> {
      * @param monitoringConfig   The interval in seconds between each polling.
      */
     public SystemPollerProvider (VespaServices services, MonitoringConfig monitoringConfig) {
-        poller = new SystemPoller(services.getVespaServices(), 60 * monitoringConfig.intervalMinutes());
-        poller.poll();
+        if (runningOnLinux()) {
+            poller = new SystemPoller(services.getVespaServices(), 60 * monitoringConfig.intervalMinutes());
+            poller.poll();
+        } else {
+            poller = null;
+        }
     }
 
     public void deconstruct() {
-        poller.stop();
+        if (poller != null) poller.stop();
     }
 
     public SystemPoller get() {
+        if (poller == null) {
+            throw new IllegalStateException("System poller is only available on Linux, current OS is" + getOs());
+        }
         return poller;
     }
 
+    private static boolean runningOnLinux() {
+        return getOs().contains("nux");
+    }
+
+    private static String getOs() {
+        return System.getProperty("os.name");
+    }
 }
