@@ -20,7 +20,7 @@ public class NodeResources {
     private final double vcpu;
     private final double memoryGb;
     private final double diskGb;
-    private final double bandwidthMbps;
+    private final double bandwidthGbps;
     private final DiskSpeed diskSpeed;
 
     /** Create node resources requiring fast disk and no bandwidth */
@@ -33,26 +33,26 @@ public class NodeResources {
         this(vcpu, memoryGb, diskGb, 0, diskSpeed);
     }
 
-    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthMbps, DiskSpeed diskSpeed) {
+    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
         this.vcpu = vcpu;
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
-        this.bandwidthMbps = bandwidthMbps;
+        this.bandwidthGbps = bandwidthGbps;
         this.diskSpeed = diskSpeed;
     }
 
     public double vcpu() { return vcpu; }
     public double memoryGb() { return memoryGb; }
     public double diskGb() { return diskGb; }
-    public double bandwidthMbps() { return bandwidthMbps; }
+    public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
 
     public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthMbps, speed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed);
     }
 
     public NodeResources withVcpu(double vcpu) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthMbps, diskSpeed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -61,7 +61,7 @@ public class NodeResources {
         return new NodeResources(vcpu - other.vcpu,
                                  memoryGb - other.memoryGb,
                                  diskGb - other.diskGb,
-                                 bandwidthMbps - other.bandwidthMbps,
+                                 bandwidthGbps - other.bandwidthGbps,
                                  combine(this.diskSpeed, other.diskSpeed));
     }
 
@@ -71,7 +71,7 @@ public class NodeResources {
         return new NodeResources(vcpu + other.vcpu,
                                  memoryGb + other.memoryGb,
                                  diskGb + other.diskGb,
-                                 bandwidthMbps + other.bandwidthMbps,
+                                 bandwidthGbps + other.bandwidthGbps,
                                  combine(this.diskSpeed, other.diskSpeed));
     }
 
@@ -104,20 +104,20 @@ public class NodeResources {
         if (this.vcpu != other.vcpu) return false;
         if (this.memoryGb != other.memoryGb) return false;
         if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthMbps != other.bandwidthMbps) return false;
+        if (this.bandwidthGbps != other.bandwidthGbps) return false;
         if (this.diskSpeed != other.diskSpeed) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthMbps, diskSpeed);
+        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
     }
 
     @Override
     public String toString() {
         return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
-               (bandwidthMbps > 0 ? ", bandwidth: " + bandwidthMbps + " Mbps" : "") +
+               (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
                (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
     }
 
@@ -126,7 +126,7 @@ public class NodeResources {
         if (this.vcpu < other.vcpu) return false;
         if (this.memoryGb < other.memoryGb) return false;
         if (this.diskGb < other.diskGb) return false;
-        if (this.bandwidthMbps < other.bandwidthMbps) return false;
+        if (this.bandwidthGbps < other.bandwidthGbps) return false;
 
         // Why doesn't a fast disk satisfy a slow disk? Because if slow disk is explicitly specified
         // (i.e not "any"), you should not randomly, sometimes get a faster disk as that means you may
@@ -141,7 +141,7 @@ public class NodeResources {
         if (this.vcpu != other.vcpu) return false;
         if (this.memoryGb != other.memoryGb) return false;
         if (this.diskGb != other.diskGb) return false;
-        if (this.bandwidthMbps != other.bandwidthMbps) return false;
+        if (this.bandwidthGbps != other.bandwidthGbps) return false;
         if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
 
         return true;

@@ -104,7 +104,7 @@ public class AllocatedHostsSerializer {
             resourcesObject.setDouble(vcpuKey, resources.vcpu());
             resourcesObject.setDouble(memoryKey, resources.memoryGb());
             resourcesObject.setDouble(diskKey, resources.diskGb());
-            resourcesObject.setDouble(bandwidthKey, resources.bandwidthMbps());
+            resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
             resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
         }
     }

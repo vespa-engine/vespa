@@ -33,7 +33,7 @@ public class Flavor {
         this.resources = new NodeResources(flavorConfig.minCpuCores(),
                                            flavorConfig.minMainMemoryAvailableGb(),
                                            flavorConfig.minDiskAvailableGb(),
-                                           flavorConfig.bandwidth(),
+                                           flavorConfig.bandwidth() / 1000,
                                            flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
     }
 
@@ -72,7 +72,7 @@ public class Flavor {
 
     public boolean hasFastDisk() { return resources.diskSpeed() == NodeResources.DiskSpeed.fast; }
 
-    public double getBandwidth() { return resources.bandwidthMbps(); }
+    public double getBandwidthGbps() { return resources.bandwidthGbps(); }
 
     public double getMinCpuCores() { return resources.vcpu(); }
 
