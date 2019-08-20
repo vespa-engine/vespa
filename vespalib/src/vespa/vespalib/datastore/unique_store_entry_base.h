@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstring>
+#include <cstdint>
 
 namespace search::datastore {
 

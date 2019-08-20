@@ -3,6 +3,7 @@
 #pragma once
 
 #include "unique_store_allocator.h"
+#include "unique_store_value_filter.h"
 #include "datastore.hpp"
 
 namespace search::datastore {
@@ -33,7 +34,7 @@ template <typename EntryT, typename RefT>
 EntryRef
 UniqueStoreAllocator<EntryT, RefT>::allocate(const EntryType& value)
 {
-    return _store.template freeListAllocator<WrappedEntryType,  UniqueStoreEntryReclaimer<WrappedEntryType>>(0).alloc(value).ref;
+    return _store.template freeListAllocator<WrappedEntryType,  UniqueStoreEntryReclaimer<WrappedEntryType>>(0).alloc(UniqueStoreValueFilter<EntryType>::filter(value)).ref;
 }
 
 template <typename EntryT, typename RefT>

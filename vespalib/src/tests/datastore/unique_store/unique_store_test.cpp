@@ -135,6 +135,7 @@ struct TestBase : public ::testing::Test {
 using NumberUniqueStore  = UniqueStore<uint32_t>;
 using StringUniqueStore  = UniqueStore<std::string>;
 using CStringUniqueStore = UniqueStore<const char *, EntryRefT<22>, UniqueStoreStringComparator<EntryRefT<22>>, UniqueStoreStringAllocator<EntryRefT<22>>>;
+using DoubleUniqueStore  = UniqueStore<double>;
 using SmallOffsetNumberUniqueStore = UniqueStore<uint32_t, EntryRefT<10,10>>;
 
 template <>
@@ -143,6 +144,8 @@ template <>
 std::vector<std::string> TestBase<StringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
 template <>
 std::vector<const char *> TestBase<CStringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
+template <>
+std::vector<double> TestBase<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
 
 using UniqueStoreTestTypes = ::testing::Types<NumberUniqueStore, StringUniqueStore, CStringUniqueStore>;
 TYPED_TEST_CASE(TestBase, UniqueStoreTestTypes);
@@ -156,6 +159,7 @@ TYPED_TEST_CASE(TestBase, UniqueStoreTestTypes);
 using NumberTest = TestBase<NumberUniqueStore>;
 using StringTest = TestBase<StringUniqueStore>;
 using CStringTest = TestBase<CStringUniqueStore>;
+using DoubleTest = TestBase<DoubleUniqueStore>;
 using SmallOffsetNumberTest = TestBase<SmallOffsetNumberUniqueStore>;
 
 TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
@@ -291,4 +295,33 @@ TYPED_TEST(TestBase, store_can_be_saved)
 
 #pragma GCC diagnostic pop
 
+TEST_F(DoubleTest, nan_is_handled)
+{
+    std::vector<double> myvalues = {
+        std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity(),
+        10.0,
+        -std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::infinity(),
+        -std::numeric_limits<double>::infinity()
+    };
+    std::vector<EntryRef> refs;
+    refs.push_back(EntryRef());
+    for (auto &value : myvalues) {
+        refs.emplace_back(add(value));
+    }
+    trimHoldLists();
+    EXPECT_TRUE(std::isnan(store.get(refs[1])));
+    EXPECT_TRUE(std::signbit(store.get(refs[1])));
+    auto saver = getSaver();
+    saver.enumerateValues();
+    std::vector<uint32_t> enumerated;
+    for (auto &ref : refs) {
+        enumerated.push_back(saver.mapEntryRefToEnumValue(ref));
+    }
+    std::vector<uint32_t> exp_enumerated = { 0, 1, 4, 2, 3, 1, 4, 2 };
+    EXPECT_EQ(exp_enumerated, enumerated);
+}    
+                
 GTEST_MAIN_RUN_ALL_TESTS()
