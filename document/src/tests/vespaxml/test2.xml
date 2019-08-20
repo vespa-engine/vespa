@@ -1,7 +1,0 @@
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<vespafeed>
-    <document documenttype="news" documentid="doc:crawler:http://www.ntnu.no/">
-       <title>TestTitle</title>
-       <last_downloaded>100</last_downloaded>
-    </document>
-</vespafeed>

@@ -79,7 +79,7 @@ public class VespaXmlUpdateReaderTestCase {
     public void requireThatDeserializeExceptionIncludesFieldName() throws Exception {
         assertThrows(new Field("my_field", DataType.BYTE),
                      "<assign field='my_field'>-129</assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 79)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 82)");
     }
 
     @Test
@@ -87,19 +87,19 @@ public class VespaXmlUpdateReaderTestCase {
         Field field = new Field("my_field", DataType.getArray(DataType.BYTE));
         assertThrows(field,
                      "<assign field='my_field'><item>-129</item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 86)");
         assertThrows(field,
                      "<assign fieldpath='my_field'><item>-129</item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 90)");
         assertThrows(field,
                      "<add field='my_field'><item>-129</item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 80)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
         assertThrows(field,
                      "<add fieldpath='my_field'><item>-129</item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 84)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
         assertThrows(field,
                      "<remove field='my_field'><item>-129</item></remove>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 86)");
     }
 
     @Test
@@ -107,19 +107,19 @@ public class VespaXmlUpdateReaderTestCase {
         Field field = new Field("my_field", DataType.getMap(DataType.BYTE, DataType.STRING));
         assertThrows(field,
                      "<assign field='my_field'><item><key>-129</key><value>foo</value></item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 90)");
         assertThrows(field,
                      "<assign fieldpath='my_field'><item><key>-129</key><value>foo</value></item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 91)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 94)");
         assertThrows(field,
                      "<add field='my_field'><item><key>-129</key><value>foo</value></item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 84)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
         assertThrows(field,
                      "<add fieldpath='my_field'><item><key>-129</key><value>foo</value></item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 88)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 91)");
         assertThrows(field,
                      "<remove field='my_field'><item><key>-129</key><value>foo</value></item></remove>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 90)");
         try {
             readUpdate(field, "<remove fieldpath='my_field{-129}' />");
             fail();
@@ -133,19 +133,19 @@ public class VespaXmlUpdateReaderTestCase {
         Field field = new Field("my_field", DataType.getMap(DataType.STRING, DataType.BYTE));
         assertThrows(field,
                      "<assign field='my_field'><item><key>foo</key><value>-129</value></item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 105)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 108)");
         assertThrows(field,
                      "<assign fieldpath='my_field'><item><key>foo</key><value>-129</value></item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 109)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 112)");
         assertThrows(field,
                      "<add field='my_field'><item><key>foo</key><value>-129</value></item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 102)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 105)");
         assertThrows(field,
                      "<add fieldpath='my_field'><item><key>foo</key><value>-129</value></item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 106)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 109)");
         assertThrows(field,
                      "<remove field='my_field'><item><key>foo</key><value>-129</value></item></remove>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 105)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 108)");
     }
 
     @Test
@@ -155,19 +155,19 @@ public class VespaXmlUpdateReaderTestCase {
         Field field = new Field("my_field", structType);
         assertThrows(field,
                      "<assign field='my_field'><my_byte>-129</my_byte></assign>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 89)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 92)");
         assertThrows(field,
                      "<assign fieldpath='my_field'><my_byte>-129</my_byte></assign>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 93)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 96)");
         assertThrows(field,
                      "<add field='my_field'><my_byte>-129</my_byte></add>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 86)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 89)");
         assertThrows(field,
                      "<add fieldpath='my_field'><my_byte>-129</my_byte></add>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 90)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 93)");
         assertThrows(field,
                      "<remove field='my_field'><my_byte>-129</my_byte></remove>",
-                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 89)");
+                     "Field 'my_byte': Invalid byte \"-129\". (at line 1, column 92)");
     }
 
     @Test
@@ -175,19 +175,19 @@ public class VespaXmlUpdateReaderTestCase {
         Field field = new Field("my_field", DataType.getWeightedSet(DataType.BYTE));
         assertThrows(field,
                      "<assign field='my_field'><item>-129</item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 86)");
         assertThrows(field,
                      "<assign fieldpath='my_field'><item>-129</item></assign>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 90)");
         assertThrows(field,
                      "<add field='my_field'><item>-129</item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 80)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
         assertThrows(field,
                      "<add fieldpath='my_field'><item>-129</item></add>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 84)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 87)");
         assertThrows(field,
                      "<remove field='my_field'><item>-129</item></remove>",
-                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 83)");
+                     "Field 'my_field': Invalid byte \"-129\". (at line 1, column 86)");
         try {
             readUpdate(field, "<remove fieldpath='my_field{-129}' />");
             fail();
@@ -206,12 +206,12 @@ public class VespaXmlUpdateReaderTestCase {
 
     @Test
     public void requireThatCreateIfNonExistentFlagIsValidated() throws Exception {
-        String documentXml = "<update id='doc:scheme:' type='my_type' create-if-non-existent='illegal'></update>";
+        String documentXml = "<update id='id:ns:my_doc::' type='my_type' create-if-non-existent='illegal'></update>";
         try {
             readUpdateHelper(null, documentXml);
             fail();
         } catch (DeserializationException e) {
-            assertEquals(printStackTrace(e), "'create-if-non-existent' must be either 'true' or 'false', was 'illegal' (at line 1, column 74)", e.getMessage());
+            assertEquals(printStackTrace(e), "'create-if-non-existent' must be either 'true' or 'false', was 'illegal' (at line 1, column 77)", e.getMessage());
         }
     }
 
@@ -231,12 +231,12 @@ public class VespaXmlUpdateReaderTestCase {
     }
 
     private static DocumentUpdate readUpdate(Field field, String fieldXml) throws Exception {
-        String documentXml = "<update id='doc:scheme:' type='my_type'>" + fieldXml + "</update>";
+        String documentXml = "<update id='id:ns:my_doc::' type='my_type'>" + fieldXml + "</update>";
         return readUpdateHelper(field, documentXml);
     }
 
     private static DocumentUpdate readUpdate(boolean createIfNonExistent) throws Exception {
-        String documentXml = "<update id='doc:scheme:' type='my_type' create-if-non-existent='" + (createIfNonExistent ? "true" : "false") + "'></update>";
+        String documentXml = "<update id='id:ns:my_doc::' type='my_type' create-if-non-existent='" + (createIfNonExistent ? "true" : "false") + "'></update>";
         return readUpdateHelper(null, documentXml);
     }
 
@@ -249,7 +249,7 @@ public class VespaXmlUpdateReaderTestCase {
         docManager.register(docType);
 
         InputStream in = new ByteArrayInputStream(documentXml.getBytes(StandardCharsets.UTF_8));
-        DocumentUpdate doc = new DocumentUpdate(docType, "doc:scheme:");
+        DocumentUpdate doc = new DocumentUpdate(docType, "id:ns:my_doc::");
         VespaXMLUpdateReader reader = new VespaXMLUpdateReader(in, docManager);
         reader.reader.next(); // initialize reader
         reader.read(doc);

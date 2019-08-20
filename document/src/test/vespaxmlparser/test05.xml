@@ -9,7 +9,7 @@
 -->
 
 <vespafeed>
-    <update documenttype="news" documentid="doc:news:http://news5"> 
+    <update documenttype="news" documentid="id:ns:news::http://news5"> 
         <add field="stringarr">
             <item>addString1</item>
             <item>addString2</item>

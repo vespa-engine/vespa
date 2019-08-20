@@ -1,12 +1,12 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documenttype="my_doc" documentid="doc:scheme:">
+    <document documenttype="my_doc" documentid="id:ns:my_doc::">
         <my_uri>scheme://host</my_uri>
     </document>
-    <document documenttype="my_doc" documentid="doc:scheme:">
+    <document documenttype="my_doc" documentid="id:ns:my_doc::">
         <my_arr><item>scheme://host</item></my_arr>
     </document>
-    <update documenttype="my_doc" documentid="doc:scheme:">
+    <update documenttype="my_doc" documentid="id:ns:my_doc::">
         <add field="my_arr">
             <item>scheme://host</item>
         </add>
