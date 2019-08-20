@@ -1,5 +1,6 @@
 package ai.vespa.hosted.auth;
 
+import ai.vespa.hosted.api.Authenticator;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
@@ -8,7 +9,6 @@ import com.yahoo.security.X509CertificateUtils;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.http.HttpRequest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
@@ -24,10 +24,10 @@ import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
  *
  * @author jonmv
  */
-public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthenticator {
+public class CertificateAndKeyAuthenticator implements Authenticator {
 
     /** Don't touch. */
-    public EndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
+    public CertificateAndKeyAuthenticator(@SuppressWarnings("unused") SystemName __) { }
 
     /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files
@@ -58,11 +58,6 @@ public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthen
         catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    @Override
-    public HttpRequest.Builder authenticated(HttpRequest.Builder request) {
-        return request;
     }
 
 }
