@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 
@@ -59,7 +58,7 @@ public class CapacityPolicies {
         if (clusterType == ClusterSpec.Type.admin)
             return nodeResourcesForAdminCluster();
 
-        return new NodeResources(1.5, 8, 50);
+        return new NodeResources(1.5, 8, 50, 0.3);
     }
 
     /**
@@ -87,7 +86,7 @@ public class CapacityPolicies {
 
     private NodeResources nodeResourcesForAdminCluster() {
         double memoryInGb = Flags.MEMORY_FOR_ADMIN_CLUSTER_NODES.bindTo(flagSource).value();
-        return new NodeResources(0.5, memoryInGb, 50);
+        return new NodeResources(0.5, memoryInGb, 50, 0.3);
     }
 
 }

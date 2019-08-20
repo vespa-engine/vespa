@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
@@ -128,7 +128,7 @@ public class LoadBalancerExpirerTest {
         List<HostSpec> hosts = tester.prepare(application, ClusterSpec.request(ClusterSpec.Type.container, cluster,
                                                                                Vtag.currentVersion, false),
                                               2, 1,
-                                              new NodeResources(1, 1, 1));
+                                              new NodeResources(1, 1, 1, 0.3));
         if (activate) {
             tester.activate(application, hosts);
         }

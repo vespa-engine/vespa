@@ -11,7 +11,7 @@
   "minMainMemoryAvailableGb": 32.0,
   "minCpuCores": 4.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 20000.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",

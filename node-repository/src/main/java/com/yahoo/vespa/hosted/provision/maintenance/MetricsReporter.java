@@ -215,14 +215,14 @@ public class MetricsReporter extends Maintainer {
         return nodes.nodeType(NodeType.host).asList().stream()
                 .map(host -> host.flavor().resources())
                 .map(resources -> resources.withDiskSpeed(any))
-                .reduce(new NodeResources(0, 0, 0, any), NodeResources::add);
+                .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
         return nodes.nodeType(NodeType.host).asList().stream()
                 .map(n -> freeCapacityOf(nodes, n))
                 .map(resources -> resources.withDiskSpeed(any))
-                .reduce(new NodeResources(0, 0, 0, any), NodeResources::add);
+                .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources freeCapacityOf(NodeList nodes, Node dockerHost) {

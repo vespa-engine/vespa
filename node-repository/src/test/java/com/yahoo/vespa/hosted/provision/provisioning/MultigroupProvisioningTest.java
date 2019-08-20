@@ -140,7 +140,7 @@ public class MultigroupProvisioningTest {
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
                 Duration.ofHours(12)).run();
 
-        assertEquals(8, tester.getNodes(application1, Node.State.inactive).resources(new NodeResources(1, 1, 1)).size());
+        assertEquals(8, tester.getNodes(application1, Node.State.inactive).resources(new NodeResources(1, 1, 1, 0.3)).size());
         deploy(application1, 8, 8, "d-3-3-3", tester);
     }
 

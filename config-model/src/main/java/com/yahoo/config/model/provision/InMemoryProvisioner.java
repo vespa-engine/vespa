@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    private static final NodeResources defaultResources = new NodeResources(1, 3, 9);
+    private static final NodeResources defaultResources = new NodeResources(1, 3, 9, 1);
 
     /**
      * If this is true an exception is thrown when all nodes are used.
@@ -56,7 +56,7 @@ public class InMemoryProvisioner implements HostProvisioner {
     /** Use this index as start index for all clusters */
     private final int startIndexForClusters;
 
-    /** Creates this with a number of nodes with resources 1, 3, 9 */
+    /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
     public InMemoryProvisioner(int nodeCount) {
         this(Collections.singletonMap(defaultResources,
                                       createHostInstances(nodeCount)), true, 0);

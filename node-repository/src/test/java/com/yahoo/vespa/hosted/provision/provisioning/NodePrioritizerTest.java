@@ -32,20 +32,20 @@ public class NodePrioritizerTest {
     public void relocated_nodes_are_preferred() {
         List<Node> nodes = new ArrayList<>();
         Node parent = createParent("parent");
-        Node b = createNode(parent, "b", new NodeResources(2, 2, 2));
+        Node b = createNode(parent, "b", new NodeResources(2, 2, 2, 2));
         nodes.add(b);
 
         // Only one node - should be obvious what to prefer
         Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, b, parent));
 
         // Two equal nodes - choose lexically
-        Node a = createNode(parent, "a", new NodeResources(2, 2, 2));
+        Node a = createNode(parent, "a", new NodeResources(2, 2, 2, 2));
         nodes.add(a);
         Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, a, parent));
         Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, b, parent));
 
         // Smallest node should be preferred
-        Node c = createNode(parent, "c", new NodeResources(1, 1, 1));
+        Node c = createNode(parent, "c", new NodeResources(1, 1, 1, 1));
         nodes.add(c);
         Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
 
@@ -54,7 +54,7 @@ public class NodePrioritizerTest {
         c = c.allocate(ApplicationId.defaultId(), ClusterMembership.from(spec, 0), Instant.now());
         nodes.remove(c);
         nodes.add(c);
-        Node d = createNode(parent, "d", new NodeResources(1, 1, 1));
+        Node d = createNode(parent, "d", new NodeResources(1, 1, 1, 1));
         nodes.add(d);
         Assert.assertTrue(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, d, parent));
         Assert.assertFalse(NodePrioritizer.isPreferredNodeToBeRelocated(nodes, c, parent));
@@ -80,7 +80,7 @@ public class NodePrioritizerTest {
 
     private static FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-large", 6., 6., 6, 6, Flavor.Type.BARE_METAL);
         return b.build();
     }
 }

@@ -301,7 +301,7 @@ public class NodeFailerTest {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // Add ready docker node
-        NodeResources newNodeResources = new NodeResources(3,4,5);
+        NodeResources newNodeResources = new NodeResources(3, 4, 5, 1);
         tester.createReadyNodes(1, 16, newNodeResources);
 
         // For a day all nodes work so nothing happens

@@ -3,7 +3,6 @@ package com.yahoo.config.model.provision;
 
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -23,10 +22,10 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.container.ApplicationContainer;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -42,7 +41,6 @@ import java.io.StringReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1139,7 +1137,7 @@ public class ModelProvisioningTest {
                 "      </logservers>" +
                 "      <slobroks>" +
                 "         <nodes count='2' dedicated='true'>" +
-                "            <resources vcpu='0.1' memory='0.3Gb' disk='1Gb'/>" +
+                "            <resources vcpu='0.1' memory='0.3Gb' disk='1Gb' bandwidth='500Mbps'/>" +
                 "         </nodes>" +
                 "      </slobroks>" +
                 "   </admin>" +
@@ -1178,13 +1176,13 @@ public class ModelProvisioningTest {
 
         int totalHosts = 23;
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(new NodeResources(0.1, 0.2, 300, NodeResources.DiskSpeed.slow), 1);// Logserver
-        tester.addHosts(new NodeResources(0.1, 0.3, 1), 2); // Slobrok
-        tester.addHosts(new NodeResources(12, 10, 30), 4); // Container
-        tester.addHosts(new NodeResources(0.8, 3, 2), 2); // Controller-foo
-        tester.addHosts(new NodeResources(8, 200, 1000000), 5); // Content-foo
-        tester.addHosts(new NodeResources(0.7, 2, 2.5), 3); // Controller-bar
-        tester.addHosts(new NodeResources(10, 64, 200), 6); // Content-bar
+        tester.addHosts(new NodeResources(0.1, 0.2, 300, 0.3, NodeResources.DiskSpeed.slow), 1);// Logserver
+        tester.addHosts(new NodeResources(0.1, 0.3, 1, 0.5), 2); // Slobrok
+        tester.addHosts(new NodeResources(12, 10, 30, 0.3), 4); // Container
+        tester.addHosts(new NodeResources(0.8, 3, 2, 0.3), 2); // Controller-foo
+        tester.addHosts(new NodeResources(8, 200, 1000000, 0.3), 5); // Content-foo
+        tester.addHosts(new NodeResources(0.7, 2, 2.5, 0.3), 3); // Controller-bar
+        tester.addHosts(new NodeResources(10, 64, 200, 0.3), 6); // Content-bar
         VespaModel model = tester.createModel(services, true, 0);
         assertEquals(totalHosts, model.getRoot().getHostSystem().getHosts().size());
     }
@@ -1713,13 +1711,13 @@ public class ModelProvisioningTest {
                  "       <document type='type1' mode='index'/>",
                  "     </documents>",
                  "     <nodes count='2'>",
-                 "       <resources vcpu='1' memory='3Gb' disk='9Gb' disk-speed='slow'/>",
+                 "       <resources vcpu='1' memory='3Gb' disk='9Gb' bandwidth='5Gbps' disk-speed='slow'/>",
                  "     </nodes>",
                  "  </content>",
                  "</services>");
 
          VespaModelTester tester = new VespaModelTester();
-         tester.addHosts(new NodeResources(1, 3, 9, NodeResources.DiskSpeed.slow), 2);
+         tester.addHosts(new NodeResources(1, 3, 9, 5, NodeResources.DiskSpeed.slow), 2);
          VespaModel model = tester.createModel(services, true, 0);
          ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
          assertEquals(2, cluster.getSearchNodes().size());
@@ -1776,8 +1774,8 @@ public class ModelProvisioningTest {
                 "</services>");
 
         VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(new NodeResources(1, 3, 9), 1);
-        tester.addHosts(new NodeResources(1, 128, 100), 1);
+        tester.addHosts(new NodeResources(1, 3, 9, 1), 1);
+        tester.addHosts(new NodeResources(1, 128, 100, 0.3), 1);
         VespaModel model = tester.createModel(services, true, 0);
         ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());

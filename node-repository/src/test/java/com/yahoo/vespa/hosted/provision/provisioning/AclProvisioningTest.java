@@ -6,8 +6,8 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
@@ -34,7 +34,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class AclProvisioningTest {
 
-    private final NodeResources nodeResources = new NodeResources(2, 8, 50);
+    private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
 
@@ -134,7 +134,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1),
+        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1, 1),
                                                                     dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);

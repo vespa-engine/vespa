@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
  */
 public class InactiveAndFailedExpirerTest {
 
-    private final NodeResources nodeResources = new NodeResources(2, 8, 50);
+    private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
     private final ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"),
                                                                    ApplicationName.from("bar"),

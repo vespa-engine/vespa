@@ -126,12 +126,12 @@ public class MetricsReporterTest {
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
         Node container1 = Node.createDockerNode(Set.of("::2"), Set.of(), "container1",
-                                                Optional.of("dockerHost"), new NodeResources(1, 3, 2), NodeType.tenant);
+                                                Optional.of("dockerHost"), new NodeResources(1, 3, 2, 1), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
         Node container2 = Node.createDockerNode(Set.of("::3"), Set.of(), "container2",
-                                                Optional.of("dockerHost"), new NodeResources(2, 4, 4), NodeType.tenant);
+                                                Optional.of("dockerHost"), new NodeResources(2, 4, 4, 1), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
 

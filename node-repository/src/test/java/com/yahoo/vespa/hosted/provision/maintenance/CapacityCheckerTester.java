@@ -7,7 +7,17 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -21,7 +31,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -149,7 +162,7 @@ public class CapacityCheckerTester {
                      int numHosts, NodeResources hostExcessCapacity, int hostExcessIps,
                      int numEmptyHosts, NodeResources emptyHostExcessCapacity, int emptyHostExcessIps) {
         List<NodeResources> childResources = List.of(
-                new NodeResources(1, 10, 100)
+                new NodeResources(1, 10, 100, 1)
 
         );
         createNodes(childrenPerHost, numDistinctChildren, childResources,
@@ -172,7 +185,7 @@ public class CapacityCheckerTester {
 
     NodeResources containingNodeResources(List<NodeResources> resources, NodeResources excessCapacity) {
         NodeResources usedByChildren = resources.stream()
-                .reduce(new NodeResources(0, 0, 0), NodeResources::add);
+                .reduce(new NodeResources(0, 0, 0, 0), NodeResources::add);
         return usedByChildren.add(excessCapacity);
     }
 
@@ -215,6 +228,7 @@ public class CapacityCheckerTester {
         @JsonProperty double minDiskAvailableGb;
         @JsonProperty double minMainMemoryAvailableGb;
         @JsonProperty double minCpuCores;
+        @JsonProperty double bandwidth;
         @JsonProperty boolean fastDisk;
         @JsonProperty Set<String> ipAddresses;
         @JsonProperty Set<String> additionalIpAddresses;
@@ -249,7 +263,7 @@ public class CapacityCheckerTester {
             diskSpeed = nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow;
         }
         NodeResources nr = new NodeResources(nodeModel.minCpuCores, nodeModel.minMainMemoryAvailableGb,
-                nodeModel.minDiskAvailableGb, diskSpeed);
+                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000, diskSpeed);
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,

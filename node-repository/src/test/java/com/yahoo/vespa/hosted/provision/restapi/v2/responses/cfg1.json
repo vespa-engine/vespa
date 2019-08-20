@@ -11,7 +11,7 @@
   "minMainMemoryAvailableGb": 16.0,
   "minCpuCores": 2.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 10000.0,
   "environment": "BARE_METAL",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
