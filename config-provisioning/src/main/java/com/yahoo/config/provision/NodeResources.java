@@ -24,13 +24,20 @@ public class NodeResources {
     private final DiskSpeed diskSpeed;
 
     /** Create node resources requiring fast disk and no bandwidth */
+    @Deprecated // Remove Oct. 2019
     public NodeResources(double vcpu, double memoryGb, double diskGb) {
-        this(vcpu, memoryGb, diskGb, 0, DiskSpeed.fast);
+        this(vcpu, memoryGb, diskGb, DiskSpeed.fast);
     }
 
     /** Create node resources requiring no bandwidth */
+    @Deprecated // Remove Oct. 2019
     public NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed) {
-        this(vcpu, memoryGb, diskGb, 0, diskSpeed);
+        this(vcpu, memoryGb, diskGb, 0.3, diskSpeed);
+    }
+
+    /** Create node resources requiring fast disk */
+    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps) {
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, DiskSpeed.fast);
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
@@ -165,7 +172,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, DiskSpeed.fast);
+        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.fast);
     }
 
 }

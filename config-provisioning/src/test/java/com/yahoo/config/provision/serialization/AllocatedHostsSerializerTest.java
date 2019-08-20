@@ -40,9 +40,9 @@ public class AllocatedHostsSerializerTest {
         hosts.add(new HostSpec("allocated",
                                Optional.of(ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1")))));
         hosts.add(new HostSpec("flavor-from-resources-1",
-                               Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4))));
+                               Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1))));
         hosts.add(new HostSpec("flavor-from-resources-2",
-                               Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, NodeResources.DiskSpeed.any))));
+                               Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any))));
         hosts.add(new HostSpec("configured-flavor",
                                Collections.emptyList(), configuredFlavors.getFlavorOrThrow("C/12/45/100")));
         hosts.add(new HostSpec("with-version",

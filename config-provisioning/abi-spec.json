@@ -608,6 +608,7 @@
     "methods": [
       "public void <init>(double, double, double)",
       "public void <init>(double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public void <init>(double, double, double, double)",
       "public void <init>(double, double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public double vcpu()",
       "public double memoryGb()",
