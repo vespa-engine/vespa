@@ -670,9 +670,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"" + flavor  + "\">\n" +
-                "            <jvm allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
-                "        </nodes>\n" +
+                "        <nodes count=\"1\" flavor=\"" + flavor + "\" allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
                 "    </container>\n" +
                 "</services>\n";
 
