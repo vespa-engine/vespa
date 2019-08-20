@@ -39,8 +39,6 @@
             </filtering>
         </http>
 
-        <nodes count="1" flavor="d-2-12-75">
-            <jvm allocated-memory="17%" />
-        </nodes>
+        <nodes count="1" flavor="d-2-12-75" allocated-memory="17%" />
     </container>
 </services>
