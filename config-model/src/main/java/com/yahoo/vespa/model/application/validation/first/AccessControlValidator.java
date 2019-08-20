@@ -29,6 +29,7 @@ public class AccessControlValidator extends Validator {
 
         if (! deployState.isHosted()) return;
         if (! deployState.zone().environment().isProduction()) return;
+        if (deployState.zone().system().isPublic()) return;
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
         List<String> offendingClusters = new ArrayList<>();
