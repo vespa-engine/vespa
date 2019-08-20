@@ -495,14 +495,14 @@
                 <artifactId>commons-pool</artifactId>
                 <version>1.5.6</version>
             </dependency>
-            <!-- Explicitly included to get Zookeeper version 3.4.14,
+            <!-- Explicitly included to get Zookeeper version 3.4.13,
                  can be excluded if you want the Zookeeper version
                  used by curator by default
             -->
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.4.14</version>
+                <version>3.4.13</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
