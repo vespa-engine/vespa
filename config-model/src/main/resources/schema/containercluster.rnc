@@ -7,7 +7,8 @@ ContainerCluster = element container | jdisc {
     ContainerServices &    
     DocumentBinding* &
     Aliases? &
-    NodesOfContainerCluster?
+    NodesOfContainerCluster? &
+    ClientAuthorize?
 }
 
 ContainerServices =
@@ -27,6 +28,9 @@ ContainerServices =
     AccessLog* &
     SecretStore? &
     GenericConfig*
+
+# TODO(ogronnesby): Change this configuration syntax
+ClientAuthorize = element client-authorize { empty }
 
 Components = element components {
     Include* &
