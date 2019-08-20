@@ -314,6 +314,10 @@ TEST_F(DoubleTest, nan_is_handled)
     trimHoldLists();
     EXPECT_TRUE(std::isnan(store.get(refs[1])));
     EXPECT_TRUE(std::signbit(store.get(refs[1])));
+    EXPECT_TRUE(std::isinf(store.get(refs[2])));
+    EXPECT_FALSE(std::signbit(store.get(refs[2])));
+    EXPECT_TRUE(std::isinf(store.get(refs[3])));
+    EXPECT_TRUE(std::signbit(store.get(refs[3])));
     auto saver = getSaver();
     saver.enumerateValues();
     std::vector<uint32_t> enumerated;
