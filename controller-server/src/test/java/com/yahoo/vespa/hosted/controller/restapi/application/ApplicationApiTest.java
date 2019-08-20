@@ -36,6 +36,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -861,6 +865,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void  testMeteringResponses() {
+        MockMeteringClient mockMeteringClient = (MockMeteringClient) controllerTester.controller().meteringClient();
+
+        // Mock response for MeteringClient
+        ResourceAllocation currentSnapshot = new ResourceAllocation(1, 2, 3);
+        ResourceAllocation thisMonth = new ResourceAllocation(12, 24, 1000);
+        ResourceAllocation lastMonth = new ResourceAllocation(24, 48, 2000);
+        ApplicationId applicationId = ApplicationId.from("doesnotexist", "doesnotexist", "default");
+        Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, List.of(
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123)),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246)),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492))));
+
+        mockMeteringClient.setMeteringInfo(new MeteringInfo(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
+
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
