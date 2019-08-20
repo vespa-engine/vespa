@@ -826,12 +826,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                 cpu.setDouble("value", resourceSnapshot.getCpuCores());
 
                                 Cursor mem = detailsMemData.addObject();
-                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                                cpu.setDouble("value", resourceSnapshot.getMemoryGb());
+                                mem.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                                mem.setDouble("value", resourceSnapshot.getMemoryGb());
 
                                 Cursor disk = detailsDiskData.addObject();
-                                cpu.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
-                                cpu.setDouble("value", resourceSnapshot.getDiskGb());
+                                disk.setLong("unixms", resourceSnapshot.getTimestamp().toEpochMilli());
+                                disk.setDouble("value", resourceSnapshot.getDiskGb());
 
                             });
 

@@ -1,15 +1,15 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author olaa
@@ -17,6 +17,7 @@ import java.util.Map;
 public class MockMeteringClient implements MeteringClient {
 
     private List<ResourceSnapshot> resources = new ArrayList<>();
+    private Optional<MeteringInfo> meteringInfo;
 
     @Override
     public void consume(List<ResourceSnapshot> resources){
@@ -25,13 +26,17 @@ public class MockMeteringClient implements MeteringClient {
 
     @Override
     public MeteringInfo getResourceSnapshots(String tenantName, String applicationName) {
-        ResourceAllocation emptyAllocation = new ResourceAllocation(0, 0, 0);
-        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, "default");
-        Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, new ArrayList<>());
-        return new MeteringInfo(emptyAllocation, emptyAllocation, emptyAllocation, snapshotHistory);
+        return meteringInfo.orElseGet(() -> {
+            ResourceAllocation emptyAllocation = new ResourceAllocation(0, 0, 0);
+            return new MeteringInfo(emptyAllocation, emptyAllocation, emptyAllocation, Collections.emptyMap());
+        });
     }
 
     public List<ResourceSnapshot> consumedResources() {
         return this.resources;
+    }
+
+    public void setMeteringInfo(MeteringInfo meteringInfo) {
+        this.meteringInfo = Optional.of(meteringInfo);
     }
 }

@@ -1,33 +1,45 @@
 {
   "currentrate": {
-    "cpu": 0.0,
-    "mem": 0.0,
-    "disk": 0.0
+    "cpu": 1.0,
+    "mem": 2.0,
+    "disk": 3.0
   },
   "thismonth": {
-    "cpu": 0.0,
-    "mem": 0.0,
-    "disk": 0.0
+    "cpu": 12.0,
+    "mem": 24.0,
+    "disk": 1000.0
   },
   "lastmonth": {
-    "cpu": 0.0,
-    "mem": 0.0,
-    "disk": 0.0
+    "cpu": 24.0,
+    "mem": 48.0,
+    "disk": 2000.0
   },
   "details": {
     "cpu": {
       "default": {
-        "data": []
+        "data": [
+          {"unixms":123,"value":1.0},
+          {"unixms":246,"value":1.0},
+          {"unixms":492,"value":1.0}
+        ]
       }
     },
     "mem": {
       "default": {
-        "data": []
+        "data": [
+          {"unixms":123,"value":2.0},
+          {"unixms":246,"value":2.0},
+          {"unixms":492,"value":2.0}
+        ]
       }
     },
     "disk": {
       "default": {
-        "data": []
+        "data": [
+          {"unixms":123,"value":3.0},
+          {"unixms":246,"value":3.0},
+          {"unixms":492,"value":3.0}
+        ]
       }
     }
   }
