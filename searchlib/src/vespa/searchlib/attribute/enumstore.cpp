@@ -18,74 +18,6 @@ insertEntryValue(char * dst, Type value)
 
 template <>
 void
-EnumStoreT<StringEntryType>::
-printEntry(vespalib::asciistream & os, const Entry & e) const
-{
-    os << "Entry: {";
-    os << "enum: " << e.getEnum();
-    os << ", refcount: " << e.getRefCount();
-    os << ", value: " << vespalib::string(e.getValue());
-    os << "}";
-}
-
-
-template <>
-void
-EnumStoreT<NumericEntryType<float> >::
-printEntry(vespalib::asciistream & os, const Entry & e) const
-{
-    os << "Entry: {";
-    os << "enum: " << e.getEnum();
-    os << ", refcount: " << e.getRefCount();
-    os << ", value: " << e.getValue();
-    union
-    {
-        unsigned int _asInt;
-        float _asFloat;
-    } u;
-    u._asFloat = e.getValue();
-    os << ", bvalue: 0x" << vespalib::hex << u._asInt;
-    os << "}";
-}
-
-
-template <>
-void
-EnumStoreT<NumericEntryType<double> >::
-printEntry(vespalib::asciistream & os, const Entry & e) const
-{
-    os << "Entry: {";
-    os << "enum: " << e.getEnum();
-    os << ", refcount: " << e.getRefCount();
-    os << ", value: " << e.getValue();
-    union
-    {
-        unsigned long _asLong;
-        double _asDouble;
-    } u;
-    u._asDouble = e.getValue();
-    os << ", bvalue: 0x" << vespalib::hex << u._asLong;
-    os << "}";
-}
-
-
-template <>
-void
-EnumStoreT<StringEntryType>::printValue(vespalib::asciistream & os, Index idx) const
-{
-    os << vespalib::string(getValue(idx));
-}
-
-template <>
-void
-EnumStoreT<StringEntryType>::printValue(vespalib::asciistream & os, Type value) const
-{
-    os << vespalib::string(value);
-}
-
- 
-template <>
-void
 EnumStoreT<StringEntryType>::writeValues(BufferWriter &writer,
                                          const Index *idxs,
                                          size_t count) const
@@ -150,21 +82,6 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     idx = newIdx;
     return sz;
 }
-
-
-#if 0
-template
-class btree::BTreeKeyData<EnumStoreBase::Index, btree::BTreeNoLeafData>;
-
-template
-class btree::BTreeKeyData<EnumStoreBase::Index, datastore::EntryRef>;
-
-template
-class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::LEAF_SLOTS>;
-
-template
-class btree::BTreeNodeTT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-#endif
 
 template
 class btree::BTreeBuilder<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,

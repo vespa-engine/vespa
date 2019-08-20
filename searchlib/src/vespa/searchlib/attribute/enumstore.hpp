@@ -48,17 +48,6 @@ EnumStoreT<StringEntryType>::
 insertEntryValue(char * dst, Type value);
 
 template <typename EntryType>
-void
-EnumStoreT<EntryType>::printEntry(vespalib::asciistream & os, const Entry & e) const
-{
-    os << "Entry: {";
-    os << "enum: " << e.getEnum();
-    os << ", refcount: " << e.getRefCount();
-    os << ", value: " << e.getValue();
-    os << "}";
-}
-
-template <typename EntryType>
 bool
 EnumStoreT<EntryType>::getValue(Index idx, Type & value) const
 {
@@ -70,21 +59,6 @@ EnumStoreT<EntryType>::getValue(Index idx, Type & value) const
 }
 
 template <typename EntryType>
-void
-EnumStoreT<EntryType>::printBuffer(vespalib::asciistream & os, uint32_t bufferIdx) const
-{
-    uint64_t i = 0;
-    while (i < _store.getBufferState(bufferIdx).size()) {
-        Index idx(i, bufferIdx);
-
-        Entry e = this->getEntry(idx);
-        this->printEntry(os, e);
-        os << ", " << idx << '\n';
-        i += this->getEntrySize(e.getValue());
-    }
-}
-
-template <typename EntryType>
 EnumStoreT<EntryType>::Builder::Builder()
     : _uniques(),
       _bufferSize(Index::align(1))
@@ -92,21 +66,6 @@ EnumStoreT<EntryType>::Builder::Builder()
 
 template <typename EntryType>
 EnumStoreT<EntryType>::Builder::~Builder() { }
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::printValue(vespalib::asciistream & os, Index idx) const
-{
-    os << getValue(idx);
-}
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::printValue(vespalib::asciistream & os, Type value) const
-{
-    os << value;
-}
-
 
 template <class EntryType>
 void
@@ -119,7 +78,6 @@ EnumStoreT<EntryType>::writeValues(BufferWriter &writer, const Index *idxs, size
         writer.write(src, sz);
     }
 }
-
 
 template <class EntryType>
 ssize_t
@@ -459,38 +417,6 @@ EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded, EnumIndexMap & ol
         performCompaction(static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary(), old2New);
     }
     return true;
-}
-
-
-template <typename EntryType>
-template <typename Dictionary>
-void
-EnumStoreT<EntryType>::printCurrentContent(vespalib::asciistream &os, const Dictionary &dict) const
-{
-    typedef typename Dictionary::ConstIterator DictionaryConstIterator;
-
-    for (DictionaryConstIterator iter = dict.begin(); iter.valid(); ++iter) {
-        Index idx = iter.getKey();
-        if (!this->validIndex(idx)) {
-            os << "Bad entry: " << idx << '\n';
-        } else {
-            Entry e = this->getEntry(idx);
-            this->printEntry(os, e);
-            os << ", " << idx << '\n';
-        }
-    }
-}
-
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::printCurrentContent(vespalib::asciistream &os) const
-{
-    if (_enumDict->hasData()) {
-        printCurrentContent(os, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
-    } else {
-        printCurrentContent(os, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
-    }
 }
 
 } // namespace search

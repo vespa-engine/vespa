@@ -140,8 +140,6 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
         attr.commit();
     }
 
-    //attr.getEnumStore().printCurrentContent();
-
     // check values and enums
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t valueCount = attr.getValueCount(doc);
@@ -194,8 +192,6 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
             EXPECT_TRUE(attr.append(doc, newUniques[j], 1));
         }
         attr.commit();
-
-        //attr.getEnumStore().printCurrentContent();
     }
 
     // check values and enums
@@ -389,8 +385,6 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
         }
     }
 
-    //svsa.printBuffers();
-
     // 1000 unique strings
     for (uint32_t i = 0; i < numDocs; ++i) {
         sprintf(tmp, "unique%u", i);
@@ -407,10 +401,8 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
                 EXPECT_TRUE( v.findEnum(t, e2) );
                 EXPECT_TRUE( e1 == e2 );
             }
-            //svsa.printBuffers();
         }
     }
-    //svsa.printBuffers();
 
     // check that enumX strings are removed (
     for (uint32_t i = 0; i < 10; ++i) {

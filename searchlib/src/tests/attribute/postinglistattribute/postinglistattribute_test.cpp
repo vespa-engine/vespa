@@ -759,9 +759,6 @@ PostingListAttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
     EXPECT_TRUE(vec.apply(3, Arith(Arith::Div, 10)));
     ptr->commit();
 
-    vespalib::asciistream ss;
-    vec.printPostingListContent(ss);
-    std::cout << ss.str();
     {
         uint32_t docs[] = {0};
         checkPostingList<AttributeType, ValueType>(vec, 2020, DocSet(docs, docs + 1));
