@@ -244,7 +244,7 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void testDocumentUpdate() throws ParseException {
-        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("id:myspace:test::adocnything"));
+        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("id:myspace:test::anything"));
         assertEquals(Result.TRUE, evaluate("test", upd));
         assertEquals(Result.FALSE, evaluate("music", upd));
         assertEquals(Result.TRUE, evaluate("test or music", upd));
