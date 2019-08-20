@@ -109,6 +109,10 @@ void generate_tensor_map(TestBuilder &dst) {
 void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
     std::vector<Layout> layouts = {
         {},                                                 {},
+        {},                                                 {x(5)},
+        {x(5)},                                             {},
+        {},                                                 float_cells({x(5)}),
+        float_cells({x(5)}),                                {},
         {x(5)},                                             {x(5)},
         {x(5)},                                             {y(5)},
         {x(5)},                                             {x(5),y(5)},
