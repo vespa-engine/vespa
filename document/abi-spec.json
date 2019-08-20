@@ -3622,8 +3622,7 @@
       "public void <init>()",
       "public static com.yahoo.document.serialization.DocumentSerializer createHead(com.yahoo.io.GrowableByteBuffer)",
       "public static com.yahoo.document.serialization.DocumentSerializer create6(com.yahoo.io.GrowableByteBuffer)",
-      "public static com.yahoo.document.serialization.DocumentSerializer create6()",
-      "public static com.yahoo.document.serialization.DocumentSerializer create42(com.yahoo.io.GrowableByteBuffer)"
+      "public static com.yahoo.document.serialization.DocumentSerializer create6()"
     ],
     "fields": []
   },
@@ -3905,59 +3904,6 @@
       "protected com.yahoo.document.update.ValueUpdate readTensorModifyUpdate(com.yahoo.document.DataType)",
       "protected com.yahoo.document.update.ValueUpdate readTensorAddUpdate(com.yahoo.document.DataType)",
       "protected com.yahoo.document.update.ValueUpdate readTensorRemoveUpdate(com.yahoo.document.DataType)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.document.serialization.VespaDocumentSerializer42": {
-    "superClass": "com.yahoo.vespa.objects.BufferSerializer",
-    "interfaces": [
-      "com.yahoo.document.serialization.DocumentSerializer"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void write(com.yahoo.document.Document)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.Document)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Array)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.MapFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ByteFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.BoolFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.CollectionFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.DoubleFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.FloatFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.IntegerFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.LongFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Raw)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.PredicateFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.StringFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.TensorFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.ReferenceFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.Struct)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.StructuredFieldValue)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.datatypes.WeightedSet)",
-      "public void write(com.yahoo.vespa.objects.FieldBase, com.yahoo.document.annotation.AnnotationReference)",
-      "public void write(com.yahoo.document.DocumentId)",
-      "public void write(com.yahoo.document.DocumentType)",
-      "public void write(com.yahoo.document.annotation.Annotation)",
-      "public void write(com.yahoo.document.annotation.SpanTree)",
-      "public void write(com.yahoo.document.annotation.SpanNode)",
-      "public void write(com.yahoo.document.annotation.Span)",
-      "public void write(com.yahoo.document.annotation.SpanList)",
-      "public void write(com.yahoo.document.annotation.AlternateSpanList)",
-      "public void write(com.yahoo.document.DocumentUpdate)",
-      "public void write(com.yahoo.document.update.FieldUpdate)",
-      "public void write(com.yahoo.document.update.AddValueUpdate, com.yahoo.document.DataType)",
-      "public void write(com.yahoo.document.update.MapValueUpdate, com.yahoo.document.DataType)",
-      "public void write(com.yahoo.document.update.ArithmeticValueUpdate)",
-      "public void write(com.yahoo.document.update.AssignValueUpdate, com.yahoo.document.DataType)",
-      "public void write(com.yahoo.document.update.RemoveValueUpdate, com.yahoo.document.DataType)",
-      "public void write(com.yahoo.document.update.ClearValueUpdate, com.yahoo.document.DataType)",
-      "public void write(com.yahoo.document.update.TensorModifyUpdate)",
-      "public void write(com.yahoo.document.update.TensorAddUpdate)",
-      "public void write(com.yahoo.document.update.TensorRemoveUpdate)",
-      "public static long getSerializedSize(com.yahoo.document.Document)"
     ],
     "fields": []
   },

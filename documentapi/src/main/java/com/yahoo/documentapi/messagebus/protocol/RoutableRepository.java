@@ -5,16 +5,21 @@ import com.yahoo.component.Version;
 import com.yahoo.component.VersionSpecification;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Routable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * This class encapsulates the logic required to map routable type and version to a corresponding {@link
@@ -49,21 +54,23 @@ final class RoutableRepository {
             log.log(LogLevel.ERROR, "Received empty byte array for deserialization.");
             return null;
         }
+        if (version.getMajor() < 5) {
+            log.log(LogLevel.ERROR,"Can not decode anything from (version " + version + "). Only major version 5 and up supported.");
+            return null;
+        }
         DocumentDeserializer in = DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(data));
 
 
         int type = in.getInt(null);
         RoutableFactory factory = getFactory(version, type);
         if (factory == null) {
-            log.log(LogLevel.ERROR, "No routable factory found for routable type " + type +
-                                    " (version " + version + ").");
+            log.log(LogLevel.ERROR,"No routable factory found for routable type " + type + " (version " + version + ").");
             return null;
         }
         Routable ret = factory.decode(in, loadTypes);
         if (ret == null) {
-            log.log(LogLevel.ERROR, "Routable factory " + factory.getClass().getName() + " failed to deserialize " +
-                                    "routable of type " + type + " (version " + version + ").");
-            log.log(LogLevel.ERROR, Arrays.toString(data));
+            log.log(LogLevel.ERROR,"Routable factory " + factory.getClass().getName() + " failed to deserialize " +
+                                               "routable of type " + type + " (version " + version + ").\nData = " + Arrays.toString(data));
             return null;
         }
         return ret;
@@ -83,17 +90,14 @@ final class RoutableRepository {
         int type = obj.getType();
         RoutableFactory factory = getFactory(version, type);
         if (factory == null) {
-            log.log(LogLevel.ERROR, "No routable factory found for routable type " + type +
-                                    " (version " + version + ").");
+            log.log(LogLevel.ERROR,"No routable factory found for routable type " + type + " (version " + version + ").");
             return new byte[0];
         }
-        DocumentSerializer out;
-
-        if (version.getMajor() >= 5) {
-            out = DocumentSerializerFactory.createHead(new GrowableByteBuffer(8192));
-        } else {
-            out = DocumentSerializerFactory.create42(new GrowableByteBuffer(8192));
+        if (version.getMajor() < 5) {
+            log.log(LogLevel.ERROR,"Can not encode routable type " + type + " (version " + version + "). Only major version 5 and up supported.");
+            return new byte[0];
         }
+        DocumentSerializer out= DocumentSerializerFactory.createHead(new GrowableByteBuffer(8192));
 
         out.putInt(null, type);
         if (!factory.encode(obj, out)) {
@@ -133,7 +137,7 @@ final class RoutableRepository {
      * @param type    The routable type that the factory must support.
      * @return The routable factory matching the criteria, or null.
      */
-     RoutableFactory getFactory(Version version, int type) {
+     private RoutableFactory getFactory(Version version, int type) {
         CacheKey cacheKey = new CacheKey(version, type);
         RoutableFactory factory = cache.get(cacheKey);
         if (factory != null) {
@@ -204,7 +208,7 @@ final class RoutableRepository {
         final Version version;
         final int type;
 
-        public CacheKey(Version version, int type) {
+        CacheKey(Version version, int type) {
             this.version = version;
             this.type = type;
         }

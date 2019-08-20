@@ -297,14 +297,13 @@ public class DocumentUpdateTestCase {
         }
     }
 
-    @Ignore
     @Test
     public void testSerialize() {
         docUp.addFieldUpdate(assignSingle);
         docUp.addFieldUpdate(addMultiList);
 
         GrowableByteBuffer buf = new GrowableByteBuffer();
-        docUp.serialize(DocumentSerializerFactory.create42(buf));
+        docUp.serialize(DocumentSerializerFactory.create6(buf));
         buf.flip();
 
         try {
@@ -314,9 +313,7 @@ public class DocumentUpdateTestCase {
         } catch (Exception e) {
         }
 
-        assertEquals(2 // version
-                     + (17 + 1) //docid id:ns:foobar:bar\0
-                     + 1 //contents
+        assertEquals((17 + 1) //docid id:ns:foobar:bar\0
                      + (6 + 1 + 2) //doctype foobar\0\0\0
                      + 4 //num field updates
 
@@ -334,6 +331,7 @@ public class DocumentUpdateTestCase {
 
                            + (4  //valueUpdateClassID
                               + (4 + 4 + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1) + 4 + (1 + 1 + 2 + 1))))) //value
+                        + 4 //num field path updates
                 , buf.remaining());
 
         DocumentUpdate docUpDeser = new DocumentUpdate(DocumentDeserializerFactory.createHead(docMan, buf));
@@ -406,7 +404,7 @@ public class DocumentUpdateTestCase {
         upd.addFieldUpdate(serAdd);
 
         GrowableByteBuffer buf = new GrowableByteBuffer(100, 2.0f);
-        upd.serialize(DocumentSerializerFactory.create42(buf));
+        upd.serialize(DocumentSerializerFactory.create6(buf));
         buf.flip();
 
         writeBufferToFile(buf, "src/tests/data/serializeupdatejava.dat");
