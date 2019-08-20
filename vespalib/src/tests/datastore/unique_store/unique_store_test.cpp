@@ -147,7 +147,7 @@ std::vector<const char *> TestBase<CStringUniqueStore>::values{ "aa", "bbb", "cc
 template <>
 std::vector<double> TestBase<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
 
-using UniqueStoreTestTypes = ::testing::Types<NumberUniqueStore, StringUniqueStore, CStringUniqueStore>;
+using UniqueStoreTestTypes = ::testing::Types<NumberUniqueStore, StringUniqueStore, CStringUniqueStore, DoubleUniqueStore>;
 TYPED_TEST_CASE(TestBase, UniqueStoreTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
