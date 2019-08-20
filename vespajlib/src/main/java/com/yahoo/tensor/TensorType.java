@@ -87,6 +87,16 @@ public class TensorType {
         this.dimensions = ImmutableList.copyOf(dimensionList);
     }
 
+    static public Value combinedValueType(TensorType ... types) {
+        List<Value> valueTypes = new ArrayList<>();
+        for (TensorType type : types) {
+            if (type.rank() > 0) {
+                valueTypes.add(type.valueType());
+            }
+        }
+        return Value.largestOf(valueTypes);
+    }
+
     /**
      * Returns a tensor type instance from a string on the format
      * <code>tensor(dimension1, dimension2, ...)</code>
@@ -456,7 +466,7 @@ public class TensorType {
          * The value type will be the largest of the value types of the input types
          */
         public Builder(TensorType ... types) {
-            this.valueType = TensorType.Value.largestOf(Arrays.stream(types).map(type -> type.valueType()).collect(Collectors.toList()));
+            this.valueType = TensorType.combinedValueType(types);
             for (TensorType type : types)
                 addDimensionsOf(type);
         }
