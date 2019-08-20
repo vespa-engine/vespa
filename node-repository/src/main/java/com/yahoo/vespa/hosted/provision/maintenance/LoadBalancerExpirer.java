@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -68,7 +67,7 @@ public class LoadBalancerExpirer extends Maintainer {
                                           .in(State.inactive)
                                           .changedBefore(expirationTime);
             for (var lb : expired) {
-                if (hasNodes(lb.id().application())) { // Defer removal if there are still nodes allocated to application
+                if (hasNodes(lb.id())) { // Defer removal if there are still nodes allocated
                     continue;
                 }
                 try {
@@ -91,8 +90,8 @@ public class LoadBalancerExpirer extends Maintainer {
         }
     }
 
-    private boolean hasNodes(ApplicationId application) {
-        return !nodeRepository().getNodes(application).isEmpty();
+    private boolean hasNodes(LoadBalancerId loadBalancer) {
+        return nodeRepository().list().owner(loadBalancer.application()).cluster(loadBalancer.cluster()).size() > 0;
     }
 
 }
