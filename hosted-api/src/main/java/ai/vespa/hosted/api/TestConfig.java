@@ -67,7 +67,7 @@ public class TestConfig {
 
     /**
      * Returns a TestConfig with default values for everything except the endpoints.
-     * @param endpoints a set of cluster name -> URI mappings — one per services.xml container cluster
+     * @param endpoints the endpoint for each of the containers specified in services.xml, by container id
      */
     public static TestConfig fromEndpointsOnly(Map<String, URI> endpoints) {
         return new TestConfig(ApplicationId.defaultId(),
