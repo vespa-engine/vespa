@@ -239,7 +239,7 @@ public class NodeSerializer {
             double bandwidth = Optional.of(resources.field(bandwidthKey))
                     .filter(Inspector::valid)
                     .map(Inspector::asDouble)
-                    .orElse(0d);
+                    .orElse(0.3);
             return new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                 resources.field(memoryKey).asDouble(),
                                                 resources.field(diskKey).asDouble(),

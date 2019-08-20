@@ -148,7 +148,7 @@ public class AllocatedHostsSerializer {
             double bandwidth = Optional.of(resources.field(bandwidthKey))
                     .filter(Inspector::valid)
                     .map(Inspector::asDouble)
-                    .orElse(0d);
+                    .orElse(0.3);
             return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                             resources.field(memoryKey).asDouble(),
                                                             resources.field(diskKey).asDouble(),
