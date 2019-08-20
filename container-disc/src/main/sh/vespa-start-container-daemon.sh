@@ -98,6 +98,8 @@ configure_memory() {
 configure_cpu() {
     if ((jvm_availableProcessors > 0)); then
         cpu_options="-XX:ActiveProcessorCount=${jvm_availableProcessors}"
+    else
+        cpu_options="-XX:ActiveProcessorCount=`nproc`"
     fi
 }
 
