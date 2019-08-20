@@ -201,7 +201,7 @@ public class ApplicationController {
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Version oldestInstalledPlatform(ApplicationId id) {
         return get(id).flatMap(application -> application.productionDeployments().keySet().stream()
-                                                         .flatMap(zone -> configServer().nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
+                                                         .flatMap(zone -> configServer.nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
                                                          .map(Node::currentVersion)
                                                          .filter(version -> ! version.isEmpty())
                                                          .min(naturalOrder()))
@@ -438,7 +438,7 @@ public class ApplicationController {
             deploySystemApplicationPackage(application, zone, version);
         } else {
             // Deploy by calling node repository directly
-            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
+            configServer.nodeRepository().upgrade(zone, application.nodeType(), version);
         }
     }
 
@@ -796,8 +796,6 @@ public class ApplicationController {
                                   id.application().value().replaceAll("-", "_"),
                                   id.instance().value());
     }
-
-    public ConfigServer configServer() { return configServer; }
 
     /**
      * Returns a lock which provides exclusive rights to changing this application.

@@ -74,8 +74,7 @@ public class RoutingPolicies {
      */
     public void refresh(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone) {
         if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
-        var lbs = new LoadBalancers(application, zone, controller.applications().configServer()
-                                                                 .getLoadBalancers(application, zone));
+        var lbs = new LoadBalancers(application, zone, controller.configServer().getLoadBalancers(application, zone));
         try (var lock = db.lockRoutingPolicies()) {
             removeObsoleteEndpointsFromDns(lbs, deploymentSpec, lock);
             storePoliciesOf(lbs, deploymentSpec, lock);
