@@ -310,29 +310,6 @@ template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-printPostingListContent(vespalib::asciistream & os) const
-{
-    for (DictionaryIterator itr = _es.getPostingDictionary().begin();
-         itr.valid(); ++itr) {
-        EnumIndex enumIdx = itr.getKey();
-        os << "PostingList[";
-        _es.printValue(os, enumIdx);
-        os << "]: {";
-
-        EntryRef postIdx = itr.getData();
-        PostingIterator postings = _postingList.begin(postIdx);
-        for (; postings.valid(); ++postings) {
-            os << postings.getKey() << ", ";
-        }
-        os << "}\n";
-    }
-}
-
-
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-void
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
                        uint32_t fromLid,
                        uint32_t toLid)

@@ -108,7 +108,6 @@ protected:
     Entry getEntry(Index idx) const {
         return Entry(const_cast<DataStoreType &>(_store).getEntry<char>(idx));
     }
-    void printEntry(vespalib::asciistream & os, const Entry & e) const;
 
     void freeUnusedEnum(Index idx, IndexSet & unused) override;
 
@@ -121,16 +120,12 @@ public:
     bool getValue(Index idx, Type & value) const;
     Type     getValue(uint32_t idx) const { return getValue(Index(datastore::EntryRef(idx))); }
     Type     getValue(Index idx)    const { return getEntry(idx).getValue(); }
-    uint32_t getFixedSize() const override { return Entry::fixedSize(); }
 
     static uint32_t
     getEntrySize(Type value)
     {
         return alignEntrySize(EntryBase::size() + EntryType::size(value));
     }
-    void printBuffer(vespalib::asciistream & os, uint32_t bufferIdx) const;
-    void printValue(vespalib::asciistream & os, Index idx) const;
-    void printValue(vespalib::asciistream & os, Type value) const;
 
     class Builder {
     public:
@@ -173,7 +168,6 @@ public:
     void freeUnusedEnums(const IndexVector &toRemove) override;
     void reset(Builder &builder);
     bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) override;
-    void printCurrentContent(vespalib::asciistream &os) const;
 
 private:
     template <typename Dictionary>
@@ -184,9 +178,6 @@ private:
 
     template <typename Dictionary>
     void performCompaction(Dictionary &dict, EnumIndexMap & old2New);
-
-    template <typename Dictionary>
-    void printCurrentContent(vespalib::asciistream &os, const Dictionary &dict) const;
 };
 
 template <typename EntryType>
@@ -234,44 +225,6 @@ template <>
 void
 EnumStoreT<StringEntryType>::
 insertEntryValue(char * dst, Type value);
-
-template <>
-void
-EnumStoreT<StringEntryType>::
-printEntry(vespalib::asciistream & os, const Entry & e) const;
-
-template <>
-void
-EnumStoreT<NumericEntryType<float> >::
-printEntry(vespalib::asciistream & os, const Entry & e) const;
-
-template <>
-void
-EnumStoreT<NumericEntryType<double> >::
-printEntry(vespalib::asciistream & os, const Entry & e) const;
-
-template <>
-void
-EnumStoreT<StringEntryType>::printValue(vespalib::asciistream & os, Index idx) const;
-
-template <>
-void
-EnumStoreT<StringEntryType>::printValue(vespalib::asciistream & os, Type value) const;
-
-
-#if 0
-extern template
-class btree::BTreeKeyData<EnumStoreBase::Index, btree::BTreeNoLeafData>;
-
-extern template
-class btree::BTreeKeyData<EnumStoreBase::Index, datastore::EntryRef>;
-
-extern template
-class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-#endif
 
 
 extern template
