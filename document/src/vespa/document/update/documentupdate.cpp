@@ -35,32 +35,6 @@ readCStr(nbostream & stream) {
     return vespalib::stringref(s, sz);
 }
 
-std::pair<const DocumentType *, DocumentId>
-deserializeTypeAndId(const DocumentTypeRepo& repo, vespalib::nbostream & stream) {
-    DocumentId docId(readCStr(stream));
-
-    // Read content bit vector.
-    unsigned char content = 0x00;
-    stream >> content;
-
-    // Why on earth do we have this whether we have type part?
-    // We need type for object to work, so just throwing exception if it's
-    // not there.
-    if((content & CONTENT_HASTYPE) == 0) {
-        throw IllegalStateException("Missing document type", VESPA_STRLOC);
-    }
-
-    vespalib::stringref typestr = readCStr(stream);
-
-    int16_t version = 0;
-    stream >> version;
-    const DocumentType *type = repo.getDocumentType(typestr);
-    if (!type) {
-        throw DocumentTypeNotFoundException(typestr, VESPA_STRLOC);
-    }
-    return std::make_pair(type, docId);
-}
-
 const DocumentType *
 deserializeHeader(const DocumentTypeRepo &repo, vespalib::nbostream & stream, vespalib::stringref & documentId)
 {
@@ -258,15 +232,6 @@ DocumentUpdate::serializeFlags(int size_) const
     return flags.injectInto(size_);
 }
 
-// Deserialize the content of the given buffer into this document update.
-DocumentUpdate::UP
-DocumentUpdate::create42(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
-{
-    auto update = std::make_unique<DocumentUpdate>();
-    update->init42(repo, stream);
-    return update;
-}
-
 DocumentUpdate::UP
 DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, ByteBuffer& buffer)
 {
@@ -285,13 +250,7 @@ DocumentUpdate::createHEAD(const DocumentTypeRepo& repo, vespalib::nbostream str
     return update;
 }
 
-void
-DocumentUpdate::init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream)
-{
-    _repo = &repo;
-    deserialize42(repo, stream);
-    reserialize();
-}
+
 void
 DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream)
 {
@@ -314,35 +273,6 @@ DocumentUpdate::initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & st
     deserializeBody(repo, stream);
     size_t sz = stream.rp() - startPos;
     _backing = nbostream(stream.peek() - sz, sz);
-}
-
-void
-DocumentUpdate::deserialize42(const DocumentTypeRepo& repo, vespalib::nbostream & stream)
-{
-    size_t pos = stream.rp();
-    try{
-        int16_t version(0);
-        stream >> version;
-        std::pair<const DocumentType *, DocumentId> typeAndId(deserializeTypeAndId(repo, stream));
-        _type = typeAndId.first;
-        _documentId = typeAndId.second;
-        // Read field updates, if any.
-        if (! stream.empty()) {
-            int32_t sizeAndFlags = 0;
-            stream >> sizeAndFlags;
-            int numUpdates = deserializeFlags(sizeAndFlags);
-            _updates.reserve(numUpdates);
-            for (int i = 0; i < numUpdates; i++) {
-                _updates.emplace_back(repo, *typeAndId.first, stream);
-            }
-        }
-    } catch (const DeserializeException &) {
-        stream.rp(pos);
-        throw;
-    } catch (const BufferOutOfBoundsException &) {
-        stream.rp(pos);
-        throw;
-    }
 }
 
 void

@@ -46,20 +46,8 @@ namespace document {
 
 namespace {
 template <typename Input>
-uint32_t readSize(Input &input, uint16_t version) {
-    if (version < 7) {
-        readValue<uint32_t>(input);  // type id
-        return readValue<uint32_t>(input);
-    } else {
+uint32_t readSize(Input &input) {
         return getInt1_2_4Bytes(input);
-    }
-}
-
-template <typename T, typename Input>
-void skipIfOld(Input &input, uint16_t version) {
-    if (version < 7) {
-        readValue<T>(input);
-    }
 }
 
 uint32_t
@@ -138,31 +126,24 @@ void VespaDocumentDeserializer::read(Document &value) {
     uint16_t version = readValue<uint16_t>(_stream);
     VarScope<uint16_t> version_scope(_version, version);
 
-    if (version < 6 || version > 8) {
+    if (version < 8 || version > 8) {
         asciistream msg;
         msg << "Unrecognized serialization version " << version;
         throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
 
-    if (version >= 7) {
-        uint32_t data_size = readValue<uint32_t>(_stream);
-        size_t data_start_size = _stream.size();
-        readDocument(value);
-        if (version == 7) {
-            readValue<uint32_t>(_stream);  // Skip crc value.
-        }
-        if (data_start_size - _stream.size() != data_size) {
-            asciistream msg;
-            msg << "Length mismatch. Was "
-                << data_start_size - _stream.size()
-                << ", expected " << data_size << ".";
-            throw DeserializeException(msg.str(), VESPA_STRLOC);
-        }
-    } else {  // version <= 6
-        getInt2_4_8Bytes(_stream);  // skip document length
-        readDocument(value);
-        readValue<uint32_t>(_stream);  // Skip crc value.
+    uint32_t data_size = readValue<uint32_t>(_stream);
+    size_t data_start_size = _stream.size();
+    readDocument(value);
+
+    if (data_start_size - _stream.size() != data_size) {
+        asciistream msg;
+        msg << "Length mismatch. Was "
+            << data_start_size - _stream.size()
+            << ", expected " << data_size << ".";
+        throw DeserializeException(msg.str(), VESPA_STRLOC);
     }
+
 }
 
 void VespaDocumentDeserializer::read(AnnotationReferenceFieldValue &value) {
@@ -170,21 +151,19 @@ void VespaDocumentDeserializer::read(AnnotationReferenceFieldValue &value) {
 }
 
 void VespaDocumentDeserializer::read(ArrayFieldValue &value) {
-    uint32_t size = readSize(_stream, _version);
+    uint32_t size = readSize(_stream);
     value.clear();
     value.resize(size);
     for (uint32_t i = 0; i < size; ++i) {
-        skipIfOld<uint32_t>(_stream, _version);  // element size
         value[i].accept(*this);  // Double dispatch to call the correct read()
     }
 }
 
 void VespaDocumentDeserializer::read(MapFieldValue &value) {
     value.clear();
-    uint32_t size = readSize(_stream, _version);
+    uint32_t size = readSize(_stream);
     value.resize(size);
     for (auto & pair : value) {
-        skipIfOld<uint32_t>(_stream, _version);  // element size
         pair.first->accept(*this);  // Double dispatch to call the correct read()
         pair.second->accept(*this);  // Double dispatch to call the correct read()
     }
@@ -205,14 +184,6 @@ void readFieldValue(nbostream &input, T &value) {
     value.setValue(val);
 }
 
-template <typename Input>
-stringref readAttributeString(Input &input) {
-    uint8_t size;
-    input >> size;
-    stringref s(input.peek(), size);
-    input.adjustReadPos(size + 1);
-    return s;
-}
 }  // namespace
 
 void VespaDocumentDeserializer::read(BoolFieldValue &value) {
@@ -313,18 +284,9 @@ void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
 }  // namespace
 
 void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
-    size_t start_size = _stream.size();
-    size_t data_size;
-    if (_version < 6) {
-        throw DeserializeException("Illegal struct serialization version.", VESPA_STRLOC);
-    } else if (_version < 7) {
-        data_size = getInt2_4_8Bytes(_stream);
-    } else {
-        data_size = readValue<uint32_t>(_stream);
-    }
+    size_t data_size = readValue<uint32_t>(_stream);
 
-    CompressionConfig::Type compression_type =
-        CompressionConfig::Type(readValue<uint8_t>(_stream));
+    CompressionConfig::Type compression_type = CompressionConfig::Type(readValue<uint8_t>(_stream));
 
     SerializableArray::EntryMap  field_info;
     size_t uncompressed_size = 0;
@@ -332,9 +294,7 @@ void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
         uncompressed_size = getInt2_4_8Bytes(_stream);
     }
     readFieldInfo(_stream, field_info);
-    if (_version < 7) {
-        data_size -= (start_size - _stream.size());
-    }
+
     if (CompressionConfig::isCompressed(compression_type)) {
         if ((compression_type != CompressionConfig::LZ4)) {
             throw DeserializeException("Unsupported compression type.", VESPA_STRLOC);

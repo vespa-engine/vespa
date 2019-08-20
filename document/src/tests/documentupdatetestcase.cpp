@@ -471,7 +471,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
 
     auto buf = readBufferFromFile("data/serializeupdatejava.dat");
     nbostream is(buf->getBufferAtPos(), buf->getRemaining());
-    DocumentUpdate::UP updp(DocumentUpdate::create42(repo, is));
+    DocumentUpdate::UP updp(DocumentUpdate::createHEAD(repo, is));
     DocumentUpdate& upd(*updp);
 
     const DocumentType *type = repo.getDocumentType("serializetest");
@@ -1187,7 +1187,7 @@ CreateIfNonExistentFixture::CreateIfNonExistentFixture()
     update->setCreateIfNonExistent(true);
 }
 
-TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerialized50AndDeserialized50)
+TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeserialized)
 {
     CreateIfNonExistentFixture f;
 
@@ -1195,19 +1195,6 @@ TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerialized50AndDeseria
     buf->flip();
 
     DocumentUpdate::UP deserialized = DocumentUpdate::createHEAD(f.docMan.getTypeRepo(), *buf);
-    EXPECT_EQ(*f.update, *deserialized);
-    EXPECT_TRUE(deserialized->getCreateIfNonExistent());
-}
-
-TEST(DocumentUpdateTest, testThatCreateIfNonExistentFlagIsSerializedAndDeserialized)
-{
-    CreateIfNonExistentFixture f;
-
-    ByteBuffer::UP buf(serialize42(*f.update));
-    buf->flip();
-
-    nbostream is(buf->getBufferAtPos(), buf->getRemaining());
-    auto deserialized = DocumentUpdate::create42(f.docMan.getTypeRepo(), is);
     EXPECT_EQ(*f.update, *deserialized);
     EXPECT_TRUE(deserialized->getCreateIfNonExistent());
 }

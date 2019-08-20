@@ -100,8 +100,7 @@ static inline size_t wantChunks(bool hasHeader, bool hasBody) {
     return res;
 }
 
-void VespaDocumentSerializer::write(const Document &value,
-                                    DocSerializationMode mode) {
+void VespaDocumentSerializer::write(const Document &value, DocSerializationMode mode) {
     nbostream doc_stream;
     VespaDocumentSerializer doc_serializer(doc_stream);
     doc_serializer.write(value.getId());
