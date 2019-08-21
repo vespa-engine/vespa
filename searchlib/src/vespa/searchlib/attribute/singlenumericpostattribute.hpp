@@ -77,7 +77,7 @@ makePostingChange(const EnumStoreComparator *cmpa,
 
 template <typename B>
 void
-SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBase::IndexVector & unused)
+SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
     Dictionary & dict = enumStore.getPostingDictionary();
@@ -118,7 +118,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBase::IndexVec
     makePostingChange(&cmpa, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
-    SingleValueNumericEnumAttribute<B>::applyValueChanges(unused);
+    SingleValueNumericEnumAttribute<B>::applyValueChanges(updater);
 }
 
 template <typename B>

@@ -440,16 +440,14 @@ EnumStoreDict<Dictionary>::freeUnusedEnums(const EnumStoreComparator &cmp,
 
 template <typename Dictionary>
 void
-EnumStoreDict<Dictionary>::freeUnusedEnums(const IndexVector &toRemove,
-                                           const EnumStoreComparator &cmp,
-                                           const EnumStoreComparator *fcmp)
+EnumStoreDict<Dictionary>::freeUnusedEnums(const IndexSet& toRemove,
+                                           const EnumStoreComparator& cmp,
+                                           const EnumStoreComparator* fcmp)
 {
     IndexSet unused;
-    for(IndexVector::const_iterator it(toRemove.begin()), mt(toRemove.end());
-        it != mt; it++) {
-        _enumStore.freeUnusedEnum(*it, unused);
+    for (const auto& index : toRemove) {
+        _enumStore.freeUnusedEnum(index, unused);
     }
-
     removeUnusedEnums(unused, cmp, fcmp);
 }
 

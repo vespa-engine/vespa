@@ -17,24 +17,23 @@ namespace search {
  * M: MultiValueType
  */
 template <typename B, typename M>
-class MultiValueNumericAttribute : public MultiValueAttribute<B, M>
-{
+class MultiValueNumericAttribute : public MultiValueAttribute<B, M> {
 private:
-    typedef typename B::BaseType      T;
-    typedef typename B::DocId         DocId;
-    typedef typename B::EnumHandle    EnumHandle;
-    typedef typename B::largeint_t    largeint_t;
-    typedef typename B::Weighted      Weighted;
-    typedef typename B::WeightedInt   WeightedInt;
-    typedef typename B::WeightedFloat WeightedFloat;
-    typedef typename B::WeightedEnum  WeightedEnum;
+    using T = typename B::BaseType;
+    using DocId = typename B::DocId;
+    using EnumHandle = typename B::EnumHandle;
+    using Weighted = typename B::Weighted;
+    using WeightedEnum = typename B::WeightedEnum;
+    using WeightedFloat = typename B::WeightedFloat;
+    using WeightedInt = typename B::WeightedInt;
+    using largeint_t = typename B::largeint_t;
 
-    typedef typename MultiValueAttribute<B, M>::MultiValueMapping MultiValueMapping;
-    typedef typename MultiValueAttribute<B, M>::DocumentValues    DocumentValues;
-    typedef typename MultiValueAttribute<B, M>::Change            Change;
-    typedef typename MultiValueAttribute<B, M>::ValueType         MValueType; // = B::BaseType
-    typedef typename MultiValueAttribute<B, M>::MultiValueType    MultiValueType; // = B::BaseType
+    using Change = typename MultiValueAttribute<B, M>::Change;
+    using DocumentValues = typename MultiValueAttribute<B, M>::DocumentValues;
+    using MValueType = typename MultiValueAttribute<B, M>::ValueType; // = B::BaseType
     using MultiValueArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
+    using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
+    using MultiValueType = typename MultiValueAttribute<B, M>::MultiValueType; // = B::BaseType
 
     bool extractChangeData(const Change & c, MValueType & data) override {
         data = static_cast<MValueType>(c._data.get());
@@ -45,8 +44,8 @@ private:
     bool findEnum(T value, EnumHandle & e) const override;
 
 protected:
-    typedef typename B::generation_t generation_t;
-    typedef MultiValueType WType;
+    using generation_t = typename B::generation_t;
+    using WType = MultiValueType;
     uint32_t get(DocId doc, const WType * & values) const {
         MultiValueArrayRef array(this->_mvMapping.get(doc));
         values = &array[0];

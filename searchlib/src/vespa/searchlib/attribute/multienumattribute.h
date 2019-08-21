@@ -26,7 +26,7 @@ public:
 
 class ReaderBase;
 
-/*
+/**
  * Implementation of multi value enum attribute that uses an underlying enum store
  * to store unique values and a multi value mapping to store enum indices for each document.
  *
@@ -38,27 +38,27 @@ class MultiValueEnumAttribute : public MultiValueAttribute<B, M>,
                                 public IWeightedIndexVector
 {
 protected:
-    typedef typename B::UniqueSet UniqueSet;
+    using Change = typename B::BaseClass::Change;
+    using DocId = typename B::BaseClass::DocId;
+    using EnumHandle = typename B::BaseClass::EnumHandle;
+    using EnumModifier = typename B::BaseClass::EnumModifier;
+    using LoadedVector = typename B::BaseClass::LoadedVector;
+    using UniqueSet = typename B::UniqueSet;
+    using ValueModifier = typename B::BaseClass::ValueModifier;
+    using WeightedEnum = typename B::BaseClass::WeightedEnum;
+    using generation_t = typename B::BaseClass::generation_t;
 
-    typedef typename B::BaseClass::Change        Change;
-    typedef typename B::BaseClass::DocId         DocId;
-    typedef typename B::BaseClass::EnumHandle    EnumHandle;
-    typedef typename B::BaseClass::EnumModifier  EnumModifier;
-    typedef typename B::BaseClass::generation_t  generation_t;
-    typedef typename B::BaseClass::LoadedVector  LoadedVector;
-    typedef typename B::BaseClass::ValueModifier ValueModifier;
-    typedef typename B::BaseClass::WeightedEnum  WeightedEnum;
-
-    typedef typename EnumStoreBase::Index        EnumIndex;
-    typedef typename EnumStoreBase::IndexVector  EnumIndexVector;
-    typedef typename EnumStoreBase::EnumVector   EnumVector;
-    typedef typename MultiValueAttribute<B, M>::MultiValueType WeightedIndex;
-    typedef typename MultiValueAttribute<B, M>::ValueVector    WeightedIndexVector;
-    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
-    typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
-    typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
+    using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
+    using EnumIndex = typename EnumStoreBase::Index;
     using EnumIndexMap = EnumStoreBase::EnumIndexMap;
+    using EnumIndexVector = typename EnumStoreBase::IndexVector;
+    using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
+    using EnumVector = typename EnumStoreBase::EnumVector;
+    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
+    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
+    using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
 
     // from MultiValueAttribute
     bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
@@ -67,10 +67,7 @@ protected:
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
     void reEnumerate(const EnumIndexMap &) override; // same for both string and numeric
 
-    virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
-
-    void incRefCount(const WeightedIndex & idx) { this->_enumStore.incRefCount(idx); }
-    void decRefCount(const WeightedIndex & idx) { this->_enumStore.decRefCount(idx); }
+    virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 
     virtual void freezeEnumDictionary() {
         this->getEnumStore().freezeTree();

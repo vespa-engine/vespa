@@ -36,6 +36,7 @@ private:
     typedef typename SingleValueStringAttributeT<B>::DocId         DocId;
 public:
     typedef typename SingleValueStringAttributeT<B>::EnumStore     EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 private:
     typedef typename SingleValueStringAttributeT<B>::EnumIndex     EnumIndex;
     typedef typename SingleValueStringAttributeT<B>::generation_t  generation_t;
@@ -82,7 +83,7 @@ private:
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);
 
-    void applyValueChanges(EnumStoreBase::IndexVector & unused) override;
+    void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 public:
     SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                        AttributeVector::Config(AttributeVector::BasicType::STRING));

@@ -44,6 +44,7 @@ private:
 public:
     typedef typename B::EnumStore  EnumStore;
     typedef typename EnumStore::Index  EnumIndex;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 private:
     typedef typename B::DocId DocId;
     typedef typename B::LoadedVector    LoadedVector;
@@ -78,7 +79,7 @@ private:
 
     void freezeEnumDictionary() override;
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
-    void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused) override;
+    void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override;
 
 public:
     MultiValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);

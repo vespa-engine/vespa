@@ -81,12 +81,12 @@ SingleValueEnumAttribute<B>::onCommit()
     this->checkSetMaxValueCount(1);
 
     // update enum store
-    EnumStoreBase::IndexVector possiblyUnused;
-    this->insertNewUniqueValues(possiblyUnused);
+    auto updater = this->_enumStore.make_batch_updater();
+    this->insertNewUniqueValues(updater);
     // apply updates
-    applyValueChanges(possiblyUnused);
+    applyValueChanges(updater);
     this->_changes.clear();
-    this->_enumStore.freeUnusedEnums(possiblyUnused);
+    updater.commit();
     freezeEnumDictionary();
     this->setEnumMax(this->_enumStore.getLastEnum());
     std::atomic_thread_fence(std::memory_order_release);
@@ -161,46 +161,40 @@ SingleValueEnumAttribute<B>::reEnumerate(const EnumIndexMap & old2New)
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change & c, EnumStoreBase::IndexVector & unused)
+SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater)
 {
     EnumIndex oldIdx = _enumIndices[c._doc];
     EnumIndex newIdx;
     this->_enumStore.findIndex(c._data.raw(), newIdx);
-    updateEnumRefCounts(c, newIdx, oldIdx, unused);
+    updateEnumRefCounts(c, newIdx, oldIdx, updater);
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBase::IndexVector & unused)
+SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
     for (ChangeVectorIterator iter = this->_changes.begin(), end = this->_changes.end(); iter != end; ++iter) {
         if (iter->_type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(*iter, unused);
+            applyUpdateValueChange(*iter, updater);
         } else if (iter->_type >= ChangeBase::ADD && iter->_type <= ChangeBase::DIV) {
-            applyArithmeticValueChange(*iter, unused);
+            applyArithmeticValueChange(*iter, updater);
         } else if (iter->_type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = iter->_doc;
-            applyUpdateValueChange(this->_defaultValue, unused);
+            applyUpdateValueChange(this->_defaultValue, updater);
         }
     }
 }
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::updateEnumRefCounts(const Change & c, EnumIndex newIdx, EnumIndex oldIdx,
-                                                 EnumStoreBase::IndexVector & unused)
+SingleValueEnumAttribute<B>::updateEnumRefCounts(const Change& c, EnumIndex newIdx, EnumIndex oldIdx,
+                                                 EnumStoreBatchUpdater& updater)
 {
-    // increase and decrease refcount
-    this->_enumStore.incRefCount(newIdx);
-
+    updater.inc_ref_count(newIdx);
     _enumIndices[c._doc] = newIdx;
-
     if (oldIdx.valid()) {
-        this->_enumStore.decRefCount(oldIdx);
-        if (this->_enumStore.getRefCount(oldIdx) == 0) {
-            unused.push_back(oldIdx);
-        }
+        updater.dec_ref_count(oldIdx);
     }
 }
 
