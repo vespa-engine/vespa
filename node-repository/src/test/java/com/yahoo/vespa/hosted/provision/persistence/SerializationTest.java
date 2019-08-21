@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
@@ -274,6 +275,18 @@ public class SerializationTest {
                         "}";
         Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
         assertFalse(node.status().wantToRetire());
+    }
+
+    @Test
+    public void flavor_overrides_serialization() {
+        Node node = createNode();
+        assertEquals(2, node.flavor().getMinDiskAvailableGb(), 0);
+        node = node.with(node.flavor().withFlavorOverrides(FlavorOverrides.ofDisk(1234)));
+        assertEquals(1234, node.flavor().getMinDiskAvailableGb(), 0);
+
+        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        assertEquals(1234, copy.flavor().getMinDiskAvailableGb(), 0);
+        assertEquals(node, copy);
     }
 
     @Test
