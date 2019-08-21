@@ -65,97 +65,97 @@ public class ApplicationSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     // Application fields
-    private final String idField = "id";
-    private final String createdAtField = "createdAt";
-    private final String deploymentSpecField = "deploymentSpecField";
-    private final String validationOverridesField = "validationOverrides";
-    private final String deploymentsField = "deployments";
-    private final String deploymentJobsField = "deploymentJobs";
-    private final String deployingField = "deployingField";
-    private final String pinnedField = "pinned";
-    private final String outstandingChangeField = "outstandingChangeField";
-    private final String ownershipIssueIdField = "ownershipIssueId";
-    private final String ownerField = "confirmedOwner";
-    private final String majorVersionField = "majorVersion";
-    private final String writeQualityField = "writeQuality";
-    private final String queryQualityField = "queryQuality";
-    private final String pemDeployKeyField = "pemDeployKey";
-    private final String assignedRotationsField = "assignedRotations";
-    private final String assignedRotationEndpointField = "endpointId";
-    private final String assignedRotationClusterField = "clusterId";
-    private final String assignedRotationRotationField = "rotationId";
-    private final String rotationStatusField = "rotationStatus";
-    private final String applicationCertificateField = "applicationCertificate";
+    private static final String idField = "id";
+    private static final String createdAtField = "createdAt";
+    private static final String deploymentSpecField = "deploymentSpecField";
+    private static final String validationOverridesField = "validationOverrides";
+    private static final String deploymentsField = "deployments";
+    private static final String deploymentJobsField = "deploymentJobs";
+    private static final String deployingField = "deployingField";
+    private static final String pinnedField = "pinned";
+    private static final String outstandingChangeField = "outstandingChangeField";
+    private static final String ownershipIssueIdField = "ownershipIssueId";
+    private static final String ownerField = "confirmedOwner";
+    private static final String majorVersionField = "majorVersion";
+    private static final String writeQualityField = "writeQuality";
+    private static final String queryQualityField = "queryQuality";
+    private static final String pemDeployKeyField = "pemDeployKey";
+    private static final String assignedRotationsField = "assignedRotations";
+    private static final String assignedRotationEndpointField = "endpointId";
+    private static final String assignedRotationClusterField = "clusterId";
+    private static final String assignedRotationRotationField = "rotationId";
+    private static final String rotationStatusField = "rotationStatus";
+    private static final String applicationCertificateField = "applicationCertificate";
 
     // Deployment fields
-    private final String zoneField = "zone";
-    private final String environmentField = "environment";
-    private final String regionField = "region";
-    private final String deployTimeField = "deployTime";
-    private final String applicationBuildNumberField = "applicationBuildNumber";
-    private final String applicationPackageRevisionField = "applicationPackageRevision";
-    private final String sourceRevisionField = "sourceRevision";
-    private final String repositoryField = "repositoryField";
-    private final String branchField = "branchField";
-    private final String commitField = "commitField";
-    private final String authorEmailField = "authorEmailField";
-    private final String compileVersionField = "compileVersion";
-    private final String buildTimeField = "buildTime";
-    private final String lastQueriedField = "lastQueried";
-    private final String lastWrittenField = "lastWritten";
-    private final String lastQueriesPerSecondField = "lastQueriesPerSecond";
-    private final String lastWritesPerSecondField = "lastWritesPerSecond";
+    private static final String zoneField = "zone";
+    private static final String environmentField = "environment";
+    private static final String regionField = "region";
+    private static final String deployTimeField = "deployTime";
+    private static final String applicationBuildNumberField = "applicationBuildNumber";
+    private static final String applicationPackageRevisionField = "applicationPackageRevision";
+    private static final String sourceRevisionField = "sourceRevision";
+    private static final String repositoryField = "repositoryField";
+    private static final String branchField = "branchField";
+    private static final String commitField = "commitField";
+    private static final String authorEmailField = "authorEmailField";
+    private static final String compileVersionField = "compileVersion";
+    private static final String buildTimeField = "buildTime";
+    private static final String lastQueriedField = "lastQueried";
+    private static final String lastWrittenField = "lastWritten";
+    private static final String lastQueriesPerSecondField = "lastQueriesPerSecond";
+    private static final String lastWritesPerSecondField = "lastWritesPerSecond";
 
     // DeploymentJobs fields
-    private final String projectIdField = "projectId";
-    private final String jobStatusField = "jobStatus";
-    private final String issueIdField = "jiraIssueId";
-    private final String builtInternallyField = "builtInternally";
+    private static final String projectIdField = "projectId";
+    private static final String jobStatusField = "jobStatus";
+    private static final String issueIdField = "jiraIssueId";
+    private static final String builtInternallyField = "builtInternally";
 
     // JobStatus field
-    private final String jobTypeField = "jobType";
-    private final String errorField = "jobError";
-    private final String lastTriggeredField = "lastTriggered";
-    private final String lastCompletedField = "lastCompleted";
-    private final String firstFailingField = "firstFailing";
-    private final String lastSuccessField = "lastSuccess";
-    private final String pausedUntilField = "pausedUntil";
+    private static final String jobTypeField = "jobType";
+    private static final String errorField = "jobError";
+    private static final String lastTriggeredField = "lastTriggered";
+    private static final String lastCompletedField = "lastCompleted";
+    private static final String firstFailingField = "firstFailing";
+    private static final String lastSuccessField = "lastSuccess";
+    private static final String pausedUntilField = "pausedUntil";
 
     // JobRun fields
-    private final String jobRunIdField = "id";
-    private final String versionField = "version";
-    private final String revisionField = "revision";
-    private final String sourceVersionField = "sourceVersion";
-    private final String sourceApplicationField = "sourceRevision";
-    private final String reasonField = "reason";
-    private final String atField = "at";
+    private static final String jobRunIdField = "id";
+    private static final String versionField = "version";
+    private static final String revisionField = "revision";
+    private static final String sourceVersionField = "sourceVersion";
+    private static final String sourceApplicationField = "sourceRevision";
+    private static final String reasonField = "reason";
+    private static final String atField = "at";
 
     // ClusterInfo fields
-    private final String clusterInfoField = "clusterInfo";
-    private final String clusterInfoFlavorField = "flavor";
-    private final String clusterInfoCostField = "cost";
-    private final String clusterInfoCpuField = "flavorCpu";
-    private final String clusterInfoMemField = "flavorMem";
-    private final String clusterInfoDiskField = "flavorDisk";
-    private final String clusterInfoTypeField = "clusterType";
-    private final String clusterInfoHostnamesField = "hostnames";
+    private static final String clusterInfoField = "clusterInfo";
+    private static final String clusterInfoFlavorField = "flavor";
+    private static final String clusterInfoCostField = "cost";
+    private static final String clusterInfoCpuField = "flavorCpu";
+    private static final String clusterInfoMemField = "flavorMem";
+    private static final String clusterInfoDiskField = "flavorDisk";
+    private static final String clusterInfoTypeField = "clusterType";
+    private static final String clusterInfoHostnamesField = "hostnames";
 
     // ClusterUtils fields
-    private final String clusterUtilsField = "clusterUtils";
-    private final String clusterUtilsCpuField = "cpu";
-    private final String clusterUtilsMemField = "mem";
-    private final String clusterUtilsDiskField = "disk";
-    private final String clusterUtilsDiskBusyField = "diskbusy";
+    private static final String clusterUtilsField = "clusterUtils";
+    private static final String clusterUtilsCpuField = "cpu";
+    private static final String clusterUtilsMemField = "mem";
+    private static final String clusterUtilsDiskField = "disk";
+    private static final String clusterUtilsDiskBusyField = "diskbusy";
 
     // Deployment metrics fields
-    private final String deploymentMetricsField = "metrics";
-    private final String deploymentMetricsQPSField = "queriesPerSecond";
-    private final String deploymentMetricsWPSField = "writesPerSecond";
-    private final String deploymentMetricsDocsField = "documentCount";
-    private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
-    private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
-    private final String deploymentMetricsUpdateTime = "lastUpdated";
-    private final String deploymentMetricsWarningsField = "warnings";
+    private static final String deploymentMetricsField = "metrics";
+    private static final String deploymentMetricsQPSField = "queriesPerSecond";
+    private static final String deploymentMetricsWPSField = "writesPerSecond";
+    private static final String deploymentMetricsDocsField = "documentCount";
+    private static final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
+    private static final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
+    private static final String deploymentMetricsUpdateTime = "lastUpdated";
+    private static final String deploymentMetricsWarningsField = "warnings";
 
     // ------------------ Serialization
 
