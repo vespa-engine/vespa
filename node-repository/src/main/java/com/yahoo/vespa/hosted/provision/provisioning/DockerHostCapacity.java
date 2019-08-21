@@ -61,7 +61,7 @@ public class DockerHostCapacity {
      */
     NodeResources freeCapacityOf(Node dockerHost, boolean excludeInactive) {
         // Only hosts have free capacity
-        if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0);
+        if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0, 0);
         NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(dockerHost.flavor().resources());
 
         // Subtract used resources without taking disk speed into account since existing allocations grandfathered in

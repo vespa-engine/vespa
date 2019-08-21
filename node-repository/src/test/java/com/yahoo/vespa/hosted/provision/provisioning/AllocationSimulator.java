@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
-import javax.swing.JFrame;
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,14 +44,14 @@ public class AllocationSimulator {
         // Setup flavors
         //
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 8., 8., 8, Flavor.Type.BARE_METAL);
-        b.addFlavor("host-small", 5., 5., 5, Flavor.Type.BARE_METAL);
-        b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("host-large", 8., 8., 8, 8, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 5., 5., 5, 8, Flavor.Type.BARE_METAL);
+        b.addFlavor("d-1", 1, 1., 1, 1, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2", 2, 2., 2, 2, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3", 3, 3., 3, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-disk", 3, 3., 5, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-mem", 3, 5., 3, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-cpu", 5, 3., 3, 3, Flavor.Type.DOCKER_CONTAINER);
         flavors = new NodeFlavors(b.build());
 
         //

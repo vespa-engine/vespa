@@ -166,8 +166,11 @@ public class NodesSpecification {
         ModelElement resources = nodesElement.child("resources");
         if (resources != null) {
             return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
-                                                 parseGbAmount(resources.requiredStringAttribute("memory")),
-                                                 parseGbAmount(resources.requiredStringAttribute("disk")),
+                                                 parseGbAmount(resources.requiredStringAttribute("memory"), "B"),
+                                                 parseGbAmount(resources.requiredStringAttribute("disk"), "B"),
+                                                 Optional.ofNullable(resources.stringAttribute("bandwidth"))
+                                                         .map(b -> parseGbAmount(b, "BPS"))
+                                                         .orElse(0.3),
                                                  parseOptionalDiskSpeed(resources.stringAttribute("disk-speed"))));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
@@ -178,17 +181,17 @@ public class NodesSpecification {
         }
     }
 
-    private static double parseGbAmount(String byteAmount) {
+    private static double parseGbAmount(String byteAmount, String unit) {
         byteAmount = byteAmount.strip();
         byteAmount = byteAmount.toUpperCase();
-        if (byteAmount.endsWith("B"))
-            byteAmount = byteAmount.substring(0, byteAmount.length() -1);
+        if (byteAmount.endsWith(unit))
+            byteAmount = byteAmount.substring(0, byteAmount.length() - unit.length());
 
-        double multiplier = 1/Math.pow(1000, 3);
+        double multiplier = Math.pow(1000, -3);
         if (byteAmount.endsWith("K"))
-            multiplier = 1/Math.pow(1000, 2);
+            multiplier = Math.pow(1000, -2);
         else if (byteAmount.endsWith("M"))
-            multiplier = 1/1000;
+            multiplier = Math.pow(1000, -1);
         else if (byteAmount.endsWith("G"))
             multiplier = 1;
         else if (byteAmount.endsWith("T"))

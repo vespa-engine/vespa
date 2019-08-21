@@ -12,7 +12,7 @@
   "minMainMemoryAvailableGb": 8.0,
   "minCpuCores": 2.0,
   "fastDisk": true,
-  "bandwidth":0.0,
+  "bandwidth": 1000.0,
   "environment": "DOCKER_CONTAINER",
   "owner": {
     "tenant": "tenant3",

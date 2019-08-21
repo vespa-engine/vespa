@@ -57,7 +57,7 @@ import static org.mockito.Mockito.verify;
  */
 public class RetiredExpirerTest {
 
-    private final NodeResources nodeResources = new NodeResources(2, 8, 50);
+    private final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
 
     private Curator curator = new MockCurator();
     private final ManualClock clock = new ManualClock();

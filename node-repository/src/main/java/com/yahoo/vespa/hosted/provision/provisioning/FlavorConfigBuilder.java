@@ -19,19 +19,16 @@ public class FlavorConfigBuilder {
         return new FlavorsConfig(builder);
     }
 
-    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, double bandwidth, Flavor.Type type) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.minDiskAvailableGb(disk);
         flavor.minCpuCores(cpu);
         flavor.minMainMemoryAvailableGb(mem);
+        flavor.bandwidth(1000 * bandwidth);
         flavor.environment(type.name());
         builder.flavor(flavor);
         return flavor;
-    }
-
-    public void addCost(int cost, FlavorsConfig.Flavor.Builder flavor) {
-        flavor.cost(cost);
     }
 
     /** Convenience method which creates a node flavors instance from a list of flavor names */
@@ -40,13 +37,13 @@ public class FlavorConfigBuilder {
         FlavorConfigBuilder flavorConfigBuilder = new FlavorConfigBuilder();
         for (String flavorName : flavors) {
             if (flavorName.equals("docker"))
-                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, 1.5 /* bandwidth Gbps*/, Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("docker2"))
-                flavorConfigBuilder.addFlavor(flavorName, 2. /* cpu*/, 4. /* mem GB*/, 4. /*disk GB*/, Flavor.Type.DOCKER_CONTAINER);
+                flavorConfigBuilder.addFlavor(flavorName, 2. /* cpu*/, 4. /* mem GB*/, 4. /*disk GB*/, 0.5, /* bandwidth Gbps*/ Flavor.Type.DOCKER_CONTAINER);
             else if (flavorName.equals("host"))
-                flavorConfigBuilder.addFlavor(flavorName, 7. /* cpu*/, 10. /* mem GB*/, 12. /*disk GB*/, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 7. /* cpu*/, 10. /* mem GB*/, 12. /*disk GB*/, 5 /* bandwidth Gbps*/, Flavor.Type.BARE_METAL);
             else
-                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, Flavor.Type.BARE_METAL);
+                flavorConfigBuilder.addFlavor(flavorName, 1. /* cpu*/, 3. /* mem GB*/, 2. /*disk GB*/, 3 /* bandwidth Gbps*/, Flavor.Type.BARE_METAL);
         }
         return new NodeFlavors(flavorConfigBuilder.build());
     }

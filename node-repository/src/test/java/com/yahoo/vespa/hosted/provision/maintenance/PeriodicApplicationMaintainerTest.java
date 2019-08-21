@@ -37,7 +37,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -242,7 +241,7 @@ public class PeriodicApplicationMaintainerTest {
         final NodeRepository nodeRepository;
         final MockDeployer deployer;
 
-        final NodeResources nodeResources = new NodeResources(2, 8, 50);
+        final NodeResources nodeResources = new NodeResources(2, 8, 50, 1);
         final ApplicationId app1 = ApplicationId.from(TenantName.from("foo1"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ApplicationId app2 = ApplicationId.from(TenantName.from("foo2"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         final ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);

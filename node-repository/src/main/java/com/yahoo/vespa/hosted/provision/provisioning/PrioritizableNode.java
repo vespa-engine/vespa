@@ -105,7 +105,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     static class Builder {
         public final Node node;
-        private NodeResources freeParentCapacity = new NodeResources(0, 0, 0);
+        private NodeResources freeParentCapacity = new NodeResources(0, 0, 0, 0);
         private Optional<Node> parent = Optional.empty();
         private boolean violatesSpares;
         private boolean isSurplusNode;

@@ -20,7 +20,6 @@ public class Flavor {
     private final String name;
     private final int cost;
     private final Type type;
-    private final double bandwidth;
 
     /** The hardware resources of this flavor */
     private NodeResources resources;
@@ -34,8 +33,8 @@ public class Flavor {
         this.resources = new NodeResources(flavorConfig.minCpuCores(),
                                            flavorConfig.minMainMemoryAvailableGb(),
                                            flavorConfig.minDiskAvailableGb(),
+                                           flavorConfig.bandwidth() / 1000,
                                            flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
-        this.bandwidth = flavorConfig.bandwidth();
     }
 
     /** Creates a *node* flavor from a node resources spec */
@@ -45,7 +44,6 @@ public class Flavor {
         this.name = resources.toString();
         this.cost = 0;
         this.type = Type.DOCKER_CONTAINER;
-        this.bandwidth = 1;
         this.resources = resources;
     }
 
@@ -74,7 +72,7 @@ public class Flavor {
 
     public boolean hasFastDisk() { return resources.diskSpeed() == NodeResources.DiskSpeed.fast; }
 
-    public double getBandwidth() { return bandwidth; }
+    public double getBandwidthGbps() { return resources.bandwidthGbps(); }
 
     public double getMinCpuCores() { return resources.vcpu(); }
 

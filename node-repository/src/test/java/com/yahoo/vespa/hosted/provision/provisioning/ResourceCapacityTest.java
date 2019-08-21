@@ -18,14 +18,14 @@ public class ResourceCapacityTest {
     @Test
     public void basic_capacity_and_compare_operations() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 6., 6., 6, Flavor.Type.BARE_METAL);
-        b.addFlavor("host-small", 3., 3., 3, Flavor.Type.BARE_METAL);
-        b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-disk", 3, 3., 5, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-mem", 3, 5., 3, Flavor.Type.DOCKER_CONTAINER);
-        b.addFlavor("d-3-cpu", 5, 3., 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("host-large", 6., 6., 6, 6, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 3., 3., 3, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("d-1", 1, 1., 1, 1, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-2", 2, 2., 2, 2, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3", 3, 3., 3, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-disk", 3, 3., 5, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-mem", 3, 5., 3, 3, Flavor.Type.DOCKER_CONTAINER);
+        b.addFlavor("d-3-cpu", 5, 3., 3, 3, Flavor.Type.DOCKER_CONTAINER);
 
         FlavorsConfig flavors = b.build();
         Flavor hostLargeFlavor = new Flavor(flavors.flavor(0));
@@ -73,10 +73,10 @@ public class ResourceCapacityTest {
         assertEquals(-1, compare(d3CPUFlavor.resources(), d3MemFlavor.resources()));
         assertEquals(1, compare(d3MemFlavor.resources(), d3DiskFlavor.resources()));
 
-        assertEquals(-1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow),
-                                          new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast)));
-        assertEquals(1, compare(new NodeResources(1, 2, 3, NodeResources.DiskSpeed.fast),
-                                         new NodeResources(1, 2, 3, NodeResources.DiskSpeed.slow)));
+        assertEquals(-1, compare(new NodeResources(1, 2, 3, 1, NodeResources.DiskSpeed.slow),
+                                          new NodeResources(1, 2, 3, 1, NodeResources.DiskSpeed.fast)));
+        assertEquals(1, compare(new NodeResources(1, 2, 3, 1, NodeResources.DiskSpeed.fast),
+                                         new NodeResources(1, 2, 3, 1, NodeResources.DiskSpeed.slow)));
     }
 
     private int compare(NodeResources a, NodeResources b) {

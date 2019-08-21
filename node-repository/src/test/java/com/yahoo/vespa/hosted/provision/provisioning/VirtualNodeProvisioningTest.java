@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
 // to remove these tests
 public class VirtualNodeProvisioningTest {
 
-    private static final NodeResources flavor = new NodeResources(4, 8, 100);
+    private static final NodeResources flavor = new NodeResources(4, 8, 100, 1);
     private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Version.fromString("6.42"), false);
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Version.fromString("6.42"), false);
 
@@ -82,7 +82,7 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
-            NodeResources flavor = new NodeResources(1, 1, 1);
+            NodeResources flavor = new NodeResources(1, 1, 1, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, flavor, NodeType.host, 1);
             tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
