@@ -34,7 +34,7 @@ public class DocumentCalculatorTestCase {
         testDocType.addHeaderField("missingattr", DataType.INT);
 
         docMan.registerDocumentType(testDocType);
-        doc = new Document(testDocType, new DocumentId("id:ns:testdoc::testdoc:http://www.ntnu.no/"));
+        doc = new Document(testDocType, new DocumentId("doc:testdoc:http://www.ntnu.no/"));
         doc.setFieldValue(testDocType.getField("byteattr"), new ByteFieldValue((byte)32));
         doc.setFieldValue(testDocType.getField("intattr"), new IntegerFieldValue(468));
         doc.setFieldValue(testDocType.getField("longattr"), new LongFieldValue((long)327));

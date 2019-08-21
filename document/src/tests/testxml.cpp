@@ -24,7 +24,7 @@ Document::UP createTestDocument(const DocumentTypeRepo& repo)
     const DocumentType* type(repo.getDocumentType("testdoc"));
     Document::UP
         doc(new Document(*type,
-                         DocumentId("id:ns:testdoc::crawler/http://www.ntnu.no/")));
+                         DocumentId("doc:crawler/http://www.ntnu.no/")));
     doc->setRepo(repo);
     std::string s("humlepungens buffer");
     ByteBuffer bb(s.c_str(), s.size());
@@ -48,7 +48,7 @@ Document::UP createTestDocument(const DocumentTypeRepo& repo)
     doc->setValue(doc->getField("rawarrayattr"), val);
 
     Document::UP doc2(new Document(*type, DocumentId(
-                            "id:ns:testdoc::crawler/http://www.ntnu.no/2")));
+                            "doc:crawler/http://www.ntnu.no/2")));
     doc2->setValue(doc2->getField("stringattr"), StringFieldValue("tjo hei paa du"));
     doc->setValue(doc->getField("docfield"), *doc2);
 
@@ -59,7 +59,7 @@ DocumentUpdate::UP
 createTestDocumentUpdate(const DocumentTypeRepo& repo)
 {
     const DocumentType* type(repo.getDocumentType("testdoc"));
-    DocumentId id("id:ns:testdoc::crawler/http://www.ntnu.no/");
+    DocumentId id("doc:crawler/http://www.ntnu.no/");
 
     DocumentUpdate::UP up(new DocumentUpdate(repo, *type, id));
     up->addUpdate(FieldUpdate(type->getField("intattr"))
@@ -86,7 +86,7 @@ TEST(TestXml, testSimpleUsage)
     doc1->setValue(doc1->getField("stringattr"), StringFieldValue("tjohei���"));
 
     std::string expected =
-        "<document documenttype=\"testdoc\" documentid=\"id:ns:testdoc::crawler/http://www.ntnu.no/\">\n"
+        "<document documenttype=\"testdoc\" documentid=\"doc:crawler/http://www.ntnu.no/\">\n"
         "  <doubleattr>17.7862</doubleattr>\n"
         "  <intattr>50</intattr>\n"
         "  <floatattr>3.56</floatattr>\n"
@@ -100,7 +100,7 @@ TEST(TestXml, testSimpleUsage)
         "  <rawattr binaryencoding=\"base64\">cmVhZGFibA==</rawattr>\n"
         "  <stringattr>tjohei���</stringattr>\n"
         "  <docfield>\n"
-        "    <document documenttype=\"testdoc\" documentid=\"id:ns:testdoc::crawler/http://www.ntnu.no/2\">\n"
+        "    <document documenttype=\"testdoc\" documentid=\"doc:crawler/http://www.ntnu.no/2\">\n"
         "      <stringattr>tjo hei paa du</stringattr>\n"
         "    </document>\n"
         "  </docfield>\n"
@@ -114,7 +114,7 @@ TEST(TestXml, testDocumentUpdate)
     DocumentUpdate::UP up1(createTestDocumentUpdate(repo));
 
     std::string expected =
-        "<document type=\"testdoc\" id=\"id:ns:testdoc::crawler/http://www.ntnu.no/\">\n"
+        "<document type=\"testdoc\" id=\"doc:crawler/http://www.ntnu.no/\">\n"
         "  <alter field=\"intattr\">\n"
         "    <assign>7</assign>\n"
         "  </alter>\n"

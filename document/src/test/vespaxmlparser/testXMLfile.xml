@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documenttype="music" documentid="id:ns::music::http://music.yahoo.com/bobdylan/BestOf"> 
+    <document documenttype="music" documentid="doc:music:http://music.yahoo.com/bobdylan/BestOf"> 
         <url>http://music.yahoo.com/bobdylan/BestOf</url>
         <songs>Knockin on Heaven's Door; Mr. Tambourine Man</songs>
         <title>Best of Bob Dylan</title>
@@ -18,9 +18,9 @@
         </popularity>
     </document>
     
-    <remove documentid="id:ns:music::http://music.yahoo.com/BritneySpears/HitMe"/>
+    <remove documentid="doc:music:http://music.yahoo.com/BritneySpears/HitMe"/>
     
-    <update documenttype="music" documentid="id:ns:music::http://music.yahoo.com/bobdylan/BestOf"> 
+    <update documenttype="music" documentid="doc:music:http://music.yahoo.com/bobdylan/BestOf"> 
         <assign field="title">The Best of Bob Dylan</assign>
         <add field="tracks">
             <item>Man Of Constant Sorrow</item>

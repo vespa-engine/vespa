@@ -120,10 +120,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
             dataPos = position();
         }
 
-        DocumentId documentId = readDocumentId();
+        doc.setId(readDocumentId());
+
         Byte content = getByte(null);
+
         doc.setDataType(readDocumentType());
-        doc.setId(documentId);
 
         Struct h = doc.getHeader();
         Struct b = doc.getBody();

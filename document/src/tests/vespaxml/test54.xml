@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <!-- VERY BAD: -->
+    <vesparemove>
+        <document documentid="doc:bluh:bluh:bluh" documenttype="news">
+            <value_long>45</value_long>
+        </document>
+    </vesparemove>
+</vespafeed>

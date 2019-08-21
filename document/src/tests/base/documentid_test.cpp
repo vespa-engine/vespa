@@ -42,6 +42,11 @@ void checkType(const string &id, const string &doc_type) {
     EXPECT_EQUAL(doc_type, doc_id.getDocType());
 }
 
+TEST("require that doc id can be parsed") {
+    const string id = "doc:" + ns + ":" + ns_id;
+    checkId(id, IdString::DOC, ns, ns_id);
+}
+
 TEST("require that id id can be parsed") {
     const string id = "id:" + ns + ":" + type + "::" + ns_id;
     checkId(id, IdString::ID, ns, ns_id);
@@ -53,6 +58,10 @@ TEST("require that we allow ':' in namespace specific part") {
     string id="id:" + ns + ":" + type + "::" + nss;
     checkId(id, IdString::ID, ns, nss);
     checkType(id, type);
+
+    id="doc:" + ns + ":" + nss;
+    checkId(id, IdString::DOC, ns, nss);
+
 }
 
 TEST("require that id id can specify location") {
@@ -144,6 +153,11 @@ TEST("require that = is handled correctly in group ids") {
 
 TEST("require that id strings reports features (hasNumber, hasGroup)") {
     DocumentId none("id:ns:type::foo");
+    EXPECT_FALSE(none.getScheme().hasNumber());
+    EXPECT_FALSE(none.getScheme().hasGroup());
+    EXPECT_EQUAL("foo", none.getScheme().getNamespaceSpecific());
+
+    none = DocumentId("doc:ns:foo");
     EXPECT_FALSE(none.getScheme().hasNumber());
     EXPECT_FALSE(none.getScheme().hasGroup());
     EXPECT_EQUAL("foo", none.getScheme().getNamespaceSpecific());

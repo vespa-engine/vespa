@@ -23,8 +23,8 @@ struct Fixture {
     ~Fixture();
 };
 
-    Fixture::Fixture() = default;
-    Fixture::~Fixture() = default;
+    Fixture::Fixture() { }
+    Fixture::~Fixture() { }
 }
 
 using vespalib::IllegalArgumentException;
@@ -57,6 +57,17 @@ TEST_F("Exception is thrown if constructor doc ID type does not match referenced
             ReferenceFieldValue(f.refType, DocumentId("id:ns:bar::wario-time")),
             IllegalArgumentException,
             "Can't assign document ID 'id:ns:bar::wario-time' (of type 'bar') "
+            "to reference of document type 'foo'");
+}
+
+TEST_F("Exception is thrown if doc ID does not have a type", Fixture) {
+    // Could have had a special cased message for this, but type-less IDs are
+    // not expected to be allowed through the feed pipeline at all. We just
+    // want to ensure it fails in a controlled fashion if encountered.
+    EXPECT_EXCEPTION(
+            ReferenceFieldValue(f.refType, DocumentId("doc:foo:bario")),
+            IllegalArgumentException,
+            "Can't assign document ID 'doc:foo:bario' (of type '') "
             "to reference of document type 'foo'");
 }
 

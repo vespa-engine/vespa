@@ -25,7 +25,7 @@ public class Bug6394548TestCase {
         AnnotationType featureSetType = registry.getType("morty.RICK_FEATURESET");
         assertNotNull(featureSetType);
 
-        Document doc = new Document(manager.getDocumentType("article"), "id:ns:article::test");
+        Document doc = new Document(manager.getDocumentType("article"), "doc:article:test");
         StringFieldValue sfv = new StringFieldValue("badger waltz");
 
         SpanList root = new SpanList();

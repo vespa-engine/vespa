@@ -118,7 +118,7 @@ TEST(DocumentTypeTest, testMultipleInheritance)
     EXPECT_TRUE(docType3->hasField("tmp"));
     EXPECT_TRUE(docType3->hasField("tall"));
 
-    Document doc(*docType3, DocumentId("id:ns:test3::1"));
+    Document doc(*docType3, DocumentId(DocIdString("test", "test")));
 
     IntFieldValue intVal(3);
     doc.setValue(doc.getField("nalle"), intVal);

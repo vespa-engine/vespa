@@ -3448,6 +3448,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.document.idstring.DocIdString": {
+    "superClass": "com.yahoo.document.idstring.IdString",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public long getLocation()",
+      "public java.lang.String getSchemeSpecific()"
+    ],
+    "fields": []
+  },
   "com.yahoo.document.idstring.IdIdString": {
     "superClass": "com.yahoo.document.idstring.IdString",
     "interfaces": [],
@@ -3482,6 +3495,7 @@
       "public static com.yahoo.document.idstring.IdString$Scheme valueOf(java.lang.String)"
     ],
     "fields": [
+      "public static final enum com.yahoo.document.idstring.IdString$Scheme doc",
       "public static final enum com.yahoo.document.idstring.IdString$Scheme id"
     ]
   },

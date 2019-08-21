@@ -1,0 +1,23 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+
+  <vespaadd idprefix="doc:crawler:">
+    <document type="news" id="http://www.uio.no/">
+       <title>TestTitle</title>
+       <last_downloaded>100</last_downloaded>
+    </document>
+
+    <document type="news" id="http://www.dagbladet.no/">
+       <title>Title2</title>
+       <last_downloaded>100</last_downloaded>
+    </document>
+  </vespaadd>
+
+  <vespaadd>
+    <document type="news" id="doc:crawler2:http://www.vg.no/">
+       <title>Title2</title>
+       <last_downloaded>100</last_downloaded>
+    </document>
+  </vespaadd>
+
+</vespafeed>

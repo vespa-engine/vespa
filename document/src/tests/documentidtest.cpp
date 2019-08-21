@@ -23,6 +23,14 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
     {  // Generate file with globalids and bucket ID of various document ids,
        // which java will use to ensure equal implementations.
         std::ostringstream ost;
+        writeGlobalIdBucketId(ost, "doc:ns:specific");
+        writeGlobalIdBucketId(ost, "doc:another:specific");
+        writeGlobalIdBucketId(ost, "doc:ns:another");
+        for (uint32_t i=0; i<20; ++i) {
+            std::ostringstream ost2;
+            ost2 << i;
+            writeGlobalIdBucketId(ost, "doc:ns:"+ost2.str());
+        }
         writeGlobalIdBucketId(ost, "id:ns:type::specific");
         writeGlobalIdBucketId(ost, "id:another:type::specific");
         writeGlobalIdBucketId(ost, "id:ns:type::another");
@@ -43,16 +51,17 @@ TEST(DocumentIdTest, generateJavaComplianceFile)
 
 TEST(DocumentIdTest, testOutput)
 {
-    DocumentId id("id:ns:news::crawler:http://www.yahoo.com");
+    DocumentId id(DocIdString("crawler", "http://www.yahoo.com"));
 
     std::ostringstream ost;
     ost << id;
-    std::string expected("id:ns:news::crawler:http://www.yahoo.com");
+    std::string expected("doc:crawler:http://www.yahoo.com");
     EXPECT_EQ(expected, ost.str());
 
     EXPECT_EQ(vespalib::string(expected), id.toString());
 
-    expected = "DocumentId(id = id:ns:news::crawler:http://www.yahoo.com, gid(0xa516a5abd7c7fa26944b72f7))";
+    expected = "DocumentId(id = doc:crawler:http://www.yahoo.com, "
+                          "gid(0x928baffb39cf32004542fb60))";
     EXPECT_EQ(expected, static_cast<Printable&>(id).toString(true));
 }
 
@@ -68,11 +77,11 @@ namespace {
 
 TEST(DocumentIdTest, testEqualityOperator)
 {
-    std::string uri("id:ns:news::crawler:http://www.yahoo.com");
+    std::string uri(DocIdString("crawler", "http://www.yahoo.com").toString());
 
     DocumentId id1(uri);
     DocumentId id2(uri);
-    DocumentId id3("id:ns:news::crawler:http://www.yahoo.no/");
+    DocumentId id3("doc:crawler:http://www.yahoo.no/");
 
     EXPECT_EQ(id1, id2);
     EXPECT_NE(id1, id3);
@@ -80,11 +89,11 @@ TEST(DocumentIdTest, testEqualityOperator)
 
 TEST(DocumentIdTest, testCopying)
 {
-    std::string uri("id:crawler:news::http://www.yahoo.com");
+    std::string uri(DocIdString("crawler", "http://www.yahoo.com/").toString());
 
     DocumentId id1(uri);
     DocumentId id2(id1);
-    DocumentId id3("id:ns:foo::");
+    DocumentId id3("doc:ns:foo");
     id3 = id2;
 
     EXPECT_EQ(id1, id2);
@@ -93,8 +102,21 @@ TEST(DocumentIdTest, testCopying)
 
 TEST(DocumentIdTest, checkNtnuGlobalId)
 {
-    DocumentId id("id:ns:news::crawler:http://www.ntnu.no/");
-    EXPECT_EQ(vespalib::string("gid(0x1e9d7fc69ac6c1da44dd87e0)"), id.getGlobalId().toString());
+    DocumentId id("doc:crawler:http://www.ntnu.no/");
+    EXPECT_EQ(vespalib::string("gid(0xb8863740be14221c0ac77896)"), id.getGlobalId().toString());
+}
+
+TEST(DocumentIdTest, testDocGlobalId)
+{
+        // Test that location of doc scheme documents are set correctly, such
+        // that the location is the first bytes of the original GID.
+    std::string id("doc:crawler:http://www.ntnu.no/");
+    DocumentId did(id);
+
+    unsigned char key[16];
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);
+
+    EXPECT_EQ(GlobalId(key), did.getGlobalId());
 }
 
 TEST(DocumentIdTest, freestandingLocationFromGroupNameFuncMatchesIdLocation)

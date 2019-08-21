@@ -1,15 +1,15 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_pos><x>1</x><y>2</y></my_pos>
     </document>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_pos>E3;N4</my_pos>
     </document>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_pos>5;6</my_pos>
     </document>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_pos binaryencoding="base64">Nzs4</my_pos>
     </document>
 </vespafeed>

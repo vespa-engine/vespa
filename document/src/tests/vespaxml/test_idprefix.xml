@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+
+  <document type="news" id="http://music.yahoo.com/bobdylan/BestOf">
+    <title>Best of Bob Dylan</title>
+  </document>
+
+  <document type="news" id="http://music.yahoo.com/metallica/BestOf">
+    <title>Best of Metallica</title>
+  </document>
+
+</vespafeed>

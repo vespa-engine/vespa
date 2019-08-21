@@ -35,7 +35,7 @@ public class VespaDocumentSerializerTestCase {
         DocumentType docType = new DocumentType("my_type");
         docType.addField("my_str", DataType.STRING);
         docType.addField("my_int", DataType.INT);
-        Document doc = new Document(docType, "id:ns:my_type::");
+        Document doc = new Document(docType, "doc:scheme:");
         doc.setFieldValue("my_str", new StringFieldValue("foo"));
         doc.setFieldValue("my_int", new IntegerFieldValue(69));
 
@@ -49,7 +49,7 @@ public class VespaDocumentSerializerTestCase {
         DocumentType docType = new DocumentType("my_type");
         Field field = new Field("my_predicate", DataType.PREDICATE);
         docType.addField(field);
-        Document doc = new Document(docType, "id:ns:my_type::");
+        Document doc = new Document(docType, "doc:scheme:");
         PredicateFieldValue predicate = Mockito.mock(PredicateFieldValue.class);
         doc.setFieldValue("my_predicate", predicate);
 

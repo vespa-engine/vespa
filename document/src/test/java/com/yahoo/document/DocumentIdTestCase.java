@@ -44,9 +44,9 @@ public class DocumentIdTestCase {
 
     @Test
     public void testCompareTo() {
-        DocumentId docId1 = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::http://www.uio.no/")).getId();
-        DocumentId docId2 = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::http://www.uio.no/")).getId();
-        DocumentId docId3 = new Document(manager.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::http://www.ntnu.no/")).getId();
+        DocumentId docId1 = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.uio.no/")).getId();
+        DocumentId docId2 = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.uio.no/")).getId();
+        DocumentId docId3 = new Document(manager.getDocumentType("testdoc"), new DocumentId("doc:testdoc:http://www.ntnu.no/")).getId();
 
         assertTrue(docId1.equals(docId2));
         assertTrue(!docId1.equals(docId3));
@@ -70,6 +70,8 @@ public class DocumentIdTestCase {
     public void testValidInvalidUriSchemes() {
         try {
             //valid URIs
+            new DocumentId("doc:blabla:something");
+            new DocumentId("doc:doc:doc");
             new DocumentId("id:namespace:type:n=42:whatever");
             new DocumentId("id:namespace:type::whatever");
         } catch (IllegalArgumentException iae) {
@@ -78,6 +80,11 @@ public class DocumentIdTestCase {
 
         checkInvalidUri("foobar:");
         checkInvalidUri("ballooo:blabla/something/");
+        checkInvalidUri("doc:");
+        checkInvalidUri("doc::");
+        checkInvalidUri("doc:::");
+        checkInvalidUri("doc::/");
+        checkInvalidUri("doc");
         checkInvalidUri("id:namespace:type");
         checkInvalidUri("id:namespace:type:key-values");
         checkInvalidUri("id:namespace:type:n=0,n=1:foo");
@@ -175,6 +182,10 @@ public class DocumentIdTestCase {
         assertFalse(none.getScheme().hasGroup());
         assertFalse(none.getScheme().hasNumber());
 
+        none = new DocumentId("doc:ns:foo");
+        assertFalse(none.getScheme().hasGroup());
+        assertFalse(none.getScheme().hasNumber());
+
         DocumentId user = new DocumentId("id:ns:type:n=42:foo");
         assertFalse(user.getScheme().hasGroup());
         assertTrue(user.getScheme().hasNumber());
@@ -193,9 +204,9 @@ public class DocumentIdTestCase {
 
     @Test
     public void testHashCodeOfGids() {
-        DocumentId docId0 = new DocumentId("id:blabla:type::0");
+        DocumentId docId0 = new DocumentId("doc:blabla:0");
         byte[] docId0Gid = docId0.getGlobalId();
-        DocumentId docId0Copy = new DocumentId("id:blabla:type::0");
+        DocumentId docId0Copy = new DocumentId("doc:blabla:0");
         byte[] docId0CopyGid = docId0Copy.getGlobalId();
 
 

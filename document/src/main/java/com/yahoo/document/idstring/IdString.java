@@ -37,7 +37,7 @@ public abstract class IdString {
         return "";
     }
 
-    public enum Scheme { id }
+    public enum Scheme { doc, id }
     private final Scheme scheme;
     private final String namespace;
     private final String namespaceSpecific;
@@ -79,6 +79,7 @@ public abstract class IdString {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static IdString parseAndCreate(String id) {
         String namespace;
 
@@ -120,6 +121,9 @@ public abstract class IdString {
 
             currPos = colonPos + 1;
             return new IdIdString(namespace, type, keyValues, id.substring(currPos));
+
+        } else if (schemeStr.equals("doc")) {
+            return new DocIdString(namespace, id.substring(currPos));
         } else {
             throw new IllegalArgumentException("Unknown id scheme '" + schemeStr + "'");
         }
