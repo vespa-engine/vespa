@@ -25,7 +25,8 @@
           },
           "log": "https://some.url:43/root/dev-us-east-1/run/1"
         }
-      ]
+      ],
+      "url": "https://some.url:43/root/dev-us-east-1"
     }
   }
 }

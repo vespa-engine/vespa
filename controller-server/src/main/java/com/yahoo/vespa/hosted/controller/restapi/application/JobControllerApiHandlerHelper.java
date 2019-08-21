@@ -141,9 +141,13 @@ class JobControllerApiHandlerHelper {
                 && type.environment().isManuallyDeployed()
                 && application.deployments().containsKey(type.zone(controller.system())))
                 controller.jobController().last(application.id(), type)
-                          .ifPresent(last -> runToSlime(devJobsObject.setObject(type.jobName()).setArray("runs").addObject(),
-                                                        last,
-                                                        baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize()));
+                          .ifPresent(last -> {
+                              Cursor devJobObject = devJobsObject.setObject(type.jobName());
+                              runToSlime(devJobObject.setArray("runs").addObject(),
+                                         last,
+                                         baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
+                              devJobObject.setString("url", baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize().toString());
+                          });
 
         return new SlimeJsonResponse(slime);
     }
