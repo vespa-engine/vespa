@@ -228,7 +228,7 @@ public class Application {
 
     public Optional<String> pemDeployKey() { return pemDeployKey; }
 
-    /** Returns the status of the global rotation assigned to this. Wil be empty if this does not have a global rotation. */
+    /** Returns the status of the global rotation assigned to this. Empty if this does not have a global rotation. */
     public Map<HostName, RotationStatus> rotationStatus() {
         return rotationStatus;
     }

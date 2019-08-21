@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import org.junit.Test;
 
@@ -24,15 +23,6 @@ public class ControllerVersionSerializerTest {
         assertEquals(version.version(), serialized.version());
         assertEquals(version.commitSha(), serialized.commitSha());
         assertEquals(version.commitDate(), serialized.commitDate());
-    }
-
-    @Test // TODO(mpolden): Remove after August 2019
-    public void legacy_serialization() {
-        var slime = SlimeUtils.jsonToSlime("{\"version\":\"7.42.1\"}");
-        var serialized = serializer.fromSlime(slime);
-        assertEquals(Version.fromString("7.42.1"), serialized.version());
-        assertEquals("badc0ffee", serialized.commitSha());
-        assertEquals(Instant.EPOCH, serialized.commitDate());
     }
 
 }

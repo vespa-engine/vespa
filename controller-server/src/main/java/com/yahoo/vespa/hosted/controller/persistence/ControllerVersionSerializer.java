@@ -37,11 +37,8 @@ public class ControllerVersionSerializer {
     public ControllerVersion fromSlime(Slime slime) {
         var root = slime.get();
         var version = Version.fromString(root.field(VERSION_FIELD).asString());
-        // TODO(mpolden): Make the following two fields non-optional after August 2019
-        var commitSha = Serializers.optionalString(root.field(COMMIT_SHA_FIELD))
-                                   .orElse("badc0ffee");
-        var commitDate = Serializers.optionalInstant(root.field(COMMIT_DATE_FIELD))
-                                    .orElse(Instant.EPOCH);
+        var commitSha = root.field(COMMIT_SHA_FIELD).asString();
+        var commitDate = Instant.ofEpochMilli(root.field(COMMIT_DATE_FIELD).asLong());
         return new ControllerVersion(version, commitSha, commitDate);
     }
 
