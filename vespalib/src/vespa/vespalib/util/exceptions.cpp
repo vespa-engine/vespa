@@ -100,7 +100,7 @@ PortListenException::PortListenException(int port, vespalib::stringref protocol,
 PortListenException::PortListenException(const PortListenException &) = default;
 PortListenException & PortListenException::operator = (const PortListenException &) = default;
 
-PortListenException::~PortListenException() {}
+PortListenException::~PortListenException() = default;
 
 //-----------------------------------------------------------------------------
 

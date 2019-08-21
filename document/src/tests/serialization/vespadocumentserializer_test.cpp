@@ -367,31 +367,6 @@ TEST("requireThatArrayFieldValueCanBeSerialized") {
     TEST_DO(checkArrayFieldValue<uint32_t>(0x4000));
 }
 
-TEST("requireThatOldVersionArrayFieldValueCanBeDeserialized") {
-    uint16_t old_version = 6;
-
-    nbostream stream;
-    uint32_t type_id = 3;
-    uint32_t size = 2;
-    uint32_t element_size = 4;
-    uint32_t element1 = 21, element2 = 42;
-    stream << type_id << size
-           << element_size << element1
-           << element_size << element2;
-
-    ArrayDataType array_type(*DataType::INT);
-    ArrayFieldValue value(array_type);
-    VespaDocumentDeserializer deserializer(repo, stream, old_version);
-    deserializer.read(value);
-    ASSERT_TRUE(EXPECT_EQUAL(size, value.size()));
-    IntFieldValue *int_value = dynamic_cast<IntFieldValue *>(&value[0]);
-    ASSERT_TRUE(int_value);
-    EXPECT_EQUAL(element1, static_cast<uint32_t>(int_value->getValue()));
-    int_value = dynamic_cast<IntFieldValue *>(&value[1]);
-    ASSERT_TRUE(int_value);
-    EXPECT_EQUAL(element2, static_cast<uint32_t>(int_value->getValue()));
-}
-
 template <typename SizeType>
 void checkMapFieldValue(SizeType value_count, bool check_equal) {
     MapDataType map_type(*DataType::LONG, *DataType::BYTE);
@@ -420,33 +395,6 @@ TEST("requireThatMapFieldValueCanBeSerialized") {
     TEST_DO(checkMapFieldValue<uint16_t>(0x80, true));
     TEST_DO(checkMapFieldValue<uint16_t>(0x3fff, false));
     TEST_DO(checkMapFieldValue<uint32_t>(0x4000, false));
-}
-
-TEST("requireThatOldVersionMapFieldValueCanBeDeserialized") {
-    uint16_t old_version = 6;
-
-    nbostream stream;
-    uint32_t type_id = 4;
-    uint32_t size = 2;
-    uint32_t element_size = 9;
-    uint64_t key1 = 21, key2 = 42;
-    uint8_t val1 = 1, val2 = 2;
-    stream << type_id << size
-           << element_size << key1 << val1
-           << element_size << key2 << val2;
-
-    MapDataType map_type(*DataType::LONG, *DataType::BYTE);
-    MapFieldValue value(map_type);
-    VespaDocumentDeserializer deserializer(repo, stream, old_version);
-    deserializer.read(value);
-    ASSERT_TRUE(EXPECT_EQUAL(size, value.size()));
-
-    ASSERT_TRUE(value.contains(LongFieldValue(key1)));
-    ASSERT_TRUE(value.contains(LongFieldValue(key2)));
-    EXPECT_EQUAL(ByteFieldValue(val1),
-               *value.find(LongFieldValue(key1))->second);
-    EXPECT_EQUAL(ByteFieldValue(val2),
-               *value.find(LongFieldValue(key2))->second);
 }
 
 TEST("requireThatWeightedSetFieldValueCanBeSerialized") {
@@ -599,7 +547,7 @@ TEST("requireThatDocumentCanBeSerialized") {
     EXPECT_EQUAL(0, read_version);
 }
 
-TEST("requireThatOldVersionDocumentCanBeDeserialized") {
+TEST("requireThatOldVersionDocumentCanNotBeDeserialized") {
     uint16_t old_version = 6;
     uint16_t data_size = 432;
     string doc_id = "id:ns:my_doctype::";
@@ -615,11 +563,12 @@ TEST("requireThatOldVersionDocumentCanBeDeserialized") {
 
     Document value;
     VespaDocumentDeserializer deserializer(repo, stream, old_version);
-    deserializer.read(value);
-
-    EXPECT_EQUAL(doc_id, value.getId().getScheme().toString());
-    EXPECT_EQUAL(doc_name, value.getType().getName());
-    EXPECT_TRUE(value.getFields().empty());
+    try {
+        deserializer.read(value);
+        ASSERT_FALSE(true);
+    } catch (vespalib::Exception & e) {
+        EXPECT_EQUAL("CORRUPT DATA: Unrecognized serialization version 6", e.getMessage());
+    }
 }
 
 TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {

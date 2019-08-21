@@ -53,7 +53,6 @@ public:
     void write(const TensorFieldValue &value);
     void write(const ReferenceFieldValue& value);
 
-    void write42(const DocumentUpdate &value);
     void writeHEAD(const DocumentUpdate &value);
     void write(const FieldUpdate &value);
     void write(const ValueUpdate &value);

@@ -549,7 +549,7 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 2)))
           .addUpdate(MapValueUpdate(StringFieldValue("foo"),
                         ArithmeticValueUpdate(ArithmeticValueUpdate::Mul, 2))));
-    ByteBuffer::UP buf(serialize42(upd));
+    ByteBuffer::UP buf(serializeHEAD(upd));
     writeBufferToFile(*buf, "data/serializeupdatecpp.dat");
 }
 
