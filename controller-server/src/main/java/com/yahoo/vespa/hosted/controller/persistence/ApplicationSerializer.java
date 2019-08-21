@@ -325,11 +325,6 @@ public class ApplicationSerializer {
         });
     }
 
-    private void rotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
-        var rotationsArray = parent.setArray(fieldName);
-        rotations.forEach(rot -> rotationsArray.addString(rot.rotationId().asString()));
-    }
-
     private void assignedRotationsToSlime(List<AssignedRotation> rotations, Cursor parent, String fieldName) {
         var rotationsArray = parent.setArray(fieldName);
         for (var rotation : rotations) {
