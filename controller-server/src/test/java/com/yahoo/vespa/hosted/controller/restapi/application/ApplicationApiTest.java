@@ -49,7 +49,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
@@ -1679,12 +1679,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         applicationController.store(locked.withRotationStatus(rotationStatus(application))));
         });}
 
-    private Map<HostName, RotationStatus> rotationStatus(Application application) {
+    private Map<HostName, RotationState> rotationStatus(Application application) {
         return controllerTester.controller().applications().rotationRepository().getRotation(application)
                 .map(rotation -> controllerTester.controller().metricsService().getRotationStatus(rotation.name()))
                 .map(rotationStatus -> {
-                    Map<HostName, RotationStatus> result = new TreeMap<>();
-                    rotationStatus.forEach((hostname, status) -> result.put(hostname, RotationStatus.in));
+                    Map<HostName, RotationState> result = new TreeMap<>();
+                    rotationStatus.forEach((hostname, status) -> result.put(hostname, RotationState.in));
                     return result;
                 })
                 .orElseGet(Collections::emptyMap);

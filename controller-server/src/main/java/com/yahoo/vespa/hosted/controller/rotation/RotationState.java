@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.application;
+package com.yahoo.vespa.hosted.controller.rotation;
 
 /**
- * Represents the health status of a global rotation.
+ * The possible states of a global rotation.
  *
  * @author mpolden
  */
-public enum RotationStatus {
+public enum RotationState {
 
     /** Rotation has status 'in' and is receiving traffic */
     in,

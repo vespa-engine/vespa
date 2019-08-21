@@ -24,7 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -58,7 +58,7 @@ public class LockedApplication {
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
     private final List<AssignedRotation> rotations;
-    private final Map<HostName, RotationStatus> rotationStatus;
+    private final Map<HostName, RotationState> rotationStatus;
     private final Optional<ApplicationCertificate> applicationCertificate;
 
     /**
@@ -81,7 +81,7 @@ public class LockedApplication {
                               Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                               Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                               OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                              List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
+                              List<AssignedRotation> rotations, Map<HostName, RotationState> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
         this.lock = lock;
         this.id = id;
         this.createdAt = createdAt;
@@ -266,7 +266,7 @@ public class LockedApplication {
                                      metrics, pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
     }
 
-    public LockedApplication withRotationStatus(Map<HostName, RotationStatus> rotationStatus) {
+    public LockedApplication withRotationStatus(Map<HostName, RotationState> rotationStatus) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);

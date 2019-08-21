@@ -32,7 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
@@ -317,7 +317,7 @@ public class ApplicationSerializer {
             object.setBool(pinnedField, true);
     }
 
-    private void toSlime(Map<HostName, RotationStatus> rotationStatus, Cursor array) {
+    private void toSlime(Map<HostName, RotationState> rotationStatus, Cursor array) {
         rotationStatus.forEach((hostname, status) -> {
             Cursor object = array.addObject();
             object.setString("hostname", hostname.value());
@@ -355,7 +355,7 @@ public class ApplicationSerializer {
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
-        Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
+        Map<HostName, RotationState> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
         Optional<ApplicationCertificate> applicationCertificate = Serializers.optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
@@ -403,14 +403,14 @@ public class ApplicationSerializer {
         return Collections.unmodifiableMap(warnings);
     }
 
-    private Map<HostName, RotationStatus> rotationStatusFromSlime(Inspector object) {
+    private Map<HostName, RotationState> rotationStatusFromSlime(Inspector object) {
         if (!object.valid()) {
             return Collections.emptyMap();
         }
-        Map<HostName, RotationStatus> rotationStatus = new TreeMap<>();
+        Map<HostName, RotationState> rotationStatus = new TreeMap<>();
         object.traverse((ArrayTraverser) (idx, inspect) -> {
             HostName hostname = HostName.from(inspect.field("hostname").asString());
-            RotationStatus status = RotationStatus.valueOf(inspect.field("status").asString());
+            RotationState status = RotationState.valueOf(inspect.field("status").asString());
             rotationStatus.put(hostname, status);
         });
         return Collections.unmodifiableMap(rotationStatus);

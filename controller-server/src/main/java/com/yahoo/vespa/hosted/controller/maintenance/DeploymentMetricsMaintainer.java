@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -102,22 +102,22 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     }
 
     /** Get global rotation status for application */
-    private Map<HostName, RotationStatus> rotationStatus(Application application) {
+    private Map<HostName, RotationState> rotationStatus(Application application) {
         return applications.rotationRepository().getRotation(application)
                            .map(rotation -> controller().metricsService().getRotationStatus(rotation.name()))
                            .map(rotationStatus -> {
-                               Map<HostName, RotationStatus> result = new TreeMap<>();
+                               Map<HostName, RotationState> result = new TreeMap<>();
                                rotationStatus.forEach((hostname, status) -> result.put(hostname, from(status)));
                                return result;
                            })
                            .orElseGet(Collections::emptyMap);
     }
 
-    private static RotationStatus from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {
+    private static RotationState from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {
         switch (status) {
-            case IN: return RotationStatus.in;
-            case OUT: return RotationStatus.out;
-            case UNKNOWN: return RotationStatus.unknown;
+            case IN: return RotationState.in;
+            case OUT: return RotationState.out;
+            case UNKNOWN: return RotationState.unknown;
             default: throw new IllegalArgumentException("Unknown API value for rotation status: " + status);
         }
     }

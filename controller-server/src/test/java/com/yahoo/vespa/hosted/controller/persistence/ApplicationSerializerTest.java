@@ -29,7 +29,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
 
@@ -105,9 +105,9 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
-        Map<HostName, RotationStatus> rotationStatus = new TreeMap<>();
-        rotationStatus.put(HostName.from("rot1.fqdn"), RotationStatus.in);
-        rotationStatus.put(HostName.from("rot2.fqdn"), RotationStatus.out);
+        Map<HostName, RotationState> rotationStatus = new TreeMap<>();
+        rotationStatus.put(HostName.from("rot1.fqdn"), RotationState.in);
+        rotationStatus.put(HostName.from("rot2.fqdn"), RotationState.out);
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),

@@ -60,7 +60,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -685,9 +685,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("gitCommit", revision.get().commit());
     }
 
-    private void toSlime(RotationStatus status, Cursor object) {
+    private void toSlime(RotationState state, Cursor object) {
         Cursor bcpStatus = object.setObject("bcpStatus");
-        bcpStatus.setString("rotationStatus", status.name().toUpperCase());
+        bcpStatus.setString("rotationStatus", state.name().toUpperCase());
     }
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {

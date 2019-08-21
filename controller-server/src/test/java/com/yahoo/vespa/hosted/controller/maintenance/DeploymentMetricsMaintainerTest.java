@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
@@ -115,21 +115,21 @@ public class DeploymentMetricsMaintainerTest {
         tester.controllerTester().metricsService().addRotation(assignedRotation);
 
         // No status gathered yet
-        assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.unknown, app.get().rotationStatus(deployment1.get()));
+        assertEquals(RotationState.unknown, app.get().rotationStatus(deployment2.get()));
 
         // One rotation out, one in
         metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
         metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.out, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus(deployment1.get()));
+        assertEquals(RotationState.out, app.get().rotationStatus(deployment2.get()));
 
         // All rotations in
         metricsService.setZoneIn(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus(deployment1.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus(deployment2.get()));
     }
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
