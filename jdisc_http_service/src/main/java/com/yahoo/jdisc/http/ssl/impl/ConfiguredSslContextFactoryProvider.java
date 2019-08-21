@@ -3,10 +3,11 @@ package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
-import com.yahoo.security.KeyStoreBuilder;
-import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.tls.DefaultTlsContext;
+import com.yahoo.security.tls.PeerAuthentication;
+import com.yahoo.security.tls.TlsContext;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.IOException;
@@ -14,7 +15,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -24,7 +24,7 @@ import java.util.List;
  *
  * @author bjorncs
  */
-public class ConfiguredSslContextFactoryProvider implements SslContextFactoryProvider {
+public class ConfiguredSslContextFactoryProvider extends TlsContextBasedProvider {
 
     private final ConnectorConfig connectorConfig;
 
@@ -34,28 +34,17 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
     }
 
     @Override
-    public SslContextFactory getInstance(String containerId, int port) {
+    protected TlsContext getTlsContext(String containerId, int port) {
         ConnectorConfig.Ssl sslConfig = connectorConfig.ssl();
         if (!sslConfig.enabled()) throw new IllegalStateException();
-        SslContextFactory.Server factory = new JDiscSslContextFactory();
 
-        switch (sslConfig.clientAuth()) {
-            case NEED_AUTH:
-                factory.setNeedClientAuth(true);
-                break;
-            case WANT_AUTH:
-                factory.setWantClientAuth(true);
-                break;
-        }
-
-        // Check if using new ssl syntax from services.xml
-        factory.setKeyStore(createKeystore(sslConfig));
-        factory.setKeyStorePassword("");
-        if (!sslConfig.caCertificateFile().isEmpty()) {
-            factory.setTrustStore(createTruststore(sslConfig));
-        }
-        factory.setProtocol("TLS");
-        return factory;
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
+        X509Certificate certificate = X509CertificateUtils.fromPem(getCertificate(sslConfig));
+        List<X509Certificate> caCertificates = !sslConfig.caCertificateFile().isEmpty()
+                ? X509CertificateUtils.certificateListFromPem(getCaCertificates(sslConfig))
+                : List.of();
+        PeerAuthentication peerAuthentication = toPeerAuthentication(sslConfig.clientAuth());
+        return new DefaultTlsContext(List.of(certificate), privateKey, caCertificates, null, null, peerAuthentication);
     }
 
     private static void validateConfig(ConnectorConfig.Ssl config) {
@@ -74,20 +63,24 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
             throw new IllegalArgumentException("Specified neither private key or private key file.");
     }
 
+    private static PeerAuthentication toPeerAuthentication(ConnectorConfig.Ssl.ClientAuth.Enum clientAuth) {
+        switch (clientAuth) {
+            case DISABLED:
+                return PeerAuthentication.DISABLED;
+            case NEED_AUTH:
+                return PeerAuthentication.NEED;
+            case WANT_AUTH:
+                return PeerAuthentication.WANT;
+            default:
+                throw new IllegalArgumentException("Unknown client auth: " + clientAuth);
+        }
+    }
+
     private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
     private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
-    private static KeyStore createTruststore(ConnectorConfig.Ssl sslConfig) {
-        List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.caCertificateFile()));
-        return KeyStoreBuilder.withType(KeyStoreType.JKS)
-                .withCertificateEntries("entry", caCertificates)
-                .build();
-    }
-
-    private static KeyStore createKeystore(ConnectorConfig.Ssl sslConfig) {
-        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
-        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(getCertificate(sslConfig));
-        return KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificates).build();
+    private static String getCaCertificates(ConnectorConfig.Ssl sslConfig) {
+        return readToString(sslConfig.caCertificateFile());
     }
 
     private static String getPrivateKey(ConnectorConfig.Ssl config) {
