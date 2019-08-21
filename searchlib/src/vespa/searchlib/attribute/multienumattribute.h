@@ -59,6 +59,7 @@ protected:
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
     using EnumIndexMap = EnumStoreBase::EnumIndexMap;
+    using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
 
     // from MultiValueAttribute
     bool extractChangeData(const Change & c, EnumIndex & idx) override; // EnumIndex is ValueType. Use EnumStore
@@ -67,10 +68,7 @@ protected:
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
     void reEnumerate(const EnumIndexMap &) override; // same for both string and numeric
 
-    virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
-
-    void incRefCount(const WeightedIndex & idx) { this->_enumStore.incRefCount(idx); }
-    void decRefCount(const WeightedIndex & idx) { this->_enumStore.decRefCount(idx); }
+    virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 
     virtual void freezeEnumDictionary() {
         this->getEnumStore().freezeTree();

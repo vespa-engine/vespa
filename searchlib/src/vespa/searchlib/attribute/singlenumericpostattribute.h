@@ -35,6 +35,7 @@ private:
                                         typename B::EnumStore> PostingParent;
 public:
     typedef typename SingleValueNumericEnumAttribute<B>::EnumStore     EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 private:
     typedef typename SingleValueEnumAttributeBase::EnumIndex           EnumIndex;
     typedef typename SingleValueNumericEnumAttribute<B>::generation_t  generation_t;
@@ -74,7 +75,7 @@ private:
                            const std::map<DocId, EnumIndex> &currEnumIndices,
                            PostingMap &changePost);
 
-    void applyValueChanges(EnumStoreBase::IndexVector & unused) override;
+    void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 
 public:
     SingleValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);

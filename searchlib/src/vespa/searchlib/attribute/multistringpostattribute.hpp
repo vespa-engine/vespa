@@ -39,7 +39,7 @@ private:
 template <typename B, typename T>
 void
 MultiValueStringPostingAttributeT<B, T>::
-applyValueChanges(const DocIndices &docIndices, EnumStoreBase::IndexVector &unused)
+applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
 {
     typedef PostingChangeComputerT<WeightedIndex, PostingMap> PostingChangeComputer;
     EnumStore &enumStore(this->getEnumStore());
@@ -49,7 +49,7 @@ applyValueChanges(const DocIndices &docIndices, EnumStoreBase::IndexVector &unus
     StringEnumIndexMapper mapper(dict);
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
     this->updatePostings(changePost);
-    MultiValueStringAttributeT<B, T>::applyValueChanges(docIndices, unused);
+    MultiValueStringAttributeT<B, T>::applyValueChanges(docIndices, updater);
 }
 
 template <typename B, typename T>

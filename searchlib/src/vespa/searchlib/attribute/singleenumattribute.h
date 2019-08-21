@@ -58,10 +58,11 @@ protected:
     typedef attribute::LoadedEnumAttribute LoadedEnumAttribute;
     using B::getGenerationHolder;
     using EnumIndexMap = EnumStoreBase::EnumIndexMap;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
     void considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques);
-    void applyUpdateValueChange(const Change & c, EnumStoreBase::IndexVector & unused);
+    void applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater);
 
 protected:
     // from EnumAttribute
@@ -72,12 +73,11 @@ protected:
     virtual void considerUpdateAttributeChange(const Change & c) { (void) c; }
     virtual void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) { (void) c; (void) newUniques; }
 
-    // update enum index vector with new values according to change vector
-    virtual void applyValueChanges(EnumStoreBase::IndexVector & unused) ;
-    virtual void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused) {
-        (void) c; (void) unused;
+    virtual void applyValueChanges(EnumStoreBatchUpdater& updater) ;
+    virtual void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) {
+        (void) c; (void) updater;
     }
-    void updateEnumRefCounts(const Change & c, EnumIndex newIdx, EnumIndex oldIdx, EnumStoreBase::IndexVector & unused);
+    void updateEnumRefCounts(const Change& c, EnumIndex newIdx, EnumIndex oldIdx, EnumStoreBatchUpdater& updater);
 
     virtual void freezeEnumDictionary() {
         this->getEnumStore().freezeTree();

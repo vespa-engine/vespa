@@ -22,7 +22,8 @@ MultiValueNumericPostingAttribute<B, M>::mergeMemoryStats(vespalib::MemoryUsage 
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused)
+MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& docIndices,
+                                                           EnumStoreBatchUpdater& updater)
 {
     typedef PostingChangeComputerT<WeightedIndex, PostingMap> PostingChangeComputer;
     EnumStore & enumStore = this->getEnumStore();
@@ -31,7 +32,7 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices & do
     EnumIndexMapper mapper;
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
     this->updatePostings(changePost);
-    MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, unused);
+    MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }
 
 

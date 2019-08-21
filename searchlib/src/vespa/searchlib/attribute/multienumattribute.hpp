@@ -63,7 +63,7 @@ MultiValueEnumAttribute<B, M>::reEnumerate(const EnumIndexMap & old2new)
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused)
+MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater)
 {
     // set new set of indices for documents with changes
     ValueModifier valueGuard(this->getValueModifier());
@@ -72,13 +72,10 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices & docIndices, 
         uint32_t valueCount = oldIndices.size();
         this->_mvMapping.set(iter->first, iter->second);
         for (uint32_t i = 0; i < iter->second.size(); ++i) {
-            incRefCount(iter->second[i]);
+            updater.inc_ref_count(iter->second[i]);
         }
         for (uint32_t i = 0; i < valueCount; ++i) {
-            decRefCount(oldIndices[i]);
-            if (this->_enumStore.getRefCount(oldIndices[i]) == 0) {
-                unused.push_back(oldIndices[i].value());
-            }
+            updater.dec_ref_count(oldIndices[i]);
         }
     }
 }
@@ -161,13 +158,13 @@ void
 MultiValueEnumAttribute<B, M>::onCommit()
 {
     // update enum store
-    EnumStoreBase::IndexVector possiblyUnused;
-    this->insertNewUniqueValues(possiblyUnused);
+    auto updater = this->_enumStore.make_batch_updater();
+    this->insertNewUniqueValues(updater);
     DocIndices docIndices;
     this->applyAttributeChanges(docIndices);
-    applyValueChanges(docIndices, possiblyUnused);
+    applyValueChanges(docIndices, updater);
     this->_changes.clear();
-    this->_enumStore.freeUnusedEnums(possiblyUnused);
+    updater.commit();
     this->freezeEnumDictionary();
     this->setEnumMax(this->_enumStore.getLastEnum());
     std::atomic_thread_fence(std::memory_order_release);

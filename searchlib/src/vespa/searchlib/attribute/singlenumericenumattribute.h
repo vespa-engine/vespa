@@ -38,6 +38,7 @@ protected:
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -48,7 +49,7 @@ protected:
     // from SingleValueEnumAttribute
     void considerUpdateAttributeChange(const Change & c) override;
     void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) override;
-    void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused) override;
+    void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 
     /*
      * Specialization of SearchContext

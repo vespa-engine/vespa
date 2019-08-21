@@ -46,7 +46,9 @@ protected:
     using B::getStatus;
 
 public:
-    typedef EnumStoreT<EnumEntryType>                  EnumStore;
+    using EnumStore = EnumStoreT<EnumEntryType>;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+
 protected:
     using EnumIndex = EnumStoreBase::Index;
     using EnumIndexMap = EnumStoreBase::EnumIndexMap;
@@ -71,7 +73,7 @@ protected:
      * Iterate through the change vector and find new unique values.
      * Perform compaction if necessary and insert the new unique values into the EnumStore.
      */
-    void insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes);
+    void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
     virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
     virtual void reEnumerate(const EnumIndexMap &) = 0;
     vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const override;
