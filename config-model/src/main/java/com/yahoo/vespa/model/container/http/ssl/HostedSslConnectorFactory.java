@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container.http.ssl;
 
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 tlsSecrets.certificate(),
                 /*caCertificatePath*/null,
                 tlsCaCertificates,
-                "want");
+                ClientAuth.Enum.WANT_AUTH);
     }
 
     @Override
