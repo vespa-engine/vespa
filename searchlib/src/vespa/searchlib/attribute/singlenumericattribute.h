@@ -10,21 +10,21 @@
 namespace search {
 
 template <typename B>
-class SingleValueNumericAttribute final : public B
-{
+class SingleValueNumericAttribute final : public B {
 private:
-    typedef typename B::BaseType      T;
-    typedef typename B::DocId         DocId;
-    typedef typename B::EnumHandle    EnumHandle;
-    typedef typename B::largeint_t    largeint_t;
-    typedef typename B::Weighted      Weighted;
-    typedef typename B::WeightedInt   WeightedInt;
-    typedef typename B::WeightedFloat WeightedFloat;
-    typedef typename B::WeightedEnum  WeightedEnum;
-    typedef typename B::generation_t generation_t;
+    using T = typename B::BaseType;
+    using DataVector = vespalib::RcuVectorBase<T>;
+    using DocId = typename B::DocId;
+    using EnumHandle = typename B::EnumHandle;
+    using Weighted = typename B::Weighted;
+    using WeightedEnum = typename B::WeightedEnum;
+    using WeightedFloat = typename B::WeightedFloat;
+    using WeightedInt = typename B::WeightedInt;
+    using generation_t = typename B::generation_t;
+    using largeint_t = typename B::largeint_t;
+
     using B::getGenerationHolder;
 
-    typedef vespalib::RcuVectorBase<T> DataVector;
     DataVector _data;
 
     T getFromEnum(EnumHandle e) const override {

@@ -12,7 +12,7 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of multi value string attribute that uses an underlying enum store
  * to store unique string values and a multi value mapping to store the enum store indices
  * for each document.
@@ -23,31 +23,30 @@ namespace search {
  *    multivalue::WeightedValue<EnumStoreBase::Index> (weighted set)
  */
 template <typename B, typename M>
-class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M>
-{
+class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M> {
 protected:
-    typedef typename B::EnumStore                                 EnumStore;
-    typedef typename MultiValueAttribute<B, M>::MultiValueType    WeightedIndex;
-    typedef typename MultiValueAttribute<B, M>::ValueType         EnumIndex;
-    typedef typename MultiValueAttribute<B, M>::MultiValueMapping MultiValueMapping;
-    typedef typename MultiValueAttribute<B, M>::ValueVector       WeightedIndexVector;
-    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    typedef typename MultiValueAttribute<B, M>::DocumentValues    DocIndices;
-
-    typedef StringAttribute::DocId             DocId;
-    typedef StringAttribute::EnumHandle        EnumHandle;
-    typedef StringAttribute::LoadedVector      LoadedVector;
-    typedef StringAttribute::generation_t      generation_t;
-    typedef StringAttribute::WeightedString    WeightedString;
-    typedef StringAttribute::WeightedConstChar WeightedConstChar;
-    typedef StringAttribute::SearchContext     SearchContext;
-    typedef StringAttribute::Change            Change;
-    typedef StringAttribute::ChangeVector      ChangeVector;
-    typedef StringAttribute::ValueModifier     ValueModifier;
-    typedef StringAttribute::EnumModifier      EnumModifier;
-    typedef StringAttribute::WeightedEnum      WeightedEnum;
-    typedef attribute::EnumHintSearchContext   EnumHintSearchContext;
+    using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
+    using EnumHintSearchContext = attribute::EnumHintSearchContext;
+    using EnumIndex = typename MultiValueAttribute<B, M>::ValueType;
+    using EnumStore = typename B::EnumStore;
+    using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
+    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
+    using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
+
+    using Change = StringAttribute::Change;
+    using ChangeVector = StringAttribute::ChangeVector;
+    using DocId = StringAttribute::DocId;
+    using EnumHandle = StringAttribute::EnumHandle;
+    using EnumModifier = StringAttribute::EnumModifier;
+    using LoadedVector = StringAttribute::LoadedVector;
+    using SearchContext = StringAttribute::SearchContext;
+    using ValueModifier = StringAttribute::ValueModifier;
+    using WeightedConstChar = StringAttribute::WeightedConstChar;
+    using WeightedEnum = StringAttribute::WeightedEnum;
+    using WeightedString = StringAttribute::WeightedString;
+    using generation_t = StringAttribute::generation_t;
 
 private:
     friend class StringAttributeTest;
@@ -159,8 +158,8 @@ public:
                                      public EnumHintSearchContext
     {
         using BT::queryTerm;
-        typedef MultiValueStringAttributeT<B, M> AttrType;
-        typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
+        using AttrType = MultiValueStringAttributeT<B, M>;
+        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
     public:
         StringTemplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };
@@ -170,7 +169,7 @@ public:
 };
 
 
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> > ArrayStringAttribute;
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> > WeightedSetStringAttribute;
+using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> >;
+using WeightedSetStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> >;
 
 }

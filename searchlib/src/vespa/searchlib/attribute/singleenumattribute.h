@@ -8,21 +8,20 @@
 namespace search {
 
 class ReaderBase;
-/*
+
+/**
  * Implementation of single value enum attribute that uses an underlying enum store
  * to store unique values.
  *
  * B: EnumAttribute<BaseClass>
  */
-
-class SingleValueEnumAttributeBase
-{
+class SingleValueEnumAttributeBase {
 protected:
-    typedef EnumStoreBase::Index      EnumIndex;
-    typedef vespalib::RcuVectorBase<EnumIndex> EnumIndexVector;
-    typedef AttributeVector::DocId        DocId;
-    typedef AttributeVector::EnumHandle   EnumHandle;
-    typedef vespalib::GenerationHolder GenerationHolder;
+    using DocId = AttributeVector::DocId;
+    using EnumHandle = AttributeVector::EnumHandle;
+    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndexVector = vespalib::RcuVectorBase<EnumIndex>;
+    using GenerationHolder = vespalib::GenerationHolder;
 
 public:
     using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
@@ -40,25 +39,25 @@ protected:
 };
 
 template <typename B>
-class SingleValueEnumAttribute : public B, public SingleValueEnumAttributeBase
-{
+class SingleValueEnumAttribute : public B, public SingleValueEnumAttributeBase {
 protected:
-    typedef typename B::DocId                   DocId;
-    typedef typename B::WeightedEnum            WeightedEnum;
-    typedef typename B::Change                  Change;
-    typedef typename B::ChangeVector            ChangeVector;
-    typedef typename B::ChangeVector::const_iterator  ChangeVectorIterator;
-    typedef typename B::generation_t            generation_t;
-    typedef typename B::EnumModifier            EnumModifier;
-    typedef typename B::ValueModifier           ValueModifier;
-    typedef typename B::EnumStore               EnumStore;
-    typedef typename B::LoadedVector            LoadedVector;
-    typedef typename B::UniqueSet               UniqueSet;
-    typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
-    typedef attribute::LoadedEnumAttribute LoadedEnumAttribute;
-    using B::getGenerationHolder;
+    using Change = typename B::Change;
+    using ChangeVector = typename B::ChangeVector;
+    using ChangeVectorIterator = typename B::ChangeVector::const_iterator;
+    using DocId = typename B::DocId;
     using EnumIndexMap = EnumStoreBase::EnumIndexMap;
+    using EnumModifier = typename B::EnumModifier;
+    using EnumStore = typename B::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using LoadedVector = typename B::LoadedVector;
+    using UniqueSet = typename B::UniqueSet;
+    using ValueModifier = typename B::ValueModifier;
+    using WeightedEnum = typename B::WeightedEnum;
+    using generation_t = typename B::generation_t;
+
+    using B::getGenerationHolder;
 
 private:
     void considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques);

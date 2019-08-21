@@ -21,27 +21,28 @@ class EnumAttribute : public B
     template <typename, typename, typename> 
     friend class attribute::PostingSearchContext; // getEnumStore()
 protected:
-    typedef B                                   BaseClass;
-    typedef typename B::DocId                   DocId;
-    typedef typename B::EnumHandle              EnumHandle;
-    typedef typename B::EnumEntryType           EnumEntryType; // Template argument for enum store
-    typedef typename B::EnumEntryType::Type     EnumType;      // Type stored in enum store (integer, float, string)
-    typedef typename B::Change                  Change;
-    typedef typename B::Change::DataType        ChangeDataType;
-    typedef typename B::ChangeVector            ChangeVector;
-    typedef typename B::ChangeVector::const_iterator  ChangeVectorIterator;
-    typedef typename B::EnumModifier            EnumModifier;
-    typedef typename B::ValueModifier           ValueModifier;
+    using BaseClass = B;
+    using Change = typename B::Change;
+    using ChangeDataType = typename B::Change::DataType;
+    using ChangeVector = typename B::ChangeVector;
+    using ChangeVectorIterator = typename B::ChangeVector::const_iterator;
+    using DocId = typename B::DocId;
+    using EnumEntryType = typename B::EnumEntryType;  // Template argument for enum store
+    using EnumHandle = typename B::EnumHandle;
+    using EnumModifier = typename B::EnumModifier;
+    using EnumType = typename B::EnumEntryType::Type; // Type stored in enum store (integer, float, string)
+    using ValueModifier = typename B::ValueModifier;
+
 public:
-    typedef typename B::LoadedVector            LoadedVector;
-    typedef typename B::EnumIndexVector         EnumIndexVector;
-    typedef typename B::EnumVector              EnumVector;
-    typedef typename B::LoadedValueType         LoadedValueType;
+    using EnumIndexVector = typename B::EnumIndexVector;
+    using EnumVector = typename B::EnumVector;
+    using LoadedValueType = typename B::LoadedValueType;
+    using LoadedVector = typename B::LoadedVector;
+
 protected:
-    typedef typename B::generation_t            generation_t;
-    typedef std::set<ChangeDataType>            UniqueSet;
-    typedef attribute::LoadedEnumAttributeVector
-    LoadedEnumAttributeVector;
+    using generation_t = typename B::generation_t;
+    using UniqueSet = std::set<ChangeDataType>;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using B::getGenerationHolder;
     using B::getStatus;
 

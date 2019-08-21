@@ -8,7 +8,7 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of multi value numeric attribute that uses an underlying enum store
  * to store unique numeric values and a multi value mapping to store enum indices for each document.
  * This class is used for both array and weighted set types.
@@ -17,33 +17,30 @@ namespace search {
  * M: MultiValueType (MultiValueMapping template argument)
  */
 template <typename B, typename M>
-class MultiValueNumericEnumAttribute : public MultiValueEnumAttribute<B, M>
-{
-protected:
-    typedef typename B::BaseClass::DocId           DocId;
-    typedef typename B::BaseClass::EnumHandle      EnumHandle;
+class MultiValueNumericEnumAttribute : public MultiValueEnumAttribute<B, M> {
 public:
-    typedef typename B::BaseClass::BaseType        T;
-protected:
-    typedef typename B::BaseClass::largeint_t      largeint_t;
-    typedef typename B::BaseClass::LoadedNumericValueT LoadedNumericValueT;
-    typedef typename B::BaseClass::LoadedVector    LoadedVector;
-    typedef SequentialReadModifyWriteVector<LoadedNumericValueT> LoadedVectorR;
-    typedef typename B::BaseClass::Weighted        Weighted;
-    typedef typename B::BaseClass::WeightedInt     WeightedInt;
-    typedef typename B::BaseClass::WeightedFloat   WeightedFloat;
-    typedef typename B::BaseClass::WeightedEnum    WeightedEnum;
+    using T = typename B::BaseClass::BaseType;
 
-    typedef typename MultiValueEnumAttribute<B, M>::MultiValueType WeightedIndex;
-    using WeightedIndexArrayRef = typename MultiValueEnumAttribute<B, M>::MultiValueArrayRef;
-    typedef attribute::LoadedEnumAttribute         LoadedEnumAttribute;
-    typedef attribute::LoadedEnumAttributeVector   LoadedEnumAttributeVector;
-    typedef EnumStoreBase::IndexVector             EnumIndexVector;
-    typedef EnumStoreBase::EnumVector              EnumVector;
-    typedef EnumStoreBase::Index                   EnumIndex;
+protected:
+    using DocId = typename B::BaseClass::DocId;
+    using EnumHandle = typename B::BaseClass::EnumHandle;
+    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndexVector = EnumStoreBase::IndexVector;
+    using EnumVector = EnumStoreBase::EnumVector;
+    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;
+    using LoadedVector = typename B::BaseClass::LoadedVector;
+    using LoadedVectorR = SequentialReadModifyWriteVector<LoadedNumericValueT>;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using Weighted = typename B::BaseClass::Weighted;
+    using WeightedEnum = typename B::BaseClass::WeightedEnum;
+    using WeightedFloat = typename B::BaseClass::WeightedFloat;
+    using WeightedIndex = typename MultiValueEnumAttribute<B, M>::MultiValueType;
+    using WeightedIndexArrayRef = typename MultiValueEnumAttribute<B, M>::MultiValueArrayRef;
+    using WeightedInt = typename B::BaseClass::WeightedInt;
+    using largeint_t = typename B::BaseClass::largeint_t;
 
-protected:
     /*
      * Specialization of SearchContext for weighted set type
      */
