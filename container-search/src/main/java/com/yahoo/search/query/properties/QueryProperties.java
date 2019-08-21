@@ -274,7 +274,7 @@ public class QueryProperties extends Properties {
                 else if (key.equals(Query.NO_CACHE))
                     query.setNoCache(asBoolean(value,false));
                 else if (key.equals(Query.GROUPING_SESSION_CACHE))
-                    query.setGroupingSessionCache(asBoolean(value, false));
+                    query.setGroupingSessionCache(asBoolean(value, true));
                 else
                     super.set(key,value,context);
             } else
