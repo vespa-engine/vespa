@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -60,7 +59,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
-        this.capacityPolicies = new CapacityPolicies(zone, flagSource);
+        this.capacityPolicies = new CapacityPolicies(zone);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService().map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.preparer = new Preparer(nodeRepository,
