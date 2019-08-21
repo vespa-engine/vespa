@@ -53,16 +53,6 @@ ByteBuffer::UP serializeHEAD(const DocumentUpdate & update)
     return retVal;
 }
 
-ByteBuffer::UP serialize42(const DocumentUpdate & update)
-{
-    nbostream stream;
-    VespaDocumentSerializer serializer(stream);
-    serializer.write42(update);
-    ByteBuffer::UP retVal(new ByteBuffer(stream.size()));
-    retVal->putBytes(stream.peek(), stream.size());
-    return retVal;
-}
-
 nbostream serialize(const ValueUpdate & update)
 {
     nbostream stream;
