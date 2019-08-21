@@ -2,7 +2,10 @@
 package com.yahoo.vespa.model.container.http.ssl;
 
 import com.yahoo.config.model.api.TlsSecrets;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
+
+import java.util.List;
 
 /**
  * Component specification for {@link com.yahoo.jdisc.http.server.jetty.ConnectorFactory} with hosted specific configuration.
@@ -10,6 +13,8 @@ import com.yahoo.vespa.model.container.http.ConnectorFactory;
  * @author bjorncs
  */
 public class HostedSslConnectorFactory extends ConnectorFactory {
+
+    private static final List<String> INSECURE_WHITELISTED_PATHS = List.of("/status.html");
 
     public HostedSslConnectorFactory(String serverName, TlsSecrets tlsSecrets) {
         this(serverName, tlsSecrets, null);
@@ -27,7 +32,15 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                 tlsSecrets.certificate(),
                 /*caCertificatePath*/null,
                 tlsCaCertificates,
-                "disabled");
+                "want");
+    }
+
+    @Override
+    public void getConfig(ConnectorConfig.Builder connectorBuilder) {
+        super.getConfig(connectorBuilder);
+        connectorBuilder.tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
+                                                       .pathWhitelist(INSECURE_WHITELISTED_PATHS)
+                                                       .enable(true));
     }
 
 }
