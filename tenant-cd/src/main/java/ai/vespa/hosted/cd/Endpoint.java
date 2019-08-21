@@ -7,7 +7,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -28,6 +33,12 @@ public interface Endpoint {
         return send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
+    /** Creates a request against the endpoint, with the given path and properties. */
+    HttpRequest.Builder request(String path, Map<String, String> properties);
 
+    /** Creates a request against the endpoint, with the given path. */
+    default HttpRequest.Builder request(String path) {
+        return request(path, Collections.emptyMap());
+    }
 
 }

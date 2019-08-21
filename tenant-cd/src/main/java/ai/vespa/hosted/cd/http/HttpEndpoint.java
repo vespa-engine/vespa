@@ -9,7 +9,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -50,5 +53,11 @@ public class HttpEndpoint implements Endpoint {
     }
 
     @Override
+    public HttpRequest.Builder request(String path, Map<String, String> properties) {
+        return HttpRequest.newBuilder(endpoint.resolve(path +
+                                                       properties.entrySet().stream()
+                                                                 .map(entry -> encode(entry.getKey(), UTF_8) + "=" + encode(entry.getValue(), UTF_8))
+                                                                 .collect(Collectors.joining("&", "?", ""))));
+    }
 
 }
