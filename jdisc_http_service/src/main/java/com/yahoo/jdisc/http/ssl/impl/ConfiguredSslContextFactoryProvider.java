@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * An implementation of {@link SslContextFactoryProvider} that uses the {@link ConnectorConfig} to construct a {@link SslContextFactory}.
@@ -40,9 +41,9 @@ public class ConfiguredSslContextFactoryProvider extends TlsContextBasedProvider
 
         PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
         X509Certificate certificate = X509CertificateUtils.fromPem(getCertificate(sslConfig));
-        List<X509Certificate> caCertificates = !sslConfig.caCertificateFile().isEmpty()
-                ? X509CertificateUtils.certificateListFromPem(getCaCertificates(sslConfig))
-                : List.of();
+        List<X509Certificate> caCertificates = getCaCertificates(sslConfig)
+                .map(X509CertificateUtils::certificateListFromPem)
+                .orElse(List.of());
         PeerAuthentication peerAuthentication = toPeerAuthentication(sslConfig.clientAuth());
         return new DefaultTlsContext(List.of(certificate), privateKey, caCertificates, null, null, peerAuthentication);
     }
@@ -79,8 +80,14 @@ public class ConfiguredSslContextFactoryProvider extends TlsContextBasedProvider
     private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
     private static boolean hasNeither(String a, String b) { return a.isBlank() && b.isBlank(); }
 
-    private static String getCaCertificates(ConnectorConfig.Ssl sslConfig) {
-        return readToString(sslConfig.caCertificateFile());
+    private static Optional<String> getCaCertificates(ConnectorConfig.Ssl sslConfig) {
+        if (!sslConfig.caCertificate().isBlank()) {
+            return Optional.of(sslConfig.caCertificate());
+        } else if (!sslConfig.caCertificateFile().isBlank()) {
+            return Optional.of(readToString(sslConfig.caCertificateFile()));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private static String getPrivateKey(ConnectorConfig.Ssl config) {
