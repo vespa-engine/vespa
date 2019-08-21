@@ -1,0 +1,18 @@
+<!-- Test field attribute -->
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+  <vespaadd>
+    <document type="news">
+       <field name="uri">doc:crawler:http://www.ntnu.no/</field>
+       <field name="title">TestTitleContent</field>
+       <field name="value_content" contenttype="text/html" encoding="UTF-8" language="NO">This is content</field>
+       <last_downloaded>345</last_downloaded>
+    </document>
+    <document type="news">
+       <field name="uri">doc:crawler:http://www.ntnu.no/2</field>
+       <field name="title">TestTitleContent2</field>
+       <field name="value_content">This is content2</field>
+       <last_downloaded>345</last_downloaded>
+    </document>
+  </vespaadd>
+</vespafeed>

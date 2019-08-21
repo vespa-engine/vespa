@@ -64,7 +64,7 @@ public class DocumentUpdateTestCase {
     private FieldUpdate addMultiList = null;
     private FieldUpdate addMultiWset = null;
 
-    private final String documentId = "id:ns:foobar::foooo";
+    private final String documentId = "doc:something:foooo";
     private final String tensorField = "tensorfield";
     private final TensorType tensorType = new TensorType.Builder().mapped("x").build();
 
@@ -92,11 +92,11 @@ public class DocumentUpdateTestCase {
         docType2.addField(new Field("strinother", DataType.STRING));
         docMan.register(docType2);
 
-        docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::bar"));
+        docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
 
         assignSingle = FieldUpdate.createAssign(docType.getField("strfoo"), new StringFieldValue("something"));
 
-        Array<StringFieldValue> assignList = new Array<>(docType.getField("strarray").getDataType());
+        Array<StringFieldValue> assignList = new Array<StringFieldValue>(docType.getField("strarray").getDataType());
         assignList.add(new StringFieldValue("assigned val 0"));
         assignList.add(new StringFieldValue("assigned val 1"));
         assignMultiList = FieldUpdate.createAssign(docType.getField("strarray"), assignList);
@@ -266,7 +266,7 @@ public class DocumentUpdateTestCase {
         Field field = new Field("my_int", DataType.INT);
         docType.addField(field);
 
-        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:ns:my_type::foo:"));
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:foo:"));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(1)));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(2)));
 
@@ -287,7 +287,7 @@ public class DocumentUpdateTestCase {
     @Test
     public void testUpdateToWrongField() {
         DocumentType docType = new DocumentType("my_type");
-        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:ns:my_type::foo:"));
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:foo:"));
         try {
             update.addFieldUpdate(FieldUpdate.createIncrement(new Field("my_int", DataType.INT), 1));
             fail();
@@ -313,7 +313,7 @@ public class DocumentUpdateTestCase {
         }
 
         assertEquals(2 // version
-                     + (17 + 1) //docid id:ns:foobar:bar\0
+                     + (11 + 1) //docid doc:foo:bar\0
                      + 1 //contents
                      + (6 + 1 + 2) //doctype foobar\0\0\0
                      + 4 //num field updates
@@ -349,7 +349,7 @@ public class DocumentUpdateTestCase {
 
         DocumentUpdate upd = new DocumentUpdate(buf);
 
-        assertEquals(new DocumentId("id:ns:serializetest::update"), upd.getId());
+        assertEquals(new DocumentId("doc:update:test"), upd.getId());
         assertEquals(type, upd.getType());
 
         FieldUpdate serAssignFU = upd.getFieldUpdate(type.getField("intfield"));
@@ -390,7 +390,7 @@ public class DocumentUpdateTestCase {
         docMan = DocumentTestCase.setUpCppDocType();
 
         DocumentType type = docMan.getDocumentType("serializetest");
-        DocumentUpdate upd = new DocumentUpdate(type, new DocumentId("id:ns:serializetest::update"));
+        DocumentUpdate upd = new DocumentUpdate(type, new DocumentId("doc:update:test"));
         FieldUpdate serAssign = FieldUpdate.createAssign(type.getField("intfield"), new IntegerFieldValue(4));
         upd.addFieldUpdate(serAssign);
         FieldUpdate serClearField = FieldUpdate.createClearField(type.getField("floatfield"));
@@ -422,11 +422,11 @@ public class DocumentUpdateTestCase {
         docType.addField(field);
 
         FieldUpdate fooField = FieldUpdate.createAssign(field, new IntegerFieldValue(1));
-        DocumentUpdate fooUpdate = new DocumentUpdate(docType, new DocumentId("id:ns:my_type::foo:"));
+        DocumentUpdate fooUpdate = new DocumentUpdate(docType, new DocumentId("doc:foo:"));
         fooUpdate.addFieldUpdate(fooField);
 
         FieldUpdate barField = FieldUpdate.createAssign(field, new IntegerFieldValue(2));
-        DocumentUpdate barUpdate = new DocumentUpdate(docType, new DocumentId("id:ns:my_type::foo:"));
+        DocumentUpdate barUpdate = new DocumentUpdate(docType, new DocumentId("doc:foo:"));
         barUpdate.addFieldUpdate(barField);
 
         fooUpdate.addAll(barUpdate);
@@ -451,7 +451,7 @@ public class DocumentUpdateTestCase {
         Field your_int = new Field("your_int", DataType.INT);
         docType.addField(my_int);
         docType.addField(your_int);
-        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:this:my_type::is:a:test"));
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:this:is:a:test"));
 
         update.addFieldUpdate(FieldUpdate.createAssign(my_int, new IntegerFieldValue(2)));
         assertNull(update.getFieldUpdate("none-existing-field"));
@@ -473,8 +473,8 @@ public class DocumentUpdateTestCase {
     @Test
     public void testInstantiationAndEqualsHashCode() {
         DocumentType type = new DocumentType("doo");
-        DocumentUpdate d1 = new DocumentUpdate(type, new DocumentId("id:this:doo::is:a:test"));
-        DocumentUpdate d2 = new DocumentUpdate(type, "id:this:doo::is:a:test");
+        DocumentUpdate d1 = new DocumentUpdate(type, new DocumentId("doc:this:is:a:test"));
+        DocumentUpdate d2 = new DocumentUpdate(type, "doc:this:is:a:test");
 
         assertEquals(d1, d2);
         assertEquals(d1, d1);
@@ -487,10 +487,10 @@ public class DocumentUpdateTestCase {
     @Test
     public void testThatApplyingToWrongTypeFails() {
         DocumentType t1 = new DocumentType("doo");
-        DocumentUpdate documentUpdate = new DocumentUpdate(t1, new DocumentId("id:this:doo::is:a:test"));
+        DocumentUpdate documentUpdate = new DocumentUpdate(t1, new DocumentId("doc:this:is:a:test"));
 
         DocumentType t2 = new DocumentType("foo");
-        Document document = new Document(t2, "id:this:foo::is:another:test");
+        Document document = new Document(t2, "doc:this:is:another:test");
 
         try {
             documentUpdate.applyTo(document);
@@ -509,7 +509,7 @@ public class DocumentUpdateTestCase {
         t1.addField(f1);
         t1.addField(f2);
 
-        DocumentUpdate documentUpdate = new DocumentUpdate(t1, new DocumentId("id:ns:doo::is:a:test"));
+        DocumentUpdate documentUpdate = new DocumentUpdate(t1, new DocumentId("doc:this:is:a:test"));
 
         assertEquals(0, documentUpdate.size());
 
@@ -569,8 +569,8 @@ public class DocumentUpdateTestCase {
         t1.addField(f1);
         t2.addField(f2);
 
-        DocumentUpdate du1 = new DocumentUpdate(t1, new DocumentId("id:this:doo::is:a:test"));
-        DocumentUpdate du2 = new DocumentUpdate(t2, "id:this:foo::is:another:test");
+        DocumentUpdate du1 = new DocumentUpdate(t1, new DocumentId("doc:this:is:a:test"));
+        DocumentUpdate du2 = new DocumentUpdate(t2, "doc:this:is:another:test");
 
         FieldUpdate fu1 = FieldUpdate.createAssign(f1, new StringFieldValue("banana"));
         FieldUpdate fu2 = FieldUpdate.createAssign(f2, new StringFieldValue("apple"));
@@ -586,7 +586,7 @@ public class DocumentUpdateTestCase {
             //ok!
         }
 
-        DocumentUpdate du3 = new DocumentUpdate(t2, new DocumentId("id:this:foo::is:a:test"));
+        DocumentUpdate du3 = new DocumentUpdate(t2, new DocumentId("doc:this:is:a:test"));
 
         try {
             du1.addAll(du3);

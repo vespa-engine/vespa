@@ -1,6 +1,6 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_url>
             <all>scheme://user@host:99/path?query#fragment</all>
             <scheme>scheme</scheme>
@@ -11,10 +11,10 @@
             <fragment>fragment</fragment>
         </my_url>
     </document>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_url>scheme://user@host:99/path?query#fragment</my_url>
     </document>
-    <document documenttype="my_doc" documentid="id:ns:my_doc::">
+    <document documenttype="my_doc" documentid="doc:scheme:">
         <my_url binaryencoding="base64">c2NoZW1lOi8vdXNlckBob3N0Ojk5L3BhdGg/cXVlcnkjZnJhZ21lbnQ=</my_url>
     </document>
 </vespafeed>

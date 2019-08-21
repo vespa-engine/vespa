@@ -20,7 +20,7 @@ public:
     typedef std::unique_ptr<IdString> UP;
     typedef vespalib::CloneablePtr<IdString> CP;
     typedef uint64_t LocationType;
-    enum Type { ID=0, NULLID };
+    enum Type { DOC=0, ID, NULLID };
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
@@ -116,6 +116,26 @@ private:
     virtual void validate() const override;
     Type getType() const override { return ID; }
     vespalib::stringref getNamespaceSpecific() const override { return getComponent(3); }
+};
+
+/**
+ * \class document::DocIdString
+ * \ingroup base
+ *
+ * \brief Scheme for documents with no forced distribution.
+ *
+ * By using this scheme, documents will be evenly distributed within VDS,
+ * as the location of a doc identifier is a hash of the entire URI.
+ */
+class DocIdString final : public IdString {
+public:
+    DocIdString(vespalib::stringref ns, vespalib::stringref id);
+    DocIdString(vespalib::stringref rawId);
+private:
+    DocIdString* clone() const override { return new DocIdString(*this); }
+    Type getType() const override { return DOC; }
+    LocationType getLocation() const override;
+    vespalib::stringref getNamespaceSpecific() const override { return getComponent(1); }
 };
 
 } // document

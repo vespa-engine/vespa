@@ -1,0 +1,10 @@
+<!-- Test content -->
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+  <vespaadd>
+    <document type="news" id="doc:crawler:http://www.ntnu.no/">
+       <title>TestTitleContent</title>
+        <value_content contenttype="text/html" encoding="utf-8" language="en"><![CDATA[<html><body><h1>This is the title</h1></body></html>]]></value_content>
+    </document>
+  </vespaadd>
+</vespafeed>

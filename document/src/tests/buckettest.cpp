@@ -79,10 +79,9 @@ TEST(BucketTest, testGetBit)
 TEST(BucketTest, testBucketGeneration)
 {
     BucketIdFactory factory;
-    DocumentId doc1("id:ns:type::1");
-    DocumentId doc2("id:ns2:type::1");
-    DocumentId doc3("id:ns:type2::1");
-    DocumentId doc4("id:ns:type::2");
+    DocumentId doc1("doc:ns:spec");
+    DocumentId doc2("doc:ns2:spec");
+    DocumentId doc3("doc:ns:spec2");
     DocumentId userDoc1("id:ns:mytype:n=18:spec");
     DocumentId userDoc2("id:ns2:mytype:n=18:spec2");
     DocumentId userDoc3("id:ns:mytype:n=19:spec");
@@ -90,10 +89,9 @@ TEST(BucketTest, testBucketGeneration)
     DocumentId groupDoc2("id:ns2:mytype:g=yahoo.com:spec2");
     DocumentId groupDoc3("id:ns:mytype:g=yahoo:spec");
 
-    BucketId docBucket1 = factory.getBucketId(doc1);
-    BucketId docBucket2 = factory.getBucketId(doc2);
-    BucketId docBucket3 = factory.getBucketId(doc3);
-    BucketId docBucket4 = factory.getBucketId(doc4);
+    BucketId docBucket1(factory.getBucketId(doc1));
+    BucketId docBucket2(factory.getBucketId(doc2));
+    BucketId docBucket3(factory.getBucketId(doc3));
     BucketId userDocBucket1(factory.getBucketId(userDoc1));
     BucketId userDocBucket2(factory.getBucketId(userDoc2));
     BucketId userDocBucket3(factory.getBucketId(userDoc3));
@@ -123,30 +121,28 @@ TEST(BucketTest, testBucketGeneration)
     groupDocBucket3.setUsedBits(16);
     EXPECT_EQ(Hex(0x4000000000001f24ull), Hex(groupDocBucket3.getId()));
 
-    EXPECT_EQ(Hex(0xe9362c053842cac4ull), Hex(docBucket1.getRawId()));
-    EXPECT_EQ(Hex(0xe960b5773842cac4ull), Hex(docBucket2.getRawId()));
-    EXPECT_EQ(Hex(0xe8daaf763842cac4ull), Hex(docBucket3.getRawId()));
-    EXPECT_EQ(Hex(0xeb5016ab8d721ec8ull), Hex(docBucket4.getRawId()));
+    EXPECT_EQ(Hex(0xe980c9abd5fd8d11ull), Hex(docBucket1.getRawId()));
+    EXPECT_EQ(Hex(0xeafe870c5f9c37b9ull), Hex(docBucket2.getRawId()));
+    EXPECT_EQ(Hex(0xeaebe9473ecbcd69ull), Hex(docBucket3.getRawId()));
 
     docBucket1.setUsedBits(16);
-    EXPECT_EQ(Hex(0x400000000000cac4ull), Hex(docBucket1.getId()));
+    EXPECT_EQ(Hex(0x4000000000008d11ull), Hex(docBucket1.getId()));
     docBucket2.setUsedBits(16);
-    EXPECT_EQ(Hex(0x400000000000cac4ull), Hex(docBucket2.getId()));
+    EXPECT_EQ(Hex(0x40000000000037b9ull), Hex(docBucket2.getId()));
     docBucket3.setUsedBits(16);
-    EXPECT_EQ(Hex(0x400000000000cac4ull), Hex(docBucket3.getId()));
-    docBucket4.setUsedBits(16);
-    EXPECT_EQ(Hex(0x4000000000001ec8ull), Hex(docBucket4.getId()));
+    EXPECT_EQ(Hex(0x400000000000cd69ull), Hex(docBucket3.getId()));
 }
 
 TEST(BucketTest, testBucketSerialization)
 {
     BucketIdFactory factory;
-    DocumentId doc("id:ns:test::1");
+    DocumentId doc(DocIdString("ns", "spec"));
     BucketId bucket(factory.getBucketId(doc));
 
     std::ostringstream ost;
     ost << bucket.getRawId();
-    EXPECT_EQ(std::string("16910189189155441348"), ost.str());
+    EXPECT_EQ(std::string("16825669947722927377"),
+                         ost.str());
 
     BucketId::Type id;
     std::istringstream ist(ost.str());

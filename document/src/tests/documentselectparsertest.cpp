@@ -132,8 +132,10 @@ void
 DocumentSelectParserTest::createDocs()
 {
     _doc.clear();
-    _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1::anything", 24, 2.0, "foo", "bar", 0));  // DOC 0
-    _doc.push_back(createDoc("testdoctype1", "id:anotherspace:testdoctype1::foo", 13, 4.1, "bar", "foo", 0));  // DOC 1
+    _doc.push_back(createDoc(
+                           "testdoctype1", "doc:myspace:anything", 24, 2.0, "foo", "bar", 0));  // DOC 0
+    _doc.push_back(createDoc(
+                           "testdoctype1", "doc:anotherspace:foo", 13, 4.1, "bar", "foo", 0));  // DOC 1
         // Add some arrays and structs to doc 1
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
@@ -206,8 +208,10 @@ DocumentSelectParserTest::createDocs()
                 _doc.back()->getField("structarray").getDataType());
         _doc.back()->setValue("structarray", aval);
     }
-    _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
-    _doc.push_back(createDoc("testdoctype2", "id:myspace:testdoctype2::inheriteddoc", 10, 1.4, "inherited", "")); // DOC 4
+    _doc.push_back(createDoc(
+                           "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 14, 2.4, "Yet", "\xE4\xB8\xBA\xE4\xBB\x80", 0)); // DOC 3
+    _doc.push_back(createDoc(
+                           "testdoctype2", "doc:myspace:inheriteddoc", 10, 1.4, "inherited", "")); // DOC 4
     _doc.push_back(createDoc(
         "testdoctype1", "id:footype:testdoctype1:n=123456789:aardvark",
         10, 1.4, "inherited", "", 0));  // DOC 5
@@ -218,7 +222,7 @@ DocumentSelectParserTest::createDocs()
         "testdoctype1", "id:footype:testdoctype1:n=1234:highlong",
         10, 1.4, "inherited", "", -2651257743)); // DOC 7
     _doc.push_back(createDoc( // DOC 8. As DOC 0 but with version 2.
-        "testdoctype1", "id:myspace:testdoctype1::anything", 24, 2.0, "foo", "bar", 0));
+        "testdoctype1", "doc:myspace:anything", 24, 2.0, "foo", "bar", 0));
     _doc.push_back(createDoc(
         "testdoctype1", "id:footype:testdoctype1:n=12345:foo",
         10, 1.4, "inherited", "", 42)); // DOC 9
@@ -227,11 +231,16 @@ DocumentSelectParserTest::createDocs()
         10, 1.4, "inherited", "", 42)); // DOC 10
 
     _update.clear();
-    _update.push_back(createUpdate("testdoctype1", "id:myspace:testdoctype1::anything", 20, "hmm"));
-    _update.push_back(createUpdate("testdoctype1", "id:anotherspace:testdoctype1::foo", 10, "foo"));
-    _update.push_back(createUpdate("testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 0, "foo"));
-    _update.push_back(createUpdate("testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
-    _update.push_back(createUpdate("testdoctype2", "id:myspace:testdoctype2::inheriteddoc", 10, "bar"));
+    _update.push_back(createUpdate(
+        "testdoctype1", "doc:myspace:anything", 20, "hmm"));
+    _update.push_back(createUpdate(
+        "testdoctype1", "doc:anotherspace:foo", 10, "foo"));
+    _update.push_back(createUpdate(
+        "testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 0, "foo"));
+    _update.push_back(createUpdate(
+        "testdoctype1", "id:myspace:testdoctype1:g=yahoo:bar", 3, "\xE4\xBA\xB8\xE4\xBB\x80"));
+    _update.push_back(createUpdate(
+        "testdoctype2", "doc:myspace:inheriteddoc", 10, "bar"));
 }
 
 namespace {
@@ -613,14 +622,14 @@ void DocumentSelectParserTest::testOperators2()
     createDocs();
 
     // Id values
-    PARSEI("id == \"id:myspace:testdoctype1::anything\"", *_doc[0], True);
-    PARSEI(" iD==  \"id:myspace:testdoctype1::anything\"  ", *_doc[0], True);
-    PARSEI("id == \"id:myspa:testdoctype1::nything\"", *_doc[0], False);
-    PARSEI("Id.scHeme == \"doc\"", *_doc[0], False);
-    PARSEI("id.scheme == \"id\"", *_doc[0], True);
+    PARSEI("id == \"doc:myspace:anything\"", *_doc[0], True);
+    PARSEI(" iD==  \"doc:myspace:anything\"  ", *_doc[0], True);
+    PARSEI("id == \"doc:myspa:nything\"", *_doc[0], False);
+    PARSEI("Id.scHeme == \"doc\"", *_doc[0], True);
+    PARSEI("id.scheme == \"id\"", *_doc[0], False);
     PARSEI("id.type == \"testdoctype1\"", *_doc[9], True);
     PARSEI("id.type == \"wrong_type\"", *_doc[9], False);
-    PARSEI("id.type == \"unknown\"", *_doc[0], False);
+    PARSEI("id.type == \"unknown\"", *_doc[0], Invalid);
     PARSEI("Id.namespaCe == \"myspace\"", *_doc[0], True);
     PARSEI("id.NaMespace == \"pace\"", *_doc[0], False);
     PARSEI("id.specific == \"anything\"", *_doc[0], True);
@@ -638,17 +647,17 @@ void DocumentSelectParserTest::testOperators3()
     createDocs();
     {
         std::ostringstream ost;
-        ost << "id.bucket == " << BucketId(16, 0xe1f0).getId() ;
+        ost << "id.bucket == " << BucketId(16, 4006).getId() ;
         PARSEI(ost.str(), *_doc[0], True);
     }
     {
         std::ostringstream ost;
-        ost << "id.bucket == " << BucketId(18, 0xe1f0).getId() ;
+        ost << "id.bucket == " << BucketId(17, 4006).getId() ;
         PARSEI(ost.str(), *_doc[0], False);
     }
     {
         std::ostringstream ost;
-        ost << "id.bucket == " << BucketId(18, 0x2e1f0).getId() ;
+        ost << "id.bucket == " << BucketId(17, 69542).getId() ;
         PARSEI(ost.str(), *_doc[0], True);
     }
     {
@@ -1099,11 +1108,11 @@ void DocumentSelectParserTest::testDocumentUpdates2()
     createDocs();
 
     // Id values
-    PARSEI("id == \"id:myspace:testdoctype1::anything\"", *_update[0], True);
-    PARSEI(" iD==  \"id:myspace:testdoctype1::anything\"  ", *_update[0], True);
-    PARSEI("id == \"id:myspa:testdoctype1::nything\"", *_update[0], False);
-    PARSEI("Id.scHeme == \"doc\"", *_update[0], False);
-    PARSEI("id.scheme == \"id\"", *_update[0], True);
+    PARSEI("id == \"doc:myspace:anything\"", *_update[0], True);
+    PARSEI(" iD==  \"doc:myspace:anything\"  ", *_update[0], True);
+    PARSEI("id == \"doc:myspa:nything\"", *_update[0], False);
+    PARSEI("Id.scHeme == \"doc\"", *_update[0], True);
+    PARSEI("id.scheme == \"id\"", *_update[0], False);
     PARSEI("Id.namespaCe == \"myspace\"", *_update[0], True);
     PARSEI("id.NaMespace == \"pace\"", *_update[0], False);
     PARSEI("id.specific == \"anything\"", *_update[0], True);
@@ -1114,7 +1123,7 @@ void DocumentSelectParserTest::testDocumentUpdates2()
     PARSEI("id.bucket == 1234", *_update[0], False);
     {
         std::ostringstream ost;
-        ost << "id.bucket == " << BucketId(16, 0xe1f0).getId();
+        ost << "id.bucket == " << BucketId(16, 4006).getId();
         PARSEI(ost.str(), *_update[0], True);
     }
     PARSEI("id.bucket == \"foo\"", *_update[0], Invalid);
@@ -1192,7 +1201,8 @@ TEST_F(DocumentSelectParserTest, testUtf8)
 //    boost::u32regex rx = boost::make_u32regex("H.kon");
 //    EXPECT_EQ(true, boost::u32regex_match(utf8name, rx));
 
-    _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1::utf8doc", 24, 2.0, utf8name, "bar"));
+    _doc.push_back(createDoc(
+        "testdoctype1", "doc:myspace:utf8doc", 24, 2.0, utf8name, "bar"));
 //    PARSE("testdoctype1.hstringval = \"H?kon\"", *_doc[_doc.size()-1], True);
 //    PARSE("testdoctype1.hstringval =~ \"H.kon\"", *_doc[_doc.size()-1], True);
 }

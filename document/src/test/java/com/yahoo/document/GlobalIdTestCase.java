@@ -90,9 +90,9 @@ public class GlobalIdTestCase {
         verifyGidToBucketIdMapping("id:ns:mytype:n=1000:abc");
         verifyGidToBucketIdMapping("id:hsgf:mytype:n=9146744073700000000:dfdfsdfg");
         verifyGidToBucketIdMapping("id:ns:mytype:g=somegroup:hmm");
-        verifyGidToBucketIdMapping("id:foo:mytype::test");
-        verifyGidToBucketIdMapping("id:myns:mytype::http://foo.bar");
-        verifyGidToBucketIdMapping("id:jsrthsdf:mytype::a234aleingzldkifvasdfgadf");
+        verifyGidToBucketIdMapping("doc:foo:test");
+        verifyGidToBucketIdMapping("doc:myns:http://foo.bar");
+        verifyGidToBucketIdMapping("doc:jsrthsdf:a234aleingzldkifvasdfgadf");
     }
 
 }

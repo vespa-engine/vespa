@@ -10,29 +10,29 @@
     </vespaadd>
 
     <!-- bad document: -->
-    <document documenttype="news" documentid="id:ns:news::http://news12b"> 
+    <document documenttype="news" documentid="doc:news:http://news12b"> 
         <value_long>testUrlB</value_long>
     </document>
     
     <!-- OK document -->
-    <document documenttype="news" documentid="id:ns:news::http://news12c"> 
+    <document documenttype="news" documentid="doc:news:http://news12c"> 
         <url>testUrl</url>
         <title>testTitle</title>
     </document>
     
     <!-- bad document: -->
-    <document documenttype="news" documentid="id:ns:news::http://news12d"> 
+    <document documenttype="news" documentid="doc:news:http://news12d"> 
         <value_long>testUrlC</value_long>
     </documen>
 
     <!-- OK document -->
-    <document documenttype="news" documentid="id:ns:news::http://news12e"> 
+    <document documenttype="news" documentid="doc:news:http://news12e"> 
         <url>testUrl</url>
         <title>testTitle</title>
     </document>
     
     <!-- bad document: -->
-    <document documenttype="news" documentid="id:ns:news::http://news12f"> 
+    <document documenttype="news" documentid="doc:news:http://news12f"> 
         <value_long>testUrlD</value_long>
     </document>
     

@@ -1,0 +1,19 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+  <document documenttype="news" documentid="doc:test:struct">
+    <mystructarr>
+      <item>
+        <intval>36</intval>
+        <stringval>test</stringval>
+      </item>
+      <item>
+        <intval>39</intval>
+        <stringval>test2</stringval>
+      </item>
+      <item>
+        <intval>100</intval>
+        <stringval>cooool</stringval>
+      </item>
+    </mystructarr>
+  </document>
+</vespafeed>

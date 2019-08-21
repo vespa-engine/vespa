@@ -16,7 +16,7 @@ public class SimpleDocumentTestCase {
     public void requireThatAccessorsWorks() {
         DocumentType type = new DocumentType("test");
         type.addField("int", DataType.INT);
-        Document doc = new Document(type, "id:ns:test::");
+        Document doc = new Document(type, "doc:scheme:");
         SimpleDocument simple = new SimpleDocument(doc);
 
         assertNull(simple.get("int"));

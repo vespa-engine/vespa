@@ -88,9 +88,9 @@ TEST_F(GlobalIdTest, testBucketIdConversion)
     verifyDocumentId("id:ns:test:n=1000:abc");
     verifyDocumentId("id:hsgf:test:n=18446744073700000000:dfdfsdfg");
     verifyDocumentId("id:ns:mytype:g=somegroup:hmm");
-    verifyDocumentId("id:ns:test::");
-    verifyDocumentId("id:myns:test::http://foo.bar");
-    verifyDocumentId("id:ns:test::jsrthsdf:a234aleingzldkifvasdfgadf");
+    verifyDocumentId("doc::test");
+    verifyDocumentId("doc:myns:http://foo.bar");
+    verifyDocumentId("doc:jsrthsdf:a234aleingzldkifvasdfgadf");
 }
 
 void
@@ -155,7 +155,7 @@ TEST_F(GlobalIdTest, testGidRangeConversion)
         }
         uint32_t scheme = randomizer.nextUint32(0, 2);
         switch (scheme) {
-            case 0: ost << "id:" << name_space.str() << ":mytype::";
+            case 0: ost << "doc:" << name_space.str() << ":";
                     break;
             case 1: ost << "id:" << name_space.str() << ":mytype:n=";
                     ost << randomizer.nextUint32() << ":";

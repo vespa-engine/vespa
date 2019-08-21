@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
 public class DocumentTestCase extends DocumentTestCaseBase {
 
     private static final String SERTEST_DOC_AS_XML_HEAD =
-            "<document documenttype=\"sertest\" documentid=\"id:ns:sertest::foobar\">\n" +
+            "<document documenttype=\"sertest\" documentid=\"doc:sertest:foobar\">\n" +
             " <mailid>emailfromalicetobob&amp;someone</mailid>\n" +
             " <date>-2013512400</date>\n" +
             " <attachmentcount>2</attachmentcount>\n" +
@@ -76,7 +76,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             " <myposfield>N37.374821;W122.057174</myposfield>\n";
 
     private static final String SERTEST_DOC_AS_XML_FOOT =
-            " <docindoc documenttype=\"docindoc\" documentid=\"id:ns:docindoc::inserted\">\n" +
+            " <docindoc documenttype=\"docindoc\" documentid=\"doc:sertest:inserted\">\n" +
             "  <tull>ball</tull>\n" +
             " </docindoc>\n" +
             " <mapfield>\n" +
@@ -143,7 +143,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     private Document getSertestDocument() {
-        Document doc = new Document(docMan.getDocumentType("sertest"), new DocumentId("id:ns:sertest::foobar"));
+        Document doc = new Document(docMan.getDocumentType("sertest"), new DocumentId("doc:sertest:foobar"));
         doc.setFieldValue("mailid", "emailfromalicetobob");
         doc.setFieldValue("date", -2013512400); // 03/13/06 11:00:00
         doc.setFieldValue("attachmentcount", 2);
@@ -155,7 +155,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         doc.setFieldValue("rawfield", new Raw(ByteBuffer.wrap(rawBytes)));
 
-        Document docInDoc = new Document(docMan.getDocumentType("docindoc"), new DocumentId("id:ns:docindoc::inserted"));
+        Document docInDoc = new Document(docMan.getDocumentType("docindoc"), new DocumentId("doc:sertest:inserted"));
         docInDoc.setFieldValue("tull", "ball");
         doc.setFieldValue("docindoc", docInDoc);
 
@@ -182,7 +182,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         type.addField(new Field("long", DataType.LONG));
         type.addField(new Field("string", DataType.STRING));
 
-        Document doc = new Document(type, "id:ns:test::");
+        Document doc = new Document(type, "doc:scheme:");
         FieldValue stringVal = new StringFieldValue("69");
         FieldValue doubleVal = new DoubleFieldValue(6.9);
         FieldValue floatVal = new FloatFieldValue(6.9f);
@@ -256,7 +256,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             iiiaV.add(iiaV);
         }
 
-        Document doc = new Document(type, new DocumentId("id:ns:test::"));
+        Document doc = new Document(type, new DocumentId("doc:foo:testdoc"));
         doc.setFieldValue("iiiarray", iiiaV);
 
         {
@@ -299,7 +299,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testGetRecursiveValue() {
-        Document doc = new Document(testDocType, new DocumentId("id:ns:testdoc::"));
+        Document doc = new Document(testDocType, new DocumentId("doc:ns:testdoc"));
         doc.setFieldValue("primitive1", 1);
 
         Struct l1s1 = new Struct(doc.getField("l1s1").getDataType());
@@ -478,7 +478,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testModifyDocument() {
-        Document doc = new Document(testDocType, new DocumentId("id:ns:testdoc::"));
+        Document doc = new Document(testDocType, new DocumentId("doc:ns:testdoc"));
         doc.setFieldValue("primitive1", 1);
 
         Struct l1s1 = new Struct(doc.getField("l1s1").getDataType());
@@ -601,7 +601,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     @Test
     public void testNoType() {
         try {
-            new Document(null, new DocumentId("id:null:type::URI"));
+            new Document(null, new DocumentId("doc:null:URI"));
             fail("Should have gotten an Exception");
         } catch (NullPointerException | IllegalArgumentException e) {
             // Success
@@ -610,7 +610,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testURI() {
-        String uri = "id:ns:testdoc::http://www.ntnu.no/";
+        String uri = "doc:testdoc:http://www.ntnu.no/";
 
         DocumentType documentType = docMan.getDocumentType("testdoc");
         assertNotNull(documentType);
@@ -620,7 +620,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testSetGet() {
-        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::test"));
+        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:test"));
         Object val = doc.getFieldValue(minField.getName());
         assertNull(val);
         doc.setFieldValue(minField.getName(), 500);
@@ -662,6 +662,16 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         validateCppDoc(doc);
     }
 
+    @Test
+    public void testV6Doc() throws IOException {
+        docMan = setUpCppDocType();
+        byte[] data = readFile("src/tests/data/serializev6.dat");
+        ByteBuffer buf = ByteBuffer.wrap(data);
+
+        Document doc = docMan.createDocument(new GrowableByteBuffer(buf));
+        validateCppDocNotMap(doc);
+    }
+
     public void validateCppDoc(Document doc) throws IOException {
         validateCppDocNotMap(doc);
         MapFieldValue map = (MapFieldValue)doc.getFieldValue("mapfield");
@@ -672,7 +682,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     @SuppressWarnings("unchecked")
     public void validateCppDocNotMap(Document doc) throws IOException {
         // in practice to validate v6 serialization
-        assertEquals("id:ns:serializetest::http://test.doc.id/", doc.getId().toString());
+        assertEquals("doc:serializetest:http://test.doc.id/", doc.getId().toString());
         assertEquals(new IntegerFieldValue(5), doc.getFieldValue("intfield"));
         assertEquals(new FloatFieldValue((float)-9.23), doc.getFieldValue("floatfield"));
         assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
@@ -686,7 +696,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         Document docindoc = (Document)doc.getFieldValue("docfield");
         assertEquals(docMan.getDocumentType("docindoc"), docindoc.getDataType());
-        assertEquals(new DocumentId("id:ns:docindoc::http://embedded"), docindoc.getId());
+        assertEquals(new DocumentId("doc:docindoc:http://embedded"), docindoc.getId());
 
         Array<FloatFieldValue> array = (Array<FloatFieldValue>)doc.getFieldValue("arrayoffloatfield");
         assertEquals(new FloatFieldValue(1.0f), array.get(0));
@@ -703,10 +713,10 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         docMan = setUpCppDocType();
         Document doc = new Document(docMan.getDocumentType("serializetest"),
-                                    new DocumentId("id:ns:serializetest::http://test.doc.id/"));
+                                    new DocumentId("doc:serializetest:http://test.doc.id/"));
 
         Document docindoc = new Document(docMan.getDocumentType("docindoc"),
-                                         new DocumentId("id:ns:docindoc::http://doc.in.doc/"));
+                                         new DocumentId("doc:serializetest:http://doc.in.doc/"));
         docindoc.setFieldValue("stringindocfield", "Elvis is dead");
         doc.setFieldValue("docfield", docindoc);
 
@@ -892,7 +902,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         DocumentTypeManager manager = new DocumentTypeManager();
         manager.register(childType);
 
-        Document child = new Document(childType, new DocumentId("id:ns:child::what:test"));
+        Document child = new Document(childType, new DocumentId("doc:what:test"));
         child.setFieldValue(childType.getField("parentbodyint"), new IntegerFieldValue(4));
         child.setFieldValue("parentheaderint", 6);
         child.setFieldValue("overwritten", 7);
@@ -939,7 +949,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         //just checks that isAssignableFrom() in Document.setFieldValue() goes the right way
 
-        Document doc = new Document(docMan.getDocumentType("impl"), new DocumentId("id:ns:impl::fooooobardoc"));
+        Document doc = new Document(docMan.getDocumentType("impl"), new DocumentId("doc:doctest:fooooobardoc"));
         Array<StringFieldValue> testlist = new Array<>(doc.getField("something").getDataType());
         doc.setFieldValue("something", testlist);
     }
@@ -952,7 +962,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             DocumentTypeManager docMan = new DocumentTypeManager();
             docMan.configure("file:src/tests/data/cppdocument.cfg");
 
-            Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
+            Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("doc:test:test"));
 
             doc.setFieldValue("stringfield",
                               "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
@@ -965,7 +975,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         DocumentTypeManager docMan = new DocumentTypeManager();
         docMan.configure("file:src/tests/data/compressed.cfg");
 
-        Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
+        Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("doc:test:test"));
 
         doc.setFieldValue("stringfield",
                           "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
@@ -987,8 +997,8 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         docMan.getDocumentType("outerdoc");
 
         //create document and necessary structures
-        Document outerdoc = new Document(docMan.getDocumentType("outerdoc"), new DocumentId("id:recursion:outerdoc::"));
-        Document innerdoc = new Document(docMan.getDocumentType("innerdoc"), new DocumentId("id:recursion:innerdoc::"));
+        Document outerdoc = new Document(docMan.getDocumentType("outerdoc"), new DocumentId("doc:recursion:outerdoc"));
+        Document innerdoc = new Document(docMan.getDocumentType("innerdoc"), new DocumentId("doc:recursion:innerdoc"));
 
         innerdoc.setFieldValue("intfield", 55);
 
@@ -1012,7 +1022,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testTimestamp() {
-        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::timetest"));
+        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:timetest"));
         assertNull(doc.getLastModified());
         doc.setLastModified(4350129845023985L);
         assertEquals(Long.valueOf(4350129845023985L), doc.getLastModified());
@@ -1062,18 +1072,18 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     @Test
     public void testSingleFieldToXml() {
-        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::xmltest"));
+        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:xmltest"));
         doc.setFieldValue("stringattr", new StringFieldValue("hello world"));
         assertEquals("<value>hello world</value>\n", doc.getFieldValue("stringattr").toXml());
     }
 
     @Test
     public void testDelegatedDocumentToXml() {
-        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("id:ns:testdoc::xmltest"));
+        Document doc = new Document(docMan.getDocumentType("testdoc"), new DocumentId("doc:testdoc:xmltest"));
         doc.setFieldValue("stringattr", new StringFieldValue("hello universe"));
         // Should just delegate to toXML
         assertEquals(
-                "<document documenttype=\"testdoc\" documentid=\"id:ns:testdoc::xmltest\">\n" +
+                "<document documenttype=\"testdoc\" documentid=\"doc:testdoc:xmltest\">\n" +
                 "  <stringattr>hello universe</stringattr>\n" +
                 "</document>\n",
                 doc.toXml());
@@ -1086,7 +1096,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         String json = doc.toJson();
         Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {
         });
-        assertEquals(parsed.get("id"), "id:ns:sertest::foobar");
+        assertEquals(parsed.get("id"), "doc:sertest:foobar");
         assertThat(parsed.get("fields"), instanceOf(Map.class));
         Object fieldMap = parsed.get("fields");
         if (fieldMap instanceof Map) {
@@ -1111,7 +1121,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         GrowableByteBuffer grbuf = new GrowableByteBuffer();
         {
-            Document doc = new Document(docType, new DocumentId("id:ns:emptystrings::"));
+            Document doc = new Document(docType, new DocumentId("doc:a:b:emptystrings"));
 
             doc.setFieldValue("emptystring", "");
             doc.removeFieldValue("nullstring");
@@ -1147,7 +1157,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         GrowableByteBuffer grbuf = new GrowableByteBuffer();
 
-        Document doc = new Document(docType, new DocumentId("id:ns:bug2354045::strings"));
+        Document doc = new Document(docType, new DocumentId("doc:a:b:strings"));
 
         doc.removeFieldValue("string");
         assertNull(doc.getFieldValue("string"));
@@ -1175,7 +1185,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             typeWithDinner.addField("dinner", DataType.DOUBLE);
             docTypeManasjer.registerDocumentType(typeWithDinner);
 
-            Document docWithDinner = new Document(typeWithDinner, "id:ns:elvis::has:left:the:building");
+            Document docWithDinner = new Document(typeWithDinner, "doc:elvis:has:left:the:building");
             docWithDinner.setFieldValue("breakfast", "peanut butter");
             docWithDinner.setFieldValue("lunch", 14);
             docWithDinner.setFieldValue("dinner", 5.43d);
@@ -1209,11 +1219,11 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         Document doc;
 
-        doc = new Document(type, "id:ns:foo::bar:bar");
+        doc = new Document(type, "doc:foo:bar:bar");
         doc.removeFieldValue("productdesc");
         assertNull(doc.getFieldValue("productdesc"));
 
-        doc = new Document(type, "id:ns:foo::bar:bar");
+        doc = new Document(type, "doc:foo:bar:bar");
         assertNull(doc.getFieldValue("productdesc"));
     }
 
@@ -1281,13 +1291,13 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         docType.addField(new Field("float", 0, DataType.FLOAT, true));
         docMan.register(docType);
 
-        Document doc1 = new Document(docType, new DocumentId("id:ns:bug2354045::bug6394548"));
+        Document doc1 = new Document(docType, new DocumentId("doc:a:b:bug6394548"));
         doc1.setFieldValue("string", new StringFieldValue("hello world"));
         doc1.setFieldValue("int", new IntegerFieldValue(1234));
         doc1.setFieldValue("float", new FloatFieldValue(5.5f));
         String doc1Before = doc1.toXml();
 
-        Document doc2 = new Document(docType, new DocumentId("id:ns:bug2354045::bug6394548"));
+        Document doc2 = new Document(docType, new DocumentId("doc:a:b:bug6394548"));
         doc2.setFieldValue("string", new StringFieldValue("aardvark"));
         doc2.setFieldValue("int", new IntegerFieldValue(90909));
         doc2.setFieldValue("float", new FloatFieldValue(777.15f));

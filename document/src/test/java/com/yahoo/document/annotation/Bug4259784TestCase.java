@@ -26,7 +26,7 @@ public class Bug4259784TestCase {
         DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.bug4259784.cfg");
 
         DocumentType type = manager.getDocumentType("blog");
-        Document doc = new Document(type, "id:this:blog::is:a:test");
+        Document doc = new Document(type, "doc:this:is:a:test");
         doc.setFieldValue("body", new StringFieldValue("bla bla bla bla bla bla bla" +
                                                        "bla bla bla bla bla bla bla"));
         annotate(doc, manager);

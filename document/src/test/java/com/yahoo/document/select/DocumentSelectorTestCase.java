@@ -244,7 +244,7 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void testDocumentUpdate() throws ParseException {
-        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("id:myspace:test::anything"));
+        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:myspace:anything"));
         assertEquals(Result.TRUE, evaluate("test", upd));
         assertEquals(Result.FALSE, evaluate("music", upd));
         assertEquals(Result.TRUE, evaluate("test or music", upd));
@@ -289,8 +289,8 @@ public class DocumentSelectorTestCase {
 
     @Test
     public void testInvalidLogic() throws ParseException {
-        DocumentPut put = new DocumentPut(manager.getDocumentType("test"), new DocumentId("id:ns:test::"));
-        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("id:ns:test::"));
+        DocumentPut put = new DocumentPut(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
+        DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
 
         assertEquals(Result.FALSE, evaluate("test.content", put)); // BROKEN
         assertEquals(Result.INVALID, evaluate("test.content", upd));
@@ -325,13 +325,13 @@ public class DocumentSelectorTestCase {
 
     List<DocumentPut> createDocs() {
         List<DocumentPut> documents = new ArrayList<>();
-        documents.add(createDocument("id:myspace:test::anything", 24, 2.0f, "foo", "bar"));
-        documents.add(createDocument("id:anotherspace:test::foo", 13, 4.1f, "bar", "foo"));
+        documents.add(createDocument("doc:myspace:anything", 24, 2.0f, "foo", "bar"));
+        documents.add(createDocument("doc:anotherspace:foo", 13, 4.1f, "bar", "foo"));
         documents.add(createDocument("id:myspace:test:n=1234:mail1", 15, 1.0f, "some", "some"));
         documents.add(createDocument("id:myspace:test:n=5678:bar", 14, 2.4f, "Yet", "More"));
         documents.add(createDocument("id:myspace:test:n=2345:mail2", 15, 1.0f, "bar", "baz"));
         documents.add(createDocument("id:myspace:test:g=mygroup:qux", 15, 1.0f, "quux", "corge"));
-        documents.add(createDocument("id:myspace:test::missingint", null, 2.0f, null, "bar"));
+        documents.add(createDocument("doc:myspace:missingint", null, 2.0f, null, "bar"));
 
         // Add some array/struct info to doc 1
         Struct sval = new Struct(documents.get(1).getDocument().getField("mystruct").getDataType());
@@ -521,11 +521,11 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("not test.hint and false", doc1234));
 
         // Id values.
-        assertEquals(Result.TRUE, evaluate("id == \"id:myspace:test::anything\"", documents.get(0)));
-        assertEquals(Result.TRUE, evaluate(" iD==  \"id:myspace:test::anything\"  ", documents.get(0)));
-        assertEquals(Result.FALSE, evaluate("id == \"id:myspa:test::nything\"", documents.get(0)));
-        assertEquals(Result.FALSE, evaluate("Id.scHeme == \"xyz\"", documents.get(0)));
-        assertEquals(Result.TRUE, evaluate("id.scheme == \"id\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("id == \"doc:myspace:anything\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate(" iD==  \"doc:myspace:anything\"  ", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("id == \"doc:myspa:nything\"", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("Id.scHeme == \"doc\"", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("id.scheme == \"id\"", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("id.type == \"test\"", documents.get(4)));
         assertEquals(Result.FALSE, evaluate("id.type == \"wrong\"", documents.get(4)));
         assertEquals(Result.TRUE, evaluate("Id.namespaCe == \"myspace\"", documents.get(0)));
@@ -538,6 +538,7 @@ public class DocumentSelectorTestCase {
         assertError("id.user == 1234", documents.get(0), "User identifier is null.");
         assertError("id.group == 1234", documents.get(3), "Group identifier is null.");
         assertError("id.group == \"yahoo\"", documents.get(3), "Group identifier is null.");
+        assertError("id.type == \"unknown\"", documents.get(0), "Document id doesn't have doc type.");
 
         // Branch operators.
         assertEquals(Result.FALSE, evaluate("true and false", documents.get(0)));

@@ -169,7 +169,7 @@ FieldSetTest::doCopyFields(const Document& src,
                            const std::string& fieldSetStr,
                            Document* dest) const
 {
-    Document destDoc(src.getType(), DocumentId("id:ns:" + src.getType().getName() + "::fieldset"));
+    Document destDoc(src.getType(), DocumentId("doc:test:fieldsdest"));
     if (!dest) {
         dest = &destDoc;
     }
@@ -195,7 +195,7 @@ Document::UP
 FieldSetTest::createTestDocument(const TestDocMan& testDocMan) const
 {
     Document::UP doc(testDocMan.createDocument("megafoo megabar",
-                                               "id:ns:testdoctype1::1",
+                                               "doc:test:fieldssrc",
                                                "testdoctype1"));
     doc->setValue(doc->getField("headerval"), IntFieldValue(5678));
     doc->setValue(doc->getField("hstringval"),
@@ -225,7 +225,7 @@ TEST_F(FieldSetTest, testCopyDocumentFields)
               doCopyFields(*src, repo, "testdoctype1:hstringval,content"));
     // Test that we overwrite already set fields in destination document
     {
-        Document dest(src->getType(), DocumentId("id:ns:" + src->getType().getName() + "::bar"));
+        Document dest(src->getType(), DocumentId("doc:foo:bar"));
         dest.setValue(dest.getField("content"), StringFieldValue("overwriteme"));
         EXPECT_EQ(std::string("content: megafoo megabar\n"),
                   doCopyFields(*src, repo, "[body]", &dest));

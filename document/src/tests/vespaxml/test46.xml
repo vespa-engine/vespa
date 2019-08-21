@@ -1,0 +1,10 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <document documenttype="news" documentid="doc:crawler:http://www.blargh.example.com/" lastmodified="98798787">
+        <value_long>1008</value_long>
+	<weightedsetstring>
+	    <item weight="1">First</item>
+            <item weight="2">Second</item>
+        </weightedsetstring>
+    </document>
+</vespafeed>

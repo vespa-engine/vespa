@@ -7,7 +7,7 @@
     - some fields in this documenttype are assigned invalid values
 -->
 <vespafeed>
-    <update documenttype="news" documentid="id:ns:news::http://news7a">
+    <update documenttype="news" documentid="doc:news:http://news7a">
         <alter field="last_downloaded">
             <increment by="2" />
             <decrement by="3" />
@@ -36,7 +36,7 @@
         </divide> 
     </update>
     
-    <update documenttype="news" documentid="id:ns:news::http://news7b">
+    <update documenttype="news" documentid="doc:news:http://news7b">
         <alter field="title">
             <increment by="2" />
             <decrement by="3" />
@@ -45,25 +45,25 @@
         </alter>
     </update>
     
-    <update documenttype="news" documentid="id:ns:news::http://news7c">
+    <update documenttype="news" documentid="doc:news:http://news7c">
         <increment field="weightedsetint" by="five">
             <key>1</key>
         </increment> 
     </update>
     
-    <update documenttype="news" documentid="id:ns:news::http://news7d">
+    <update documenttype="news" documentid="doc:news:http://news7d">
         <decrement field="weightedsetint" by="2">
             <key></key>
         </decrement> 
     </update>
     
-    <update documenttype="news" documentid="id:ns:news::http://news7e">
+    <update documenttype="news" documentid="doc:news:http://news7e">
         <multiply field="floatarr">
             <key>3</key>
         </multiply> 
     </update>
     
-    <update documenttype="news" documentid="id:ns:news::http://news7f">
+    <update documenttype="news" documentid="doc:news:http://news7f">
         <divide field="floatarr" by="3">
             <key>four</key>
         </divide> 

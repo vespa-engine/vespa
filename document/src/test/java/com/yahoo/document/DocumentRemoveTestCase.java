@@ -16,16 +16,16 @@ public class DocumentRemoveTestCase {
 
     @Test
     public void requireThatToStringWorks() {
-        DocumentId docId = new DocumentId("id:this:is::a:test");
+        DocumentId docId = new DocumentId("doc:this:is:a:test");
         DocumentRemove r = new DocumentRemove(docId);
         assertThat(r.toString().contains(docId.toString()), is(true));
     }
 
     @Test
     public void requireThatEqualsAndHashCodeWorks() {
-        DocumentRemove r1 = new DocumentRemove(new DocumentId("id:this:is::a:test"));
-        DocumentRemove r2 = new DocumentRemove(new DocumentId("id:this:is::a:test"));
-        DocumentRemove r3 = new DocumentRemove(new DocumentId("id:this:is::nonequal"));
+        DocumentRemove r1 = new DocumentRemove(new DocumentId("doc:this:is:a:test"));
+        DocumentRemove r2 = new DocumentRemove(new DocumentId("doc:this:is:a:test"));
+        DocumentRemove r3 = new DocumentRemove(new DocumentId("doc:this:is:nonequal"));
 
         assertThat(r1, equalTo(r1));
         assertThat(r1, equalTo(r2));

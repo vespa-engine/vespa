@@ -1,0 +1,32 @@
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<vespafeed>
+    <document documenttype="news" documentid="doc:crawler:http://www.ntnu.no/">
+        <value_long>1008</value_long>
+	<weightedsetstring>
+	    <item weight="1">First</item>
+            <item weight="2">Second</item>
+        </weightedsetstring>
+    </document>
+    <update documenttype="news" documentid="doc:crawler:http://www.ntnu.no/">
+        <increment field="value_long" by="1" />
+        <decrement field="value_long" by="2" />
+	<divide field="value_long" by="3" />
+	<multiply field="value_long" by="4" />
+    </update>	
+    <update documenttype="news" documentid="doc:crawler:http://www.ntnu.no/">
+	<alter field="value_long">
+	    <increment by="5" />
+	    <decrement by="6" />
+	</alter>
+	<alter field="value_long">
+	    <divide by="7" />
+	    <multiply by="8" />
+	</alter>
+    </update>	
+    <update documenttype="news" documentid="doc:crawler:http://www.ntnu.no/">
+	<increment field="weightedsetstring" by="9">
+	    <key>First</key>
+	    <key>Second</key>
+	</increment>
+    </update>
+</vespafeed>

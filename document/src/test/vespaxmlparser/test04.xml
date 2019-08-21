@@ -9,7 +9,7 @@
 -->
 
 <vespafeed>
-    <update documenttype="news" documentid="id:ns:news::http://news4"> 
+    <update documenttype="news" documentid="doc:news:http://news4"> 
         <assign field="url">assignUrl</assign>
         <assign field="value_long">2</assign>
         <assign field="stringarr">
