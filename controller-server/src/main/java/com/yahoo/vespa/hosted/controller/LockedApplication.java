@@ -73,7 +73,7 @@ public class LockedApplication {
              application.deployments(),
              application.deploymentJobs(), application.change(), application.outstandingChange(),
              application.ownershipIssueId(), application.owner(), application.majorVersion(), application.metrics(),
-             application.pemDeployKey(), application.assignedRotations(), application.rotationStatus(), application.applicationCertificate());
+             application.pemDeployKey(), application.rotations(), application.rotationStatus(), application.applicationCertificate());
     }
 
     private LockedApplication(Lock lock, ApplicationId id, Instant createdAt,

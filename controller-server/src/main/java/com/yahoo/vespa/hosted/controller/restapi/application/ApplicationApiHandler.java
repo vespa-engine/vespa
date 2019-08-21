@@ -50,6 +50,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAlloca
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -527,8 +528,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                    .map(URI::toString)
                    .forEach(globalRotationsArray::addString);
 
-
-        application.rotations().stream().findFirst().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
+        application.rotations().stream()
+                   .map(AssignedRotation::rotationId)
+                   .findFirst()
+                   .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(application.id());
@@ -547,7 +550,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            if ((! application.rotations().isEmpty()) && deployment.zone().environment() == Environment.prod) {
+            if (!application.rotations().isEmpty() && deployment.zone().environment() == Environment.prod) {
                 toSlime(application.rotationStatus(deployment), deploymentObject);
             }
 

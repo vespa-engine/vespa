@@ -452,7 +452,7 @@ public class ControllerTest {
                 tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-central-1")))
         );
 
-        assertEquals(Set.of(RegionName.from("us-west-1")), tester.application(application.id()).assignedRotations().get(0).regions());
+        assertEquals(Set.of(RegionName.from("us-west-1")), tester.application(application.id()).rotations().get(0).regions());
     }
 
     @Test
@@ -481,7 +481,7 @@ public class ControllerTest {
 
         assertEquals(
                 List.of(AssignedRotation.fromStrings("qrs", "default", "rotation-id-01", Set.of())),
-                tester.application(application.id()).assignedRotations()
+                tester.application(application.id()).rotations()
         );
 
         assertEquals(
@@ -570,7 +570,7 @@ public class ControllerTest {
                     .build();
             tester.deployCompletely(app1, applicationPackage);
             app1 = tester.applications().require(app1.id());
-            assertEquals("rotation-id-02", app1.rotations().get(0).asString());
+            assertEquals("rotation-id-02", app1.rotations().get(0).rotationId().asString());
 
             // DNS records are created for the newly assigned rotation
             assertEquals(2, tester.controllerTester().nameService().records().size());

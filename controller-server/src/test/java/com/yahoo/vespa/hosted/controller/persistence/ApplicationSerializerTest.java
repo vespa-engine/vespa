@@ -274,21 +274,11 @@ public class ApplicationSerializerTest {
 
         // Parse and test the output from parsing contains both legacy rotation and multiple rotations
         final var application = applicationSerializer.fromSlime(slime);
-
-        assertEquals(
-                List.of(
-                        new RotationId("assigned-rotation")
-                ),
-                application.rotations()
-        );
-
-        assertEquals(new RotationId("assigned-rotation"), application.rotations().get(0));
-
         assertEquals(
                 List.of(
                         new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"), Set.of())
                 ),
-                application.assignedRotations()
+                application.rotations()
         );
     }
 

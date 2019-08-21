@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.Endpoint;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -20,7 +18,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -59,7 +56,10 @@ public class RotationRepository {
 
     /** Get rotation for given application */
     public Optional<Rotation> getRotation(Application application) {
-        return application.rotations().stream().map(allRotations::get).findFirst();
+        return application.rotations().stream()
+                          .map(AssignedRotation::rotationId)
+                          .map(allRotations::get)
+                          .findFirst();
     }
 
     /** Get rotation for the given rotationId */
@@ -78,7 +78,7 @@ public class RotationRepository {
      */
     public Rotation getOrAssignRotation(Application application, RotationLock lock) {
         if (! application.rotations().isEmpty()) {
-            return allRotations.get(application.rotations().get(0));
+            return allRotations.get(application.rotations().get(0).rotationId());
         }
         if (application.deploymentSpec().globalServiceId().isEmpty()) {
             throw new IllegalArgumentException("global-service-id is not set in deployment spec");
@@ -191,15 +191,17 @@ public class RotationRepository {
             );
         };
 
-        return application.assignedRotations().stream()
-                .collect(
-                        Collectors.toMap(
-                                AssignedRotation::endpointId,
-                                assignedRotationWithConfiguredRegions,
-                                (a, b) -> { throw new IllegalStateException("Duplicate entries: " + a + ", " + b); },
-                                LinkedHashMap::new
-                        )
-                );
+        return application.rotations().stream()
+                          .collect(
+                                  Collectors.toMap(
+                                          AssignedRotation::endpointId,
+                                          assignedRotationWithConfiguredRegions,
+                                          (a, b) -> {
+                                              throw new IllegalStateException("Duplicate entries: " + a + ", " + b);
+                                          },
+                                          LinkedHashMap::new
+                                  )
+                          );
     }
 
     /**
@@ -210,6 +212,7 @@ public class RotationRepository {
         List<RotationId> assignedRotations = applications.asList().stream()
                                                          .filter(application -> ! application.rotations().isEmpty())
                                                          .flatMap(application -> application.rotations().stream())
+                                                         .map(AssignedRotation::rotationId)
                                                          .collect(Collectors.toList());
         Map<RotationId, Rotation> unassignedRotations = new LinkedHashMap<>(this.allRotations);
         assignedRotations.forEach(unassignedRotations::remove);

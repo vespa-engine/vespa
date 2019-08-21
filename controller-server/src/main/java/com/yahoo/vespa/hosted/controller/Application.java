@@ -10,9 +10,9 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -200,15 +199,8 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns all rotations for this application */
-    public List<RotationId> rotations() {
-        return rotations.stream()
-                .map(AssignedRotation::rotationId)
-                .collect(Collectors.toList());
-    }
-
-    /** Returns all assigned rotations for this application */
-    public List<AssignedRotation> assignedRotations() {
+    /** Returns all rotations assigned to this */
+    public List<AssignedRotation> rotations() {
         return rotations;
     }
 
