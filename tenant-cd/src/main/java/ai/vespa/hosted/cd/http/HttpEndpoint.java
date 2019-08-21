@@ -38,7 +38,7 @@ public class HttpEndpoint implements Endpoint {
     }
 
     @Override
-    public URI hostUri() {
+    public URI uri() {
         return endpoint;
     }
 

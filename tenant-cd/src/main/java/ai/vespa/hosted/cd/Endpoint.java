@@ -23,7 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public interface Endpoint {
 
     /** Returns the URI of the endpoint, with scheme, host and port. */
-    URI hostUri();
+    URI uri();
 
     /** Sends the given request with required authentication. See {@link EndpointAuthenticator#authenticated} and {@link HttpClient#send}. */
     <T> HttpResponse<T> send(HttpRequest.Builder request, HttpResponse.BodyHandler<T> handler);
