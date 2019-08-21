@@ -8,10 +8,9 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredDirectSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 
 import java.util.Optional;
 
@@ -35,22 +34,15 @@ public final class ApplicationContainer extends Container {
         this.isHostedVespa = isHostedVespa;
 
         if (isHostedVespa && tlsSecrets.isPresent()) {
-            String connectorName = "tls4443";
 
             JettyHttpServer server = Optional.ofNullable(getHttp())
                                              .map(Http::getHttpServer)
                                              .orElse(getDefaultHttpServer());
-
-            var sslProvider = new ConfiguredDirectSslProvider(
-                    server.getComponentId().getName(),
-                    tlsSecrets.get().key(),
-                    tlsSecrets.get().certificate(),
-                    null,
-                    tlsCa.orElse(null),
-                    null
-            );
-
-            server.addConnector(new ConnectorFactory(connectorName, 4443, sslProvider));
+            String serverName = server.getComponentId().getName();
+            var connectorFactory = tlsCa
+                    .map(caCert -> new HostedSslConnectorFactory(serverName, tlsSecrets.get(), caCert))
+                    .orElseGet(() -> new HostedSslConnectorFactory(serverName, tlsSecrets.get()));
+            server.addConnector(connectorFactory);
         }
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }

@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import java.util.Optional;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
+import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.*;
 
 /**
  * Configure SSL with PEM encoded certificate/key strings
@@ -27,9 +28,9 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
     private final String certificate;
     private final String caCertificatePath;
     private final String caCertificate;
-    private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
+    private final ClientAuth.Enum clientAuthentication;
 
-    public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, String clientAuthentication) {
+    public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, ClientAuth.Enum clientAuthentication) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
                                                      fromString(COMPONENT_CLASS),
@@ -38,7 +39,7 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
         this.certificate = certificate;
         this.caCertificatePath = caCertificatePath;
         this.caCertificate = caCertificate;
-        this.clientAuthentication = mapToConfigEnum(clientAuthentication);
+        this.clientAuthentication = clientAuthentication;
     }
 
     @Override
@@ -55,15 +56,4 @@ public class ConfiguredDirectSslProvider extends SimpleComponent implements Conn
         return new SimpleComponent(new ComponentModel(getComponentId().stringValue(), COMPONENT_CLASS, COMPONENT_BUNDLE));
     }
 
-    private static ConnectorConfig.Ssl.ClientAuth.Enum mapToConfigEnum(String clientAuthValue) {
-        if ("disabled".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED;
-        } else if ("want".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH;
-        } else if ("need".equals(clientAuthValue)) {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH;
-        } else {
-            return ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED;
-        }
-    }
 }
