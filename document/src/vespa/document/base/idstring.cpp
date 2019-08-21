@@ -79,7 +79,6 @@ union EightByte {
     uint64_t as64;
 };
 
-const FourByte _G_doc = {{'d', 'o', 'c', ':'}};
 const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
 const TwoByte _G_id = {{'i', 'd'}};
 
