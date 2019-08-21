@@ -151,12 +151,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundDoubleFlag MEMORY_FOR_ADMIN_CLUSTER_NODES = defineDoubleFlag(
-            "memory-for-admin-cluster-nodes", 2,
-            "Node resource memory in Gb for admin cluster nodes",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Node resource memory in Gb for admin cluster nodes",
