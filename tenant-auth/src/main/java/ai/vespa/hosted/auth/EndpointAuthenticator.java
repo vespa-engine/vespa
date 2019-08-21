@@ -1,6 +1,5 @@
 package ai.vespa.hosted.auth;
 
-import ai.vespa.hosted.api.Authenticator;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
@@ -24,10 +23,10 @@ import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
  *
  * @author jonmv
  */
-public class CertificateAndKeyAuthenticator implements Authenticator {
+public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthenticator {
 
     /** Don't touch. */
-    public CertificateAndKeyAuthenticator(@SuppressWarnings("unused") SystemName __) { }
+    public EndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
 
     /**
      * If {@code System.getProperty("vespa.test.credentials.root")} is set, key and certificate files

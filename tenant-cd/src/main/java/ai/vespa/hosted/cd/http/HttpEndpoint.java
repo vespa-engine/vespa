@@ -1,14 +1,7 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.api.Authenticator;
-import ai.vespa.hosted.cd.Digest;
-import ai.vespa.hosted.cd.Feed;
-import ai.vespa.hosted.cd.Query;
-import ai.vespa.hosted.cd.Search;
-import ai.vespa.hosted.cd.Selection;
-import ai.vespa.hosted.cd.TestEndpoint;
-import ai.vespa.hosted.cd.Visit;
-import ai.vespa.hosted.cd.metric.Metrics;
+import ai.vespa.hosted.api.EndpointAuthenticator;
+import ai.vespa.hosted.cd.Endpoint;
 
 import java.io.IOException;
 import java.net.URI;
@@ -25,17 +18,13 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
-public class HttpEndpoint implements TestEndpoint {
-
-    static final String metricsPath = "/state/v1/metrics"; // TODO metrics/v1/values?
-    static final String documentApiPath = "/document/v1";
-    static final String searchApiPath = "/search";
+public class HttpEndpoint implements Endpoint {
 
     private final URI endpoint;
     private final HttpClient client;
-    private final Authenticator authenticator;
+    private final EndpointAuthenticator authenticator;
 
-    public HttpEndpoint(URI endpoint, Authenticator authenticator) {
+    public HttpEndpoint(URI endpoint, EndpointAuthenticator authenticator) {
         this.endpoint = requireNonNull(endpoint);
         this.authenticator = requireNonNull(authenticator);
         this.client = HttpClient.newBuilder()
@@ -46,12 +35,7 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     @Override
-    public Digest digest(Feed feed) {
-        return null;
-    }
-
-    @Override
-    public URI uri() {
+    public URI hostUri() {
         return endpoint;
     }
 
@@ -66,38 +50,5 @@ public class HttpEndpoint implements TestEndpoint {
     }
 
     @Override
-    public Search search(Query query) {
-        try {
-            URI target = endpoint.resolve(searchApiPath).resolve("?" + query.rawQuery());
-            HttpResponse<byte[]> response = send(HttpRequest.newBuilder(target)
-                                                            .timeout(query.timeout().orElse(Duration.ofMillis(500))
-                                                                          .plus(Duration.ofSeconds(1))),
-                                                 HttpResponse.BodyHandlers.ofByteArray());
-            if (response.statusCode() / 100 != 2) // TODO consider allowing 504 if specified.
-                throw new RuntimeException("Non-OK status code " + response.statusCode() + " at " + target +
-                                           ", with response \n" + new String(response.body()));
-
-            return toSearch(response.body());
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static Search toSearch(byte[] body) {
-        // TODO jvenstad
-        // Inspector rootObject = new JsonDecoder().decode(new Slime(), body).get();
-        return new Search(new String(body, UTF_8));
-    }
-
-    @Override
-    public Visit visit(Selection selection) {
-        return null;
-    }
-
-    @Override
-    public Metrics metrics() {
-        return null;
-    }
 
 }
