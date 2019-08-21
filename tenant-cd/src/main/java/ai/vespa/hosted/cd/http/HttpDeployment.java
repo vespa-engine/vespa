@@ -1,10 +1,8 @@
 package ai.vespa.hosted.cd.http;
 
-import ai.vespa.hosted.api.Authenticator;
-import ai.vespa.hosted.cd.TestDeployment;
-import ai.vespa.hosted.cd.TestEndpoint;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneId;
+import ai.vespa.hosted.api.EndpointAuthenticator;
+import ai.vespa.hosted.cd.Deployment;
+import ai.vespa.hosted.cd.Endpoint;
 
 import java.net.URI;
 import java.util.Map;
@@ -16,38 +14,23 @@ import java.util.stream.Collectors;
  *
  * @author jonmv
  */
-public class HttpDeployment implements TestDeployment {
+public class HttpDeployment implements Deployment {
 
-    private final ZoneId zone;
     private final Map<String, HttpEndpoint> endpoints;
 
     /** Creates a representation of the given deployment endpoints, using the authenticator for data plane access. */
-    public HttpDeployment(Map<String, URI> endpoints, ZoneId zone, Authenticator authenticator) {
-        this.zone = zone;
+    public HttpDeployment(Map<String, URI> endpoints, EndpointAuthenticator authenticator) {
         this.endpoints = endpoints.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                       entry -> new HttpEndpoint(entry.getValue(), authenticator)));
     }
 
     @Override
-    public TestEndpoint endpoint() {
-        return endpoint("default");
-    }
-
-    @Override
-    public TestEndpoint endpoint(String id) {
+    public Endpoint endpoint(String id) {
         if ( ! endpoints.containsKey(id))
             throw new NoSuchElementException("No cluster with id '" + id + "'");
 
         return endpoints.get(id);
-    }
-
-    @Override
-    public TestDeployment asTestDeployment() {
-        if (zone.environment() == Environment.prod)
-            throw new IllegalArgumentException("Won't return a mutable view of a production deployment");
-
-        return this;
     }
 
 }

@@ -1,10 +1,9 @@
 package ai.vespa.hosted.cd;
 
-import ai.vespa.hosted.api.Authenticator;
 import ai.vespa.hosted.api.ControllerHttpClient;
+import ai.vespa.hosted.api.EndpointAuthenticator;
 import ai.vespa.hosted.api.Properties;
 import ai.vespa.hosted.api.TestConfig;
-import ai.vespa.hosted.auth.CertificateAndKeyAuthenticator;
 import ai.vespa.hosted.cd.http.HttpDeployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -12,9 +11,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
-
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * The place to obtain environment-dependent configuration for test of a Vespa deployment.
@@ -26,18 +22,11 @@ public class TestRuntime {
     private static TestRuntime theRuntime;
 
     private final TestConfig config;
-    private final Map<String, Deployment> productionDeployments;
     private final Deployment deploymentToTest;
 
-    private TestRuntime(TestConfig config, Authenticator authenticator) {
+    private TestRuntime(TestConfig config, EndpointAuthenticator authenticator) {
         this.config = config;
-        this.productionDeployments = config.deployments().entrySet().stream()
-                                           .filter(zoneDeployment -> zoneDeployment.getKey().environment() == Environment.prod)
-                                           .collect(toUnmodifiableMap(zoneDeployment -> zoneDeployment.getKey().region().value(),
-                                                                      zoneDeployment -> new HttpDeployment(zoneDeployment.getValue(),
-                                                                                                           config.zone(),
-                                                                                                           authenticator)));
-        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), config.zone(), authenticator);
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), authenticator);
     }
 
     /**
@@ -55,13 +44,13 @@ public class TestRuntime {
             String configPath = System.getProperty("vespa.test.config");
             TestConfig config = configPath != null ? fromFile(configPath) : fromController();
             theRuntime = new TestRuntime(config,
-                                         new CertificateAndKeyAuthenticator(config.system()));
+                                         new ai.vespa.hosted.auth.EndpointAuthenticator(config.system()));
         }
         return theRuntime;
     }
 
     /** Returns a copy of this runtime, with the given endpoint authenticator. */
-    public TestRuntime with(Authenticator authenticator) {
+    public TestRuntime with(EndpointAuthenticator authenticator) {
         return new TestRuntime(config, authenticator);
     }
 
@@ -70,9 +59,6 @@ public class TestRuntime {
 
     /** Returns the zone of the deployment this is testing. */
     public ZoneId zone() { return config.zone(); }
-
-    /** Returns all production deployments of the application this is testing. */
-    public Map<String, Deployment> productionDeployments() { return productionDeployments; }
 
     /** Returns the deployment this is testing. */
     public Deployment deploymentToTest() { return deploymentToTest; }
