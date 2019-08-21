@@ -160,7 +160,7 @@ public:
     class BatchUpdater {
     private:
         EnumStoreType& _store;
-        EnumStoreBase::IndexVector _possibly_unused;
+        IndexSet _possibly_unused;
 
     public:
         BatchUpdater(EnumStoreType& store)
@@ -170,7 +170,7 @@ public:
         void add(Type value) {
             Index new_idx;
             _store.addEnum(value, new_idx);
-            _possibly_unused.push_back(new_idx);
+            _possibly_unused.insert(new_idx);
         }
         void inc_ref_count(Index idx) {
             _store.incRefCount(idx);
@@ -178,7 +178,7 @@ public:
         void dec_ref_count(Index idx) {
             _store.decRefCount(idx);
             if (_store.getRefCount(idx) == 0) {
-                _possibly_unused.push_back(idx);
+                _possibly_unused.insert(idx);
             }
         }
         void commit() {
@@ -199,7 +199,7 @@ public:
     void addEnum(Type value, Index &newIdx);
     virtual bool findIndex(Type value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
-    void freeUnusedEnums(const IndexVector &toRemove) override;
+    void freeUnusedEnums(const IndexSet& toRemove) override;
     void reset(Builder &builder);
     bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) override;
 

@@ -175,21 +175,21 @@ EnumStoreT<EntryType>::freeUnusedEnums(bool movePostingIdx)
         FoldedComparatorType fcmp(*this);
         _enumDict->freeUnusedEnums(cmp, &fcmp);
     } else {
-        _enumDict->freeUnusedEnums(cmp, NULL);
+        _enumDict->freeUnusedEnums(cmp, nullptr);
     }
 }
 
 
 template <typename EntryType>
 void
-EnumStoreT<EntryType>::freeUnusedEnums(const IndexVector &toRemove)
+EnumStoreT<EntryType>::freeUnusedEnums(const IndexSet& toRemove)
 {
     ComparatorType cmp(*this);
     if (EntryType::hasFold()) {
         FoldedComparatorType fcmp(*this);
         _enumDict->freeUnusedEnums(toRemove, cmp, &fcmp);
     } else {
-        _enumDict->freeUnusedEnums(toRemove, cmp, NULL);
+        _enumDict->freeUnusedEnums(toRemove, cmp, nullptr);
     }
 }
 
