@@ -5,9 +5,56 @@
 #include "entry_comparator.h"
 #include "unique_store_entry.h"
 #include "datastore.h"
+#include <cmath>
 
 namespace search::datastore {
 
+/*
+ * Helper class for comparing elements in unique store. 
+ */
+template <typename EntryT>
+class UniqueStoreComparatorHelper {
+public:
+    static bool less(const EntryT& lhs, const EntryT& rhs) {
+        return lhs < rhs;
+    }
+};
+
+/*
+ * Helper class for comparing floating point elements in unique store with
+ * special handling of NAN.
+ */
+template <typename EntryT>
+class UniqueStoreFloatingPointComparatorHelper
+{
+public:
+    static bool less(EntryT lhs, const EntryT rhs) {
+        if (std::isnan(lhs)) {
+            return !std::isnan(rhs);
+        } else if (std::isnan(rhs)) {
+            return false;
+        } else {
+            return (lhs < rhs);
+        }
+    }
+};
+
+/*
+ * Specialized helper class for comparing float elements in unique store with
+ * special handling of NAN.
+ */
+template <>
+class UniqueStoreComparatorHelper<float> : public UniqueStoreFloatingPointComparatorHelper<float> {
+};
+
+/*
+ * Specialized helper class for comparing double elements in unique store with
+ * special handling of NAN.
+ */
+template <>
+class UniqueStoreComparatorHelper<double> : public UniqueStoreFloatingPointComparatorHelper<double> {
+};
+  
 /*
  * Compare two entries based on entry refs.  Valid entry ref is mapped
  * to an entry in a data store.  Invalid entry ref is mapped to a
@@ -39,7 +86,7 @@ public:
     {
         const EntryType &lhsValue = get(lhs);
         const EntryType &rhsValue = get(rhs);
-        return lhsValue < rhsValue;
+        return UniqueStoreComparatorHelper<EntryT>::less(lhsValue, rhsValue);
     }
 };
 

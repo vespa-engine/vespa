@@ -4,6 +4,7 @@
 
 #include "unique_store_entry_base.h"
 #include <cassert>
+#include <utility>
 
 namespace search::datastore {
 
