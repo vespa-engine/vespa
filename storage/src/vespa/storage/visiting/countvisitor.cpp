@@ -47,11 +47,6 @@ CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
                 }
 
                 switch (idString.getType()) {
-                case document::IdString::DOC:
-                    if (_doScheme) {
-                        _schemeCount["doc"]++;
-                    }
-                    break;
                 case document::IdString::ID:
                     if (_doScheme) {
                         _schemeCount["id"]++;

@@ -196,7 +196,7 @@ public class FieldUpdateTestCase {
 
     @Test
     public void testApplyToSingleValue() {
-        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("doc:test:ballooo"));
+        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("id:ns:foobar::ballooo"));
         FieldUpdate alter = FieldUpdate.create(strfoo);
 
         ValueUpdate assign = ValueUpdate.createAssign(new StringFieldValue("potato"));
@@ -216,7 +216,7 @@ public class FieldUpdateTestCase {
         Array<StringFieldValue> fruitList = new Array<>(DataType.getArray(DataType.STRING));
         fruitList.add(new StringFieldValue("kiwi"));
         fruitList.add(new StringFieldValue("mango"));
-        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("doc:test:ballooo"));
+        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("id:ns:foobar::ballooo"));
         FieldUpdate alter = FieldUpdate.create(strarray);
 
         alter.addValueUpdate(ValueUpdate.createAdd(new StringFieldValue("banana")));
@@ -261,7 +261,7 @@ public class FieldUpdateTestCase {
         WeightedSet fruitWs = new WeightedSet(DataType.getWeightedSet(DataType.STRING));
         fruitWs.put(new StringFieldValue("pineapple"), 50);
         fruitWs.put(new StringFieldValue("apple"), 10);
-        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("doc:test:ballooo"));
+        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("id:ns:foobar::ballooo"));
         FieldUpdate alter = FieldUpdate.create(strws);
         FieldUpdate alter2 = FieldUpdate.create(strws2);
 
@@ -365,9 +365,7 @@ public class FieldUpdateTestCase {
 
     @Test
     public void testArithmeticUpdatesOnAutoCreatedWSetItemsAreZeroBased() {
-        Document testDoc = new Document(
-                docman.getDocumentType("foobar"),
-                new DocumentId("doc:test:ballooo"));
+        Document testDoc = new Document(docman.getDocumentType("foobar"), new DocumentId("id:ns:foobar::ballooo"));
         // strws2 is fixture weightedset type with create-if-non-existing
         // and remove-if-zero attributes set.
         FieldUpdate update = FieldUpdate.create(strws2);

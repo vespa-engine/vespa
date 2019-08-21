@@ -21,7 +21,7 @@ public class ReferenceFieldValueSerializationTestCase {
     static class Fixture {
         final TestDocumentFactory documentFactory;
         // Note: these must match their C++ serialization test counterparts.
-        final static String REF_TARGET_DOC_TYPE_NAME = "my document";
+        final static String REF_TARGET_DOC_TYPE_NAME = "my_doctype";
         final static String REF_SOURCE_DOC_TYPE_NAME = "doc_with_ref";
         final static int REF_TYPE_ID = 789;
         final static String SOURCE_REF_FIELD_NAME = "ref_field";

@@ -38,7 +38,7 @@ public class XMLNumericFieldErrorMsgTestCase {
         DocumentTypeManager dtm = setupTypes();
         try {
             VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(
-                    new ByteArrayInputStream(("<document id=\"doc:foo:bar\" type=\"doctype\">" +
+                    new ByteArrayInputStream(("<document id=\"id:ns:doctype::bar\" type=\"doctype\">" +
                                               "  <floatfield></floatfield>" +
                                               "</document>").getBytes(StandardCharsets.UTF_8)), dtm);
             new Document(documentReader);
@@ -53,7 +53,7 @@ public class XMLNumericFieldErrorMsgTestCase {
         DocumentTypeManager dtm = setupTypes();
         try {
             VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(
-                    new ByteArrayInputStream(("<document id=\"doc:foo:bar\" type=\"doctype\">" +
+                    new ByteArrayInputStream(("<document id=\"id:ns:doctype::bar\" type=\"doctype\">" +
                                               "  <doublefield></doublefield>" +
                                               "</document>").getBytes(StandardCharsets.UTF_8)), dtm);
             new Document(documentReader);
@@ -68,7 +68,7 @@ public class XMLNumericFieldErrorMsgTestCase {
         DocumentTypeManager dtm = setupTypes();
         try {
             VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(
-                    new ByteArrayInputStream(("<document id=\"doc:foo:bar\" type=\"doctype\">" +
+                    new ByteArrayInputStream(("<document id=\"id:ns:doctype::bar\" type=\"doctype\">" +
                                               "  <longfield></longfield>" +
                                               "</document>").getBytes(StandardCharsets.UTF_8)), dtm);
             new Document(documentReader);
@@ -83,7 +83,7 @@ public class XMLNumericFieldErrorMsgTestCase {
         DocumentTypeManager dtm = setupTypes();
         try {
             VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(
-                    new ByteArrayInputStream(("<document id=\"doc:foo:bar\" type=\"doctype\">" +
+                    new ByteArrayInputStream(("<document id=\"id:ns:doctype::bar\" type=\"doctype\">" +
                                               "  <intfield></intfield>" +
                                               "</document>").getBytes(StandardCharsets.UTF_8)), dtm);
             new Document(documentReader);
@@ -98,7 +98,7 @@ public class XMLNumericFieldErrorMsgTestCase {
         DocumentTypeManager dtm = setupTypes();
         try {
             VespaXMLDocumentReader documentReader = new VespaXMLDocumentReader(
-                    new ByteArrayInputStream(("<document id=\"doc:foo:bar\" type=\"doctype\">" +
+                    new ByteArrayInputStream(("<document id=\"id:ns:doctype::bar\" type=\"doctype\">" +
                                               "  <bytefield></bytefield>" +
                                               "</document>").getBytes(StandardCharsets.UTF_8)), dtm);
             new Document(documentReader);

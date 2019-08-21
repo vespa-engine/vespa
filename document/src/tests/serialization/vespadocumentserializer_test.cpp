@@ -33,11 +33,9 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
-#include <vespa/eval/tensor/types.h>
 #include <vespa/eval/tensor/tensor.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -63,12 +61,12 @@ using namespace document::config_builder;
 namespace {
 
 const int doc_type_id = 1234;
-const string doc_name = "my document";
+const string doc_name = "my_doctype";
 const int body_id = 94;
 const int inner_type_id = 95;
 const int outer_type_id = 96;
-const string type_name = "outer doc";
-const string inner_name = "inner doc";
+const string type_name = "outer_doc";
+const string inner_name = "inner_doc";
 const int a_id = 12345;
 const string a_name = "annotation";
 const int predicate_doc_type_id = 321;
@@ -83,9 +81,9 @@ constexpr uint16_t serialization_version = Document::getNewestSerializationVersi
 DocumenttypesConfig getDocTypesConfig() {
     DocumenttypesConfigBuilderHelper builder;
     builder.document(doc_type_id, doc_name,
-                     Struct("my document.header")
+                     Struct(doc_name + ".header")
                      .addField("header field", DataType::T_INT),
-                     Struct("my document.body")
+                     Struct(doc_name + ".body")
                      .addField("body field", DataType::T_STRING))
         .annotationType(42, "foo_type", DataType::T_INT);
     builder.document(inner_type_id, inner_name,
@@ -576,7 +574,7 @@ template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 TEST("requireThatDocumentCanBeSerialized") {
     const DocumentType &type = repo.getDocumentType();
 
-    DocumentId doc_id("doc::testdoc");
+    DocumentId doc_id("id:ns:" + type.getName() + "::");
     Document value(type, doc_id);
 
     value.setValue(type.getField("header field"), IntFieldValue(42));
@@ -589,7 +587,7 @@ TEST("requireThatDocumentCanBeSerialized") {
     uint32_t size;
     stream >> read_version >> size;
     EXPECT_EQUAL(serialization_version, read_version);
-    EXPECT_EQUAL(65u, size);
+    EXPECT_EQUAL(70u, size);
     EXPECT_EQUAL(doc_id.getScheme().toString(), stream.peek());
     stream.adjustReadPos(doc_id.getScheme().toString().size() + 1);
     uint8_t content_code;
@@ -604,7 +602,7 @@ TEST("requireThatDocumentCanBeSerialized") {
 TEST("requireThatOldVersionDocumentCanBeDeserialized") {
     uint16_t old_version = 6;
     uint16_t data_size = 432;
-    string doc_id = "doc::testdoc";
+    string doc_id = "id:ns:my_doctype::";
     uint8_t content_code = 0x01;
     uint32_t crc = 42;
 
@@ -628,19 +626,19 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
 
     DocumenttypesConfigBuilderHelper builder1, builder2;
     builder1.document(doc_type_id, doc_name,
-                      Struct("my document.header")
+                      Struct("my_doctype.header")
                       .addField("field2", DataType::T_STRING),
-                      Struct("my document.body"));
+                      Struct("my_doctype.body"));
     builder2.document(doc_type_id, doc_name,
-                      Struct("my document.header")
+                      Struct("my_doctype.header")
                       .addField("field1", DataType::T_INT)
                       .addField("field2", DataType::T_STRING),
-                      Struct("my document.body"));
+                      Struct("my_doctype.body"));
 		
     DocumentTypeRepo repo1Field(builder1.config());
     DocumentTypeRepo repo2Fields(builder2.config());
 
-    DocumentId doc_id("doc::testdoc");
+    DocumentId doc_id("id:ns:my_doctype::");
     Document value(*repo2Fields.getDocumentType(doc_type_id), doc_id);
 
     value.setValue("field1", IntFieldValue(42));
@@ -684,21 +682,20 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
     const DocumentTypeRepo &my_repo = repo.getDocumentTypeRepo();
     const DocumentType *inner_type = my_repo.getDocumentType(inner_type_id);
     ASSERT_TRUE(inner_type);
-    const AnnotationType *a_type =
-        my_repo.getAnnotationType(*inner_type, a_id);
+    const AnnotationType *a_type =my_repo.getAnnotationType(*inner_type, a_id);
     StringFieldValue str("foo");
-    SpanTree::UP tree(new SpanTree("name", Span::UP(new Span(0, 3))));
-    tree->annotate(Annotation::UP(new Annotation(*a_type)));
+    auto tree = std::make_unique<SpanTree>("name", std::make_unique<Span>(0, 3));
+    tree->annotate(std::make_unique<Annotation>(*a_type));
 
 
     setSpanTree(str, *tree);
     const Field str_field("str", *DataType::STRING, false);
 
-    Document inner(*inner_type, DocumentId("doc::in"));
+    Document inner(*inner_type, DocumentId("id:ns:" + inner_type->getName() + "::"));
     inner.setValue(str_field, str);
     const DocumentType *type = my_repo.getDocumentType(outer_type_id);
     ASSERT_TRUE(type);
-    DocumentId doc_id("doc::testdoc");
+    DocumentId doc_id("id:ns:" + type->getName() + "::");
     Document value(*type, doc_id);
     const Field doc_field(inner_name, *inner_type, false);
     value.setValue(doc_field, inner);
@@ -1040,8 +1037,7 @@ TEST_F("Empty ReferenceFieldValue can be roundtrip serialized", RefFixture) {
 }
 
 TEST_F("ReferenceFieldValue with ID can be roundtrip serialized", RefFixture) {
-    ReferenceFieldValue ref_with_id(
-            f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
+    ReferenceFieldValue ref_with_id(f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
     nbostream stream;
     serializeAndDeserialize(ref_with_id, stream, f.fixed_repo);
 }
@@ -1055,8 +1051,7 @@ TEST_F("Empty ReferenceFieldValue has changed-flag cleared after deserialization
 }
 
 TEST_F("ReferenceFieldValue with ID has changed-flag cleared after deserialization", RefFixture) {
-    ReferenceFieldValue src(
-            f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
+    ReferenceFieldValue src(f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
     ReferenceFieldValue dest(f.ref_type());
     f.roundtrip_serialize(src, dest);
 
@@ -1069,14 +1064,13 @@ TEST_F("Empty ReferenceFieldValue serialization matches Java", RefFixture) {
 }
 
 TEST_F("ReferenceFieldValue with ID serialization matches Java", RefFixture) {
-    ReferenceFieldValue value(
-            f.ref_type(), DocumentId("id:ns:" + doc_name + "::bar"));
+    ReferenceFieldValue value(f.ref_type(), DocumentId("id:ns:" + doc_name + "::bar"));
     f.verify_cross_language_serialization("reference_with_id", value);
 }
 
 struct AssociatedDocumentRepoFixture {
     const DocumentType& doc_type{repo.getDocumentType()};
-    DocumentId doc_id{"doc::testdoc"};
+    DocumentId doc_id{"id:ns:" + doc_type.getName() + "::"};
     Document source_doc{doc_type, doc_id};
 
     std::unique_ptr<Document> roundtrip_serialize_source_document() {

@@ -89,7 +89,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
         String path = "src/test/serializeddocuments/";
 
         {
-            Document doc = new Document(docType, "doc:serializetest:http://test.doc.id/");
+            Document doc = new Document(docType, "id:ns:serializetest::http://test.doc.id/");
             doc.setFieldValue("intfield", 5);
             doc.setFieldValue("floatfield", -9.23);
             doc.setFieldValue("stringfield", "This is a string.");
@@ -100,7 +100,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             byte[] rawData = "RAW DATA".getBytes();
             assertEquals(8, rawData.length);
             doc.setFieldValue(docType.getField("rawfield"),new Raw(ByteBuffer.wrap("RAW DATA".getBytes())));
-            Document docInDoc = new Document(docInDocType, "doc:serializetest:http://doc.in.doc/");
+            Document docInDoc = new Document(docInDocType, "id:ns:docindoc::http://doc.in.doc/");
             docInDoc.setFieldValue("stringindocfield", "Elvis is dead");
             doc.setFieldValue(docType.getField("docfield"), docInDoc);
             Array<FloatFieldValue> floatArray = new Array<>(arrayOfFloatDataType);
@@ -146,16 +146,12 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
         String cpppath = "src/tests/data/";
 
         List<TestDoc> tests = new ArrayList<>();
-        tests.add(new TestDoc(path + "document-java-currentversion-uncompressed.dat",
-                              Document.SERIALIZED_VERSION));
-        tests.add(new TestDoc(path + "document-java-currentversion-lz4-9.dat",
-                              Document.SERIALIZED_VERSION));
+        tests.add(new TestDoc(path + "document-java-currentversion-uncompressed.dat", Document.SERIALIZED_VERSION));
+        tests.add(new TestDoc(path + "document-java-currentversion-lz4-9.dat", Document.SERIALIZED_VERSION));
         tests.add(new TestDoc(path + "document-java-v8-uncompressed.dat", 8));
         tests.add(new TestDoc(cpppath + "document-cpp-currentversion-uncompressed.dat", 7));
         tests.add(new TestDoc(cpppath + "document-cpp-currentversion-lz4-9.dat", 7));
         tests.add(new TestDoc(cpppath + "document-cpp-v8-uncompressed.dat", 7));
-        tests.add(new TestDoc(cpppath + "document-cpp-v7-uncompressed.dat", 7));
-        tests.add(new TestDoc(cpppath + "serializev6.dat", 6));
         for (TestDoc test : tests) {
             File f = new File(test.testFile);
             FileInputStream fin = new FileInputStream(f);
@@ -206,7 +202,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
 
     @Test
     public void testSerializeDeserializeWithAnnotations() throws IOException {
-        Document doc = new Document(docType, "doc:foo:bar");
+        Document doc = new Document(docType, "id:ns:dokk::bar");
 
         doc.setFieldValue("age", (byte)123);
         doc.setFieldValue("story", getAnnotatedString());

@@ -140,14 +140,14 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     EXPECT_EQ(fieldUpdate, fieldUpdateCopy);
 
         // Test that a document update can be serialized
-    DocumentUpdate docUpdate(repo, *docType, DocumentId("doc::testdoc"));
+    DocumentUpdate docUpdate(repo, *docType, DocumentId("id:ns:test::1"));
     docUpdate.addUpdate(fieldUpdateCopy);
     ByteBuffer::UP docBuf = serializeHEAD(docUpdate);
     docBuf->flip();
     auto docUpdateCopy(DocumentUpdate::createHEAD(repo, nbostream(docBuf->getBufferAtPos(), docBuf->getRemaining())));
 
         // Create a test document
-    Document doc(*docType, DocumentId("doc::testdoc"));
+    Document doc(*docType, DocumentId("id:ns:test::1"));
     doc.set("bytef", 0);
     doc.set("intf", 5);
     ArrayFieldValue array(*arrayType);
@@ -158,7 +158,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
         // Verify that we can apply simple updates to it
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ClearValueUpdate()));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
@@ -166,7 +166,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(AssignValueUpdate(IntFieldValue(15))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
@@ -174,7 +174,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("intf")).addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
@@ -182,7 +182,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(AddValueUpdate(IntFieldValue(4))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
@@ -192,7 +192,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("intarr")).addUpdate(RemoveValueUpdate(IntFieldValue(3))));
         upd.applyTo(updated);
         EXPECT_NE(doc, updated);
@@ -202,7 +202,7 @@ TEST(DocumentUpdateTest, testSimpleUsage)
     }
     {
         Document updated(doc);
-        DocumentUpdate upd(repo, *docType, DocumentId("doc::testdoc"));
+        DocumentUpdate upd(repo, *docType, DocumentId("id:ns:test::1"));
         upd.addUpdate(FieldUpdate(docType->getField("bytef"))
                               .addUpdate(ArithmeticValueUpdate(ArithmeticValueUpdate::Add, 15)));
         upd.applyTo(updated);
@@ -409,9 +409,9 @@ WeightedSetAutoCreateFixture::~WeightedSetAutoCreateFixture() = default;
 WeightedSetAutoCreateFixture::WeightedSetAutoCreateFixture()
     : repo(makeConfig()),
       docType(repo.getDocumentType("test")),
-      doc(*docType, DocumentId("doc::testdoc")),
+      doc(*docType, DocumentId("id:ns:test::1")),
       field(docType->getField("strwset")),
-      update(repo, *docType, DocumentId("doc::testdoc"))
+      update(repo, *docType, DocumentId("id:ns:test::1"))
 {
     update.addUpdate(FieldUpdate(field)
                              .addUpdate(MapValueUpdate(StringFieldValue("foo"),
@@ -475,7 +475,7 @@ TEST(DocumentUpdateTest, testReadSerializedFile)
     DocumentUpdate& upd(*updp);
 
     const DocumentType *type = repo.getDocumentType("serializetest");
-    EXPECT_EQ(DocumentId(DocIdString("update", "test")), upd.getId());
+    EXPECT_EQ(DocumentId("id:ns:serializetest::update"), upd.getId());
     EXPECT_EQ(*type, upd.getType());
 
     // Verify assign value update.
@@ -533,7 +533,7 @@ TEST(DocumentUpdateTest, testGenerateSerializedFile)
     DocumentTypeRepo repo(readDocumenttypesConfig(file_name));
 
     const DocumentType *type(repo.getDocumentType("serializetest"));
-    DocumentUpdate upd(repo, *type, DocumentId(DocIdString("update", "test")));
+    DocumentUpdate upd(repo, *type, DocumentId("id:ns:serializetest::update"));
     upd.addUpdate(FieldUpdate(type->getField("intfield"))
 		  .addUpdate(AssignValueUpdate(IntFieldValue(4))));
     upd.addUpdate(FieldUpdate(type->getField("floatfield"))
