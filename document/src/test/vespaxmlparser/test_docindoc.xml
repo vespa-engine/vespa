@@ -2,22 +2,22 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
 
-  <document type="outerdoc" id="doc:outer:this:is:outer:doc">
+  <document type="outerdoc" id="id:outer:outerdoc::this:is:outer:doc">
     <innerdocuments>
         <item>
-            <document type="docindoc" id="doc:inner:this:is:inner:doc:a">
+            <document type="docindoc" id="id:inner:docindoc::this:is:inner:doc:a">
               <name>Peter Sellers</name>
               <content>Comedian</content>
             </document>
         </item>
         <item>
-            <document type="docindoc" id="doc:inner:this:is:inner:doc:b">
+            <document type="docindoc" id="id:inner:docindoc::this:is:inner:doc:b">
               <name>Ole Olsen</name>
               <content>Common man</content>
             </document>
         </item>
         <item>
-            <document type="docindoc" id="doc:inner:this:is:inner:doc:c">
+            <document type="docindoc" id="id:inner:docindoc::this:is:inner:doc:c">
               <name>Stein Nilsen</name>
               <content>Worker</content>
             </document>

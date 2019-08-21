@@ -10,13 +10,13 @@
 -->
 
 <vespafeed>
-    <remove documentid="doc:news:http://news9a" />
+    <remove documentid="id:ns:news::http://news9a" />
 
-    <remove documentid="doc:news:http://news9b">
+    <remove documentid="id:ns:news::http://news9b">
     </remove>
 
     <remove>
-        <uri>doc:news:http://news9c</uri>
+        <uri>id:ns:news::http://news9c</uri>
     </remove>
     
 </vespafeed>

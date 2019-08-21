@@ -120,7 +120,7 @@ public class SystemTestCase {
     @Test
     public void testSystemTest() {
         DocumentType type = manager.getDocumentType("article");
-        Document inDocument = new Document(type, "doc:article:boringarticle:longarticle");
+        Document inDocument = new Document(type, "id:ns:article::boringarticle:longarticle");
         annotate(inDocument);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();

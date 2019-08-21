@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <vespafeed>
-    <document documenttype="alltypes" documentid="doc:foobar:http://all.types">
+    <document documenttype="alltypes" documentid="id:ns:alltypes::http://all.types">
         <stringval>Banana</stringval>
         <intval1>2146983647</intval1>
         <intval2>4294967291</intval2>
