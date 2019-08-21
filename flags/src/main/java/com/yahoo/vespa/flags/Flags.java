@@ -146,7 +146,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLE_GROUPING_SESSION_CACHE = defineFeatureFlag(
-            "enable-grouping-session-cache", false,
+            "enable-grouping-session-cache", true,
             "Enable grouping session cache",
             "Takes effect at redeployment",
             APPLICATION_ID);
