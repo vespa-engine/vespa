@@ -27,7 +27,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author vegardh
  */
-public class ConfigSubscriber {
+public class ConfigSubscriber implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());
     private State state = State.OPEN;
@@ -316,6 +316,7 @@ public class ConfigSubscriber {
     /**
      * Closes all open {@link ConfigSubscription}s
      */
+    @Override
     public void close() {
         synchronized (monitor) {
             state = State.CLOSED;

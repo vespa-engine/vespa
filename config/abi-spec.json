@@ -189,7 +189,9 @@
   },
   "com.yahoo.config.subscription.ConfigSubscriber": {
     "superClass": "java.lang.Object",
-    "interfaces": [],
+    "interfaces": [
+      "java.lang.AutoCloseable"
+    ],
     "attributes": [
       "public"
     ],
