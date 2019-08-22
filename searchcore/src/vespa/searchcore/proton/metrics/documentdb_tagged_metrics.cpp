@@ -149,6 +149,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       queries("queries", {}, "Number of queries executed", this),
       limitedQueries("limited_queries", {}, "Number of queries limited in match phase", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
+      softDoomFactor("soft_doom_factor", {}, "Factor used to compute soft-timeout", this),
       matchTime("match_time", {}, "Average time (sec) for matching a query (1st phase)", this),
       groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
       rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
@@ -195,6 +196,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     queries.inc(stats.queries());
     limitedQueries.inc(stats.limited_queries());
     softDoomedQueries.inc(stats.softDoomed());
+    softDoomFactor.set(stats.softDoomFactor());
     matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
                             stats.matchTimeMin(), stats.matchTimeMax());
     groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount(),
