@@ -49,7 +49,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
@@ -63,6 +62,8 @@ import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -79,11 +80,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -1677,17 +1678,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         applicationList.forEach(application -> {
                 applicationController.lockIfPresent(application.id(), locked ->
                         applicationController.store(locked.withRotationStatus(rotationStatus(application))));
-        });}
+        });
+    }
 
-    private Map<HostName, RotationState> rotationStatus(Application application) {
+    private RotationStatus rotationStatus(Application application) {
         return controllerTester.controller().applications().rotationRepository().getRotation(application)
-                .map(rotation -> controllerTester.controller().metricsService().getRotationStatus(rotation.name()))
-                .map(rotationStatus -> {
-                    Map<HostName, RotationState> result = new TreeMap<>();
-                    rotationStatus.forEach((hostname, status) -> result.put(hostname, RotationState.in));
-                    return result;
+                .map(rotation -> {
+                    var rotationStatus = controllerTester.controller().metricsService().getRotationStatus(rotation.name());
+                    var statusMap = new LinkedHashMap<ZoneId, RotationState>();
+                    rotationStatus.forEach((hostname, status) -> statusMap.put(ZoneId.from("prod", hostname.value()), RotationState.in));
+                    return new RotationStatus(Map.of(rotation.id(), statusMap));
                 })
-                .orElseGet(Collections::emptyMap);
+                .orElse(RotationStatus.EMPTY);
     }
 
     private void updateContactInformation() {

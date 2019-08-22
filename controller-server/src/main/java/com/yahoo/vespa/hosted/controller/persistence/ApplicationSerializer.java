@@ -32,8 +32,9 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class ApplicationSerializer {
     private static final String assignedRotationEndpointField = "endpointId";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
-    private static final String rotationStatusField = "rotationStatus";
+    private static final String legacyRotationStatusField = "rotationStatus";
     private static final String applicationCertificateField = "applicationCertificate";
 
     // Deployment fields
@@ -157,6 +158,13 @@ public class ApplicationSerializer {
     private static final String deploymentMetricsUpdateTime = "lastUpdated";
     private static final String deploymentMetricsWarningsField = "warnings";
 
+    // RotationStatus fields
+    private static final String rotationStatusField = "rotationStatus2";
+    private static final String rotationIdField = "rotationId";
+    private static final String rotationStateField = "state";
+    private static final String statusField = "status";
+    private static final String hostnameField = "hostname";
+
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
@@ -178,6 +186,15 @@ public class ApplicationSerializer {
         application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
         assignedRotationsToSlime(application.rotations(), root, assignedRotationsField);
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
+        { // TODO(mpolden): Remove this block after September 2019
+            var firstRotationStatus = application.rotations().stream().findFirst()
+                                                 .map(AssignedRotation::rotationId)
+                                                 .flatMap(rotation -> application.rotationStatus().asMap().entrySet().stream()
+                                                                                 .filter(kv -> kv.getKey().equals(rotation))
+                                                                                 .map(Map.Entry::getValue).findFirst())
+                                                 .orElse(Map.of());
+            legacyToSlime(firstRotationStatus, root.setArray(legacyRotationStatusField));
+        }
         application.applicationCertificate().ifPresent(cert -> root.setString(applicationCertificateField, cert.secretsKeyNamePrefix()));
         return slime;
     }
@@ -317,11 +334,24 @@ public class ApplicationSerializer {
             object.setBool(pinnedField, true);
     }
 
-    private void toSlime(Map<HostName, RotationState> rotationStatus, Cursor array) {
-        rotationStatus.forEach((hostname, status) -> {
+    private void toSlime(RotationStatus status, Cursor array) {
+        status.asMap().forEach((rotationId, zoneStatus) -> {
+            Cursor rotationObject = array.addObject();
+            rotationObject.setString(rotationIdField, rotationId.asString());
+            Cursor statusArray = rotationObject.setArray(statusField);
+            zoneStatus.forEach((zone, state) -> {
+                Cursor statusObject = statusArray.addObject();
+                zoneIdToSlime(zone, statusObject);
+                statusObject.setString(rotationStateField, state.name());
+            });
+        });
+    }
+
+    private void legacyToSlime(Map<ZoneId, RotationState> state, Cursor array) {
+        state.forEach((zone, status) -> {
             Cursor object = array.addObject();
-            object.setString("hostname", hostname.value());
-            object.setString("status", status.name());
+            object.setString(hostnameField, zone.value());
+            object.setString(statusField, status.name());
         });
     }
 
@@ -355,7 +385,7 @@ public class ApplicationSerializer {
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
-        Map<HostName, RotationState> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
+        RotationStatus rotationStatus = rotationStatusFromSlime(root, assignedRotations.stream().findFirst());
         Optional<ApplicationCertificate> applicationCertificate = Serializers.optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
@@ -403,15 +433,50 @@ public class ApplicationSerializer {
         return Collections.unmodifiableMap(warnings);
     }
 
-    private Map<HostName, RotationState> rotationStatusFromSlime(Inspector object) {
+    private RotationStatus rotationStatusFromSlime(Inspector parentObject, Optional<AssignedRotation> firstRotation) {
+        var object = parentObject.field(rotationStatusField);
+        if (firstRotation.isEmpty()) {
+            return RotationStatus.EMPTY;
+        }
+        if (!object.valid()) {
+            // TODO(mpolden): Remove compatibility after September 2019
+            var legacyRotationStatus = legacyRotationStatusFromSlime(parentObject.field(legacyRotationStatusField));
+            var status = new LinkedHashMap<ZoneId, RotationState>();
+            for (var kv : legacyRotationStatus.entrySet()) {
+                // Old format stores hostname instead of zone, but this is only used in substring matching so we can get
+                // away with this hack
+                status.put(ZoneId.from("prod", kv.getKey().value()), kv.getValue());
+            }
+            return new RotationStatus(Map.of(firstRotation.get().rotationId(), status));
+        }
+        var statusMap = new LinkedHashMap<RotationId, Map<ZoneId, RotationState>>();
+        object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
+                                                                              singleRotationStatusFromSlime(statusObject.field(statusField))));
+        return new RotationStatus(statusMap);
+    }
+
+    private Map<HostName, RotationState> legacyRotationStatusFromSlime(Inspector object) {
         if (!object.valid()) {
             return Collections.emptyMap();
         }
         Map<HostName, RotationState> rotationStatus = new TreeMap<>();
         object.traverse((ArrayTraverser) (idx, inspect) -> {
-            HostName hostname = HostName.from(inspect.field("hostname").asString());
-            RotationState status = RotationState.valueOf(inspect.field("status").asString());
+            HostName hostname = HostName.from(inspect.field(hostnameField).asString());
+            RotationState status = RotationState.valueOf(inspect.field(statusField).asString());
             rotationStatus.put(hostname, status);
+        });
+        return Collections.unmodifiableMap(rotationStatus);
+    }
+
+    private Map<ZoneId, RotationState> singleRotationStatusFromSlime(Inspector object) {
+        if (!object.valid()) {
+            return Collections.emptyMap();
+        }
+        Map<ZoneId, RotationState> rotationStatus = new LinkedHashMap<>();
+        object.traverse((ArrayTraverser) (idx, statusObject) -> {
+            var zone = zoneIdFromSlime(statusObject);
+            var status = RotationState.valueOf(statusObject.field(rotationStateField).asString());
+            rotationStatus.put(zone, status);
         });
         return Collections.unmodifiableMap(rotationStatus);
     }

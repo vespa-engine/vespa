@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -27,9 +26,12 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,12 +47,12 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -101,9 +104,10 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
-        Map<HostName, RotationState> rotationStatus = new TreeMap<>();
-        rotationStatus.put(HostName.from("rot1.fqdn"), RotationState.in);
-        rotationStatus.put(HostName.from("rot2.fqdn"), RotationState.out);
+        var rotationStatusMap = new LinkedHashMap<ZoneId, RotationState>();
+        rotationStatusMap.put(ZoneId.from("prod", "us-west-1"), RotationState.in);
+        rotationStatusMap.put(ZoneId.from("prod", "us-east-3"), RotationState.out);
+        var rotationStatus = new RotationStatus(Map.of(new RotationId("my-rotation"), rotationStatusMap));
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -247,6 +251,22 @@ public class ApplicationSerializerTest {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
         applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
+    }
+
+    @Test // TODO(mpolden): Remove after september 2019
+    public void testLegacyRotationStatus() throws Exception {
+        var json = Files.readAllBytes(testData.resolve("complete-application.json"));
+        var application = applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(json));
+        var expected = new RotationStatus(Map.of(new RotationId("rotation-foo"),
+                                                 Map.of(ZoneId.from("prod", "host1.fqdn"), RotationState.out,
+                                                        ZoneId.from("prod", "host2.fqdn"), RotationState.in)));
+        assertEquals(expected, application.rotationStatus());
+
+        // Writes both new and old format
+        var serializedJson = new String(SlimeUtils.toJsonBytes(applicationSerializer.toSlime(application)), StandardCharsets.UTF_8);
+        var jsonFragment = "\"rotationStatus2\":[{\"rotationId\":\"rotation-foo\",\"status\":[{\"environment\":\"prod\",\"region\":\"host1.fqdn\",\"state\":\"out\"},{\"environment\":\"prod\",\"region\":\"host2.fqdn\",\"state\":\"in\"}]}]," +
+                           "\"rotationStatus\":[{\"hostname\":\"prod.host1.fqdn\",\"status\":\"out\"},{\"hostname\":\"prod.host2.fqdn\",\"status\":\"in\"}]}";
+        assertTrue("Writes both new and old format", serializedJson.contains(jsonFragment));
     }
 
 }

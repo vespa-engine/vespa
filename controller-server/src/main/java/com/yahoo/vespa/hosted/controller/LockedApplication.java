@@ -6,16 +6,15 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -24,7 +23,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -58,7 +57,7 @@ public class LockedApplication {
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
     private final List<AssignedRotation> rotations;
-    private final Map<HostName, RotationState> rotationStatus;
+    private final RotationStatus rotationStatus;
     private final Optional<ApplicationCertificate> applicationCertificate;
 
     /**
@@ -81,7 +80,7 @@ public class LockedApplication {
                               Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                               Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                               OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                              List<AssignedRotation> rotations, Map<HostName, RotationState> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
+                              List<AssignedRotation> rotations, RotationStatus rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
         this.lock = lock;
         this.id = id;
         this.createdAt = createdAt;
@@ -266,7 +265,7 @@ public class LockedApplication {
                                      metrics, pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
     }
 
-    public LockedApplication withRotationStatus(Map<HostName, RotationState> rotationStatus) {
+    public LockedApplication withRotationStatus(RotationStatus rotationStatus) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);

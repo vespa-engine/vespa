@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
@@ -349,7 +350,8 @@ public final class ControllerTester {
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
                                                new ApplicationCertificateMock(),
-                                               new MockMeteringClient());
+                                               new MockMeteringClient(),
+                                               new MemoryGlobalRoutingService());
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

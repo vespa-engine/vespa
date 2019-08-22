@@ -115,21 +115,21 @@ public class DeploymentMetricsMaintainerTest {
         tester.controllerTester().metricsService().addRotation(assignedRotation);
 
         // No status gathered yet
-        assertEquals(RotationState.unknown, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationState.unknown, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.unknown, app.get().rotationStatus().of(deployment1.get()));
+        assertEquals(RotationState.unknown, app.get().rotationStatus().of(deployment2.get()));
 
         // One rotation out, one in
         metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
         metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
-        assertEquals(RotationState.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationState.out, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment1.get()));
+        assertEquals(RotationState.out, app.get().rotationStatus().of(deployment2.get()));
 
         // All rotations in
         metricsService.setZoneIn(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
-        assertEquals(RotationState.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationState.in, app.get().rotationStatus(deployment2.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment1.get()));
+        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment2.get()));
     }
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
