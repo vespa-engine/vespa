@@ -59,8 +59,8 @@ public class Flags {
 
     public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
             "thin-pool-gb", 100,
-            "The size of the disk reserved for the thin pool, in base-2 GB.",
-            "Takes effect immediately, but used only during provisioning.",
+            "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB.",
+            "Takes effect immediately (but used only during provisioning).",
             NODE_TYPE);
 
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
