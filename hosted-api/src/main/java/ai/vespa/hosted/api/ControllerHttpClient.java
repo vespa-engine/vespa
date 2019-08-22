@@ -104,9 +104,9 @@ public abstract class ControllerHttpClient {
 
     /** Deactivates the deployment of the given application in the given zone. */
     public String deactivate(ApplicationId id, ZoneId zone) {
-        return asString(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
-                                                .timeout(Duration.ofSeconds(10)),
-                                     DELETE)));
+        return toMessage(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
+                                                 .timeout(Duration.ofSeconds(30)),
+                                      DELETE)));
     }
 
     /** Returns the default {@link ZoneId} for the given environment, if any. */
