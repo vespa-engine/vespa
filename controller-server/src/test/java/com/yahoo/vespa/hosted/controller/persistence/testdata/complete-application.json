@@ -511,5 +511,22 @@
   "outstandingChangeField": false,
   "queryQuality": 100,
   "writeQuality": 99.99894341115082,
-  "pemDeployKey": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"
+  "pemDeployKey": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
+  "assignedRotations": [
+    {
+      "rotationId": "rotation-foo",
+      "clusterId": "qrs",
+      "endpointId": "default"
+    }
+  ],
+  "rotationStatus": [
+    {
+      "status": "out",
+      "hostname": "host1.fqdn"
+    },
+    {
+      "status": "in",
+      "hostname": "host2.fqdn"
+    }
+  ]
 }

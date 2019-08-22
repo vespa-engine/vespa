@@ -50,6 +50,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAlloca
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
@@ -59,7 +60,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -527,8 +528,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                    .map(URI::toString)
                    .forEach(globalRotationsArray::addString);
 
-
-        application.rotations().stream().findFirst().ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
+        application.rotations().stream()
+                   .map(AssignedRotation::rotationId)
+                   .findFirst()
+                   .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
         // Per-cluster rotations
         Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(application.id());
@@ -547,8 +550,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            if ((! application.rotations().isEmpty()) && deployment.zone().environment() == Environment.prod) {
-                toSlime(application.rotationStatus(deployment), deploymentObject);
+            if (!application.rotations().isEmpty() && deployment.zone().environment() == Environment.prod) {
+                toSlime(application.rotationStatus().of(deployment), deploymentObject);
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -682,9 +685,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("gitCommit", revision.get().commit());
     }
 
-    private void toSlime(RotationStatus status, Cursor object) {
+    private void toSlime(RotationState state, Cursor object) {
         Cursor bcpStatus = object.setObject("bcpStatus");
-        bcpStatus.setString("rotationStatus", status.name().toUpperCase());
+        bcpStatus.setString("rotationStatus", state.name().toUpperCase());
     }
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
@@ -773,7 +776,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-        toSlime(application.rotationStatus(deployment), response);
+        toSlime(application.rotationStatus().of(deployment), response);
         return new SlimeJsonResponse(slime);
     }
 

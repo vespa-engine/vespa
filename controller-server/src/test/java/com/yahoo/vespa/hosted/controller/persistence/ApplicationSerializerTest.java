@@ -6,18 +6,16 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -27,13 +25,13 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import org.junit.Test;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +39,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,12 +47,12 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -105,9 +104,10 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
-        Map<HostName, RotationStatus> rotationStatus = new TreeMap<>();
-        rotationStatus.put(HostName.from("rot1.fqdn"), RotationStatus.in);
-        rotationStatus.put(HostName.from("rot2.fqdn"), RotationStatus.out);
+        var rotationStatusMap = new LinkedHashMap<ZoneId, RotationState>();
+        rotationStatusMap.put(ZoneId.from("prod", "us-west-1"), RotationState.in);
+        rotationStatusMap.put(ZoneId.from("prod", "us-east-3"), RotationState.out);
+        var rotationStatus = new RotationStatus(Map.of(new RotationId("my-rotation"), rotationStatusMap));
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -253,43 +253,20 @@ public class ApplicationSerializerTest {
         // ok if no error
     }
 
-    @Test
-    public void testParsingAssignedRotations() throws IOException {
-        // Use the 'complete-application.json' as a baseline
-        final var applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
-        final var slime = SlimeUtils.jsonToSlime(applicationJson);
+    @Test // TODO(mpolden): Remove after september 2019
+    public void testLegacyRotationStatus() throws Exception {
+        var json = Files.readAllBytes(testData.resolve("complete-application.json"));
+        var application = applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(json));
+        var expected = new RotationStatus(Map.of(new RotationId("rotation-foo"),
+                                                 Map.of(ZoneId.from("prod", "host1.fqdn"), RotationState.out,
+                                                        ZoneId.from("prod", "host2.fqdn"), RotationState.in)));
+        assertEquals(expected, application.rotationStatus());
 
-        final var regions = Set.of(
-                RegionName.from("us-east-3"),
-                RegionName.from("us-west-1")
-        );
-
-        // Add the necessary fields to the Slime representation of the application
-        final var cursor = slime.get();
-        final var assignedRotations = cursor.setArray("assignedRotations");
-        final var assignedRotation = assignedRotations.addObject();
-        assignedRotation.setString("clusterId", "foobar");
-        assignedRotation.setString("endpointId", "nice-endpoint");
-        assignedRotation.setString("rotationId", "assigned-rotation");
-
-        // Parse and test the output from parsing contains both legacy rotation and multiple rotations
-        final var application = applicationSerializer.fromSlime(slime);
-
-        assertEquals(
-                List.of(
-                        new RotationId("assigned-rotation")
-                ),
-                application.rotations()
-        );
-
-        assertEquals(new RotationId("assigned-rotation"), application.rotations().get(0));
-
-        assertEquals(
-                List.of(
-                        new AssignedRotation(new ClusterSpec.Id("foobar"), EndpointId.of("nice-endpoint"), new RotationId("assigned-rotation"), Set.of())
-                ),
-                application.assignedRotations()
-        );
+        // Writes both new and old format
+        var serializedJson = new String(SlimeUtils.toJsonBytes(applicationSerializer.toSlime(application)), StandardCharsets.UTF_8);
+        var jsonFragment = "\"rotationStatus2\":[{\"rotationId\":\"rotation-foo\",\"status\":[{\"environment\":\"prod\",\"region\":\"host1.fqdn\",\"state\":\"out\"},{\"environment\":\"prod\",\"region\":\"host2.fqdn\",\"state\":\"in\"}]}]," +
+                           "\"rotationStatus\":[{\"hostname\":\"prod.host1.fqdn\",\"status\":\"out\"},{\"hostname\":\"prod.host2.fqdn\",\"status\":\"in\"}]}";
+        assertTrue("Writes both new and old format", serializedJson.contains(jsonFragment));
     }
 
 }

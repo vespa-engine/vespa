@@ -7,12 +7,11 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
@@ -22,8 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -60,7 +58,7 @@ public class Application {
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
     private final List<AssignedRotation> rotations;
-    private final Map<HostName, RotationStatus> rotationStatus;
+    private final RotationStatus rotationStatus;
     private final Optional<ApplicationCertificate> applicationCertificate;
 
     /** Creates an empty application */
@@ -69,7 +67,7 @@ public class Application {
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0),
-             Optional.empty(), Collections.emptyList(), Collections.emptyMap(), Optional.empty());
+             Optional.empty(), Collections.emptyList(), RotationStatus.EMPTY, Optional.empty());
     }
 
     /** Used from persistence layer: Do not use */
@@ -77,7 +75,7 @@ public class Application {
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                       List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, 
+                       List<AssignedRotation> rotations, RotationStatus rotationStatus,
                        Optional<ApplicationCertificate> applicationCertificate) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
@@ -89,7 +87,7 @@ public class Application {
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                 OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                List<AssignedRotation> rotations, Map<HostName, RotationStatus> rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
+                List<AssignedRotation> rotations, RotationStatus rotationStatus, Optional<ApplicationCertificate> applicationCertificate) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -104,7 +102,7 @@ public class Application {
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.pemDeployKey = pemDeployKey;
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
-        this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
+        this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
         this.applicationCertificate = Objects.requireNonNull(applicationCertificate, "applicationCertificate cannot be null");
     }
 
@@ -200,15 +198,8 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns all rotations for this application */
-    public List<RotationId> rotations() {
-        return rotations.stream()
-                .map(AssignedRotation::rotationId)
-                .collect(Collectors.toList());
-    }
-
-    /** Returns all assigned rotations for this application */
-    public List<AssignedRotation> assignedRotations() {
+    /** Returns all rotations assigned to this */
+    public List<AssignedRotation> rotations() {
         return rotations;
     }
 
@@ -228,21 +219,9 @@ public class Application {
 
     public Optional<String> pemDeployKey() { return pemDeployKey; }
 
-    /** Returns the status of the global rotation assigned to this. Empty if this does not have a global rotation. */
-    public Map<HostName, RotationStatus> rotationStatus() {
+    /** Returns the status of the global rotation(s) assigned to this */
+    public RotationStatus rotationStatus() {
         return rotationStatus;
-    }
-
-    /** Returns the global rotation status of given deployment */
-    public RotationStatus rotationStatus(Deployment deployment) {
-        // Rotation status only contains VIP host names, one per zone in the system. The only way to map VIP hostname to
-        // this deployment, and thereby determine rotation status, is to check if VIP hostname contains the
-        // deployment's environment and region.
-        return rotationStatus.entrySet().stream()
-                             .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
-                             .map(Map.Entry::getValue)
-                             .findFirst()
-                             .orElse(RotationStatus.unknown);
     }
 
     public Optional<ApplicationCertificate> applicationCertificate() {
