@@ -47,18 +47,12 @@ public class ConfigGetter<T extends ConfigInstance> {
      * @return an instance of a config class
      */
     public synchronized T getConfig(String configId) {
-        ConfigSubscriber subscriber;
-        ConfigHandle<T> h;
-        if (source == null) {
-            subscriber = new ConfigSubscriber();
-        } else {
-            subscriber = new ConfigSubscriber(source);
+        try (ConfigSubscriber subscriber =
+                     source == null ? new ConfigSubscriber() : new ConfigSubscriber(source)) {
+            ConfigHandle<T> handle = subscriber.subscribe(clazz, configId);
+            subscriber.nextConfig();
+            return handle.getConfig();
         }
-        h = subscriber.subscribe(clazz, configId);
-        subscriber.nextConfig();
-        T ret = h.getConfig();
-        subscriber.close();
-        return ret;
     }
 
     /**
