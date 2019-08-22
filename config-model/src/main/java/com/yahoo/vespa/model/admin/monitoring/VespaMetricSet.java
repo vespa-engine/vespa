@@ -413,6 +413,10 @@ public class VespaMetricSet {
         // matching
         metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.soft_doomed_queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.min"));
+        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.max"));
+        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.sum"));
+        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.count"));
@@ -424,6 +428,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.docs_matched.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doomed_queries.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doom_factor.min"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doom_factor.max"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doom_factor.sum"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.soft_doom_factor.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.count"));
