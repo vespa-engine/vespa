@@ -84,7 +84,7 @@ EnumAttribute<B>::getUniqueValueCount() const
 
 template <typename B>
 void
-EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
+EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
 {
     UniqueSet newUniques;
 
@@ -131,9 +131,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes)
 
     // insert new unique values in EnumStore
     for (const auto & data : newUniques) {
-        EnumIndex idx;
-        _enumStore.addEnum(data.raw(), idx);
-        newIndexes.push_back(idx);
+        updater.add(data.raw());
     }
 }
 

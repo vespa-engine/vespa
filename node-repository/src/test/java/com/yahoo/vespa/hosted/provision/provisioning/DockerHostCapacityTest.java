@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +32,8 @@ public class DockerHostCapacityTest {
     private DockerHostCapacity capacity;
     private List<Node> nodes;
     private Node host1, host2, host3;
-    private Flavor flavorDocker, flavorDocker2;
+    private final NodeResources resources1 = new NodeResources(1, 3, 2, 1.5);
+    private final NodeResources resources2 = new NodeResources(2, 4, 4, 0.5);
 
     @Before
     public void setup() {
@@ -40,24 +41,22 @@ public class DockerHostCapacityTest {
 
         // Create flavors
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
-        flavorDocker = nodeFlavors.getFlavorOrThrow("docker");
-        flavorDocker2 = nodeFlavors.getFlavorOrThrow("docker2");
 
         // Create three docker hosts
-        host1 = Node.create("host1", Set.of("::1"), generateIPs(2, 4), "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host2 = Node.create("host2", Set.of("::11"), generateIPs(12, 3), "host2", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
-        host3 = Node.create("host3", Set.of("::21"), generateIPs(22, 1), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host1 = Node.create("host1", new IP.Config(Set.of("::1"), generateIPs(2, 4)), "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host2 = Node.create("host2", new IP.Config(Set.of("::11"), generateIPs(12, 3)), "host2", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        host3 = Node.create("host3", new IP.Config(Set.of("::21"), generateIPs(22, 1)), "host3", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
 
         // Add two containers to host1
-        var nodeA = Node.create("nodeA", Set.of("::2"), Set.of(), "nodeA", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
-        var nodeB = Node.create("nodeB", Set.of("::3"), Set.of(), "nodeB", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeA = Node.createDockerNode(Set.of("::2"), "nodeA", "host1", resources1, NodeType.tenant);
+        var nodeB = Node.createDockerNode(Set.of("::3"), "nodeB", "host1", resources1, NodeType.tenant);
 
         // Add two containers to host 2 (same as host 1)
-        var nodeC = Node.create("nodeC", Set.of("::12"), Set.of(), "nodeC", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
-        var nodeD = Node.create("nodeD", Set.of("::13"), Set.of(), "nodeD", Optional.of("host2"), Optional.empty(), flavorDocker, NodeType.tenant);
+        var nodeC = Node.createDockerNode(Set.of("::12"), "nodeC", "host2", resources1, NodeType.tenant);
+        var nodeD = Node.createDockerNode(Set.of("::13"), "nodeD", "host2", resources1, NodeType.tenant);
 
         // Add a larger container to host3
-        var nodeE = Node.create("nodeE", Set.of("::22"), Set.of(), "nodeE", Optional.of("host3"), Optional.empty(), flavorDocker2, NodeType.tenant);
+        var nodeE = Node.createDockerNode(Set.of("::22"), "nodeE", "host3", resources2, NodeType.tenant);
 
         // init docker host capacity
         nodes = new ArrayList<>(List.of(host1, host2, host3, nodeA, nodeB, nodeC, nodeD, nodeE));
@@ -66,20 +65,19 @@ public class DockerHostCapacityTest {
 
     @Test
     public void hasCapacity() {
-        assertTrue(capacity.hasCapacity(host1, flavorDocker.resources()));
-        assertTrue(capacity.hasCapacity(host1, flavorDocker2.resources()));
-        assertTrue(capacity.hasCapacity(host2, flavorDocker.resources()));
-        assertTrue(capacity.hasCapacity(host2, flavorDocker2.resources()));
-        assertFalse(capacity.hasCapacity(host3, flavorDocker.resources()));  // No ip available
-        assertFalse(capacity.hasCapacity(host3, flavorDocker2.resources())); // No ip available
+        assertTrue(capacity.hasCapacity(host1, resources1));
+        assertTrue(capacity.hasCapacity(host1, resources2));
+        assertTrue(capacity.hasCapacity(host2, resources1));
+        assertTrue(capacity.hasCapacity(host2, resources2));
+        assertFalse(capacity.hasCapacity(host3, resources1));  // No ip available
+        assertFalse(capacity.hasCapacity(host3, resources2)); // No ip available
 
         // Add a new node to host1 to deplete the memory resource
-        Node nodeF = Node.create("nodeF", Set.of("::6"), Set.of(),
-                "nodeF", Optional.of("host1"), Optional.empty(), flavorDocker, NodeType.tenant);
+        Node nodeF = Node.createDockerNode(Set.of("::6"), "nodeF", "host1", resources1, NodeType.tenant);
         nodes.add(nodeF);
         capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertFalse(capacity.hasCapacity(host1, flavorDocker.resources()));
-        assertFalse(capacity.hasCapacity(host1, flavorDocker2.resources()));
+        assertFalse(capacity.hasCapacity(host1, resources1));
+        assertFalse(capacity.hasCapacity(host1, resources2));
     }
 
     @Test

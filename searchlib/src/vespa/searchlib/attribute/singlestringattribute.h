@@ -9,34 +9,32 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of single value string attribute that uses an underlying enum store
  * to store unique string values.
  *
  * B: EnumAttribute<StringAttribute>
  */
 template <typename B>
-class SingleValueStringAttributeT : public SingleValueEnumAttribute<B>
-{
+class SingleValueStringAttributeT : public SingleValueEnumAttribute<B> {
 protected:
-    typedef StringAttribute::DocId             DocId;
-    typedef StringAttribute::EnumHandle        EnumHandle;
-    typedef StringAttribute::generation_t      generation_t;
-    typedef StringAttribute::WeightedString    WeightedString;
-    typedef StringAttribute::WeightedConstChar WeightedConstChar;
-    typedef StringAttribute::WeightedEnum      WeightedEnum;
-    typedef StringAttribute::SearchContext     SearchContext;
-    typedef StringAttribute::ChangeVector      ChangeVector;
-    typedef StringAttribute::Change            Change;
-    typedef StringAttribute::ValueModifier     ValueModifier;
-    typedef StringAttribute::EnumModifier      EnumModifier;
-    typedef StringAttribute::LoadedVector      LoadedVector;
-
-    typedef typename SingleValueEnumAttribute<B>::EnumStore        EnumStore;
-    typedef typename SingleValueEnumAttributeBase::EnumIndex       EnumIndex;
-    typedef typename SingleValueEnumAttributeBase::EnumIndexVector EnumIndexVector;
-    typedef attribute::EnumHintSearchContext    EnumHintSearchContext;
+    using Change = StringAttribute::Change;
+    using ChangeVector = StringAttribute::ChangeVector;
+    using DocId = StringAttribute::DocId;
+    using EnumHandle = StringAttribute::EnumHandle;
+    using EnumHintSearchContext = attribute::EnumHintSearchContext;
+    using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
+    using EnumIndexVector = typename SingleValueEnumAttributeBase::EnumIndexVector;
+    using EnumModifier = StringAttribute::EnumModifier;
+    using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
+    using LoadedVector = StringAttribute::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using SearchContext = StringAttribute::SearchContext;
+    using ValueModifier = StringAttribute::ValueModifier;
+    using WeightedConstChar = StringAttribute::WeightedConstChar;
+    using WeightedEnum = StringAttribute::WeightedEnum;
+    using WeightedString = StringAttribute::WeightedString;
+    using generation_t = StringAttribute::generation_t;
 
 public:
     SingleValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
@@ -108,15 +106,15 @@ public:
     class StringTemplSearchContext : public StringSingleImplSearchContext,
                                      public EnumHintSearchContext
     {
+        using AttrType = SingleValueStringAttributeT<B>;
+        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
         using StringSingleImplSearchContext::queryTerm;
-        typedef SingleValueStringAttributeT<B> AttrType;
-        typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
     public:
         StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };
 };
 
-typedef SingleValueStringAttributeT<EnumAttribute<StringAttribute> > SingleValueStringAttribute;
+using SingleValueStringAttribute = SingleValueStringAttributeT<EnumAttribute<StringAttribute> >;
 
 } // namespace search
 

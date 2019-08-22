@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
@@ -19,6 +18,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -117,21 +117,21 @@ public class MetricsReporterTest {
                                                            true);
 
         // Allow 4 containers
-        Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
+        Set<String> ipAddressPool = Set.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("openStackId1", Set.of("::1"), ipAddressPool, "dockerHost",
+        Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(List.of(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Set.of("::2"), Set.of(), "container1",
-                                                Optional.of("dockerHost"), new NodeResources(1, 3, 2, 1), NodeType.tenant);
+        Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
+                                                "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant);
         container1 = container1.with(allocation(Optional.of("app1")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
-        Node container2 = Node.createDockerNode(Set.of("::3"), Set.of(), "container2",
-                                                Optional.of("dockerHost"), new NodeResources(2, 4, 4, 1), NodeType.tenant);
+        Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
+                                                "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant);
         container2 = container2.with(allocation(Optional.of("app2")).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
 

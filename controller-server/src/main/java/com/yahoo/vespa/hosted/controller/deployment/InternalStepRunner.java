@@ -239,9 +239,10 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.empty();
             }
             if (   e.getErrorCode() == INVALID_APPLICATION_PACKAGE
-                || e.getErrorCode() == BAD_REQUEST) {
+                || e.getErrorCode() == BAD_REQUEST
+                || e.getErrorCode() == OUT_OF_CAPACITY) {
                 logger.log("Deployment failed: " + e.getMessage());
-                return Optional.of(deploymentFailed);
+                return Optional.of(e.getErrorCode() == OUT_OF_CAPACITY ? outOfCapacity : deploymentFailed);
             }
             throw e;
         }

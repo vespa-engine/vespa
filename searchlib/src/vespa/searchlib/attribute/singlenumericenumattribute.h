@@ -8,36 +8,35 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of single value numeric enum attribute that uses an underlying enum store
  * to store unique numeric values.
  *
  * B: EnumAttribute<NumericBaseClass>
  */
 template <typename B>
-class SingleValueNumericEnumAttribute : public SingleValueEnumAttribute<B>
-{
+class SingleValueNumericEnumAttribute : public SingleValueEnumAttribute<B> {
 protected:
-    typedef typename B::BaseClass::BaseType        T;
-    typedef typename B::BaseClass::Change          Change;
-    typedef typename B::BaseClass::DocId           DocId;
-    typedef typename B::BaseClass::EnumHandle      EnumHandle;
-    typedef typename B::BaseClass::largeint_t      largeint_t;
-    typedef typename B::BaseClass::Weighted        Weighted;
-    typedef typename B::BaseClass::WeightedInt     WeightedInt;
-    typedef typename B::BaseClass::WeightedFloat   WeightedFloat;
-    typedef typename B::BaseClass::generation_t    generation_t;
-    typedef typename B::BaseClass::LoadedNumericValueT LoadedNumericValueT;
-    typedef typename B::BaseClass::LoadedVector    LoadedVector;
-
-    typedef typename SingleValueEnumAttribute<B>::EnumStore        EnumStore;
-    typedef typename SingleValueEnumAttributeBase::EnumIndex       EnumIndex;
-    typedef typename SingleValueEnumAttribute<B>::UniqueSet        UniqueSet;
-    typedef EnumStoreBase::IndexVector            EnumIndexVector;
-    typedef EnumStoreBase::EnumVector             EnumVector;
-    typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
-    typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
+    using T = typename B::BaseClass::BaseType;
+    using Change = typename B::BaseClass::Change;
+    using DocId = typename B::BaseClass::DocId;
+    using EnumHandle = typename B::BaseClass::EnumHandle;
+    using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
+    using EnumIndexVector = EnumStoreBase::IndexVector;
+    using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+    using EnumVector = EnumStoreBase::EnumVector;
+    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;
+    using LoadedVector = typename B::BaseClass::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using UniqueSet = typename SingleValueEnumAttribute<B>::UniqueSet;
+    using Weighted = typename B::BaseClass::Weighted;
+    using WeightedFloat = typename B::BaseClass::WeightedFloat;
+    using WeightedInt = typename B::BaseClass::WeightedInt;
+    using generation_t = typename B::BaseClass::generation_t;
+    using largeint_t = typename B::BaseClass::largeint_t;
 
 private:
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -48,7 +47,7 @@ protected:
     // from SingleValueEnumAttribute
     void considerUpdateAttributeChange(const Change & c) override;
     void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) override;
-    void applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused) override;
+    void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 
     /*
      * Specialization of SearchContext

@@ -9,8 +9,8 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <set>
 #include <atomic>
+#include <set>
 
 namespace vespalib { class asciistream; }
 namespace search {
@@ -23,10 +23,10 @@ class EnumStoreBase;
 class EnumStoreComparator;
 class EnumStoreComparatorWrapper;
 
-typedef datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> > EnumStoreDataStoreType;
-typedef EnumStoreDataStoreType::RefType EnumStoreIndex;
-typedef vespalib::Array<EnumStoreIndex> EnumStoreIndexVector;
-typedef vespalib::Array<uint32_t> EnumStoreEnumVector;
+using EnumStoreDataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
+using EnumStoreIndex = EnumStoreDataStoreType::RefType;
+using EnumStoreIndexVector = vespalib::Array<EnumStoreIndex>;
+using EnumStoreEnumVector = vespalib::Array<uint32_t>;
 
 typedef btree::BTreeTraits<16, 16, 10, true> EnumTreeTraits;
 
@@ -74,9 +74,9 @@ public:
     virtual void fixupRefCounts(const EnumVector &hist) = 0;
     virtual void freeUnusedEnums(const EnumStoreComparator &cmp,
                                  const EnumStoreComparator *fcmp) = 0;
-    virtual void freeUnusedEnums(const IndexVector &toRemove,
-                                 const EnumStoreComparator &cmp,
-                                 const EnumStoreComparator *fcmp) = 0;
+    virtual void freeUnusedEnums(const IndexSet& toRemove,
+                                 const EnumStoreComparator& cmp,
+                                 const EnumStoreComparator* fcmp) = 0;
     virtual bool findIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
     virtual bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const = 0;
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
@@ -129,9 +129,9 @@ public:
     void freeUnusedEnums(const EnumStoreComparator &cmp,
                          const EnumStoreComparator *fcmp) override;
 
-    void freeUnusedEnums(const IndexVector &toRemove,
-                         const EnumStoreComparator &cmp,
-                         const EnumStoreComparator *fcmp) override;
+    void freeUnusedEnums(const IndexSet& toRemove,
+                         const EnumStoreComparator& cmp,
+                         const EnumStoreComparator* fcmp) override;
 
     bool findIndex(const EnumStoreComparator &cmp, Index &idx) const override;
     bool findFrozenIndex(const EnumStoreComparator &cmp, Index &idx) const override;
@@ -341,7 +341,7 @@ public:
 
     virtual void freeUnusedEnum(Index idx, IndexSet &unused) = 0;
     virtual void freeUnusedEnums(bool movePostingIdx) = 0;
-    virtual void freeUnusedEnums(const IndexVector &toRemove) = 0;
+    virtual void freeUnusedEnums(const IndexSet& toRemove) = 0;
 
     void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
     void freezeTree() { _enumDict->freezeTree(); }

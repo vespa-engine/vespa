@@ -91,7 +91,7 @@ public class ProvisioningTester {
         this.orchestrator = orchestrator;
         ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
-        this.capacityPolicies = new CapacityPolicies(zone, new InMemoryFlagSource());
+        this.capacityPolicies = new CapacityPolicies(zone);
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;
     }
@@ -290,7 +290,6 @@ public class ProvisioningTester {
                                                 hostname,
                                                 new IP.Config(hostIps, ipAddressPool),
                                                 Optional.empty(),
-                                                Optional.empty(),
                                                 flavor,
                                                 type));
         }
@@ -310,7 +309,6 @@ public class ProvisioningTester {
             Node node = nodeRepository.createNode(hostname,
                     hostname,
                     new IP.Config(Set.of(ipv4), Set.of()),
-                    Optional.empty(),
                     Optional.empty(),
                     nodeFlavors.getFlavorOrThrow(flavor),
                     NodeType.config);

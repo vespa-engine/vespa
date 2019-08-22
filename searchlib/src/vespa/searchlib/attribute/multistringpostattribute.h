@@ -50,6 +50,7 @@ private:
     typedef typename MultiValueStringAttributeT<B, T>::DocId DocId;
 public:
     typedef typename MultiValueStringAttributeT<B, T>::EnumStore EnumStore;
+    typedef typename EnumStore::BatchUpdater EnumStoreBatchUpdater;
 private:
     typedef typename MultiValueStringAttributeT<B, T>::WeightedIndex WeightedIndex;
     typedef typename MultiValueStringAttributeT<B, T>::DocIndices DocIndices;
@@ -79,7 +80,7 @@ private:
 
     void freezeEnumDictionary() override;
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
-    void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused) override ;
+    void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override ;
 
 public:
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =

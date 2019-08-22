@@ -340,7 +340,7 @@ public class ConfigGenerator {
                         "%s\n" +//
                         "\n" +//
                         "  @Override\n" +//
-                        "  protected boolean doSetValue(@NonNull String name) {\n" +//
+                        "  protected boolean doSetValue(String name) {\n" +//
                         "    try {\n" +//
                         "      value = Enum.valueOf(name);\n" +//
                         "      return true;\n" +//

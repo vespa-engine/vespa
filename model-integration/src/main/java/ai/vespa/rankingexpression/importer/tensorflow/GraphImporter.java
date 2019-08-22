@@ -34,7 +34,6 @@ import org.tensorflow.framework.MetaGraphDef;
 import org.tensorflow.framework.NodeDef;
 import org.tensorflow.framework.SignatureDef;
 import org.tensorflow.framework.TensorInfo;
-import org.tensorflow.op.core.DecodeRaw;
 
 import java.io.IOException;
 import java.util.List;
@@ -119,6 +118,8 @@ class GraphImporter {
             // state ops
             case "variable":    return new Constant(modelName, nodeName, nodeType);
             case "variablev2":  return new Constant(modelName, nodeName, nodeType);
+            case "varhandleop": return new Constant(modelName, nodeName, nodeType);
+            case "readvariableop":return new Identity(modelName, nodeName, inputs);
 
             // evaluation no-ops
             case "stopgradient":return new Identity(modelName, nodeName, inputs);

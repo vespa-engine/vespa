@@ -77,9 +77,10 @@ class EnumStoreT : public EnumStoreBase
 {
     friend class EnumStoreTest;
 public:
-    typedef typename EntryType::Type Type;
-    typedef EnumStoreComparatorT<EntryType> ComparatorType;
-    typedef EnumStoreFoldedComparatorT<EntryType> FoldedComparatorType;
+    using Type = typename EntryType::Type;
+    using ComparatorType = EnumStoreComparatorT<EntryType>;
+    using FoldedComparatorType = EnumStoreFoldedComparatorT<EntryType>;
+    using EnumStoreType = EnumStoreT<EntryType>;
     using EnumStoreBase::deserialize;
     using EnumStoreBase::fixupRefCounts;
     using EnumStoreBase::reset;
@@ -156,6 +157,39 @@ public:
         uint64_t getBufferSize()     const { return _bufferSize; }
     };
 
+    class BatchUpdater {
+    private:
+        EnumStoreType& _store;
+        IndexSet _possibly_unused;
+
+    public:
+        BatchUpdater(EnumStoreType& store)
+            : _store(store),
+              _possibly_unused()
+        {}
+        void add(Type value) {
+            Index new_idx;
+            _store.addEnum(value, new_idx);
+            _possibly_unused.insert(new_idx);
+        }
+        void inc_ref_count(Index idx) {
+            _store.incRefCount(idx);
+        }
+        void dec_ref_count(Index idx) {
+            _store.decRefCount(idx);
+            if (_store.getRefCount(idx) == 0) {
+                _possibly_unused.insert(idx);
+            }
+        }
+        void commit() {
+            _store.freeUnusedEnums(_possibly_unused);
+        }
+    };
+
+    BatchUpdater make_batch_updater() {
+        return BatchUpdater(*this);
+    }
+
     void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const override;
     ssize_t deserialize(const void *src, size_t available, size_t &initSpace) override;
     ssize_t deserialize(const void *src, size_t available, Index &idx) override;
@@ -165,7 +199,7 @@ public:
     void addEnum(Type value, Index &newIdx);
     virtual bool findIndex(Type value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
-    void freeUnusedEnums(const IndexVector &toRemove) override;
+    void freeUnusedEnums(const IndexSet& toRemove) override;
     void reset(Builder &builder);
     bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) override;
 

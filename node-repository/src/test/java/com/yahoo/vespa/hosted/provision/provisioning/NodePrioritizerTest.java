@@ -11,15 +11,15 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author smorgrav
@@ -69,12 +69,11 @@ public class NodePrioritizerTest {
     }
 
     private static Node createNode(Node parent, String hostname, NodeResources resources) {
-        return Node.createDockerNode(Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.of(parent.hostname()),
-                                     resources, NodeType.tenant);
+        return Node.createDockerNode(Set.of("127.0.0.1"), hostname, parent.hostname(), resources, NodeType.tenant);
     }
 
     private static Node createParent(String hostname) {
-        return Node.create("openid", Collections.singleton("127.0.0.1"), new HashSet<>(), hostname, Optional.empty(),
+        return Node.create("openid", new IP.Config(Set.of("127.0.0.1"), Set.of()), hostname, Optional.empty(),
                 Optional.empty(), flavors.getFlavorOrThrow("host-large"), NodeType.host);
     }
 

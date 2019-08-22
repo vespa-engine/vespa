@@ -235,8 +235,8 @@ public class SearchHandler extends LoggingRequestHandler {
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
         Query query = new Query(request, requestMap, queryProfile);
-        if (enableGroupingSessionCache) {
-            query.setGroupingSessionCache(true);
+        if (!enableGroupingSessionCache) {
+            query.setGroupingSessionCache(false);
         }
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);

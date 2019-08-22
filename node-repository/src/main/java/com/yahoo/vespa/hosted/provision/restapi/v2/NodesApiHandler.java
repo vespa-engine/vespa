@@ -219,10 +219,10 @@ public class NodesApiHandler extends LoggingRequestHandler {
         Set<String> ipAddressPool = new HashSet<>();
         inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
-        return nodeRepository.createNode(
+        return Node.create(
                 inspector.field("openStackId").asString(),
-                inspector.field("hostname").asString(),
                 new IP.Config(ipAddresses, ipAddressPool),
+                inspector.field("hostname").asString(),
                 parentHostname,
                 modelName,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),

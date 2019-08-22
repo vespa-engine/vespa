@@ -45,14 +45,14 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
 
 template <typename B>
 void
-SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change & c, EnumStoreBase::IndexVector & unused)
+SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater)
 {
     EnumIndex oldIdx = this->_enumIndices[c._doc];
     EnumIndex newIdx;
     T newValue = this->applyArithmetic(get(c._doc), c);
     this->_enumStore.findIndex(newValue, newIdx);
 
-    this->updateEnumRefCounts(c, newIdx, oldIdx, unused);
+    this->updateEnumRefCounts(c, newIdx, oldIdx, updater);
 }
 
 template <typename B>
