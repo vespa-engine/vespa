@@ -17,10 +17,8 @@ import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.yolean.Exceptions;
 
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.TimeZone;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -51,13 +49,6 @@ public class JRTConfigRequester implements RequestWaiter {
     static final float randomFraction = 0.2f;
     /* Time to be added to server timeout to create client timeout. This is the time allowed for the server to respond after serverTimeout has elapsed. */
     private static final Double additionalTimeForClientTimeout = 5.0;
-
-    private static final SimpleDateFormat yyyyMMddz;
-
-    static {
-        yyyyMMddz = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-        yyyyMMddz.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
 
     /**
      * Returns a new requester
