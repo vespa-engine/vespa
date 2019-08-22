@@ -49,7 +49,7 @@ public class GetDocSumsPacketTestCase {
 
     @Test
     public void requireThatSessionIdIsEncodedAsPropertyWhenUsingSearchSession() throws BufferTooSmallException {
-        Result result = new Result(new Query("?query=foo"));
+        Result result = new Result(new Query("?query=foo&groupingSessionCache=false"));
         SessionId sessionId = result.getQuery().getSessionId("node-0");
         result.getQuery().getRanking().setQueryCache(true);
         FastHit hit = new FastHit();

@@ -153,7 +153,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     private boolean noCache = false;
 
     /** Whether or not grouping should use a session cache */
-    private boolean groupingSessionCache = false;
+    private boolean groupingSessionCache = true;
 
     //--------------  Generic property containers --------------------------------
 

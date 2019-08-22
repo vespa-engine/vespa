@@ -29,7 +29,7 @@ public class QueryTestCase {
 
     @Test
     public void testEncodePacket() {
-        Query query = new Query("/?query=chain&timeout=0");
+        Query query = new Query("/?query=chain&timeout=0&groupingSessionCache=false");
         query.setWindow(2, 8);
         QueryPacket packet = QueryPacket.create("container.0", query);
         assertEquals(2, packet.getOffset());
@@ -52,7 +52,7 @@ public class QueryTestCase {
 
     @Test
     public void testEncodeQueryPacketWithSomeAdditionalFeatures() {
-        Query query = new Query("/?query=chain&dataset=10&type=phrase&timeout=0");
+        Query query = new Query("/?query=chain&dataset=10&type=phrase&timeout=0&groupingSessionCache=false");
         query.properties().set(SoftTimeout.enableProperty, false);
 
         // Because the rank mapping now needs config and a searcher,
@@ -82,7 +82,8 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3");
+                                "&model.searchPath=7/3" +
+                                "&groupingSessionCache=false");
         query.getRanking().setFreshness(new Freshness("123456"));
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -108,7 +109,8 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3");
+                                "&model.searchPath=7/3" +
+                                "&groupingSessionCache=false");
         query.getRanking().setFreshness("123456");
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -130,6 +132,7 @@ public class QueryTestCase {
     @Test
     public void testEncodeQueryPacketWithLabelsConnectivityAndSignificance() {
         Query query = new Query();
+        query.setGroupingSessionCache(false);
         AndItem and = new AndItem();
         WeightedSetItem taggable1 = new WeightedSetItem("field1");
         taggable1.setLabel("foo");
@@ -159,7 +162,7 @@ public class QueryTestCase {
 
     @Test
     public void testEncodeSortSpec() throws BufferTooSmallException {
-        Query query = new Query("/?query=chain&sortspec=%2Ba+-b&timeout=0");
+        Query query = new Query("/?query=chain&sortspec=%2Ba+-b&timeout=0&groupingSessionCache=false");
         query.setWindow(2, 8);
         QueryPacket packet = QueryPacket.create("container.0", query);
         ByteBuffer buffer = ByteBuffer.allocate(500);
@@ -197,12 +200,13 @@ public class QueryTestCase {
         QueryPacket packet = QueryPacket.create("container.0", query);
 
         ByteBuffer buffer = packet.grantEncodingBuffer(0, ByteBuffer.allocate(2));
-        assertEquals(64, buffer.capacity());
+        assertEquals(128, buffer.capacity());
     }
 
     @Test
     public void testPhraseEqualsPhraseWithPhraseSegment() throws BufferTooSmallException {
         Query query = new Query();
+        query.setGroupingSessionCache(false);
         PhraseItem p = new PhraseItem();
         PhraseSegmentItem ps = new PhraseSegmentItem("a b", false, false);
         ps.addItem(new WordItem("a"));
@@ -218,6 +222,7 @@ public class QueryTestCase {
         queryPacket.encode(buffer1, 0);
 
         query = new Query();
+        query.setGroupingSessionCache(false);
         p = new PhraseItem();
         p.addItem(new WordItem("a"));
         p.addItem(new WordItem("b"));
@@ -242,7 +247,7 @@ public class QueryTestCase {
 
     @Test
     public void testPatchInChannelId() {
-        Query query = new Query("/?query=chain&timeout=0");
+        Query query = new Query("/?query=chain&timeout=0&groupingSessionCache=false");
         query.setWindow(2, 8);
         QueryPacket packet = QueryPacket.create("container.0", query);
         assertEquals(2,packet.getOffset());
