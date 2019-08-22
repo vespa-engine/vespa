@@ -6,7 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Deploys a Vespa application package to the hosted Vespa API.
+ * Deletes a Vespa application deployment, provided the deployment is in a manually deployed environment.
  *
  * @author jonmv
  */
