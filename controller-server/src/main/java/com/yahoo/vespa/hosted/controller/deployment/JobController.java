@@ -351,7 +351,7 @@ public class JobController {
         });
     }
 
-    /** Deletes run data, packages and tester deployments for applications which are unknown, or no longer built internally. */
+    /** Deletes run data and tester deployments for applications which are unknown, or no longer built internally. */
     public void collectGarbage() {
         Set<ApplicationId> applicationsToBuild = new HashSet<>(applications());
         curator.applicationsWithJobs().stream()
