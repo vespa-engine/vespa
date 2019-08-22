@@ -67,7 +67,7 @@ makePostingChange(const EnumStoreComparator *cmpa,
 
         // remove old posting
         if ( oldIdx.valid()) {
-            DictionaryIterator rmItr = dict.find(oldIdx, *cmpa);
+            auto rmItr = dict.find(oldIdx, *cmpa);
             changePost[EnumPostingPair(rmItr.getKey(), cmpa)].remove(docId);
         }
     }

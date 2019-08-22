@@ -41,7 +41,7 @@ void
 MultiValueStringPostingAttributeT<B, T>::
 applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
 {
-    typedef PostingChangeComputerT<WeightedIndex, PostingMap> PostingChangeComputer;
+    using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore &enumStore(this->getEnumStore());
     Dictionary &dict(enumStore.getPostingDictionary());
     FoldedComparatorType compare(enumStore);

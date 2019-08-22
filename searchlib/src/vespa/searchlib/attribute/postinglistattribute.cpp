@@ -305,27 +305,20 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
 }
 
 
-
 template class PostingListAttributeBase<AttributePosting>;
 template class PostingListAttributeBase<AttributeWeightPosting>;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t> >
-LoadedInt8Vector;
+using LoadedInt8Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t> >
-LoadedInt16Vector;
+using LoadedInt16Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t> >
-LoadedInt32Vector;
+using LoadedInt32Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t> >
-LoadedInt64Vector;
+using LoadedInt64Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<float> >
-LoadedFloatVector;
+using LoadedFloatVector = SequentialReadModifyWriteInterface<LoadedNumericValue<float> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<double> >
-LoadedDoubleVector;
+using LoadedDoubleVector = SequentialReadModifyWriteInterface<LoadedNumericValue<double> >;
                                                        
 
 template class

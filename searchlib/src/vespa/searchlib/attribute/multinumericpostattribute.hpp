@@ -25,7 +25,7 @@ void
 MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& docIndices,
                                                            EnumStoreBatchUpdater& updater)
 {
-    typedef PostingChangeComputerT<WeightedIndex, PostingMap> PostingChangeComputer;
+    using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore & enumStore = this->getEnumStore();
     ComparatorType compare(enumStore);
 
