@@ -67,12 +67,12 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, E
 {
     // set new set of indices for documents with changes
     ValueModifier valueGuard(this->getValueModifier());
-    for (typename DocIndices::const_iterator iter = docIndices.begin(); iter != docIndices.end(); ++iter) {
-        vespalib::ConstArrayRef<WeightedIndex> oldIndices(this->_mvMapping.get(iter->first));
+    for (const auto& doc_values : docIndices) {
+        vespalib::ConstArrayRef<WeightedIndex> oldIndices(this->_mvMapping.get(doc_values.first));
         uint32_t valueCount = oldIndices.size();
-        this->_mvMapping.set(iter->first, iter->second);
-        for (uint32_t i = 0; i < iter->second.size(); ++i) {
-            updater.inc_ref_count(iter->second[i]);
+        this->_mvMapping.set(doc_values.first, doc_values.second);
+        for (uint32_t i = 0; i < doc_values.second.size(); ++i) {
+            updater.inc_ref_count(doc_values.second[i]);
         }
         for (uint32_t i = 0; i < valueCount; ++i) {
             updater.dec_ref_count(oldIndices[i]);
@@ -90,7 +90,7 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
     WeightedIndexVector indices;
     this->_mvMapping.prepareLoadFromMultiValue();
     for (DocId doc = 0; doc < numDocs; ++doc) {
-        for(const typename LoadedVector::Type * v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
+        for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
             indices.push_back(WeightedIndex(v->getEidx(), v->getWeight()));
         }
         this->checkSetMaxValueCount(indices.size());
@@ -147,7 +147,8 @@ extract(const IWeightedIndexVector::WeightedIndex * values) {
 
 template <typename B, typename M>
 uint32_t
-MultiValueEnumAttribute<B, M>::getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const  {
+MultiValueEnumAttribute<B, M>::getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const
+{
     WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
     values = extract(&indices[0]);
     return indices.size();
@@ -218,7 +219,7 @@ std::unique_ptr<AttributeSaver>
 MultiValueEnumAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 {
     this->_enumStore.reEnumerate();
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
+    auto guard = this->getGenerationHandler().takeGuard();
     return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>
         (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping, this->_enumStore);
 }

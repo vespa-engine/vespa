@@ -26,7 +26,9 @@ SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
 }
 
 template <typename B>
-bool SingleValueEnumAttribute<B>::onAddDoc(DocId doc) {
+bool
+SingleValueEnumAttribute<B>::onAddDoc(DocId doc)
+{
     if (doc < _enumIndices.capacity()) {
         _enumIndices.reserve(doc+1);
         return true;
@@ -36,7 +38,8 @@ bool SingleValueEnumAttribute<B>::onAddDoc(DocId doc) {
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::onAddDocs(DocId limit) {
+SingleValueEnumAttribute<B>::onAddDocs(DocId limit)
+{
     _enumIndices.reserve(limit);
 }
 
@@ -174,13 +177,13 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
-    for (ChangeVectorIterator iter = this->_changes.begin(), end = this->_changes.end(); iter != end; ++iter) {
-        if (iter->_type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(*iter, updater);
-        } else if (iter->_type >= ChangeBase::ADD && iter->_type <= ChangeBase::DIV) {
-            applyArithmeticValueChange(*iter, updater);
-        } else if (iter->_type == ChangeBase::CLEARDOC) {
-            this->_defaultValue._doc = iter->_doc;
+    for (const auto& change : this->_changes) {
+        if (change._type == ChangeBase::UPDATE) {
+            applyUpdateValueChange(change, updater);
+        } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
+            applyArithmeticValueChange(change, updater);
+        } else if (change._type == ChangeBase::CLEARDOC) {
+            this->_defaultValue._doc = change._doc;
             applyUpdateValueChange(this->_defaultValue, updater);
         }
     }
@@ -306,7 +309,7 @@ std::unique_ptr<AttributeSaver>
 SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
 {
     this->_enumStore.reEnumerate();
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
+    auto guard = this->getGenerationHandler().takeGuard();
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),

@@ -35,7 +35,6 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
     MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }
 
-
 template <typename B, typename M>
 MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const vespalib::string & name,
                                                                            const AttributeVector::Config & cfg)
@@ -52,7 +51,6 @@ MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
     this->disableElemHoldList();
     clearAllPostings();
 }
-
 
 template <typename B, typename M>
 void
@@ -83,7 +81,6 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
              type(std::move(qTerm), params, *this));
     return sc;
 }
-
 
 template <typename B, typename M>
 IDocumentWeightAttribute::LookupResult

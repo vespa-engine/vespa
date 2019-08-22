@@ -46,9 +46,7 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
     enumStore.findIndex(c._data.raw(), newIdx);
 
     currEnumIndices[c._doc] = newIdx;
-
 }
-
 
 template <typename B>
 void
@@ -58,16 +56,13 @@ makePostingChange(const EnumStoreComparator *cmpa,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
-    typedef typename std::map<DocId, EnumIndex>::const_iterator EnumIter;
-    for (EnumIter iter = currEnumIndices.begin(), end = currEnumIndices.end();
-         iter != end; ++iter) {
-
-        uint32_t docId = iter->first;
+    for (const auto& elem : currEnumIndices) {
+        uint32_t docId = elem.first;
         EnumIndex oldIdx = this->_enumIndices[docId];
-        EnumIndex newIdx = iter->second;
+        EnumIndex newIdx = elem.second;
 
         // add new posting
-        DictionaryIterator addItr = dict.find(newIdx, *cmpa);
+        auto addItr = dict.find(newIdx, *cmpa);
         changePost[EnumPostingPair(addItr.getKey(), cmpa)].add(docId, 1);
 
         // remove old posting
@@ -77,7 +72,6 @@ makePostingChange(const EnumStoreComparator *cmpa,
         }
     }
 }
-
 
 template <typename B>
 void
@@ -91,20 +85,19 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
     // used to make sure several arithmetic operations on the same document in a single commit works
     std::map<DocId, EnumIndex> currEnumIndices;
 
-    typedef ChangeVector::const_iterator CVIterator;
-    for (CVIterator iter = this->_changes.begin(), end = this->_changes.end(); iter != end; ++iter) {
-        typename std::map<DocId, EnumIndex>::const_iterator enumIter = currEnumIndices.find(iter->_doc);
+    for (const auto& change : this->_changes) {
+        auto enumIter = currEnumIndices.find(change._doc);
         EnumIndex oldIdx;
         if (enumIter != currEnumIndices.end()) {
             oldIdx = enumIter->second;
         } else {
-            oldIdx = this->_enumIndices[iter->_doc];
+            oldIdx = this->_enumIndices[change._doc];
         }
-        if (iter->_type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(*iter, enumStore,
+        if (change._type == ChangeBase::UPDATE) {
+            applyUpdateValueChange(change, enumStore,
                                    currEnumIndices);
-        } else if (iter->_type == ChangeBase::CLEARDOC) {
-            this->_defaultValue._doc = iter->_doc;
+        } else if (change._type == ChangeBase::CLEARDOC) {
+            this->_defaultValue._doc = change._doc;
             applyUpdateValueChange(this->_defaultValue, enumStore,
                                    currEnumIndices);
         }
@@ -139,12 +132,10 @@ AttributeVector::SearchContext::UP
 SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
                                                  const attribute::SearchContextParams & params) const
 {
-    return std::unique_ptr<search::AttributeVector::SearchContext>
-        (new StringSinglePostingSearchContext(std::move(qTerm),
-                                              params.useBitVector(),
-                                              *this));
+    return std::make_unique<StringSinglePostingSearchContext>(std::move(qTerm),
+                                                              params.useBitVector(),
+                                                              *this);
 }
-
 
 } // namespace search
 

@@ -26,7 +26,7 @@ void
 SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques)
 {
     T oldValue;
-    typename std::map<DocId, T>::const_iterator iter = _currDocValues.find(c._doc);
+    auto iter = _currDocValues.find(c._doc);
     if (iter != _currDocValues.end()) {
         oldValue = iter->second;
     } else {
@@ -65,7 +65,7 @@ SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
 }
 
 template <typename B>
-SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() {}
+SingleValueNumericEnumAttribute<B>::~SingleValueNumericEnumAttribute() = default;
 
 template <typename B>
 void
@@ -118,13 +118,15 @@ SingleValueNumericEnumAttribute<B>::onLoad()
     PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
     
-    if (!ok)
+    if (!ok) {
         return false;
+    }
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
+    if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
+    }
 
     const uint32_t numDocs(attrReader.getDataCount());
     SequentialReadModifyWriteVector<LoadedNumericValueT> loaded(numDocs);
@@ -168,7 +170,11 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
 }
 
 template <typename B>
-bool SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const { return this->isValid(); }
+bool
+SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const
+{
+    return this->isValid();
+}
 
 template <typename B>
 SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
@@ -178,7 +184,9 @@ SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(Que
 { }
 
 template <typename B>
-Int64Range SingleValueNumericEnumAttribute<B>::SingleSearchContext::getAsIntegerTerm() const {
+Int64Range
+SingleValueNumericEnumAttribute<B>::SingleSearchContext::getAsIntegerTerm() const
+{
     return this->getRange();
 }
 
@@ -188,18 +196,16 @@ SingleValueNumericEnumAttribute<B>::SingleSearchContext::createFilterIterator(fe
                                                                               bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<SingleSearchContext>(*this, matchData));
+        return strict
+               ? std::make_unique<FilterAttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
+               : std::make_unique<FilterAttributeIteratorT<SingleSearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-             : new AttributeIteratorT<SingleSearchContext>(*this, matchData));
+    return strict
+           ? std::make_unique<AttributeIteratorStrict<SingleSearchContext>>(*this, matchData)
+           : std::make_unique<AttributeIteratorT<SingleSearchContext>>(*this, matchData);
 }
 
 }

@@ -29,7 +29,8 @@ SingleValueStringAttributeT<B>::~SingleValueStringAttributeT() = default;
 
 template <typename B>
 void
-SingleValueStringAttributeT<B>::freezeEnumDictionary() {
+SingleValueStringAttributeT<B>::freezeEnumDictionary()
+{
     this->getEnumStore().freezeTree();
 }
 

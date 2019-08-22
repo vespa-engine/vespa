@@ -66,7 +66,6 @@ MultiValueStringPostingAttributeT<B, T>::mergeMemoryStats(vespalib::MemoryUsage 
     total.merge(this->_postingList.getMemoryUsage());
 }
 
-
 template <typename B, typename T>
 void
 MultiValueStringPostingAttributeT<B, T>::removeOldGenerations(generation_t firstUsed)

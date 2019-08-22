@@ -25,7 +25,7 @@ MultiValueStringAttributeT(const vespalib::string &name,
 { }
 
 template <typename B, typename M>
-MultiValueStringAttributeT<B, M>::~MultiValueStringAttributeT() { }
+MultiValueStringAttributeT<B, M>::~MultiValueStringAttributeT() = default;
 
 
 template <typename B, typename M>
@@ -94,7 +94,7 @@ template <typename B, typename M>
 int32_t
 MultiValueStringAttributeT<B, M>::StringImplSearchContext::onFind(DocId doc, int32_t elemId) const
 {
-    const MultiValueStringAttributeT<B, M> & attr(static_cast< const MultiValueStringAttributeT<B, M> & > (attribute()));
+    const auto& attr = static_cast<const MultiValueStringAttributeT<B, M>&>(attribute());
     WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
     for (uint32_t i(elemId); i < indices.size(); i++) {
         if (isMatch(attr._enumStore.getValue(indices[i].value()))) {
