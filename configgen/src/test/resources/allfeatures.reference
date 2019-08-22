@@ -8,7 +8,6 @@ package com.yahoo.configgen;
 import java.util.*;
 import java.io.File;
 import java.nio.file.Path;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import com.yahoo.config.*;
 
 /**
@@ -1112,7 +1111,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public final static Enum FOOBAR = Enum.FOOBAR;
 
     @Override
-    protected boolean doSetValue(@NonNull String name) {
+    protected boolean doSetValue(String name) {
       try {
         value = Enum.valueOf(name);
         return true;
@@ -1142,7 +1141,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public final static Enum FOOBAR2 = Enum.FOOBAR2;
 
     @Override
-    protected boolean doSetValue(@NonNull String name) {
+    protected boolean doSetValue(String name) {
       try {
         value = Enum.valueOf(name);
         return true;
@@ -1171,7 +1170,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public final static Enum VALUES = Enum.VALUES;
 
     @Override
-    protected boolean doSetValue(@NonNull String name) {
+    protected boolean doSetValue(String name) {
       try {
         value = Enum.valueOf(name);
         return true;
@@ -1731,7 +1730,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
       public final static Enum TYPE = Enum.TYPE;
 
       @Override
-      protected boolean doSetValue(@NonNull String name) {
+      protected boolean doSetValue(String name) {
         try {
           value = Enum.valueOf(name);
           return true;
@@ -2029,7 +2028,7 @@ public final class AllfeaturesConfig extends ConfigInstance {
       public final static Enum TYPE = Enum.TYPE;
 
       @Override
-      protected boolean doSetValue(@NonNull String name) {
+      protected boolean doSetValue(String name) {
         try {
           value = Enum.valueOf(name);
           return true;
