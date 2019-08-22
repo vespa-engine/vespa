@@ -1,17 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.TimeZone;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -24,9 +13,19 @@ import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.ErrorType;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTClientConfigRequest;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.vespa.config.protocol.JRTConfigRequestFactory;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.yolean.Exceptions;
+
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.TimeZone;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class fetches config payload using JRT, and acts as the callback target.
@@ -305,12 +304,10 @@ public class JRTConfigRequester implements RequestWaiter {
         scheduler.shutdown();
     }
 
-    private class JRTSourceThreadFactory implements ThreadFactory {
-        @SuppressWarnings("NullableProblems")
+    private static class JRTSourceThreadFactory implements ThreadFactory {
         @Override
         public Thread newThread(Runnable runnable) {
-            ThreadFactory tf = Executors.defaultThreadFactory();
-            Thread t = tf.newThread(runnable);
+            Thread t = new Thread(runnable, String.format("jrt-config-requester-%d", System.currentTimeMillis()));
             // We want a daemon thread to avoid hanging threads in case something goes wrong in the config system
             t.setDaemon(true);
             return t;
