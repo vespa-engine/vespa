@@ -57,10 +57,7 @@ public class Flavor {
         this.cost = cost;
     }
 
-    public Flavor withFlavorOverrides(FlavorOverrides flavorOverrides) {
-        if (type == Type.DOCKER_CONTAINER)
-            throw new IllegalArgumentException("Cannot override flavor for docker containers");
-
+    public Flavor with(FlavorOverrides flavorOverrides) {
         if (!configured)
             throw new IllegalArgumentException("Cannot override non-configured flavor");
 
@@ -71,6 +68,16 @@ public class Flavor {
                 resources.bandwidthGbps(),
                 resources.diskSpeed());
         return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost);
+    }
+
+    public Flavor with(NodeResources resources) {
+        if (type == Type.DOCKER_CONTAINER && !configured)
+            return new Flavor(resources);
+
+        if (!resources.equals(this.resources.withDiskGb(resources.diskGb())))
+            throw new IllegalArgumentException("Can only override disk GB for configured flavor");
+
+        return with(FlavorOverrides.ofDisk(resources.diskGb()));
     }
 
     /** Returns the unique identity of this flavor if it is configured, or the resource spec string otherwise */

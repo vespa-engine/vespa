@@ -281,7 +281,7 @@ public class SerializationTest {
     public void flavor_overrides_serialization() {
         Node node = createNode();
         assertEquals(2, node.flavor().getMinDiskAvailableGb(), 0);
-        node = node.with(node.flavor().withFlavorOverrides(FlavorOverrides.ofDisk(1234)));
+        node = node.with(node.flavor().with(FlavorOverrides.ofDisk(1234)));
         assertEquals(1234, node.flavor().getMinDiskAvailableGb(), 0);
 
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
