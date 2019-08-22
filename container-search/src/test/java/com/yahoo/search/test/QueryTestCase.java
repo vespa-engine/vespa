@@ -426,7 +426,7 @@ public class QueryTestCase {
         Query q = new Query("search?query=foobar&groupingSessionCache");
         assertTrue(q.getGroupingSessionCache());
         q = new Query("search?query=foobar");
-        assertFalse(q.getGroupingSessionCache());
+        assertTrue(q.getGroupingSessionCache());
     }
 
     public class TestClass {

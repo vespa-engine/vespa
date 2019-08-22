@@ -172,7 +172,7 @@ public class FastSearcherTestCase {
                                                      new ClusterParams("testhittype"),
                                                      documentdbConfigWithOneDb);
 
-        Query query = new Query("?query=foo&model.restrict=testDb");
+        Query query = new Query("?query=foo&model.restrict=testDb&groupingSessionCache=false");
         query.prepare();
         doSearch(fastSearcher, query, 0, 10);
 
@@ -280,7 +280,7 @@ public class FastSearcherTestCase {
     public void testThatPropertiesAreReencoded() throws Exception {
         FastSearcher fastSearcher = createFastSearcher();
 
-        Query query = new Query("?query=ignored&dispatch.summaries=false");
+        Query query = new Query("?query=ignored&dispatch.summaries=false&groupingSessionCache=false");
         query.getRanking().setQueryCache(true);
         Result result = doSearch(fastSearcher, query, 0, 10);
 

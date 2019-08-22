@@ -88,7 +88,7 @@ public class PacketTestCase {
 
     @Test
     public void requireThatPacketsCanTurnOnCompression() throws BufferTooSmallException {
-        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&groupingSessionCache=false"));
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int channel = 32;
 
@@ -116,7 +116,7 @@ public class PacketTestCase {
 
     @Test
     public void requireThatUncompressablePacketsArentCompressed() throws BufferTooSmallException {
-        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaa"));
+        QueryPacket queryPacket = QueryPacket.create("container.0", new Query("/?query=aaaaaaaaaaaaaaa&groupingSessionCache=false"));
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int channel = 32;
 
