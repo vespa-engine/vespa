@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -40,9 +42,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
 /**
@@ -225,8 +230,41 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 inspector.field("hostname").asString(),
                 parentHostname,
                 modelName,
-                nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
+                flavorFromSlime(inspector),
                 nodeTypeFromSlime(inspector.field("type")));
+    }
+
+    private Flavor flavorFromSlime(Inspector inspector) {
+        Inspector flavorInspector = inspector.field("flavor");
+        log.info("flavorFromSlime: " + flavorInspector.valid());
+        if (!flavorInspector.valid()) {
+            return new Flavor(new NodeResources(
+                    requiredField(inspector, "minCpuCores", Inspector::asDouble),
+                    requiredField(inspector, "minMainMemoryAvailableGb", Inspector::asDouble),
+                    requiredField(inspector, "minDiskAvailableGb", Inspector::asDouble),
+                    requiredField(inspector, "bandwidth", Inspector::asDouble) / 1000,
+                    requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow));
+        }
+
+        Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
+        if (inspector.field("minCpuCores").valid())
+            flavor = flavor.with(flavor.resources().withVcpu(inspector.field("minCpuCores").asDouble()));
+        if (inspector.field("minMainMemoryAvailableGb").valid())
+            flavor = flavor.with(flavor.resources().withMemoryGb(inspector.field("minMainMemoryAvailableGb").asDouble()));
+        if (inspector.field("minDiskAvailableGb").valid())
+            flavor = flavor.with(flavor.resources().withDiskGb(inspector.field("minDiskAvailableGb").asDouble()));
+        if (inspector.field("bandwidth").valid())
+            flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidth").asDouble() / 1000));
+        if (inspector.field("fastDisk").valid())
+            flavor = flavor.with(flavor.resources().withDiskSpeed(inspector.field("fastDisk").asBool() ? fast : slow));
+        log.info("should not be here");
+        return flavor;
+    }
+
+    private static <T> T requiredField(Inspector inspector, String fieldName, Function<Inspector, T> valueExtractor) {
+        Inspector field = inspector.field(fieldName);
+        if (!field.valid()) throw new IllegalArgumentException("Required field '" + fieldName + "' is missing");
+        return valueExtractor.apply(field);
     }
 
     private NodeType nodeTypeFromSlime(Inspector object) {
