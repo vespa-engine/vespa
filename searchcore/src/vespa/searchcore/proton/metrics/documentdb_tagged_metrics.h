@@ -30,7 +30,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::DoubleAverageMetric total;
 
         JobMetrics(metrics::MetricSet *parent);
-        ~JobMetrics();
+        ~JobMetrics() override;
     };
 
     struct SubDBMetrics : metrics::MetricSet
@@ -45,7 +45,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::DoubleValueMetric lidFragmentationFactor;
 
             LidSpaceMetrics(metrics::MetricSet *parent);
-            ~LidSpaceMetrics();
+            ~LidSpaceMetrics() override;
         };
 
         struct DocumentStoreMetrics : metrics::MetricSet
@@ -59,7 +59,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
                 metrics::LongCountMetric invalidations;
 
                 CacheMetrics(metrics::MetricSet *parent);
-                ~CacheMetrics();
+                ~CacheMetrics() override;
             };
 
             metrics::LongValueMetric diskUsage;
@@ -69,7 +69,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             CacheMetrics cache;
 
             DocumentStoreMetrics(metrics::MetricSet *parent);
-            ~DocumentStoreMetrics();
+            ~DocumentStoreMetrics() override;
         };
 
         LidSpaceMetrics lidSpace;
@@ -77,7 +77,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         proton::AttributeMetrics attributes;
 
         SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
-        ~SubDBMetrics();
+        ~SubDBMetrics() override;
     };
 
     struct AttributeMetrics : metrics::MetricSet
@@ -89,14 +89,14 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongValueMetric   feedingBlocked;
 
             ResourceUsageMetrics(metrics::MetricSet *parent);
-            ~ResourceUsageMetrics();
+            ~ResourceUsageMetrics() override;
         };
 
         ResourceUsageMetrics resourceUsage;
         MemoryUsageMetrics totalMemoryUsage;
 
         AttributeMetrics(metrics::MetricSet *parent);
-        ~AttributeMetrics();
+        ~AttributeMetrics() override;
     };
 
     struct IndexMetrics : metrics::MetricSet
@@ -106,7 +106,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongValueMetric docsInMemory;
 
         IndexMetrics(metrics::MetricSet *parent);
-        ~IndexMetrics();
+        ~IndexMetrics() override;
     };
 
     struct MatchingMetrics : metrics::MetricSet {
@@ -129,7 +129,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
                 using UP = std::unique_ptr<DocIdPartition>;
                 DocIdPartition(const vespalib::string &name, metrics::MetricSet *parent);
-                ~DocIdPartition();
+                ~DocIdPartition() override;
                 void update(const matching::MatchingStats::Partition &stats);
             };
             using DocIdPartitions = std::vector<DocIdPartition::UP>;
@@ -141,6 +141,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limitedQueries;
             metrics::LongCountMetric     softDoomedQueries;
+            metrics::DoubleValueMetric   softDoomFactor;
             metrics::DoubleAverageMetric matchTime;
             metrics::DoubleAverageMetric groupingTime;
             metrics::DoubleAverageMetric rerankTime;
@@ -151,7 +152,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             RankProfileMetrics(const vespalib::string &name,
                                size_t numDocIdPartitions,
                                metrics::MetricSet *parent);
-            ~RankProfileMetrics();
+            ~RankProfileMetrics() override;
             void update(const matching::MatchingStats &stats);
 
         };
@@ -160,7 +161,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
         void update(const matching::MatchingStats &stats);
         MatchingMetrics(metrics::MetricSet *parent);
-        ~MatchingMetrics();
+        ~MatchingMetrics() override;
     };
 
     struct SessionCacheMetrics : metrics::MetricSet {
@@ -168,7 +169,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         SessionManagerMetrics grouping;
 
         SessionCacheMetrics(metrics::MetricSet *parent);
-        ~SessionCacheMetrics();
+        ~SessionCacheMetrics() override;
     };
 
     struct DocumentsMetrics : metrics::MetricSet {
@@ -178,7 +179,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongValueMetric removed;
 
         DocumentsMetrics(metrics::MetricSet *parent);
-        ~DocumentsMetrics();
+        ~DocumentsMetrics() override;
     };
 
     JobMetrics job;
@@ -196,7 +197,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     size_t maxNumThreads;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_);
-    ~DocumentDBTaggedMetrics();
+    ~DocumentDBTaggedMetrics() override;
 };
 
 }
