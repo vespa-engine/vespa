@@ -311,7 +311,11 @@ public class ContentCluster extends AbstractConfigProducer implements
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
-                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"), hosts, clusterName, true, context.getDeployState());
+                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", context.getDeployState()),
+                                                              hosts,
+                                                              clusterName,
+                                                              true,
+                                                              context.getDeployState());
                 contentCluster.clusterControllers = clusterControllers;
             }
             else {
@@ -447,7 +451,8 @@ public class ContentCluster extends AbstractConfigProducer implements
 
         private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer parent,
                                                                            Collection<HostResource> hosts,
-                                                                           String name, boolean multitenant,
+                                                                           String name,
+                                                                           boolean multitenant,
                                                                            DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();

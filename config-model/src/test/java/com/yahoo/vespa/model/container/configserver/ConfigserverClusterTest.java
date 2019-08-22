@@ -59,6 +59,18 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
+        assertFalse(config.useRestrictedServerCnxnFactory());
+    }
+
+    @Test
+    public void zookeeperConfig_self_hosted() {
+        final boolean hostedVespa = false;
+        TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(4, 2, 3), hostedVespa);
+        ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
+        assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
+        assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
+        assertEquals(2, config.myid());
+        assertTrue(config.useRestrictedServerCnxnFactory());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -118,11 +130,16 @@ public class ConfigserverClusterTest {
         assertEquals(expectedPropertyValues, actualPropertyValues);
     }
 
+
     private static TestOptions createTestOptions(List<String> configServerHostnames, List<Integer> configServerZkIds) {
+        return createTestOptions(configServerHostnames, configServerZkIds, true);
+
+    }
+    private static TestOptions createTestOptions(List<String> configServerHostnames, List<Integer> configServerZkIds, boolean hostedVespa) {
         TestOptions testOptions = new TestOptions()
                 .rpcPort(12345)
                 .useVespaVersionInRequest(true)
-                .hostedVespa(true)
+                .hostedVespa(hostedVespa)
                 .environment("test")
                 .region("bar")
                 .numParallelTenantLoaders(99);

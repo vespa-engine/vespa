@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
@@ -27,7 +26,10 @@ import java.util.Collection;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for creating cluster controllers under the admin tag.
@@ -208,15 +210,10 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         ZookeeperServerConfig config = new ZookeeperServerConfig(builder);
         assertThat(config.server().size(), is(3));
         assertThat(config.myid(), is(id));
-        Collection<Integer> serverIds = Collections2.transform(config.server(), new Function<ZookeeperServerConfig.Server, Integer>() {
-            @Override
-            public Integer apply(ZookeeperServerConfig.Server server) {
-                return server.id();
-            }
-        });
+        Collection<Integer> serverIds = Collections2.transform(config.server(), ZookeeperServerConfig.Server::id);
         assertTrue(serverIds.contains(id));
+        assertTrue(config.useRestrictedServerCnxnFactory());
     }
-
 
     @Test
     public void testUnconfigured() throws Exception {
@@ -435,7 +432,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                                                   .withServices(servicesXml)
                                                   .withSearchDefinitions(sds)
                                                   .build());
-        SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(6));
+        SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(7));
         return model;
     }
 }
