@@ -201,7 +201,6 @@ getent passwd vespa >/dev/null || \
 chmod a+rx %{_prefix}
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
-chmod +x /etc/profile.d/vespa.sh
 exit 0
 
 %post
