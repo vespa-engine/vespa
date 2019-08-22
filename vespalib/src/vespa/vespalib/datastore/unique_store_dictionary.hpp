@@ -58,7 +58,7 @@ UniqueStoreDictionary<DictionaryType>::add(const EntryComparator &comp,
 
     } else {
         EntryRef newRef = insertEntry();
-        _dict.insert(itr, newRef, btree::BTreeNoLeafData());
+        _dict.insert(itr, newRef, DataType());
         return UniqueStoreAddResult(newRef, true);
     }
 }
@@ -126,7 +126,7 @@ UniqueStoreDictionary<DictionaryType>::build(const std::vector<EntryRef> &refs,
     typename Dictionary::Builder builder(_dict.getAllocator());
     for (size_t i = 1; i < refs.size(); ++i) {
         if (ref_counts[i] != 0u) {
-            builder.insert(refs[i], btree::BTreeNoLeafData());
+            builder.insert(refs[i], DataType());
         } else {
             hold(refs[i]);
         }

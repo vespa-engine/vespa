@@ -18,7 +18,9 @@ class UniqueStoreDictionary : public UniqueStoreDictionaryBase
 public:
     using Dictionary = DictionaryType;
 
-private:
+protected:
+    using DataType = typename DictionaryType::DataType;
+
     DictionaryType _dict;
 
 public:
