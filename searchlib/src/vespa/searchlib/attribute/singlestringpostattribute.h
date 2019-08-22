@@ -7,7 +7,7 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of single value string attribute that in addition to enum store
  * uses an underlying posting list to provide faster search.
  *
@@ -21,47 +21,41 @@ class SingleValueStringPostingAttributeT
                                             typename B::LoadedValueType,
                                             typename B::EnumStore>
 {
+public:
+    using EnumStore = typename SingleValueStringAttributeT<B>::EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+
 private:
     friend class PostingListAttributeTest;
     template <typename, typename, typename> 
     friend class attribute::PostingSearchContext; // getEnumStore()
     friend class StringAttributeTest;
-    typedef SingleValueStringPostingAttributeT<B> SelfType;
-    typedef typename B::LoadedVector    LoadedVector;
-    typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
-    typedef PostingListAttributeSubBase<AttributePosting,
-                                        LoadedVector,
-                                        typename B::LoadedValueType,
-                                        typename B::EnumStore> PostingParent;
-    typedef typename SingleValueStringAttributeT<B>::DocId         DocId;
-public:
-    typedef typename SingleValueStringAttributeT<B>::EnumStore     EnumStore;
-    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
-private:
-    typedef typename SingleValueStringAttributeT<B>::EnumIndex     EnumIndex;
-    typedef typename SingleValueStringAttributeT<B>::generation_t  generation_t;
-    typedef typename SingleValueStringAttributeT<B>::ValueModifier ValueModifier;
 
-    typedef typename SingleValueStringAttributeT<B>::StringSingleImplSearchContext StringSingleImplSearchContext;
-    typedef attribute::StringPostingSearchContext<StringSingleImplSearchContext,
-                                                  SelfType,
-                                                  btree::BTreeNoLeafData>
-    StringSinglePostingSearchContext;
+    using LoadedVector = typename B::LoadedVector;
+    using PostingParent = PostingListAttributeSubBase<AttributePosting,
+                                                      LoadedVector,
+                                                      typename B::LoadedValueType,
+                                                      typename B::EnumStore>;
 
-    typedef StringAttribute::Change       Change;
-    typedef StringAttribute::ChangeVector ChangeVector;
+    using Change = StringAttribute::Change;
+    using ChangeVector = StringAttribute::ChangeVector;
+    using ComparatorType = typename EnumStore::ComparatorType;
+    using Dictionary = EnumPostingTree;
+    using DocId = typename SingleValueStringAttributeT<B>::DocId;
+    using EnumIndex = typename SingleValueStringAttributeT<B>::EnumIndex;
+    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using PostingList = typename PostingParent::PostingList;
+    using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using SelfType = SingleValueStringPostingAttributeT<B>;
+    using StringSingleImplSearchContext = typename SingleValueStringAttributeT<B>::StringSingleImplSearchContext;
+    using StringSinglePostingSearchContext = attribute::StringPostingSearchContext<StringSingleImplSearchContext,
+                                                                                   SelfType,
+                                                                                   btree::BTreeNoLeafData>;
+    using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
+    using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 
-    typedef typename PostingParent::PostingList PostingList;
-    typedef typename PostingParent::PostingMap  PostingMap;
-    // typedef typename PostingParent::Posting     Posting;
-
-    typedef EnumPostingTree Dictionary;
-    typedef typename EnumStore::ComparatorType ComparatorType;
-    typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
-    typedef typename Dictionary::Iterator   DictionaryIterator;
-    typedef typename Dictionary::ConstIterator   DictionaryConstIterator;
-    typedef typename Dictionary::FrozenView FrozenDictionary;
     using PostingParent::_postingList;
     using PostingParent::clearAllPostings;
     using PostingParent::handleFillPostings;
@@ -120,6 +114,6 @@ public:
     }
 };
 
-typedef SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute> > SingleValueStringPostingAttribute;
+using SingleValueStringPostingAttribute = SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute> >;
 
 } // namespace search

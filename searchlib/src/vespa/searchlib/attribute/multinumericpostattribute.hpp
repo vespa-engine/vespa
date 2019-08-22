@@ -25,7 +25,7 @@ void
 MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& docIndices,
                                                            EnumStoreBatchUpdater& updater)
 {
-    typedef PostingChangeComputerT<WeightedIndex, PostingMap> PostingChangeComputer;
+    using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore & enumStore = this->getEnumStore();
     ComparatorType compare(enumStore);
 
@@ -34,7 +34,6 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
     this->updatePostings(changePost);
     MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }
-
 
 template <typename B, typename M>
 MultiValueNumericPostingAttribute<B, M>::MultiValueNumericPostingAttribute(const vespalib::string & name,
@@ -52,7 +51,6 @@ MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
     this->disableElemHoldList();
     clearAllPostings();
 }
-
 
 template <typename B, typename M>
 void
@@ -83,7 +81,6 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
              type(std::move(qTerm), params, *this));
     return sc;
 }
-
 
 template <typename B, typename M>
 IDocumentWeightAttribute::LookupResult

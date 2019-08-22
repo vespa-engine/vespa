@@ -95,13 +95,15 @@ MultiValueNumericEnumAttribute<B, M>::onLoad()
     AttributeReader attrReader(*this);
     bool ok(attrReader.getHasLoadData());
 
-    if (!ok)
+    if (!ok) {
         return false;
+    }
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
+    if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
+    }
     
     size_t numDocs = attrReader.getNumIdx() - 1;
     uint32_t numValues = attrReader.getNumValues();
@@ -148,7 +150,8 @@ MultiValueNumericEnumAttribute<B, M>::SetSearchContext::SetSearchContext(QueryTe
 
 template <typename B, typename M>
 Int64Range
-MultiValueNumericEnumAttribute<B, M>::SetSearchContext::getAsIntegerTerm() const {
+MultiValueNumericEnumAttribute<B, M>::SetSearchContext::getAsIntegerTerm() const
+{
     return this->getRange();
 }
 
@@ -160,15 +163,13 @@ MultiValueNumericEnumAttribute<B, M>::SetSearchContext::createFilterIterator(fef
         return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
+        return strict
+               ? std::make_unique<FilterAttributeIteratorStrict<SetSearchContext>>(*this, matchData)
+               : std::make_unique<FilterAttributeIteratorT<SetSearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
-             : new AttributeIteratorT<SetSearchContext>(*this, matchData));
+    return strict
+           ? std::make_unique<AttributeIteratorStrict<SetSearchContext>>(*this, matchData)
+           : std::make_unique<AttributeIteratorT<SetSearchContext>>(*this, matchData);
 }
 
 template <typename B, typename M>
@@ -179,15 +180,13 @@ MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::createFilterIterator(f
         return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
-        return queryeval::SearchIterator::UP
-                (strict
-                 ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
+        return strict
+               ? std::make_unique<FilterAttributeIteratorStrict<ArraySearchContext>>(*this, matchData)
+               : std::make_unique<FilterAttributeIteratorT<ArraySearchContext>>(*this, matchData);
     }
-    return queryeval::SearchIterator::UP
-            (strict
-             ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-             : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
+    return strict
+           ? std::make_unique<AttributeIteratorStrict<ArraySearchContext>>(*this, matchData)
+           : std::make_unique<AttributeIteratorT<ArraySearchContext>>(*this, matchData);
 }
 
 template <typename B, typename M>
@@ -199,7 +198,8 @@ MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::ArraySearchContext(Que
 
 template <typename B, typename M>
 Int64Range
-MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::getAsIntegerTerm() const {
+MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::getAsIntegerTerm() const
+{
     return this->getRange();
 }
 

@@ -8,7 +8,7 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of multi value string attribute that in addition to enum store and
  * multi value mapping uses an underlying posting list to provide faster search.
  * This class is used for both array and weighted set types.
@@ -25,9 +25,12 @@ class MultiValueStringPostingAttributeT
                                             typename B::LoadedValueType,
                                             typename B::EnumStore>
 {
+public:
+    using EnumStore = typename MultiValueStringAttributeT<B, T>::EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+
 private:
-    struct DocumentWeightAttributeAdapter : IDocumentWeightAttribute
-    {
+    struct DocumentWeightAttributeAdapter : IDocumentWeightAttribute {
         const MultiValueStringPostingAttributeT &self;
         DocumentWeightAttributeAdapter(const MultiValueStringPostingAttributeT &self_in) : self(self_in) {}
         virtual LookupResult lookup(const vespalib::string &term) const override final;
@@ -40,38 +43,34 @@ private:
     template <typename, typename, typename> 
     friend class attribute::PostingSearchContext; // getEnumStore()
     friend class StringAttributeTest;
-    typedef MultiValueStringPostingAttributeT<B, T> SelfType;
-    typedef typename B::LoadedVector    LoadedVector;
-    typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
-    typedef PostingListAttributeSubBase<AttributeWeightPosting,
-                                        LoadedVector,
-                                        typename B::LoadedValueType,
-                                        typename B::EnumStore> PostingParent;
-    typedef typename MultiValueStringAttributeT<B, T>::DocId DocId;
-public:
-    typedef typename MultiValueStringAttributeT<B, T>::EnumStore EnumStore;
-    typedef typename EnumStore::BatchUpdater EnumStoreBatchUpdater;
-private:
-    typedef typename MultiValueStringAttributeT<B, T>::WeightedIndex WeightedIndex;
-    typedef typename MultiValueStringAttributeT<B, T>::DocIndices DocIndices;
-    typedef typename MultiValueStringAttributeT<B, T>::generation_t generation_t;
-    typedef typename PostingParent::PostingList PostingList;
-    typedef typename PostingParent::PostingMap  PostingMap;
-    typedef typename PostingParent::Posting     Posting;
+
+    using LoadedVector = typename B::LoadedVector;
+    using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
+                                                      LoadedVector,
+                                                      typename B::LoadedValueType,
+                                                      typename B::EnumStore>;
+
+    using ComparatorType = typename EnumStore::ComparatorType;
+    using Dictionary = EnumPostingTree;
+    using DictionaryConstIterator = typename Dictionary::ConstIterator;
+    using DocId = typename MultiValueStringAttributeT<B, T>::DocId;
+    using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
+    using EnumIndex = typename EnumStore::Index;
+    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
+    using FrozenDictionary = typename Dictionary::FrozenView;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using Posting = typename PostingParent::Posting;
+    using PostingList = typename PostingParent::PostingList;
+    using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    using SelfType = MultiValueStringPostingAttributeT<B, T>;
+    using StringArrayImplSearchContext = typename MultiValueStringAttributeT<B, T>::StringArrayImplSearchContext;
+    using StringArrayPostingSearchContext = attribute::StringPostingSearchContext<StringArrayImplSearchContext, SelfType, int32_t>;
+    using StringSetImplSearchContext = typename MultiValueStringAttributeT<B, T>::StringSetImplSearchContext;
+    using StringSetPostingSearchContext = attribute::StringPostingSearchContext<StringSetImplSearchContext, SelfType, int32_t>;
+    using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
+    using generation_t = typename MultiValueStringAttributeT<B, T>::generation_t;
 
-    typedef typename MultiValueStringAttributeT<B, T>::StringSetImplSearchContext StringSetImplSearchContext;
-    typedef typename MultiValueStringAttributeT<B, T>::StringArrayImplSearchContext StringArrayImplSearchContext;
-    typedef attribute::StringPostingSearchContext<StringSetImplSearchContext, SelfType, int32_t> StringSetPostingSearchContext;
-    typedef attribute::StringPostingSearchContext<StringArrayImplSearchContext, SelfType, int32_t> StringArrayPostingSearchContext;
-
-    typedef EnumPostingTree Dictionary;
-    typedef typename EnumStore::Index EnumIndex;
-    typedef typename EnumStore::ComparatorType ComparatorType;
-    typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
-    typedef typename Dictionary::Iterator DictionaryIterator;
-    typedef typename Dictionary::ConstIterator DictionaryConstIterator;
-    typedef typename Dictionary::FrozenView FrozenDictionary;
     using PostingParent::_postingList;
     using PostingParent::clearAllPostings;
     using PostingParent::handleFillPostings;
@@ -113,8 +112,8 @@ public:
     }
 };
 
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> > ArrayStringPostingAttribute;
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> > WeightedSetStringPostingAttribute;
+using ArrayStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> >;
+using WeightedSetStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> >;
 
 } // namespace search
 

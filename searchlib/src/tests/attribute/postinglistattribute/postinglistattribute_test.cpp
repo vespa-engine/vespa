@@ -452,9 +452,8 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         const uint32_t docBegin = range.getBegin(i);
         const uint32_t docEnd = range.getEnd(i);
 
-        typename VectorType::DictionaryIterator itr =
-            dict.find(typename VectorType::EnumIndex(),
-                      typename VectorType::ComparatorType(enumStore, values[i]));
+        auto itr = dict.find(typename VectorType::EnumIndex(),
+                             typename VectorType::ComparatorType(enumStore, values[i]));
         ASSERT_TRUE(itr.valid());
 
         typename VectorType::PostingList::Iterator postings;
@@ -672,9 +671,8 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
     const typename AttributeType::EnumStore & enumStore = vec.getEnumStore();
     const typename AttributeType::Dictionary & dict = enumStore.getPostingDictionary();
     const typename AttributeType::PostingList & postingList = vec.getPostingList();
-    typename AttributeType::DictionaryIterator itr =
-        dict.find(typename AttributeType::EnumIndex(),
-                  typename AttributeType::ComparatorType(vec.getEnumStore(), value));
+    auto itr = dict.find(typename AttributeType::EnumIndex(),
+                         typename AttributeType::ComparatorType(vec.getEnumStore(), value));
     ASSERT_TRUE(itr.valid());
 
     typename AttributeType::PostingList::Iterator postings;
@@ -693,9 +691,8 @@ void
 PostingListAttributeTest::checkNonExistantPostingList(AttributeType & vec, ValueType value)
 {
     const typename AttributeType::Dictionary & dict = vec.getEnumStore().getPostingDictionary();
-    typename AttributeType::DictionaryIterator itr =
-        dict.find(typename AttributeType::EnumIndex(),
-                  typename AttributeType::ComparatorType(vec.getEnumStore(), value));
+    auto itr = dict.find(typename AttributeType::EnumIndex(),
+                         typename AttributeType::ComparatorType(vec.getEnumStore(), value));
     EXPECT_TRUE(!itr.valid());
 }
 

@@ -32,18 +32,19 @@ public:
 
 
 template <typename P>
-class PostingListAttributeBase : public attribute::IPostingListAttributeBase
-{
+class PostingListAttributeBase : public attribute::IPostingListAttributeBase {
 protected:
-    typedef P Posting;
-    typedef typename Posting::DataType DataType;
-    typedef attribute::PostingListTraits<DataType> AggregationTraits;
-    typedef typename AggregationTraits::PostingList PostingList;
-    typedef AttributeVector::DocId DocId;
-    typedef std::map<EnumPostingPair, PostingChange<P> > PostingMap;
-    typedef datastore::EntryRef EntryRef;
-    typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
-    typedef EnumStoreBase::Index EnumIndex;
+    using Posting = P;
+    using DataType = typename Posting::DataType;
+
+    using AggregationTraits = attribute::PostingListTraits<DataType>;
+    using DocId = AttributeVector::DocId;
+    using EntryRef = datastore::EntryRef;
+    using EnumIndex = EnumStoreBase::Index;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using PostingList = typename AggregationTraits::PostingList;
+    using PostingMap = std::map<EnumPostingPair, PostingChange<P> >;
+
     PostingList _postingList;
     AttributeVector &_attr;
     EnumPostingTree &_dict;
@@ -74,20 +75,18 @@ public:
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
-class PostingListAttributeSubBase : public PostingListAttributeBase<P>
-{
+class PostingListAttributeSubBase : public PostingListAttributeBase<P> {
 public:
-    typedef PostingListAttributeBase<P> Parent;
-    typedef EnumStoreType EnumStore;
-    typedef EnumPostingTree Dictionary;
-    typedef typename Dictionary::Iterator DictionaryIterator;
-    typedef EnumStoreBase::Index EnumIndex;
-    typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
-    typedef datastore::EntryRef EntryRef;
-    typedef typename Parent::PostingMap PostingMap;
-    typedef typename Parent::PostingList PostingList;
-    typedef typename PostingList::Iterator PostingIterator;
-    typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
+    using Parent = PostingListAttributeBase<P>;
+
+    using Dictionary = EnumPostingTree;
+    using EntryRef = datastore::EntryRef;
+    using EnumIndex = EnumStoreBase::Index;
+    using EnumStore = EnumStoreType;
+    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using PostingList = typename Parent::PostingList;
+    using PostingMap = typename Parent::PostingMap;
 
     using Parent::clearAllPostings;
     using Parent::updatePostings;

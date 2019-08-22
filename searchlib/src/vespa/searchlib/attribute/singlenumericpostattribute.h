@@ -8,7 +8,7 @@
 
 namespace search {
 
-/*
+/**
  * Implementation of single value numeric attribute that in addition to enum store
  * uses an underlying posting list to provide faster search.
  *
@@ -22,45 +22,37 @@ class SingleValueNumericPostingAttribute
                                             typename B::LoadedValueType,
                                             typename B::EnumStore>
 {
+public:
+    using T = typename SingleValueNumericEnumAttribute<B>::T;
+    using Dictionary = EnumPostingTree;
+    using EnumStore = typename SingleValueNumericEnumAttribute<B>::EnumStore;
+    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
+
 private:
     friend class PostingListAttributeTest;
     template <typename, typename, typename> 
     friend class attribute::PostingSearchContext; // getEnumStore()
-    typedef SingleValueNumericPostingAttribute<B> SelfType;
-    typedef typename B::LoadedVector    LoadedVector;
-    typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
-    typedef PostingListAttributeSubBase<AttributePosting,
-                                        LoadedVector,
-                                        typename B::LoadedValueType,
-                                        typename B::EnumStore> PostingParent;
-public:
-    typedef typename SingleValueNumericEnumAttribute<B>::EnumStore     EnumStore;
-    using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
-private:
-    typedef typename SingleValueEnumAttributeBase::EnumIndex           EnumIndex;
-    typedef typename SingleValueNumericEnumAttribute<B>::generation_t  generation_t;
-public:
-    typedef typename SingleValueNumericEnumAttribute<B>::T             T;
-private:
 
+    using LoadedVector = typename B::LoadedVector;
+    using PostingParent = PostingListAttributeSubBase<AttributePosting,
+                                                      LoadedVector,
+                                                      typename B::LoadedValueType,
+                                                      typename B::EnumStore>;
+
+    using Change = typename B::BaseClass::Change;
+    using ComparatorType = typename EnumStore::ComparatorType;
+    using DocId = typename B::BaseClass::DocId;
+    using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
+    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
+    using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
-    typedef typename SingleValueNumericEnumAttribute<B>::SingleSearchContext SingleSearchContext;
-    typedef SingleSearchContext     SingleNumericSearchContext;
-    typedef attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, btree::BTreeNoLeafData> SinglePostingSearchContext;
+    using SelfType = SingleValueNumericPostingAttribute<B>;
+    using SingleSearchContext = typename SingleValueNumericEnumAttribute<B>::SingleSearchContext;
+    using SingleNumericSearchContext = SingleSearchContext;
+    using SinglePostingSearchContext = attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, btree::BTreeNoLeafData>;
+    using ValueModifier = typename B::BaseClass::ValueModifier;
+    using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
 
-    typedef typename PostingParent::PostingMap            PostingMap;
-    typedef typename B::BaseClass::Change                 Change;
-    typedef typename B::BaseClass::ChangeVector           ChangeVector;
-    typedef typename B::BaseClass::ChangeVector::const_iterator ChangeVectorIterator;
-    typedef typename B::BaseClass::DocId                  DocId;
-    typedef typename B::BaseClass::ValueModifier          ValueModifier;
-
-public:
-    typedef EnumPostingTree Dictionary;
-private:
-    typedef typename Dictionary::Iterator DictionaryIterator;
-    typedef typename Dictionary::ConstIterator DictionaryConstIterator;
-    typedef typename EnumStore::ComparatorType ComparatorType;
     using PostingParent::_postingList;
     using PostingParent::clearAllPostings;
     using PostingParent::handleFillPostings;

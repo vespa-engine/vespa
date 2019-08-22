@@ -21,12 +21,8 @@ PostingListAttributeBase(AttributeVector &attr,
       _esb(enumStore)
 { }
 
-
 template <typename P>
-PostingListAttributeBase<P>::~PostingListAttributeBase()
-{
-}
-
+PostingListAttributeBase<P>::~PostingListAttributeBase() = default;
 
 template <typename P>
 void
@@ -34,7 +30,7 @@ PostingListAttributeBase<P>::clearAllPostings()
 {
     _postingList.clearBuilder();
     _attr.incGeneration(); // Force freeze
-    EnumPostingTree::Iterator itr(_dict.begin());
+    auto itr = _dict.begin();
     EntryRef prev;
     while (itr.valid()) {
         EntryRef ref = itr.getData();
@@ -53,36 +49,34 @@ PostingListAttributeBase<P>::clearAllPostings()
 
 template <typename P>
 void
-PostingListAttributeBase<P>::fillPostingsFixupEnumBase(
-        const LoadedEnumAttributeVector &loaded)
+PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded)
 {
     clearAllPostings();
     uint32_t docIdLimit = _attr.getNumDocs();
     EnumStoreBase &enumStore = _esb;
     EntryRef newIndex;
     PostingChange<P> postings;
-    if ( loaded.empty() )
+    if (loaded.empty()) {
         return;
-    typedef LoadedEnumAttributeVector::const_iterator LoadedIT;
+    }
     uint32_t preve = 0;
     uint32_t refCount = 0;
-    typedef EnumPostingTree::Iterator DictIT;
 
-    DictIT di(_dict.begin());
-    DictIT pdi(di);
-    assert(di.valid());
-    for(LoadedIT i(loaded.begin()), ie(loaded.end()); i != ie; ++i) {
-        if (preve != i->getEnum()) {
-            assert(preve < i->getEnum());
-            enumStore.fixupRefCount(di.getKey(), refCount);
+    auto itr = _dict.begin();
+    auto posting_itr = itr;
+    assert(itr.valid());
+    for (const auto& elem : loaded) {
+        if (preve != elem.getEnum()) {
+            assert(preve < elem.getEnum());
+            enumStore.fixupRefCount(itr.getKey(), refCount);
             refCount = 0;
-            while (preve != i->getEnum()) {
-                ++di;
-                assert(di.valid());
+            while (preve != elem.getEnum()) {
+                ++itr;
+                assert(itr.valid());
                 ++preve;
             }
-            assert(di.valid());
-            if (enumStore.foldedChange(pdi.getKey(), di.getKey())) {
+            assert(itr.valid());
+            if (enumStore.foldedChange(posting_itr.getKey(), itr.getKey())) {
                 postings.removeDups();
                 newIndex = EntryRef();
                 _postingList.apply(newIndex,
@@ -92,20 +86,20 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(
                                    &postings._removals[0],
                                    &postings._removals[0] +
                                    postings._removals.size());
-                pdi.writeData(newIndex);
-                while (pdi != di) {
-                    ++pdi;
+                posting_itr.writeData(newIndex);
+                while (posting_itr != itr) {
+                    ++posting_itr;
                 }
                 postings.clear();
             }
         }
         ++refCount;
-        assert(i->getDocId() < docIdLimit);
+        assert(elem.getDocId() < docIdLimit);
         (void) docIdLimit;
-        postings.add(i->getDocId(), i->getWeight());
+        postings.add(elem.getDocId(), elem.getWeight());
     }
     assert(refCount != 0);
-    enumStore.fixupRefCount(di.getKey(), refCount);
+    enumStore.fixupRefCount(itr.getKey(), refCount);
     postings.removeDups();
     newIndex = EntryRef();
     _postingList.apply(newIndex,
@@ -113,22 +107,19 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(
                        &postings._additions[0] + postings._additions.size(),
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
-    pdi.writeData(newIndex);
+    posting_itr.writeData(newIndex);
     enumStore.freeUnusedEnums(false);
 }
-
 
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
                                             EnumStoreComparator &cmp)
 {
-    for (typename PostingMap::iterator
-             it(changePost.begin()), mt(changePost.end()); it != mt; it++) {
-        PostingChange<P> &change(it->second);
-        EnumIndex idx(it->first.getEnumIdx());
-        typename EnumPostingTree::Iterator dictItr =
-            _dict.lowerBound(idx, cmp);
+    for (auto& elem : changePost) {
+        auto& change = elem.second;
+        EnumIndex idx = elem.first.getEnumIdx();
+        auto dictItr = _dict.lowerBound(idx, cmp);
         assert(dictItr.valid() && dictItr.getKey() == idx);
         EntryRef newPosting = dictItr.getData();
         
@@ -144,22 +135,23 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
     }
 }
 
-
 template <typename P>
 bool
 PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc,
                                                size_t wantSize,
                                                size_t wantCapacity)
 {
-    if (!_postingList._enableBitVectors)
+    if (!_postingList._enableBitVectors) {
         return false;
-    if (doc >= wantSize)
+    }
+    if (doc >= wantSize) {
         wantSize = doc + 1;
-    if (doc >= wantCapacity)
+    }
+    if (doc >= wantCapacity) {
         wantCapacity = doc + 1;
+    }
     return _postingList.resizeBitVectors(wantSize, wantCapacity);
 }
-
 
 template <typename P>
 void
@@ -175,12 +167,11 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
         postings.remove(lid);
     }
 
-    typedef EnumPostingTree::Iterator DictIT;
     EntryRef er(eidx);
-    DictIT di(_dict.lowerBound(er, cmp));
-    assert(di.valid());
+    auto itr = _dict.lowerBound(er, cmp);
+    assert(itr.valid());
     
-    EntryRef newPosting = di.getData();
+    EntryRef newPosting = itr.getData();
     assert(newPosting.valid());
     
     _postingList.apply(newPosting,
@@ -190,10 +181,9 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
                        &postings._removals[0],
                        &postings._removals[0] +
                        postings._removals.size());
-    _dict.thaw(di);
-    di.writeData(newPosting);
+    _dict.thaw(itr);
+    itr.writeData(newPosting);
 }
-
 
 template <typename P>
 void
@@ -219,14 +209,10 @@ PostingListAttributeSubBase(AttributeVector &attr,
 {
 }
 
-
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-~PostingListAttributeSubBase()
-{
-}
-
+~PostingListAttributeSubBase() = default;
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
@@ -241,17 +227,17 @@ handleFillPostings(LoadedVector &loaded)
     _postingList.resizeBitVectors(docIdLimit, docIdLimit);
     if ( ! loaded.empty() ) {
         vespalib::Array<typename LoadedVector::Type> similarValues;
-        typename LoadedVector::Type v = loaded.read();
-        LoadedValueType prev = v.getValue();
-        for(size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
-            v = loaded.read();
-            if (FoldedComparatorType::compareFolded(prev, v.getValue()) == 0) {
+        auto value = loaded.read();
+        LoadedValueType prev = value.getValue();
+        for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
+            value = loaded.read();
+            if (FoldedComparatorType::compareFolded(prev, value.getValue()) == 0) {
                 // for single value attributes loaded[numDocs] is used
                 // for default value but we don't want to add an
                 // invalid docId to the posting list.
-                if (v._docId < docIdLimit) {
-                    postings.add(v._docId, v.getWeight());
-                    similarValues.push_back(v);
+                if (value._docId < docIdLimit) {
+                    postings.add(value._docId, value.getWeight());
+                    similarValues.push_back(value);
                 }
             } else {
                 postings.removeDups();
@@ -265,16 +251,16 @@ handleFillPostings(LoadedVector &loaded)
                                    &postings._removals[0] +
                                    postings._removals.size());
                 postings.clear();
-                if (v._docId < docIdLimit) {
-                    postings.add(v._docId, v.getWeight());
+                if (value._docId < docIdLimit) {
+                    postings.add(value._docId, value.getWeight());
                 }
                 similarValues[0]._pidx = newIndex;
-                for(size_t j(0), k(similarValues.size()); j < k; j++) {
+                for (size_t j(0), k(similarValues.size()); j < k; j++) {
                     loaded.write(similarValues[j]);
                 }
                 similarValues.clear();
-                similarValues.push_back(v);
-                prev = v.getValue();
+                similarValues.push_back(value);
+                prev = value.getValue();
             }
         }
 
@@ -287,7 +273,7 @@ handleFillPostings(LoadedVector &loaded)
                            &postings._removals[0],
                            &postings._removals[0] + postings._removals.size());
         similarValues[0]._pidx = newIndex;
-        for(size_t i(0), m(similarValues.size()); i < m; i++) {
+        for (size_t i(0), m(similarValues.size()); i < m; i++) {
             loaded.write(similarValues[i]);
         }
     }
@@ -319,27 +305,20 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
 }
 
 
-
 template class PostingListAttributeBase<AttributePosting>;
 template class PostingListAttributeBase<AttributeWeightPosting>;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t> >
-LoadedInt8Vector;
+using LoadedInt8Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t> >
-LoadedInt16Vector;
+using LoadedInt16Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t> >
-LoadedInt32Vector;
+using LoadedInt32Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t> >
-LoadedInt64Vector;
+using LoadedInt64Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<float> >
-LoadedFloatVector;
+using LoadedFloatVector = SequentialReadModifyWriteInterface<LoadedNumericValue<float> >;
 
-typedef SequentialReadModifyWriteInterface<LoadedNumericValue<double> >
-LoadedDoubleVector;
+using LoadedDoubleVector = SequentialReadModifyWriteInterface<LoadedNumericValue<double> >;
                                                        
 
 template class
