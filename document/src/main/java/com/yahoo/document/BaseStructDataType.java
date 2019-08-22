@@ -43,7 +43,7 @@ public abstract class BaseStructDataType extends StructuredDataType {
         type.fields = new LinkedHashMap<>();
         for (Field field : fieldIds.values()) {
             type.fields.put(field.getName(), field);
-            type.fieldIds.put(field.getId(Document.SERIALIZED_VERSION), field);
+            type.fieldIds.put(field.getId(), field);
         }
         return type;
     }
@@ -52,18 +52,18 @@ public abstract class BaseStructDataType extends StructuredDataType {
         if (fields.containsKey(field.getName())) {
             throw new IllegalArgumentException("Struct " + getName() + " already contains field with name " + field.getName());
         }
-        if (fieldIds.containsKey(field.getId(Document.SERIALIZED_VERSION))) {
-            throw new IllegalArgumentException("Struct " + getName() + " already contains field with id " + field.getId(Document.SERIALIZED_VERSION));
+        if (fieldIds.containsKey(field.getId())) {
+            throw new IllegalArgumentException("Struct " + getName() + " already contains field with id " + field.getId());
         }
 
         fields.put(field.getName(), field);
-        fieldIds.put(field.getId(Document.SERIALIZED_VERSION), field);
+        fieldIds.put(field.getId(), field);
     }
 
     public Field removeField(String fieldName) {
         Field old = fields.remove(fieldName);
         if (old != null) {
-            fieldIds.remove(old.getId(Document.SERIALIZED_VERSION));
+            fieldIds.remove(old.getId());
         }
         return old;
     }

@@ -176,6 +176,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     }
 
     /** Returns the numeric ID used to represent this field when serialized */
+    @Deprecated
     public final int getId(int version) {
         return getId();
     }

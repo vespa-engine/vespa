@@ -181,9 +181,9 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
     public void testIdImporting() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/strange.sd");
         SDField idecidemyide=(SDField) search.getDocument().getField("idecidemyide");
-        assertEquals(5,idecidemyide.getId(Document.SERIALIZED_VERSION));
+        assertEquals(5,idecidemyide.getId());
         SDField sodoi=(SDField) search.getDocument().getField("sodoi");
-        assertEquals(7,sodoi.getId(Document.SERIALIZED_VERSION));
+        assertEquals(7,sodoi.getId());
     }
 
 }

@@ -344,7 +344,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
             value.getValue().serialize(value.getKey(), this);
 
             fieldLengths.add(buffer.position() - startPos);
-            fieldIds.add(value.getKey().getId(s.getVersion()));
+            fieldIds.add(value.getKey().getId());
         }
 
         // Switch buffers again:
@@ -627,7 +627,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(FieldUpdate update) {
-        putInt(null, update.getField().getId(Document.SERIALIZED_VERSION));
+        putInt(null, update.getField().getId());
         putInt(null, update.getValueUpdates().size());
         for (ValueUpdate vupd : update.getValueUpdates()) {
             putInt(null, vupd.getValueUpdateClassID().id);
