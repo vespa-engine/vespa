@@ -8,6 +8,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -24,6 +26,7 @@ public class StoredInteger implements Supplier<OptionalInt> {
     private final Path path;
     private OptionalInt value;
     private boolean hasBeenRead = false;
+    private Optional<Instant> lastModifiedTime;
 
     public StoredInteger(Path path) {
         this.path = path;
@@ -31,17 +34,7 @@ public class StoredInteger implements Supplier<OptionalInt> {
 
     @Override
     public OptionalInt get() {
-        if (!hasBeenRead) {
-            try {
-                String value = new String(Files.readAllBytes(path));
-                this.value = OptionalInt.of(Integer.parseInt(value));
-            } catch (NoSuchFileException e) {
-                this.value = OptionalInt.empty();
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to read integer in " + path, e);
-            }
-            hasBeenRead = true;
-        }
+        if (!hasBeenRead) readValue();
         return value;
     }
 
@@ -50,9 +43,30 @@ public class StoredInteger implements Supplier<OptionalInt> {
             Files.write(path, Integer.toString(value).getBytes());
             this.value = OptionalInt.of(value);
             this.hasBeenRead = true;
+            this.lastModifiedTime = Optional.of(Instant.now());
             taskContext.log(logger, "Stored new integer in %s: %d", path, value);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to store integer in " + path, e);
         }
     }
+
+    public Optional<Instant> getLastModifiedTime() {
+        if (!hasBeenRead) readValue();
+        return lastModifiedTime;
+    }
+
+    private void readValue() {
+        try {
+            String value = new String(Files.readAllBytes(path));
+            this.value = OptionalInt.of(Integer.parseInt(value));
+            this.lastModifiedTime = Optional.of(Files.getLastModifiedTime(path).toInstant());
+        } catch (NoSuchFileException e) {
+            this.value = OptionalInt.empty();
+            this.lastModifiedTime = Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read integer in " + path, e);
+        }
+        hasBeenRead = true;
+    }
+
 }
