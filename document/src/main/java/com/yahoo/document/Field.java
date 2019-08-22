@@ -21,9 +21,8 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
 
     protected DataType dataType;
     protected int fieldId;
-    private int fieldIdV6;
     private boolean isHeader;
-    private boolean forcedId = false;
+    private boolean forcedId;
 
     /**
      * Creates a new field.
@@ -36,11 +35,10 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     public Field(String name, int id, DataType dataType, boolean isHeader) {
         super(name);
         this.fieldId = id;
-        this.fieldIdV6 = id;
         this.dataType = dataType;
         this.isHeader = isHeader;
         this.forcedId = true;
-        validateId(id, null, Document.SERIALIZED_VERSION);
+        validateId(id, null);
     }
 
     public Field(String name) {
@@ -60,7 +58,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     public Field(String name, DataType dataType, boolean isHeader, DocumentType owner) {
         this(name, 0, dataType, isHeader);
         this.fieldId = calculateIdV7(owner);
-        this.fieldIdV6 = calculateIdV6(owner);
         this.forcedId = false;
     }
 
@@ -95,21 +92,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         this(name, field.dataType, field.isHeader, null);
     }
 
-    /**
-     * The field id must be unique within a document type, and also
-     * within a (unknown at this time) hierarchy of document types.
-     * In addition it should be as resilient to doctype content changes
-     * and inheritance hierarchy changes as possible.
-     * All of this is enforced for names, so id's should follow names.
-     * Therefore we hash on name.
-     */
-    private int calculateIdV6(DocumentType owner) {
-        int newId = BobHash.hash(getName()); // Using a portfriendly hash
-        if (newId < 0) newId = -newId; // Highest bit is reserved to tell 7-bit id's from 31-bit ones
-        validateId(newId, owner, 6);
-        return newId;
-    }
-
     public int compareTo(Object o) {
         return fieldId - ((Field) o).fieldId;
     }
@@ -127,7 +109,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
 
         int newId = BobHash.hash(combined); // Using a portfriendly hash
         if (newId < 0) newId = -newId; // Highest bit is reserved to tell 7-bit id's from 31-bit ones
-        validateId(newId, owner, Document.SERIALIZED_VERSION);
+        validateId(newId, owner);
         return newId;
     }
 
@@ -144,16 +126,15 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
             throw new NullPointerException("Can not assign an id of " + this + " without knowing the owner");
         }
 
-        validateId(newId, owner, Document.SERIALIZED_VERSION);
+        validateId(newId, owner);
 
         owner.removeField(getName());
         this.fieldId = newId;
-        this.fieldIdV6 = newId;
         this.forcedId = true;
         owner.addField(this);
     }
 
-    private void validateId(int newId, DocumentType owner, int version) {
+    private void validateId(int newId, DocumentType owner) {
         if (newId >= 100 && newId <= 127) {
             throw new IllegalArgumentException("Attempt to set the id of " + this + " to " + newId +
                                                " failed, values from 100 to 127 " + "are reserved for internal use");
@@ -168,7 +149,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
 
         if (owner == null) return;
         {
-            Field existing = owner.getField(newId, version);
+            Field existing = owner.getField(newId);
             if (existing != null && !existing.getName().equals(getName())) {
                 throw new IllegalArgumentException("Couldn't set id of " + this + " to " + newId + ", " + existing +
                                                    " already has this id in " + owner);
@@ -196,15 +177,11 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
 
     /** Returns the numeric ID used to represent this field when serialized */
     public final int getId(int version) {
-        return (version > 6) ? getId() : getIdV6();
+        return getId();
     }
 
     public final int getId() {
         return fieldId;
-    }
-
-    public final int getIdV6() {
-        return fieldIdV6;
     }
 
     /**

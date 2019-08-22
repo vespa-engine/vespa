@@ -41,7 +41,7 @@ public class VespaDocumentSerializerTestCase {
 
         GrowableByteBuffer buf = new GrowableByteBuffer();
         doc.serialize(buf);
-        assertEquals(buf.position(), VespaDocumentSerializer42.getSerializedSize(doc));
+        assertEquals(buf.position(), VespaDocumentSerializerHead.getSerializedSize(doc));
     }
 
     @Test

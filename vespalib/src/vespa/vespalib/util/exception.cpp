@@ -58,8 +58,7 @@ swap(ExceptionPtr &a, ExceptionPtr &b)
 
 //-----------------------------------------------------------------------------
 
-Exception::Exception(stringref msg, stringref location,
-                     int skipStack)
+Exception::Exception(stringref msg, stringref location, int skipStack)
     : _what(),
       _msg(msg),
       _location(location),
@@ -69,8 +68,7 @@ Exception::Exception(stringref msg, stringref location,
 {
 }
 
-Exception::Exception(stringref msg, const Exception &cause,
-                     stringref location, int skipStack)
+Exception::Exception(stringref msg, const Exception &cause, stringref location, int skipStack)
     : _what(),
       _msg(msg),
       _location(location),
@@ -81,7 +79,7 @@ Exception::Exception(stringref msg, const Exception &cause,
 
 Exception::Exception(const Exception &) = default;
 Exception & Exception::operator = (const Exception &) = default;
-Exception::~Exception() {}
+Exception::~Exception() = default;
 
 const char *
 Exception::what() const throw()

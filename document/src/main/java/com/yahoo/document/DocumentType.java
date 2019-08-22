@@ -351,27 +351,6 @@ public class DocumentType extends StructuredDataType {
     }
 
     /**
-     * Gets the field matching a given ID.
-     *
-     * @param id      The ID of a field.
-     * @param version The serialization version of the document.
-     * @return Returns the matching field, or null if not found.
-     */
-    public Field getField(Integer id, int version) {
-        Field field = headerType.getField(id, version);
-        if (field == null) {
-            field = bodyType.getField(id, version);
-        }
-        if (field == null && !isRegistered()) {
-            for (DocumentType inheritedType : inherits) {
-                field = inheritedType.getField(id, version);
-                if (field != null) break;
-            }
-        }
-        return field;
-    }
-
-    /**
      * Removes an field from the DocumentType.
      *
      * @param name The name of the field.

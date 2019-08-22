@@ -48,11 +48,6 @@ public:
     typedef std::vector<FieldPathUpdate::CP> FieldPathUpdateV;
 
     /**
-     * Create old style document update, no support for field path updates.
-     */
-    static DocumentUpdate::UP create42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
-
-    /**
      * Create new style document update, possibly with field path updates.
      */
     static DocumentUpdate::UP createHEAD(const DocumentTypeRepo & repo, vespalib::nbostream stream);
@@ -129,10 +124,8 @@ private:
     bool                    _needHardReserialize;
 
     int deserializeFlags(int sizeAndFlags);
-    void init42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream && stream);
     void initHEAD(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
-    void deserialize42(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void deserializeBody(const DocumentTypeRepo &repo, vespalib::nbostream &stream);
     void lazyDeserialize(const DocumentTypeRepo & repo, vespalib::nbostream & stream);
     void ensureDeserialized() const;
@@ -143,6 +136,4 @@ private:
 
 std::ostream &operator<<(std::ostream &out, const DocumentUpdate &update);
 
-
 }
-

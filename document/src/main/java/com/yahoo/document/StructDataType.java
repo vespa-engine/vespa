@@ -62,15 +62,6 @@ public class StructDataType extends BaseStructDataType {
     }
 
     @Override
-    public Field getField(Integer fieldId, int version) {
-        Field f = super.getField(fieldId, version);
-        if (f == null && superType != null) {
-            f = superType.getField(fieldId, version);
-        }
-        return f;
-    }
-
-    @Override
     public Field getField(String fieldName) {
         Field f = super.getField(fieldName);
         if (f == null && superType != null) {
@@ -97,15 +88,6 @@ public class StructDataType extends BaseStructDataType {
             throw new IllegalArgumentException(field.toString() + " already present in inherited type '" + superType.toString() + "', " + this.toString() + " cannot override.");
         }
         super.addField(field);
-    }
-
-    @Override
-    public boolean hasField(Field field, int version) {
-        boolean f = super.hasField(field, version);
-        if (!f && superType != null) {
-            f = superType.hasField(field, version);
-        }
-        return f;
     }
 
     @Override

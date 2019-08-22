@@ -96,7 +96,7 @@ StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
     _doc_type = &repo.getDocumentType();
     _version = version;
 
-    _chunks.push_back(SerializableArray::UP(new SerializableArray()));
+    _chunks.push_back(std::make_unique<SerializableArray>());
     _chunks.back().assign(fm, std::move(buffer), comp_type, uncompressed_length);
     _hasChanged = false;
 }

@@ -264,26 +264,6 @@ TEST_F("require that we can serialize and deserialize update operations", Fixtur
     }
 }
 
-TEST_F("require that we can deserialize old update operations", Fixture)
-{
-    vespalib::nbostream stream;
-    BucketId bucket(toBucket(docId.getGlobalId()));
-    auto upd(f.makeUpdate());
-    {
-        UpdateOperation op(bucket, Timestamp(10), upd);
-        op.serializeDocumentOperationOnly(stream);
-        document::VespaDocumentSerializer serializer(stream);
-        serializer.write42(*op.getUpdate());
-    }
-    {
-        UpdateOperation op(FeedOperation::UPDATE_42);
-        op.deserialize(stream, *f._repo);
-        EXPECT_EQUAL(*upd, *op.getUpdate());
-        EXPECT_EQUAL(bucket, op.getBucketId());
-        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
-    }
-}
-
 TEST_F("require that we can serialize and deserialize put operations", Fixture)
 {
     vespalib::nbostream stream;

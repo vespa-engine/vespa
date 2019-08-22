@@ -60,7 +60,6 @@ public class FieldUpdate {
 
     // Used only while deserializing.
     private DocumentType documentType = null;
-    private int serializationVersion = 0;
 
     FieldUpdate(Field field) {
         this.field = field;
@@ -76,18 +75,18 @@ public class FieldUpdate {
         addValueUpdates(valueUpdates);
     }
 
+    @Deprecated
     public FieldUpdate(DocumentUpdateReader reader, DocumentType type, int serializationVersion) {
+        this(reader, type);
+    }
+
+    public FieldUpdate(DocumentUpdateReader reader, DocumentType type) {
         documentType = type;
-        this.serializationVersion = serializationVersion;
         reader.read(this);
     }
 
     public DocumentType getDocumentType() {
         return documentType;
-    }
-
-    public int getSerializationVersion() {
-        return serializationVersion;
     }
 
     /** Returns the field that this field update applies to */

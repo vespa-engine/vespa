@@ -30,7 +30,7 @@ MoveOperation::MoveOperation(const BucketId &bucketId,
     setDbDocumentId(DbDocumentId(targetSubDbId, 0u));
 }
 
-MoveOperation::~MoveOperation() { }
+MoveOperation::~MoveOperation() = default;
 
 void
 MoveOperation::serialize(vespalib::nbostream &os) const
