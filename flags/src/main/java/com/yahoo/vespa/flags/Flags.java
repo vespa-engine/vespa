@@ -57,6 +57,12 @@ public class Flags {
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
+    public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
+            "thin-pool-gb", 100,
+            "The size of the disk reserved for the thin pool, in base-2 GB.",
+            "Takes effect immediately, but used only during provisioning.",
+            NODE_TYPE);
+
     public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
             "use-dedicated-node-for-logserver", true,
             "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
