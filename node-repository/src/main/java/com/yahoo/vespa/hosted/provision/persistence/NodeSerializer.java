@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -153,6 +154,10 @@ public class NodeSerializer {
     private void toSlime(Flavor flavor, Cursor object) {
         if (flavor.isConfigured()) {
             object.setString(flavorKey, flavor.name());
+            if (flavor.flavorOverrides().isPresent()) {
+                Cursor resourcesObject = object.setObject(resourcesKey);
+                flavor.flavorOverrides().get().diskGb().ifPresent(diskGb -> resourcesObject.setDouble(diskKey, diskGb));
+            }
         }
         else {
             NodeResources resources = flavor.resources();
@@ -229,12 +234,14 @@ public class NodeSerializer {
     }
 
     private Flavor flavorFromSlime(Inspector object) {
+        Inspector resources = object.field(resourcesKey);
+
         if (object.field(flavorKey).valid()) {
-            return flavors.getFlavorOrThrow(object.field(flavorKey).asString());
+            Flavor flavor = flavors.getFlavorOrThrow(object.field(flavorKey).asString());
+            if (!resources.valid()) return flavor;
+            return flavor.withFlavorOverrides(FlavorOverrides.ofDisk(resources.field(diskKey).asDouble()));
         }
         else {
-            Inspector resources = object.field(resourcesKey);
-
             // TODO: Simplify Sept. 2019
             double bandwidth = Optional.of(resources.field(bandwidthKey))
                     .filter(Inspector::valid)

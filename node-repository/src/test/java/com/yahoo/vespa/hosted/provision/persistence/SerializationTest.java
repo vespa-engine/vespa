@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
@@ -34,14 +35,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -235,7 +234,7 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.of(parentHostname), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -276,6 +275,18 @@ public class SerializationTest {
                         "}";
         Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
         assertFalse(node.status().wantToRetire());
+    }
+
+    @Test
+    public void flavor_overrides_serialization() {
+        Node node = createNode();
+        assertEquals(2, node.flavor().getMinDiskAvailableGb(), 0);
+        node = node.with(node.flavor().withFlavorOverrides(FlavorOverrides.ofDisk(1234)));
+        assertEquals(1234, node.flavor().getMinDiskAvailableGb(), 0);
+
+        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
+        assertEquals(1234, copy.flavor().getMinDiskAvailableGb(), 0);
+        assertEquals(node, copy);
     }
 
     @Test
@@ -420,7 +431,7 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", singleton("127.0.0.1"), Collections.emptySet(), "myHostname", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }

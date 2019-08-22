@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A host or node flavor.
@@ -16,35 +18,59 @@ import java.util.Objects;
  */
 public class Flavor {
 
-    private boolean configured;
+    private final boolean configured;
     private final String name;
     private final int cost;
     private final Type type;
 
     /** The hardware resources of this flavor */
-    private NodeResources resources;
+    private final NodeResources resources;
+
+    private final Optional<FlavorOverrides> flavorOverrides;
 
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
-        this.configured = true;
-        this.name = flavorConfig.name();
-        this.cost = flavorConfig.cost();
-        this.type = Type.valueOf(flavorConfig.environment());
-        this.resources = new NodeResources(flavorConfig.minCpuCores(),
-                                           flavorConfig.minMainMemoryAvailableGb(),
-                                           flavorConfig.minDiskAvailableGb(),
-                                           flavorConfig.bandwidth() / 1000,
-                                           flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
+        this(
+                flavorConfig.name(),
+                new NodeResources(flavorConfig.minCpuCores(),
+                        flavorConfig.minMainMemoryAvailableGb(),
+                        flavorConfig.minDiskAvailableGb(),
+                        flavorConfig.bandwidth() / 1000,
+                        flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
+                Optional.empty(),
+                Type.valueOf(flavorConfig.environment()),
+                true,
+                flavorConfig.cost());
     }
 
     /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
-        Objects.requireNonNull(resources, "Resources cannot be null");
-        this.configured = false;
-        this.name = resources.toString();
-        this.cost = 0;
-        this.type = Type.DOCKER_CONTAINER;
-        this.resources = resources;
+        this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0);
+    }
+
+    private Flavor(String name, NodeResources resources, Optional<FlavorOverrides> flavorOverrides, Type type, boolean configured, int cost) {
+        this.name = Objects.requireNonNull(name, "Name cannot be null");
+        this.resources = Objects.requireNonNull(resources, "Resources cannot be null");
+        this.flavorOverrides = Objects.requireNonNull(flavorOverrides, "Flavor overrides cannot be null");
+        this.type = Objects.requireNonNull(type, "Type cannot be null");
+        this.configured = configured;
+        this.cost = cost;
+    }
+
+    public Flavor withFlavorOverrides(FlavorOverrides flavorOverrides) {
+        if (type == Type.DOCKER_CONTAINER)
+            throw new IllegalArgumentException("Cannot override flavor for docker containers");
+
+        if (!configured)
+            throw new IllegalArgumentException("Cannot override non-configured flavor");
+
+        NodeResources newResources = new NodeResources(
+                resources.vcpu(),
+                resources.memoryGb(),
+                flavorOverrides.diskGb().orElseGet(resources::diskGb),
+                resources.bandwidthGbps(),
+                resources.diskSpeed());
+        return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost);
     }
 
     /** Returns the unique identity of this flavor if it is configured, or the resource spec string otherwise */
@@ -65,6 +91,10 @@ public class Flavor {
     public boolean isConfigured() { return configured; }
 
     public NodeResources resources() { return resources; }
+
+    public Optional<FlavorOverrides> flavorOverrides() {
+        return flavorOverrides;
+    }
 
     public double getMinMainMemoryAvailableGb() { return resources.memoryGb(); }
 
@@ -103,7 +133,7 @@ public class Flavor {
     public void freeze() {}
 
     @Override
-    public int hashCode() { return name.hashCode(); }
+    public int hashCode() { return Objects.hash(name, flavorOverrides); }
 
     @Override
     public boolean equals(Object o) {
@@ -111,7 +141,8 @@ public class Flavor {
         if ( ! (o instanceof Flavor)) return false;
         Flavor other = (Flavor)o;
         if (configured)
-            return other.name.equals(this.name);
+            return Objects.equals(this.name, other.name) &&
+                    Objects.equals(this.flavorOverrides, other.flavorOverrides);
         else
             return this.resources.equals(other.resources);
     }
@@ -119,7 +150,7 @@ public class Flavor {
     @Override
     public String toString() {
         if (isConfigured())
-            return "flavor '" + name + "'";
+            return "flavor '" + name + "'" + flavorOverrides.map(o -> " with overrides: " + o).orElse("");
         else
             return name;
     }

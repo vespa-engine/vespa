@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
@@ -169,9 +168,8 @@ class NodePrioritizer {
             }
 
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
-                                                 Set.of(),
                                                  allocation.get().hostname(),
-                                                 Optional.of(host.hostname()),
+                                                 host.hostname(),
                                                  resources(requestedNodes).withDiskSpeed(host.flavor().resources().diskSpeed()),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);

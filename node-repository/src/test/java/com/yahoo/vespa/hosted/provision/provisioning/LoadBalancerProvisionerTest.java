@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -225,7 +224,7 @@ public class LoadBalancerProvisionerTest {
     private void makeDynamicDockerNodes(int n, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 1; i <= n; i++) {
-            var node = Node.createDockerNode(Set.of(), Set.of(), "node" + i, Optional.empty(),
+            var node = Node.createDockerNode(Set.of(), "node" + i, "parent" + i,
                                              NodeResources.fromLegacyName("d-1-1-1"), nodeType);
             nodes.add(node);
         }

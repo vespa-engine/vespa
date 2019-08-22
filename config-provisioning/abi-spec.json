@@ -389,11 +389,13 @@
     "methods": [
       "public void <init>(com.yahoo.config.provisioning.FlavorsConfig$Flavor)",
       "public void <init>(com.yahoo.config.provision.NodeResources)",
+      "public com.yahoo.config.provision.Flavor withFlavorOverrides(com.yahoo.config.provision.host.FlavorOverrides)",
       "public java.lang.String name()",
       "public int cost()",
       "public boolean isStock()",
       "public boolean isConfigured()",
       "public com.yahoo.config.provision.NodeResources resources()",
+      "public java.util.Optional flavorOverrides()",
       "public double getMinMainMemoryAvailableGb()",
       "public double getMinDiskAvailableGb()",
       "public boolean hasFastDisk()",

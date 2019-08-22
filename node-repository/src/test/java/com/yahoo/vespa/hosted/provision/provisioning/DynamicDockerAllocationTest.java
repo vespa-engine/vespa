@@ -22,6 +22,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -386,7 +387,7 @@ public class DynamicDockerAllocationTest {
     }
 
     private void addAndAssignNode(ApplicationId id, String hostname, String parentHostname, ClusterSpec clusterSpec, NodeResources flavor, int index, ProvisioningTester tester) {
-        Node node1a = Node.create("open1", Set.of("127.0.233." + index), Set.of(), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
+        Node node1a = Node.create("open1", new IP.Config(Set.of("127.0.233." + index), Set.of()), hostname, Optional.of(parentHostname), Optional.empty(), new Flavor(flavor), NodeType.tenant);
         ClusterMembership clusterMembership1 = ClusterMembership.from(
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, Instant.now());

@@ -15,7 +15,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -168,7 +167,7 @@ public class IPTest {
     }
 
     private static Node createNode(Set<String> ipAddresses) {
-        return Node.create("id1", Collections.singleton("127.0.0.1"), ipAddresses,
+        return Node.create("id1", new IP.Config(Set.of("127.0.0.1"), ipAddresses),
                            "host1", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"),
                            NodeType.host);
     }

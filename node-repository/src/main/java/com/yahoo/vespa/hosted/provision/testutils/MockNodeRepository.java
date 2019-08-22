@@ -64,34 +64,34 @@ public class MockNodeRepository extends NodeRepository {
         List<Node> nodes = new ArrayList<>();
 
         // Regular nodes
-        nodes.add(createNode("node1", "host1.yahoo.com", ipConfig(1), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("node1", "host1.yahoo.com", ipConfig(1), Optional.empty(),
                              new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant));
-        nodes.add(createNode("node2", "host2.yahoo.com", ipConfig(2), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("node2", "host2.yahoo.com", ipConfig(2), Optional.empty(),
                              new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant));
-        nodes.add(createNode("node3", "host3.yahoo.com", ipConfig(3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("node3", "host3.yahoo.com", ipConfig(3), Optional.empty(),
                              new Flavor(new NodeResources(0.5, 48, 500, 1)), NodeType.tenant));
-        Node node4 = createNode("node4", "host4.yahoo.com", ipConfig(4), Optional.of("dockerhost1.yahoo.com"), Optional.empty(),
+        Node node4 = createNode("node4", "host4.yahoo.com", ipConfig(4), Optional.of("dockerhost1.yahoo.com"),
                                 new Flavor(new NodeResources(1, 1, 100, 1)), NodeType.tenant);
         node4 = node4.with(node4.status()
                                 .withVespaVersion(new Version("6.41.0"))
                                 .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
         nodes.add(node4);
 
-        Node node5 = createNode("node5", "host5.yahoo.com", ipConfig(5), Optional.of("dockerhost2.yahoo.com"), Optional.empty(),
+        Node node5 = createNode("node5", "host5.yahoo.com", ipConfig(5), Optional.of("dockerhost2.yahoo.com"),
                                 new Flavor(new NodeResources(1, 1, 100, 1)), NodeType.tenant);
         nodes.add(node5.with(node5.status()
                                   .withVespaVersion(new Version("1.2.3"))
                                   .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
 
 
-        nodes.add(createNode("node6", "host6.yahoo.com", ipConfig(6), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("node6", "host6.yahoo.com", ipConfig(6), Optional.empty(),
                              new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant));
-        Node node7 = createNode("node7", "host7.yahoo.com", ipConfig(7), Optional.empty(), Optional.empty(),
+        Node node7 = createNode("node7", "host7.yahoo.com", ipConfig(7), Optional.empty(),
                                 new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant);
         nodes.add(node7);
 
         // 8, 9, 11 and 12 are added by web service calls
-        Node node10 = createNode("node10", "host10.yahoo.com", ipConfig(10), Optional.of("parent1.yahoo.com"), Optional.empty(),
+        Node node10 = createNode("node10", "host10.yahoo.com", ipConfig(10), Optional.of("parent1.yahoo.com"),
                                  new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
@@ -100,26 +100,26 @@ public class MockNodeRepository extends NodeRepository {
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 
-        Node node55 = createNode("node55", "host55.yahoo.com", ipConfig(55), Optional.empty(), Optional.empty(),
+        Node node55 = createNode("node55", "host55.yahoo.com", ipConfig(55), Optional.empty(),
                                  new Flavor(new NodeResources(2, 8, 50, 1)), NodeType.tenant);
         nodes.add(node55.with(node55.status().withWantToRetire(true).withWantToDeprovision(true)));
 
         /* Setup docker hosts (two of these will be reserved for spares */
-        nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipConfig(100, 1, 3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("dockerhost1", "dockerhost1.yahoo.com", ipConfig(100, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipConfig(101, 1, 3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("dockerhost2", "dockerhost2.yahoo.com", ipConfig(101, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipConfig(102, 1, 3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("dockerhost3", "dockerhost3.yahoo.com", ipConfig(102, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipConfig(103, 1, 3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("dockerhost4", "dockerhost4.yahoo.com", ipConfig(103, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), NodeType.host));
-        nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipConfig(104, 1, 3), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("dockerhost5", "dockerhost5.yahoo.com", ipConfig(104, 1, 3), Optional.empty(),
                              flavors.getFlavorOrThrow("large"), NodeType.host));
 
         // Config servers
-        nodes.add(createNode("cfg1", "cfg1.yahoo.com", ipConfig(201), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("cfg1", "cfg1.yahoo.com", ipConfig(201), Optional.empty(),
                              flavors.getFlavorOrThrow("default"), NodeType.config));
-        nodes.add(createNode("cfg2", "cfg2.yahoo.com", ipConfig(202), Optional.empty(), Optional.empty(),
+        nodes.add(createNode("cfg2", "cfg2.yahoo.com", ipConfig(202), Optional.empty(),
                              flavors.getFlavorOrThrow("default"), NodeType.config));
 
         // Ready all nodes, except 7 and 55
@@ -161,9 +161,9 @@ public class MockNodeRepository extends NodeRepository {
         activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 1, 100, 1), false, true), 1, null), app3, provisioner);
 
         List<Node> largeNodes = new ArrayList<>();
-        largeNodes.add(createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(), Optional.empty(),
+        largeNodes.add(createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(),
                                   new Flavor(new NodeResources(10, 48, 500, 1)), NodeType.tenant));
-        largeNodes.add(createNode("node14", "host14.yahoo.com", ipConfig(14), Optional.empty(), Optional.empty(),
+        largeNodes.add(createNode("node14", "host14.yahoo.com", ipConfig(14), Optional.empty(),
                                   new Flavor(new NodeResources(10, 48, 500, 1)), NodeType.tenant));
         addNodes(largeNodes);
         setReady(largeNodes, Agent.system, getClass().getSimpleName());

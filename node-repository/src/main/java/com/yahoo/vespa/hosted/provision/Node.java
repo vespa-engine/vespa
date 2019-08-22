@@ -46,15 +46,15 @@ public final class Node {
     /** The current allocation of this node, if any */
     private final Optional<Allocation> allocation;
 
-    /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, NodeResources resources, NodeType type) {
-        return new Node("fake-" + hostname, new IP.Config(ipAddresses, ipAddressPool), hostname, parentHostname, new Flavor(resources), Status.initial(), State.reserved,
+    /** Creates a node in the initial state (reserved) */
+    public static Node createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
+        return new Node("fake-" + hostname, new IP.Config(ipAddresses, Set.of()), hostname, Optional.of(parentHostname), new Flavor(resources), Status.initial(), State.reserved,
                         Optional.empty(), History.empty(), type, new Reports(), Optional.empty());
     }
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
-        return new Node(openStackId, new IP.Config(ipAddresses, ipAddressPool), hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, IP.Config ipConfig, String hostname, Optional<String> parentHostname, Optional<String> modelName, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipConfig, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                 Optional.empty(), History.empty(), type, new Reports(), modelName);
     }
 
