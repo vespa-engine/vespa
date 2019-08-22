@@ -25,7 +25,7 @@ public final class Service implements Comparable<Service> {
     public final String name;
 
     public Service(String serviceType, String host, int statePort, String clusterName, String clusterType,
-            String configId, List<Integer> ports, String name) {
+                   String configId, List<Integer> ports, String name) {
         this.serviceType = serviceType;
         this.host = host.toLowerCase();
         this.statePort = statePort;
@@ -53,8 +53,7 @@ public final class Service implements Comparable<Service> {
      * Generate an identifier string for one of the ports of this service
      * suitable for using in an URL.
      *
-     * @param port
-     *            port which this identifier pertains to
+     * @param port port which this identifier pertains to
      * @return an opaque identifier string for this service
      */
     public String getIdentifier(int port) {
