@@ -11,13 +11,7 @@ import org.apache.maven.plugins.annotations.Parameter;
  * @author jonmv
  */
 @Mojo(name = "delete")
-public class DeleteMojo extends AbstractVespaMojo {
-
-    @Parameter(property = "environment")
-    private String environment;
-
-    @Parameter(property = "region")
-    private String region;
+public class DeleteMojo extends AbstractVespaDeploymentMojo {
 
     @Override
     protected void doExecute() {
