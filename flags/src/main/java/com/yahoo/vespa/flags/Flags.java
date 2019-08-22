@@ -145,10 +145,10 @@ public class Flags {
             "Takes effect on deployment through controller",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_GROUPING_SESSION_CACHE = defineFeatureFlag(
-            "enable-grouping-session-cache", true,
-            "Enable grouping session cache",
-            "Takes effect at redeployment",
+    public static final UnboundBooleanFlag MULTIPLE_GLOBAL_ENDPOINTS = defineFeatureFlag(
+            "multiple-global-endpoints", false,
+            "Allow applications to use new endpoints syntax in deployment.xml",
+            "Takes effect on deployment through controller",
             APPLICATION_ID);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(

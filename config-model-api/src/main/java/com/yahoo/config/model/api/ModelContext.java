@@ -59,7 +59,7 @@ public interface ModelContext {
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
-        default boolean enableGroupingSessionCache() { return false; }
+        default boolean enableGroupingSessionCache() { return true; } // TODO Remove once no longer in use by old config models
         double defaultTermwiseLimit();
     }
 

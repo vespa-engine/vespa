@@ -136,7 +136,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
         private final Optional<TlsSecrets> tlsSecrets;
-        private final boolean enableGroupingSessionCache;
         private final double defaultTermwiseLimit;
 
         public Properties(ApplicationId applicationId,
@@ -174,8 +173,6 @@ public class ModelContextImpl implements ModelContext {
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.tlsSecrets = tlsSecrets;
-            this.enableGroupingSessionCache = Flags.ENABLE_GROUPING_SESSION_CACHE.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
@@ -234,11 +231,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
-
-        @Override
-        public boolean enableGroupingSessionCache() {
-            return enableGroupingSessionCache;
-        }
 
         @Override
         public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
