@@ -54,6 +54,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final NameServiceDispatcher nameServiceDispatcher;
     private final BillingMaintainer billingMaintainer;
     private final AwsEventReporterMaintainer awsEventReporterMaintainer;
+    private final RotationStatusUpdater rotationStatusUpdater;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -90,6 +91,7 @@ public class ControllerMaintenance extends AbstractComponent {
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
+        rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -120,6 +122,7 @@ public class ControllerMaintenance extends AbstractComponent {
         nameServiceDispatcher.deconstruct();
         billingMaintainer.deconstruct();
         awsEventReporterMaintainer.deconstruct();
+        rotationStatusUpdater.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

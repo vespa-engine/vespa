@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.rotation;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
@@ -19,7 +18,6 @@ public class RotationStatus {
 
     private final Map<RotationId, Map<ZoneId, RotationState>> status;
 
-    /** DO NOT USE. Public for serialization purposes */
     public RotationStatus(Map<RotationId, Map<ZoneId, RotationState>> status) {
         this.status = Map.copyOf(Objects.requireNonNull(status));
     }
@@ -33,16 +31,14 @@ public class RotationStatus {
         return status.getOrDefault(rotation, Map.of());
     }
 
-    /** Get status of given deployment, if any */
-    public RotationState of(Deployment deployment) {
-        return status.values().stream()
-                     .map(Map::entrySet)
-                     .flatMap(Collection::stream)
-                     // TODO(mpolden): Change to exact comparison after September 2019
-                     .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
-                     .map(Map.Entry::getValue)
-                     .findFirst()
-                     .orElse(RotationState.unknown);
+    /** Get status of deployment in given rotation, if any */
+    public RotationState of(RotationId rotation, Deployment deployment) {
+        return of(rotation).entrySet().stream()
+                           // TODO(mpolden): Change to exact comparison after September 2019
+                           .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
+                           .map(Map.Entry::getValue)
+                           .findFirst()
+                           .orElse(RotationState.unknown);
     }
 
     @Override

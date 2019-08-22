@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.routing;
 
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -10,9 +12,20 @@ import java.util.Map;
  */
 public class MemoryGlobalRoutingService implements GlobalRoutingService {
 
+    private final Map<String, Map<ZoneId, RotationStatus>> status = new HashMap<>();
+
     @Override
     public Map<ZoneId, RotationStatus> getHealthStatus(String rotationName) {
-        return Map.of(ZoneId.from("prod", "us-west-1"), RotationStatus.IN);
+        if (status.isEmpty()) {
+            return Map.of(ZoneId.from("prod", "us-west-1"), RotationStatus.IN);
+        }
+        return Collections.unmodifiableMap(status.getOrDefault(rotationName, Map.of()));
+    }
+
+    public MemoryGlobalRoutingService setStatus(String rotation, ZoneId zone, RotationStatus status) {
+        this.status.putIfAbsent(rotation, new HashMap<>());
+        this.status.get(rotation).put(zone, status);
+        return this;
     }
 
 }

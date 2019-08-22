@@ -2,21 +2,16 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,9 +53,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     applications.lockIfPresent(application.id(), locked ->
                             applications.store(locked.with(controller().metricsService().getApplicationMetrics(application.id()))));
 
-                    applications.lockIfPresent(application.id(), locked ->
-                            applications.store(locked.withRotationStatus(rotationStatus(application))));
-
                     for (Deployment deployment : application.deployments().values()) {
                         MetricsService.DeploymentMetrics collectedMetrics = controller().metricsService()
                                                                                         .getDeploymentMetrics(application.id(), deployment.zone());
@@ -101,26 +93,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         }
     }
 
-    /** Get global rotation status for application */
-    // TODO(mpolden): Stop fetching rotation status from MetricsService and remove this
-    private RotationStatus rotationStatus(Application application) {
-        return applications.rotationRepository().getRotation(application)
-                           .map(rotation -> {
-                               var rotationStatus = controller().metricsService().getRotationStatus(rotation.name());
-                               var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                               rotationStatus.forEach((hostname, zoneStatus) -> statusMap.put(ZoneId.from("prod", hostname.value()), from(zoneStatus)));
-                               return new RotationStatus(Map.of(rotation.id(), statusMap));
-                           })
-                           .orElse(RotationStatus.EMPTY);
-    }
-
-    private static RotationState from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {
-        switch (status) {
-            case IN: return RotationState.in;
-            case OUT: return RotationState.out;
-            case UNKNOWN: return RotationState.unknown;
-            default: throw new IllegalArgumentException("Unknown API value for rotation status: " + status);
-        }
+    private static DeploymentMetricsMaintainer maintainer(Controller controller) {
+        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
     }
 
 }

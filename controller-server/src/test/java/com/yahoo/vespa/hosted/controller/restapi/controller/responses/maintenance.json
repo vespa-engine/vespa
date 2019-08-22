@@ -55,6 +55,9 @@
       "name": "ResourceMeterMaintainer"
     },
     {
+      "name": "RotationStatusUpdater"
+    },
+    {
       "name": "SystemUpgrader"
     },
     {

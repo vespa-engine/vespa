@@ -1677,16 +1677,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
         List<Application> applicationList = applicationController.asList();
         applicationList.forEach(application -> {
                 applicationController.lockIfPresent(application.id(), locked ->
-                        applicationController.store(locked.withRotationStatus(rotationStatus(application))));
+                        applicationController.store(locked.with(rotationStatus(application))));
         });
     }
 
     private RotationStatus rotationStatus(Application application) {
         return controllerTester.controller().applications().rotationRepository().getRotation(application)
                 .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().metricsService().getRotationStatus(rotation.name());
+                    var rotationStatus = controllerTester.controller().globalRoutingService().getHealthStatus(rotation.name());
                     var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                    rotationStatus.forEach((hostname, status) -> statusMap.put(ZoneId.from("prod", hostname.value()), RotationState.in));
+                    rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
                     return new RotationStatus(Map.of(rotation.id(), statusMap));
                 })
                 .orElse(RotationStatus.EMPTY);
