@@ -78,6 +78,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.zookeeperClientPort().isPresent()) {
             builder.clientPort(options.zookeeperClientPort().get());
         }
+        boolean hosted = options.hostedVespa().orElse(false);
+        builder.useRestrictedServerCnxnFactory( ! hosted);
     }
 
     @Override
