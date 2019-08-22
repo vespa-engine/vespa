@@ -201,7 +201,7 @@ public class ApplicationController {
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Version oldestInstalledPlatform(ApplicationId id) {
         return get(id).flatMap(application -> application.productionDeployments().keySet().stream()
-                                                         .flatMap(zone -> configServer.nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
+                                                         .flatMap(zone -> configServer().nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
                                                          .map(Node::currentVersion)
                                                          .filter(version -> ! version.isEmpty())
                                                          .min(naturalOrder()))
@@ -346,9 +346,9 @@ public class ApplicationController {
 
                     // Include global DNS names
                     Application app = application.get();
-                    app.rotations().stream()
-                       .filter(assignedRotation -> assignedRotation.regions().contains(zone.region()))
-                       .map(assignedRotation -> {
+                    app.assignedRotations().stream()
+                            .filter(assignedRotation -> assignedRotation.regions().contains(zone.region()))
+                            .map(assignedRotation -> {
                                 return new ContainerEndpoint(
                                         assignedRotation.clusterId().value(),
                                         Stream.concat(
@@ -357,17 +357,14 @@ public class ApplicationController {
                                         ).collect(Collectors.toList())
                                 );
                             })
-                       .forEach(endpoints::add);
+                            .forEach(endpoints::add);
                 } else {
                     application = withRotationLegacy(application, zone);
 
                     // Add both the names we have in DNS for each endpoint as well as name of the rotation so healthchecks works
                     Application app = application.get();
                     app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).forEach(legacyRotations::add);
-                    app.rotations().stream()
-                       .map(AssignedRotation::rotationId)
-                       .map(RotationId::asString)
-                       .forEach(legacyRotations::add);
+                    app.rotations().stream().map(RotationId::asString).forEach(legacyRotations::add);
                 }
 
                 // Get application certificate (provisions a new certificate if missing)
@@ -441,7 +438,7 @@ public class ApplicationController {
             deploySystemApplicationPackage(application, zone, version);
         } else {
             // Deploy by calling node repository directly
-            configServer.nodeRepository().upgrade(zone, application.nodeType(), version);
+            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
         }
     }
 
@@ -528,7 +525,7 @@ public class ApplicationController {
     }
 
     private void registerAssignedRotationCnames(Application application) {
-        application.rotations().forEach(assignedRotation -> {
+        application.assignedRotations().forEach(assignedRotation -> {
             var endpoints = application.endpointsIn(controller.system(), assignedRotation.endpointId())
                                        .scope(Endpoint.Scope.global);
             var maybeRotation = rotationRepository.getRotation(assignedRotation.rotationId());
@@ -696,7 +693,7 @@ public class ApplicationController {
             applicationStore.removeAll(id);
             applicationStore.removeAll(TesterId.of(id));
 
-            application.get().rotations().forEach(assignedRotation -> {
+            application.get().assignedRotations().forEach(assignedRotation -> {
                 var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
                 endpoints.asList().stream()
                          .map(Endpoint::dnsName)
@@ -799,6 +796,8 @@ public class ApplicationController {
                                   id.application().value().replaceAll("-", "_"),
                                   id.instance().value());
     }
+
+    public ConfigServer configServer() { return configServer; }
 
     /**
      * Returns a lock which provides exclusive rights to changing this application.

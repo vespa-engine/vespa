@@ -1,22 +1,22 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -102,25 +102,23 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     }
 
     /** Get global rotation status for application */
-    // TODO(mpolden): Stop fetching rotation status from MetricsService and remove this
-    private RotationStatus rotationStatus(Application application) {
+    private Map<HostName, RotationStatus> rotationStatus(Application application) {
         return applications.rotationRepository().getRotation(application)
-                           .map(rotation -> {
-                               var rotationStatus = controller().metricsService().getRotationStatus(rotation.name());
-                               var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                               rotationStatus.forEach((hostname, zoneStatus) -> statusMap.put(ZoneId.from("prod", hostname.value()), from(zoneStatus)));
-                               return new RotationStatus(Map.of(rotation.id(), statusMap));
+                           .map(rotation -> controller().metricsService().getRotationStatus(rotation.name()))
+                           .map(rotationStatus -> {
+                               Map<HostName, RotationStatus> result = new TreeMap<>();
+                               rotationStatus.forEach((hostname, status) -> result.put(hostname, from(status)));
+                               return result;
                            })
-                           .orElse(RotationStatus.EMPTY);
+                           .orElseGet(Collections::emptyMap);
     }
 
-    private static RotationState from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {
+    private static RotationStatus from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {
         switch (status) {
-            case IN: return RotationState.in;
-            case OUT: return RotationState.out;
-            case UNKNOWN: return RotationState.unknown;
+            case IN: return RotationStatus.in;
+            case OUT: return RotationStatus.out;
+            case UNKNOWN: return RotationStatus.unknown;
             default: throw new IllegalArgumentException("Unknown API value for rotation status: " + status);
         }
     }
-
 }
