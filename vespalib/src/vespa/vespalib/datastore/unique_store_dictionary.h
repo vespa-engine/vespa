@@ -9,20 +9,17 @@ namespace search::datastore {
 
 class EntryComparatorWrapper;
 
-/*
+/**
  * A dictionary for unique store. Mostly accessed via base class.
  */
+template <typename DictionaryType>
 class UniqueStoreDictionary : public UniqueStoreDictionaryBase
 {
 public:
-    using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
-    using Dictionary = btree::BTree<EntryRef, btree::BTreeNoLeafData,
-                                    btree::NoAggregated,
-                                    EntryComparatorWrapper,
-                                    DictionaryTraits>;
+    using Dictionary = DictionaryType;
 
 private:
-    Dictionary _dict;
+    DictionaryType _dict;
 
 public:
     UniqueStoreDictionary();
