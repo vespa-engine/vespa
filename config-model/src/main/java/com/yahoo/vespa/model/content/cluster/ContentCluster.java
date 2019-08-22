@@ -425,7 +425,7 @@ public class ContentCluster extends AbstractConfigProducer implements
          * physical node. It will not achieve maximum spread over all levels in a multilevel group hierarchy.
          */
         // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
-        //       which overlaps with previously drawn nodes as this will prevent rolling upgrade
+        //       which overlaps with previously drawn nodes as that will prevent rolling upgrade
         private List<HostResource> drawContentHostsRecursively(int count, StorageGroup group) {
             Set<HostResource> hosts = new HashSet<>();
             if (group.getNodes().isEmpty()) {

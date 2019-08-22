@@ -128,21 +128,16 @@ public class HttpRequest {
         }
 
         private void populateProperties() {
-            if (parent == null) {
-                return;
-            }
+            if (parent == null) return;
 
             properties.putAll(parent.propertyMap());
         }
 
         /**
-         * Add a parameter to the request. Multi-value parameters are not
-         * supported.
+         * Add a parameter to the request. Multi-value parameters are not supported.
          *
-         * @param key
-         *            parameter name
-         * @param value
-         *            parameter value
+         * @param key parameter name
+         * @param value parameter value
          * @return this Builder instance
          */
         public Builder put(String key, String value) {
@@ -162,8 +157,7 @@ public class HttpRequest {
         /**
          * Set the HTTP method for the new request.
          *
-         * @param method
-         *            the HTTP method to use for the new request
+         * @param method the HTTP method to use for the new request
          * @return this Builder instance
          */
         public Builder method(Method method) {
@@ -174,8 +168,7 @@ public class HttpRequest {
         /**
          * Define the JDisc parent request.
          *
-         * @param request
-         *            a valid JDisc request for the current container
+         * @param request a valid JDisc request for the current container
          * @return this Builder instance
          */
         public Builder jdiscRequest(com.yahoo.jdisc.http.HttpRequest request) {
@@ -214,8 +207,7 @@ public class HttpRequest {
          * instance's JDisc request, but no properties will be propagated into
          * the original JDisc request.
          *
-         * @return a new HttpRequest instance reflecting the given request data
-         *         and parameters
+         * @return a new HttpRequest instance reflecting the given request data and parameters
          */
         public HttpRequest createDirectRequest() {
             ensureRequestData();

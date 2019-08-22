@@ -110,7 +110,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.startsWith("/nodes/v2/state/ready/") ||
-                path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
+            path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
             nodeRepository.markNodeAvailableForNewAllocation(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }

@@ -10,6 +10,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
@@ -74,6 +75,16 @@ public class ExecutionFactory extends AbstractComponent {
     @Override
     public void deconstruct() {
         rendererRegistry.deconstruct();
+    }
+
+    public static ExecutionFactory empty() {
+        return new ExecutionFactory(new ChainsConfig.Builder().build(),
+                                    new IndexInfoConfig.Builder().build(),
+                                    new QrSearchersConfig.Builder().build(),
+                                    new ComponentRegistry<>(),
+                                    new SpecialtokensConfig.Builder().build(),
+                                    new SimpleLinguistics(),
+                                    new ComponentRegistry<>());
     }
 
 }

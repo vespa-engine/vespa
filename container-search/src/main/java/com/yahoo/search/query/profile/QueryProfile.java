@@ -330,21 +330,21 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         return node;
     }
 
-    final Object get(CompoundName name,DimensionBinding dimensionBinding) {
-        return lookup(name,false,dimensionBinding);
+    final Object get(CompoundName name, DimensionBinding dimensionBinding) {
+        return lookup(name, false, dimensionBinding);
     }
 
     /**
      * Returns the node at the position prescribed by the given name (without doing substitutions) -
      * a primitive value, a substitutable string, a query profile, or null if not found.
      */
-    public final Object lookup(String name, Map<String,String> context) {
+    public final Object lookup(String name, Map<String, String> context) {
         return lookup(new CompoundName(name),true,DimensionBinding.createFrom(getDimensions(),context));
     }
 
     /** Sets a value in this or any nested profile using null as context */
     public final void set(String name, Object value, QueryProfileRegistry registry) {
-        set(name,value,(Map<String,String>)null, registry);
+        set(name, value, (Map<String, String>)null, registry);
     }
 
     /**
@@ -357,16 +357,16 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @throws IllegalArgumentException if the given name is illegal given the types of this or any nested query profile
      * @throws IllegalStateException if this query profile is frozen
      */
-    public final void set(CompoundName name,Object value,Map<String,String> context, QueryProfileRegistry registry) {
+    public final void set(CompoundName name, Object value, Map<String,String> context, QueryProfileRegistry registry) {
         set(name, value, DimensionBinding.createFrom(getDimensions(), context), registry);
     }
 
-    public final void set(String name,Object value,Map<String,String> context, QueryProfileRegistry registry) {
+    public final void set(String name, Object value, Map<String,String> context, QueryProfileRegistry registry) {
         set(new CompoundName(name), value, DimensionBinding.createFrom(getDimensions(), context), registry);
     }
 
-    public final void set(String name,Object value,String[] dimensionValues, QueryProfileRegistry registry) {
-        set(name,value,DimensionValues.createFrom(dimensionValues), registry);
+    public final void set(String name, Object value, String[] dimensionValues, QueryProfileRegistry registry) {
+        set(name, value, DimensionValues.createFrom(dimensionValues), registry);
     }
 
     /**
@@ -382,7 +382,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @throws IllegalArgumentException if the given name is illegal given the types of this or any nested query profile
      * @throws IllegalStateException if this query profile is frozen
      */
-    public final void set(String name,Object value,DimensionValues dimensionValues, QueryProfileRegistry registry) {
+    public final void set(String name,Object value, DimensionValues dimensionValues, QueryProfileRegistry registry) {
         set(new CompoundName(name), value, DimensionBinding.createFrom(getDimensions(), dimensionValues), registry);
     }
 

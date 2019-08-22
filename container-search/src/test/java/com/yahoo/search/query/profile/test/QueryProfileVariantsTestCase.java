@@ -26,60 +26,78 @@ public class QueryProfileVariantsTestCase {
 
     @Test
     public void testSimple() {
-        QueryProfile profile=new QueryProfile("a");
+        QueryProfile profile = new QueryProfile("a");
         profile.set("a","a.deflt", null);
         profile.setDimensions(new String[] {"x","y","z"});
-        profile.set("a","a.1.*.*",new String[] {"x1",null,null}, null);
-        profile.set("a","a.1.*.1",new String[] {"x1",null,"z1"}, null);
-        profile.set("a","a.1.*.5",new String[] {"x1",null,"z5"}, null);
-        profile.set("a","a.1.1.*",new String[] {"x1","y1",null}, null);
-        profile.set("a","a.1.5.*",new String[] {"x1","y5",null}, null);
-        profile.set("a","a.1.1.1",new String[] {"x1","y1","z1"}, null);
-        profile.set("a","a.2.1.1",new String[] {"x2","y1","z1"}, null);
-        profile.set("a","a.1.2.2",new String[] {"x1","y2","z2"}, null);
-        profile.set("a","a.1.2.3",new String[] {"x1","y2","z3"}, null);
-        profile.set("a","a.2.*.*",new String[] {"x2"          }, null); // Same as ,null,null
+        profile.set("a","a.1.*.*", new String[] {"x1",null,null}, null);
+        profile.set("a","a.1.*.1", new String[] {"x1",null,"z1"}, null);
+        profile.set("a","a.1.*.5", new String[] {"x1",null,"z5"}, null);
+        profile.set("a","a.1.1.*", new String[] {"x1","y1",null}, null);
+        profile.set("a","a.1.5.*", new String[] {"x1","y5",null}, null);
+        profile.set("a","a.1.1.1", new String[] {"x1","y1","z1"}, null);
+        profile.set("a","a.2.1.1", new String[] {"x2","y1","z1"}, null);
+        profile.set("a","a.1.2.2", new String[] {"x1","y2","z2"}, null);
+        profile.set("a","a.1.2.3", new String[] {"x1","y2","z3"}, null);
+        profile.set("a","a.2.*.*", new String[] {"x2"          }, null); // Same as ,null,null
         CompiledQueryProfile cprofile = profile.compile(null);
 
         // Perfect matches
-        assertGet("a.deflt","a",new String[] {null,null,null}, profile, cprofile);
-        assertGet("a.1.*.*","a",new String[] {"x1",null,null}, profile, cprofile);
-        assertGet("a.1.1.*","a",new String[] {"x1","y1",null}, profile, cprofile);
-        assertGet("a.1.5.*","a",new String[] {"x1","y5",null}, profile, cprofile);
-        assertGet("a.1.*.1","a",new String[] {"x1",null,"z1"}, profile, cprofile);
-        assertGet("a.1.*.5","a",new String[] {"x1",null,"z5"}, profile, cprofile);
-        assertGet("a.1.1.1","a",new String[] {"x1","y1","z1"}, profile, cprofile);
-        assertGet("a.2.1.1","a",new String[] {"x2","y1","z1"}, profile, cprofile);
-        assertGet("a.1.2.2","a",new String[] {"x1","y2","z2"}, profile, cprofile);
-        assertGet("a.1.2.3","a",new String[] {"x1","y2","z3"}, profile, cprofile);
-        assertGet("a.2.*.*","a",new String[] {"x2",null,null}, profile, cprofile);
+        assertGet("a.deflt","a", new String[] {null,null,null}, profile, cprofile);
+        assertGet("a.1.*.*","a", new String[] {"x1",null,null}, profile, cprofile);
+        assertGet("a.1.1.*","a", new String[] {"x1","y1",null}, profile, cprofile);
+        assertGet("a.1.5.*","a", new String[] {"x1","y5",null}, profile, cprofile);
+        assertGet("a.1.*.1","a", new String[] {"x1",null,"z1"}, profile, cprofile);
+        assertGet("a.1.*.5","a", new String[] {"x1",null,"z5"}, profile, cprofile);
+        assertGet("a.1.1.1","a", new String[] {"x1","y1","z1"}, profile, cprofile);
+        assertGet("a.2.1.1","a", new String[] {"x2","y1","z1"}, profile, cprofile);
+        assertGet("a.1.2.2","a", new String[] {"x1","y2","z2"}, profile, cprofile);
+        assertGet("a.1.2.3","a", new String[] {"x1","y2","z3"}, profile, cprofile);
+        assertGet("a.2.*.*","a", new String[] {"x2",null,null}, profile, cprofile);
 
         // Wildcard matches
-        assertGet("a.deflt","a",new String[] {"x?","y?","z?"}, profile, cprofile);
-        assertGet("a.deflt","a",new String[] {"x?","y1","z1"}, profile, cprofile);
-        assertGet("a.1.*.*","a",new String[] {"x1","y?","z?"}, profile, cprofile);
-        assertGet("a.1.*.*","a",new String[] {"x1","y?","z?"}, profile, cprofile);
-        assertGet("a.1.1.*","a",new String[] {"x1","y1","z?"}, profile, cprofile);
-        assertGet("a.1.*.1","a",new String[] {"x1","y?","z1"}, profile, cprofile);
-        assertGet("a.1.5.*","a",new String[] {"x1","y5","z?"}, profile, cprofile);
-        assertGet("a.1.*.5","a",new String[] {"x1","y?","z5"}, profile, cprofile);
-        assertGet("a.1.5.*","a",new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
-        assertGet("a.2.*.*","a",new String[] {"x2","y?","z?"}, profile, cprofile);
+        assertGet("a.deflt","a", new String[] {"x?","y?","z?"}, profile, cprofile);
+        assertGet("a.deflt","a", new String[] {"x?","y1","z1"}, profile, cprofile);
+        assertGet("a.1.*.*","a", new String[] {"x1","y?","z?"}, profile, cprofile);
+        assertGet("a.1.*.*","a", new String[] {"x1","y?","z?"}, profile, cprofile);
+        assertGet("a.1.1.*","a", new String[] {"x1","y1","z?"}, profile, cprofile);
+        assertGet("a.1.*.1","a", new String[] {"x1","y?","z1"}, profile, cprofile);
+        assertGet("a.1.5.*","a", new String[] {"x1","y5","z?"}, profile, cprofile);
+        assertGet("a.1.*.5","a", new String[] {"x1","y?","z5"}, profile, cprofile);
+        assertGet("a.1.5.*","a", new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
+        assertGet("a.2.*.*","a", new String[] {"x2","y?","z?"}, profile, cprofile);
+    }
+
+    @Test
+    public void testInheritedVariants() {
+        QueryProfile parent = new QueryProfile("parent");
+        parent.setDimensions(new String[] { "parentDim" });
+        parent.set("property", "defaultValue", null);
+        parent.set("property", "variantValue", new String[] {"V2" }, null);
+
+        QueryProfile child = new QueryProfile("child");
+        child.addInherited(parent);
+        child.setDimensions(new String[] { "childDim" });
+        child.set("otherProperty", "otherPropertyValue", new String[] { "V1" }, null);
+
+        CompiledQueryProfile cchild = child.compile(null);
+        assertEquals("defaultValue", new Query("?query=test",               cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2",             cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2&childDim=V1", cchild).properties().get("property"));
     }
 
     @Test
     public void testVariantsOfInlineCompound() {
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
-        profile.set("a.b","a.b", null);
-        profile.set("a.b","a.b.x1",new String[] {"x1"}, null);
-        profile.set("a.b","a.b.x2",new String[] {"x2"}, null);
+        profile.set("a.b", "a.b", null);
+        profile.set("a.b", "a.b.x1", new String[] {"x1"}, null);
+        profile.set("a.b", "a.b.x2", new String[] {"x2"}, null);
 
         CompiledQueryProfile cprofile = profile.compile(null);
 
-        assertEquals("a.b",cprofile.get("a.b"));
-        assertEquals("a.b.x1",cprofile.get("a.b", toMap("x=x1")));
-        assertEquals("a.b.x2",cprofile.get("a.b", toMap("x=x2")));
+        assertEquals("a.b", cprofile.get("a.b"));
+        assertEquals("a.b.x1", cprofile.get("a.b", toMap("x=x1")));
+        assertEquals("a.b.x2", cprofile.get("a.b", toMap("x=x2")));
     }
 
     @Test
@@ -105,7 +123,7 @@ public class QueryProfileVariantsTestCase {
 
     @Test
     public void testVariantsOfExplicitCompound() {
-        QueryProfile a1=new QueryProfile("a1");
+        QueryProfile a1 = new QueryProfile("a1");
         a1.set("b","a.b", null);
 
         QueryProfile profile=new QueryProfile("test");
@@ -116,50 +134,50 @@ public class QueryProfileVariantsTestCase {
 
         CompiledQueryProfile cprofile = profile.compile(null);
 
-        assertEquals("a.b",cprofile.get("a.b"));
-        assertEquals("a.b.x1",cprofile.get("a.b", toMap("x=x1")));
-        assertEquals("a.b.x2",cprofile.get("a.b", toMap("x=x2")));
+        assertEquals("a.b", cprofile.get("a.b"));
+        assertEquals("a.b.x1", cprofile.get("a.b", toMap("x=x1")));
+        assertEquals("a.b.x2", cprofile.get("a.b", toMap("x=x2")));
     }
 
     @Test
     public void testCompound() {
         // Configuration phase
 
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setDimensions(new String[] {"x","y"});
 
-        QueryProfile a1=new QueryProfile("a1");
-        a1.set("b","a1.b.default", null);
-        a1.set("c","a1.c.default", null);
-        a1.set("d","a1.d.default", null);
-        a1.set("e","a1.e.default", null);
+        QueryProfile a1 = new QueryProfile("a1");
+        a1.set("b", "a1.b.default", null);
+        a1.set("c", "a1.c.default", null);
+        a1.set("d", "a1.d.default", null);
+        a1.set("e", "a1.e.default", null);
 
-        QueryProfile a2=new QueryProfile("a2");
-        a2.set("b","a2.b.default", null);
-        a2.set("c","a2.c.default", null);
-        a2.set("d","a2.d.default", null);
-        a2.set("e","a2.e.default", null);
+        QueryProfile a2 = new QueryProfile("a2");
+        a2.set("b", "a2.b.default", null);
+        a2.set("c", "a2.c.default", null);
+        a2.set("d", "a2.d.default", null);
+        a2.set("e", "a2.e.default", null);
 
         profile.set("a",a1, null); // Must set profile references before overrides
-        profile.set("a.b","a.b.default-override", null);
-        profile.set("a.c","a.c.default-override", null);
-        profile.set("a.d","a.d.default-override", null);
-        profile.set("a.g","a.g.default-override", null);
+        profile.set("a.b", "a.b.default-override", null);
+        profile.set("a.c", "a.c.default-override", null);
+        profile.set("a.d", "a.d.default-override", null);
+        profile.set("a.g", "a.g.default-override", null);
 
-        String[] d1=new String[] { "x1","y1" };
-        profile.set("a",a1,d1, null);
-        profile.set("a.b","x1.y1.a.b.default-override",d1, null);
-        profile.set("a.c","x1.y1.a.c.default-override",d1, null);
-        profile.set("a.g","x1.y1.a.g.default-override",d1, null); // This value is never manifest because the runtime override overrides all variants
+        String[] d1 = new String[] { "x1","y1" };
+        profile.set("a", a1, d1, null);
+        profile.set("a.b", "x1.y1.a.b.default-override", d1, null);
+        profile.set("a.c", "x1.y1.a.c.default-override", d1, null);
+        profile.set("a.g", "x1.y1.a.g.default-override", d1, null); // This value is never manifest because the runtime override overrides all variants
 
-        String[] d2=new String[] { "x1","y2" };
-        profile.set("a.b","x1.y2.a.b.default-override",d2, null);
-        profile.set("a.c","x1.y2.a.c.default-override",d2, null);
+        String[] d2 = new String[] { "x1","y2" };
+        profile.set("a.b","x1.y2.a.b.default-override", d2, null);
+        profile.set("a.c","x1.y2.a.c.default-override", d2, null);
 
-        String[] d3=new String[] { "x2","y1" };
-        profile.set("a",a2,d3, null);
-        profile.set("a.b","x2.y1.a.b.default-override",d3, null);
-        profile.set("a.c","x2.y1.a.c.default-override",d3, null);
+        String[] d3 = new String[] { "x2","y1" };
+        profile.set("a", a2, d3, null);
+        profile.set("a.b", "x2.y1.a.b.default-override", d3, null);
+        profile.set("a.c", "x2.y1.a.c.default-override", d3, null);
 
 
         // Runtime phase - four simultaneous requests using different variants makes their own overrides
@@ -172,8 +190,8 @@ public class QueryProfileVariantsTestCase {
         d1RuntimeProfile.set("a.g", "a.g.d1.runtime-override", toMap("x=x1", "y=y1"));
 
         QueryProfileProperties d2RuntimeProfile = new QueryProfileProperties(profile.compile(null));
-        d2RuntimeProfile.set("a.f", "a.f.d2.runtime-override",toMap("x=x1", "y=y2"));
-        d2RuntimeProfile.set("a.g", "a.g.d2.runtime-override",toMap("x=x1", "y=y2"));
+        d2RuntimeProfile.set("a.f", "a.f.d2.runtime-override", toMap("x=x1", "y=y2"));
+        d2RuntimeProfile.set("a.g", "a.g.d2.runtime-override", toMap("x=x1", "y=y2"));
 
         QueryProfileProperties d3RuntimeProfile = new QueryProfileProperties(profile.compile(null));
         d3RuntimeProfile.set("a.f", "a.f.d3.runtime-override", toMap("x=x2", "y=y1"));
@@ -246,9 +264,9 @@ public class QueryProfileVariantsTestCase {
 
         CompiledQueryProfile cchild = child.compile(null);
 
-        assertEquals("a.default",cchild.get("a"));
-        assertEquals("a.x1.y1",cchild.get("a", toMap("x=x1","y=y1")));
-        assertEquals("a.x1.y2",cchild.get("a", toMap("x=x1","y=y2")));
+        assertEquals("a.default", cchild.get("a"));
+        assertEquals("a.x1.y1", cchild.get("a", toMap("x=x1","y=y1")));
+        assertEquals("a.x1.y2", cchild.get("a", toMap("x=x1","y=y2")));
     }
 
     @Test
