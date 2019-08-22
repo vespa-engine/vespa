@@ -182,7 +182,7 @@ VespaDocumentSerializer::write(const AnnotationReferenceFieldValue &value)
 
 void VespaDocumentSerializer::write(const ArrayFieldValue &value) {
     putInt1_2_4Bytes(_stream, value.size());
-    for (auto & item : value) {
+    for (const auto & item : value) {
        item.accept(*this);
     }
 }
@@ -405,7 +405,7 @@ void VespaDocumentSerializer::write(const StructFieldValue &value,
 
 void
 VespaDocumentSerializer::write(const WeightedSetFieldValue &value) {
-   auto type = static_cast<const WeightedSetDataType *>(value.getDataType());
+    auto type = static_cast<const WeightedSetDataType *>(value.getDataType());
     _stream << static_cast<uint32_t>(type->getNestedType().getId());
     _stream << static_cast<uint32_t>(value.size());
     for (const auto & entry : value) {
