@@ -62,15 +62,22 @@ class TypeConverter {
     }
 
     private static TensorShapeProto tensorFlowShape(NodeDef node) {
-        AttrValue attrValueList = node.getAttrMap().get("_output_shapes");
-        if (attrValueList == null)
+        // Use specific shape if available...
+        AttrValue attrShape = node.getAttrMap().get("shape");
+        if (attrShape != null && attrShape.getValueCase() == AttrValue.ValueCase.SHAPE) {
+            return attrShape.getShape();
+        }
+
+        // ... else use inferred shape
+        AttrValue attrOutputShapes = node.getAttrMap().get("_output_shapes");
+        if (attrOutputShapes == null)
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
                                                "does not exist");
-        if (attrValueList.getValueCase() != AttrValue.ValueCase.LIST)
+        if (attrOutputShapes.getValueCase() != AttrValue.ValueCase.LIST)
             throw new IllegalArgumentException("_output_shapes attribute of '" + node.getName() + "' " +
                                                "is not of expected type");
 
-        return attrValueList.getList().getShape(0); // support multiple outputs?
+        return attrOutputShapes.getList().getShape(0); // support multiple outputs?
     }
 
     private static DataType tensorFlowValueType(NodeDef node) {
