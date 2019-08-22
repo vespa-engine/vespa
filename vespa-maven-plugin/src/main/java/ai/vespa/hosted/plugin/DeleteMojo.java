@@ -1,5 +1,7 @@
 package ai.vespa.hosted.plugin;
 
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -19,6 +21,9 @@ public class DeleteMojo extends AbstractVespaMojo {
 
     @Override
     protected void doExecute() {
+        if (environment != null && ! Environment.from(environment).isManuallyDeployed())
+            throw new IllegalArgumentException("Manual deletion is not permitted in " + environment);
+
         getLog().info(controller.deactivate(id, zoneOf(environment, region)));
     }
 
