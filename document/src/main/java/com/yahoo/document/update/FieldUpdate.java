@@ -305,7 +305,7 @@ public class FieldUpdate {
 
     @Override
     public int hashCode() {
-        return field.getId(Document.SERIALIZED_VERSION) + valueUpdates.hashCode();
+        return field.getId() + valueUpdates.hashCode();
     }
 
     @Override
