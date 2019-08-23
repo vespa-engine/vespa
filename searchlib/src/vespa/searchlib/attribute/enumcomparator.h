@@ -10,14 +10,17 @@ namespace search {
  * Template comparator class for the various entry types.
  **/
 template <typename EntryType>
-class EnumStoreComparatorT : public EnumStoreComparator {
+class EnumStoreComparatorT : public datastore::EntryComparator {
 public:
-    typedef EnumStoreT<EntryType> EnumStoreType;
+    using EnumStoreType = EnumStoreT<EntryType>;
 protected:
-    typedef typename EntryType::Type EntryValue;
+    using EntryValue = typename EntryType::Type;
+    using EnumIndex = typename EnumStoreType::Index;
+
     const EnumStoreType     & _enumStore;
     EntryValue  _value;
-    EntryValue getValue(const EnumIndex & idx) const {
+    EntryValue getValue(const datastore::EntryRef ref) const {
+        EnumIndex idx(ref);
         if (idx.valid()) {
             return _enumStore.getValue(idx);
         }
@@ -48,7 +51,7 @@ public:
         }
         return 1;
     }
-    bool operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override {
+    bool operator() (const datastore::EntryRef lhs, const datastore::EntryRef rhs) const override {
         return compare(getValue(lhs), getValue(rhs)) < 0;
     }
 };
@@ -87,10 +90,11 @@ public:
         return ParentType::compare(lhs, rhs);
     }
 
-    bool operator() (const EnumIndex & lhs, const EnumIndex & rhs) const override {
-        if (getUsePrefix())
+    bool operator() (const datastore::EntryRef lhs, const datastore::EntryRef rhs) const override {
+        if (getUsePrefix()) {
             return compareFoldedPrefix(getValue(lhs),
                                        getValue(rhs), _prefixLen) < 0;
+        }
         return compareFolded(getValue(lhs), getValue(rhs)) < 0;
     }
 };

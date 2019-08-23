@@ -5,20 +5,32 @@
 #include "unique_store.h"
 #include "unique_store_dictionary.h"
 #include "datastore.hpp"
-#include <vespa/vespalib/util/bufferwriter.h>
 #include "unique_store_allocator.hpp"
 #include "unique_store_builder.hpp"
+#include "unique_store_dictionary.hpp"
 #include "unique_store_saver.hpp"
+#include <vespa/vespalib/util/bufferwriter.h>
 #include <atomic>
 #include <algorithm>
 
 namespace search::datastore {
 
+namespace uniquestore {
+
+using DefaultDictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
+using DefaultDictionary = btree::BTree<EntryRef, btree::BTreeNoLeafData,
+                                       btree::NoAggregated,
+                                       EntryComparatorWrapper,
+                                       DefaultDictionaryTraits>;
+using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
+
+}
+
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
     : _allocator(),
       _store(_allocator.get_data_store()),
-      _dict(std::make_unique<UniqueStoreDictionary>())
+      _dict(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>())
 {
 }
 

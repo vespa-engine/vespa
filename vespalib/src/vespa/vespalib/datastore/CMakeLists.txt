@@ -7,7 +7,6 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     datastore.cpp
     datastorebase.cpp
     entryref.cpp
-    unique_store_dictionary.cpp
     unique_store_string_allocator.cpp
     DEPENDS
 )

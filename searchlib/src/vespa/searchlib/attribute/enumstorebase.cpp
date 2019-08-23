@@ -8,11 +8,12 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 
 #include <vespa/log/log.h>
@@ -302,61 +303,42 @@ EnumStoreDictBase::EnumStoreDictBase(EnumStoreBase &enumStore)
 {
 }
 
-
 EnumStoreDictBase::~EnumStoreDictBase() = default;
-
 
 template <typename Dictionary>
 EnumStoreDict<Dictionary>::EnumStoreDict(EnumStoreBase &enumStore)
     : EnumStoreDictBase(enumStore),
-      _dict()
+      ParentUniqueStoreDictionary()
 {
 }
 
 template <typename Dictionary>
 EnumStoreDict<Dictionary>::~EnumStoreDict() = default;
 
-
-template <typename Dictionary>
-void
-EnumStoreDict<Dictionary>::freezeTree()
-{
-    _dict.getAllocator().freeze();
-}
-
 template <typename Dictionary>
 uint32_t
 EnumStoreDict<Dictionary>::getNumUniques() const
 {
-    return _dict.size();
-}
-
-
-template <typename Dictionary>
-vespalib::MemoryUsage
-EnumStoreDict<Dictionary>::getTreeMemoryUsage() const
-{
-    return _dict.getMemoryUsage();
+    return this->_dict.size();
 }
 
 template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::reEnumerate()
 {
-    _enumStore.reEnumerate(_dict);
+    _enumStore.reEnumerate(this->_dict);
 }
-
 
 template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::
 writeAllValues(BufferWriter &writer,
-                   btree::BTreeNode::Ref rootRef) const
+               btree::BTreeNode::Ref rootRef) const
 {
     constexpr size_t BATCHSIZE = 1000;
     std::vector<Index> idxs;
     idxs.reserve(BATCHSIZE);
-    typename Dictionary::Iterator it(rootRef, _dict.getAllocator());
+    typename Dictionary::Iterator it(rootRef, this->_dict.getAllocator());
     while (it.valid()) {
         if (idxs.size() >= idxs.capacity()) {
             _enumStore.writeValues(writer, &idxs[0], idxs.size());
@@ -370,69 +352,67 @@ writeAllValues(BufferWriter &writer,
     }
 }
 
-
 template <typename Dictionary>
 ssize_t
 EnumStoreDict<Dictionary>::deserialize(const void *src,
-                                           size_t available,
-                                           IndexVector &idx)
+                                       size_t available,
+                                       IndexVector &idx)
 {
-    return _enumStore.deserialize(src, available, idx, _dict);
+    return _enumStore.deserialize(src, available, idx, this->_dict);
 }
-
 
 template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::fixupRefCounts(const EnumVector & hist)
 {
-    _enumStore.fixupRefCounts(hist, _dict);
+    _enumStore.fixupRefCounts(hist, this->_dict);
 }
-
 
 template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::removeUnusedEnums(const IndexSet &unused,
-                                             const EnumStoreComparator &cmp,
-                                             const EnumStoreComparator *fcmp)
+                                             const datastore::EntryComparator &cmp,
+                                             const datastore::EntryComparator *fcmp)
 {
     typedef typename Dictionary::Iterator Iterator;
     if (unused.empty())
         return;
-    Iterator it(BTreeNode::Ref(), _dict.getAllocator());
-    for (IndexSet::const_iterator iter(unused.begin()), mt(unused.end());
-         iter != mt; ++iter) {
-        it.lower_bound(_dict.getRoot(), *iter, cmp);
-        assert(it.valid() && !cmp(*iter, it.getKey()));
+    Iterator it(BTreeNode::Ref(), this->_dict.getAllocator());
+    for (const auto& idx : unused) {
+        it.lower_bound(this->_dict.getRoot(), idx, cmp);
+        assert(it.valid() && !cmp(idx, it.getKey()));
         if (Iterator::hasData() && fcmp != nullptr) {
             typename Dictionary::DataType pidx(it.getData());
-            _dict.remove(it);
-            if (!it.valid() || (*fcmp)(*iter, it.getKey()))
+            this->_dict.remove(it);
+            if (!it.valid() || (*fcmp)(idx, it.getKey())) {
                 continue;  // Next entry does not use same posting list
+            }
             --it;
-            if (it.valid() && !(*fcmp)(it.getKey(), *iter))
+            if (it.valid() && !(*fcmp)(it.getKey(), idx)) {
                 continue;  // Previous entry uses same posting list
-            if (it.valid())
+            }
+            if (it.valid()) {
                 ++it;
-            else
+            } else {
                 it.begin();
-            _dict.thaw(it);
+            }
+            this->_dict.thaw(it);
             it.writeData(pidx);
         } else {
-            _dict.remove(it);
+            this->_dict.remove(it);
         }
    }
 }
 
 template <typename Dictionary>
 void
-EnumStoreDict<Dictionary>::freeUnusedEnums(const EnumStoreComparator &cmp,
-                                           const EnumStoreComparator *fcmp)
+EnumStoreDict<Dictionary>::freeUnusedEnums(const datastore::EntryComparator &cmp,
+                                           const datastore::EntryComparator *fcmp)
 {
     IndexSet unused;
 
     // find unused enums
-    for (typename Dictionary::Iterator iter(_dict.begin()); iter.valid();
-         ++iter) {
+    for (auto iter = this->_dict.begin(); iter.valid(); ++iter) {
         _enumStore.freeUnusedEnum(iter.getKey(), unused);
     }
     removeUnusedEnums(unused, cmp, fcmp);
@@ -441,8 +421,8 @@ EnumStoreDict<Dictionary>::freeUnusedEnums(const EnumStoreComparator &cmp,
 template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::freeUnusedEnums(const IndexSet& toRemove,
-                                           const EnumStoreComparator& cmp,
-                                           const EnumStoreComparator* fcmp)
+                                           const datastore::EntryComparator& cmp,
+                                           const datastore::EntryComparator* fcmp)
 {
     IndexSet unused;
     for (const auto& index : toRemove) {
@@ -451,43 +431,38 @@ EnumStoreDict<Dictionary>::freeUnusedEnums(const IndexSet& toRemove,
     removeUnusedEnums(unused, cmp, fcmp);
 }
 
-
 template <typename Dictionary>
 bool
-EnumStoreDict<Dictionary>::findIndex(const EnumStoreComparator &cmp,
+EnumStoreDict<Dictionary>::findIndex(const datastore::EntryComparator &cmp,
                                      Index &idx) const
 {
-    typename Dictionary::Iterator itr = _dict.find(Index(), cmp);
+    auto itr = this->_dict.find(Index(), cmp);
     if (!itr.valid()) {
         return false;
     }
     idx = itr.getKey();
     return true;
 }
-
 
 template <typename Dictionary>
 bool
-EnumStoreDict<Dictionary>::findFrozenIndex(const EnumStoreComparator &cmp,
+EnumStoreDict<Dictionary>::findFrozenIndex(const datastore::EntryComparator &cmp,
                                            Index &idx) const
 {
-    typename Dictionary::ConstIterator itr =
-        _dict.getFrozenView().find(Index(), cmp);
+    auto itr = this->_dict.getFrozenView().find(Index(), cmp);
     if (!itr.valid()) {
         return false;
     }
     idx = itr.getKey();
     return true;
 }
-
 
 template <typename Dictionary>
 std::vector<EnumStoreBase::EnumHandle>
-EnumStoreDict<Dictionary>::findMatchingEnums(const EnumStoreComparator &cmp) const
+EnumStoreDict<Dictionary>::findMatchingEnums(const datastore::EntryComparator &cmp) const
 {
     std::vector<EnumStoreBase::EnumHandle> result;
-    typename Dictionary::ConstIterator itr =
-        _dict.getFrozenView().find(Index(), cmp);
+    auto itr = this->_dict.getFrozenView().find(Index(), cmp);
     while (itr.valid() && !cmp(Index(), itr.getKey())) {
         result.push_back(itr.getKey().ref());
         ++itr;
@@ -499,42 +474,16 @@ template <typename Dictionary>
 void
 EnumStoreDict<Dictionary>::onReset()
 {
-    _dict.clear();
+    this->_dict.clear();
 }
-
-
-template <typename Dictionary>
-void
-EnumStoreDict<Dictionary>::onTransferHoldLists(generation_t generation)
-{
-    _dict.getAllocator().transferHoldLists(generation);
-}
-
-
-template <typename Dictionary>
-void
-EnumStoreDict<Dictionary>::onTrimHoldLists(generation_t firstUsed)
-{
-    _dict.getAllocator().trimHoldLists(firstUsed);
-}
-
-
-template <typename Dictionary>
-BTreeNode::Ref
-EnumStoreDict<Dictionary>::getFrozenRootRef() const
-{
-    return _dict.getFrozenView().getRoot();
-}
-
 
 template <typename Dictionary>
 uint32_t
-EnumStoreDict<Dictionary>::
-lookupFrozenTerm(BTreeNode::Ref frozenRootRef,
-                 const EnumStoreComparator &comp) const
+EnumStoreDict<Dictionary>::lookupFrozenTerm(BTreeNode::Ref frozenRootRef,
+                                            const datastore::EntryComparator &comp) const
 {
     typename Dictionary::ConstIterator itr(BTreeNode::Ref(),
-                                           _dict.getAllocator());
+                                           this->_dict.getAllocator());
     itr.lower_bound(frozenRootRef, Index(), comp);
     if (itr.valid() && !comp(Index(), itr.getKey())) {
         return 1u;
@@ -542,20 +491,20 @@ lookupFrozenTerm(BTreeNode::Ref frozenRootRef,
     return 0u;
 }
 
-
 template <typename Dictionary>
 uint32_t
 EnumStoreDict<Dictionary>::
 lookupFrozenRange(BTreeNode::Ref frozenRootRef,
-                  const EnumStoreComparator &low,
-                  const EnumStoreComparator &high) const
+                  const datastore::EntryComparator &low,
+                  const datastore::EntryComparator &high) const
 {
     typename Dictionary::ConstIterator lowerDictItr(BTreeNode::Ref(),
-                                                    _dict.getAllocator());
+                                                    this->_dict.getAllocator());
     lowerDictItr.lower_bound(frozenRootRef, Index(), low);
-    typename Dictionary::ConstIterator upperDictItr = lowerDictItr;
-    if (upperDictItr.valid() && !high(Index(), upperDictItr.getKey()))
+    auto upperDictItr = lowerDictItr;
+    if (upperDictItr.valid() && !high(Index(), upperDictItr.getKey())) {
         upperDictItr.seekPast(Index(), high);
+    }
     return upperDictItr - lowerDictItr;
 }
 
@@ -665,19 +614,19 @@ class btree::BTreeNodeStore<EnumStoreBase::Index, datastore::EntryRef, btree::No
 
 template
 class btree::BTreeRoot<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                       const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTreeRoot<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                       const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTreeRootT<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                        const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTreeRootT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                        const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTreeRootBase<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
@@ -702,23 +651,25 @@ template
 class btree::BTreeIteratorBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
 
-template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
+                                         const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
-template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, const EnumStoreComparatorWrapper, EnumTreeTraits>;
+template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
+                                         const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTreeIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 template
 class btree::BTreeIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                           const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 template
 class btree::BTree<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                   const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 template
 class btree::BTree<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                   const EnumStoreComparatorWrapper, EnumTreeTraits>;
+                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 
 }

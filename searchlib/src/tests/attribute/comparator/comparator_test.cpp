@@ -28,7 +28,7 @@ typedef EnumStoreBase::Index EnumIndex;
 
 typedef BTreeRoot<EnumIndex, BTreeNoLeafData,
                   btree::NoAggregated,
-                  const EnumStoreComparatorWrapper> TreeType;
+                  const datastore::EntryComparatorWrapper> TreeType;
 typedef TreeType::NodeAllocatorType NodeAllocator;
 
 class Test : public vespalib::TestApp {
