@@ -38,8 +38,7 @@ public class QueryProfileCompiler {
         DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
 
         // Resolve values for each existing variant and combine into a single data structure
-        Set<DimensionBindingForPath> variants = new HashSet<>();
-        collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding, variants);
+        Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
         variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
         if (log.isLoggable(Level.FINE))
             log.fine("Compiling " + in.toString() + " having " + variants.size() + " variants");
@@ -67,41 +66,68 @@ public class QueryProfileCompiler {
      *
      * @param profile the profile we are collecting the variants of
      * @param currentVariant the variant we must have to arrive at this point in the query profile graph
-     * @param allVariants the set of all variants accumulated so far
      */
-    private static void collectVariants(CompoundName path, QueryProfile profile, DimensionBinding currentVariant, Set<DimensionBindingForPath> allVariants) {
-        for (QueryProfile inheritedProfile : profile.inherited())
-            collectVariants(path, inheritedProfile, currentVariant, allVariants);
-
-        collectVariantsFromValues(path, profile.getContent(), currentVariant, allVariants);
-
-        collectVariantsInThis(path, profile, currentVariant, allVariants);
+    private static Set<DimensionBindingForPath> collectVariants(CompoundName path, QueryProfile profile, DimensionBinding currentVariant) {
+        Set<DimensionBindingForPath> variants = new HashSet<>();
+        variants.addAll(collectVariantsFromValues(path, profile.getContent(), currentVariant));
+        variants.addAll(collectVariantsInThis(path, profile, currentVariant));
         if (profile instanceof BackedOverridableQueryProfile)
-            collectVariantsInThis(path, ((BackedOverridableQueryProfile) profile).getBacking(), currentVariant, allVariants);
+            variants.addAll(collectVariantsInThis(path, ((BackedOverridableQueryProfile) profile).getBacking(), currentVariant));
+
+        Set<DimensionBindingForPath> parentVariants = new HashSet<>();
+        for (QueryProfile inheritedProfile : profile.inherited())
+            parentVariants = collectVariants(path, inheritedProfile, currentVariant);
+        variants.addAll(parentVariants);
+        variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
+        return variants;
     }
 
-    private static void collectVariantsInThis(CompoundName path, QueryProfile profile, DimensionBinding currentVariant, Set<DimensionBindingForPath> allVariants) {
+    /** Generates a set of all the (legal) combinations of the variants in the given sets */
+    private static Set<DimensionBindingForPath> combined(Set<DimensionBindingForPath> v1s,
+                                                         Set<DimensionBindingForPath> v2s) {
+        Set<DimensionBindingForPath> combinedVariants = new HashSet<>();
+        for (DimensionBindingForPath v1 : v1s) {
+            for (DimensionBindingForPath v2 : v2s) {
+                if ( ! v1.path().equals(v2.path())) continue;
+
+                DimensionBinding combined = v1.binding().combineWith(v2.binding);
+                if ( combined.isInvalid() ) continue;
+
+                combinedVariants.add(new DimensionBindingForPath(combined, v1.path()));
+            }
+        }
+        return combinedVariants;
+    }
+
+    private static Set<DimensionBindingForPath> collectVariantsInThis(CompoundName path, QueryProfile profile, DimensionBinding currentVariant) {
         QueryProfileVariants profileVariants = profile.getVariants();
+        Set<DimensionBindingForPath> variants = new HashSet<>();
         if (profileVariants != null) {
             for (QueryProfileVariant variant : profile.getVariants().getVariants()) {
                 DimensionBinding combinedVariant =
                         DimensionBinding.createFrom(profile.getDimensions(), variant.getDimensionValues()).combineWith(currentVariant);
                 if (combinedVariant.isInvalid()) continue; // values at this point in the graph are unreachable
-                collectVariantsFromValues(path, variant.values(), combinedVariant, allVariants);
+
+                variants.addAll(collectVariantsFromValues(path, variant.values(), combinedVariant));
                 for (QueryProfile variantInheritedProfile : variant.inherited())
-                    collectVariants(path, variantInheritedProfile, combinedVariant, allVariants);
+                    variants.addAll(collectVariants(path, variantInheritedProfile, combinedVariant));
             }
         }
+        return variants;
     }
 
-    private static void collectVariantsFromValues(CompoundName path, Map<String, Object> values, DimensionBinding currentVariant, Set<DimensionBindingForPath> allVariants) {
+    private static Set<DimensionBindingForPath>  collectVariantsFromValues(CompoundName path,
+                                                                           Map<String, Object> values,
+                                                                           DimensionBinding currentVariant) {
+        Set<DimensionBindingForPath> variants = new HashSet<>();
         if ( ! values.isEmpty())
-            allVariants.add(new DimensionBindingForPath(currentVariant, path)); // there are actual values for this variant
+            variants.add(new DimensionBindingForPath(currentVariant, path)); // there are actual values for this variant
 
         for (Map.Entry<String, Object> entry : values.entrySet()) {
             if (entry.getValue() instanceof QueryProfile)
-                collectVariants(path.append(entry.getKey()), (QueryProfile)entry.getValue(), currentVariant, allVariants);
+                variants.addAll(collectVariants(path.append(entry.getKey()), (QueryProfile)entry.getValue(), currentVariant));
         }
+        return variants;
     }
 
     private static class DimensionBindingForPath {

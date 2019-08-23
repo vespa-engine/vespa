@@ -3,6 +3,7 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.processing.execution.Execution;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
@@ -18,7 +19,12 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -31,7 +37,7 @@ public class XmlReadingTestCase {
                 new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/validxml");
         CompiledQueryProfileRegistry cRegistry= registry.compile();
 
-        QueryProfileType rootType=registry.getType("rootType");
+        QueryProfileType rootType = registry.getType("rootType");
         assertEquals(1,rootType.inherited().size());
         assertEquals("native",rootType.inherited().get(0).getId().getName());
         assertTrue(rootType.isStrict());

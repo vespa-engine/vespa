@@ -37,9 +37,9 @@ public class JsonReader {
      * @param numSent counter to be incremented for every document streamed.
      */
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
-        try (final InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream)) {
-            final JsonFactory jfactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
-            final JsonParser jParser = jfactory.createParser(jsonElementBuffer);
+        try (InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream)) {
+            JsonFactory jfactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
+            JsonParser jParser = jfactory.createParser(jsonElementBuffer);
             while (true) {
                 int documentStart = (int) jParser.getCurrentLocation().getCharOffset();
                 String docId = parseOneDocument(jParser);

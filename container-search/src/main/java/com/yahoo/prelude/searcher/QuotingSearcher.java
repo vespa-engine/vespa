@@ -98,6 +98,7 @@ public class QuotingSearcher extends Searcher {
         setQuoteTable(new QuoteTable(config));
     }
 
+    @Override
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
         execution.fill(result);

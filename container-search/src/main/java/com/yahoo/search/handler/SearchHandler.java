@@ -122,23 +122,40 @@ public class SearchHandler extends LoggingRequestHandler {
                          QueryProfilesConfig queryProfileConfig,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
+        this(statistics,
+             metric,
+             executor,
+             accessLog,
+             QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
+             executionFactory,
+             queryProfileConfig.enableGroupingSessionCache(),
+             containerHttpConfig.hostResponseHeaderKey().equals("") ?
+             Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
+    }
+
+    public SearchHandler(Statistics statistics,
+                         Metric metric,
+                         Executor executor,
+                         AccessLog accessLog,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ExecutionFactory executionFactory,
+                         boolean enableGroupingSessionCache,
+                         Optional<String> hostResponseHeaderKey) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
-        this.enableGroupingSessionCache = queryProfileConfig.enableGroupingSessionCache();
-        QueryProfileRegistry queryProfileRegistry = QueryProfileConfigurer.createFromConfig(queryProfileConfig);
-        this.queryProfileRegistry = queryProfileRegistry.compile();
+        this.enableGroupingSessionCache = enableGroupingSessionCache;
+        this.queryProfileRegistry = queryProfileRegistry;
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
 
         searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
                                       new Value.Parameters().setLogRaw(true).setLogMax(true)
-                                              .setLogMean(true).setLogMin(true)
-                                              .setNameExtension(true)
-                                              .setCallback(new MeanConnections()));
-        
-        this.hostResponseHeaderKey = containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
+                                                            .setLogMean(true).setLogMin(true)
+                                                            .setNameExtension(true)
+                                                            .setCallback(new MeanConnections()));
+
+        this.hostResponseHeaderKey = hostResponseHeaderKey;
     }
 
     /** @deprecated use the other constructor */
