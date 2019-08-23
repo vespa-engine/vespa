@@ -2,7 +2,6 @@
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.idstring.IdString;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
@@ -26,11 +25,13 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
+import com.yahoo.vespa.streamingvisitors.tracing.TraceDescription;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -49,8 +50,10 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
 
     public static final String STREAMING_STATISTICS = "streaming.statistics";
-    private VisitorFactory visitorFactory;
+    private final VisitorFactory visitorFactory;
+    private final TracingOptions tracingOptions;
     private static final Logger log = Logger.getLogger(VdsStreamingSearcher.class.getName());
+
     private Route route;
     /** The configId used to access the searchcluster. */
     private String searchClusterConfigId = null;
@@ -73,26 +76,105 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     private static class VdsVisitorFactory implements VisitorFactory {
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType) {
-            return new VdsVisitor(query, searchCluster, route, documentType);
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+            return new VdsVisitor(query, searchCluster, route, documentType, traceLevelOverride);
         }
     }
 
     public VdsStreamingSearcher() {
-        visitorFactory = new VdsVisitorFactory();
+        this(new VdsVisitorFactory());
     }
 
     public VdsStreamingSearcher(VisitorFactory visitorFactory) {
         this.visitorFactory = visitorFactory;
+        tracingOptions = TracingOptions.DEFAULT;
+    }
+
+    public VdsStreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
+        this.visitorFactory = visitorFactory;
+        this.tracingOptions = tracingOptions;
     }
 
     @Override
     protected void doPartialFill(Result result, String summaryClass) {
     }
 
+    private double durationInMillisFromNanoTime(long startTimeNanos) {
+        return (tracingOptions.getClock().nanoTimeNow() - startTimeNanos) / (double)TimeUnit.MILLISECONDS.toNanos(1);
+    }
+
+    private boolean timeoutBadEnoughToBeReported(Query query, double durationMillis) {
+        return (durationMillis > (query.getTimeout() * tracingOptions.getTraceTimeoutMultiplierThreshold()));
+    }
+
+    private static boolean queryIsLocationConstrained(Query query) {
+        return ((query.properties().getString(streamingUserid) != null) ||
+                (query.properties().getString(streamingGroupname) != null));
+    }
+
+    private static int documentSelectionQueryParameterCount(Query query) {
+        int paramCount = 0;
+        if (query.properties().getString(streamingUserid) != null) {
+            paramCount++;
+        }
+        if (query.properties().getString(streamingGroupname) != null) {
+            paramCount++;
+        }
+        if (query.properties().getString(streamingSelection) != null) {
+            paramCount++;
+        }
+        return paramCount;
+    }
+
+    private boolean shouldTraceQuery(Query query) {
+        // Only trace for explicit bucket subset queries, as otherwise we'd get a trace entry for every superbucket in the system.
+        return (queryIsLocationConstrained(query) &&
+                ((query.getTraceLevel() > 0) || tracingOptions.getSamplingStrategy().shouldSample()));
+    }
+
+    private int inferEffectiveQueryTraceLevel(Query query) {
+        return ((query.getTraceLevel() == 0) && shouldTraceQuery(query)) // Honor query's explicit trace level if present.
+                ? tracingOptions.getTraceLevelOverride()
+                : query.getTraceLevel();
+    }
+
     @Override
     public Result doSearch2(Query query, Execution execution) {
-        // TODO refactor this method into smaller methods, it's hard to see the actual code
+        initializeMissingQueryFields(query);
+        if (documentSelectionQueryParameterCount(query) != 1) {
+            return new Result(query, ErrorMessage.createBackendCommunicationError("Streaming search needs one and " +
+                    "only one of these query parameters to be set: streaming.userid, streaming.groupname, " +
+                    "streaming.selection"));
+        }
+        query.trace("Routing to search cluster " + getSearchClusterConfigId() + " and document type " + documentType, 4);
+        long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
+        int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
+
+        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterConfigId(), route, documentType, effectiveTraceLevel);
+        try {
+            visitor.doSearch();
+        } catch (ParseException e) {
+            return new Result(query, ErrorMessage.createBackendCommunicationError(
+                    "Failed to parse document selection string: " + e.getMessage() + "'."));
+        } catch (TokenMgrException e) {
+            return new Result(query, ErrorMessage.createBackendCommunicationError(
+                    "Failed to tokenize document selection string: " + e.getMessage() + "'."));
+        } catch (TimeoutException e) {
+            double elapsedMillis = durationInMillisFromNanoTime(timeStartedNanos);
+            if ((effectiveTraceLevel > 0) && timeoutBadEnoughToBeReported(query, elapsedMillis)) {
+                tracingOptions.getTraceExporter().maybeExport(() -> new TraceDescription(visitor.getTrace(),
+                        String.format("Trace of %s which timed out after %.2g ms",
+                                      query.toString(), elapsedMillis)));
+            }
+            return new Result(query, ErrorMessage.createTimeout(e.getMessage()));
+        } catch (InterruptedException|IllegalArgumentException e) {
+            return new Result(query, ErrorMessage.createBackendCommunicationError(e.getMessage()));
+        }
+
+        return buildResultFromCompletedVisitor(query, visitor);
+    }
+
+    private void initializeMissingQueryFields(Query query) {
         lazyTrace(query, 7, "Routing to storage cluster ", getStorageClusterRouteSpec());
 
         if (route == null) {
@@ -119,32 +201,9 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         lazyTrace(query, 8, "doSearch2(): sort specification=", query
                 .getRanking().getSorting() == null ? null : query.getRanking()
                 .getSorting().fieldOrders());
+    }
 
-        int documentSelectionQueryParameterCount = 0;
-        if (query.properties().getString(streamingUserid) != null) documentSelectionQueryParameterCount++;
-        if (query.properties().getString(streamingGroupname) != null) documentSelectionQueryParameterCount++;
-        if (query.properties().getString(streamingSelection) != null) documentSelectionQueryParameterCount++;
-        if (documentSelectionQueryParameterCount != 1) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError("Streaming search needs one and " +
-                    "only one of these query parameters to be set: streaming.userid, streaming.groupname, " +
-                    "streaming.selection"));
-        }
-        query.trace("Routing to search cluster " + getSearchClusterConfigId() + " and document type " + documentType, 4);
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterConfigId(), route, documentType);
-        try {
-            visitor.doSearch();
-        } catch (ParseException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(
-                    "Failed to parse document selection string: " + e.getMessage() + "'."));
-        } catch (TokenMgrException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(
-                    "Failed to tokenize document selection string: " + e.getMessage() + "'."));
-        } catch (TimeoutException e) {
-            return new Result(query, ErrorMessage.createTimeout(e.getMessage()));
-        } catch (InterruptedException|IllegalArgumentException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(e.getMessage()));
-        }
-
+    private Result buildResultFromCompletedVisitor(Query query, Visitor visitor) {
         lazyTrace(query, 8, "offset=", query.getOffset(), ", hits=", query.getHits());
 
         Result result = new Result(query);
@@ -176,7 +235,6 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             DocumentSummary.Summary summary = summaryMap.get(hit.getDocId());
             if (summary != null) {
                 DocsumPacket dp = new DocsumPacket(summary.getSummary());
-                //log.log(LogLevel.SPAM, "DocsumPacket: " + dp);
                 summaryPackets[index] = dp;
             } else {
                 return new Result(query, ErrorMessage.createBackendCommunicationError(
@@ -213,7 +271,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             return new Result(query, ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields"));
         }
 
-        if (skippedHits==0) {
+        if (skippedHits == 0) {
             query.trace("All hits have been filled",4); // TODO: cache results or result.analyzeHits(); ?
         } else {
             lazyTrace(query, 8, "Skipping some hits for query: ", result.getQuery());
@@ -221,7 +279,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
         lazyTrace(query, 8, "Returning result ", result);
 
-        if ( skippedHits>0 ) {
+        if (skippedHits > 0) {
             getLogger().info("skipping " + skippedHits + " hits for query: " + result.getQuery());
             result.hits().addError(com.yahoo.search.result.ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
         }

@@ -10,5 +10,7 @@ import com.yahoo.search.Query;
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
 interface VisitorFactory {
-    public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType);
+
+    Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride);
+
 }
