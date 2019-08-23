@@ -14,7 +14,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -195,7 +194,6 @@ public class ApplicationSerializer {
                                                  .orElse(Map.of());
             legacyToSlime(firstRotationStatus, root.setArray(legacyRotationStatusField));
         }
-        application.applicationCertificate().ifPresent(cert -> root.setString(applicationCertificateField, cert.secretsKeyNamePrefix()));
         return slime;
     }
 
@@ -386,11 +384,10 @@ public class ApplicationSerializer {
         Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
         RotationStatus rotationStatus = rotationStatusFromSlime(root, assignedRotations.stream().findFirst());
-        Optional<ApplicationCertificate> applicationCertificate = Serializers.optionalString(root.field(applicationCertificateField)).map(ApplicationCertificate::new);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
                                deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
+                               pemDeployKey, assignedRotations, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
