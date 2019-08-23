@@ -239,7 +239,7 @@ public class NodeSerializer {
         if (object.field(flavorKey).valid()) {
             Flavor flavor = flavors.getFlavorOrThrow(object.field(flavorKey).asString());
             if (!resources.valid()) return flavor;
-            return flavor.withFlavorOverrides(FlavorOverrides.ofDisk(resources.field(diskKey).asDouble()));
+            return flavor.with(FlavorOverrides.ofDisk(resources.field(diskKey).asDouble()));
         }
         else {
             // TODO: Simplify Sept. 2019

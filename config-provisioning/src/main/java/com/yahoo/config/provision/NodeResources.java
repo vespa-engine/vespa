@@ -54,12 +54,24 @@ public class NodeResources {
     public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
 
-    public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed);
-    }
-
     public NodeResources withVcpu(double vcpu) {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+    }
+
+    public NodeResources withMemoryGb(double memoryGb) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+    }
+
+    public NodeResources withDiskGb(double diskGb) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+    }
+
+    public NodeResources withBandwidthGbps(double bandwidthGbps) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+    }
+
+    public NodeResources withDiskSpeed(DiskSpeed speed) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed);
     }
 
     public NodeResources subtract(NodeResources other) {

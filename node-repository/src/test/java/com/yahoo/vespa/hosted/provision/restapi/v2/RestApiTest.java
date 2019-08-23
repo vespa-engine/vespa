@@ -858,6 +858,72 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
     }
 
+    @Test
+    public void test_flavor_overrides() throws Exception {
+        String hostname = "parent2.yahoo.com";
+        // Test adding with overrides
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                        "\"flavor\":\"large-variant\",\"minDiskAvailableGb\":1234,\"minMainMemoryAvailableGb\":4321}]").
+                        getBytes(StandardCharsets.UTF_8),
+                Request.Method.POST),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can only override disk GB for configured flavor\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                "\"flavor\":\"large-variant\",\"type\":\"host\",\"minDiskAvailableGb\":1234}]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"bandwidth\":15000.0,");
+
+        // Test patching with overrides
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
+                        "{\"minDiskAvailableGb\":5432,\"minMainMemoryAvailableGb\":2345}".getBytes(StandardCharsets.UTF_8),
+                        Request.Method.PATCH),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'minMainMemoryAvailableGb': Can only override disk GB for configured flavor\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
+                        "{\"minDiskAvailableGb\":5432}".getBytes(StandardCharsets.UTF_8),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated " + hostname + "\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "\"minDiskAvailableGb\":5432.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"bandwidth\":15000.0,");
+    }
+
+    @Test
+    public void test_node_resources() throws Exception {
+        String hostname = "node123.yahoo.com";
+        // Test adding new node with resources
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                "\"minDiskAvailableGb\":1234,\"minCpuCores\":5,\"fastDisk\":false,\"bandwidth\":300}]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Required field 'minMainMemoryAvailableGb' is missing\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                "\"minDiskAvailableGb\":1234,\"minMainMemoryAvailableGb\":4321,\"minCpuCores\":5,\"fastDisk\":false,\"bandwidth\":300}]")
+                                .getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":4321.0,\"minCpuCores\":5.0,\"fastDisk\":false,\"bandwidth\":300.0,");
+
+        // Test patching with overrides
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
+                        "{\"minDiskAvailableGb\":12,\"minMainMemoryAvailableGb\":34,\"minCpuCores\":56,\"fastDisk\":true,\"bandwidth\":78}".getBytes(StandardCharsets.UTF_8),
+                        Request.Method.PATCH),
+                "{\"message\":\"Updated " + hostname + "\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "\"minDiskAvailableGb\":12.0,\"minMainMemoryAvailableGb\":34.0,\"minCpuCores\":56.0,\"fastDisk\":true,\"bandwidth\":78.0");
+    }
+
     private String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                 createIpAddresses(ipAddress) +
