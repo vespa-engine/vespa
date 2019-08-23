@@ -25,8 +25,6 @@ namespace document {
 
 namespace {
 
-constexpr unsigned char CONTENT_HASTYPE = 0x01;
-
 vespalib::stringref
 readCStr(nbostream & stream) {
     const char * s = stream.peek();
