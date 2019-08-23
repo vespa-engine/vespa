@@ -141,10 +141,36 @@ public class KeyUtils {
         }
     }
 
+    // Note: Encoding using PKCS#1 as default as this is to be read by tools only supporting PKCS#1
+    // Should ideally be PKCS#8
     public static String toPem(PrivateKey privateKey) {
+        return toPem(privateKey, KeyFormat.PKCS1);
+    }
+
+    public static String toPem(PrivateKey privateKey, KeyFormat format) {
+        switch (format) {
+            case PKCS1:
+                return toPkcs1Pem(privateKey);
+            case PKCS8:
+                return toPkcs8Pem(privateKey);
+            default:
+                throw new IllegalArgumentException("Unknown format: " + format);
+        }
+    }
+
+    public static String toPem(PublicKey publicKey) {
+        try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+            pemWriter.writeObject(publicKey);
+            pemWriter.flush();
+            return stringWriter.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static String toPkcs1Pem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
             String algorithm = privateKey.getAlgorithm();
-            // Note: Encoding using PKCS#1 as this is to be read by tools only supporting PKCS#1
             String type;
             if (algorithm.equals(RSA.getAlgorithmName())) {
                 type = "RSA PRIVATE KEY";
@@ -161,9 +187,9 @@ public class KeyUtils {
         }
     }
 
-    public static String toPem(PublicKey publicKey) {
+    private static String toPkcs8Pem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
-            pemWriter.writeObject(publicKey);
+            pemWriter.writeObject(new PemObject("PRIVATE KEY", privateKey.getEncoded()));
             pemWriter.flush();
             return stringWriter.toString();
         } catch (IOException e) {
