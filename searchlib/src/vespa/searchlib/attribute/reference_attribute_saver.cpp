@@ -21,7 +21,7 @@ ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
-      _saver(store.getSaver())
+      _enumerator(store.getEnumerator())
 {
 }
 
@@ -49,13 +49,13 @@ public:
     }
 };
 
-template <class Store, class Saver>
+template <class Store, class Enumerator>
 void
-writeUdat(IAttributeSaveTarget &saveTarget, const Store &store, const Saver &saver)
+writeUdat(IAttributeSaveTarget &saveTarget, const Store &store, const Enumerator &enumerator)
 {
     std::unique_ptr<BufferWriter>
         udatWriter(saveTarget.udatWriter().allocBufferWriter());
-    saver.foreach_key(ValueWriter<Store>(store, *udatWriter));
+    enumerator.foreach_key(ValueWriter<Store>(store, *udatWriter));
     udatWriter->flush();
 }
 
@@ -64,13 +64,13 @@ writeUdat(IAttributeSaveTarget &saveTarget, const Store &store, const Saver &sav
 bool
 ReferenceAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
-    writeUdat(saveTarget, _store, _saver);
+    writeUdat(saveTarget, _store, _enumerator);
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().
                                                     allocBufferWriter());
 
-    _saver.enumerateValues();
+    _enumerator.enumerateValues();
     for (const auto &ref : _indices) {
-        uint32_t enumValue = _saver.mapEntryRefToEnumValue(ref);
+        uint32_t enumValue = _enumerator.mapEntryRefToEnumValue(ref);
         datWriter->write(&enumValue, sizeof(uint32_t));
     }
     datWriter->flush();

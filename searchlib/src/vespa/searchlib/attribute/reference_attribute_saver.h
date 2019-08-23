@@ -5,7 +5,7 @@
 #include "attributesaver.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/datastore/unique_store.h>
-#include <vespa/vespalib/datastore/unique_store_saver.h>
+#include <vespa/vespalib/datastore/unique_store_enumerator.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include "reference_attribute.h"
 #include "reference.h"
@@ -32,10 +32,10 @@ private:
     using GlobalId = document::GlobalId;
     using IndicesCopyVector = ReferenceAttribute::IndicesCopyVector;
     using Store = ReferenceAttribute::ReferenceStore;
-    using Saver = Store::Saver;
+    using Enumerator = Store::Enumerator;
     IndicesCopyVector _indices;
     const Store &_store;
-    Saver _saver;
+    Enumerator _enumerator;
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:

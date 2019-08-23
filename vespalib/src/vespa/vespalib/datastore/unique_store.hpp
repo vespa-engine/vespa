@@ -8,7 +8,7 @@
 #include "unique_store_allocator.hpp"
 #include "unique_store_builder.hpp"
 #include "unique_store_dictionary.hpp"
-#include "unique_store_saver.hpp"
+#include "unique_store_enumerator.hpp"
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <atomic>
 #include <algorithm>
@@ -217,10 +217,10 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getBuilder(uint32_t uniqueValuesH
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
-typename UniqueStore<EntryT, RefT, Compare, Allocator>::Saver
-UniqueStore<EntryT, RefT, Compare, Allocator>::getSaver() const
+typename UniqueStore<EntryT, RefT, Compare, Allocator>::Enumerator
+UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator() const
 {
-    return Saver(*_dict, _store);
+    return Enumerator(*_dict, _store);
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>

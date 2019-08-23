@@ -12,9 +12,8 @@ namespace search::datastore {
  * Contains utility methods for traversing all unique values (as
  * EntryRef value) and mapping from EntryRef value to enum value.
  */
-template <typename EntryT, typename RefT>
-class UniqueStoreSaver {
-    using EntryType = EntryT;
+template <typename RefT>
+class UniqueStoreEnumerator {
     using RefType = RefT;
 
     const UniqueStoreDictionaryBase &_dict;
@@ -23,8 +22,8 @@ class UniqueStoreSaver {
     std::vector<std::vector<uint32_t>> _enumValues;
     uint32_t _next_enum_val;
 public:
-    UniqueStoreSaver(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
-    ~UniqueStoreSaver();
+    UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
+    ~UniqueStoreEnumerator();
     void enumerateValue(EntryRef ref);
     void enumerateValues();
 

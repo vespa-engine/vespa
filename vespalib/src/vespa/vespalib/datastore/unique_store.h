@@ -19,8 +19,8 @@ namespace search::datastore {
 template <typename Allocator>
 class UniqueStoreBuilder;
 
-template <typename EntryT, typename RefT>
-class UniqueStoreSaver;
+template <typename RefT>
+class UniqueStoreEnumerator;
 
 /**
  * Datastore for unique values of type EntryT that is accessed via a
@@ -33,7 +33,7 @@ public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
-    using Saver = UniqueStoreSaver<EntryT, RefT>;
+    using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
     using EntryConstRefType = typename Allocator::EntryConstRefType;
 private:
@@ -61,7 +61,7 @@ public:
     uint32_t getNumUniques() const;
 
     Builder getBuilder(uint32_t uniqueValuesHint);
-    Saver getSaver() const;
+    Enumerator getEnumerator() const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
