@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "unique_store.h"
+#include "unique_store_dictionary_base.h"
 
 namespace search::datastore {
 
