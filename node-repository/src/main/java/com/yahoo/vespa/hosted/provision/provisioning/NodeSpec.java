@@ -41,6 +41,9 @@ public interface NodeSpec {
     /** Returns whether this should throw an exception if the requested nodes are not fully available */
     boolean canFail();
 
+    /** Returns whether we should retire nodes at all when fulfilling this spec */
+    boolean considerRetiring();
+
     /** Returns the ideal number of nodes that should be retired to fulfill this spec */
     int idealRetiredCount(int acceptedCount, int currentRetiredCount);
 
@@ -110,6 +113,12 @@ public interface NodeSpec {
         public boolean canFail() { return canFail; }
 
         @Override
+        public boolean considerRetiring() {
+            // If we cannot fail we cannot retire as we may end up without sufficient replacement capacity
+            return canFail();
+        }
+
+        @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
 
         @Override
@@ -166,6 +175,9 @@ public interface NodeSpec {
 
         @Override
         public boolean canFail() { return false; }
+
+        @Override
+        public boolean considerRetiring() { return true; }
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {

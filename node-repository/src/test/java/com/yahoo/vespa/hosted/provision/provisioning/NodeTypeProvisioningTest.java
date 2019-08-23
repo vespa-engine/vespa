@@ -35,8 +35,10 @@ public class NodeTypeProvisioningTest {
 
     private final ApplicationId application = tester.makeApplicationId(); // application using proxy nodes
     private final Capacity capacity = Capacity.fromRequiredNodeType(NodeType.proxy);
-    private final ClusterSpec clusterSpec = ClusterSpec.request(
-            ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.42"), false);
+    private final ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
+                                                                ClusterSpec.Id.from("test"),
+                                                                Version.fromString("6.42"),
+                                                                false);
 
     @Before
     public void setup() {
@@ -156,13 +158,16 @@ public class NodeTypeProvisioningTest {
 
     @Test
     public void retire_multiple_proxy_simultaneously() {
-        MockDeployer deployer = new MockDeployer(
-                tester.provisioner(),
-                tester.clock(),
-                Collections.singletonMap(
-                        application, new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
-        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer,
-                tester.clock(), Duration.ofDays(30), Duration.ofMinutes(10));
+        MockDeployer deployer = new MockDeployer(tester.provisioner(),
+                                                 tester.clock(),
+                                                 Collections.singletonMap(application,
+                                                                          new MockDeployer.ApplicationContext(application, clusterSpec, capacity, 1)));
+        RetiredExpirer retiredExpirer =  new RetiredExpirer(tester.nodeRepository(),
+                                                            tester.orchestrator(),
+                                                            deployer,
+                                                            tester.clock(),
+                                                            Duration.ofDays(30),
+                                                            Duration.ofMinutes(10));
         final int numNodesToRetire = 5;
 
         { // Deploy

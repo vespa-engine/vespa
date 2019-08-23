@@ -100,7 +100,6 @@ class NodeAllocation {
             Node offered = offeredPriority.node;
 
             if (offered.allocation().isPresent()) {
-                boolean wantToRetireNode = false;
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().equalsIgnoringGroupAndVespaVersion(cluster)) continue; // wrong cluster id/type
@@ -108,15 +107,19 @@ class NodeAllocation {
                 if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
-                // conditions on which we want to retire nodes that were allocated previously
-                if ( violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
-                if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
-                if ( offered.status().wantToRetire()) wantToRetireNode = true;
-                if ( requestedNodes.isExclusive() &&
-                     ! hostsOnly(application.tenant(), offered.parentHostname())) wantToRetireNode = true;
+                if (requestedNodes.considerRetiring()) {
+                    boolean wantToRetireNode = false;
+                    if (violatesParentHostPolicy(this.nodes, offered)) wantToRetireNode = true;
+                    if ( ! hasCompatibleFlavor(offered)) wantToRetireNode = true;
+                    if (offered.status().wantToRetire()) wantToRetireNode = true;
+                    if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
+                        wantToRetireNode = true;
 
-                if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) ) {
-                    accepted.add(acceptNode(offeredPriority, wantToRetireNode));
+                    if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered))
+                        accepted.add(acceptNode(offeredPriority, wantToRetireNode));
+                }
+                else {
+                    accepted.add(acceptNode(offeredPriority, false));
                 }
             }
             else if ( ! saturated() && hasCompatibleFlavor(offered)) {

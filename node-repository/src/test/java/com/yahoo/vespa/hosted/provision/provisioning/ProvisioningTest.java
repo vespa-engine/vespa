@@ -16,6 +16,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.maintenance.ReservationExpirer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -47,6 +48,8 @@ import static org.junit.Assert.fail;
  */
 public class ProvisioningTest {
 
+    private static final NodeResources defaultResources = new NodeResources(1, 2, 3, 4);
+
     @Test
     public void application_deployment_constant_application_size() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
@@ -54,37 +57,37 @@ public class ProvisioningTest {
         ApplicationId application1 = tester.makeApplicationId();
         ApplicationId application2 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(21, "d-1-1-1");
+        tester.makeReadyNodes(21, defaultResources);
 
         // deploy
-        SystemState state1 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state1.allHosts);
 
         // redeploy
-        SystemState state2 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state2 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state2.assertEquals(state1);
         tester.activate(application1, state2.allHosts);
 
         // deploy another application
-        SystemState state1App2 = prepare(application2, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1App2 = prepare(application2, 2, 2, 3, 3, defaultResources, tester);
         assertFalse("Hosts to different apps are disjunct", state1App2.allHosts.removeAll(state1.allHosts));
         tester.activate(application2, state1App2.allHosts);
 
         // prepare twice
-        SystemState state3 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
-        SystemState state4 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state3 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
+        SystemState state4 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state3.assertEquals(state2);
         state4.assertEquals(state3);
         tester.activate(application1, state4.allHosts);
 
         // remove nodes before deploying
-        SystemState state5 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         HostSpec removed = tester.removeOne(state5.allHosts);
         tester.activate(application1, state5.allHosts);
         assertEquals(removed.hostname(), tester.nodeRepository().getNodes(application1, Node.State.inactive).get(0).hostname());
 
         // remove some of the clusters
-        SystemState state6 = prepare(application1, 0, 2, 0, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state6 = prepare(application1, 0, 2, 0, 3, defaultResources, tester);
         tester.activate(application1, state6.allHosts);
         assertEquals(5, tester.getNodes(application1, Node.State.active).size());
         assertEquals(5, tester.getNodes(application1, Node.State.inactive).size());
@@ -103,14 +106,14 @@ public class ProvisioningTest {
         HostSpec failed = tester.removeOne(state1App2.allHosts);
         tester.fail(failed);
         assertEquals(9, tester.getNodes(application2, Node.State.active).size());
-        SystemState state2App2 = prepare(application2, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state2App2 = prepare(application2, 2, 2, 3, 3, defaultResources, tester);
         assertFalse("Hosts to different apps are disjunct", state2App2.allHosts.removeAll(state1.allHosts));
         assertEquals("A new node was reserved to replace the failed one", 10, state2App2.allHosts.size());
         assertFalse("The new host is not the failed one", state2App2.allHosts.contains(failed));
         tester.activate(application2, state2App2.allHosts);
 
         // deploy first app again
-        SystemState state7 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state7 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state7.assertEquals(state1);
         tester.activate(application1, state7.allHosts);
         assertEquals(0, tester.getNodes(application1, Node.State.inactive).size());
@@ -132,12 +135,12 @@ public class ProvisioningTest {
     public void nodeVersionIsReturnedIfSet() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(4, new NodeResources(1, 1, 1, 0.3), NodeType.host, 1);
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         // deploy
         ApplicationId application1 = tester.makeApplicationId();
-        SystemState state1 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1 = prepare(application1, 1, 1, 1, 1, defaultResources, tester);
         tester.activate(application1, state1.allHosts);
 
         HostSpec host1 = state1.container0.iterator().next();
@@ -146,7 +149,7 @@ public class ProvisioningTest {
         tester.nodeRepository().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))), () -> {});
 
         // redeploy
-        SystemState state2 = prepare(application1, 1, 1, 1, 1, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state2 = prepare(application1, 1, 1, 1, 1, defaultResources, tester);
         tester.activate(application1, state2.allHosts);
 
         host1 = state2.container0.iterator().next();
@@ -159,20 +162,20 @@ public class ProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(24, "d-1-1-1");
+        tester.makeReadyNodes(24, defaultResources);
 
         // deploy
-        SystemState state1 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state1.allHosts);
 
         // redeploy with increased sizes
-        SystemState state2 = prepare(application1, 3, 4, 4, 5, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state2 = prepare(application1, 3, 4, 4, 5, defaultResources, tester);
         state2.assertExtends(state1);
         assertEquals("New nodes are reserved", 6, tester.getNodes(application1, Node.State.reserved).size());
         tester.activate(application1, state2.allHosts);
 
         // decrease again
-        SystemState state3 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state3 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state3.allHosts);
         assertEquals("Superfluous container nodes are deactivated",
                      3-2 + 4-2, tester.getNodes(application1, Node.State.inactive).size());
@@ -180,7 +183,7 @@ public class ProvisioningTest {
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
 
         // increase even more, and remove one node before deploying
-        SystemState state4 = prepare(application1, 4, 5, 5, 6, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state4 = prepare(application1, 4, 5, 5, 6, defaultResources, tester);
         assertEquals("Inactive nodes are reused", 0, tester.getNodes(application1, Node.State.inactive).size());
         assertEquals("Earlier retired nodes are not unretired before activate",
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
@@ -196,7 +199,7 @@ public class ProvisioningTest {
                      0, tester.getNodes(application1, Node.State.active).retired().size());
 
         // decrease again
-        SystemState state5 = prepare(application1, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state5.allHosts);
         assertEquals("Superfluous container nodes are also deactivated",
                      4-2 + 5-2 + 1, tester.getNodes(application1, Node.State.inactive).size()); //
@@ -204,13 +207,13 @@ public class ProvisioningTest {
                      5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // increase content slightly
-        SystemState state6 = prepare(application1, 2, 2, 4, 3, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state6 = prepare(application1, 2, 2, 4, 3, defaultResources, tester);
         tester.activate(application1, state6.allHosts);
         assertEquals("One content node is unretired",
                      5-4 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
         // Then reserve more
-        SystemState state7 = prepare(application1, 8, 2, 2, 2, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state7 = prepare(application1, 8, 2, 2, 2, defaultResources, tester);
 
         // delete app
         NestedTransaction removeTransaction = new NestedTransaction();
@@ -222,14 +225,14 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_multiple_flavors() {
+        NodeResources small = new NodeResources(1, 1, 1, 0.3);
+        NodeResources large = new NodeResources(2, 2, 2, 0.3);
+
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(12, "d-1-1-1");
-
-        NodeResources small = new NodeResources(1, 1, 1, 0.3);
-        NodeResources large = new NodeResources(2, 2, 2, 0.3);
+        tester.makeReadyNodes(12, small);
 
         // deploy
         SystemState state1 = prepare(application1, 2, 2, 4, 4, small, tester);
@@ -239,7 +242,7 @@ public class ProvisioningTest {
         SystemState state2 = prepare(application1, 2, 2, 3, 3, small, tester);
         tester.activate(application1, state2.allHosts);
 
-        tester.makeReadyNodes(16, "d-2-2-2");
+        tester.makeReadyNodes(16, large);
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);
@@ -284,25 +287,22 @@ public class ProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(5, "d-1-1-1");
+        tester.makeReadyNodes(5, defaultResources);
 
         // deploy
-        SystemState state1 = prepare(application1, 2, 0, 3, 0,
-                                     new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1 = prepare(application1, 2, 0, 3, 0, defaultResources, tester);
         tester.activate(application1, state1.allHosts);
 
         // redeploy a too large application
         try {
-            SystemState state2 = prepare(application1, 3, 0, 3, 0,
-                                         new NodeResources(1, 1, 1, 0.3), tester);
+            SystemState state2 = prepare(application1, 3, 0, 3, 0, defaultResources, tester);
             fail("Expected out of capacity exception");
         }
         catch (OutOfCapacityException expected) {
         }
 
         // deploy first state again
-        SystemState state3 = prepare(application1, 2, 0, 3, 0,
-                                     new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state3 = prepare(application1, 2, 0, 3, 0, defaultResources, tester);
         tester.activate(application1, state3.allHosts);
     }
 
@@ -310,12 +310,11 @@ public class ProvisioningTest {
     public void dev_deployment_node_size() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(4, new NodeResources(1, 1, 1, 0.3), NodeType.host, 1);
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = tester.makeApplicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3,
-                                    new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -324,11 +323,11 @@ public class ProvisioningTest {
     public void deploy_specific_vespa_version() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(4, new NodeResources(1, 1, 1, 0.3), NodeType.host, 1);
+        tester.makeReadyNodes(4, defaultResources, NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = tester.makeApplicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3, new NodeResources(1, 1, 1, 0.3), Version.fromString("6.91"), tester);
+        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, Version.fromString("6.91"), tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -338,9 +337,8 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-1-1-1");
-        SystemState state = prepare(application, 2, 2, 3, 3,
-                                    new NodeResources(1, 1, 1, 0.3), tester);
+        tester.makeReadyNodes(4, defaultResources);
+        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -350,9 +348,8 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(10, "d-1-1-1");
-        prepare(application, 1, 2, 3, 3,
-                new NodeResources(1, 1, 1, 0.3), tester);
+        tester.makeReadyNodes(10, defaultResources);
+        prepare(application, 1, 2, 3, 3, defaultResources, tester);
     }
 
     /** Dev always uses the zone default flavor */
@@ -370,15 +367,16 @@ public class ProvisioningTest {
         tester.activate(application, state.allHosts);
     }
 
-    /** Test always uses the zone default flavor */
+    /** Test always uses the zone default resources */
     @Test
-    public void test_deployment_flavor() {
+    public void test_deployment_resources() {
+        NodeResources large = new NodeResources(2, 2, 2, 0.3);
+
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(4, "d-2-2-2");
-        SystemState state = prepare(application, 2, 2, 3, 3,
-                                    new NodeResources(2, 2, 2, 0.3), tester);
+        tester.makeReadyNodes(4, large);
+        SystemState state = prepare(application, 2, 2, 3, 3, large, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -388,9 +386,8 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.staging, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(14, "d-1-1-1");
-        SystemState state = prepare(application, 1, 1, 1, 64,
-                                    new NodeResources(1, 1, 1, 0.3), tester); // becomes 1, 1, 1, 1, 6
+        tester.makeReadyNodes(14, defaultResources);
+        SystemState state = prepare(application, 1, 1, 1, 64, defaultResources, tester); // becomes 1, 1, 1, 1, 6
         assertEquals(9, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -399,10 +396,9 @@ public class ProvisioningTest {
     public void activate_after_reservation_timeout() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(10, "d-1-1-1");
+        tester.makeReadyNodes(10, defaultResources);
         ApplicationId application = tester.makeApplicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3,
-                                    new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
 
         // Simulate expiry
         NestedTransaction deactivateTransaction = new NestedTransaction();
@@ -422,11 +418,10 @@ public class ProvisioningTest {
     public void out_of_capacity() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(9, "d-1-1-1"); // need 2+2+3+3=10
+        tester.makeReadyNodes(9, defaultResources); // need 2+2+3+3=10
         ApplicationId application = tester.makeApplicationId();
         try {
-            prepare(application, 2, 2, 3, 3,
-                    new NodeResources(1, 1, 1, 0.3), tester);
+            prepare(application, 2, 2, 3, 3, defaultResources, tester);
             fail("Expected exception");
         }
         catch (OutOfCapacityException e) {
@@ -437,7 +432,7 @@ public class ProvisioningTest {
     @Test
     public void out_of_capacity_but_cannot_fail() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyNodes(4, "d-1-1-1");
+        tester.makeReadyNodes(4, defaultResources);
         ApplicationId application = tester.makeApplicationId();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
                                                   ClusterSpec.Id.from("music"),
@@ -453,16 +448,53 @@ public class ProvisioningTest {
 
         ApplicationId application = tester.makeApplicationId();
         // Flag all nodes for retirement
-        List<Node> readyNodes = tester.makeReadyNodes(5, "d-1-1-1");
+        List<Node> readyNodes = tester.makeReadyNodes(5, defaultResources);
         readyNodes.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
 
         try {
-            prepare(application, 2, 0, 2, 0,
-                    new NodeResources(1, 1, 1, 0.3), tester);
+            prepare(application, 2, 0, 2, 0, defaultResources, tester);
             fail("Expected exception");
         } catch (OutOfCapacityException e) {
             assertTrue(e.getMessage().startsWith("Could not satisfy request"));
         }
+    }
+
+    @Test
+    public void want_to_retire_but_cannot_fail() {
+        Capacity capacity =       Capacity.fromCount(5, Optional.of(defaultResources), false, true);
+        Capacity capacityFORCED = Capacity.fromCount(5, Optional.of(defaultResources), false, false);
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        ApplicationId application = tester.makeApplicationId();
+
+        // Create 10 nodes
+        tester.makeReadyNodes(10, defaultResources);
+        // Allocate 5 nodes
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("music"),
+                                                  new com.yahoo.component.Version(4, 5, 6),
+                                                  false);
+        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+
+        // Mark the nodes as want to retire
+        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
+        // redeploy without allow failing
+        tester.activate(application, tester.prepare(application, cluster, capacityFORCED, 1));
+
+        // Nodes are not retired since that is unsafe when we cannot fail
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        // ... but we still want to
+        tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
+
+        // redeploy with allowing failing
+        tester.activate(application, tester.prepare(application, cluster, capacity, 1));
+        // ... old nodes are now retired
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
     }
 
     @Test
@@ -471,14 +503,14 @@ public class ProvisioningTest {
 
         ApplicationId application1 = tester.makeApplicationId();
 
-        tester.makeReadyNodes(14, "d-1-1-1");
+        tester.makeReadyNodes(14, defaultResources);
 
         // deploy
-        SystemState state1 = prepare(application1, 3, 3, 4, 4, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state1 = prepare(application1, 3, 3, 4, 4, defaultResources, tester);
         tester.activate(application1, state1.allHosts);
 
         // decrease cluster sizes
-        SystemState state2 = prepare(application1, 2, 2, 2, 2, new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state2 = prepare(application1, 2, 2, 2, 2, defaultResources, tester);
         tester.activate(application1, state2.allHosts);
 
         // content0
@@ -499,12 +531,11 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(10, "d-1-1-1");
+        tester.makeReadyNodes(10, defaultResources);
 
         // Deploy application
         {
-            SystemState state = prepare(application, 2, 0, 2, 0,
-                                        new NodeResources(1, 1, 1, 0.3), tester);
+            SystemState state = prepare(application, 2, 0, 2, 0,defaultResources, tester);
             tester.activate(application, state.allHosts);
             assertEquals(4, tester.getNodes(application, Node.State.active).size());
         }
@@ -528,24 +559,22 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
         ApplicationId application = tester.makeApplicationId();
-        tester.makeReadyNodes(2, "d-1-1-1");
+        tester.makeReadyNodes(2, defaultResources);
 
         // Deploy fails with out of capacity
         try {
-            prepare(application, 2, 0, 2, 0,
-                    new NodeResources(1, 1, 1, 0.3), tester);
+            prepare(application, 2, 0, 2, 0, defaultResources, tester);
             fail("Expected exception");
         } catch (OutOfCapacityException ignored) {}
         assertEquals("Reserved a subset of required nodes", 2,
                      tester.getNodes(application, Node.State.reserved).size());
 
         // Enough nodes become available
-        tester.makeReadyNodes(2, "d-1-1-1");
+        tester.makeReadyNodes(2, defaultResources);
 
         // Deploy is retried after a few minutes
         tester.clock().advance(Duration.ofMinutes(2));
-        SystemState state = prepare(application, 2, 0, 2, 0,
-                                    new NodeResources(1, 1, 1, 0.3), tester);
+        SystemState state = prepare(application, 2, 0, 2, 0, defaultResources, tester);
         List<Node> reserved = tester.getNodes(application, Node.State.reserved).asList();
         assertEquals("Reserved required nodes", 4, reserved.size());
         assertTrue("Time of event is updated for all nodes",
@@ -571,7 +600,7 @@ public class ProvisioningTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ApplicationId application = tester.makeApplicationId();
         try {
-            prepare(application, 1, 0, 1, 0, true, new NodeResources(1, 1, 1, 0.3), Version.fromString("6.42"), tester);
+            prepare(application, 1, 0, 1, 0, true, defaultResources, Version.fromString("6.42"), tester);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
     }
