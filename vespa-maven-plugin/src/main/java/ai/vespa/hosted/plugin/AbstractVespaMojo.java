@@ -2,8 +2,6 @@ package ai.vespa.hosted.plugin;
 
 import ai.vespa.hosted.api.ControllerHttpClient;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneId;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -68,17 +66,6 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         controller = certificateFile == null
                 ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(privateKeyFile), id)
                 : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
-    }
-
-    protected ZoneId zoneOf(String environment, String region) {
-        if (region == null)
-            return controller.defaultZone(environment != null ? Environment.from(environment)
-                                                              : Environment.dev);
-
-        if (environment == null)
-            throw new IllegalArgumentException("Environment must be specified if region is specified");
-
-        return ZoneId.from(environment, region);
     }
 
     protected String projectPathOf(String first, String... rest) {

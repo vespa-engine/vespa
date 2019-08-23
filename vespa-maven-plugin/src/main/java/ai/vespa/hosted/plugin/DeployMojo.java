@@ -18,19 +18,13 @@ import java.time.format.DateTimeFormatter;
  * @author jonmv
  */
 @Mojo(name = "deploy")
-public class DeployMojo extends AbstractVespaMojo {
+public class DeployMojo extends AbstractVespaDeploymentMojo {
 
     @Parameter(property = "applicationZip")
     private String applicationZip;
 
     @Parameter(property = "vespaVersion")
     private String vespaVersion;
-
-    @Parameter(property = "environment")
-    private String environment;
-
-    @Parameter(property = "region")
-    private String region;
 
     @Parameter(property = "follow", defaultValue = "true")
     private boolean follow;

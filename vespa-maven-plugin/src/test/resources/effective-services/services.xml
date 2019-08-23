@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services xmlns:deploy="vespa">
+    <container>
+        <component id="good-service-client">
+            <config>
+                <url deploy:environment="dev">dev.tld</url>
+                <url deploy:environment="prod" deploy:region="us-east-3">us-east-3.prod.tld</url>
+            </config>
+        </component>
+    </container>
+</services>
