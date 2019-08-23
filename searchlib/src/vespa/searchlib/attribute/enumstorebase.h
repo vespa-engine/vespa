@@ -30,20 +30,21 @@ using EnumStoreIndex = EnumStoreDataStoreType::RefType;
 using EnumStoreIndexVector = vespalib::Array<EnumStoreIndex>;
 using EnumStoreEnumVector = vespalib::Array<uint32_t>;
 
-typedef btree::BTreeTraits<16, 16, 10, true> EnumTreeTraits;
+using EnumTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
 
-typedef btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
-                     btree::NoAggregated,
-                     const datastore::EntryComparatorWrapper,
-                     EnumTreeTraits> EnumTree;
-typedef btree::BTree<EnumStoreIndex, datastore::EntryRef,
-                     btree::NoAggregated,
-                     const datastore::EntryComparatorWrapper,
-                     EnumTreeTraits> EnumPostingTree;
+using EnumTree = btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
+                              btree::NoAggregated,
+                              const datastore::EntryComparatorWrapper,
+                              EnumTreeTraits>;
+
+using EnumPostingTree = btree::BTree<EnumStoreIndex, datastore::EntryRef,
+                                     btree::NoAggregated,
+                                     const datastore::EntryComparatorWrapper,
+                                     EnumTreeTraits>;
 
 struct CompareEnumIndex
 {
-    typedef EnumStoreIndex Index;
+    using Index = EnumStoreIndex;
 
     bool operator()(const Index &lhs, const Index &rhs) const {
         return lhs.ref() < rhs.ref();
@@ -53,11 +54,11 @@ struct CompareEnumIndex
 class EnumStoreDictBase
 {
 public:
-    typedef EnumStoreIndex Index;
-    typedef EnumStoreIndexVector IndexVector;
-    typedef EnumStoreEnumVector EnumVector;
-    typedef std::set<Index, CompareEnumIndex> IndexSet;
-    typedef vespalib::GenerationHandler::generation_t  generation_t;
+    using EnumVector = EnumStoreEnumVector;
+    using Index = EnumStoreIndex;
+    using IndexSet = std::set<Index, CompareEnumIndex>;
+    using IndexVector = EnumStoreIndexVector;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
 protected:
     EnumStoreBase &_enumStore;
@@ -163,12 +164,13 @@ public:
 class EnumStoreBase
 {
 public:
-    typedef vespalib::GenerationHandler::generation_t  generation_t;
-    typedef attribute::IAttributeVector::EnumHandle     EnumHandle;
-    typedef EnumStoreDataStoreType DataStoreType;
-    typedef EnumStoreIndex         Index;
-    typedef EnumStoreIndexVector   IndexVector;
-    typedef EnumStoreEnumVector    EnumVector;
+    using DataStoreType = EnumStoreDataStoreType;
+    using EnumHandle = attribute::IAttributeVector::EnumHandle;
+    using EnumVector = EnumStoreEnumVector;
+    using Index = EnumStoreIndex;
+    using IndexVector = EnumStoreIndexVector;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+
     using EnumIndexMap = vespalib::hash_map<Index, Index, vespalib::hash<Index>, std::equal_to<Index>,
                                             vespalib::hashtable_base::and_modulator>;
 
@@ -209,7 +211,7 @@ public:
         static uint32_t size() { return 2*sizeof(uint32_t); }
     };
 
-    typedef std::set<Index, CompareEnumIndex> IndexSet;
+    using IndexSet = std::set<Index, CompareEnumIndex>;
 
 protected:
 
