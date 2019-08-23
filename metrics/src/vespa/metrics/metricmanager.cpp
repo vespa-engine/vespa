@@ -4,10 +4,6 @@
 #include "countmetric.h"
 #include "valuemetric.h"
 #include "metricset.h"
-#include "summetric.h"
-#include "jsonwriter.h"
-#include "textwriter.h"
-#include "xmlwriter.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -29,7 +25,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
 MetricManager::Timer::getTime() const {
-    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 void
@@ -50,7 +46,7 @@ MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose,
     for (const Metric::String & name : includedMetrics) {
         sortedMetrics.insert(name);
     }
-    for (auto s : sortedMetrics) {
+    for (const auto & s : sortedMetrics) {
         out << "\n" << indent << "  " << s;
     }
     out << ")";
