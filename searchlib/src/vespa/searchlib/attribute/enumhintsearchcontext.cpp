@@ -14,7 +14,7 @@ EnumHintSearchContext(const EnumStoreDictBase &dictionary,
                       uint32_t docIdLimit,
                       uint64_t numValues)
     : _dictionary(dictionary),
-      _frozenRootRef(dictionary.getFrozenRootRef()),
+      _frozenRootRef(dictionary.get_frozen_root()),
       _uniqueValues(0u),
       _docIdLimit(docIdLimit),
       _numValues(numValues)

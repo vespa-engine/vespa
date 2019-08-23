@@ -51,8 +51,7 @@ struct CompareEnumIndex
     }
 };
 
-class EnumStoreDictBase
-{
+class EnumStoreDictBase : public datastore::UniqueStoreDictionaryBase {
 public:
     using EnumVector = EnumStoreEnumVector;
     using Index = EnumStoreIndex;
@@ -60,16 +59,11 @@ public:
     using IndexVector = EnumStoreIndexVector;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-protected:
-    EnumStoreBase &_enumStore;
-
 public:
-    EnumStoreDictBase(EnumStoreBase &enumStore);
+    EnumStoreDictBase();
     virtual ~EnumStoreDictBase();
 
-    virtual void freezeTree() = 0;
     virtual uint32_t getNumUniques() const = 0;
-    virtual vespalib::MemoryUsage getTreeMemoryUsage() const = 0;
     virtual void reEnumerate() = 0;
     virtual void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const = 0;
     virtual ssize_t deserialize(const void *src, size_t available, IndexVector &idx) = 0;
@@ -86,8 +80,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator &cmp) const = 0;
 
     virtual void onReset() = 0;
-    virtual void onTransferHoldLists(generation_t generation) = 0;
-    virtual void onTrimHoldLists(generation_t firstUsed) = 0;
     virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
 
     virtual uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
@@ -104,11 +96,17 @@ public:
 
 
 template <typename Dictionary>
-class EnumStoreDict : public EnumStoreDictBase,
-                             search::datastore::UniqueStoreDictionary<Dictionary>
+class EnumStoreDict : public datastore::UniqueStoreDictionary<Dictionary, EnumStoreDictBase>
 {
 private:
-    using ParentUniqueStoreDictionary = search::datastore::UniqueStoreDictionary<Dictionary>;
+    using EnumVector = EnumStoreDictBase::EnumVector;
+    using Index = EnumStoreDictBase::Index;
+    using IndexSet = EnumStoreDictBase::IndexSet;
+    using IndexVector = EnumStoreDictBase::IndexVector;
+    using ParentUniqueStoreDictionary = datastore::UniqueStoreDictionary<Dictionary, EnumStoreDictBase>;
+    using generation_t = EnumStoreDictBase::generation_t;
+
+    EnumStoreBase& _enumStore;
 
 public:
     EnumStoreDict(EnumStoreBase &enumStore);
@@ -118,9 +116,7 @@ public:
     const Dictionary &getDictionary() const { return this->_dict; }
     Dictionary &getDictionary() { return this->_dict; }
     
-    void freezeTree() override { this->freeze(); }
     uint32_t getNumUniques() const override;
-    vespalib::MemoryUsage getTreeMemoryUsage() const override { return this->get_memory_usage(); }
     void reEnumerate() override;
     void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const override;
     ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override;
@@ -143,8 +139,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator &cmp) const override;
 
     void onReset() override;
-    void onTransferHoldLists(generation_t generation) override { this->transfer_hold_lists(generation); }
-    void onTrimHoldLists(generation_t firstUsed) override { this->trim_hold_lists(firstUsed); }
     btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
 
     uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
@@ -299,7 +293,7 @@ public:
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).capacity();
     }
     vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage getTreeMemoryUsage() const { return _enumDict->getTreeMemoryUsage(); }
+    vespalib::MemoryUsage getTreeMemoryUsage() const { return _enumDict->get_memory_usage(); }
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 
@@ -349,7 +343,7 @@ public:
     virtual void freeUnusedEnums(const IndexSet& toRemove) = 0;
 
     void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
-    void freezeTree() { _enumDict->freezeTree(); }
+    void freezeTree() { _enumDict->freeze(); }
 
     virtual bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) = 0;
 
