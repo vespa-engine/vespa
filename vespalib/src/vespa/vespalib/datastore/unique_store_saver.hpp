@@ -26,8 +26,8 @@ UniqueStoreSaver<EntryT, RefT>::enumerateValue(EntryRef ref)
 {
     RefType iRef(ref);
     assert(iRef.valid());
-    assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
-    uint32_t &enumVal = _enumValues[iRef.bufferId()][iRef.offset()];
+    assert(iRef.unscaled_offset() < _enumValues[iRef.bufferId()].size());
+    uint32_t &enumVal = _enumValues[iRef.bufferId()][iRef.unscaled_offset()];
     assert(enumVal == 0u);
     enumVal = _next_enum_val;
     ++_next_enum_val;
@@ -41,7 +41,7 @@ UniqueStoreSaver<EntryT, RefT>::enumerateValues()
     for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
         const BufferState &state = _store.getBufferState(bufferId);
         if (state.isActive()) {
-            _enumValues[bufferId].resize(state.size());
+            _enumValues[bufferId].resize(state.size() / state.getArraySize());
         }
     }
     _next_enum_val = 1;
