@@ -96,7 +96,8 @@ public class KeyUtils {
                 if (pemObject instanceof PrivateKeyInfo) {
                     PrivateKeyInfo keyInfo = (PrivateKeyInfo) pemObject;
                     PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyInfo.getEncoded());
-                    return createKeyFactory(RSA).generatePrivate(keySpec);
+                    return createKeyFactory(keyInfo.getPrivateKeyAlgorithm())
+                            .generatePrivate(keySpec);
                 } else if (pemObject instanceof PEMKeyPair) {
                     PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
                     PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
