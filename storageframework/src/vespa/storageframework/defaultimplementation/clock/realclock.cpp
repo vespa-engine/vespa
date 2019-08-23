@@ -3,9 +3,7 @@
 #include "realclock.h"
 #include <sys/time.h>
 
-namespace storage {
-namespace framework {
-namespace defaultimplementation {
+namespace storage::framework::defaultimplementation {
 
 MicroSecTime RealClock::getTimeInMicros() const {
     struct timeval mytime;
@@ -30,6 +28,4 @@ MonotonicTimePoint RealClock::getMonotonicTime() const {
     return std::chrono::steady_clock::now();
 }
 
-} // defaultimplementation
-} // framework
-} // storage
+}

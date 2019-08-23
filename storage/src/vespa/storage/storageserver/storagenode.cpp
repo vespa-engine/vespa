@@ -161,10 +161,10 @@ StorageNode::initialize()
     _context.getComponentRegister().setBucketSpacesConfig(*_bucketSpacesConfig);
 
     _metrics = std::make_shared<StorageMetricSet>();
-    _component.reset(new StorageComponent(_context.getComponentRegister(), "storagenode"));
+    _component = std::make_unique<StorageComponent>(_context.getComponentRegister(), "storagenode");
     _component->registerMetric(*_metrics);
     if (!_context.getComponentRegister().hasMetricManager()) {
-        _metricManager.reset(new metrics::MetricManager);
+        _metricManager = std::make_unique<metrics::MetricManager>();
         _context.getComponentRegister().setMetricManager(*_metricManager);
     }
     _component->registerMetricUpdateHook(*this, framework::SecondTime(300));

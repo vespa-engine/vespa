@@ -1273,10 +1273,10 @@ FileStorHandlerImpl::Stripe::dumpQueueHtml(std::ostream & os) const
 namespace {
 
 void dump_lock_entry(const document::BucketId& bucketId, const FileStorHandlerImpl::Stripe::LockEntry& entry,
-                     api::LockingRequirements lock_mode, uint32_t now_ts, std::ostream& os) {
+                     api::LockingRequirements lock_mode, FileStorHandlerImpl::Clock::time_point now_ts, std::ostream& os) {
     os << api::MessageType::get(entry.msgType).getName() << ":" << entry.msgId << " ("
        << bucketId << ", " << api::to_string(lock_mode)
-       << " lock) Running for " << (now_ts - entry.timestamp) << " secs<br/>\n";
+       << " lock) Running for " << std::chrono::duration_cast<std::chrono::seconds>(now_ts - entry.timestamp).count() << " secs<br/>\n";
 }
 
 }
@@ -1284,7 +1284,7 @@ void dump_lock_entry(const document::BucketId& bucketId, const FileStorHandlerIm
 void
 FileStorHandlerImpl::Stripe::dumpActiveHtml(std::ostream & os) const
 {
-    uint32_t now = time(nullptr);
+    Clock::time_point now = Clock::now();
     vespalib::MonitorGuard guard(_lock);
     for (const auto & e : _lockedBuckets) {
         if (e.second._exclusiveLock) {

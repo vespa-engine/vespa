@@ -70,7 +70,7 @@ public:
 
     struct Timer {
         virtual ~Timer() {}
-        virtual time_t getTime() const { return time(0); }
+        virtual time_t getTime() const;
         virtual time_t getTimeInMilliSecs() const { return getTime() * 1000; }
     };
 
@@ -85,7 +85,7 @@ public:
         ConsumerSpec(ConsumerSpec &&) = default;
         ConsumerSpec & operator= (ConsumerSpec &&) = default;
         ConsumerSpec();
-        ~ConsumerSpec();
+        ~ConsumerSpec() override;
 
         bool contains(const Metric& m) const {
             return (includedMetrics.find(m.getPath()) != includedMetrics.end());
@@ -126,8 +126,8 @@ private:
     LongAverageMetric _sleepTimes;
 
 public:
-    MetricManager(std::unique_ptr<Timer> timer = std::unique_ptr<Timer>(new Timer));
-    ~MetricManager();
+    MetricManager(std::unique_ptr<Timer> timer = std::make_unique<Timer>());
+    ~MetricManager() override;
 
     void stop();
 

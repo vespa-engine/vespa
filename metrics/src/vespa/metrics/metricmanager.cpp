@@ -27,6 +27,11 @@ typedef MetricsmanagerConfig Config;
 MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
+time_t
+MetricManager::Timer::getTime() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
     if (!g.monitors(_waiter)) {
@@ -327,7 +332,7 @@ namespace {
     {
         LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
     }
-    ConsumerMetricBuilder::~ConsumerMetricBuilder() { }
+    ConsumerMetricBuilder::~ConsumerMetricBuilder() = default;
 
 }
 
