@@ -147,14 +147,18 @@ public class NodePatcher {
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
                 return node.withOpenStackId(asString(value));
+            case "diskGb":
             case "minDiskAvailableGb":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())));
+            case "memoryGb":
             case "minMainMemoryAvailableGb":
                 return node.with(node.flavor().with(node.flavor().resources().withMemoryGb(value.asDouble())));
+            case "vcpu":
             case "minCpuCores":
                 return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())));
             case "fastDisk":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskSpeed(value.asBool() ? fast : slow)));
+            case "bandwidthGbps":
             case "bandwidth":
                 return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble() / 1000)));
             case "modelName":
