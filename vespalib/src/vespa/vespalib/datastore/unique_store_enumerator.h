@@ -7,7 +7,7 @@
 namespace search::datastore {
 
 /**
- * Saver for related UniqueStore class.
+ * Enumerator for related UniqueStore class.
  *
  * Contains utility methods for traversing all unique values (as
  * EntryRef value) and mapping from EntryRef value to enum value.
