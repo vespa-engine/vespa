@@ -16,41 +16,41 @@
 
 namespace search::datastore {
 
-template <typename DictionaryType>
-UniqueStoreDictionary<DictionaryType>::UniqueStoreDictionary()
+template <typename DictionaryT>
+UniqueStoreDictionary<DictionaryT>::UniqueStoreDictionary()
     : UniqueStoreDictionaryBase(),
       _dict()
 {
 }
 
-template <typename DictionaryType>
-UniqueStoreDictionary<DictionaryType>::~UniqueStoreDictionary() = default;
+template <typename DictionaryT>
+UniqueStoreDictionary<DictionaryT>::~UniqueStoreDictionary() = default;
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::freeze()
+UniqueStoreDictionary<DictionaryT>::freeze()
 {
     _dict.getAllocator().freeze();
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::transfer_hold_lists(generation_t generation)
+UniqueStoreDictionary<DictionaryT>::transfer_hold_lists(generation_t generation)
 {
     _dict.getAllocator().transferHoldLists(generation);
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::trim_hold_lists(generation_t firstUsed)
+UniqueStoreDictionary<DictionaryT>::trim_hold_lists(generation_t firstUsed)
 {
     _dict.getAllocator().trimHoldLists(firstUsed);
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 UniqueStoreAddResult
-UniqueStoreDictionary<DictionaryType>::add(const EntryComparator &comp,
-                                           std::function<EntryRef(void)> insertEntry)
+UniqueStoreDictionary<DictionaryT>::add(const EntryComparator &comp,
+                                        std::function<EntryRef(void)> insertEntry)
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
@@ -63,9 +63,9 @@ UniqueStoreDictionary<DictionaryType>::add(const EntryComparator &comp,
     }
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 EntryRef
-UniqueStoreDictionary<DictionaryType>::find(const EntryComparator &comp)
+UniqueStoreDictionary<DictionaryT>::find(const EntryComparator &comp)
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
@@ -75,9 +75,9 @@ UniqueStoreDictionary<DictionaryType>::find(const EntryComparator &comp)
     }
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::remove(const EntryComparator &comp, EntryRef ref)
+UniqueStoreDictionary<DictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
     auto itr = _dict.lowerBound(ref, comp);
@@ -85,9 +85,9 @@ UniqueStoreDictionary<DictionaryType>::remove(const EntryComparator &comp, Entry
     _dict.remove(itr);
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::move_entries(ICompactable &compactable)
+UniqueStoreDictionary<DictionaryT>::move_entries(ICompactable &compactable)
 {
     auto itr = _dict.begin();
     while (itr.valid()) {
@@ -101,29 +101,29 @@ UniqueStoreDictionary<DictionaryType>::move_entries(ICompactable &compactable)
     }
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 uint32_t
-UniqueStoreDictionary<DictionaryType>::get_num_uniques() const
+UniqueStoreDictionary<DictionaryT>::get_num_uniques() const
 {
     return _dict.getFrozenView().size();
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 vespalib::MemoryUsage
-UniqueStoreDictionary<DictionaryType>::get_memory_usage() const
+UniqueStoreDictionary<DictionaryT>::get_memory_usage() const
 {
     return _dict.getMemoryUsage();
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::build(const std::vector<EntryRef> &refs,
-                                             const std::vector<uint32_t> &ref_counts,
-                                             std::function<void(EntryRef)> hold)
+UniqueStoreDictionary<DictionaryT>::build(const std::vector<EntryRef> &refs,
+                                          const std::vector<uint32_t> &ref_counts,
+                                          std::function<void(EntryRef)> hold)
 {
     assert(refs.size() == ref_counts.size());
     assert(!refs.empty());
-    typename Dictionary::Builder builder(_dict.getAllocator());
+    typename DictionaryType::Builder builder(_dict.getAllocator());
     for (size_t i = 1; i < refs.size(); ++i) {
         if (ref_counts[i] != 0u) {
             builder.insert(refs[i], DataType());
@@ -134,18 +134,17 @@ UniqueStoreDictionary<DictionaryType>::build(const std::vector<EntryRef> &refs,
     _dict.assign(builder);
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 EntryRef
-UniqueStoreDictionary<DictionaryType>::get_frozen_root() const
+UniqueStoreDictionary<DictionaryT>::get_frozen_root() const
 {
     return _dict.getFrozenView().getRoot();
 }
 
-template <typename DictionaryType>
+template <typename DictionaryT>
 void
-UniqueStoreDictionary<DictionaryType>::foreach_key(EntryRef root, std::function<void(EntryRef)> callback) const
+UniqueStoreDictionary<DictionaryT>::foreach_key(EntryRef root, std::function<void(EntryRef)> callback) const
 {
-    
     _dict.getAllocator().getNodeStore().foreach_key(root, callback);
 }
 

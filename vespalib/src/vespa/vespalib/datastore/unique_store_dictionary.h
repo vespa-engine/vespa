@@ -12,13 +12,11 @@ class EntryComparatorWrapper;
 /**
  * A dictionary for unique store. Mostly accessed via base class.
  */
-template <typename DictionaryType>
+template <typename DictionaryT>
 class UniqueStoreDictionary : public UniqueStoreDictionaryBase
 {
-public:
-    using Dictionary = DictionaryType;
-
 protected:
+    using DictionaryType = DictionaryT;
     using DataType = typename DictionaryType::DataType;
 
     DictionaryType _dict;
