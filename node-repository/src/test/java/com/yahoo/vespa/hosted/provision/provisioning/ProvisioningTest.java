@@ -545,7 +545,7 @@ public class ProvisioningTest {
             List<Node> nodesToRetire = tester.getNodes(application, Node.State.active).asList().subList(0, 2);
             nodesToRetire.forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
 
-            SystemState state = prepare(application, 2, 0, 2, 0, new NodeResources(1, 1, 1, 0.3), tester);
+            SystemState state = prepare(application, 2, 0, 2, 0, defaultResources, tester);
             tester.activate(application, state.allHosts);
 
             List<Node> retiredNodes = tester.getNodes(application).retired().asList();
