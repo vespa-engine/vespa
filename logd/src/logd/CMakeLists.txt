@@ -7,8 +7,8 @@ find_package(Protobuf REQUIRED)
 protobuf_generate_cpp(logd_PROTOBUF_SRCS logd_PROTOBUF_HDRS ../../../logserver/src/protobuf/log_protocol.proto)
 
 # protoc-generated files emit compiler warnings that we normally treat as errors.
-if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set_source_files_properties(${logd_PROTOBUF_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-suggest-override")
+if (NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+  set_source_files_properties(${logd_PROTOBUF_SRCS} PROPERTIES COMPILE_FLAGS "-Wno-array-bounds -Wno-suggest-override")
 endif()
 
 vespa_add_library(logd STATIC
