@@ -72,21 +72,22 @@ public:
 
     using PriorityIdx = bmi::nth_index<PriorityQueue, 1>::type;
     using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
+    using Clock = std::chrono::steady_clock;
 
     struct Disk;
 
     class Stripe {
     public:
         struct LockEntry {
-            uint32_t                timestamp;
+            Clock::time_point       timestamp;
             uint8_t                 priority;
             api::MessageType::Id    msgType;
             api::StorageMessage::Id msgId;
 
-            LockEntry() : timestamp(0), priority(0), msgType(), msgId(0) { }
+            LockEntry() : timestamp(), priority(0), msgType(), msgId(0) { }
 
             LockEntry(uint8_t priority_, api::MessageType::Id msgType_, api::StorageMessage::Id msgId_)
-                : timestamp(time(nullptr)), priority(priority_), msgType(msgType_), msgId(msgId_)
+                : timestamp(Clock::now()), priority(priority_), msgType(msgType_), msgId(msgId_)
             { }
         };
 
