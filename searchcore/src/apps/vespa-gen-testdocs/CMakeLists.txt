@@ -6,4 +6,3 @@ vespa_add_executable(searchcore_vespa-gen-testdocs_app
     INSTALL bin
     DEPENDS
 )
-vespa_add_target_system_dependency(searchcore_vespa-gen-testdocs_app crypto)
