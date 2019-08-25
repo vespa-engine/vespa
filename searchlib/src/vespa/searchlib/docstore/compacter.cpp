@@ -7,8 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 using vespalib::alloc::Alloc;
 
@@ -96,5 +95,4 @@ BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const 
     }
 }
 
-}
 }
