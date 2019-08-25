@@ -70,7 +70,7 @@ private:
     MemoryDataStore                            & _backingMemory;
     ThreadExecutor                             & _executor;
     vespalib::Monitor                            _monitor;
-    int64_t                                      _inFlight;
+    size_t                                       _inFlight;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
     CompressionConfig                            _compression;
 };

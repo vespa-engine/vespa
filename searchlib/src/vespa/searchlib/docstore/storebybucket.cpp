@@ -18,8 +18,8 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & e
     _where(),
     _backingMemory(backingMemory),
     _executor(executor),
-    _lock(),
-    _allInFlight(false),
+    _monitor(),
+    _inFlight(0),
     _chunks(),
     _compression(compression)
 {
@@ -34,7 +34,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
     if ( ! _current->hasRoom(sz)) {
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
-        _inflight
+        incInFlight();
         _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(tmpChunk))));
     }
     Index idx(bucketId, _current->getId(), chunkId, lid);
@@ -50,7 +50,7 @@ StoreByBucket::createChunk()
 
 size_t
 StoreByBucket::getChunkCount() const {
-    vespalib::LockGuard guard(_lock);
+    vespalib::LockGuard guard(_monitor);
     return _chunks.size();
 }
 
