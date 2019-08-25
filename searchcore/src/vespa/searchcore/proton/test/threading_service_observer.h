@@ -15,7 +15,7 @@ private:
     ThreadServiceObserver _master;
     ThreadServiceObserver _index;
     ThreadServiceObserver _summary;
-    vespalib::ThreadExecutor & _shared;
+    vespalib::SyncableThreadExecutor & _shared;
     search::SequencedTaskExecutorObserver _indexFieldInverter;
     search::SequencedTaskExecutorObserver _indexFieldWriter;
     search::SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -72,7 +72,7 @@ public:
     searchcorespi::index::IThreadService &summary() override {
         return _summary;
     }
-    vespalib::ThreadExecutor &shared() override {
+    vespalib::SyncableThreadExecutor &shared() override {
         return _shared;
     }
     search::ISequencedTaskExecutor &indexFieldInverter() override {

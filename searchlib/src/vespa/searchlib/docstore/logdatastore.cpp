@@ -50,7 +50,7 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_fileConfig == rhs._fileConfig);
 }
 
-LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
+LogDataStore::LogDataStore(vespalib::SyncableThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
                            const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                            const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
                            const IBucketizer::SP & bucketizer, bool readOnly)

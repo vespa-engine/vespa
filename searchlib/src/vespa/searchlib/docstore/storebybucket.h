@@ -5,7 +5,7 @@
 #include "chunk.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/data/memorydatastore.h>
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
@@ -20,12 +20,12 @@ namespace search::docstore {
 class StoreByBucket
 {
     using MemoryDataStore = vespalib::MemoryDataStore;
-    using ThreadExecutor = vespalib::ThreadExecutor;
+    using Executor = vespalib::Executor;
     using ConstBufferRef = vespalib::ConstBufferRef;
     using CompressionConfig = vespalib::compression::CompressionConfig;
 public:
     StoreByBucket(vespalib::MemoryDataStore & backingMemory, const CompressionConfig & compression);
-    StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & executor, const CompressionConfig & compression);
+    StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression);
     StoreByBucket(StoreByBucket &&) = default;
     ~StoreByBucket();
     class IWrite {
@@ -68,7 +68,7 @@ private:
     Chunk::UP                                    _current;
     std::map<uint64_t, IndexVector>              _where;
     MemoryDataStore                            & _backingMemory;
-    ThreadExecutor                             & _executor;
+    Executor                                   & _executor;
     vespalib::Monitor                            _monitor;
     size_t                                       _inFlight;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;

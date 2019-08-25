@@ -30,9 +30,9 @@ public:
                           ISearchableIndexCollection::SP prev,
                           ISearchableIndexCollection::SP next,
                           IndexSearchable & warmup,
-                          vespalib::ThreadExecutor & executor,
+                          vespalib::SyncableThreadExecutor & executor,
                           IWarmupDone & warmupDone);
-    ~WarmupIndexCollection();
+    ~WarmupIndexCollection() override;
     // Implements IIndexCollection
     const ISourceSelector &getSourceSelector() const override;
     size_t getSourceCount() const override;
@@ -95,15 +95,15 @@ private:
     void fireWarmup(Task::UP task);
     bool handledBefore(uint32_t fieldId, const Node &term);
 
-    const WarmupConfig               _warmupConfig;
-    ISearchableIndexCollection::SP   _prev;
-    ISearchableIndexCollection::SP   _next;
-    IndexSearchable                & _warmup;
-    vespalib::ThreadExecutor       & _executor;
-    IWarmupDone                    & _warmupDone;
-    fastos::TimeStamp                _warmupEndTime;
-    std::mutex                       _lock;
-    std::unique_ptr<FieldTermMap>    _handledTerms;
+    const WarmupConfig                 _warmupConfig;
+    ISearchableIndexCollection::SP     _prev;
+    ISearchableIndexCollection::SP     _next;
+    IndexSearchable                  & _warmup;
+    vespalib::SyncableThreadExecutor & _executor;
+    IWarmupDone                      & _warmupDone;
+    fastos::TimeStamp                  _warmupEndTime;
+    std::mutex                         _lock;
+    std::unique_ptr<FieldTermMap>      _handledTerms;
 };
 
 }  // namespace searchcorespi

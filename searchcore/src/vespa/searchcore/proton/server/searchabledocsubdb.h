@@ -52,15 +52,15 @@ public:
     };
 
     struct Context {
-        const FastAccessDocSubDB::Context _fastUpdCtx;
-        matching::QueryLimiter   &_queryLimiter;
-        const vespalib::Clock    &_clock;
-        vespalib::ThreadExecutor &_warmupExecutor;
+        const FastAccessDocSubDB::Context  _fastUpdCtx;
+        matching::QueryLimiter            &_queryLimiter;
+        const vespalib::Clock             &_clock;
+        vespalib::SyncableThreadExecutor  &_warmupExecutor;
 
         Context(const FastAccessDocSubDB::Context &fastUpdCtx,
                 matching::QueryLimiter &queryLimiter,
                 const vespalib::Clock &clock,
-                vespalib::ThreadExecutor &warmupExecutor)
+                vespalib::SyncableThreadExecutor &warmupExecutor)
             : _fastUpdCtx(fastUpdCtx),
               _queryLimiter(queryLimiter),
               _clock(clock),
@@ -80,7 +80,7 @@ private:
     vespalib::eval::ConstantValueCache          _constantValueCache;
     matching::ConstantValueRepo                 _constantValueRepo;
     SearchableDocSubDBConfigurer                _configurer;
-    vespalib::ThreadExecutor                   &_warmupExecutor;
+    vespalib::SyncableThreadExecutor           &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;
     bool                                        _nodeRetired;

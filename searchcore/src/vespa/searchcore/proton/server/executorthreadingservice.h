@@ -75,7 +75,7 @@ public:
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
     }
-    vespalib::ThreadExecutor &shared() override {
+    vespalib::SyncableThreadExecutor &shared() override {
         return _sharedExecutor;
     }
 
