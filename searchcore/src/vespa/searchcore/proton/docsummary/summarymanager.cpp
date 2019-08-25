@@ -147,7 +147,7 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg, const Summa
                                           juniperCfg, attributeMgr, _docStore, repo);
 }
 
-SummaryManager::SummaryManager(vespalib::SyncableThreadExecutor & executor, const LogDocumentStore::Config & storeConfig,
+SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDocumentStore::Config & storeConfig,
                                const search::GrowStrategy & growStrategy, const vespalib::string &baseDir,
                                const DocTypeName &docTypeName, const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,

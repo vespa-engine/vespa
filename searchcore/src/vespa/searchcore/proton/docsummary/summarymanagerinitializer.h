@@ -20,7 +20,7 @@ class SummaryManagerInitializer : public initializer::InitializerTask
     const vespalib::string                   _baseDir;
     const vespalib::string                   _subDbName;
     const DocTypeName                        _docTypeName;
-    vespalib::SyncableThreadExecutor        &_summaryExecutor;
+    vespalib::ThreadExecutor                &_summaryExecutor;
     const search::LogDocumentStore::Config   _storeCfg;
     const search::TuneFileSummary            _tuneFile;
     const search::common::FileHeaderContext &_fileHeaderContext;
@@ -36,7 +36,7 @@ public:
                               const vespalib::string baseDir,
                               const vespalib::string &subDbName,
                               const DocTypeName &docTypeName,
-                              vespalib::SyncableThreadExecutor & summaryExecutor,
+                              vespalib::ThreadExecutor & summaryExecutor,
                               const search::LogDocumentStore::Config & storeCfg,
                               const search::TuneFileSummary &tuneFile,
                               const search::common::FileHeaderContext & fileHeaderContext,

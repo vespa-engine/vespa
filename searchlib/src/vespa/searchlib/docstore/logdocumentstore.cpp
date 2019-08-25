@@ -13,7 +13,7 @@ LogDocumentStore::Config::operator == (const Config & rhs) const {
     return DocumentStore::Config::operator ==(rhs) && (_logConfig == rhs._logConfig);
 }
 
-LogDocumentStore::LogDocumentStore(vespalib::SyncableThreadExecutor & executor,
+LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
                                    const vespalib::string & baseDir,
                                    const Config & config,
                                    const GrowStrategy & growStrategy,

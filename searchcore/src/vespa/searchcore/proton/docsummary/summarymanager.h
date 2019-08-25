@@ -63,7 +63,7 @@ private:
 
 public:
     typedef std::shared_ptr<SummaryManager> SP;
-    SummaryManager(vespalib::SyncableThreadExecutor & executor,
+    SummaryManager(vespalib::ThreadExecutor & executor,
                    const search::LogDocumentStore::Config & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,

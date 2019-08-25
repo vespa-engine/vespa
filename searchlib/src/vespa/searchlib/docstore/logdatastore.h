@@ -84,7 +84,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::SyncableThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
+    LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
                  const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, const IBucketizer::SP & bucketizer, bool readOnly = false);
@@ -279,7 +279,7 @@ private:
     FileId                                   _prevActive;
     vespalib::Lock                           _updateLock;
     bool                                     _readOnly;
-    vespalib::SyncableThreadExecutor        &_executor;
+    vespalib::ThreadExecutor                &_executor;
     SerialNum                                _initFlushSyncToken;
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;

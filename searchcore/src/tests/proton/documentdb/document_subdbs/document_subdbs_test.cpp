@@ -235,7 +235,7 @@ MySearchableContext::MySearchableContext(IThreadingService &writeService,
                                          IBucketDBHandlerInitializer & bucketDBHandlerInitializer)
     : _fastUpdCtx(writeService, bucketDB, bucketDBHandlerInitializer),
       _queryLimiter(), _clock(),
-      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, writeService.shared())
+      _ctx(_fastUpdCtx._ctx, _queryLimiter, _clock, dynamic_cast<vespalib::SyncableThreadExecutor &>(writeService.shared()))
 {}
 MySearchableContext::~MySearchableContext() = default;
 

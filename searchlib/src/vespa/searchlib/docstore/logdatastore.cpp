@@ -50,7 +50,7 @@ LogDataStore::Config::operator == (const Config & rhs) const {
             (_fileConfig == rhs._fileConfig);
 }
 
-LogDataStore::LogDataStore(vespalib::SyncableThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
+LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config &config,
                            const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                            const FileHeaderContext &fileHeaderContext, transactionlog::SyncProxy &tlSyncer,
                            const IBucketizer::SP & bucketizer, bool readOnly)
@@ -103,7 +103,6 @@ LogDataStore::~LogDataStore()
 {
     // Must be called before ending threads as there are sanity checks.
     _fileChunks.clear();
-    _executor.sync();
     _genHandler.updateFirstUsedGeneration();
     _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
 }
