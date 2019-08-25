@@ -6,11 +6,9 @@
 #include "storebybucket.h"
 #include <vespa/vespalib/data/memorydatastore.h>
 
-namespace search {
+namespace search { class LogDataStore; }
 
-class LogDataStore;
-
-namespace docstore {
+namespace search::docstore {
 
 /**
  * A simple write through implementation of the IWriteData interface.
@@ -59,5 +57,4 @@ private:
     vespalib::hash_map<uint64_t, uint32_t> _stat;
 };
 
-}
 }
