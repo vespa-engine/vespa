@@ -19,13 +19,14 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & e
     _backingMemory(backingMemory),
     _executor(executor),
     _lock(),
+    _allInFlight(false),
     _chunks(),
     _compression(compression)
 {
     createChunk().swap(_current);
 }
 
-StoreByBucket::~StoreByBucket() { }
+StoreByBucket::~StoreByBucket() = default;
 
 void
 StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)
@@ -33,6 +34,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
     if ( ! _current->hasRoom(sz)) {
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
+        _inflight
         _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(tmpChunk))));
     }
     Index idx(bucketId, _current->getId(), chunkId, lid);
@@ -59,15 +61,33 @@ StoreByBucket::closeChunk(Chunk::UP chunk)
     chunk->pack(1, buffer, _compression);
     buffer.shrink(buffer.getDataLen());
     ConstBufferRef bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
-    vespalib::LockGuard guard(_lock);
+    vespalib::MonitorGuard guard(_monitor);
     _chunks[chunk->getId()] = bufferRef;
+    if (_inFlight == _chunks.size()) {
+        guard.signal();
+    }
+}
+
+void
+StoreByBucket::incInFlight() {
+    vespalib::MonitorGuard guard(_monitor);
+    _inFlight++;
+}
+
+void
+StoreByBucket::waitAllProcessed() {
+    vespalib::MonitorGuard guard(_monitor);
+    while (_inFlight != _chunks.size()) {
+        guard.wait();
+    }
 }
 
 void
 StoreByBucket::drain(IWrite & drainer)
 {
+    incInFlight();
     _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(_current))));
-    _executor.sync();
+    waitAllProcessed();
     std::vector<Chunk::UP> chunks;
     chunks.resize(_chunks.size());
     for (const auto & it : _chunks) {

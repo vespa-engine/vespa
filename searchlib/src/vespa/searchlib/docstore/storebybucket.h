@@ -10,8 +10,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 /**
  * StoreByBucket will organize the data you add to it by buckets.
@@ -47,6 +46,8 @@ public:
         return lidCount;
     }
 private:
+    void incInFlight();
+    void waitAllProcessed();
     Chunk::UP createChunk();
     void closeChunk(Chunk::UP chunk);
     struct Index {
@@ -68,10 +69,10 @@ private:
     std::map<uint64_t, IndexVector>              _where;
     MemoryDataStore                            & _backingMemory;
     ThreadExecutor                             & _executor;
-    vespalib::Lock                               _lock;
+    vespalib::Monitor                            _monitor;
+    int64_t                                      _inFlight;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
     CompressionConfig                            _compression;
 };
 
-}
 }
