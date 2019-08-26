@@ -123,7 +123,7 @@ FRTConnection::allocRPCRequest() {
 using namespace std::chrono;
 int64_t
 FRTConnection::milliSecsSinceEpoch() {
-    return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
 }
