@@ -4,6 +4,9 @@
 #include "multivalueattributesaverutils.h"
 #include "multivalue.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.multi_enum_attribute_saver");
+
 using vespalib::GenerationHandler;
 using search::multivalueattributesaver::CountWriter;
 using search::multivalueattributesaver::WeightWriter;
@@ -19,15 +22,18 @@ namespace {
 class DatWriter
 {
     std::vector<EnumStoreIndex>           _indexes;
-    const EnumStoreBase                  &_enumStore;
+    const EnumAttributeSaver::Enumerator &_enumerator;
     std::unique_ptr<search::BufferWriter> _datWriter;
+    std::function<bool()>                 _compaction_interferred;
 
 public:
     DatWriter(IAttributeSaveTarget &saveTarget,
-              const EnumStoreBase &enumStore)
+              const EnumAttributeSaver::Enumerator &enumerator,
+              std::function<bool()> compaction_interferred)
         : _indexes(),
-          _enumStore(enumStore),
-          _datWriter(saveTarget.datWriter().allocBufferWriter())
+          _enumerator(enumerator),
+          _datWriter(saveTarget.datWriter().allocBufferWriter()),
+          _compaction_interferred(compaction_interferred)
     {
         assert(saveTarget.getEnumerated());
         _indexes.reserve(1000);
@@ -42,8 +48,15 @@ public:
     void flush()
     {
         if (!_indexes.empty()) {
-            _enumStore.writeEnumValues(*_datWriter,
-                                       &_indexes[0], _indexes.size());
+            for (auto ref : _indexes) {
+                uint32_t enumValue = _enumerator.map_entry_ref_to_enum_value_or_zero(ref);
+                assert(enumValue != 0u || _compaction_interferred());
+                // Enumerator enumerates known entry refs (based on
+                // dictionary tree) to values >= 1, but file format
+                // starts enumeration at 0.
+                --enumValue;
+                _datWriter->write(&enumValue, sizeof(uint32_t));
+            }
             _indexes.clear();
         }
     }
@@ -70,11 +83,19 @@ MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                              const EnumStoreBase &enumStore)
     : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping),
-      _enumSaver(enumStore, true)
+      _enumSaver(enumStore),
+      _enum_store_data_store_base(enumStore.get_data_store_base()),
+      _compaction_count(_enum_store_data_store_base.get_compaction_count())
 {
 }
 
 
+template <typename MultiValueT>
+bool
+MultiValueEnumAttributeSaver<MultiValueT>::compaction_interferred() const
+{
+    return _compaction_count != _enum_store_data_store_base.get_compaction_count();
+}
 
 template <typename MultiValueT>
 MultiValueEnumAttributeSaver<MultiValueT>::~MultiValueEnumAttributeSaver() = default;
@@ -84,20 +105,33 @@ bool
 MultiValueEnumAttributeSaver<MultiValueT>::
 onSave(IAttributeSaveTarget &saveTarget)
 {
+    bool compaction_broke_save = false;
     CountWriter countWriter(saveTarget);
     WeightWriter<MultiValueType::_hasWeight> weightWriter(saveTarget);
-    DatWriter datWriter(saveTarget, _enumSaver.getEnumStore());
+    DatWriter datWriter(saveTarget, _enumSaver.get_enumerator(),
+                        [this]() { return compaction_interferred(); });
     _enumSaver.writeUdat(saveTarget);
+    _enumSaver.get_enumerator().enumerateValues();
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
         datastore::EntryRef idx = _frozenIndices[docId];
         vespalib::ConstArrayRef<MultiValueType> handle(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(handle.size());
         weightWriter.writeWeights(handle);
         datWriter.writeValues(handle);
+        if (((docId & 0xfff) == 0) && compaction_interferred()) {
+            compaction_broke_save = true;
+            break;
+        }
     }
     datWriter.flush();
-    _enumSaver.enableReEnumerate();
-    return true;
+    _enumSaver.clear();
+    if (compaction_interferred()) {
+        compaction_broke_save = true;
+    }
+    if (compaction_broke_save) {
+        LOG(warning, "Aborted save of attribute vector to '%s' due to compaction of unique values", get_file_name().c_str());
+    }
+    return !compaction_broke_save;
 }
 
 using EnumIdxArray = multivalue::Value<EnumStoreIndex>;

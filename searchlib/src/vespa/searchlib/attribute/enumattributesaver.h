@@ -3,6 +3,7 @@
 #pragma once
 
 #include "enumstorebase.h"
+#include <vespa/vespalib/datastore/unique_store_enumerator.h>
 
 namespace search {
 
@@ -15,17 +16,21 @@ class IAttributeSaveTarget;
  */
 class EnumAttributeSaver
 {
+public:
+    using Enumerator = datastore::UniqueStoreEnumerator<EnumStoreIndex>;
+
+private:
     const EnumStoreBase  &_enumStore;
-    bool                  _disableReEnumerate;
-    btree::BTreeNode::Ref _rootRef;
+    Enumerator _enumerator;
 
 public:
-    EnumAttributeSaver(const EnumStoreBase &enumStore, bool disableReEnumerate);
+    EnumAttributeSaver(const EnumStoreBase &enumStore);
     ~EnumAttributeSaver();
 
-    void enableReEnumerate();
     void writeUdat(IAttributeSaveTarget &saveTarget);
     const EnumStoreBase &getEnumStore() const { return _enumStore; }
+    Enumerator &get_enumerator() { return _enumerator; }
+    void clear() { _enumerator.clear(); }
 };
 
 } // namespace search

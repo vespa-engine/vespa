@@ -54,7 +54,7 @@ private:
 
     void testCompaction();
     template <typename EnumStoreType>
-    void testCompaction(bool hasPostings, bool disableReEnumerate);
+    void testCompaction(bool hasPostings);
 
     void testReset();
     template <typename EnumStoreType>
@@ -396,15 +396,13 @@ EnumStoreTest::testUniques
 void
 EnumStoreTest::testCompaction()
 {
-    testCompaction<StringEnumStore>(false, false);
-    testCompaction<StringEnumStore>(true, false);
-    testCompaction<StringEnumStore>(false, true);
-    testCompaction<StringEnumStore>(true, true);
+    testCompaction<StringEnumStore>(false);
+    testCompaction<StringEnumStore>(true);
 }
 
 template <typename EnumStoreType>
 void
-EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
+EnumStoreTest::testCompaction(bool hasPostings)
 {
     // entrySize = 15 before alignment
     uint32_t entrySize = EnumStoreType::alignEntrySize(15);
@@ -462,30 +460,24 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
     EXPECT_EQUAL(entrySize + RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     // perform compaction
-    if (disableReEnumerate) {
-        ses.disableReEnumerate();
-    }
     EnumStoreBase::EnumIndexMap old2New;
     EXPECT_TRUE(ses.performCompaction(3 * entrySize, old2New));
-    if (disableReEnumerate) {
-        ses.enableReEnumerate();
-    }
     EXPECT_TRUE(ses.getRemaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).remaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).size() == entrySize * 4);
     EXPECT_TRUE(ses.getBuffer(1).getDeadElems() == 0);
 
-    EXPECT_EQUAL((disableReEnumerate ? 4u : 3u), ses.getLastEnum());
+    EXPECT_EQUAL(3u, ses.getLastEnum());
 
     // add new unique strings
     ses.addEnum("enum05", idx);
-    EXPECT_EQUAL((disableReEnumerate ? 5u : 4u), ses.getEnum(idx));
+    EXPECT_EQUAL(4u, ses.getEnum(idx));
     ses.addEnum("enum06", idx);
-    EXPECT_EQUAL((disableReEnumerate ? 6u : 5u), ses.getEnum(idx));
+    EXPECT_EQUAL(5u, ses.getEnum(idx));
     ses.addEnum("enum00", idx);
-    EXPECT_EQUAL((disableReEnumerate ? 7u : 6u), ses.getEnum(idx));
+    EXPECT_EQUAL(6u, ses.getEnum(idx));
 
-    EXPECT_EQUAL((disableReEnumerate ? 7u : 6u), ses.getLastEnum());
+    EXPECT_EQUAL(6u, ses.getLastEnum());
 
     // compare old and new indices
     for (uint32_t i = 0; i < indices.size(); ++i) {

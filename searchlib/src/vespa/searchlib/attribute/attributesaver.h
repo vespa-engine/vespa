@@ -34,6 +34,8 @@ public:
     bool save(IAttributeSaveTarget &saveTarget);
 
     bool hasGenerationGuard() const;
+
+    const vespalib::string &get_file_name() const { return _header.getFileName(); }
 };
 
 } // namespace search

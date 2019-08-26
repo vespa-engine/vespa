@@ -3,36 +3,19 @@
 #include "enumattributesaver.h"
 #include "iattributesavetarget.h"
 #include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/vespalib/datastore/unique_store_enumerator.hpp>
 
 namespace search {
 
 EnumAttributeSaver::
-EnumAttributeSaver(const EnumStoreBase &enumStore, bool disableReEnumerate)
+EnumAttributeSaver(const EnumStoreBase &enumStore)
     : _enumStore(enumStore),
-      _disableReEnumerate(disableReEnumerate),
-      _rootRef()
+      _enumerator(_enumStore.getEnumStoreDict(), _enumStore.get_data_store_base())
 {
-    if (_disableReEnumerate) {
-        // Prevent enum store from re-enumerating enum values during compaction
-        _enumStore.disableReEnumerate();
-    }
-    const EnumStoreDictBase &enumDict = enumStore.getEnumStoreDict();
-    _rootRef = enumDict.getFrozenRootRef();
 }
 
 EnumAttributeSaver::~EnumAttributeSaver()
 {
-    enableReEnumerate();
-}
-
-void
-EnumAttributeSaver::enableReEnumerate()
-{
-    if (_disableReEnumerate) {
-        // compaction of enumstore can now re-enumerate enum values
-        _enumStore.enableReEnumerate();
-        _disableReEnumerate = false;
-    }
 }
 
 void
@@ -42,9 +25,15 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
         std::unique_ptr<BufferWriter>
             udatWriter(saveTarget.udatWriter().allocBufferWriter());
         const EnumStoreDictBase &enumDict = _enumStore.getEnumStoreDict();
-        enumDict.writeAllValues(*udatWriter, _rootRef);
+        enumDict.writeAllValues(*udatWriter, _enumerator.get_frozen_root());
         udatWriter->flush();
     }
 }
 
 }  // namespace search
+
+namespace search::datastore {
+
+template class UniqueStoreEnumerator<EnumStoreIndex>;
+
+}
