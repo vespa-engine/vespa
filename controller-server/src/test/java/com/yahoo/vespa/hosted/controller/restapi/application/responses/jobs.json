@@ -129,6 +129,27 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1"
     }
   },
-  "devJobs": {}
+  "devJobs": {
+    "dev-us-east-1": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "aborted",
+          "start": 1566818982185,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "unknown"
+          },
+          "steps": {
+            "deployReal": "unfinished",
+            "installReal": "unfinished"
+          },
+          "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/run/1"
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1"
+    }
+  }
 }
 
