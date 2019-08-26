@@ -14,7 +14,7 @@ namespace search::datastore {
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT()
     : DataStoreBase(RefType::numBuffers(),
-                    RefType::offsetSize() / RefType::align(1))
+                    RefType::unscaled_offset_size())
 {
 }
 
@@ -39,8 +39,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
     }
     state.incDeadElems(numElems);
     state.cleanHold(getBuffer(intRef.bufferId()),
-                    (intRef.offset() / RefType::align(1)) *
-                    state.getArraySize(), numElems);
+                    intRef.unscaled_offset() * state.getArraySize(), numElems);
 }
 
 template <typename RefT>

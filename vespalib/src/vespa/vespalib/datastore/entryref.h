@@ -40,6 +40,10 @@ public:
     static size_t align(size_t val) { return val; }
     static size_t pad(size_t val) { (void) val; return 0ul; }
     static constexpr bool isAlignedType = false;
+    // TODO: Remove following temporary methods when removing
+    // AlignedEntryRefT
+    size_t unscaled_offset() const { return offset(); }
+    static size_t unscaled_offset_size() { return offsetSize(); }
 };
 
 /**

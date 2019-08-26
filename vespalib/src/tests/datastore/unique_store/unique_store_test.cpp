@@ -123,7 +123,7 @@ struct TestBase : public ::testing::Test {
     }
     size_t entrySize() const { return sizeof(ValueType); }
     auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
-    auto getSaver() { return store.getSaver(); }
+    auto getEnumerator() { return store.getEnumerator(); }
     size_t get_reserved(EntryRef ref) {
         return store.bufferState(ref).getTypeHandler()->getReservedElements(getBufferId(ref));
     }
@@ -270,24 +270,24 @@ TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
     EXPECT_EQ(val1Ref.ref(), this->add(this->values[1]).ref());
 }
 
-TYPED_TEST(TestBase, store_can_be_saved)
+TYPED_TEST(TestBase, store_can_be_enumerated)
 {
     EntryRef val0Ref = this->add(this->values[0]);
     EntryRef val1Ref = this->add(this->values[1]);
     this->remove(this->add(this->values[2]));
     this->trimHoldLists();
 
-    auto saver = this->getSaver();
+    auto enumerator = this->getEnumerator();
     std::vector<uint32_t> refs;
-    saver.foreach_key([&](EntryRef ref) { refs.push_back(ref.ref()); });
+    enumerator.foreach_key([&](EntryRef ref) { refs.push_back(ref.ref()); });
     std::vector<uint32_t> expRefs;
     expRefs.push_back(val0Ref.ref());
     expRefs.push_back(val1Ref.ref());
     EXPECT_EQ(expRefs, refs);
-    saver.enumerateValues();
-    uint32_t invalidEnum = saver.mapEntryRefToEnumValue(EntryRef());
-    uint32_t enumValue1 = saver.mapEntryRefToEnumValue(val0Ref);
-    uint32_t enumValue2 = saver.mapEntryRefToEnumValue(val1Ref);
+    enumerator.enumerateValues();
+    uint32_t invalidEnum = enumerator.mapEntryRefToEnumValue(EntryRef());
+    uint32_t enumValue1 = enumerator.mapEntryRefToEnumValue(val0Ref);
+    uint32_t enumValue2 = enumerator.mapEntryRefToEnumValue(val1Ref);
     EXPECT_EQ(0u, invalidEnum);
     EXPECT_EQ(1u, enumValue1);
     EXPECT_EQ(2u, enumValue2);
@@ -318,11 +318,11 @@ TEST_F(DoubleTest, nan_is_handled)
     EXPECT_FALSE(std::signbit(store.get(refs[2])));
     EXPECT_TRUE(std::isinf(store.get(refs[3])));
     EXPECT_TRUE(std::signbit(store.get(refs[3])));
-    auto saver = getSaver();
-    saver.enumerateValues();
+    auto enumerator = getEnumerator();
+    enumerator.enumerateValues();
     std::vector<uint32_t> enumerated;
     for (auto &ref : refs) {
-        enumerated.push_back(saver.mapEntryRefToEnumValue(ref));
+        enumerated.push_back(enumerator.mapEntryRefToEnumValue(ref));
     }
     std::vector<uint32_t> exp_enumerated = { 0, 1, 4, 2, 3, 1, 4, 2 };
     EXPECT_EQ(exp_enumerated, enumerated);
