@@ -236,7 +236,7 @@ Watcher::watchfile()
         already.st_dev = sb.st_dev;
         already.st_ino = sb.st_ino;
 
-        time_t now = time(nullptr);
+        time_t now = fastos::time();
         bool wantrotate = (now > created + _confsubscriber.getRotateAge())
                           || (sb.st_size > _confsubscriber.getRotateSize());
 
@@ -351,10 +351,10 @@ Watcher::removeOldLogs(const char *prefix)
             }
             if (S_ISREG(sb.st_mode)) {
                 if (sb.st_mtime +
-                    _confsubscriber.getRemoveAge() * 86400 < time(nullptr))
+                    _confsubscriber.getRemoveAge() * 86400 < fastos::time())
                 {
                     LOG(info, "removing %s, too old (%f days)", fname,
-                        (double)(time(nullptr)-sb.st_mtime)/86400.0);
+                        (double)(fastos::time()-sb.st_mtime)/86400.0);
 
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s",
