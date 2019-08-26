@@ -24,7 +24,6 @@ public class NodeSpec {
     private final NodeState state;
     private final NodeType type;
     private final String flavor;
-    private final String canonicalFlavor;
 
     private final Optional<DockerImage> wantedDockerImage;
     private final Optional<DockerImage> currentDockerImage;
@@ -66,7 +65,6 @@ public class NodeSpec {
             NodeState state,
             NodeType type,
             String flavor,
-            String canonicalFlavor,
             Optional<Version> wantedVespaVersion,
             Optional<Version> currentVespaVersion,
             Optional<Version> wantedOsVersion,
@@ -100,7 +98,6 @@ public class NodeSpec {
         this.state = Objects.requireNonNull(state);
         this.type = Objects.requireNonNull(type);
         this.flavor = Objects.requireNonNull(flavor);
-        this.canonicalFlavor = canonicalFlavor;
         this.modelName = modelName;
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.currentVespaVersion = Objects.requireNonNull(currentVespaVersion);
@@ -137,10 +134,6 @@ public class NodeSpec {
 
     public String flavor() {
         return flavor;
-    }
-
-    public String canonicalFlavor() {
-        return canonicalFlavor;
     }
 
     public Optional<DockerImage> wantedDockerImage() {
@@ -262,7 +255,6 @@ public class NodeSpec {
                 Objects.equals(state, that.state) &&
                 Objects.equals(type, that.type) &&
                 Objects.equals(flavor, that.flavor) &&
-                Objects.equals(canonicalFlavor, that.canonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(currentVespaVersion, that.currentVespaVersion) &&
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
@@ -293,7 +285,6 @@ public class NodeSpec {
                 state,
                 type,
                 flavor,
-                canonicalFlavor,
                 wantedVespaVersion,
                 currentVespaVersion,
                 wantedOsVersion,
@@ -324,7 +315,6 @@ public class NodeSpec {
                 + " state=" + state
                 + " type=" + type
                 + " flavor=" + flavor
-                + " canonicalFlavor=" + canonicalFlavor
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
@@ -352,7 +342,6 @@ public class NodeSpec {
         private NodeState state;
         private NodeType type;
         private String flavor;
-        private String canonicalFlavor;
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Optional<Version> wantedVespaVersion = Optional.empty();
@@ -383,7 +372,6 @@ public class NodeSpec {
             state(node.state);
             type(node.type);
             flavor(node.flavor);
-            canonicalFlavor(node.canonicalFlavor);
             resources(node.resources);
             ipAddresses(node.ipAddresses);
             additionalIpAddresses(node.additionalIpAddresses);
@@ -435,11 +423,6 @@ public class NodeSpec {
 
         public Builder flavor(String flavor) {
             this.flavor = flavor;
-            return this;
-        }
-
-        public Builder canonicalFlavor(String canonicalFlavor) {
-            this.canonicalFlavor = canonicalFlavor;
             return this;
         }
 
@@ -603,10 +586,6 @@ public class NodeSpec {
             return flavor;
         }
 
-        public String canonicalFlavor() {
-            return canonicalFlavor;
-        }
-
         public Optional<Version> wantedVespaVersion() {
             return wantedVespaVersion;
         }
@@ -676,8 +655,7 @@ public class NodeSpec {
         }
 
         public NodeSpec build() {
-            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type,
-                    flavor, canonicalFlavor,
+            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor,
                     wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
