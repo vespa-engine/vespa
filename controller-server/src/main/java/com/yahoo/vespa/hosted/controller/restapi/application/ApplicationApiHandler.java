@@ -60,7 +60,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -70,6 +69,9 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -195,7 +197,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -204,7 +206,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -550,9 +552,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
 
-            if (!application.rotations().isEmpty() && deployment.zone().environment() == Environment.prod) {
-                // TODO(mpolden): Support retrieving status for multiple rotations
-                toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment), deploymentObject);
+            // Rotation status for this deployment
+            if (deployment.zone().environment() == Environment.prod) {
+                //  0 rotations: No fields written
+                //  1 rotation : Write legacy field and endpointStatus field
+                // >1 rotation : Write only endpointStatus field
+                if (application.rotations().size() == 1) {
+                    // TODO(mpolden): Stop writing this field once clients stop expecting it
+                    toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment),
+                            deploymentObject);
+                }
+                if (!application.rotations().isEmpty()) {
+                    toSlime(application.rotations(), application.rotationStatus(), deployment, deploymentObject);
+                }
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -688,7 +700,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void toSlime(RotationState state, Cursor object) {
         Cursor bcpStatus = object.setObject("bcpStatus");
-        bcpStatus.setString("rotationStatus", state.name().toUpperCase());
+        bcpStatus.setString("rotationStatus", rotationStateString(state));
+    }
+
+    private void toSlime(List<AssignedRotation> rotations, RotationStatus status, Deployment deployment, Cursor object) {
+        var array = object.setArray("endpointStatus");
+        for (var rotation : rotations) {
+            var statusObject = array.addObject();
+            statusObject.setString("endpointId", rotation.endpointId().id());
+            statusObject.setString("status", rotationStateString(status.of(rotation.rotationId(), deployment)));
+        }
     }
 
     private URI monitoringSystemUri(DeploymentId deploymentId) {
@@ -763,13 +784,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region) {
+    private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region, Optional<String> endpointId) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         Application application = controller.applications().require(applicationId);
         ZoneId zone = ZoneId.from(environment, region);
-        if (application.rotations().isEmpty()) {
-            throw new NotExistsException("global rotation does not exist for " + application);
-        }
+        RotationId rotation = findRotationId(application, endpointId);
         Deployment deployment = application.deployments().get(zone);
         if (deployment == null) {
             throw new NotExistsException(application + " has no deployment in " + zone);
@@ -777,8 +796,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-        // TODO(mpolden): Support retrieving status for multiple rotations
-        toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment), response);
+        toSlime(application.rotationStatus().of(rotation, deployment), response);
         return new SlimeJsonResponse(slime);
     }
 
@@ -1539,6 +1557,31 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new IllegalArgumentException("Value of X-Content-Hash header does not match computed content hash");
 
         return dataParts;
+    }
+
+    private static RotationId findRotationId(Application application, Optional<String> endpointId) {
+        if (application.rotations().isEmpty()) {
+            throw new NotExistsException("global rotation does not exist for " + application);
+        }
+        if (endpointId.isPresent()) {
+            return application.rotations().stream()
+                              .filter(r -> r.endpointId().id().equals(endpointId.get()))
+                              .map(AssignedRotation::rotationId)
+                              .findFirst()
+                              .orElseThrow(() -> new NotExistsException("endpoint " + endpointId.get() +
+                                                                        " does not exist for " + application));
+        } else if (application.rotations().size() > 1) {
+            throw new IllegalArgumentException(application + " has multiple rotations. Query parameter 'endpointId' must be given");
+        }
+        return application.rotations().get(0).rotationId();
+    }
+
+    private static String rotationStateString(RotationState state) {
+        switch (state) {
+            case in: return "IN";
+            case out: return "OUT";
+        }
+        return "UNKNOWN";
     }
 
 }

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
@@ -20,8 +21,9 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -59,6 +61,8 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -75,6 +79,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -378,6 +383,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.upgrader().overrideConfidence(Version.fromString("6.1"), VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         setDeploymentMaintainedInfo(controllerTester);
+        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-central-1"));
+
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
@@ -754,6 +761,64 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
+    public void multiple_endpoints() {
+        // Setup
+        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
+        tester.computeVersionStatus();
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .region("us-west-1")
+                .region("us-east-3")
+                .region("eu-west-1")
+                .endpoint("eu", "default", "eu-west-1")
+                .endpoint("default", "default", "us-west-1", "us-east-3")
+                .build();
+
+        // Create tenant and deploy
+        ApplicationId id = createTenantAndApplication();
+        long projectId = 1;
+        MultiPartStreamer deployData = createApplicationDeployData(Optional.empty(), false);
+        startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
+        for (var job : List.of(JobType.productionUsWest1, JobType.productionUsEast3, JobType.productionEuWest1)) {
+            tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/" + job.zone(SystemName.main).region().value() + "/deploy", POST)
+                                          .data(deployData)
+                                          .screwdriverIdentity(SCREWDRIVER_ID),
+                                  new File("deploy-result.json"));
+            controllerTester.jobCompletion(job)
+                            .application(id)
+                            .projectId(projectId)
+                            .submit();
+        }
+        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-west-1"));
+        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-east-3"));
+        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "eu-west-1"));
+
+        // GET global rotation status without specifying endpointId fails
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"application 'tenant1.application1.instance1' has multiple rotations. Query parameter 'endpointId' must be given\"}",
+                              400);
+
+        // GET global rotation status for us-west-1 in default endpoint
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=default", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
+                              200);
+
+        // GET global rotation status for us-west-1 in eu endpoint
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation?endpointId=eu", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"bcpStatus\":{\"rotationStatus\":\"UNKNOWN\"}}",
+                              200);
+
+        // GET global rotation status for eu-west-1 in eu endpoint
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/eu-west-1/global-rotation?endpointId=eu", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"bcpStatus\":{\"rotationStatus\":\"IN\"}}",
+                              200);
+    }
+
+    @Test
     public void testDeployDirectly() {
         // Setup
         tester.computeVersionStatus();
@@ -865,7 +930,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void  testMeteringResponses() {
+    public void testMeteringResponses() {
         MockMeteringClient mockMeteringClient = (MockMeteringClient) controllerTester.controller().meteringClient();
 
         // Mock response for MeteringClient
@@ -1671,12 +1736,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         globalRoutingService().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
-        ApplicationController applicationController = controllerTester.controller().applications();
-        List<Application> applicationList = applicationController.asList();
-        applicationList.forEach(application -> {
-                applicationController.lockIfPresent(application.id(), locked ->
-                        applicationController.store(locked.with(rotationStatus(application))));
-        });
+        new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
     }
 
     private RotationStatus rotationStatus(Application application) {

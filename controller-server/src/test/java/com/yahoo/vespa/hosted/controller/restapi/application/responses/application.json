@@ -231,8 +231,14 @@
     },
     {
       "bcpStatus": {
-        "rotationStatus": "UNKNOWN"
+        "rotationStatus": "IN"
       },
+      "endpointStatus": [
+        {
+          "endpointId": "default",
+          "status": "IN"
+        }
+      ],
       "environment": "prod",
       "region": "us-central-1",
       "instance": "instance1",
