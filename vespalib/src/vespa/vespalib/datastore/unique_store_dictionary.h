@@ -13,12 +13,23 @@ class EntryComparatorWrapper;
  * A dictionary for unique store. Mostly accessed via base class.
  */
 template <typename DictionaryT, typename ParentT = UniqueStoreDictionaryBase>
-class UniqueStoreDictionary : public ParentT
-{
+class UniqueStoreDictionary : public ParentT {
 protected:
     using DictionaryType = DictionaryT;
     using DataType = typename DictionaryType::DataType;
+    using FrozenView = typename DictionaryType::FrozenView;
+    using ReadSnapshot = typename ParentT::ReadSnapshot;
     using generation_t = typename ParentT::generation_t;
+
+    class ReadSnapshotImpl : public ReadSnapshot {
+    private:
+        FrozenView _frozen_view;
+
+    public:
+        ReadSnapshotImpl(FrozenView frozen_view);
+        EntryRef get_frozen_root() const override { return _frozen_view.getRoot(); }
+        void foreach_key(std::function<void(EntryRef)> callback) const override;
+    };
 
     DictionaryType _dict;
 
@@ -35,8 +46,8 @@ public:
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;
     void build(const std::vector<EntryRef> &refs, const std::vector<uint32_t> &ref_counts, std::function<void(EntryRef)> hold) override;
+    std::unique_ptr<ReadSnapshot> get_read_snapshot() const override;
     EntryRef get_frozen_root() const override;
-    void foreach_key(EntryRef root, std::function<void(EntryRef)> callback) const override;
 };
 
 }

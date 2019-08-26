@@ -17,6 +17,21 @@
 namespace search::datastore {
 
 template <typename DictionaryT, typename ParentT>
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::ReadSnapshotImpl(FrozenView frozen_view)
+    : _frozen_view(frozen_view)
+{
+}
+
+template <typename DictionaryT, typename ParentT>
+void
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const
+{
+    _frozen_view.foreach_key(callback);
+}
+
+template <typename DictionaryT, typename ParentT>
 UniqueStoreDictionary<DictionaryT, ParentT>::UniqueStoreDictionary()
     : ParentT(),
       _dict()
@@ -135,18 +150,17 @@ UniqueStoreDictionary<DictionaryT, ParentT>::build(const std::vector<EntryRef> &
 }
 
 template <typename DictionaryT, typename ParentT>
+std::unique_ptr<typename ParentT::ReadSnapshot>
+UniqueStoreDictionary<DictionaryT, ParentT>::get_read_snapshot() const
+{
+    return std::make_unique<ReadSnapshotImpl>(_dict.getFrozenView());
+}
+
+template <typename DictionaryT, typename ParentT>
 EntryRef
 UniqueStoreDictionary<DictionaryT, ParentT>::get_frozen_root() const
 {
     return _dict.getFrozenView().getRoot();
-}
-
-template <typename DictionaryT, typename ParentT>
-void
-UniqueStoreDictionary<DictionaryT, ParentT>::foreach_key(EntryRef root,
-                                                         std::function<void(EntryRef)> callback) const
-{
-    _dict.getAllocator().getNodeStore().foreach_key(root, callback);
 }
 
 }
