@@ -66,12 +66,10 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     @Override
     public InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
                                              AthenzIdentity instanceIdentity,
-                                             String instanceId,
                                              String attestationData,
-                                             boolean requestServiceToken,
                                              Pkcs10Csr csr) {
         InstanceRegisterInformation payload =
-                new InstanceRegisterInformation(providerIdentity, instanceIdentity, attestationData, csr, requestServiceToken);
+                new InstanceRegisterInformation(providerIdentity, instanceIdentity, attestationData, csr);
         HttpUriRequest request = RequestBuilder.post()
                 .setUri(ztsUrl.resolve("instance/"))
                 .setEntity(toJsonStringEntity(payload))
@@ -83,9 +81,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     public InstanceIdentity refreshInstance(AthenzIdentity providerIdentity,
                                             AthenzIdentity instanceIdentity,
                                             String instanceId,
-                                            boolean requestServiceToken,
                                             Pkcs10Csr csr) {
-        InstanceRefreshInformation payload = new InstanceRefreshInformation(csr, requestServiceToken);
+        InstanceRefreshInformation payload = new InstanceRefreshInformation(csr);
         URI uri = ztsUrl.resolve(
                 String.format("instance/%s/%s/%s/%s",
                               providerIdentity.getFullName(),

@@ -83,9 +83,7 @@ class AthenzCredentialsService {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             tenantIdentity,
-                            null,
                             EntityBindingsMapper.toAttestationData(document),
-                            false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
             writeCredentialsToDisk(keyPair.getPrivate(), certificate, document);
@@ -107,7 +105,6 @@ class AthenzCredentialsService {
                             configserverIdentity,
                             tenantIdentity,
                             document.providerUniqueId().asDottedString(),
-                            false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
             writeCredentialsToDisk(newKeyPair.getPrivate(), certificate, document);

@@ -18,12 +18,8 @@ public class InstanceRefreshInformation {
     @JsonProperty("csr")
     @JsonSerialize(using = Pkcs10CsrSerializer.class)
     private final Pkcs10Csr csr;
-    @JsonProperty("token")
-    private final boolean requestServiceToken;
 
-    public InstanceRefreshInformation(Pkcs10Csr csr,
-                                      boolean requestServiceToken) {
+    public InstanceRefreshInformation(Pkcs10Csr csr) {
         this.csr = csr;
-        this.requestServiceToken = requestServiceToken;
     }
 }
