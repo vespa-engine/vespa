@@ -3,14 +3,15 @@ package com.yahoo.prelude.query;
 
 import com.yahoo.protect.Validator;
 
+import java.util.Collections;
 import java.util.Iterator;
-
+import java.util.List;
 
 /**
- * <p>A composite item where the first item is positive and the following
+ * A composite item where the first item is positive and the following
  * items are negative items which should be excluded from the result.
  *
- * @author  bratseth
+ * @author bratseth
  */
 // TODO: Handle nulls by creating nullItem or checking in encode/toString
 public class NotItem extends CompositeItem {
@@ -41,6 +42,9 @@ public class NotItem extends CompositeItem {
         }
         addItem(negative);
     }
+
+    /** Returns the negative items of this: All child items except the first */
+    public List<Item> negativeItems() { return items().subList(1, getItemCount()); }
 
     /**
      * Returns the positive item (the first subitem),
