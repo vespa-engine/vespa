@@ -13,20 +13,16 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.Path;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.net.URI;
+import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
 
+import static ai.vespa.metricsproxy.http.RestApiUtil.resourceListResponse;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static java.util.logging.Level.WARNING;
 
 /**
  * Http handler for the metrics/v1 rest api.
@@ -55,19 +51,10 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
 
         Path path = new Path(request.getUri());
 
-        if (path.matches(V1_PATH)) return v1Response(request.getUri());
+        if (path.matches(V1_PATH)) return resourceListResponse(request.getUri(), List.of(VALUES_PATH));
         if (path.matches(VALUES_PATH)) return valuesResponse(request);
 
         return new ErrorResponse(NOT_FOUND, "No content at given path");
-    }
-
-    private JsonResponse v1Response(URI requestUri) {
-        try {
-            return new JsonResponse(OK, v1Content(requestUri));
-        } catch (JSONException e) {
-            log.log(WARNING, "Bad JSON construction in " + V1_PATH +  " response", e);
-            return new ErrorResponse(INTERNAL_SERVER_ERROR, "An error occurred, please try path '" + VALUES_PATH + "'");
-        }
     }
 
     private JsonResponse valuesResponse(HttpRequest request) {
@@ -76,25 +63,6 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
         } catch (JsonRenderingException e) {
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
-    }
-
-    // TODO: Use jackson with a "Resources" class instead of JSONObject
-    private String v1Content(URI requestUri) throws JSONException {
-        int port = requestUri.getPort();
-        String host = requestUri.getHost();
-        StringBuilder base = new StringBuilder("http://");
-        base.append(host);
-        if (port >= 0) {
-            base.append(":").append(port);
-        }
-        String uriBase = base.toString();
-        JSONArray linkList = new JSONArray();
-        for (String api : new String[] {VALUES_PATH}) {
-            JSONObject resource = new JSONObject();
-            resource.put("url", uriBase + api);
-            linkList.put(resource);
-        }
-        return new JSONObject().put("resources", linkList).toString(4);
     }
 
 }
