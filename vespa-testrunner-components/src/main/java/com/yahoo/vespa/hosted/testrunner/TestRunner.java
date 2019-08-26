@@ -84,10 +84,7 @@ public class TestRunner {
 
     static ProcessBuilder mavenProcessFrom(TestProfile profile, TestRunnerConfig config) {
         List<String> command = new ArrayList<>();
-        if (Path.of("/opt/vespa").equals(Path.of(Defaults.getDefaults().vespaHome())))
-            command.add("/opt/vespa/local/maven/bin/mvn");
-        else
-            command.add("mvn");
+        command.add("mvn"); // mvn must be in PATH of the jDisc containers
         command.add("test");
 
         command.add("--batch-mode"); // Run in non-interactive (batch) mode (disables output color)
