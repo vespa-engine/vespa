@@ -31,7 +31,7 @@ public class InstanceCsrGeneratorTest {
         VespaUniqueInstanceId vespaUniqueInstanceId = VespaUniqueInstanceId.fromDottedString("0.default.default.foo-app.vespa.us-north-1.prod.node");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
 
-        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Collections.emptySet(), keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, "myhostname", Collections.emptySet(), keyPair);
         assertEquals(new X500Principal(String.format("OU=%s, CN=%s", PROVIDER_SERVICE, ATHENZ_SERVICE)), csr.getSubject());
     }
 }
