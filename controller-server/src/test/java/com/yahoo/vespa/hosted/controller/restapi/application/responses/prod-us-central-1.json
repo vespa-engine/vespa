@@ -1,7 +1,13 @@
 {
   "bcpStatus": {
-    "rotationStatus": "UNKNOWN"
+    "rotationStatus": "IN"
   },
+  "endpointStatus": [
+    {
+      "endpointId": "default",
+      "status": "IN"
+    }
+  ],
   "tenant": "tenant1",
   "application": "application1",
   "instance": "instance1",
