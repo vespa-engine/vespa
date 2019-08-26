@@ -13,8 +13,7 @@ EnumHintSearchContext::
 EnumHintSearchContext(const EnumStoreDictBase &dictionary,
                       uint32_t docIdLimit,
                       uint64_t numValues)
-    : _dictionary(dictionary),
-      _frozenRootRef(dictionary.get_frozen_root()),
+    : _dict_snapshot(dictionary.get_read_snapshot()),
       _uniqueValues(0u),
       _docIdLimit(docIdLimit),
       _numValues(numValues)
@@ -28,7 +27,7 @@ EnumHintSearchContext::~EnumHintSearchContext() = default;
 void
 EnumHintSearchContext::lookupTerm(const EnumStoreComparator &comp)
 {
-    _uniqueValues = _dictionary.lookupFrozenTerm(_frozenRootRef, comp);
+    _uniqueValues = _dict_snapshot->count(comp);
 }
 
 
@@ -36,7 +35,7 @@ void
 EnumHintSearchContext::lookupRange(const EnumStoreComparator &low,
                                    const EnumStoreComparator &high)
 {
-    _uniqueValues = _dictionary.lookupFrozenRange(_frozenRootRef, low, high);
+    _uniqueValues = _dict_snapshot->count_in_range(low, high);
 }
 
 void

@@ -24,6 +24,32 @@ ReadSnapshotImpl::ReadSnapshotImpl(FrozenView frozen_view)
 }
 
 template <typename DictionaryT, typename ParentT>
+size_t
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::count(const EntryComparator& comp) const
+{
+    auto itr = _frozen_view.lowerBound(EntryRef(), comp);
+    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
+        return 1u;
+    }
+    return 0u;
+}
+
+template <typename DictionaryT, typename ParentT>
+size_t
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::count_in_range(const EntryComparator& low,
+                                 const EntryComparator& high) const
+{
+    auto low_itr = _frozen_view.lowerBound(EntryRef(), low);
+    auto high_itr = low_itr;
+    if (high_itr.valid() && !high(EntryRef(), high_itr.getKey())) {
+        high_itr.seekPast(EntryRef(), high);
+    }
+    return high_itr - low_itr;
+}
+
+template <typename DictionaryT, typename ParentT>
 void
 UniqueStoreDictionary<DictionaryT, ParentT>::
 ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const

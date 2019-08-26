@@ -28,6 +28,8 @@ protected:
     public:
         ReadSnapshotImpl(FrozenView frozen_view);
         EntryRef get_frozen_root() const override { return _frozen_view.getRoot(); }
+        size_t count(const EntryComparator& comp) const override;
+        size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const override;
         void foreach_key(std::function<void(EntryRef)> callback) const override;
     };
 
