@@ -1,9 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.host.FlavorOverrides;
 
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -15,29 +16,29 @@ public class AddNode {
 
     public final String hostname;
     public final Optional<String> parentHostname;
-    public final String nodeFlavor;
+    public final Optional<String> nodeFlavor;
+    public final Optional<FlavorOverrides> flavorOverrides;
+    public final Optional<NodeResources> nodeResources;
     public final NodeType nodeType;
     public final Set<String> ipAddresses;
     public final Set<String> additionalIpAddresses;
 
-    /**
-     * Constructor for a host node (has no parent)
-     */
-    public AddNode(String hostname, String nodeFlavor, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
-        this(hostname, Optional.empty(), nodeFlavor, nodeType, ipAddresses, additionalIpAddresses);
+    public static AddNode forHost(String hostname, String nodeFlavor, Optional<FlavorOverrides> flavorOverrides, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
+        return new AddNode(hostname, Optional.empty(), Optional.of(nodeFlavor), flavorOverrides, Optional.empty(), nodeType, ipAddresses, additionalIpAddresses);
     }
 
-    /**
-     * Constructor for a child node (Must set parentHostname, no additionalIpAddresses)
-     */
-    public AddNode(String hostname, String parentHostname, String nodeFlavor, NodeType nodeType, Set<String> ipAddresses) {
-        this(hostname, Optional.of(parentHostname), nodeFlavor, nodeType, ipAddresses, Collections.emptySet());
+    public static AddNode forNode(String hostname, String parentHostname, NodeResources nodeResources, NodeType nodeType, Set<String> ipAddresses) {
+        return new AddNode(hostname, Optional.of(parentHostname), Optional.empty(), Optional.empty(), Optional.of(nodeResources), nodeType, ipAddresses, Set.of());
     }
 
-    public AddNode(String hostname, Optional<String> parentHostname, String nodeFlavor, NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
+    private AddNode(String hostname, Optional<String> parentHostname,
+                    Optional<String> nodeFlavor, Optional<FlavorOverrides> flavorOverrides, Optional<NodeResources> nodeResources,
+                    NodeType nodeType, Set<String> ipAddresses, Set<String> additionalIpAddresses) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.nodeFlavor = nodeFlavor;
+        this.flavorOverrides = flavorOverrides;
+        this.nodeResources = nodeResources;
         this.nodeType = nodeType;
         this.ipAddresses = ipAddresses;
         this.additionalIpAddresses = additionalIpAddresses;

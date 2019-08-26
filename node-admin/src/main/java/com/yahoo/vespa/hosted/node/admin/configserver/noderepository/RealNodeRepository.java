@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
@@ -192,7 +193,15 @@ public class RealNodeRepository implements NodeRepository {
         node.openStackId = "fake-" + addNode.hostname;
         node.hostname = addNode.hostname;
         node.parentHostname = addNode.parentHostname.orElse(null);
-        node.flavor = addNode.nodeFlavor;
+        addNode.nodeFlavor.ifPresent(f -> node.flavor = f);
+        addNode.flavorOverrides.flatMap(FlavorOverrides::diskGb).ifPresent(d -> node.minDiskAvailableGb = d);
+        addNode.nodeResources.ifPresent(resources -> {
+            node.minCpuCores = resources.vcpu();
+            node.minMainMemoryAvailableGb = resources.memoryGb();
+            node.minDiskAvailableGb = resources.diskGb();
+            node.bandwidth = resources.bandwidthGbps() * 1000;
+            node.fastDisk = resources.diskSpeed() == NodeResources.DiskSpeed.fast;
+        });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
         node.additionalIpAddresses = addNode.additionalIpAddresses;
