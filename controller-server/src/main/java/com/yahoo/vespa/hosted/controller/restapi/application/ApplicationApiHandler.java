@@ -551,7 +551,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Cursor deploymentObject = instancesArray.addObject();
 
             if (!application.rotations().isEmpty() && deployment.zone().environment() == Environment.prod) {
-                toSlime(application.rotationStatus().of(deployment), deploymentObject);
+                // TODO(mpolden): Support retrieving status for multiple rotations
+                toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment), deploymentObject);
             }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
@@ -776,7 +777,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-        toSlime(application.rotationStatus().of(deployment), response);
+        // TODO(mpolden): Support retrieving status for multiple rotations
+        toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment), response);
         return new SlimeJsonResponse(slime);
     }
 

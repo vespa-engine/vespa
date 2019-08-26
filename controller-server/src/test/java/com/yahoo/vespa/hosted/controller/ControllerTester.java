@@ -90,6 +90,7 @@ public final class ControllerTester {
     private final MetricsServiceMock metricsService;
     private final RoutingGeneratorMock routingGenerator;
     private final MockContactRetriever contactRetriever;
+    private final MemoryGlobalRoutingService globalRoutingService;
 
     private Controller controller;
 
@@ -98,7 +99,7 @@ public final class ControllerTester {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new ApplicationStoreMock(), new MockBuildService(),
-             metricsService, new RoutingGeneratorMock(), new MockContactRetriever());
+             metricsService, new RoutingGeneratorMock(), new MockContactRetriever(), new MemoryGlobalRoutingService());
     }
 
     public ControllerTester(ManualClock clock) {
@@ -123,7 +124,7 @@ public final class ControllerTester {
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
                              ApplicationStoreMock appStoreMock, MockBuildService buildService,
                              MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
-                             MockContactRetriever contactRetriever) {
+                             MockContactRetriever contactRetriever, MemoryGlobalRoutingService globalRoutingService) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -137,9 +138,10 @@ public final class ControllerTester {
         this.metricsService = metricsService;
         this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
+        this.globalRoutingService = globalRoutingService;
         this.controller = createController(curator, rotationsConfig, configServer, clock, zoneRegistry,
                                            athenzDb, artifactRepository, appStoreMock, buildService,
-                                           metricsService, routingGenerator);
+                                           metricsService, routingGenerator, globalRoutingService);
 
         // Make root logger use time from manual clock
         configureDefaultLogHandler(handler -> handler.setFilter(
@@ -189,6 +191,10 @@ public final class ControllerTester {
         return contactRetriever;
     }
 
+    public MemoryGlobalRoutingService globalRoutingService() {
+        return globalRoutingService;
+    }
+
     public Optional<Record> findCname(String name) {
         return nameService.findRecords(Record.Type.CNAME, RecordName.from(name)).stream().findFirst();
     }
@@ -197,7 +203,7 @@ public final class ControllerTester {
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, zoneRegistry, athenzDb,
                                       artifactRepository, applicationStore, buildService, metricsService,
-                                      routingGenerator);
+                                      routingGenerator, globalRoutingService);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -331,7 +337,8 @@ public final class ControllerTester {
                                                AthenzDbMock athensDb,
                                                ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                                                BuildService buildService, MetricsServiceMock metricsService,
-                                               RoutingGenerator routingGenerator) {
+                                               RoutingGenerator routingGenerator,
+                                               MemoryGlobalRoutingService globalRoutingService) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                zoneRegistryMock,
@@ -351,7 +358,7 @@ public final class ControllerTester {
                                                new MockMavenRepository(),
                                                new ApplicationCertificateMock(),
                                                new MockMeteringClient(),
-                                               new MemoryGlobalRoutingService());
+                                               globalRoutingService);
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

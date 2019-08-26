@@ -265,7 +265,7 @@ public class LockedApplication {
                                      metrics, pemDeployKey, assignedRotations, rotationStatus, applicationCertificate);
     }
 
-    public LockedApplication withRotationStatus(RotationStatus rotationStatus) {
+    public LockedApplication with(RotationStatus rotationStatus) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus, applicationCertificate);

@@ -6,13 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -88,48 +82,6 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(t3, deployment.get().activity().lastWritten().get());
         assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
         assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
-    }
-
-    @Test
-    public void updates_rotation_status() {
-        DeploymentTester tester = new DeploymentTester();
-        MetricsServiceMock metricsService = tester.controllerTester().metricsService();
-        DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        ZoneId zone1 = ZoneId.from("prod", "us-west-1");
-        ZoneId zone2 = ZoneId.from("prod", "us-east-3");
-
-        // Deploy application with global rotation
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .globalServiceId("foo")
-                .region(zone1.region().value())
-                .region(zone2.region().value())
-                .build();
-        tester.deployCompletely(application, applicationPackage);
-
-        Supplier<Application> app = () -> tester.application(application.id());
-        Supplier<Deployment> deployment1 = () -> app.get().deployments().get(zone1);
-        Supplier<Deployment> deployment2 = () -> app.get().deployments().get(zone2);
-        String assignedRotation = "rotation-fqdn-01";
-        tester.controllerTester().metricsService().addRotation(assignedRotation);
-
-        // No status gathered yet
-        assertEquals(RotationState.unknown, app.get().rotationStatus().of(deployment1.get()));
-        assertEquals(RotationState.unknown, app.get().rotationStatus().of(deployment2.get()));
-
-        // One rotation out, one in
-        metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
-        metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
-        maintainer.maintain();
-        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment1.get()));
-        assertEquals(RotationState.out, app.get().rotationStatus().of(deployment2.get()));
-
-        // All rotations in
-        metricsService.setZoneIn(assignedRotation,"proxy.prod.us-east-3.vip.test");
-        maintainer.maintain();
-        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment1.get()));
-        assertEquals(RotationState.in, app.get().rotationStatus().of(deployment2.get()));
     }
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {

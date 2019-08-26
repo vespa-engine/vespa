@@ -39,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -58,7 +59,6 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
-import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -1661,8 +1661,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
-    private MetricsServiceMock metricsService() {
-        return (MetricsServiceMock) tester.container().components().getComponent(MetricsServiceMock.class.getName());
+    private MemoryGlobalRoutingService globalRoutingService() {
+        return (MemoryGlobalRoutingService) tester.container().components().getComponent(MemoryGlobalRoutingService.class.getName());
     }
 
     private MockContactRetriever contactRetriever() {
@@ -1670,23 +1670,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
-        String vipName = "proxy." + zone.value() + ".vip.test";
-        metricsService().addRotation(rotationName)
-                        .setZoneIn(rotationName, vipName);
+        globalRoutingService().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         ApplicationController applicationController = controllerTester.controller().applications();
         List<Application> applicationList = applicationController.asList();
         applicationList.forEach(application -> {
                 applicationController.lockIfPresent(application.id(), locked ->
-                        applicationController.store(locked.withRotationStatus(rotationStatus(application))));
+                        applicationController.store(locked.with(rotationStatus(application))));
         });
     }
 
     private RotationStatus rotationStatus(Application application) {
         return controllerTester.controller().applications().rotationRepository().getRotation(application)
                 .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().metricsService().getRotationStatus(rotation.name());
+                    var rotationStatus = controllerTester.controller().globalRoutingService().getHealthStatus(rotation.name());
                     var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                    rotationStatus.forEach((hostname, status) -> statusMap.put(ZoneId.from("prod", hostname.value()), RotationState.in));
+                    rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
                     return new RotationStatus(Map.of(rotation.id(), statusMap));
                 })
                 .orElse(RotationStatus.EMPTY);
