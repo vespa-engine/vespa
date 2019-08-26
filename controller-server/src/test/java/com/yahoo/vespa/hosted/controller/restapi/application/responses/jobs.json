@@ -135,7 +135,7 @@
         {
           "id": 1,
           "status": "aborted",
-          "start": 1566818982185,
+          "start": (ignore),
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "unknown"
