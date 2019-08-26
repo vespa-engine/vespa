@@ -44,7 +44,7 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
         this.origin = origin;
     }
 
-    final public int encode(ByteBuffer buffer) {
+    public final int encode(ByteBuffer buffer) {
         encodeThis(buffer);
         return 1;
     }

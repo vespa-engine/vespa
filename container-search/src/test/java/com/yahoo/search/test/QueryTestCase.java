@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.test;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
@@ -42,7 +43,9 @@ import org.junit.Test;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -875,6 +878,57 @@ public class QueryTestCase {
             query.getModel().getQueryTree().setRoot(new IntItem(">1960", "mother.Birthyear"));
             assertEquals("mother.Birthyear:>1960", query.getModel().getQueryTree().toString());
         }
+    }
+
+    @Test
+    public void testImplicitPhraseIsDefault() {
+        Query query = new Query(httpEncode("?query=it's fine"));
+        assertEquals("AND 'it s' fine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testImplicitPhrase() {
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting true");
+        assertTrue(myField.getPhraseSegmenting());
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+
+        assertEquals("AND myfield:'it s' myfield:fine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testImplicitAnd() {
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting false");
+        assertFalse(myField.getPhraseSegmenting());
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+
+        assertEquals("AND (SAND myfield:it myfield:s) myfield:fine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testImplicitAndInPhrase() {
+        Query query = new Query(httpEncode("?query=myfield:\"it's fine\""));
+
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting false");
+        assertFalse(myField.getPhraseSegmenting());
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+
+        assertEquals("myfield:\"it s fine\"", query.getModel().getQueryTree().toString());
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

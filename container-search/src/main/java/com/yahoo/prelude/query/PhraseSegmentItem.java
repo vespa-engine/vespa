@@ -52,7 +52,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     public PhraseSegmentItem(String rawWord, String current, boolean isFromQuery,
-            boolean stemmed, Substring substring) {
+                             boolean stemmed, Substring substring) {
         super(rawWord, current, isFromQuery, stemmed, substring);
     }
 
@@ -146,16 +146,16 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
 
-    /**
-     * Returns false, no parenthezes for phrases
-     */
+    /** Returns false, no parenthezes for phrases */
     protected boolean shouldParenthize() {
         return false;
     }
 
     /** Segment phrase items uses a empty heading instead of "SPHRASE " */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) {}
 
+    @Override
     protected void appendBodyString(StringBuilder buffer) {
         appendIndexString(buffer);
         appendContentsString(buffer);
@@ -175,14 +175,13 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     }
 
     // TODO: Must check all pertinent items
+    @Override
     public boolean equals(Object object) {
-        if (!super.equals(object)) {
-            return false;
-        }
-        // PhraseSegmentItem other = (PhraseSegmentItem) object; // Ensured by superclass
+        if ( ! super.equals(object)) return false;
         return true;
     }
 
+    @Override
     public String getIndexedString() {
         StringBuilder buf = new StringBuilder();
 

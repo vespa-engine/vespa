@@ -38,7 +38,7 @@ public class PhraseParser extends AbstractParser {
             }
             // Note, this depends on segment never creating AndItems when quoted
             // (the second argument) is true.
-            Item newWord = segment(token);
+            Item newWord = segment(null, token);
 
             if (firstWord == null) { // First pass
                 firstWord = newWord;

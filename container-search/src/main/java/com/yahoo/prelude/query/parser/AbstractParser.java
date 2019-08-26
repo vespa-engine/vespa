@@ -228,13 +228,13 @@ public abstract class AbstractParser implements CustomParser {
     protected abstract Item parseItems();
 
     /**
-     * Assigns the default index to query terms having no default index The
-     * parser _should_ have done this, for some reason it doesn't
+     * Assigns the default index to query terms having no default index. The
+     * parser _should_ have done this, for some reason it doesn't.
      *
-     * @param defaultIndex The default index to assign.
-     * @param item         The item to check.
+     * @param defaultIndex the default index to assign
+     * @param item         the item to check
      */
-    private static void assignDefaultIndex(final String defaultIndex, Item item) {
+    private static void assignDefaultIndex(String defaultIndex, Item item) {
         if (defaultIndex == null || item == null) return;
 
         if (item instanceof IndexedItem) {
@@ -253,9 +253,6 @@ public abstract class AbstractParser implements CustomParser {
     /**
      * Unicode normalizes some piece of natural language text. The chosen form
      * is compatibility decomposition, canonical composition (NFKC).
-     *
-     * @param input The string to normalize.
-     * @return The normalized string.
      */
     protected String normalize(String input) {
         if (input == null || input.length() == 0) return input;
@@ -272,8 +269,8 @@ public abstract class AbstractParser implements CustomParser {
     /**
      * Tokenizes the given string and initializes tokens with the found tokens.
      *
-     * @param query            the string to tokenize.
-     * @param defaultIndexName the name of the index to use as default.
+     * @param query            the string to tokenize
+     * @param defaultIndexName the name of the index to use as default
      * @param indexFacts       resolved information about the index we are searching
      * @param language         the language set for this query, or null if none
      */
@@ -324,6 +321,13 @@ public abstract class AbstractParser implements CustomParser {
         }
     }
 
+    /**
+     * Segments a token
+     *
+     * @param indexName the index name which preceeded this token, or null if none
+     * @param token the token to segment
+     * @return the resulting item
+     */
     // TODO: The segmenting stuff is a mess now, this will fix it:
     // - Make Segmenter a class which is instantiated per parsing
     // - Make the instance know the language, etc and do all dispatching internally
@@ -331,13 +335,13 @@ public abstract class AbstractParser implements CustomParser {
     // TODO: Use segmenting for forced phrase searches?
     //
     // Language detection currently depends on tokenization (see generateLanguageDetectionTextFrom), but 
-    // - the API's was originally not constructed for that, so a careful nd somewhat unsatisfactory dance
-    //   most be carried out to make it work
+    // - the API's was originally not constructed for that, so a careful and somewhat unsatisfactory dance
+    //   must be carried out to make it work
     // - it should really depend on parsing
     // This can be solved by making the segment method language independent by
     // always producing a query item containing the token text and resolve it to a WordItem or
     // SegmentItem after parsing and language detection.
-    protected Item segment(Token token) {
+    protected Item segment(String indexName, Token token) {
         String normalizedToken = normalize(token.toString());
 
         if (token.isSpecial()) {
@@ -361,13 +365,23 @@ public abstract class AbstractParser implements CustomParser {
             return new WordItem(segments.get(0), "", true, token.substring);
         }
 
-        CompositeItem composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
+        CompositeItem composite;
+        if (indexFacts.getIndex(indexName).getPhraseSegmenting()) {
+            composite = new PhraseSegmentItem(token.toString(), normalizedToken, true, false, token.substring);
+        }
+        else {
+            composite = new AndSegmentItem(token.toString(), true, false);
+        }
         int n = 0;
+        WordItem previous = null;
         for (String segment : segments) {
             WordItem w = new WordItem(segment, "", true, token.substring);
             w.setFromSegmented(true);
             w.setSegmentIndex(n++);
             w.setStemmed(false);
+            if (previous != null)
+                previous.setConnectivity(w, 1.0);
+            previous = w;
             composite.addItem(w);
         }
         composite.lock();
