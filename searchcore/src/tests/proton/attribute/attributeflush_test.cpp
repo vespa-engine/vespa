@@ -192,6 +192,10 @@ getInt32Config()
     return AVConfig(AVBasicType::INT32);
 }
 
+AVConfig getInt32ArrayConfig()
+{
+    return AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY);
+}
 
 class Test : public vespalib::TestApp
 {
@@ -225,6 +229,8 @@ private:
 
     void requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo);
     void requireThatFlushedAttributeCanBeLoaded();
+
+    void requireThatFlushFailurePreventsSyncTokenUpdate();
 public:
     int
     Main() override;
@@ -269,6 +275,11 @@ struct AttributeManagerFixture
     }
     AttributeVector::SP addPostingAttribute(const vespalib::string &name) {
         AVConfig cfg(getInt32Config());
+        cfg.setFastSearch(true);
+        return _m.addAttribute({name, cfg}, createSerialNum);
+    }
+    AttributeVector::SP addIntArrayPostingAttribute(const vespalib::string &name) {
+        AVConfig cfg(getInt32ArrayConfig());
         cfg.setFastSearch(true);
         return _m.addAttribute({name, cfg}, createSerialNum);
     }
@@ -612,6 +623,23 @@ Test::requireThatFlushedAttributeCanBeLoaded()
     TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(HwInfo::Disk(0, true, false), HwInfo::Memory(0), HwInfo::Cpu(0))));
 }
 
+void
+Test::requireThatFlushFailurePreventsSyncTokenUpdate()
+{
+    BaseFixture f;
+    AttributeManagerFixture amf(f);
+    auto &am = amf._m;
+    auto av = amf.addIntArrayPostingAttribute("a12");
+    EXPECT_EQUAL(1u, av->getNumDocs());
+    auto flush_target = am.getFlushable("a12");
+    EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
+    auto flush_task = flush_target->initFlush(200);
+    // Trigger flush failure
+    av->getEnumStoreBase()->get_data_store_base().bump_compaction_count();
+    flush_task->run();
+    EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
+}
+
 int
 Test::Main()
 {
@@ -631,6 +659,7 @@ Test::Main()
     TEST_DO(requireThatLastFlushTimeIsReported());
     TEST_DO(requireThatShrinkWorks());
     TEST_DO(requireThatFlushedAttributeCanBeLoaded());
+    TEST_DO(requireThatFlushFailurePreventsSyncTokenUpdate());
 
     TEST_DONE();
 }
