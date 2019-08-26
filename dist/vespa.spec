@@ -37,6 +37,7 @@ BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-openssl >= 1.1.1c-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
