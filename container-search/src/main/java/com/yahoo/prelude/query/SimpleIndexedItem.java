@@ -38,6 +38,7 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
     }
 
     /** Sets the name of the index to search */
+    @Override
     public void setIndexName(String index) {
         if (index == null) {
             index = "";

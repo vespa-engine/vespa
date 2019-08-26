@@ -273,17 +273,13 @@ public class IndexFacts {
         return false;
     }
 
-    /**
-     * @return whether it is permissible to update this object
-     */
+    /** Returns whether it is permissible to update this object */
     public boolean isFrozen() {
         return frozen;
     }
 
     private void ensureNotFrozen() {
-        if (frozen) {
-            throw new IllegalStateException("Tried to modify frozen IndexFacts instance.");
-        }
+        if (frozen) throw new IllegalStateException("Tried to modify frozen IndexFacts instance.");
     }
 
     public String getDefaultPosition(String sdName) {
@@ -307,7 +303,8 @@ public class IndexFacts {
         return new Session(sources, restrict);
     }
 
-    public Session newSession(Collection<String> sources, Collection<String> restrict,
+    public Session newSession(Collection<String> sources,
+                              Collection<String> restrict,
                               Set<String> candidateDocumentTypes) {
         return new Session(sources, restrict, candidateDocumentTypes);
     }

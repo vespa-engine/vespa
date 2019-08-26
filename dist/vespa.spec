@@ -37,6 +37,7 @@ BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: vespa-openssl-devel >= 1.1.1c-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
@@ -108,6 +109,7 @@ Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
 Requires: llvm5.0
+Requires: vespa-openssl >= 1.1.1c-1
 Requires: vespa-protobuf >= 3.7.0-4
 %define _vespa_llvm_version 5.0
 %define _extra_link_directory /usr/lib64/llvm5.0/lib;%{_vespa_deps_prefix}/lib64
@@ -131,7 +133,6 @@ Requires: llvm-libs >= 8.0.0
 %define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 Requires: java-11-openjdk
-Requires: openssl
 Requires(pre): shadow-utils
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private

@@ -32,25 +32,23 @@ public class KeyUtilsTest {
     }
 
     @Test
-    public void can_serialize_and_deserialize_rsa_privatekey_using_pem_format() {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        String pem = KeyUtils.toPem(keyPair.getPrivate());
-        assertThat(pem, containsString("BEGIN RSA PRIVATE KEY"));
-        assertThat(pem, containsString("END RSA PRIVATE KEY"));
-        PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
-        assertEquals(keyPair.getPrivate(), deserializedKey);
-        assertEquals(KeyAlgorithm.RSA.getAlgorithmName(), deserializedKey.getAlgorithm());
+    public void can_serialize_and_deserialize_rsa_privatekey_using_pkcs1_pem_format() {
+        testPrivateKeySerialization(KeyAlgorithm.RSA, KeyFormat.PKCS1, "RSA PRIVATE KEY");
     }
 
     @Test
-    public void can_serialize_and_deserialize_ec_privatekey_using_pem_format() {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
-        String pem = KeyUtils.toPem(keyPair.getPrivate());
-        assertThat(pem, containsString("BEGIN EC PRIVATE KEY"));
-        assertThat(pem, containsString("END EC PRIVATE KEY"));
-        PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
-        assertEquals(keyPair.getPrivate(), deserializedKey);
-        assertEquals(KeyAlgorithm.EC.getAlgorithmName(), deserializedKey.getAlgorithm());
+    public void can_serialize_and_deserialize_rsa_privatekey_using_pkcs8_pem_format() {
+        testPrivateKeySerialization(KeyAlgorithm.RSA, KeyFormat.PKCS8, "PRIVATE KEY");
+    }
+
+    @Test
+    public void can_serialize_and_deserialize_ec_privatekey_using_pkcs1_pem_format() {
+        testPrivateKeySerialization(KeyAlgorithm.EC, KeyFormat.PKCS1, "EC PRIVATE KEY");
+    }
+
+    @Test
+    public void can_serialize_and_deserialize_ec_privatekey_using_pkcs8_pem_format() {
+        testPrivateKeySerialization(KeyAlgorithm.EC, KeyFormat.PKCS8, "PRIVATE KEY");
     }
 
     @Test
@@ -73,6 +71,16 @@ public class KeyUtilsTest {
         PublicKey deserializedKey = KeyUtils.fromPemEncodedPublicKey(pem);
         assertEquals(keyPair.getPublic(), deserializedKey);
         assertEquals(KeyAlgorithm.EC.getAlgorithmName(), deserializedKey.getAlgorithm());
+    }
+
+    private static void testPrivateKeySerialization(KeyAlgorithm keyAlgorithm, KeyFormat keyFormat, String pemLabel) {
+        KeyPair keyPair = KeyUtils.generateKeypair(keyAlgorithm);
+        String pem = KeyUtils.toPem(keyPair.getPrivate(), keyFormat);
+        assertThat(pem, containsString("BEGIN " + pemLabel));
+        assertThat(pem, containsString("END " + pemLabel));
+        PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
+        assertEquals(keyPair.getPrivate(), deserializedKey);
+        assertEquals(keyAlgorithm.getAlgorithmName(), deserializedKey.getAlgorithm());
     }
 
 }

@@ -126,6 +126,7 @@ public abstract class SegmentItem extends CompositeItem implements BlockItem {
     // TODO: Add a getItemIterator which is safe for immutability
 
     /** Return a deep copy of this object */
+    @Override
     public SegmentItem clone() {
         SegmentItem copy;
         synchronized(this) {

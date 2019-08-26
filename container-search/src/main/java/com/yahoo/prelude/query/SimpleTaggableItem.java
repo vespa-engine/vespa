@@ -25,7 +25,7 @@ public abstract class SimpleTaggableItem extends Item implements TaggableItem {
         uniqueID = id;
     }
 
-    /** See {@link TaggableItem#setConnectivity} */
+    @Override
     public void setConnectivity(Item item, double connectivity) {
         setHasUniqueID(true);
         item.setHasUniqueID(true);

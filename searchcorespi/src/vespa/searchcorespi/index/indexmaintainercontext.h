@@ -15,15 +15,15 @@ namespace searchcorespi::index {
 class IndexMaintainerContext {
 private:
     IThreadingService &_threadingService;
-    searchcorespi::IIndexManager::Reconfigurer &_reconfigurer;
+    IIndexManager::Reconfigurer &_reconfigurer;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    vespalib::ThreadExecutor & _warmupExecutor;
+    vespalib::SyncableThreadExecutor & _warmupExecutor;
 
 public:
     IndexMaintainerContext(IThreadingService &threadingService,
-                           searchcorespi::IIndexManager::Reconfigurer &reconfigurer,
+                           IIndexManager::Reconfigurer &reconfigurer,
                            const search::common::FileHeaderContext &fileHeaderContext,
-                           vespalib::ThreadExecutor & warmupExecutor);
+                           vespalib::SyncableThreadExecutor & warmupExecutor);
 
     /**
      * Returns the treading service that encapsulates the thread model used for writing.
@@ -35,7 +35,7 @@ public:
     /**
      * Returns the reconfigurer used to signal when the index maintainer has changed.
      */
-    searchcorespi::IIndexManager::Reconfigurer &getReconfigurer() const {
+    IIndexManager::Reconfigurer &getReconfigurer() const {
         return _reconfigurer;
     }
 
@@ -49,7 +49,7 @@ public:
     /**
      * @return The executor that should be used for warmup.
      */
-    vespalib::ThreadExecutor & getWarmupExecutor() const {  return _warmupExecutor; }
+    vespalib::SyncableThreadExecutor & getWarmupExecutor() const {  return _warmupExecutor; }
 };
 
 }

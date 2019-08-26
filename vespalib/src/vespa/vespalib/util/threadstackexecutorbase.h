@@ -32,7 +32,7 @@ namespace thread { struct ThreadInit; }
 /**
  * An executor service that executes tasks in multiple threads.
  **/
-class ThreadStackExecutorBase : public ThreadExecutor,
+class ThreadStackExecutorBase : public SyncableThreadExecutor,
                                 public Runnable
 {
 public:
@@ -238,7 +238,7 @@ public:
     /**
      * Will invoke shutdown then sync.
      **/
-    ~ThreadStackExecutorBase();
+    ~ThreadStackExecutorBase() override;
 };
 
 } // namespace vespalib

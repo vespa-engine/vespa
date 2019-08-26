@@ -135,7 +135,9 @@ ThreadStackExecutorBase::run()
 ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
                                                  uint32_t taskLimit,
                                                  init_fun_t init_fun)
-    : _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
+    : SyncableThreadExecutor(),
+      Runnable(),
+      _pool(std::make_unique<FastOS_ThreadPool>(stackSize)),
       _monitor(),
       _stats(),
       _executorCompletion(),

@@ -34,7 +34,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              ISearchableIndexCollection::SP prev,
                                              ISearchableIndexCollection::SP next,
                                              IndexSearchable & warmup,
-                                             vespalib::ThreadExecutor & executor,
+                                             vespalib::SyncableThreadExecutor & executor,
                                              IWarmupDone & warmupDone) :
     _warmupConfig(warmupConfig),
     _prev(prev),

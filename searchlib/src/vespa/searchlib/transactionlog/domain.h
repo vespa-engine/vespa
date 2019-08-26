@@ -39,7 +39,7 @@ class Domain
 {
 public:
     using SP = std::shared_ptr<Domain>;
-    using Executor = vespalib::ThreadExecutor;
+    using Executor = vespalib::SyncableThreadExecutor;
     Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & commitExecutor,
            Executor & sessionExecutor, uint64_t domainPartSize, DomainPart::Crc defaultCrcType,
            const common::FileHeaderContext &fileHeaderContext);

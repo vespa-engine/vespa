@@ -66,10 +66,16 @@ public class Index {
     private boolean numerical = false;
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
+
     /** True if this is an <i>exact</i> index - which should match  tokens containing any characters */
     private boolean exact = false;
+
     private boolean isNGram = false;
-    private int gramSize=2;
+    private int gramSize = 2;
+
+    /** Whether implicit phrases should lead to a phrase item or an and item */
+    private boolean phraseSegmenting = true;
+
     /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;
 
@@ -178,6 +184,10 @@ public class Index {
             setNumerical(true);
         } else if (commandString.startsWith("predicate-bounds ")) {
             setPredicateBounds(commandString.substring(17));
+        } else if (commandString.equals("phrase-segmenting")) {
+            setPhraseSegmenting(true);
+        } else if (commandString.startsWith("phrase-segmenting ")) {
+            setPhraseSegmenting(Boolean.parseBoolean(commandString.substring("phrase-segmenting ".length())));
         } else {
             commands.add(commandString);
         }
@@ -306,6 +316,10 @@ public class Index {
     public long getPredicateUpperBound() { return predicateUpperBound; }
 
     public long getPredicateLowerBound() { return predicateLowerBound; }
+
+    public boolean getPhraseSegmenting() { return phraseSegmenting; }
+
+    public boolean setPhraseSegmenting(boolean phraseSegmenting) { return this.phraseSegmenting = phraseSegmenting; }
 
     /** Returns all the literal command strings given as arguments to addCommand in this instance */
     public List<String> allCommands() { return allCommands; }

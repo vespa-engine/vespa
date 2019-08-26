@@ -63,12 +63,12 @@ abstract class StructuredParser extends AbstractParser {
             item = number();
 
             if (item == null) {
-                item = phrase();
+                item = phrase(indexName);
             }
 
             if (item == null && indexName != null) {
                 if (wordsAhead()) {
-                    item = phrase();
+                    item = phrase(indexName);
                 }
             }
 
@@ -407,12 +407,12 @@ abstract class StructuredParser extends AbstractParser {
     }
 
     /** Words for phrases also permits numerals as words */
-    private Item phraseWord(boolean insidePhrase) {
+    private Item phraseWord(String indexName, boolean insidePhrase) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            item = word();
+            item = word(indexName);
 
             if (item == null && tokens.currentIs(NUMBER)) {
                 Token t = tokens.next();
@@ -437,7 +437,7 @@ abstract class StructuredParser extends AbstractParser {
      * a WordItem or PhraseSegmentItem if this is a CJK query,
      * null if the current item is not a word
      */
-    private Item word() {
+    private Item word(String indexName) {
         int position = tokens.getPosition();
         Item item = null;
 
@@ -452,7 +452,7 @@ abstract class StructuredParser extends AbstractParser {
             if (submodes.url) {
                 item = new WordItem(word, true);
             } else {
-                item = segment(word);
+                item = segment(indexName, word);
             }
 
             if (submodes.url || submodes.site) {
@@ -499,15 +499,16 @@ abstract class StructuredParser extends AbstractParser {
      * An phrase or word, either marked by quotes or by non-spaces between
      * words or by a combination.
      *
+     * @param indexName the index name which preceeded this phrase, or null if none
      * @return a word if there's only one word, a phrase if there is
      *         several quoted or non-space-separated words, or null otherwise
      */
-    private Item phrase() {
+    private Item phrase(String indexName) {
         int position = tokens.getPosition();
         Item item = null;
 
         try {
-            item = phraseBody();
+            item = phraseBody(indexName);
             return item;
         } finally {
             if (item == null) {
@@ -516,8 +517,8 @@ abstract class StructuredParser extends AbstractParser {
         }
     }
 
-    /** Returns a word, a phrase or another composite */
-    private Item phraseBody() {
+    /** Returns a word, a phrase, or another composite */
+    private Item phraseBody(String indexName) {
         boolean quoted = false;
         PhraseItem phrase = null;
         Item firstWord = null;
@@ -538,7 +539,7 @@ abstract class StructuredParser extends AbstractParser {
                 quoted = !quoted;
             }
 
-            Item word = phraseWord((firstWord != null) || (phrase != null));
+            Item word = phraseWord(indexName, (firstWord != null) || (phrase != null));
 
             if (word == null) {
                 if (tokens.skipMultiple(QUOTE)) {

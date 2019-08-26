@@ -76,15 +76,15 @@ public class PhraseItem extends CompositeIndexedItem {
     public void addItem(Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             addIndexedItem((IndexedItem) item);
-        } else if (item instanceof IntItem) {
+        }
+        else if (item instanceof IntItem) {
             addIndexedItem(convertIntToWord(item));
-        } else if (item instanceof PhraseItem) {
-            PhraseItem phrase = (PhraseItem) item;
-
-            for (Iterator<Item> i = phrase.getItemIterator(); i.hasNext();) {
+        }
+        else if (item instanceof PhraseItem || item instanceof AndSegmentItem) {
+            for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext();)
                 addIndexedItem((IndexedItem) i.next());
-            }
-        } else {
+        }
+        else {
             throw new IllegalArgumentException("Can not add " + item + " to a phrase");
         }
     }
