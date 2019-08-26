@@ -46,7 +46,7 @@ public:
         return lidCount;
     }
 private:
-    void incInFlight();
+    void incChunksPosted();
     void waitAllProcessed();
     Chunk::UP createChunk();
     void closeChunk(Chunk::UP chunk);
@@ -70,7 +70,7 @@ private:
     MemoryDataStore                            & _backingMemory;
     Executor                                   & _executor;
     vespalib::Monitor                            _monitor;
-    size_t                                       _inFlight;
+    size_t                                       _numChunksPosted;
     vespalib::hash_map<uint64_t, ConstBufferRef> _chunks;
     CompressionConfig                            _compression;
 };

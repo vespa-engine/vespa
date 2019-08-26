@@ -12,16 +12,16 @@ using document::BucketId;
 using vespalib::makeTask;
 using vespalib::makeClosure;
 
-StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression) :
-    _chunkSerial(0),
-    _current(),
-    _where(),
-    _backingMemory(backingMemory),
-    _executor(executor),
-    _monitor(),
-    _inFlight(0),
-    _chunks(),
-    _compression(compression)
+StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, Executor & executor, const CompressionConfig & compression)
+    : _chunkSerial(0),
+      _current(),
+      _where(),
+      _backingMemory(backingMemory),
+      _executor(executor),
+      _monitor(),
+      _numChunksPosted(0),
+      _chunks(),
+      _compression(compression)
 {
     createChunk().swap(_current);
 }
@@ -34,7 +34,7 @@ StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void
     if ( ! _current->hasRoom(sz)) {
         Chunk::UP tmpChunk = createChunk();
         _current.swap(tmpChunk);
-        incInFlight();
+        incChunksPosted();
         _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(tmpChunk))));
     }
     Index idx(bucketId, _current->getId(), chunkId, lid);
@@ -63,21 +63,21 @@ StoreByBucket::closeChunk(Chunk::UP chunk)
     ConstBufferRef bufferRef(_backingMemory.push_back(buffer.getData(), buffer.getDataLen()).data(), buffer.getDataLen());
     vespalib::MonitorGuard guard(_monitor);
     _chunks[chunk->getId()] = bufferRef;
-    if (_inFlight == _chunks.size()) {
+    if (_numChunksPosted == _chunks.size()) {
         guard.signal();
     }
 }
 
 void
-StoreByBucket::incInFlight() {
+StoreByBucket::incChunksPosted() {
     vespalib::MonitorGuard guard(_monitor);
-    _inFlight++;
+    _numChunksPosted++;
 }
 
 void
 StoreByBucket::waitAllProcessed() {
     vespalib::MonitorGuard guard(_monitor);
-    while (_inFlight != _chunks.size()) {
+    while (_numChunksPosted != _chunks.size()) {
         guard.wait();
     }
 }
@@ -85,7 +85,7 @@ StoreByBucket::waitAllProcessed() {
 void
 StoreByBucket::drain(IWrite & drainer)
 {
-    incInFlight();
+    incChunksPosted();
     _executor.execute(makeTask(makeClosure(this, &StoreByBucket::closeChunk, std::move(_current))));
     waitAllProcessed();
     std::vector<Chunk::UP> chunks;
