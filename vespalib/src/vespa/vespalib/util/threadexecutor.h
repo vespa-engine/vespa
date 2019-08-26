@@ -2,16 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/syncable.h>
+#include "executor.h"
+#include "syncable.h"
 
 namespace vespalib {
 
-/**
- * Can both execute and sync
- **/
-class ThreadExecutor : public Executor,
-                       public Syncable
+class ThreadExecutor : public Executor
 {
 public:
     /**
@@ -19,6 +15,14 @@ public:
      * @return number of threads in the pool
      */
     virtual size_t getNumThreads() const = 0;
+};
+
+/**
+ * Can both execute and sync
+ **/
+class SyncableThreadExecutor : public ThreadExecutor, public Syncable
+{
+public:
 };
 
 } // namespace vespalib

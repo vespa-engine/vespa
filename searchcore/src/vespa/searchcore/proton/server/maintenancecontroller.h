@@ -11,7 +11,7 @@
 
 namespace vespalib {
     class Timer;
-    class ThreadExecutor;
+    class SyncableThreadExecutor;
     class Executor;
 }
 namespace searchcorespi { namespace index { struct IThreadService; }}
@@ -34,7 +34,7 @@ public:
     using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
     using UP = std::unique_ptr<MaintenanceController>;
 
-    MaintenanceController(IThreadService &masterThread, vespalib::ThreadExecutor & defaultExecutor, const DocTypeName &docTypeName);
+    MaintenanceController(IThreadService &masterThread, vespalib::SyncableThreadExecutor & defaultExecutor, const DocTypeName &docTypeName);
 
     virtual ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
@@ -73,7 +73,7 @@ private:
     using Guard = std::lock_guard<Mutex>;
 
     IThreadService                   &_masterThread;
-    vespalib::ThreadExecutor         &_defaultExecutor;
+    vespalib::SyncableThreadExecutor &_defaultExecutor;
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;

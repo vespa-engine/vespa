@@ -43,7 +43,7 @@ public:
                               search::transactionlog::SyncProxy &tlSyncer,
                               IBucketizerSP bucketizer,
                               std::shared_ptr<SummaryManager::SP> result);
-    ~SummaryManagerInitializer();
+    ~SummaryManagerInitializer() override;
     void run() override;
 };
 

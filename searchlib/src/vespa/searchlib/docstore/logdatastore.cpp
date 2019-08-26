@@ -103,7 +103,6 @@ LogDataStore::~LogDataStore()
 {
     // Must be called before ending threads as there are sanity checks.
     _fileChunks.clear();
-    _executor.sync();
     _genHandler.updateFirstUsedGeneration();
     _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
 }

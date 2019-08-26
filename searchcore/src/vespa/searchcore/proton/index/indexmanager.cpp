@@ -78,7 +78,7 @@ IndexManager::IndexManager(const vespalib::string &baseDir,
                            SerialNum serialNum,
                            Reconfigurer &reconfigurer,
                            IThreadingService &threadingService,
-                           vespalib::ThreadExecutor & warmupExecutor,
+                           vespalib::SyncableThreadExecutor & warmupExecutor,
                            const search::TuneFileIndexManager &tuneFileIndexManager,
                            const search::TuneFileAttributes &tuneFileAttributes,
                            const FileHeaderContext &fileHeaderContext) :

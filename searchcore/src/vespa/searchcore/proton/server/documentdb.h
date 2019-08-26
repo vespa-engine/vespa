@@ -247,7 +247,7 @@ public:
                document::BucketSpace bucketSpace,
                const ProtonConfig &protonCfg,
                IDocumentDBOwner &owner,
-               vespalib::ThreadExecutor &warmupExecutor,
+               vespalib::SyncableThreadExecutor &warmupExecutor,
                vespalib::ThreadStackExecutorBase &sharedExecutor,
                search::transactionlog::Writer &tlsDirectWriter,
                MetricsWireService &metricsWireService,

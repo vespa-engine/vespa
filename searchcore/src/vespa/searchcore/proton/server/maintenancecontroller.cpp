@@ -32,7 +32,7 @@ public:
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
-                                             vespalib::ThreadExecutor & defaultExecutor,
+                                             vespalib::SyncableThreadExecutor & defaultExecutor,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),

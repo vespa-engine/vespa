@@ -11,7 +11,7 @@
 
 namespace vespalib {
     class Clock;
-    class ThreadExecutor;
+    class SyncableThreadExecutor;
     class ThreadStackExecutorBase;
 }
 
@@ -100,7 +100,7 @@ public:
             const IGetSerialNum &getSerialNum,
             const DocTypeName &docTypeName,
             searchcorespi::index::IThreadingService &writeService,
-            vespalib::ThreadExecutor &warmupExecutor,
+            vespalib::SyncableThreadExecutor &warmupExecutor,
             const search::common::FileHeaderContext &fileHeaderContext,
             MetricsWireService &metricsWireService,
             DocumentDBTaggedMetrics &metrics,

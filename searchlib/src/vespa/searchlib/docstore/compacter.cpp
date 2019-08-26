@@ -7,8 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
 
-namespace search {
-namespace docstore {
+namespace search::docstore {
 
 using vespalib::alloc::Alloc;
 
@@ -19,7 +18,7 @@ Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *bu
     _ds.write(std::move(guard), fileId, lid, buffer, sz);
 }
 
-BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds, ThreadExecutor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
+BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const CompressionConfig & compression, LogDataStore & ds, Executor & executor, const IBucketizer & bucketizer, FileId source, FileId destination) :
     _unSignificantBucketBits((maxSignificantBucketBits > 8) ? (maxSignificantBucketBits - 8) : 0),
     _sourceFileId(source),
     _destinationFileId(destination),
@@ -96,5 +95,4 @@ BucketCompacter::write(BucketId bucketId, uint32_t chunkId, uint32_t lid, const 
     }
 }
 
-}
 }
