@@ -59,15 +59,17 @@ public class TlsSecretsKeys {
     }
 
     private Optional<TlsSecrets> readFromSecretStore(Optional<String> secretKeyname) {
-        if (secretKeyname.isEmpty()) return Optional.empty();
+        if(secretKeyname.isEmpty()) return Optional.empty();
+        TlsSecrets tlsSecretParameters = TlsSecrets.MISSING;
         try {
             String cert = secretStore.getSecret(secretKeyname.get() + "-cert");
             String key = secretStore.getSecret(secretKeyname.get() + "-key");
-            return Optional.of(new TlsSecrets(cert, key));
+            tlsSecretParameters = new TlsSecrets(cert, key);
         } catch (RuntimeException e) {
             // Assume not ready yet
-            return Optional.of(TlsSecrets.MISSING);
+//            log.log(LogLevel.DEBUG, "Could not fetch certificate/key with prefix: " + secretKeyname.get(), e);
         }
+        return Optional.of(tlsSecretParameters);
     }
 
     /** Returns a transaction which deletes these tls secrets key if they exist */

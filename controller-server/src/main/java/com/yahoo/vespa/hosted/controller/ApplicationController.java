@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -371,13 +370,8 @@ public class ApplicationController {
                        .forEach(legacyRotations::add);
                 }
 
-                if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
-                    // Get application certificate (provisions a new certificate if missing)
-                    List<? extends ZoneApi> zones = controller.zoneRegistry().zones().all().zones();
-                    applicationCertificate = getApplicationCertificate(application.get());
-                } else {
-                    applicationCertificate = Optional.empty();
-                }
+                // Get application certificate (provisions a new certificate if missing)
+                applicationCertificate = getApplicationCertificate(application.get());
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
@@ -550,6 +544,7 @@ public class ApplicationController {
         if(applicationCertificate.isPresent())
             return applicationCertificate;
 
+        // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
         boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
                                                                             application.id().serializedForm()).value();
         if (!provisionCertificate) {

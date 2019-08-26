@@ -706,7 +706,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeploySelectivelyProvisionsCertificate() {
+    public void testDeployProvisionsCertificate() {
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
         Function<Application, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
 
@@ -732,7 +732,7 @@ public class ControllerTest {
         tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().application(app2.id()).get().activated());
-        assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(app2).isPresent());
+        assertTrue("Provisions certificate in " + Environment.dev, certificate.apply(app2).isPresent());
     }
 
     @Test
