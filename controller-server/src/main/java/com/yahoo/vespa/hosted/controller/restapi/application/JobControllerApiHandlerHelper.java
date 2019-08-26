@@ -138,8 +138,7 @@ class JobControllerApiHandlerHelper {
         Cursor devJobsObject = responseObject.setObject("devJobs");
         for (JobType type : JobType.allIn(controller.system()))
             if (   type.environment() != null
-                && type.environment().isManuallyDeployed()
-                && application.deployments().containsKey(type.zone(controller.system())))
+                && type.environment().isManuallyDeployed())
                 controller.jobController().last(application.id(), type)
                           .ifPresent(last -> {
                               Cursor devJobObject = devJobsObject.setObject(type.jobName());
