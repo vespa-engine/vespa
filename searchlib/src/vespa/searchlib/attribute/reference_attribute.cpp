@@ -55,8 +55,8 @@ ReferenceAttribute::~ReferenceAttribute()
     _referenceMappings.clearBuilder();
     incGeneration(); // Force freeze
     const auto &store = _store;
-    const auto saver = _store.getSaver();
-    saver.foreach_key([&store,this](EntryRef ref)
+    const auto enumerator = _store.getEnumerator();
+    enumerator.foreach_key([&store,this](EntryRef ref)
                       {   const Reference &entry = store.get(ref);
                           _referenceMappings.clearMapping(entry);
                       });
@@ -478,6 +478,6 @@ using Reference = attribute::Reference;
 template class UniqueStoreAllocator<Reference, EntryRefT<22>>;
 template class UniqueStore<Reference, EntryRefT<22>>;
 template class UniqueStoreBuilder<UniqueStoreAllocator<Reference, EntryRefT<22>>>;
-template class UniqueStoreSaver<Reference, EntryRefT<22>>;
+template class UniqueStoreEnumerator<EntryRefT<22>>;
 
 }

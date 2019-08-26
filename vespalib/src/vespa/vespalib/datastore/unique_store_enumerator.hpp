@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "unique_store_saver.h"
+#include "unique_store_enumerator.h"
 
 namespace search::datastore {
 
-template <typename EntryT, typename RefT>
-UniqueStoreSaver<EntryT, RefT>::UniqueStoreSaver(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store)
+template <typename RefT>
+UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store)
     : _dict(dict),
       _root(_dict.get_frozen_root()),
       _store(store),
@@ -15,33 +15,33 @@ UniqueStoreSaver<EntryT, RefT>::UniqueStoreSaver(const UniqueStoreDictionaryBase
 {
 }
 
-template <typename EntryT, typename RefT>
-UniqueStoreSaver<EntryT, RefT>::~UniqueStoreSaver()
+template <typename RefT>
+UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator()
 {
 }
 
-template <typename EntryT, typename RefT>
+template <typename RefT>
 void
-UniqueStoreSaver<EntryT, RefT>::enumerateValue(EntryRef ref)
+UniqueStoreEnumerator<RefT>::enumerateValue(EntryRef ref)
 {
     RefType iRef(ref);
     assert(iRef.valid());
-    assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
-    uint32_t &enumVal = _enumValues[iRef.bufferId()][iRef.offset()];
+    assert(iRef.unscaled_offset() < _enumValues[iRef.bufferId()].size());
+    uint32_t &enumVal = _enumValues[iRef.bufferId()][iRef.unscaled_offset()];
     assert(enumVal == 0u);
     enumVal = _next_enum_val;
     ++_next_enum_val;
 }
 
-template <typename EntryT, typename RefT>
+template <typename RefT>
 void
-UniqueStoreSaver<EntryT, RefT>::enumerateValues()
+UniqueStoreEnumerator<RefT>::enumerateValues()
 {
     _enumValues.resize(RefType::numBuffers());
     for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
         const BufferState &state = _store.getBufferState(bufferId);
         if (state.isActive()) {
-            _enumValues[bufferId].resize(state.size());
+            _enumValues[bufferId].resize(state.size() / state.getArraySize());
         }
     }
     _next_enum_val = 1;

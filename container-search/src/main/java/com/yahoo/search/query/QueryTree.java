@@ -114,31 +114,44 @@ public class QueryTree extends CompositeItem {
      * @return the resulting root item in this
      */
     public Item and(Item item) {
-        if (isEmpty()) {
-            setRoot(item);
+        Item result = and(getRoot(), item);
+        setRoot(result);
+        return result;
+    }
+
+    private Item and(Item a, Item b) {
+        if (a == null || a instanceof NullItem) {
+            return b;
         }
-        else if (getRoot() instanceof NotItem && item instanceof NotItem) {
-            throw new IllegalArgumentException("Can't AND two NOTs"); // TODO: Complete
+        else if (a instanceof NotItem && b instanceof NotItem) {
+            NotItem notItemA = (NotItem)a;
+            NotItem notItemB = (NotItem)b;
+            NotItem combined = new NotItem();
+            combined.addPositiveItem(and(notItemA.getPositiveItem(), notItemB.getPositiveItem()));
+            notItemA.negativeItems().forEach(item -> combined.addNegativeItem(item));
+            notItemB.negativeItems().forEach(item -> combined.addNegativeItem(item));
+            return combined;
         }
-        else if (getRoot() instanceof NotItem){
-            NotItem notItem = (NotItem)getRoot();
-            notItem.addPositiveItem(item);
+        else if (a instanceof NotItem){
+            NotItem notItem = (NotItem)a;
+            notItem.addPositiveItem(b);
+            return a;
         }
-        else if (item instanceof NotItem){
-            NotItem notItem = (NotItem)item;
-            notItem.addPositiveItem(getRoot());
-            setRoot(notItem);
+        else if (b instanceof NotItem){
+            NotItem notItem = (NotItem)b;
+            notItem.addPositiveItem(a);
+            return notItem;
         }
-        else if (getRoot() instanceof AndItem) {
-            ((AndItem) getRoot()).addItem(item);
+        else if (a instanceof AndItem) {
+            ((AndItem)a).addItem(b);
+            return a;
         }
         else {
             AndItem andItem = new AndItem();
-            andItem.addItem(getRoot());
-            andItem.addItem(item);
-            setRoot(andItem);
+            andItem.addItem(a);
+            andItem.addItem(b);
+            return andItem;
         }
-        return getRoot();
     }
 
     /** Returns a flattened list of all positive query terms under the given item */

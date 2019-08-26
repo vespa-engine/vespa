@@ -872,6 +872,7 @@
       "public java.lang.String getName()",
       "public void addItem(com.yahoo.prelude.query.Item)",
       "public void addNegativeItem(com.yahoo.prelude.query.Item)",
+      "public java.util.List negativeItems()",
       "public com.yahoo.prelude.query.Item getPositiveItem()",
       "public com.yahoo.prelude.query.Item setPositiveItem(com.yahoo.prelude.query.Item)",
       "public void addPositiveItem(com.yahoo.prelude.query.Item)",

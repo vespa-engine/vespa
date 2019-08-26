@@ -2,19 +2,18 @@
 
 #pragma once
 
-#include "unique_store.h"
+#include "unique_store_dictionary_base.h"
 
 namespace search::datastore {
 
 /**
- * Saver for related UniqueStore class.
+ * Enumerator for related UniqueStore class.
  *
  * Contains utility methods for traversing all unique values (as
  * EntryRef value) and mapping from EntryRef value to enum value.
  */
-template <typename EntryT, typename RefT>
-class UniqueStoreSaver {
-    using EntryType = EntryT;
+template <typename RefT>
+class UniqueStoreEnumerator {
     using RefType = RefT;
 
     const UniqueStoreDictionaryBase &_dict;
@@ -23,8 +22,8 @@ class UniqueStoreSaver {
     std::vector<std::vector<uint32_t>> _enumValues;
     uint32_t _next_enum_val;
 public:
-    UniqueStoreSaver(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
-    ~UniqueStoreSaver();
+    UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
+    ~UniqueStoreEnumerator();
     void enumerateValue(EntryRef ref);
     void enumerateValues();
 
@@ -38,8 +37,8 @@ public:
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
-            uint32_t enumValue = _enumValues[iRef.bufferId()][iRef.offset()];
+            assert(iRef.unscaled_offset() < _enumValues[iRef.bufferId()].size());
+            uint32_t enumValue = _enumValues[iRef.bufferId()][iRef.unscaled_offset()];
             assert(enumValue != 0);
             return enumValue;
         } else {

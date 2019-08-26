@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -75,6 +76,7 @@ public class CuratorDb {
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
+    private static final Path applicationCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
@@ -476,6 +478,16 @@ public class CuratorDb {
                                                         .orElseGet(Collections::emptySet);
     }
 
+    // -------------- Application web certificates ----------------------------
+
+    public void writeApplicationCertificate(ApplicationId applicationId, ApplicationCertificate applicationCertificate) {
+        curator.set(applicationCertificatePath(applicationId), applicationCertificate.secretsKeyNamePrefix().getBytes());
+    }
+
+    public Optional<ApplicationCertificate> readApplicationCertificate(ApplicationId applicationId) {
+        return curator.getData(applicationCertificatePath(applicationId)).map(String::new).map(ApplicationCertificate::new);
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -585,6 +597,10 @@ public class CuratorDb {
 
     private static Path controllerPath(String hostname) {
         return controllerRoot.append(hostname);
+    }
+
+    private static Path applicationCertificatePath(ApplicationId id) {
+        return applicationCertificateRoot.append(id.serializedForm());
     }
 
 }

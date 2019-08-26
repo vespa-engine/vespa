@@ -17,31 +17,9 @@ import java.util.Map;
 public class MetricsServiceMock extends AbstractComponent implements MetricsService {
 
     private final Map<String, Double> metrics = new HashMap<>();
-    private final Map<String, Map<HostName, RotationStatus>> rotationStatus = new HashMap<>();
-
-    public MetricsServiceMock addRotation(String rotationName) {
-        rotationStatus.put(rotationName, new HashMap<>());
-        return this;
-    }
 
     public MetricsServiceMock setMetric(String key, Double value) {
         metrics.put(key, value);
-        return this;
-    }
-
-    public MetricsServiceMock setZoneIn(String rotationName, String vipName) {
-        if (!rotationStatus.containsKey(rotationName)) {
-            throw new IllegalArgumentException("Unknown rotation: " + rotationName);
-        }
-        rotationStatus.get(rotationName).put(HostName.from(vipName), RotationStatus.IN);
-        return this;
-    }
-
-    public MetricsServiceMock setZoneOut(String rotationName, String vipName) {
-        if (!rotationStatus.containsKey(rotationName)) {
-            throw new IllegalArgumentException("Unknown rotation: " + rotationName);
-        }
-        rotationStatus.get(rotationName).put(HostName.from(vipName), RotationStatus.OUT);
         return this;
     }
 
@@ -70,7 +48,7 @@ public class MetricsServiceMock extends AbstractComponent implements MetricsServ
 
     @Override
     public Map<HostName, RotationStatus> getRotationStatus(String rotationName) {
-        return rotationStatus.get(rotationName);
+        return Map.of();
     }
 
 }
