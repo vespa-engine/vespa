@@ -46,6 +46,7 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
                           VespaServices vespaServices,
                           MetricsConsumers metricsConsumers) {
         super(executor);
+
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }
 

@@ -9,6 +9,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
+import ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil;
 import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.time.Instant;
