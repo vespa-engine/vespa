@@ -877,6 +877,12 @@ public class QueryTestCase {
         }
     }
 
+    @Test
+    public void testImplicitPhrase() {
+        Query query = new Query(httpEncode("?query=it's fine"));
+        assertEquals("AND 'it s' fine", query.getModel().getQueryTree().toString());
+    }
+
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
         Query q = new Query(httpEncode("/?query=" + queryString));
         SearchDefinition sd = new SearchDefinition("testSearchDefinition");

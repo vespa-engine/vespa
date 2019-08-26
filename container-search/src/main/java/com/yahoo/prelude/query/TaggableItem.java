@@ -34,7 +34,6 @@ public interface TaggableItem {
     Item getConnectedItem();
     double getConnectivity();
 
-
     /**
      * Used for setting explicit term significance (in the tf/idf sense) to a single term or phrase,
      * relative to the rest of the query.

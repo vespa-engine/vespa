@@ -50,19 +50,17 @@ public final class ParserEnvironment {
 
     public static ParserEnvironment fromExecutionContext(Execution.Context context) {
         ParserEnvironment env = new ParserEnvironment();
-        if (context == null) {
-            return env;
-        }
-        if (context.getIndexFacts() != null) {
+        if (context == null) return env;
+
+        if (context.getIndexFacts() != null)
             env.setIndexFacts(context.getIndexFacts());
-        }
-        if (context.getLinguistics() != null) {
+
+        if (context.getLinguistics() != null)
             env.setLinguistics(context.getLinguistics());
-        }
-        SpecialTokenRegistry registry = context.getTokenRegistry();
-        if (registry != null) {
-            env.setSpecialTokens(registry.getSpecialTokens("default"));
-        }
+
+        if (context.getTokenRegistry() != null)
+            env.setSpecialTokens(context.getTokenRegistry().getSpecialTokens("default"));
+
         return env;
     }
 

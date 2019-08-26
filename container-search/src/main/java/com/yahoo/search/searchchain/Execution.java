@@ -59,15 +59,10 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      */
     public static final class Context {
 
-        /**
-         * Whether the search should perform detailed diagnostics.
-         */
+        /** Whether the search should perform detailed diagnostics. */
         private boolean detailedDiagnostics = false;
 
-        /**
-         * Whether the container was considered to be in a breakdown state when
-         * this query started.
-         */
+        /** Whether the container was considered to be in a breakdown state when this query started. */
         private boolean breakdown = false;
 
         /**
@@ -79,19 +74,13 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         private IndexFacts indexFacts = null;
 
-        /**
-         * The current set of special tokens.
-         */
+        /** The current set of special tokens */
         private SpecialTokenRegistry tokenRegistry = null;
 
-        /**
-         * The current template registry.
-         */
+        /** The current template registry */
         private RendererRegistry rendererRegistry = null;
 
-        /**
-         * The current linguistics.
-         */
+        /** The current linguistics */
         private Linguistics linguistics = null;
 
         /** Always set if this context belongs to an execution, never set if it does not. */

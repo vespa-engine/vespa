@@ -24,7 +24,6 @@ public final class IndexModel {
 
     private static final Logger log = Logger.getLogger(IndexModel.class.getName());
 
-    // Copied from MasterClustersInfoUpdater. It's a temporary workaround for IndexFacts
     private Map<String, List<String>> masterClusters;
     private Map<String, SearchDefinition> searchDefinitions;
     private SearchDefinition unionSearchDefinition;
@@ -34,9 +33,6 @@ public final class IndexModel {
         this(Collections.emptyMap(), Collections.singleton(searchDefinition));
     }
 
-    /**
-     * Create an index model.
-     */
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
         this.masterClusters = masterClusters;
         this.searchDefinitions = searchDefinitions.stream().collect(Collectors.toMap(sd -> sd.getName(), sd -> sd));
