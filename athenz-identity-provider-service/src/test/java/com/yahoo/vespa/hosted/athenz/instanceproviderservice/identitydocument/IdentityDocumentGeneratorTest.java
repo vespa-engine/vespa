@@ -24,10 +24,8 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,6 +33,7 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.TestUtils.ge
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,7 +91,7 @@ public class IdentityDocumentGeneratorTest {
         assertEquals(expectedProviderUniqueId, signedIdentityDocument.providerUniqueId());
 
         // Validate that container ips are present
-        assertThat(signedIdentityDocument.ipAddresses(), Matchers.containsInAnyOrder("::1"));
+        assertThat(signedIdentityDocument.ipAddresses(), hasItem("::1"));
 
         IdentityDocumentSigner signer = new IdentityDocumentSigner();
 
