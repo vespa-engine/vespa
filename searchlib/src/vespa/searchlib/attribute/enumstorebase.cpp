@@ -129,7 +129,7 @@ EnumStoreBase::getAddressSpaceUsage() const
 void
 EnumStoreBase::transferHoldLists(generation_t generation)
 {
-    _enumDict->onTransferHoldLists(generation);
+    _enumDict->transfer_hold_lists(generation);
     _store.transferHoldLists(generation);
 }
 
@@ -137,7 +137,7 @@ void
 EnumStoreBase::trimHoldLists(generation_t firstUsed)
 {
     // remove generations in the range [0, firstUsed>
-    _enumDict->onTrimHoldLists(firstUsed);
+    _enumDict->trim_hold_lists(firstUsed);
     _store.trimHoldLists(firstUsed);
 }
 
@@ -298,8 +298,8 @@ vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStore
 }
 
 
-EnumStoreDictBase::EnumStoreDictBase(EnumStoreBase &enumStore)
-    : _enumStore(enumStore)
+EnumStoreDictBase::EnumStoreDictBase()
+    : datastore::UniqueStoreDictionaryBase()
 {
 }
 
@@ -307,8 +307,8 @@ EnumStoreDictBase::~EnumStoreDictBase() = default;
 
 template <typename Dictionary>
 EnumStoreDict<Dictionary>::EnumStoreDict(EnumStoreBase &enumStore)
-    : EnumStoreDictBase(enumStore),
-      ParentUniqueStoreDictionary()
+    : ParentUniqueStoreDictionary(),
+      _enumStore(enumStore)
 {
 }
 
