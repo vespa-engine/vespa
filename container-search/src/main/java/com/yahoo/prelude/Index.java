@@ -184,7 +184,7 @@ public class Index {
             setNumerical(true);
         } else if (commandString.startsWith("predicate-bounds ")) {
             setPredicateBounds(commandString.substring(17));
-        } else if (commandString.startsWith("phrase-segmenting ")) {
+        } else if (commandString.equals("phrase-segmenting")) {
             setPhraseSegmenting(true);
         } else if (commandString.startsWith("phrase-segmenting ")) {
             setPhraseSegmenting(Boolean.parseBoolean(commandString.substring("phrase-segmenting ".length())));
