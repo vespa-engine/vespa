@@ -89,13 +89,6 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Needed for node repo mock -->
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>zkfacade</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
