@@ -887,6 +887,21 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testImplicitPhrase() {
+        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+
+        SearchDefinition test = new SearchDefinition("test");
+        Index myField = new Index("myfield");
+        myField.addCommand("phrase-segmenting true");
+        assertTrue(myField.getPhraseSegmenting());
+        test.addIndex(myField);
+        IndexModel indexModel = new IndexModel(test);
+        query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
+
+        assertEquals("AND myfield:'it s' myfield:fine", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
     public void testImplicitAnd() {
         Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
 
@@ -902,18 +917,18 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testImplicitPhrase() {
-        Query query = new Query(httpEncode("?query=myfield:it's myfield:fine"));
+    public void testImplicitAndInPhrase() {
+        Query query = new Query(httpEncode("?query=myfield:\"it's fine\""));
 
         SearchDefinition test = new SearchDefinition("test");
         Index myField = new Index("myfield");
-        myField.addCommand("phrase-segmenting true");
-        assertTrue(myField.getPhraseSegmenting());
+        myField.addCommand("phrase-segmenting false");
+        assertFalse(myField.getPhraseSegmenting());
         test.addIndex(myField);
         IndexModel indexModel = new IndexModel(test);
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
-        assertEquals("AND myfield:'it s' myfield:fine", query.getModel().getQueryTree().toString());
+        assertEquals("myfield:\"it s fine\"", query.getModel().getQueryTree().toString());
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
