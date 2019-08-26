@@ -8,6 +8,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorconfiguration");
 
+using namespace std::chrono;
+
 namespace storage {
 
 DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
@@ -38,7 +40,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
-DistributorConfiguration::~DistributorConfiguration() { }
+DistributorConfiguration::~DistributorConfiguration() = default;
 
 namespace {
 
@@ -60,8 +62,7 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
 {
     TimeVisitor visitor;
     try {
-        document::select::Parser parser(*_component.getTypeRepo(),
-                                        _component.getBucketIdFactory());
+        document::select::Parser parser(*_component.getTypeRepo(), _component.getBucketIdFactory());
 
         std::unique_ptr<document::select::Node> node = parser.parse(documentSelection);
         node->visit(visitor);
@@ -123,7 +124,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
         // Always changes.
         _lastGarbageCollectionChange = 1;
     } else if (_garbageCollectionSelection != config.garbagecollection.selectiontoremove) {
-        _lastGarbageCollectionChange = time(NULL);
+        _lastGarbageCollectionChange = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
     }
 
     _garbageCollectionSelection = config.garbagecollection.selectiontoremove;

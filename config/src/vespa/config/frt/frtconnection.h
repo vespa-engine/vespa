@@ -34,7 +34,7 @@ public:
     enum ErrorType { TRANSIENT, FATAL };
 
     FRTConnection(const vespalib::string & address, FRT_Supervisor & supervisor, const TimingValues & timingValues);
-    ~FRTConnection();
+    ~FRTConnection() override;
 
     FRT_RPCRequest * allocRPCRequest() override;
     void invoke(FRT_RPCRequest * req, double timeout, FRT_IRequestWait * waiter) override;
@@ -48,7 +48,7 @@ public:
     void setTransientDelay(int64_t delay) override { _transientDelay = delay; }
     int64_t getFatalDelay() { return _fatalDelay; }
     int64_t getMaxFatalDelay() { return getFatalDelay() * 6; }
-    void setFatalDelay(int64_t delay) { _fatalDelay = delay; }
+    static int64_t milliSecsSinceEpoch();
 };
 
 } // namespace config

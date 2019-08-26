@@ -24,8 +24,13 @@ MetricManager::ConsumerSpec::ConsumerSpec() = default;
 MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
-MetricManager::Timer::getTime() const {
+MetricManager::Timer::secondsSinceEpoch() {
     return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+time_t
+MetricManager::Timer::getTime() const {
+    return secondsSinceEpoch();
 }
 
 void

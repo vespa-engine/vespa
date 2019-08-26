@@ -27,16 +27,16 @@ FRTConnection::FRTConnection(const vespalib::string& address, FRT_Supervisor& su
 
 FRTConnection::~FRTConnection()
 {
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
-        _target = NULL;
+        _target = nullptr;
     }
 }
 
 FRT_Target *
 FRTConnection::getTarget()
 {
-    if (_target == NULL) {
+    if (_target == nullptr) {
         _target = _supervisor.GetTarget(_address.c_str());
     } else if ( ! _target->IsValid()) {
         _target->SubRef();
@@ -102,8 +102,7 @@ void FRTConnection::calculateSuspension(ErrorType type)
         }
         break;
     }
-    int64_t now = time(0);
-    now *= 1000;
+    int64_t now = milliSecsSinceEpoch();
     _suspendedUntil = now + delay;
     if (_suspendWarned < (now - 5000)) {
         char date[32];
@@ -119,6 +118,12 @@ void FRTConnection::calculateSuspension(ErrorType type)
 FRT_RPCRequest *
 FRTConnection::allocRPCRequest() {
     return _supervisor.AllocRPCRequest();
+}
+
+using namespace std::chrono;
+int64_t
+FRTConnection::milliSecsSinceEpoch() {
+    return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
 }
 
 }
