@@ -3,13 +3,18 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 
 /**
  * @author stiankri
@@ -43,15 +48,10 @@ public class NodeSpec {
 
     private final Optional<Boolean> allowedToBeDown;
     private final Optional<Boolean> wantToDeprovision;
-    private final Optional<NodeOwner> owner;
+    private final Optional<ApplicationId> owner;
     private final Optional<NodeMembership> membership;
 
-    private final double vcpus;
-    private final double memoryGb;
-    private final double diskGb;
-
-    private final boolean fastDisk;
-    private final double bandwidth;
+    private final NodeResources resources;
     private final Set<String> ipAddresses;
     private final Set<String> additionalIpAddresses;
 
@@ -73,7 +73,7 @@ public class NodeSpec {
             Optional<Version> currentOsVersion,
             Optional<Boolean> allowedToBeDown,
             Optional<Boolean> wantToDeprovision,
-            Optional<NodeOwner> owner,
+            Optional<ApplicationId> owner,
             Optional<NodeMembership> membership,
             Optional<Long> wantedRestartGeneration,
             Optional<Long> currentRestartGeneration,
@@ -82,11 +82,7 @@ public class NodeSpec {
             Optional<Instant> wantedFirmwareCheck,
             Optional<Instant> currentFirmwareCheck,
             Optional<String> modelName,
-            double vcpus,
-            double memoryGb,
-            double diskGb,
-            boolean fastDisk,
-            double bandwidth,
+            NodeResources resources,
             Set<String> ipAddresses,
             Set<String> additionalIpAddresses,
             NodeReports reports,
@@ -120,11 +116,7 @@ public class NodeSpec {
         this.currentRebootGeneration = currentRebootGeneration;
         this.wantedFirmwareCheck = Objects.requireNonNull(wantedFirmwareCheck);
         this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck);
-        this.vcpus = vcpus;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.fastDisk = fastDisk;
-        this.bandwidth = bandwidth;
+        this.resources = Objects.requireNonNull(resources);
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.additionalIpAddresses = Objects.requireNonNull(additionalIpAddresses);
         this.reports = Objects.requireNonNull(reports);
@@ -211,7 +203,7 @@ public class NodeSpec {
         return wantToDeprovision;
     }
 
-    public Optional<NodeOwner> owner() {
+    public Optional<ApplicationId> owner() {
         return owner;
     }
 
@@ -219,24 +211,28 @@ public class NodeSpec {
         return membership;
     }
 
+    public NodeResources resources() {
+        return resources;
+    }
+
     public double vcpus() {
-        return vcpus;
+        return resources.vcpu();
     }
 
     public double memoryGb() {
-        return memoryGb;
+        return resources.memoryGb();
     }
 
     public double diskGb() {
-        return diskGb;
+        return resources.diskGb();
     }
 
     public boolean isFastDisk() {
-        return fastDisk;
+        return resources.diskSpeed() == fast;
     }
 
-    public double bandwidth() {
-        return bandwidth;
+    public double bandwidthGbps() {
+        return resources.bandwidthGbps();
     }
 
     public Set<String> ipAddresses() {
@@ -281,11 +277,7 @@ public class NodeSpec {
                 Objects.equals(currentRebootGeneration, that.currentRebootGeneration) &&
                 Objects.equals(wantedFirmwareCheck, that.wantedFirmwareCheck) &&
                 Objects.equals(currentFirmwareCheck, that.currentFirmwareCheck) &&
-                Objects.equals(vcpus, that.vcpus) &&
-                Objects.equals(memoryGb, that.memoryGb) &&
-                Objects.equals(diskGb, that.diskGb) &&
-                Objects.equals(fastDisk, that.fastDisk) &&
-                Objects.equals(bandwidth, that.bandwidth) &&
+                Objects.equals(resources, that.resources) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(additionalIpAddresses, that.additionalIpAddresses) &&
                 Objects.equals(reports, that.reports) &&
@@ -316,11 +308,7 @@ public class NodeSpec {
                 currentRebootGeneration,
                 wantedFirmwareCheck,
                 currentFirmwareCheck,
-                vcpus,
-                memoryGb,
-                diskGb,
-                fastDisk,
-                bandwidth,
+                resources,
                 ipAddresses,
                 additionalIpAddresses,
                 reports,
@@ -345,17 +333,13 @@ public class NodeSpec {
                 + " wantToDeprovision=" + wantToDeprovision
                 + " owner=" + owner
                 + " membership=" + membership
-                + " vcpus=" + vcpus
                 + " wantedRestartGeneration=" + wantedRestartGeneration
                 + " currentRestartGeneration=" + currentRestartGeneration
                 + " wantedRebootGeneration=" + wantedRebootGeneration
                 + " currentRebootGeneration=" + currentRebootGeneration
                 + " wantedFirmwareCheck=" + wantedFirmwareCheck
                 + " currentFirmwareCheck=" + currentFirmwareCheck
-                + " memoryGb=" + memoryGb
-                + " diskGb=" + diskGb
-                + " fastDisk=" + fastDisk
-                + " bandwidth=" + bandwidth
+                + " resources=" + resources
                 + " ipAddresses=" + ipAddresses
                 + " additionalIpAddresses=" + additionalIpAddresses
                 + " reports=" + reports
@@ -377,7 +361,7 @@ public class NodeSpec {
         private Optional<Version> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
         private Optional<Boolean> wantToDeprovision = Optional.empty();
-        private Optional<NodeOwner> owner = Optional.empty();
+        private Optional<ApplicationId> owner = Optional.empty();
         private Optional<NodeMembership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
         private Optional<Long> currentRestartGeneration = Optional.empty();
@@ -386,11 +370,7 @@ public class NodeSpec {
         private Optional<Instant> wantedFirmwareCheck = Optional.empty();
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
         private Optional<String> modelName = Optional.empty();
-        private double vcpus;
-        private double memoryGb;
-        private double diskGb;
-        private boolean fastDisk;
-        private double bandwidth;
+        private NodeResources resources = new NodeResources(0, 0, 0, 0, slow);
         private Set<String> ipAddresses = Set.of();
         private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
@@ -404,11 +384,7 @@ public class NodeSpec {
             type(node.type);
             flavor(node.flavor);
             canonicalFlavor(node.canonicalFlavor);
-            vcpus(node.vcpus);
-            memoryGb(node.memoryGb);
-            diskGb(node.diskGb);
-            fastDisk(node.fastDisk);
-            bandwidth(node.bandwidth);
+            resources(node.resources);
             ipAddresses(node.ipAddresses);
             additionalIpAddresses(node.additionalIpAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
@@ -497,7 +473,7 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder owner(NodeOwner owner) {
+        public Builder owner(ApplicationId owner) {
             this.owner = Optional.of(owner);
             return this;
         }
@@ -537,29 +513,29 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder vcpus(double minCpuCores) {
-            this.vcpus = minCpuCores;
+        public Builder resources(NodeResources resources) {
+            this.resources = resources;
             return this;
         }
 
-        public Builder memoryGb(double minMainMemoryAvailableGb) {
-            this.memoryGb = minMainMemoryAvailableGb;
-            return this;
+        public Builder vcpus(double vcpus) {
+            return resources(resources.withVcpu(vcpus));
         }
 
-        public Builder diskGb(double minDiskAvailableGb) {
-            this.diskGb = minDiskAvailableGb;
-            return this;
+        public Builder memoryGb(double memoryGb) {
+            return resources(resources.withMemoryGb(memoryGb));
+        }
+
+        public Builder diskGb(double diskGb) {
+            return resources(resources.withDiskGb(diskGb));
         }
 
         public Builder fastDisk(boolean fastDisk) {
-            this.fastDisk = fastDisk;
-            return this;
+            return resources(resources.withDiskSpeed(fastDisk ? fast : slow));
         }
 
-        public Builder bandwidth(double bandwidth) {
-            this.bandwidth = bandwidth;
-            return this;
+        public Builder bandwidthGbps(double bandwidthGbps) {
+            return resources(resources.withBandwidthGbps(bandwidthGbps));
         }
 
         public Builder ipAddresses(Set<String> ipAddresses) {
@@ -655,7 +631,7 @@ public class NodeSpec {
             return wantToDeprovision;
         }
 
-        public Optional<NodeOwner> owner() {
+        public Optional<ApplicationId> owner() {
             return owner;
         }
 
@@ -679,24 +655,8 @@ public class NodeSpec {
             return currentRebootGeneration;
         }
 
-        public double vcpus() {
-            return vcpus;
-        }
-
-        public double memoryGb() {
-            return memoryGb;
-        }
-
-        public double diskGb() {
-            return diskGb;
-        }
-
-        public boolean isFastDisk() {
-            return fastDisk;
-        }
-
-        public double bandwidth() {
-            return bandwidth;
+        public NodeResources resources() {
+            return resources;
         }
 
         public Set<String> ipAddresses() {
@@ -723,8 +683,7 @@ public class NodeSpec {
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
-                    vcpus, memoryGb, diskGb,
-                    fastDisk, bandwidth, ipAddresses, additionalIpAddresses,
+                    resources, ipAddresses, additionalIpAddresses,
                     reports, parentHostname);
         }
 

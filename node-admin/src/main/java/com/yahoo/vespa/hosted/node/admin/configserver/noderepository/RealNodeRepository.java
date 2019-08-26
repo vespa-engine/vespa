@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -24,6 +26,9 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 
 /**
  * @author stiankri, dybis
@@ -161,7 +166,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
-                Optional.ofNullable(node.owner).map(o -> new NodeOwner(o.tenant, o.application, o.instance)),
+                Optional.ofNullable(node.owner).map(o -> ApplicationId.from(o.tenant, o.application, o.instance)),
                 membership,
                 Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
@@ -170,11 +175,12 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
-                node.minCpuCores,
-                node.minMainMemoryAvailableGb,
-                node.minDiskAvailableGb,
-                node.fastDisk,
-                node.bandwidth,
+                new NodeResources(
+                        node.minCpuCores,
+                        node.minMainMemoryAvailableGb,
+                        node.minDiskAvailableGb,
+                        node.bandwidth / 1000,
+                        node.fastDisk ? fast : slow),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
