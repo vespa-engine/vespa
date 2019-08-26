@@ -23,4 +23,22 @@ public class QueryTreeTest {
                      new QueryTree(new WordItem("a")).and(not).toString());
      }
 
+     @Test
+     public void addNotToNot() {
+         NotItem not1 = new NotItem();
+         not1.addPositiveItem(new WordItem("p1"));
+         not1.addNegativeItem(new WordItem("n1.1"));
+         not1.addNegativeItem(new WordItem("n1.2"));
+
+         NotItem not2 = new NotItem();
+         not2.addPositiveItem(new WordItem("p2"));
+         not2.addNegativeItem(new WordItem("n2.1"));
+         not2.addNegativeItem(new WordItem("n2.2"));
+
+         QueryTree tree = new QueryTree(not1);
+         tree.and(not2);
+
+         assertEquals("+(AND p1 p2) -n1.1 -n1.2 -n2.1 -n2.2", tree.toString());
+     }
+
 }
