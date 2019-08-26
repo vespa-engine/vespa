@@ -140,7 +140,7 @@ public class Flags {
             "Takes effect on restart of configserver");
 
     public static final UnboundBooleanFlag PROVISION_APPLICATION_CERTIFICATE = defineFeatureFlag(
-            "provision-application-certificate", true,
+            "provision-application-certificate", false,
             "Provision certificate from CA and include reference in deployment",
             "Takes effect on deployment through controller",
             APPLICATION_ID);
