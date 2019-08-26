@@ -113,7 +113,7 @@ public class MetricsHandlerTest {
 
     @Ignore
     @Test
-    public void visually_inspect_values_response() throws Exception{
+    public void visually_inspect_values_response() throws Exception {
         String response = testDriver.sendRequest(VALUES_URI).readAll();
         ObjectMapper mapper = createObjectMapper();
         var jsonModel = mapper.readValue(response, GenericJsonModel.class);
@@ -197,6 +197,13 @@ public class MetricsHandlerTest {
 
         GenericMetrics dummy1Metrics = getMetricsForInstance("dummy1", dummyService);
         assertEquals("custom-val", dummy1Metrics.dimensions.get("consumer-dim"));
+    }
+
+    @Test
+    public void invalid_path_yields_error_response() throws Exception {
+        String response = testDriver.sendRequest(V1_URI + "/invalid").readAll();
+        JSONObject root = new JSONObject(response);
+        assertTrue(root.has("error"));
     }
 
     private void assertDownServiceHealth(String consumer) {
