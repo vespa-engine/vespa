@@ -3,8 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -27,7 +25,6 @@ public class RotationStatusUpdaterTest {
     @Test
     public void updates_rotation_status() {
         var tester = new DeploymentTester();
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
         var globalRotationService = tester.controllerTester().globalRoutingService();
         var updater = new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()));
 

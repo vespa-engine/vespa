@@ -21,8 +21,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
@@ -763,7 +761,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void multiple_endpoints() {
         // Setup
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

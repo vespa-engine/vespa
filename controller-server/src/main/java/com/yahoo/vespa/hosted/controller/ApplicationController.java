@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -49,13 +48,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentSpecValidator;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -66,8 +62,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.rotation.Rotation;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -83,12 +77,13 @@ import java.security.Principal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -99,7 +94,6 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -128,7 +122,6 @@ public class ApplicationController {
     private final RoutingGenerator routingGenerator;
     private final RoutingPolicies routingPolicies;
     private final Clock clock;
-    private final BooleanFlag useMultipleEndpoints;
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
     private final ApplicationCertificateProvider applicationCertificateProvider;
@@ -146,7 +139,6 @@ public class ApplicationController {
         this.routingGenerator = routingGenerator;
         this.routingPolicies = new RoutingPolicies(controller);
         this.clock = clock;
-        this.useMultipleEndpoints = Flags.MULTIPLE_GLOBAL_ENDPOINTS.bindTo(controller.flagSource());
 
         this.artifactRepository = artifactRepository;
         this.applicationStore = applicationStore;
@@ -233,7 +225,7 @@ public class ApplicationController {
     }
 
     /** Find the global endpoint of given deployment, if any */
-    public Optional<RoutingEndpoint> findGlobalEndpoint(DeploymentId deployment) {
+    private Optional<RoutingEndpoint> findGlobalEndpoint(DeploymentId deployment) {
         return routingGenerator.endpoints(deployment).stream()
                                .filter(RoutingEndpoint::isGlobal)
                                .findFirst();
@@ -298,8 +290,8 @@ public class ApplicationController {
             Version platformVersion;
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
-            Set<String> legacyRotations = new LinkedHashSet<>();
-            Set<ContainerEndpoint> endpoints = new LinkedHashSet<>();
+            Set<ContainerEndpoint> endpoints;
+            Set<String> legacyRotations;
             Optional<ApplicationCertificate> applicationCertificate;
 
             try (Lock lock = lock(applicationId)) {
@@ -338,37 +330,13 @@ public class ApplicationController {
                 // TODO(jvenstad): Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
                 verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
-                // Assign global rotation
-                // TODO(ogronnesby): Remove feature flag and replace calls to withRotationLegacy with withRotation
-                // TODO(mpolden): Remove all handling of legacy endpoints once withRotationLegacy disappears
-                if (useMultipleEndpoints.with(FetchVector.Dimension.APPLICATION_ID, application.get().id().serializedForm()).value()) {
-                    application = withRotation(application, zone);
-
-                    // Include global DNS names
-                    Application app = application.get();
-                    app.rotations().stream()
-                       .filter(assignedRotation -> assignedRotation.regions().contains(zone.region()))
-                       .map(assignedRotation -> {
-                                return new ContainerEndpoint(
-                                        assignedRotation.clusterId().value(),
-                                        Stream.concat(
-                                                app.endpointsIn(controller.system(), assignedRotation.endpointId()).legacy(false).asList().stream().map(Endpoint::dnsName),
-                                                Stream.of(assignedRotation.rotationId().asString())
-                                        ).collect(Collectors.toList())
-                                );
-                            })
-                       .forEach(endpoints::add);
-                } else {
-                    application = withRotationLegacy(application, zone);
-
-                    // Add both the names we have in DNS for each endpoint as well as name of the rotation so healthchecks works
-                    Application app = application.get();
-                    app.endpointsIn(controller.system()).asList().stream().map(Endpoint::dnsName).forEach(legacyRotations::add);
-                    app.rotations().stream()
-                       .map(AssignedRotation::rotationId)
-                       .map(RotationId::asString)
-                       .forEach(legacyRotations::add);
-                }
+                // Assign and register endpoints
+                application = withRotation(application, zone);
+                endpoints = registerEndpointsInDns(application.get(), zone);
+                legacyRotations = endpoints.stream()
+                                           .map(ContainerEndpoint::names)
+                                           .flatMap(Collection::stream)
+                                           .collect(Collectors.toSet());
 
                 // Get application certificate (provisions a new certificate if missing)
                 applicationCertificate = getApplicationCertificate(application.get());
@@ -479,63 +447,56 @@ public class ApplicationController {
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
-    private LockedApplication withRotationLegacy(LockedApplication application, ZoneId zone) {
-        if (zone.environment() == Environment.prod && application.get().deploymentSpec().globalServiceId().isPresent()) {
-            try (RotationLock rotationLock = rotationRepository.lock()) {
-                Rotation rotation = rotationRepository.getOrAssignRotation(application.get(), rotationLock);
-                application = application.with(createDefaultGlobalIdRotation(application.get(), rotation));
-                store(application); // store assigned rotation even if deployment fails
-
-                EndpointList globalEndpoints = application.get()
-                        .endpointsIn(controller.system())
-                        .scope(Endpoint.Scope.global);
-
-                globalEndpoints.main().ifPresent(mainEndpoint -> {
-                    registerCname(mainEndpoint.dnsName(), rotation.name());
-                    globalEndpoints.legacy(true).asList().forEach(endpoint -> registerCname(endpoint.dnsName(), rotation.name()));
-                });
-            }
-        }
-        return application;
-    }
-
-    private List<AssignedRotation> createDefaultGlobalIdRotation(Application application, Rotation rotation) {
-        Set<RegionName> regions = application.deploymentSpec().zones().stream()
-                                             .filter(zone -> zone.environment().isProduction())
-                                             .flatMap(zone -> zone.region().stream())
-                                             .collect(Collectors.toSet());
-        var assignment = new AssignedRotation(
-                ClusterSpec.Id.from(application.deploymentSpec().globalServiceId().get()),
-                EndpointId.default_(),
-                rotation.id(),
-                regions
-        );
-        return List.of(assignment);
-    }
-
-    /** Makes sure the application has a global rotation, if eligible. */
     private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
         if (zone.environment() == Environment.prod) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
                 var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
                 application = application.with(rotations);
                 store(application); // store assigned rotation even if deployment fails
-                registerAssignedRotationCnames(application.get());
             }
         }
         return application;
     }
 
-    private void registerAssignedRotationCnames(Application application) {
-        application.rotations().forEach(assignedRotation -> {
+    /**
+     * Register endpoints for rotations assigned to given application and zone in DNS.
+     *
+     * @return the registered endpoints
+     */
+    private Set<ContainerEndpoint> registerEndpointsInDns(Application application, ZoneId zone) {
+        var containerEndpoints = new HashSet<ContainerEndpoint>();
+        var registerLegacyNames = application.deploymentSpec().globalServiceId().isPresent();
+        for (var assignedRotation : application.rotations()) {
+            var names = new ArrayList<String>();
             var endpoints = application.endpointsIn(controller.system(), assignedRotation.endpointId())
                                        .scope(Endpoint.Scope.global);
-            var maybeRotation = rotationRepository.getRotation(assignedRotation.rotationId());
-            maybeRotation.ifPresent(rotation -> {
-                // For rotations assigned using <endpoints/> syntax, we only register the non-legacy name in DNS.
-                endpoints.main().ifPresent(mainEndpoint -> registerCname(mainEndpoint.dnsName(), rotation.name()));
-            });
-        });
+
+            // Skip rotations which do not apply to this zone. Legacy names always point to all zones
+            if (!registerLegacyNames && !assignedRotation.regions().contains(zone.region())) {
+                continue;
+            }
+
+            // Omit legacy DNS names when assigning rotations using <endpoints/> syntax
+            if (!registerLegacyNames) {
+                endpoints = endpoints.legacy(false);
+            }
+
+            // Register names in DNS
+            var rotation = rotationRepository.getRotation(assignedRotation.rotationId());
+            if (rotation.isPresent()) {
+                endpoints.asList().forEach(endpoint -> {
+                    controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
+                                                                  RecordData.fqdn(rotation.get().name()),
+                                                                  Priority.normal);
+                    names.add(endpoint.dnsName());
+                });
+            }
+
+            // Include rotation ID as a valid name of this container endpoint (required by global routing health checks)
+            names.add(assignedRotation.rotationId().asString());
+            containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(), names));
+        }
+        return Collections.unmodifiableSet(containerEndpoints);
     }
 
     private Optional<ApplicationCertificate> getApplicationCertificate(Application application) {
@@ -610,11 +571,6 @@ public class ApplicationController {
                                  options.deployCurrentVersion);
     }
 
-    /** Register a CNAME record in DNS */
-    private void registerCname(String name, String targetName) {
-        controller.nameServiceForwarder().createCname(RecordName.from(name), RecordData.fqdn(targetName), Priority.normal);
-    }
-
     /** Returns the endpoints of the deployment, or empty if the request fails */
     public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
         if ( ! get(deploymentId.applicationId())
@@ -676,7 +632,7 @@ public class ApplicationController {
      */
     public void deleteApplication(ApplicationId applicationId, Optional<Credentials> credentials) {
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() != Tenant.Type.user && ! credentials.isPresent())
+        if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
                 throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");
 
         // Find all instances of the application
