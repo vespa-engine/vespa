@@ -122,8 +122,7 @@ public class ApplicationSerializerTest {
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
-                                               rotationStatus,
-                                               Optional.of(new ApplicationCertificate("vespa.certificate")));
+                                               rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -160,8 +159,6 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.rotations(), serialized.rotations());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
-
-        assertEquals(original.applicationCertificate(), serialized.applicationCertificate());
 
         // Test cluster utilization
         assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());

@@ -388,8 +388,7 @@ public class ApplicationController {
 
             lockOrThrow(applicationId, application ->
                     store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
-                                                        warningsFrom(result))
-                                     .withApplicationCertificate(applicationCertificate)));
+                                                        warningsFrom(result))));
             return result;
         }
     }
@@ -541,16 +540,20 @@ public class ApplicationController {
 
     private Optional<ApplicationCertificate> getApplicationCertificate(Application application) {
         // Re-use certificate if already provisioned
-        if (application.applicationCertificate().isPresent()) {
-            return application.applicationCertificate();
-        }
+        Optional<ApplicationCertificate> applicationCertificate = curator.readApplicationCertificate(application.id());
+        if(applicationCertificate.isPresent())
+            return applicationCertificate;
+
         // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
         boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
                                                                             application.id().serializedForm()).value();
         if (!provisionCertificate) {
             return Optional.empty();
         }
-        return Optional.of(applicationCertificateProvider.requestCaSignedCertificate(application.id()));
+        ApplicationCertificate newCertificate = applicationCertificateProvider.requestCaSignedCertificate(application.id());
+        curator.writeApplicationCertificate(application.id(), newCertificate);
+
+        return Optional.of(newCertificate);
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
