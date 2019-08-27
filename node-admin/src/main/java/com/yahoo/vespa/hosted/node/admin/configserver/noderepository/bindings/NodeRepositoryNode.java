@@ -28,8 +28,6 @@ public class NodeRepositoryNode {
     public String openStackId;
     @JsonProperty("flavor")
     public String flavor;
-    @JsonProperty("canonicalFlavor")
-    public String canonicalFlavor;
     @JsonProperty("membership")
     public Membership membership;
     @JsonProperty("owner")
@@ -98,7 +96,6 @@ public class NodeRepositoryNode {
                 ", openStackId='" + openStackId + '\'' +
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
-                ", canonicalFlavor='" + canonicalFlavor + '\'' +
                 ", membership=" + membership +
                 ", owner=" + owner +
                 ", restartGeneration=" + restartGeneration +

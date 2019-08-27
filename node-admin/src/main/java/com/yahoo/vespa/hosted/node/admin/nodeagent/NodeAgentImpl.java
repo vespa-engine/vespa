@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -345,7 +344,6 @@ public class NodeAgentImpl implements NodeAgent {
         double cpuCap = noCpuCap(context.zone()) ?
                 0 :
                 context.node().owner()
-                        .map(NodeOwner::asApplicationId)
                         .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                         .orElse(containerCpuCap)
                         .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())

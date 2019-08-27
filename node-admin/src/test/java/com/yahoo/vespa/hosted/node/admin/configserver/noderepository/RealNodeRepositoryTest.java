@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApiImpl;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
@@ -17,11 +18,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -162,23 +162,22 @@ public class RealNodeRepositoryTest {
 
     @Test
     public void testAddNodes() {
-        AddNode host = new AddNode("host123.domain.tld", "default", NodeType.confighost,
-                Collections.singleton("::1"), new HashSet<>(Arrays.asList("::2", "::3")));
+        AddNode host = AddNode.forHost("host123.domain.tld", "default", Optional.of(FlavorOverrides.ofDisk(123)), NodeType.confighost,
+                Set.of("::1"), Set.of("::2", "::3"));
 
-        AddNode node = new AddNode("host123-1.domain.tld", "host123.domain.tld", "docker", NodeType.config,
-                new HashSet<>(Arrays.asList("::2", "::3")));
-
-        List<AddNode> nodesToAdd = Arrays.asList(host, node);
+        NodeResources nodeResources = new NodeResources(1, 2, 3, 4, NodeResources.DiskSpeed.slow);
+        AddNode node = AddNode.forNode("host123-1.domain.tld", "host123.domain.tld", nodeResources, NodeType.config, Set.of("::2", "::3"));
 
         assertFalse(nodeRepositoryApi.getOptionalNode("host123.domain.tld").isPresent());
-        nodeRepositoryApi.addNodes(nodesToAdd);
+        nodeRepositoryApi.addNodes(List.of(host, node));
 
-        NodeSpec hostSpecInNodeRepo = nodeRepositoryApi.getOptionalNode("host123.domain.tld")
-                .orElseThrow(RuntimeException::new);
+        NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode("host123.domain.tld").orElseThrow();
+        assertEquals("default", hostSpec.flavor());
+        assertEquals(123, hostSpec.diskGb(), 0);
+        assertEquals(NodeType.confighost, hostSpec.type());
 
-        assertEquals(host.nodeFlavor, hostSpecInNodeRepo.flavor());
-        assertEquals(host.nodeType, hostSpecInNodeRepo.type());
-
-        assertTrue(nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").isPresent());
+        NodeSpec nodeSpec = nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").orElseThrow();
+        assertEquals(nodeResources, nodeSpec.resources());
+        assertEquals(NodeType.config, nodeSpec.type());
     }
 }

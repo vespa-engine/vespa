@@ -4,8 +4,11 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.GetAclResponse;
@@ -24,6 +27,9 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 
 /**
  * @author stiankri, dybis
@@ -154,14 +160,13 @@ public class RealNodeRepository implements NodeRepository {
                 nodeState,
                 nodeType,
                 node.flavor,
-                node.canonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.vespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.wantedOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.currentOsVersion).map(Version::fromString),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
-                Optional.ofNullable(node.owner).map(o -> new NodeOwner(o.tenant, o.application, o.instance)),
+                Optional.ofNullable(node.owner).map(o -> ApplicationId.from(o.tenant, o.application, o.instance)),
                 membership,
                 Optional.ofNullable(node.restartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
@@ -170,11 +175,12 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
-                node.minCpuCores,
-                node.minMainMemoryAvailableGb,
-                node.minDiskAvailableGb,
-                node.fastDisk,
-                node.bandwidth,
+                new NodeResources(
+                        node.minCpuCores,
+                        node.minMainMemoryAvailableGb,
+                        node.minDiskAvailableGb,
+                        node.bandwidth / 1000,
+                        node.fastDisk ? fast : slow),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
@@ -186,7 +192,15 @@ public class RealNodeRepository implements NodeRepository {
         node.openStackId = "fake-" + addNode.hostname;
         node.hostname = addNode.hostname;
         node.parentHostname = addNode.parentHostname.orElse(null);
-        node.flavor = addNode.nodeFlavor;
+        addNode.nodeFlavor.ifPresent(f -> node.flavor = f);
+        addNode.flavorOverrides.flatMap(FlavorOverrides::diskGb).ifPresent(d -> node.minDiskAvailableGb = d);
+        addNode.nodeResources.ifPresent(resources -> {
+            node.minCpuCores = resources.vcpu();
+            node.minMainMemoryAvailableGb = resources.memoryGb();
+            node.minDiskAvailableGb = resources.diskGb();
+            node.bandwidth = resources.bandwidthGbps() * 1000;
+            node.fastDisk = resources.diskSpeed() == NodeResources.DiskSpeed.fast;
+        });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;
         node.additionalIpAddresses = addNode.additionalIpAddresses;
