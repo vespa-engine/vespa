@@ -23,7 +23,7 @@ public class RestApiUtil {
     private static Logger log = Logger.getLogger(RestApiUtil.class.getName());
 
 
-    static JsonResponse resourceListResponse(URI requestUri, List<String> resources) {
+    public static JsonResponse resourceListResponse(URI requestUri, List<String> resources) {
         try {
             return new JsonResponse(OK, RestApiUtil.resourceList(requestUri, resources));
         } catch (JSONException e) {

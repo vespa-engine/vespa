@@ -11,7 +11,7 @@ import ai.vespa.metricsproxy.metric.Metrics;
  * @author Unknown
  */
 public class DummyService extends VespaService {
-    static final String NAME = "dummy";
+    public static final String NAME = "dummy";
     public static final String METRIC_1 = "c.test";
     public static final String METRIC_2 = "val";
 

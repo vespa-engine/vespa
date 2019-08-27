@@ -436,6 +436,16 @@
                 <version>0.7</version>
             </dependency>
             <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient</artifactId>
+                <version>${prometheus.client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_common</artifactId>
+                <version>${prometheus.client.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
@@ -777,6 +787,7 @@
         <doclint>all</doclint>
         <surefire.version>2.22.0</surefire.version>
         <junit.version>5.4.2</junit.version>
+        <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.7.0</protobuf.version>
     </properties>
 

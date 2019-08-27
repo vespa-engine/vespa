@@ -33,7 +33,7 @@ public class ValuesFetcher {
     private final VespaServices vespaServices;
     private final MetricsConsumers metricsConsumers;
 
-    ValuesFetcher(MetricsManager metricsManager,
+    public ValuesFetcher(MetricsManager metricsManager,
                   VespaServices vespaServices,
                   MetricsConsumers metricsConsumers) {
         this.metricsManager = metricsManager;
