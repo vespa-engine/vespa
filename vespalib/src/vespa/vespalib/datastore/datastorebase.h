@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 #include <deque>
+#include <atomic>
 
 namespace search::datastore {
 
@@ -148,6 +149,7 @@ protected:
 
     const uint32_t _numBuffers;
     const size_t   _maxArrays;
+    mutable std::atomic<uint64_t> _compaction_count;
 
     vespalib::GenerationHolder _genHolder;
 
@@ -355,6 +357,8 @@ public:
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
+    uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
+    void inc_compaction_count() const { ++_compaction_count; }
 };
 
 }

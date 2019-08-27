@@ -279,13 +279,11 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistration() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
-
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .globalServiceId("foo")
+                .endpoint("default", "foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
@@ -352,8 +350,6 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistrationWithEndpoints() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
-
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -409,8 +405,6 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistrationWithChangingZones() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
-
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -457,8 +451,6 @@ public class ControllerTest {
 
     @Test
     public void testUnassignRotations() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
-
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -490,16 +482,14 @@ public class ControllerTest {
         );
     }
 
-        @Test
+    @Test
     public void testUpdatesExistingDnsAlias() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.MULTIPLE_GLOBAL_ENDPOINTS.id(), true);
-
         // Application 1 is deployed and deleted
         {
             Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
-                    .globalServiceId("foo")
+                    .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                     .build();
@@ -545,7 +535,7 @@ public class ControllerTest {
             Application app2 = tester.createApplication("app2", "tenant2", 2, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
-                    .globalServiceId("foo")
+                    .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1")
                     .build();
@@ -564,7 +554,7 @@ public class ControllerTest {
             Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
-                    .globalServiceId("foo")
+                    .endpoint("default", "foo")
                     .region("us-west-1")
                     .region("us-central-1")
                     .build();
@@ -706,7 +696,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployProvisionsCertificate() {
+    public void testDeploySelectivelyProvisionsCertificate() {
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
         Function<Application, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
 
@@ -732,7 +722,7 @@ public class ControllerTest {
         tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
                    tester.controllerTester().configServer().application(app2.id()).get().activated());
-        assertTrue("Provisions certificate in " + Environment.dev, certificate.apply(app2).isPresent());
+        assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(app2).isPresent());
     }
 
     @Test

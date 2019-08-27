@@ -15,8 +15,7 @@ namespace search::attribute {
 
 class EnumHintSearchContext : public IPostingListSearchContext
 {
-    const EnumStoreDictBase  &_dictionary;
-    const btree::BTreeNode::Ref _frozenRootRef;
+    const EnumStoreDictBase::ReadSnapshot::UP _dict_snapshot;
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint64_t                _numValues; // attr.getStatus().getNumValues();

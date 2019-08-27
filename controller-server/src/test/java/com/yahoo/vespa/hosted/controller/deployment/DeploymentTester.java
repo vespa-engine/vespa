@@ -117,9 +117,13 @@ public class DeploymentTester {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
-    /** Upgrade controller to given version */
     public void upgradeController(Version version) {
-        controller().curator().writeControllerVersion(controller().hostname(), new ControllerVersion(version, "badc0ffee", Instant.EPOCH));
+        upgradeController(version, "badc0ffee", Instant.EPOCH);
+    }
+
+    /** Upgrade controller to given version */
+    public void upgradeController(Version version, String commitSha, Instant commitDate) {
+        controller().curator().writeControllerVersion(controller().hostname(), new ControllerVersion(version, commitSha, commitDate));
         computeVersionStatus();
     }
 

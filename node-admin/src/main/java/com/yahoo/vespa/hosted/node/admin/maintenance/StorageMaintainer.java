@@ -141,9 +141,9 @@ public class StorageMaintainer {
         context.node().parentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
         context.node().currentVespaVersion().ifPresent(version -> attributes.put("vespa_version", version.toFullString()));
         context.node().owner().ifPresent(owner -> {
-            attributes.put("tenant", owner.tenant());
-            attributes.put("application", owner.application());
-            attributes.put("instance", owner.instance());
+            attributes.put("tenant", owner.tenant().value());
+            attributes.put("application", owner.application().value());
+            attributes.put("instance", owner.instance().value());
         });
         return Collections.unmodifiableMap(attributes);
     }

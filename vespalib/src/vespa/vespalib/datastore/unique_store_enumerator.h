@@ -14,24 +14,27 @@ namespace search::datastore {
  */
 template <typename RefT>
 class UniqueStoreEnumerator {
+public:
     using RefType = RefT;
+    using EnumValues = std::vector<std::vector<uint32_t>>;
 
-    const UniqueStoreDictionaryBase &_dict;
-    EntryRef _root;
+private:
+    UniqueStoreDictionaryBase::ReadSnapshot::UP _dict_snapshot;
     const DataStoreBase &_store;
-    std::vector<std::vector<uint32_t>> _enumValues;
+    EnumValues _enumValues;
     uint32_t _next_enum_val;
 public:
     UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
     ~UniqueStoreEnumerator();
+    EntryRef get_frozen_root() const { return _dict_snapshot->get_frozen_root(); }
     void enumerateValue(EntryRef ref);
     void enumerateValues();
+    void clear();
 
     template <typename Function>
     void
-    foreach_key(Function &&func) const
-    {
-        _dict.foreach_key(_root, func);
+    foreach_key(Function &&func) const {
+        _dict_snapshot->foreach_key(func);
     }
 
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {
@@ -41,6 +44,19 @@ public:
             uint32_t enumValue = _enumValues[iRef.bufferId()][iRef.unscaled_offset()];
             assert(enumValue != 0);
             return enumValue;
+        } else {
+            return 0u;
+        }
+    }
+
+    uint32_t map_entry_ref_to_enum_value_or_zero(EntryRef ref) const {
+        if (ref.valid()) {
+            RefType iRef(ref);
+            if (iRef.unscaled_offset() < _enumValues[iRef.bufferId()].size()) {
+                return  _enumValues[iRef.bufferId()][iRef.unscaled_offset()];
+            } else {
+                return 0u;
+            }
         } else {
             return 0u;
         }

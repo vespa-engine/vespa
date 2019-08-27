@@ -17,6 +17,47 @@
 namespace search::datastore {
 
 template <typename DictionaryT, typename ParentT>
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::ReadSnapshotImpl(FrozenView frozen_view)
+    : _frozen_view(frozen_view)
+{
+}
+
+template <typename DictionaryT, typename ParentT>
+size_t
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::count(const EntryComparator& comp) const
+{
+    auto itr = _frozen_view.lowerBound(EntryRef(), comp);
+    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
+        return 1u;
+    }
+    return 0u;
+}
+
+template <typename DictionaryT, typename ParentT>
+size_t
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::count_in_range(const EntryComparator& low,
+                                 const EntryComparator& high) const
+{
+    auto low_itr = _frozen_view.lowerBound(EntryRef(), low);
+    auto high_itr = low_itr;
+    if (high_itr.valid() && !high(EntryRef(), high_itr.getKey())) {
+        high_itr.seekPast(EntryRef(), high);
+    }
+    return high_itr - low_itr;
+}
+
+template <typename DictionaryT, typename ParentT>
+void
+UniqueStoreDictionary<DictionaryT, ParentT>::
+ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const
+{
+    _frozen_view.foreach_key(callback);
+}
+
+template <typename DictionaryT, typename ParentT>
 UniqueStoreDictionary<DictionaryT, ParentT>::UniqueStoreDictionary()
     : ParentT(),
       _dict()
@@ -135,18 +176,17 @@ UniqueStoreDictionary<DictionaryT, ParentT>::build(const std::vector<EntryRef> &
 }
 
 template <typename DictionaryT, typename ParentT>
+std::unique_ptr<typename ParentT::ReadSnapshot>
+UniqueStoreDictionary<DictionaryT, ParentT>::get_read_snapshot() const
+{
+    return std::make_unique<ReadSnapshotImpl>(_dict.getFrozenView());
+}
+
+template <typename DictionaryT, typename ParentT>
 EntryRef
 UniqueStoreDictionary<DictionaryT, ParentT>::get_frozen_root() const
 {
     return _dict.getFrozenView().getRoot();
-}
-
-template <typename DictionaryT, typename ParentT>
-void
-UniqueStoreDictionary<DictionaryT, ParentT>::foreach_key(EntryRef root,
-                                                         std::function<void(EntryRef)> callback) const
-{
-    _dict.getAllocator().getNodeStore().foreach_key(root, callback);
 }
 
 }

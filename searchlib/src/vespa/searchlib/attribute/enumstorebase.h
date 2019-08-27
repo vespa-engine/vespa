@@ -64,7 +64,6 @@ public:
     virtual ~EnumStoreDictBase();
 
     virtual uint32_t getNumUniques() const = 0;
-    virtual void reEnumerate() = 0;
     virtual void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const = 0;
     virtual ssize_t deserialize(const void *src, size_t available, IndexVector &idx) = 0;
 
@@ -81,13 +80,6 @@ public:
 
     virtual void onReset() = 0;
     virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
-
-    virtual uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                                      const datastore::EntryComparator &comp) const = 0;
-
-    virtual uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                                       const datastore::EntryComparator &low,
-                                       const datastore::EntryComparator &high) const = 0;
 
     virtual EnumPostingTree &getPostingDictionary() = 0;
     virtual const EnumPostingTree &getPostingDictionary() const = 0;
@@ -117,7 +109,6 @@ public:
     Dictionary &getDictionary() { return this->_dict; }
     
     uint32_t getNumUniques() const override;
-    void reEnumerate() override;
     void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const override;
     ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override;
     void fixupRefCounts(const EnumVector &hist) override;
@@ -140,13 +131,6 @@ public:
 
     void onReset() override;
     btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
-
-    uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                              const datastore::EntryComparator &comp) const override;
-
-    uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                               const datastore::EntryComparator &low,
-                               const datastore::EntryComparator &high) const override;
 
     EnumPostingTree & getPostingDictionary() override;
     const EnumPostingTree & getPostingDictionary() const override;
@@ -241,8 +225,6 @@ protected:
     EnumBufferType        _type;
     uint32_t              _nextEnum;
     std::vector<uint32_t> _toHoldBuffers; // used during compaction
-    // set before backgound flush, cleared during background flush
-    mutable std::atomic<bool> _disabledReEnumerate;
 
     static const uint32_t TYPE_ID = 0;
 
@@ -310,17 +292,6 @@ public:
     bool getPendingCompact() const { return _type.getPendingCompact(); }
     void clearPendingCompact() { _type.clearPendingCompact(); }
 
-    template <typename Tree>
-    void reEnumerate(const Tree &tree);
-
-    void reEnumerate() { _enumDict->reEnumerate(); }
-
-    // Disable reenumeration during compaction.
-    void disableReEnumerate() const;
-
-    // Allow reenumeration during compaction.
-    void enableReEnumerate() const;
-
     virtual void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const = 0;
 
     void writeEnumValues(BufferWriter &writer, const Index *idxs, size_t count) const;
@@ -354,6 +325,7 @@ public:
     const EnumPostingTree &getPostingDictionary() const {
         return _enumDict->getPostingDictionary();
     }
+    const datastore::DataStoreBase &get_data_store_base() const { return _store; }
 };
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStoreBase::Index & idx);

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
+#include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
@@ -142,6 +143,7 @@ private:
     SearchContextPtr getSearch(const V & vec);
 
     MemAttr::SP saveMem(AttributeVector &v);
+    void saveMemDuringCompaction(AttributeVector &v);
     void checkMem(AttributeVector &v, const MemAttr &e);
     MemAttr::SP saveBoth(AttributePtr v);
     AttributePtr make(Config cfg, const vespalib::string &pref, bool fastSearch = false);
@@ -503,6 +505,19 @@ EnumeratedSaveTest::saveMem(AttributeVector &v)
     return res;
 }
 
+void
+EnumeratedSaveTest::saveMemDuringCompaction(AttributeVector &v)
+{
+    MemAttr::SP res(new MemAttr);
+    auto *enum_store_base = v.getEnumStoreBase();
+    if (enum_store_base != nullptr) {
+        auto saver = v.onInitSave(v.getBaseFileName());
+        // Simulate compaction
+        enum_store_base->get_data_store_base().inc_compaction_count();
+        auto save_result = saver->save(*res);
+        EXPECT_EQUAL(!v.hasMultiValue(), save_result);
+    }
+}
 
 void
 EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
@@ -607,6 +622,8 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
     TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2_e", v2)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
+
+    saveMemDuringCompaction(*v);
 
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(v));

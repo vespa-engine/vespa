@@ -331,6 +331,37 @@ public class VersionStatusTest {
                                                     .keySet().contains(version0));
     }
 
+    @Test
+    public void testCommitDetailsPreservation() {
+        var tester = new DeploymentTester();
+
+        // Commit details are set for initial version
+        var version0 = new Version("6.2");
+        var commitSha0 = "badc0ffee";
+        var commitDate0 = Instant.EPOCH;
+        tester.upgradeSystem(version0);
+        assertEquals(version0, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        assertEquals(commitSha0, tester.controller().versionStatus().systemVersion().get().releaseCommit());
+        assertEquals(commitDate0, tester.controller().versionStatus().systemVersion().get().committedAt());
+
+        // Deploy app on version0 to keep computing statistics for that version
+        tester.createAndDeploy("app", 1, "canary");
+
+        // Commit details are updated for new version
+        var version1 = new Version("6.3");
+        var commitSha1 = "deadbeef";
+        var commitDate1 = Instant.ofEpochMilli(123);
+        tester.upgradeController(version1, commitSha1, commitDate1);
+        tester.upgradeSystemApplications(version1);
+        assertEquals(version1, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        assertEquals(commitSha1, tester.controller().versionStatus().systemVersion().get().releaseCommit());
+        assertEquals(commitDate1, tester.controller().versionStatus().systemVersion().get().committedAt());
+
+        // Commit details for previous version are preserved
+        assertEquals(commitSha0, tester.controller().versionStatus().version(version0).releaseCommit());
+        assertEquals(commitDate0, tester.controller().versionStatus().version(version0).committedAt());
+    }
+
     private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {
         db.writeControllerVersion(hostname, new ControllerVersion(version, "badc0ffee", Instant.EPOCH));
     }

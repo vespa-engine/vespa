@@ -84,6 +84,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
       _elemHold2List(),
       _numBuffers(numBuffers),
       _maxArrays(maxArrays),
+      _compaction_count(0u),
       _genHolder()
 {
 }
@@ -369,6 +370,7 @@ DataStoreBase::startCompact(uint32_t typeId)
         }
     }
     switchActiveBuffer(typeId, 0u);
+    inc_compaction_count();
     return toHold;
 }
 
@@ -453,6 +455,7 @@ DataStoreBase::markCompacting(uint32_t bufferId)
     state.setCompacting();
     state.disableElemHoldList();
     state.setFreeListList(nullptr);
+    inc_compaction_count();
 }
 
 std::vector<uint32_t>
