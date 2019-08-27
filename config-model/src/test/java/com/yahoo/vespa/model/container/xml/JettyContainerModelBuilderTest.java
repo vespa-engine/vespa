@@ -5,6 +5,8 @@ import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -17,6 +19,7 @@ import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
@@ -238,11 +241,27 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "            </ssl>",
                 "        </server>",
                 "    </http>",
-                nodesXml,
+                multiNode,
                 "",
                 "</container>");
 
-        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        String hostsxml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                          "<hosts>\n" +
+                          "  <host name=\"mockhost-1\">\n" +
+                          "    <alias>mockhost1</alias>\n" +
+                          "  </host>\n" +
+                          "  <host name=\"mockhost-2\">\n" +
+                          "    <alias>mockhost2</alias>\n" +
+                          "  </host>\n" +
+                          "</hosts>\n";
+        DeployState deployState = new DeployState.Builder()
+                .properties(
+                        new TestProperties()
+                                .setHostedVespa(true)
+                                .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY"))))
+                .modelHostProvisioner(new HostsXmlProvisioner(new StringReader(hostsxml)))
+                .build();
+        MockRoot root = new MockRoot("root", deployState);
         createModel(root, deployState, null, clusterElem);
         ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
         assertTrue(sslProvider.ssl().enabled());

@@ -43,6 +43,11 @@ public abstract class ContainerModelBuilderTestBase {
             "  <nodes>" +
             "    <node hostalias='mockhost' />" +
             "  </nodes>";
+    public static final String multiNode =
+            "  <nodes>" +
+            "    <node hostalias='mockhost1' />" +
+            "    <node hostalias='mockhost2' />" +
+            "  </nodes>";
 
     protected MockRoot root;
 

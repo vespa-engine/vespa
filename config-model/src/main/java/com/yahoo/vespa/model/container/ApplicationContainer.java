@@ -38,11 +38,13 @@ public final class ApplicationContainer extends Container {
             JettyHttpServer server = Optional.ofNullable(getHttp())
                                              .map(Http::getHttpServer)
                                              .orElse(getDefaultHttpServer());
-            String serverName = server.getComponentId().getName();
-            var connectorFactory = tlsCa
-                    .map(caCert -> new HostedSslConnectorFactory(serverName, tlsSecrets.get(), caCert))
-                    .orElseGet(() -> new HostedSslConnectorFactory(serverName, tlsSecrets.get()));
-            server.addConnector(connectorFactory);
+            if (server.getConnectorFactories().stream().noneMatch(connectorFactory -> connectorFactory instanceof HostedSslConnectorFactory)) {
+                String serverName = server.getComponentId().getName();
+                var connectorFactory = tlsCa
+                        .map(caCert -> new HostedSslConnectorFactory(serverName, tlsSecrets.get(), caCert))
+                        .orElseGet(() -> new HostedSslConnectorFactory(serverName, tlsSecrets.get()));
+                server.addConnector(connectorFactory);
+            }
         }
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }
