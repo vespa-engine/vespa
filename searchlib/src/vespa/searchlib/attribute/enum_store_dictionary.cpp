@@ -220,8 +220,6 @@ EnumStoreDictionary<DictionaryT>::hasData() const
 }
 
 
-template class datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
-
 template class EnumStoreDictionary<EnumTree>;
 
 template class EnumStoreDictionary<EnumPostingTree>;
