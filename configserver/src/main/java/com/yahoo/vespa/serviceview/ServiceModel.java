@@ -1,12 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.serviceview;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -19,7 +13,11 @@ import com.yahoo.vespa.serviceview.bindings.ModelResponse;
 import com.yahoo.vespa.serviceview.bindings.ServicePort;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 
@@ -37,7 +35,6 @@ public final class ServiceModel {
     /**
      * An ordered list of the clusters in this config model.
      */
-    @NonNull
     public final ImmutableList<Cluster> clusters;
 
     ServiceModel(ModelResponse modelConfig) {
@@ -155,7 +152,7 @@ public final class ServiceModel {
         }
     }
 
-    private Service getFirstServiceInstanceByType(@NonNull String typeName) {
+    private Service getFirstServiceInstanceByType(String typeName) {
         for (Cluster c : clusters) {
             for (Service s : c.services) {
                 if (typeName.equals(s.serviceType)) {
