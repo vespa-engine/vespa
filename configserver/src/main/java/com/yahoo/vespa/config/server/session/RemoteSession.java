@@ -134,4 +134,7 @@ public class RemoteSession extends Session {
         transaction.close();
     }
 
+    public ApplicationSet applicationSet() {
+        return applicationSet;
+    }
 }

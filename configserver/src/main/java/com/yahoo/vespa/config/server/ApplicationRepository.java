@@ -405,6 +405,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getApplication(applicationId).getApplicationGeneration();
     }
 
+    public List<Version> getApplicationVersions(ApplicationId applicationId) {
+        Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
+        if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
+        long sessionId = getSessionIdForApplication(tenant, applicationId);
+        RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
+        return session.applicationSet().getAllApplicationVersions();
+    }
+
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
     }
