@@ -292,7 +292,6 @@ public class ApplicationController {
             ApplicationVersion applicationVersion;
             ApplicationPackage applicationPackage;
             Set<ContainerEndpoint> endpoints;
-            Set<String> legacyRotations;
             Optional<ApplicationCertificate> applicationCertificate;
 
             try (Lock lock = lock(applicationId)) {
@@ -334,10 +333,6 @@ public class ApplicationController {
                 // Assign and register endpoints
                 application = withRotation(application, zone);
                 endpoints = registerEndpointsInDns(application.get(), zone);
-                legacyRotations = endpoints.stream()
-                                           .map(ContainerEndpoint::names)
-                                           .flatMap(Collection::stream)
-                                           .collect(Collectors.toSet());
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Get application certificate (provisions a new certificate if missing)
@@ -357,7 +352,7 @@ public class ApplicationController {
 
             // Carry out deployment without holding the application lock.
             options = withVersion(platformVersion, options);
-            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, legacyRotations, endpoints,
+            ActivateResult result = deploy(applicationId, applicationPackage, zone, options, endpoints,
                                            applicationCertificate.orElse(null));
 
             lockOrThrow(applicationId, application ->
@@ -425,7 +420,7 @@ public class ApplicationController {
                     artifactRepository.getSystemApplicationPackage(application.id(), zone, version)
             );
             DeployOptions options = withVersion(version, DeployOptions.none());
-            return deploy(application.id(), applicationPackage, zone, options, Set.of(), Set.of(), /* No application cert */ null);
+            return deploy(application.id(), applicationPackage, zone, options, Set.of(), /* No application cert */ null);
         } else {
            throw new RuntimeException("This system application does not have an application package: " + application.id().toShortString());
         }
@@ -433,16 +428,16 @@ public class ApplicationController {
 
     /** Deploys the given tester application to the given zone. */
     public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), Set.of(), /* No application cert for tester*/ null);
+        return deploy(tester.id(), applicationPackage, zone, options, Set.of(), /* No application cert for tester*/ null);
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,
-                                  ZoneId zone, DeployOptions deployOptions,
-                                  Set<String> legacyRotations, Set<ContainerEndpoint> endpoints, ApplicationCertificate applicationCertificate) {
+                                  ZoneId zone, DeployOptions deployOptions, Set<ContainerEndpoint> endpoints,
+                                  ApplicationCertificate applicationCertificate) {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, legacyRotations, endpoints, applicationCertificate, applicationPackage.zippedContent());
+                    configServer.deploy(deploymentId, deployOptions, Set.of(), endpoints, applicationCertificate, applicationPackage.zippedContent());
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {

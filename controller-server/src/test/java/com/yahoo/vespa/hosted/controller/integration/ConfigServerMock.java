@@ -239,6 +239,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
+        if (!rotationNames.isEmpty() && !containerEndpoints.isEmpty()) {
+            throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints"); // Same constraint as a real config server
+        }
+
         this.rotationNames.put(
                 deployment,
                 Stream.concat(
