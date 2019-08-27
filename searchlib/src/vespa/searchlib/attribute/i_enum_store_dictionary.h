@@ -38,7 +38,7 @@ struct CompareEnumIndex {
 /**
  * Interface for the dictionary used by an enum store.
  */
-class IEnumStoreDictionary : public datastore::UniqueStoreDictionaryBase {
+class IEnumStoreDictionary : public datastore::IUniqueStoreDictionary {
 public:
     using EnumVector = EnumStoreEnumVector;
     using Index = EnumStoreIndex;

@@ -5,14 +5,14 @@
 #include "buffer_type.h"
 #include "bufferstate.h"
 #include "datastore.h"
-#include "entryref.h"
 #include "entry_comparator_wrapper.h"
+#include "entryref.h"
+#include "i_compaction_context.h"
+#include "i_unique_store_dictionary.h"
 #include "unique_store_add_result.h"
-#include "unique_store_entry.h"
 #include "unique_store_allocator.h"
 #include "unique_store_comparator.h"
-#include "unique_store_dictionary_base.h"
-#include "i_compaction_context.h"
+#include "unique_store_entry.h"
 
 namespace search::datastore {
 
@@ -39,7 +39,7 @@ public:
 private:
     Allocator _allocator;
     DataStoreType &_store;
-    std::unique_ptr<UniqueStoreDictionaryBase> _dict;
+    std::unique_ptr<IUniqueStoreDictionary> _dict;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
