@@ -71,9 +71,7 @@ public class DocumentType extends StructuredDataType {
         type.headerType = headerType.clone();
         type.bodyType = bodyType.clone();
         type.inherits = new ArrayList<>(inherits.size());
-        for (DocumentType inherited : inherits) {
-            type.inherits.add(inherited);
-        }
+        type.inherits.addAll(inherits);
         return type;
     }
 
@@ -415,7 +413,7 @@ public class DocumentType extends StructuredDataType {
      * @return An iterator for iterating the fields in this documenttype.
      */
     public Iterator<Field> fieldIteratorThisTypeOnly() {
-        return new Iterator<Field>() {
+        return new Iterator<>() {
             Iterator<Field> headerIt = headerType.getFields().iterator();
             Iterator<Field> bodyIt = bodyType.getFields().iterator();
 
