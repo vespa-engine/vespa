@@ -18,6 +18,12 @@
 
 namespace search {
 
+namespace {
+
+const uint32_t dummy_enum_value = 0;
+
+}
+
 template <typename EntryType>
 void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
 {
@@ -33,9 +39,9 @@ void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
 template <typename EntryType>
 void
 EnumStoreT<EntryType>::
-insertEntry(char * dst, uint32_t enumValue, uint32_t refCount, Type value)
+insertEntry(char * dst, uint32_t refCount, Type value)
 {
-    memcpy(dst, &enumValue, sizeof(uint32_t));
+    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
     uint32_t pos = sizeof(uint32_t);
     memcpy(dst + pos, &refCount, sizeof(uint32_t));
     pos += sizeof(uint32_t);
@@ -108,14 +114,13 @@ EnumStoreT<EntryType>::deserialize(const void *src, size_t available, Index &idx
     uint64_t offset = buffer.size();
     Index newIdx(offset, activeBufferId);
     char *dst(_store.getEntry<char>(newIdx));
-    memcpy(dst, &_nextEnum, sizeof(uint32_t));
+    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
     uint32_t pos = sizeof(uint32_t);
     uint32_t refCount(0);
     memcpy(dst + pos, &refCount, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     memcpy(dst + pos, src, sz);
     buffer.pushed_back(entrySize);
-    ++_nextEnum;
 
     if (idx.valid()) {
         assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);
@@ -228,7 +233,7 @@ EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
     uint64_t offset = buffer.size();
     newIdx = Index(offset, activeBufferId);
     char * dst = _store.template getEntry<char>(newIdx);
-    this->insertEntry(dst, this->_nextEnum++, 0, value);
+    this->insertEntry(dst, 0, value);
     buffer.pushed_back(entrySize);
     assert(Index::pad(offset) == 0);
 
@@ -317,7 +322,7 @@ EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
         uint64_t offset = state.size();
         Index idx(offset, activeBufferId);
         char * dst = _store.template getEntry<char>(idx);
-        this->insertEntry(dst, this->_nextEnum++, iter->_refCount, iter->_value);
+        this->insertEntry(dst, iter->_refCount, iter->_value);
         state.pushed_back(iter->_sz);
 
         // update DictionaryBuilder with enum index and posting index
@@ -349,7 +354,6 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t freeBufferIdx = _store.getActiveBufferId(TYPE_ID);
     datastore::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
-    uint32_t newEnum = 0;
     // copy entries from active buffer to free buffer
     for (DictionaryIterator iter = dict.begin(); iter.valid(); ++iter) {
         Index activeIdx = iter.getKey();
@@ -370,11 +374,10 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
         Index newIdx = Index(offset, freeBufferIdx);
         char * dst = _store.template getEntry<char>(newIdx);
         // insert entry into free buffer
-        this->insertEntry(dst, newEnum, refCount, value);
+        this->insertEntry(dst, refCount, value);
 #ifdef LOG_ENUM_STORE
-        LOG(info, "performCompaction(): new entry: enum = %u, refCount = %u, value = %s", newEnum, 0, value);
+        LOG(info, "performCompaction(): new entry: refCount = %u, value = %s", 0, value);
 #endif
-        ++newEnum;
         freeBuf.pushed_back(entrySize);
         assert(Index::pad(offset) == 0);
 #ifdef LOG_ENUM_STORE
@@ -390,7 +393,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
 
         old2New[activeIdx] = newIdx;
     }
-    this->postCompact(newEnum);
+    this->postCompact();
 }
 
 

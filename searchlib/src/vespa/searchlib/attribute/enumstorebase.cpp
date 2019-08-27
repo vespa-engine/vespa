@@ -71,7 +71,6 @@ EnumStoreBase::EnumStoreBase(uint64_t initBufferSize, bool hasPostings)
     : _enumDict(nullptr),
       _store(),
       _type(),
-      _nextEnum(0),
       _toHoldBuffers()
 {
     if (hasPostings)
@@ -98,7 +97,6 @@ EnumStoreBase::reset(uint64_t initBufferSize)
     _type.setSizeNeededAndDead(initBufferSize, 0);
     _store.initActiveBuffers();
     _enumDict->onReset();
-    _nextEnum = 0;
 }
 
 uint32_t
@@ -166,10 +164,9 @@ EnumStoreBase::fallbackResize(uint64_t bytesNeeded)
 
 
 void
-EnumStoreBase::postCompact(uint32_t newEnum)
+EnumStoreBase::postCompact()
 {
     _store.finishCompact(_toHoldBuffers);
-    _nextEnum = newEnum;
 }
 
 void
@@ -244,17 +241,6 @@ EnumStoreBase::fixupRefCounts(const EnumVector &hist, Tree &tree)
     }
     assert(!ti.valid());
     freeUnusedEnums(false);
-}
-
-
-void
-EnumStoreBase::writeEnumValues(BufferWriter &writer,
-                               const Index *idxs, size_t count) const
-{
-    for (uint32_t i = 0; i < count; ++i) {
-        uint32_t enumValue = getEnum(idxs[i]);
-        writer.write(&enumValue, sizeof(uint32_t));
-    }
 }
 
 

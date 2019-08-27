@@ -30,9 +30,9 @@ private:
     typedef vespalib::GenerationHandler::generation_t generation_t;
 
     void testIndex();
-    void fillDataBuffer(char * data, uint32_t enumValue, uint32_t refCount,
+    void fillDataBuffer(char * data, uint32_t refCount,
                         const std::string & string);
-    void fillDataBuffer(char * data, uint32_t enumValue, uint32_t refCount,
+    void fillDataBuffer(char * data, uint32_t refCount,
                         uint32_t value);
     void testStringEntry();
     void testNumericEntry();
@@ -74,9 +74,8 @@ private:
     StringVector sortRandomStrings(StringVector & strings);
 
     struct StringEntry {
-        StringEntry(uint32_t e, uint32_t r, const std::string & s) :
-            _enum(e), _refCount(r), _string(s) {}
-        uint32_t _enum;
+        StringEntry(uint32_t r, const std::string & s) :
+            _refCount(r), _string(s) {}
         uint32_t _refCount;
         std::string _string;
     };
@@ -151,17 +150,17 @@ EnumStoreTest::testIndex()
 }
 
 void
-EnumStoreTest::fillDataBuffer(char * data, uint32_t enumValue, uint32_t refCount,
+EnumStoreTest::fillDataBuffer(char * data, uint32_t refCount,
                               const std::string & string)
 {
-    StringEnumStore::insertEntry(data, enumValue, refCount, string.c_str());
+    StringEnumStore::insertEntry(data, refCount, string.c_str());
 }
 
 void
-EnumStoreTest::fillDataBuffer(char * data, uint32_t enumValue, uint32_t refCount,
+EnumStoreTest::fillDataBuffer(char * data, uint32_t refCount,
                               uint32_t value)
 {
-    NumericEnumStore::insertEntry(data, enumValue, refCount, value);
+    NumericEnumStore::insertEntry(data, refCount, value);
 }
 
 void
@@ -169,41 +168,35 @@ EnumStoreTest::testStringEntry()
 {
     {
         char data[9];
-        fillDataBuffer(data, 0, 0, "");
+        fillDataBuffer(data, 0, "");
         StringEnumStore::Entry e(data);
         EXPECT_TRUE(StringEnumStore::getEntrySize("") ==
                    StringEnumStore::alignEntrySize(8 + 1));
 
-        EXPECT_TRUE(e.getEnum() == 0);
         EXPECT_TRUE(e.getRefCount() == 0);
         EXPECT_TRUE(strcmp(e.getValue(), "") == 0);
 
         e.incRefCount();
-        EXPECT_TRUE(e.getEnum() == 0);
         EXPECT_TRUE(e.getRefCount() == 1);
         EXPECT_TRUE(strcmp(e.getValue(), "") == 0);
         e.decRefCount();
-        EXPECT_TRUE(e.getEnum() == 0);
         EXPECT_TRUE(e.getRefCount() == 0);
         EXPECT_TRUE(strcmp(e.getValue(), "") == 0);
     }
     {
         char data[18];
-        fillDataBuffer(data, 10, 5, "enumstore");
+        fillDataBuffer(data, 5, "enumstore");
         StringEnumStore::Entry e(data);
         EXPECT_TRUE(StringEnumStore::getEntrySize("enumstore") ==
                    StringEnumStore::alignEntrySize(8 + 1 + 9));
 
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 5);
         EXPECT_TRUE(strcmp(e.getValue(), "enumstore") == 0);
 
         e.incRefCount();
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 6);
         EXPECT_TRUE(strcmp(e.getValue(), "enumstore") == 0);
         e.decRefCount();
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 5);
         EXPECT_TRUE(strcmp(e.getValue(), "enumstore") == 0);
     }
@@ -214,21 +207,18 @@ EnumStoreTest::testNumericEntry()
 {
     {
         char data[12];
-        fillDataBuffer(data, 10, 20, 30);
+        fillDataBuffer(data, 20, 30);
         NumericEnumStore::Entry e(data);
         EXPECT_TRUE(NumericEnumStore::getEntrySize(30) ==
                    NumericEnumStore::alignEntrySize(8 + 4));
 
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 20);
         EXPECT_TRUE(e.getValue() == 30);
 
         e.incRefCount();
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 21);
         EXPECT_TRUE(e.getValue() == 30);
         e.decRefCount();
-        EXPECT_TRUE(e.getEnum() == 10);
         EXPECT_TRUE(e.getRefCount() == 20);
         EXPECT_TRUE(e.getValue() == 30);
     }
@@ -284,15 +274,12 @@ EnumStoreTest::testFindFolded()
     for (std::string &str : unique) {
         EnumIndex idx;
         ses.addEnum(str.c_str(), idx);
-        EXPECT_TRUE(ses.getLastEnum() == indices.size());
         indices.push_back(idx);
         ses.incRefCount(idx);
         EXPECT_EQUAL(1u, ses.getRefCount(idx));
     }
     ses.freezeTree();
     for (uint32_t i = 0; i < indices.size(); ++i) {
-        uint32_t e = ses.getEnum(indices[i]);
-        EXPECT_EQUAL(i, e);
         EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
     }
@@ -346,17 +333,14 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         indices.push_back(idx);
         offset += EnumStoreType::alignEntrySize(unique[i].size() + 1 + 8);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
-        EXPECT_TRUE(ses.getLastEnum() == i);
     }
     ses.freezeTree();
 
     for (uint32_t i = 0; i < indices.size(); ++i) {
-        uint32_t e = ses.getEnum(indices[i]);
-        EXPECT_EQUAL(i, e);
+        uint32_t e = 0;
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
         EXPECT_EQUAL(1u, ses.findFoldedEnums(unique[i].c_str()).size());
         EXPECT_EQUAL(e, ses.findFoldedEnums(unique[i].c_str())[0]);
-        EXPECT_TRUE(ses.getEnum(datastore::EntryRef(e)) == i);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
         EXPECT_EQUAL(1u, ses.getRefCount(indices[i]));
@@ -472,17 +456,10 @@ EnumStoreTest::testCompaction(bool hasPostings)
 
     EXPECT_NOT_EQUAL(old_compaction_count, data_store_base.get_compaction_count());
 
-    EXPECT_EQUAL(3u, ses.getLastEnum());
-
     // add new unique strings
     ses.addEnum("enum05", idx);
-    EXPECT_EQUAL(4u, ses.getEnum(idx));
     ses.addEnum("enum06", idx);
-    EXPECT_EQUAL(5u, ses.getEnum(idx));
     ses.addEnum("enum00", idx);
-    EXPECT_EQUAL(6u, ses.getEnum(idx));
-
-    EXPECT_EQUAL(6u, ses.getLastEnum());
 
     // compare old and new indices
     for (uint32_t i = 0; i < indices.size(); ++i) {
@@ -623,10 +600,9 @@ EnumStoreTest::testHoldListAndGeneration()
                 EXPECT_TRUE(ses.findIndex(uniques[j].c_str(), idx));
                 indices.push_back(idx);
                 StringEnumStore::Entry entry = ses.getEntry(idx);
-                EXPECT_TRUE(entry.getEnum() == j);
                 EXPECT_TRUE(entry.getRefCount() == 1);
                 EXPECT_TRUE(strcmp(entry.getValue(), uniques[j].c_str()) == 0);
-                expected.push_back(StringEntry(entry.getEnum(), entry.getRefCount(),
+                expected.push_back(StringEntry(entry.getRefCount(),
                                                std::string(entry.getValue())));
             }
             EXPECT_TRUE(indices.size() == 10);
@@ -897,7 +873,6 @@ EnumStoreTest::checkReaders(const StringEnumStore & ses,
     for (uint32_t i = 0; i < readers.size(); ++i) {
         const Reader & r = readers[i];
         for (uint32_t j = 0; j < r._indices.size(); ++j) {
-            EXPECT_EQUAL(r._expected[j]._enum, ses.getEnum(r._indices[j]));
             EXPECT_TRUE(ses.getValue(r._indices[j], t));
             EXPECT_TRUE(r._expected[j]._string == std::string(t));
         }

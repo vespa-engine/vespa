@@ -48,7 +48,6 @@ void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
         builder.updateRefCount(prevRefCount);
     }
     _enumStore.reset(builder);
-    this->setEnumMax(_enumStore.getLastEnum());
 }
 
 
@@ -61,7 +60,6 @@ EnumAttribute<B>::fillEnum0(const void *src,
     ssize_t sz = _enumStore.deserialize(src, srcLen, eidxs);
     assert(static_cast<size_t>(sz) == srcLen);
     (void) sz;
-    this->setEnumMax(_enumStore.getLastEnum());
 }
 
 
