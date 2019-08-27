@@ -635,7 +635,7 @@ Test::requireThatFlushFailurePreventsSyncTokenUpdate()
     EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
     auto flush_task = flush_target->initFlush(200);
     // Trigger flush failure
-    av->getEnumStoreBase()->get_data_store_base().bump_compaction_count();
+    av->getEnumStoreBase()->get_data_store_base().inc_compaction_count();
     flush_task->run();
     EXPECT_EQUAL(0u, flush_target->getFlushedSerialNum());
 }

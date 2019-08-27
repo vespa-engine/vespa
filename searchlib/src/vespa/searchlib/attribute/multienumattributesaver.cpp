@@ -118,7 +118,7 @@ onSave(IAttributeSaveTarget &saveTarget)
         countWriter.writeCount(handle.size());
         weightWriter.writeWeights(handle);
         datWriter.writeValues(handle);
-        if (((docId & 0xfff) == 0) && compaction_interferred()) {
+        if (((docId % 0x1000) == 0) && compaction_interferred()) {
             compaction_broke_save = true;
             break;
         }

@@ -513,7 +513,7 @@ EnumeratedSaveTest::saveMemDuringCompaction(AttributeVector &v)
     if (enum_store_base != nullptr) {
         auto saver = v.onInitSave(v.getBaseFileName());
         // Simulate compaction
-        enum_store_base->get_data_store_base().bump_compaction_count();
+        enum_store_base->get_data_store_base().inc_compaction_count();
         auto save_result = saver->save(*res);
         EXPECT_EQUAL(!v.hasMultiValue(), save_result);
     }

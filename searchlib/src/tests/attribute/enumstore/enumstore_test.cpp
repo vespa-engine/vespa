@@ -459,6 +459,9 @@ EnumStoreTest::testCompaction(bool hasPostings)
     EXPECT_TRUE(!ses.findIndex("enum00", idx));
     EXPECT_EQUAL(entrySize + RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
+    auto &data_store_base = ses.get_data_store_base();
+    auto old_compaction_count = data_store_base.get_compaction_count();
+
     // perform compaction
     EnumStoreBase::EnumIndexMap old2New;
     EXPECT_TRUE(ses.performCompaction(3 * entrySize, old2New));
@@ -466,6 +469,8 @@ EnumStoreTest::testCompaction(bool hasPostings)
     EXPECT_TRUE(ses.getBuffer(1).remaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).size() == entrySize * 4);
     EXPECT_TRUE(ses.getBuffer(1).getDeadElems() == 0);
+
+    EXPECT_NOT_EQUAL(old_compaction_count, data_store_base.get_compaction_count());
 
     EXPECT_EQUAL(3u, ses.getLastEnum());
 

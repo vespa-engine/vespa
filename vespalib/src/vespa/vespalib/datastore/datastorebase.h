@@ -358,7 +358,7 @@ public:
     uint32_t startCompactWorstBuffer(uint32_t typeId);
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
-    void bump_compaction_count() const { ++_compaction_count; }
+    void inc_compaction_count() const { ++_compaction_count; }
 };
 
 }
