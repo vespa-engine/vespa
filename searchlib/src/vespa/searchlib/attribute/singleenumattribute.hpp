@@ -91,7 +91,6 @@ SingleValueEnumAttribute<B>::onCommit()
     this->_changes.clear();
     updater.commit();
     freezeEnumDictionary();
-    this->setEnumMax(this->_enumStore.getLastEnum());
     std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
 }

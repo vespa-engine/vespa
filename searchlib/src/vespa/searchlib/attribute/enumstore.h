@@ -91,7 +91,7 @@ public:
         Type getValue() const;
         static uint32_t fixedSize() { return EntryBase::size() + EntryType::fixedSize(); }
     };
-    static void insertEntry(char * dst, uint32_t enumValue, uint32_t refCount, Type value);
+    static void insertEntry(char * dst, uint32_t refCount, Type value);
 
 private:
     EnumStoreT(const EnumStoreT & rhs) = delete;

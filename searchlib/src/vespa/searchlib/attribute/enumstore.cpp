@@ -67,14 +67,13 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     uint64_t offset = buffer.size();
     Index newIdx(offset, activeBufferId);
     char *dst(_store.getEntry<char>(newIdx));
-    memcpy(dst, &_nextEnum, sizeof(uint32_t));
+    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
     uint32_t pos = sizeof(uint32_t);
     uint32_t refCount(0);
     memcpy(dst + pos, &refCount, sizeof(uint32_t));
     pos += sizeof(uint32_t);
     memcpy(dst + pos, src, sz);
     buffer.pushed_back(entrySize);
-    ++_nextEnum;
 
     if (idx.valid()) {
         assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);

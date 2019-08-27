@@ -76,7 +76,6 @@ convertMemoryUsageToSlime(const MemoryUsage &usage, Cursor &object)
 void
 convertEnumStoreToSlime(const EnumStoreBase &enumStore, Cursor &object)
 {
-    object.setLong("lastEnum", enumStore.getLastEnum());
     object.setLong("numUniques", enumStore.getNumUniques());
     convertMemoryUsageToSlime(enumStore.getMemoryUsage(), object.setObject("memoryUsage"));
     convertMemoryUsageToSlime(enumStore.getTreeMemoryUsage(), object.setObject("treeMemoryUsage"));

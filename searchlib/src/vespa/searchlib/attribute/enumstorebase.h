@@ -158,10 +158,6 @@ public:
     public:
         EntryBase(void * data) : _data(static_cast<char *>(data)) {}
 
-        uint32_t getEnum() const {
-            return *reinterpret_cast<uint32_t *>(_data);
-        }
-
         uint32_t getRefCount() const {
             return *(reinterpret_cast<uint32_t *>(_data) + 1);
         }
@@ -174,11 +170,6 @@ public:
         void decRefCount() {
             uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
             --(*dst);
-        }
-
-        void setEnum(uint32_t enumValue) {
-            uint32_t *dst = reinterpret_cast<uint32_t *>(_data);
-            *dst = enumValue;
         }
 
         void setRefCount(uint32_t refCount) {
@@ -223,7 +214,6 @@ protected:
     EnumStoreDictBase    *_enumDict;
     DataStoreType         _store;
     EnumBufferType        _type;
-    uint32_t              _nextEnum;
     std::vector<uint32_t> _toHoldBuffers; // used during compaction
 
     static const uint32_t TYPE_ID = 0;
@@ -246,14 +236,13 @@ protected:
     }
 
     uint32_t getBufferIndex(datastore::BufferState::State status);
-    void postCompact(uint32_t newEnum);
+    void postCompact();
     bool preCompact(uint64_t bytesNeeded);
 
 public:
     void reset(uint64_t initBufferSize);
 
     uint32_t getRefCount(Index idx) const { return getEntryBase(idx).getRefCount(); }
-    uint32_t getEnum(Index idx)     const { return getEntryBase(idx).getEnum(); }
     void incRefCount(Index idx)           { getEntryBase(idx).incRefCount(); }
     void decRefCount(Index idx)           { getEntryBase(idx).decRefCount(); }
     
@@ -265,7 +254,6 @@ public:
     template <typename Tree>
     void fixupRefCounts(const EnumVector &hist, Tree &tree);
 
-    uint32_t getLastEnum()          const { return _nextEnum ? _nextEnum - 1 : _nextEnum; }
     uint32_t getNumUniques() const { return _enumDict->getNumUniques(); }
 
     uint32_t getRemaining() const {
@@ -293,8 +281,6 @@ public:
     void clearPendingCompact() { _type.clearPendingCompact(); }
 
     virtual void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const = 0;
-
-    void writeEnumValues(BufferWriter &writer, const Index *idxs, size_t count) const;
 
     virtual ssize_t deserialize(const void *src, size_t available, size_t &initSpace) = 0;
     virtual ssize_t deserialize(const void *src, size_t available, Index &idx) = 0;
