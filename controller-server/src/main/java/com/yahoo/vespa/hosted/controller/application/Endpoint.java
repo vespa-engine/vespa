@@ -309,5 +309,7 @@ public class Endpoint {
             }
             return new Endpoint(name, application, zone, system, port, legacy, directRouting, wildcard);
         }
+
     }
+
 }
