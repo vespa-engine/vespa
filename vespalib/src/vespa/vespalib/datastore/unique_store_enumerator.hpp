@@ -9,8 +9,9 @@ namespace search::datastore {
 template <typename RefT>
 UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store)
     : _dict(dict),
-      _root(_dict.get_frozen_root()),
+      _frozen_root(_dict.get_frozen_root()),
       _store(store),
+      _enumValues(),
       _next_enum_val(1)
 {
 }
@@ -45,7 +46,14 @@ UniqueStoreEnumerator<RefT>::enumerateValues()
         }
     }
     _next_enum_val = 1;
-    _dict.foreach_key(_root, [this](EntryRef ref) { enumerateValue(ref); });
+    _dict.foreach_key(_frozen_root, [this](EntryRef ref) { enumerateValue(ref); });
+}
+
+template <typename RefT>
+void
+UniqueStoreEnumerator<RefT>::clear()
+{
+    EnumValues().swap(_enumValues);
 }
 
 }

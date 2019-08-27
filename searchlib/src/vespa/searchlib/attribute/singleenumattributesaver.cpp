@@ -17,7 +17,7 @@ SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                               const EnumStoreBase &enumStore)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
-      _enumSaver(enumStore, false)
+      _enumSaver(enumStore)
 {
 }
 
@@ -31,14 +31,21 @@ bool
 SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
     _enumSaver.writeUdat(saveTarget);
-    const EnumStoreBase &enumStore = _enumSaver.getEnumStore();
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().
                                                     allocBufferWriter());
     assert(saveTarget.getEnumerated());
-    enumStore.writeEnumValues(*datWriter,
-                              &_indices[0], _indices.size());
+    auto &enumerator = _enumSaver.get_enumerator();
+    enumerator.enumerateValues();
+    for (auto ref : _indices) {
+        uint32_t enumValue = enumerator.mapEntryRefToEnumValue(ref);
+        assert(enumValue != 0u);
+        // Enumerator enumerates known entry refs (based on dictionary tree)
+        // to values >= 1, but file format starts enumeration at 0.
+        --enumValue;
+        datWriter->write(&enumValue, sizeof(uint32_t));
+    }
     datWriter->flush();
-    _enumSaver.enableReEnumerate();
+    _enumSaver.clear();
     return true;
 }
 

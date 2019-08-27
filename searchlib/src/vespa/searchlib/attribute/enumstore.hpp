@@ -349,7 +349,6 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t freeBufferIdx = _store.getActiveBufferId(TYPE_ID);
     datastore::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
-    bool disabledReEnumerate = _disabledReEnumerate;
     uint32_t newEnum = 0;
     // copy entries from active buffer to free buffer
     for (DictionaryIterator iter = dict.begin(); iter.valid(); ++iter) {
@@ -365,11 +364,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
 #endif
         Type value = e.getValue();
         uint32_t refCount = e.getRefCount();
-        uint32_t oldEnum = e.getEnum();
         uint32_t entrySize = this->getEntrySize(value);
-        if (disabledReEnumerate) {
-            newEnum = oldEnum; // use old enum value
-        }
 
         uint64_t offset = freeBuf.size();
         Index newIdx = Index(offset, freeBufferIdx);
@@ -379,9 +374,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
 #ifdef LOG_ENUM_STORE
         LOG(info, "performCompaction(): new entry: enum = %u, refCount = %u, value = %s", newEnum, 0, value);
 #endif
-        if (!disabledReEnumerate) {
-            ++newEnum;
-        }
+        ++newEnum;
         freeBuf.pushed_back(entrySize);
         assert(Index::pad(offset) == 0);
 #ifdef LOG_ENUM_STORE
@@ -396,9 +389,6 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2Ne
         iter.writeKey(newIdx);
 
         old2New[activeIdx] = newIdx;
-    }
-    if (disabledReEnumerate) {
-        newEnum = this->_nextEnum; // use old range of enum values
     }
     this->postCompact(newEnum);
 }

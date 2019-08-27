@@ -72,8 +72,7 @@ EnumStoreBase::EnumStoreBase(uint64_t initBufferSize, bool hasPostings)
       _store(),
       _type(),
       _nextEnum(0),
-      _toHoldBuffers(),
-      _disabledReEnumerate(false)
+      _toHoldBuffers()
 {
     if (hasPostings)
         _enumDict = new EnumStoreDict<EnumPostingTree>(*this);
@@ -167,22 +166,6 @@ EnumStoreBase::fallbackResize(uint64_t bytesNeeded)
 
 
 void
-EnumStoreBase::disableReEnumerate() const
-{
-    assert(!_disabledReEnumerate);
-    _disabledReEnumerate = true;
-}
-
-
-void
-EnumStoreBase::enableReEnumerate() const
-{
-    assert(_disabledReEnumerate);
-    _disabledReEnumerate = false;
-}
-
-
-void
 EnumStoreBase::postCompact(uint32_t newEnum)
 {
     _store.finishCompact(_toHoldBuffers);
@@ -194,24 +177,6 @@ EnumStoreBase::failNewSize(uint64_t minNewSize, uint64_t maxSize)
 {
     throw vespalib::IllegalStateException(vespalib::make_string("EnumStoreBase::failNewSize: Minimum new size (%" PRIu64 ") exceeds max size (%" PRIu64 ")", minNewSize, maxSize));
 }
-
-template <class Tree>
-void
-EnumStoreBase::reEnumerate(const Tree &tree)
-{
-    typedef typename Tree::Iterator Iterator;
-    Iterator it(tree.begin());
-    uint32_t enumValue = 0;
-    while (it.valid()) {
-        EntryBase eb(getEntryBase(it.getKey()));
-        eb.setEnum(enumValue);
-        ++enumValue;
-        ++it;
-    }
-    _nextEnum = enumValue;
-    std::atomic_thread_fence(std::memory_order_release);
-}
-
 
 ssize_t
 EnumStoreBase::deserialize0(const void *src,
@@ -320,13 +285,6 @@ uint32_t
 EnumStoreDict<Dictionary>::getNumUniques() const
 {
     return this->_dict.size();
-}
-
-template <typename Dictionary>
-void
-EnumStoreDict<Dictionary>::reEnumerate()
-{
-    _enumStore.reEnumerate(this->_dict);
 }
 
 template <typename Dictionary>
@@ -550,14 +508,6 @@ EnumStoreDict<Dictionary>::hasData() const
 
 
 template class datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
-
-template
-void
-EnumStoreBase::reEnumerate<EnumTree>(const EnumTree &tree);
-
-template
-void
-EnumStoreBase::reEnumerate<EnumPostingTree>(const EnumPostingTree &tree);
 
 template
 ssize_t
