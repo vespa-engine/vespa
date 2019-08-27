@@ -6,6 +6,7 @@ package ai.vespa.metricsproxy.http;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import static ai.vespa.metricsproxy.http.RestApiUtil.resourceListResponse;
+import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
@@ -59,7 +61,8 @@ public class MetricsHandler extends ThreadedHttpRequestHandler {
 
     private JsonResponse valuesResponse(HttpRequest request) {
         try {
-            return new JsonResponse(OK, valuesFetcher.fetch(request.getProperty("consumer")));
+            List<MetricsPacket> metrics =  valuesFetcher.fetch(request.getProperty("consumer"));
+            return new JsonResponse(OK, toGenericJsonModel(metrics).serialize());
         } catch (JsonRenderingException e) {
             return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
