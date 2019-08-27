@@ -6,7 +6,7 @@
 
 namespace search::datastore {
 
-class UniqueStoreDictionaryBase;
+class IUniqueStoreDictionary;
 
 /**
  * Builder for related UniqueStore class.
@@ -19,12 +19,12 @@ template <typename Allocator>
 class UniqueStoreBuilder {
     using EntryType = typename Allocator::EntryType;
 
-    Allocator &_allocator;
-    UniqueStoreDictionaryBase &_dict;
+    Allocator& _allocator;
+    IUniqueStoreDictionary& _dict;
     std::vector<EntryRef> _refs;
     std::vector<uint32_t> _refCounts;
 public:
-    UniqueStoreBuilder(Allocator& allocator, UniqueStoreDictionaryBase& dict, uint32_t uniqueValuesHint);
+    UniqueStoreBuilder(Allocator& allocator, IUniqueStoreDictionary& dict, uint32_t uniqueValuesHint);
     ~UniqueStoreBuilder();
     void setupRefCounts();
     void makeDictionary();

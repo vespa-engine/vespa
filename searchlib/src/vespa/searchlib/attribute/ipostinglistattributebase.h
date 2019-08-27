@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchcommon/attribute/iattributevector.h>
+
 namespace vespalib { class MemoryUsage; }
 
 namespace search::attribute {

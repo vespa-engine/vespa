@@ -3,13 +3,13 @@
 #pragma once
 
 #include "unique_store_builder.h"
-#include "unique_store_dictionary_base.h"
+#include "i_unique_store_dictionary.h"
 #include "datastore.hpp"
 
 namespace search::datastore {
 
 template <typename Allocator>
-UniqueStoreBuilder<Allocator>::UniqueStoreBuilder(Allocator& allocator, UniqueStoreDictionaryBase& dict, uint32_t uniqueValuesHint)
+UniqueStoreBuilder<Allocator>::UniqueStoreBuilder(Allocator& allocator, IUniqueStoreDictionary& dict, uint32_t uniqueValuesHint)
     : _allocator(allocator),
       _dict(dict),
       _refs(),

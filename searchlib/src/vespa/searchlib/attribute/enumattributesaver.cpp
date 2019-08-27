@@ -24,7 +24,7 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
     if (saveTarget.getEnumerated()) {
         std::unique_ptr<BufferWriter>
             udatWriter(saveTarget.udatWriter().allocBufferWriter());
-        const EnumStoreDictBase &enumDict = _enumStore.getEnumStoreDict();
+        const auto& enumDict = _enumStore.getEnumStoreDict();
         enumDict.writeAllValues(*udatWriter, _enumerator.get_frozen_root());
         udatWriter->flush();
     }

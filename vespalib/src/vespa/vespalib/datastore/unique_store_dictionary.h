@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/btree/btree.h>
-#include "unique_store_dictionary_base.h"
+#include "i_unique_store_dictionary.h"
 
 #pragma once
 
@@ -12,7 +12,7 @@ class EntryComparatorWrapper;
 /**
  * A dictionary for unique store. Mostly accessed via base class.
  */
-template <typename DictionaryT, typename ParentT = UniqueStoreDictionaryBase>
+template <typename DictionaryT, typename ParentT = IUniqueStoreDictionary>
 class UniqueStoreDictionary : public ParentT {
 protected:
     using DictionaryType = DictionaryT;

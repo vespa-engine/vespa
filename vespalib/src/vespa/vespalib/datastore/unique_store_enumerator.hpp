@@ -7,7 +7,7 @@
 namespace search::datastore {
 
 template <typename RefT>
-UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store)
+UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store)
     : _dict_snapshot(dict.get_read_snapshot()),
       _store(store),
       _enumValues(),

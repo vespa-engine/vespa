@@ -274,9 +274,9 @@ void
 EnumStoreT<EntryType>::addEnum(Type value, Index & newIdx)
 {
     if (_enumDict->hasData()) {
-        addEnum(value, newIdx, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
+        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary());
     } else {
-        addEnum(value, newIdx, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
+        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary());
     }
 }
 
@@ -339,9 +339,9 @@ void
 EnumStoreT<EntryType>::reset(Builder &builder)
 {
     if (_enumDict->hasData()) {
-        reset(builder, static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary());
+        reset(builder, static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary());
     } else {
-        reset(builder, static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary());
+        reset(builder, static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary());
     }
 }
 
@@ -405,9 +405,9 @@ EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded, EnumIndexMap & ol
         return false;
     }
     if (_enumDict->hasData()) {
-        performCompaction(static_cast<EnumStoreDict<EnumPostingTree> *>(_enumDict)->getDictionary(), old2New);
+        performCompaction(static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary(), old2New);
     } else {
-        performCompaction(static_cast<EnumStoreDict<EnumTree> *>(_enumDict)->getDictionary(), old2New);
+        performCompaction(static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary(), old2New);
     }
     return true;
 }

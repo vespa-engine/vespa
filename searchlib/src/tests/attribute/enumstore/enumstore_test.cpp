@@ -361,10 +361,8 @@ void
 EnumStoreTest::testUniques
 (const EnumStoreType &ses, const std::vector<std::string> &unique)
 {
-    const EnumStoreDict<Dictionary> *enumDict =
-        dynamic_cast<const EnumStoreDict<Dictionary> *>
-        (&ses.getEnumStoreDict());
-    assert(enumDict != NULL);
+    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<Dictionary> *>(&ses.getEnumStoreDict());
+    assert(enumDict != nullptr);
     const Dictionary &dict = enumDict->getDictionary();
     uint32_t i = 0;
     EnumIndex idx;

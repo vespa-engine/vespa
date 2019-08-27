@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "unique_store_dictionary_base.h"
+#include "i_unique_store_dictionary.h"
 
 namespace search::datastore {
 
@@ -19,12 +19,12 @@ public:
     using EnumValues = std::vector<std::vector<uint32_t>>;
 
 private:
-    UniqueStoreDictionaryBase::ReadSnapshot::UP _dict_snapshot;
+    IUniqueStoreDictionary::ReadSnapshot::UP _dict_snapshot;
     const DataStoreBase &_store;
     EnumValues _enumValues;
     uint32_t _next_enum_val;
 public:
-    UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
+    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store);
     ~UniqueStoreEnumerator();
     EntryRef get_frozen_root() const { return _dict_snapshot->get_frozen_root(); }
     void enumerateValue(EntryRef ref);

@@ -2,9 +2,9 @@
 
 #pragma once
 
-namespace search::datastore {
+#include "entryref.h"
 
-class EntryRef;
+namespace search::datastore {
 
 /*
  * Compare two entries based on entry refs.  Valid entry ref is mapped

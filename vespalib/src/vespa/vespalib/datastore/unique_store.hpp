@@ -82,7 +82,7 @@ private:
                                     EntryComparatorWrapper,
                                     DictionaryTraits>;
     DataStoreBase &_dataStore;
-    UniqueStoreDictionaryBase &_dict;
+    IUniqueStoreDictionary &_dict;
     ICompactable &_store;
     std::vector<uint32_t> _bufferIdsToCompact;
     std::vector<std::vector<EntryRef>> _mapping;
@@ -121,7 +121,7 @@ private:
 
 public:
     CompactionContext(DataStoreBase &dataStore,
-                      UniqueStoreDictionaryBase &dict,
+                      IUniqueStoreDictionary &dict,
                       ICompactable &store,
                       std::vector<uint32_t> bufferIdsToCompact)
         : ICompactionContext(),

@@ -15,7 +15,7 @@ class UniqueStoreAddResult;
 /**
  * Interface class for unique store dictionary.
  */
-class UniqueStoreDictionaryBase {
+class IUniqueStoreDictionary {
 public:
     /**
      * Class that provides a read snapshot of the dictionary.
@@ -34,7 +34,7 @@ public:
     };
 
     using generation_t = vespalib::GenerationHandler::generation_t;
-    virtual ~UniqueStoreDictionaryBase() = default;
+    virtual ~IUniqueStoreDictionary() = default;
     virtual void freeze() = 0;
     virtual void transfer_hold_lists(generation_t generation) = 0;
     virtual void trim_hold_lists(generation_t firstUsed) = 0;

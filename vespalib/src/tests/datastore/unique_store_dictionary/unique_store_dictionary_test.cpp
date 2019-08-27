@@ -32,7 +32,7 @@ public:
 
 struct DictionaryReadTest : public ::testing::Test {
     DefaultUniqueStoreDictionary dict;
-    UniqueStoreDictionaryBase::ReadSnapshot::UP snapshot;
+    IUniqueStoreDictionary::ReadSnapshot::UP snapshot;
 
     DictionaryReadTest()
         : dict(),

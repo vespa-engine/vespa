@@ -3,6 +3,7 @@
 #pragma once
 
 #include "enumstore.h"
+#include <vespa/vespalib/datastore/entry_comparator.h>
 
 namespace search {
 
