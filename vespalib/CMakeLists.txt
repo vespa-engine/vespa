@@ -42,6 +42,7 @@ vespa_define_module(
     src/tests/datastore/buffer_type
     src/tests/datastore/datastore
     src/tests/datastore/unique_store
+    src/tests/datastore/unique_store_dictionary
     src/tests/datastore/unique_store_string_allocator
     src/tests/delegatelist
     src/tests/dotproduct

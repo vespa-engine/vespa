@@ -19,24 +19,22 @@ public:
     using EnumValues = std::vector<std::vector<uint32_t>>;
 
 private:
-    const UniqueStoreDictionaryBase &_dict;
-    EntryRef _frozen_root;
+    UniqueStoreDictionaryBase::ReadSnapshot::UP _dict_snapshot;
     const DataStoreBase &_store;
     EnumValues _enumValues;
     uint32_t _next_enum_val;
 public:
     UniqueStoreEnumerator(const UniqueStoreDictionaryBase &dict, const DataStoreBase &store);
     ~UniqueStoreEnumerator();
-    EntryRef get_frozen_root() const { return _frozen_root; }
+    EntryRef get_frozen_root() const { return _dict_snapshot->get_frozen_root(); }
     void enumerateValue(EntryRef ref);
     void enumerateValues();
     void clear();
 
     template <typename Function>
     void
-    foreach_key(Function &&func) const
-    {
-        _dict.foreach_key(_frozen_root, func);
+    foreach_key(Function &&func) const {
+        _dict_snapshot->foreach_key(func);
     }
 
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {

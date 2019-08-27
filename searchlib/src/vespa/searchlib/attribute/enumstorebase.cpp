@@ -435,37 +435,6 @@ EnumStoreDict<Dictionary>::onReset()
     this->_dict.clear();
 }
 
-template <typename Dictionary>
-uint32_t
-EnumStoreDict<Dictionary>::lookupFrozenTerm(BTreeNode::Ref frozenRootRef,
-                                            const datastore::EntryComparator &comp) const
-{
-    typename Dictionary::ConstIterator itr(BTreeNode::Ref(),
-                                           this->_dict.getAllocator());
-    itr.lower_bound(frozenRootRef, Index(), comp);
-    if (itr.valid() && !comp(Index(), itr.getKey())) {
-        return 1u;
-    }
-    return 0u;
-}
-
-template <typename Dictionary>
-uint32_t
-EnumStoreDict<Dictionary>::
-lookupFrozenRange(BTreeNode::Ref frozenRootRef,
-                  const datastore::EntryComparator &low,
-                  const datastore::EntryComparator &high) const
-{
-    typename Dictionary::ConstIterator lowerDictItr(BTreeNode::Ref(),
-                                                    this->_dict.getAllocator());
-    lowerDictItr.lower_bound(frozenRootRef, Index(), low);
-    auto upperDictItr = lowerDictItr;
-    if (upperDictItr.valid() && !high(Index(), upperDictItr.getKey())) {
-        upperDictItr.seekPast(Index(), high);
-    }
-    return upperDictItr - lowerDictItr;
-}
-
 
 template <>
 EnumPostingTree &

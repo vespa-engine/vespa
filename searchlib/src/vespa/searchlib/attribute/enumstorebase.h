@@ -81,13 +81,6 @@ public:
     virtual void onReset() = 0;
     virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
 
-    virtual uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                                      const datastore::EntryComparator &comp) const = 0;
-
-    virtual uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                                       const datastore::EntryComparator &low,
-                                       const datastore::EntryComparator &high) const = 0;
-
     virtual EnumPostingTree &getPostingDictionary() = 0;
     virtual const EnumPostingTree &getPostingDictionary() const = 0;
     virtual bool hasData() const = 0;
@@ -138,13 +131,6 @@ public:
 
     void onReset() override;
     btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
-
-    uint32_t lookupFrozenTerm(btree::BTreeNode::Ref frozenRootRef,
-                              const datastore::EntryComparator &comp) const override;
-
-    uint32_t lookupFrozenRange(btree::BTreeNode::Ref frozenRootRef,
-                               const datastore::EntryComparator &low,
-                               const datastore::EntryComparator &high) const override;
 
     EnumPostingTree & getPostingDictionary() override;
     const EnumPostingTree & getPostingDictionary() const override;
