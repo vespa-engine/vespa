@@ -10,7 +10,7 @@ using btree::BTreeNode;
 using fef::TermFieldMatchData;
 
 EnumHintSearchContext::
-EnumHintSearchContext(const EnumStoreDictBase &dictionary,
+EnumHintSearchContext(const IEnumStoreDictionary &dictionary,
                       uint32_t docIdLimit,
                       uint64_t numValues)
     : _dict_snapshot(dictionary.get_read_snapshot()),

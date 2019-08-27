@@ -2,12 +2,10 @@
 
 #pragma once
 
+#include "enum_store_dictionary.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/datastore/datastore.h>
-#include <vespa/vespalib/datastore/entry_comparator_wrapper.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/datastore/unique_store_dictionary.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/array.h>
@@ -22,127 +20,13 @@ class BufferWriter;
 
 namespace attribute { class Status; }
 
-class EnumStoreBase;
-
 using EnumStoreComparator = datastore::EntryComparator;
-using EnumStoreDataStoreType = datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
-using EnumStoreIndex = EnumStoreDataStoreType::RefType;
-using EnumStoreIndexVector = vespalib::Array<EnumStoreIndex>;
-using EnumStoreEnumVector = vespalib::Array<uint32_t>;
-
-using EnumTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
-
-using EnumTree = btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
-                              btree::NoAggregated,
-                              const datastore::EntryComparatorWrapper,
-                              EnumTreeTraits>;
-
-using EnumPostingTree = btree::BTree<EnumStoreIndex, datastore::EntryRef,
-                                     btree::NoAggregated,
-                                     const datastore::EntryComparatorWrapper,
-                                     EnumTreeTraits>;
-
-struct CompareEnumIndex
-{
-    using Index = EnumStoreIndex;
-
-    bool operator()(const Index &lhs, const Index &rhs) const {
-        return lhs.ref() < rhs.ref();
-    }
-};
-
-class EnumStoreDictBase : public datastore::UniqueStoreDictionaryBase {
-public:
-    using EnumVector = EnumStoreEnumVector;
-    using Index = EnumStoreIndex;
-    using IndexSet = std::set<Index, CompareEnumIndex>;
-    using IndexVector = EnumStoreIndexVector;
-    using generation_t = vespalib::GenerationHandler::generation_t;
-
-public:
-    EnumStoreDictBase();
-    virtual ~EnumStoreDictBase();
-
-    virtual uint32_t getNumUniques() const = 0;
-    virtual void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const = 0;
-    virtual ssize_t deserialize(const void *src, size_t available, IndexVector &idx) = 0;
-
-    virtual void fixupRefCounts(const EnumVector &hist) = 0;
-    virtual void freeUnusedEnums(const datastore::EntryComparator &cmp,
-                                 const datastore::EntryComparator *fcmp) = 0;
-    virtual void freeUnusedEnums(const IndexSet& toRemove,
-                                 const datastore::EntryComparator& cmp,
-                                 const datastore::EntryComparator* fcmp) = 0;
-    virtual bool findIndex(const datastore::EntryComparator &cmp, Index &idx) const = 0;
-    virtual bool findFrozenIndex(const datastore::EntryComparator &cmp, Index &idx) const = 0;
-    virtual std::vector<attribute::IAttributeVector::EnumHandle>
-    findMatchingEnums(const datastore::EntryComparator &cmp) const = 0;
-
-    virtual void onReset() = 0;
-    virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
-
-    virtual EnumPostingTree &getPostingDictionary() = 0;
-    virtual const EnumPostingTree &getPostingDictionary() const = 0;
-    virtual bool hasData() const = 0;
-};
-
-
-template <typename Dictionary>
-class EnumStoreDict : public datastore::UniqueStoreDictionary<Dictionary, EnumStoreDictBase>
-{
-private:
-    using EnumVector = EnumStoreDictBase::EnumVector;
-    using Index = EnumStoreDictBase::Index;
-    using IndexSet = EnumStoreDictBase::IndexSet;
-    using IndexVector = EnumStoreDictBase::IndexVector;
-    using ParentUniqueStoreDictionary = datastore::UniqueStoreDictionary<Dictionary, EnumStoreDictBase>;
-    using generation_t = EnumStoreDictBase::generation_t;
-
-    EnumStoreBase& _enumStore;
-
-public:
-    EnumStoreDict(EnumStoreBase &enumStore);
-
-    ~EnumStoreDict() override;
-
-    const Dictionary &getDictionary() const { return this->_dict; }
-    Dictionary &getDictionary() { return this->_dict; }
-    
-    uint32_t getNumUniques() const override;
-    void writeAllValues(BufferWriter &writer, btree::BTreeNode::Ref rootRef) const override;
-    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override;
-    void fixupRefCounts(const EnumVector &hist) override;
-
-    void removeUnusedEnums(const IndexSet &unused,
-                           const datastore::EntryComparator &cmp,
-                           const datastore::EntryComparator *fcmp);
-
-    void freeUnusedEnums(const datastore::EntryComparator &cmp,
-                         const datastore::EntryComparator *fcmp) override;
-
-    void freeUnusedEnums(const IndexSet& toRemove,
-                         const datastore::EntryComparator& cmp,
-                         const datastore::EntryComparator* fcmp) override;
-
-    bool findIndex(const datastore::EntryComparator &cmp, Index &idx) const override;
-    bool findFrozenIndex(const datastore::EntryComparator &cmp, Index &idx) const override;
-    std::vector<attribute::IAttributeVector::EnumHandle>
-    findMatchingEnums(const datastore::EntryComparator &cmp) const override;
-
-    void onReset() override;
-    btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
-
-    EnumPostingTree & getPostingDictionary() override;
-    const EnumPostingTree & getPostingDictionary() const override;
-
-    bool hasData() const override;
-};
 
 
 class EnumStoreBase
 {
 public:
-    using DataStoreType = EnumStoreDataStoreType;
+    using DataStoreType = datastore::DataStoreT<EnumStoreIndex>;
     using EnumHandle = attribute::IAttributeVector::EnumHandle;
     using EnumVector = EnumStoreEnumVector;
     using Index = EnumStoreIndex;
@@ -211,7 +95,7 @@ protected:
         void clearPendingCompact() { _pendingCompact = false; }
     };
 
-    EnumStoreDictBase    *_enumDict;
+    IEnumStoreDictionary    *_enumDict;
     DataStoreType         _store;
     EnumBufferType        _type;
     std::vector<uint32_t> _toHoldBuffers; // used during compaction
@@ -304,8 +188,8 @@ public:
 
     virtual bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) = 0;
 
-    EnumStoreDictBase &getEnumStoreDict() { return *_enumDict; }
-    const EnumStoreDictBase &getEnumStoreDict() const { return *_enumDict; }
+    IEnumStoreDictionary &getEnumStoreDict() { return *_enumDict; }
+    const IEnumStoreDictionary &getEnumStoreDict() const { return *_enumDict; }
     EnumPostingTree &getPostingDictionary() { return _enumDict->getPostingDictionary(); }
 
     const EnumPostingTree &getPostingDictionary() const {
@@ -316,100 +200,8 @@ public:
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStoreBase::Index & idx);
 
-
 extern template
-class datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
+class datastore::DataStoreT<EnumStoreIndex>;
 
-extern template
-class btree::BTreeNodeT<EnumStoreBase::Index, EnumTreeTraits::INTERNAL_SLOTS>;
-
-extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
-
-extern template
-class btree::BTreeNodeTT<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeInternalNode<EnumStoreBase::Index, btree::NoAggregated, EnumTreeTraits::INTERNAL_SLOTS>;
-
-extern template
-class btree::BTreeLeafNode<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNode<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNodeTemp<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeLeafNodeTemp<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeStore<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeStore<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                            EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeRoot<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeRoot<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                       const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeRootT<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeRootT<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                        const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeRootBase<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeRootBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeAllocator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-extern template
-class btree::BTreeNodeAllocator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                                EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
-
-
-extern template
-class btree::BTreeIteratorBase<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
-extern template
-class btree::BTreeIteratorBase<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                               EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS, EnumTreeTraits::PATH_SIZE>;
-
-extern template class btree::BTreeConstIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                                                const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template class btree::BTreeConstIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                                                const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTreeIterator<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-extern template
-class btree::BTreeIterator<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                           const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-
-extern template
-class btree::BTree<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
-extern template
-class btree::BTree<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
-                   const datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 }

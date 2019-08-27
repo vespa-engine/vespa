@@ -39,6 +39,7 @@ vespa_add_library(searchlib_attribute OBJECT
     enumattributesaver.cpp
     enumcomparator.cpp
     enumhintsearchcontext.cpp
+    enum_store_dictionary.cpp
     enumstore.cpp
     enumstorebase.cpp
     extendableattributes.cpp

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "enum_store_dictionary.h"
 #include "enumstorebase.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/btree/btreenode.h>

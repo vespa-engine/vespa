@@ -2,16 +2,17 @@
 
 #pragma once
 
+#include "dociditerator.h"
+#include "ipostinglistattributebase.h"
+#include "postingchange.h"
+#include "postinglistsearchcontext.h"
+#include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/numericbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/btree/btreestore.h>
-#include "dociditerator.h"
-#include "postinglistsearchcontext.h"
-#include "postingchange.h"
-#include "ipostinglistattributebase.h"
+#include <vespa/vespalib/datastore/entry_comparator.h>
+#include <vespa/vespalib/datastore/entryref.h>
 
 namespace search {
 
@@ -19,9 +20,9 @@ class EnumPostingPair
 {
 private:
     EnumStoreBase::Index _idx;
-    const EnumStoreComparator *_cmp;
+    const datastore::EntryComparator *_cmp;
 public:
-    EnumPostingPair(EnumStoreBase::Index idx, const EnumStoreComparator *cmp)
+    EnumPostingPair(EnumStoreBase::Index idx, const datastore::EntryComparator *cmp)
         : _idx(idx),
           _cmp(cmp)
     { }

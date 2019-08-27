@@ -15,13 +15,13 @@ namespace search::attribute {
 
 class EnumHintSearchContext : public IPostingListSearchContext
 {
-    const EnumStoreDictBase::ReadSnapshot::UP _dict_snapshot;
+    const IEnumStoreDictionary::ReadSnapshot::UP _dict_snapshot;
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint64_t                _numValues; // attr.getStatus().getNumValues();
     
 protected:
-    EnumHintSearchContext(const EnumStoreDictBase &dictionary,
+    EnumHintSearchContext(const IEnumStoreDictionary &dictionary,
                           uint32_t docIdLimit,
                           uint64_t numValues);
     ~EnumHintSearchContext();
