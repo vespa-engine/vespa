@@ -116,7 +116,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
     softDoomedQueries.inc(stats.softDoomed());
-    softDoomFactor.set(stats.softDoomFactor());
     queries.inc(stats.queries());
     queryCollateralTime.addValueBatch(stats.queryCollateralTimeAvg(), stats.queryCollateralTimeCount(),
                                       stats.queryCollateralTimeMin(), stats.queryCollateralTimeMax());
@@ -131,7 +130,6 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
       queries("queries", {}, "Number of queries executed", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
-      softDoomFactor("soft_doom_factor", {}, "Factor used to compute soft-timeout", this),
       queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
@@ -156,6 +154,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
+    softDoomFactor.set(MatchingStats::INITIAL_SOFT_DOOM_FACTOR);
     for (size_t i = 0; i < numDocIdPartitions; ++i) {
         vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
         partitions.push_back(std::make_unique<DocIdPartition>(partition, this));

@@ -133,6 +133,7 @@ private:
     std::vector<Partition> _partitions;
 
 public:
+    static constexpr double INITIAL_SOFT_DOOM_FACTOR = 0.5;
     MatchingStats(const MatchingStats &) = delete;
     MatchingStats & operator = (const MatchingStats &) = delete;
     MatchingStats(MatchingStats &&) = default;
