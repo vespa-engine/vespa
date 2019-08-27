@@ -545,16 +545,17 @@ public class ApplicationController {
     }
 
     private Optional<ApplicationCertificate> getApplicationCertificate(Application application) {
+        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
+                application.id().serializedForm()).value();
+        if (!provisionCertificate) {
+            return Optional.empty();
+        }
+
         // Re-use certificate if already provisioned
         Optional<ApplicationCertificate> applicationCertificate = curator.readApplicationCertificate(application.id());
         if(applicationCertificate.isPresent())
             return applicationCertificate;
 
-        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                            application.id().serializedForm()).value();
-        if (!provisionCertificate) {
-            return Optional.empty();
-        }
         ApplicationCertificate newCertificate = applicationCertificateProvider.requestCaSignedCertificate(application.id());
         curator.writeApplicationCertificate(application.id(), newCertificate);
 
