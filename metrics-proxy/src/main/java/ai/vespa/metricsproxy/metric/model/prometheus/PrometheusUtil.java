@@ -46,9 +46,11 @@ public class PrometheusUtil {
                     labels.add(labelName);
                     labelValues.add(entry.getValue());
                 }
+                labels.add("vespa_service");
+                labelValues.add(serviceName);
 
                 for (var metric : packet.metrics().entrySet()) {
-                    var metricName = serviceName + "_" + Collector.sanitizeMetricName(metric.getKey().id);
+                    var metricName = Collector.sanitizeMetricName(metric.getKey().id);
                     List<Sample> sampleList;
                     if (samples.containsKey(metricName)) {
                         sampleList = samples.get(metricName);

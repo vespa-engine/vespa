@@ -81,7 +81,18 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
         String dummy0 = getLine(valuesResponse, DummyService.NAME + "0");
         assertTrue(dummy0.contains("c_test"));  // metric name
         assertTrue(dummy0.contains("} 1.0"));   // metric value
+    }
+
+    @Test
+    public void service_metrics_have_configured_dimensions() {
+        String dummy0 = getLine(valuesResponse, DummyService.NAME + "0");
         assertTrue(dummy0.contains("consumer_dim=\"default-val\""));
+    }
+
+    @Test
+    public void service_metrics_have_vespa_service_dimension() {
+        String dummy0 = getLine(valuesResponse, DummyService.NAME + "0");
+        assertTrue(dummy0.contains("vespa_service=\"vespa_dummy\""));
     }
 
     // Find the first line that contains the given string
