@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -338,8 +339,13 @@ public class ApplicationController {
                                            .flatMap(Collection::stream)
                                            .collect(Collectors.toSet());
 
-                // Get application certificate (provisions a new certificate if missing)
-                applicationCertificate = getApplicationCertificate(application.get());
+                if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
+                    // Get application certificate (provisions a new certificate if missing)
+                    List<? extends ZoneApi> zones = controller.zoneRegistry().zones().all().zones();
+                    applicationCertificate = getApplicationCertificate(application.get());
+                } else {
+                    applicationCertificate = Optional.empty();
+                }
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
@@ -500,17 +506,17 @@ public class ApplicationController {
     }
 
     private Optional<ApplicationCertificate> getApplicationCertificate(Application application) {
+        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
+                application.id().serializedForm()).value();
+        if (!provisionCertificate) {
+            return Optional.empty();
+        }
+
         // Re-use certificate if already provisioned
         Optional<ApplicationCertificate> applicationCertificate = curator.readApplicationCertificate(application.id());
         if(applicationCertificate.isPresent())
             return applicationCertificate;
 
-        // TODO(tokle): Verify that the application is deploying to a zone where certificate provisioning is enabled
-        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                            application.id().serializedForm()).value();
-        if (!provisionCertificate) {
-            return Optional.empty();
-        }
         ApplicationCertificate newCertificate = applicationCertificateProvider.requestCaSignedCertificate(application.id());
         curator.writeApplicationCertificate(application.id(), newCertificate);
 
