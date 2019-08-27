@@ -242,21 +242,29 @@ public class VersionStatus {
                                               boolean isReleased,
                                               Collection<HostName> configServerHostnames,
                                               Controller controller) {
-        boolean isSystemVersion = statistics.version().equals(systemVersion);
-        boolean isControllerVersion = statistics.version().equals(controllerVersion.version());
-        VespaVersion.Confidence confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
+        var isSystemVersion = statistics.version().equals(systemVersion);
+        var isControllerVersion = statistics.version().equals(controllerVersion.version());
+        var confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
         // Compute confidence if there's no override
         if (confidence == null) {
             if (isSystemVersion || isControllerVersion) { // Always compute confidence for system and controller
                 confidence = VespaVersion.confidenceFrom(statistics, controller);
-            } else { // This is an older version so we keep the existing confidence, if any
+            } else { // This is an older version so we preserve the existing confidence, if any
                 confidence = confidenceFor(statistics.version(), controller)
                         .orElseGet(() -> VespaVersion.confidenceFrom(statistics, controller));
             }
         }
+        // Preserve existing commit details if we've previously computed status for this version
+        var commitSha = controllerVersion.commitSha();
+        var commitDate = controllerVersion.commitDate();
+        var previousStatus = controller.versionStatus().version(statistics.version());
+        if (previousStatus != null) {
+            commitSha = previousStatus.releaseCommit();
+            commitDate = previousStatus.committedAt();
+        }
         return new VespaVersion(statistics,
-                                controllerVersion.commitSha(),
-                                controllerVersion.commitDate(),
+                                commitSha,
+                                commitDate,
                                 isControllerVersion,
                                 isSystemVersion,
                                 isReleased,
@@ -268,9 +276,9 @@ public class VersionStatus {
     /** Returns the current confidence for the given version */
     private static Optional<VespaVersion.Confidence> confidenceFor(Version version, Controller controller) {
         return controller.versionStatus().versions().stream()
-                .filter(v -> version.equals(v.versionNumber()))
-                .map(VespaVersion::confidence)
-                .findFirst();
+                         .filter(v -> version.equals(v.versionNumber()))
+                         .map(VespaVersion::confidence)
+                         .findFirst();
     }
 
 }
