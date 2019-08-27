@@ -28,7 +28,7 @@ MatchingStats::MatchingStats()
       _docsReRanked(0),
       _softDoomed(0),
       _doomOvertime(),
-      _softDoomFactor(0.5),
+      _softDoomFactor(INITIAL_SOFT_DOOM_FACTOR),
       _queryCollateralTime(),
       _queryLatency(),
       _matchTime(),
@@ -68,7 +68,6 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsReRanked += rhs._docsReRanked;
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
-
 
     _queryCollateralTime.add(rhs._queryCollateralTime);
     _queryLatency.add(rhs._queryLatency);

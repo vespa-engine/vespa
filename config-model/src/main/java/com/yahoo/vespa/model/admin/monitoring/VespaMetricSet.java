@@ -413,10 +413,6 @@ public class VespaMetricSet {
         // matching
         metrics.add(new Metric("content.proton.documentdb.matching.queries.rate"));
         metrics.add(new Metric("content.proton.documentdb.matching.soft_doomed_queries.rate"));
-        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.min"));
-        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.max"));
-        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.sum"));
-        metrics.add(new Metric("content.proton.documentdb.matching.soft_doom_factor.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.max"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.sum"));
         metrics.add(new Metric("content.proton.documentdb.matching.query_latency.count"));
