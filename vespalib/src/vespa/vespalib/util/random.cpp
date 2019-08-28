@@ -5,6 +5,7 @@
 #include <cstring>
 #include <ctime>
 #include <unistd.h>
+#include <chrono>
 
 namespace vespalib {
 
@@ -30,7 +31,7 @@ RandomGen::RandomGen() :
     _state(0)
 {
     unsigned long seed = getpid();
-    seed ^= time(0);
+    seed ^= std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
     char hn[32];
     memset(hn, 0, sizeof(hn));
     gethostname(hn, 32);

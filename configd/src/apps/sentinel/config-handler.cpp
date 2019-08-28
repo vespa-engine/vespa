@@ -44,7 +44,7 @@ ConfigHandler::ConfigHandler()
       _startMetrics(),
       _stateApi()
 {
-    _startMetrics.startedTime = time(nullptr);
+    _startMetrics.startedTime = fastos::time();
 }
 
 ConfigHandler::~ConfigHandler()

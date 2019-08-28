@@ -10,6 +10,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/fastos/timestamp.h>
 #include <sstream>
 #include <algorithm>
 
@@ -25,7 +26,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
 MetricManager::Timer::getTime() const {
-    return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return fastos::time();
 }
 
 void

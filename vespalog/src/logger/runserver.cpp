@@ -1,25 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <unistd.h>
-#include <time.h>
-#include <csignal>
 
 #include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
-#include <fcntl.h>
 
 #include <vespa/defaults.h>
 #include <vespa/log/llparser.h>
 #include "llreader.h"
 #include <vespa/log/log.h>
+#include <chrono>
 
 LOG_SETUP("runserver");
 
@@ -36,6 +33,16 @@ void termsig(int sig) {
     gotstopsig = 1;
     unhandledsig = 1;
 }
+}
+
+namespace {
+
+using namespace std::chrono;
+
+time_t steady_time() {
+    return duration_cast<seconds>(steady_clock::now().time_since_epoch()).count();
+}
+
 }
 
 class PidFile
@@ -461,14 +468,14 @@ int main(int argc, char *argv[])
         try {
             mypf.writePid();
             do {
-                time_t laststart = time(NULL);
+                time_t laststart = steady_time();
                 stat = loop(service, argv+optind);
                 if (restart > 0 && !gotstopsig) {
-                    int wt = restart + laststart - time(NULL);
+                    int wt = restart + laststart - steady_time();
                     if (wt < 0) wt = 0;
                     LOG(info, "will restart in %d seconds", wt);
                 }
-                while (!gotstopsig && time(NULL) - laststart < restart) {
+                while (!gotstopsig && steady_time() - laststart < restart) {
                     sleep(1);
                 }
             } while (!gotstopsig && restart > 0);

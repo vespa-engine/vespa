@@ -270,7 +270,7 @@ BusyCounterBalancingClient::BusyCounterBalancingClient(Messaging& msgng, int win
 
 
 void BusyCounterBalancingClient::run() {
-    // int startTime = time(NULL);
+    // int startTime = fastos::time();
 
     while (running()) {
         {
@@ -456,9 +456,9 @@ ThrottlingApp::Main()
         m.clients.push_back(c);
     }
 */
-    int timeNow = time(NULL);
+    int timeNow = fastos::time();
 
-    while (time(NULL) - timeNow < 240) {
+    while (fastos::time() - timeNow < 240) {
         m.print();
         m.period.SetNow();
         sleep(2);
