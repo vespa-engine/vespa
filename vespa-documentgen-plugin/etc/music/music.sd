@@ -24,6 +24,10 @@ search music {
       indexing: summary | attribute
     }
 
+    field eitheror type bool {
+       indexing: summary | attribute
+    }
+
     field url type uri {
       indexing: summary | index
     }

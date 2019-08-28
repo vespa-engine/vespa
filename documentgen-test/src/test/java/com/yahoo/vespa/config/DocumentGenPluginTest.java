@@ -110,6 +110,7 @@ public class DocumentGenPluginTest {
         assertEquals(music.getUri(), "https://astro.burger");
         music.setYear(2006);
         assertEquals(music.getYear(), (Integer)2006);
+        assertTrue(music.getEitheror());
     }
 
     @Test
@@ -772,6 +773,7 @@ public class DocumentGenPluginTest {
         music.setYear(2005);
         music.setUri("http://astro.burger");
         music.setWeight_src(10.654f);
+        music.setEitheror(true);
         return music;
     }
 
