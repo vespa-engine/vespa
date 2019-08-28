@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributevector.h"
+#include "i_enum_store.h"
 #include "multi_value_mapping.h"
 #include "multi_value_mapping.hpp"
 #include "multivalue.h"
-#include "enumstorebase.h"
-#include "attributevector.h"
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "enumstorebase.h"
+#include "i_enum_store.h"
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
 
 namespace search {

@@ -114,7 +114,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            EnumStoreComparator &cmp)
+                                            datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
         auto& change = elem.second;
@@ -159,7 +159,7 @@ PostingListAttributeBase<P>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
               uint32_t fromLid,
               uint32_t toLid,
-              EnumStoreComparator &cmp)
+              datastore::EntryComparator &cmp)
 {
     PostingChange<P> postings;
 

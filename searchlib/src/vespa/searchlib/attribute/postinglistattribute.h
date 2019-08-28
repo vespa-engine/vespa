@@ -57,7 +57,7 @@ protected:
 
     virtual void updatePostings(PostingMap & changePost) = 0;
 
-    void updatePostings(PostingMap &changePost, EnumStoreComparator &cmp);
+    void updatePostings(PostingMap &changePost, datastore::EntryComparator &cmp);
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
@@ -65,7 +65,7 @@ protected:
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
-                       uint32_t toLid, EnumStoreComparator &cmp);
+                       uint32_t toLid, datastore::EntryComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
     virtual vespalib::MemoryUsage getMemoryUsage() const override;
