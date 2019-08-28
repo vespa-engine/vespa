@@ -155,7 +155,7 @@ public class InstanceValidatorTest {
         when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
-        // Add invalid hostname to request
+        // Add invalid ip to list of ip addresses
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.NODE, "invalidhostname", List.of(nodeIp));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
@@ -172,7 +172,7 @@ public class InstanceValidatorTest {
         when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
-        // Request tenant certificate with valid hostname
+        // Add invalid ip to list of ip addresses
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.TENANT, node.hostname(), List.of(nodeIp));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
