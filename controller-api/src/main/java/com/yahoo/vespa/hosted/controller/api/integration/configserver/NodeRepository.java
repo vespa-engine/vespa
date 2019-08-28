@@ -49,6 +49,11 @@ public interface NodeRepository {
                         n.getRestartGeneration(),
                         n.getCurrentRebootGeneration(),
                         n.getRebootGeneration(),
+                        n.getMinCpuCores(),
+                        n.getMinMainMemoryAvailableGb(),
+                        n.getMinDiskAvailableGb(),
+                        n.getBandwidth() / 1000,
+                        n.getFastDisk(),
                         n.getCanonicalFlavor(),
                         n.getMembership().clusterid,
                         clusterTypeOf(n.getMembership().clustertype)))
