@@ -37,6 +37,7 @@ import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
+import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.yolean.Exceptions;
@@ -79,6 +80,7 @@ public final class ConfiguredApplication implements Application {
     private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    private final SlobrokConfigSubscriber slobrokConfigSubscriber;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -124,6 +126,7 @@ public final class ConfiguredApplication implements Application {
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
+        this.slobrokConfigSubscriber = new SlobrokConfigSubscriber(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
 
         applicationWithLegacySetup = new ContainerDiscApplication(configId);
@@ -132,8 +135,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
-        SlobroksConfig slobroksConfig = getConfig(SlobroksConfig.class);
-        slobrokRegistrator = registerInSlobrok(slobroksConfig, qrConfig);
+        slobrokRegistrator = registerInSlobrok(slobrokConfigSubscriber, qrConfig);
 
         hackToInitializeServer(qrConfig);
 
@@ -150,7 +152,7 @@ public final class ConfiguredApplication implements Application {
      * The container has no rpc methods, but we still need an RPC sever
      * to register in Slobrok to enable orchestration
      */
-    private Register registerInSlobrok(SlobroksConfig slobrokConfig, QrConfig qrConfig) {
+    private Register registerInSlobrok(SlobrokConfigSubscriber slobrokConfigSubscriber, QrConfig qrConfig) {
         if ( ! qrConfig.rpc().enabled()) return null;
 
         // 1. Set up RPC server
@@ -164,8 +166,7 @@ public final class ConfiguredApplication implements Application {
         }
 
         // 2. Register it in slobrok
-        SlobrokList slobrokList = new SlobrokList();
-        slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
+        SlobrokList slobrokList = slobrokConfigSubscriber.getSlobroks();
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
         slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
