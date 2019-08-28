@@ -39,8 +39,10 @@ FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
     SourceSelector(defaultSource, AttributeVector::SP(new SourceStore(attrBaseFileName, getConfig()))),
     _source(static_cast<SourceStore &>(*_realSource))
 {
-    reserve(initialNumDocs);
-    _source.commit();
+    if (initialNumDocs != std::numeric_limits<uint32_t>::max()) {
+        reserve(initialNumDocs);
+        _source.commit();
+    }
 }
 
 FixedSourceSelector::~FixedSourceSelector()
@@ -80,7 +82,7 @@ FixedSourceSelector::load(const vespalib::string & baseFileName, uint32_t curren
     FixedSourceSelector::UP selector(new FixedSourceSelector(
                                              defaultSource,
                                              info->header()._baseFileName,
-                                             0));
+                                             std::numeric_limits<uint32_t>::max()));
     selector->setBaseId(info->header()._baseId);
     selector->_source.load();
     uint32_t cappedSources = capSelector(selector->_source, selector->getDefaultSource());
