@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
@@ -164,7 +164,8 @@ public class OsUpgraderTest {
                         node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
                         node.wantedVersion(), node.wantedOsVersion(), node.wantedOsVersion(), node.serviceState(),
                         node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
-                        node.wantedRebootGeneration(), node.canonicalFlavor(), node.clusterId(), node.clusterType()));
+                        node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
+                        node.bandwidthGbps(), node.fastDisk(), node.canonicalFlavor(), node.clusterId(), node.clusterType()));
             }
             assertCurrent(version, application, zone);
         }

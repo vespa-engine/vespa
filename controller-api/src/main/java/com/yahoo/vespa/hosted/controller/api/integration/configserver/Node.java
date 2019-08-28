@@ -31,6 +31,11 @@ public class Node {
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
     private final long wantedRebootGeneration;
+    private final double vcpu;
+    private final double memoryGb;
+    private final double diskGb;
+    private final double bandwidthGbps;
+    private final boolean fastDisk;
     private final String canonicalFlavor;
     private final String clusterId;
     private final ClusterType clusterType;
@@ -38,7 +43,7 @@ public class Node {
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                String canonicalFlavor, String clusterId, ClusterType clusterType) {
+                double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, String canonicalFlavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.state = state;
         this.type = type;
@@ -52,6 +57,11 @@ public class Node {
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.rebootGeneration = rebootGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
+        this.vcpu = vcpu;
+        this.memoryGb = memoryGb;
+        this.diskGb = diskGb;
+        this.bandwidthGbps = bandwidthGbps;
+        this.fastDisk = fastDisk;
         this.canonicalFlavor = canonicalFlavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
@@ -62,7 +72,7 @@ public class Node {
                 Version currentVersion, Version wantedVersion) {
         this(hostname, state, type, owner, currentVersion, wantedVersion,
              Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
-             "d-2-8-50", "cluster", ClusterType.container);
+                2, 8, 50, 1, true, "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
@@ -113,6 +123,26 @@ public class Node {
 
     public long wantedRebootGeneration() {
         return wantedRebootGeneration;
+    }
+
+    public double vcpu() {
+        return vcpu;
+    }
+
+    public double memoryGb() {
+        return memoryGb;
+    }
+
+    public double diskGb() {
+        return diskGb;
+    }
+
+    public double bandwidthGbps() {
+        return bandwidthGbps;
+    }
+
+    public boolean fastDisk() {
+        return fastDisk;
     }
 
     public String canonicalFlavor() {
