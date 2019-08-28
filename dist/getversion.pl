@@ -67,8 +67,8 @@ if ($printmap) {
     chomp($ostype = `uname -s`);
     chomp($osver = `uname -r`);
     chomp($osarch = `uname -m`);
-    chomp($commit_sha = `sh -c "cd ${srcdir} && git rev-parse HEAD"`);
-    chomp($commit_date = `sh -c "cd ${srcdir} && git show -s --format=%ct ${commit_sha}"`);
+    chomp($commit_sha = `sh -c "(cd ${srcdir} && git rev-parse HEAD) || echo ffffffffffffffffffffffffffffffffffffffff "`);
+    chomp($commit_date = `sh -c "(cd ${srcdir} && git show -s --format=%ct ${commit_sha}) || echo 0"`);
 
     $vtag_system_rev = $ostype . "-" . $osver;
     chomp ($who = `(whoami || logname) 2>/dev/null`);
