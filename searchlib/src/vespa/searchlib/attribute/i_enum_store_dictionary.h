@@ -2,48 +2,36 @@
 
 #pragma once
 
+#include "i_enum_store.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/entry_comparator_wrapper.h>
 #include <vespa/vespalib/datastore/unique_store_dictionary.h>
-#include <set>
 
 namespace search {
 
 class BufferWriter;
 
-using EnumStoreIndex = datastore::AlignedEntryRefT<31, 4>;
-using EnumStoreIndexVector = vespalib::Array<EnumStoreIndex>;
-using EnumStoreEnumVector = vespalib::Array<uint32_t>;
-
 using EnumTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
 
-using EnumTree = btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
+using EnumTree = btree::BTree<IEnumStore::Index, btree::BTreeNoLeafData,
                               btree::NoAggregated,
                               const datastore::EntryComparatorWrapper,
                               EnumTreeTraits>;
 
-using EnumPostingTree = btree::BTree<EnumStoreIndex, datastore::EntryRef,
+using EnumPostingTree = btree::BTree<IEnumStore::Index, datastore::EntryRef,
                                      btree::NoAggregated,
                                      const datastore::EntryComparatorWrapper,
                                      EnumTreeTraits>;
-
-struct CompareEnumIndex {
-    using Index = EnumStoreIndex;
-
-    bool operator()(const Index &lhs, const Index &rhs) const {
-        return lhs.ref() < rhs.ref();
-    }
-};
 
 /**
  * Interface for the dictionary used by an enum store.
  */
 class IEnumStoreDictionary : public datastore::IUniqueStoreDictionary {
 public:
-    using EnumVector = EnumStoreEnumVector;
-    using Index = EnumStoreIndex;
-    using IndexSet = std::set<Index, CompareEnumIndex>;
-    using IndexVector = EnumStoreIndexVector;
+    using EnumVector = IEnumStore::EnumVector;
+    using Index = IEnumStore::Index;
+    using IndexSet = IEnumStore::IndexSet;
+    using IndexVector = IEnumStore::IndexVector;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:

@@ -15,7 +15,7 @@ PostingListSearchContext(const Dictionary &dictionary,
                          uint32_t docIdLimit,
                          uint64_t numValues,
                          bool hasWeight,
-                         const EnumStoreBase &esb,
+                         const IEnumStore &esb,
                          uint32_t minBvDocFreq,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)

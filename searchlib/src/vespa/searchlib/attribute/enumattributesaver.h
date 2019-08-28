@@ -9,7 +9,7 @@ namespace search {
 
 class IAttributeSaveTarget;
 
-/*
+/**
  * Helper class for saving an enumerated multivalue attribute.
  *
  * It handles writing to the udat file.
@@ -17,18 +17,18 @@ class IAttributeSaveTarget;
 class EnumAttributeSaver
 {
 public:
-    using Enumerator = datastore::UniqueStoreEnumerator<EnumStoreIndex>;
+    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::Index>;
 
 private:
-    const EnumStoreBase  &_enumStore;
+    const IEnumStore  &_enumStore;
     Enumerator _enumerator;
 
 public:
-    EnumAttributeSaver(const EnumStoreBase &enumStore);
+    EnumAttributeSaver(const IEnumStore &enumStore);
     ~EnumAttributeSaver();
 
     void writeUdat(IAttributeSaveTarget &saveTarget);
-    const EnumStoreBase &getEnumStore() const { return _enumStore; }
+    const IEnumStore &getEnumStore() const { return _enumStore; }
     Enumerator &get_enumerator() { return _enumerator; }
     void clear() { _enumerator.clear(); }
 };

@@ -30,7 +30,7 @@ class StringEnumIndexMapper : public EnumIndexMapper
 {
 public:
     StringEnumIndexMapper(const EnumPostingTree & dictionary) : _dictionary(dictionary) { }
-    EnumStoreBase::Index map(EnumStoreBase::Index original, const EnumStoreComparator & compare) const override;
+    IEnumStore::Index map(IEnumStore::Index original, const EnumStoreComparator & compare) const override;
     virtual bool hasFold() const override { return true; }
 private:
     const EnumPostingTree & _dictionary;

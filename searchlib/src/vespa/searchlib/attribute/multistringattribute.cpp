@@ -6,8 +6,8 @@
 
 namespace search {
 
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> >;
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> >;
+template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<IEnumStore::Index> >;
+template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<IEnumStore::Index> >;
 
 } // namespace search
 

@@ -14,9 +14,9 @@ class ReaderBase;
 class NumericAttribute : public AttributeVector
 {
 protected:
-    typedef EnumStoreBase::Index       EnumIndex;
-    typedef EnumStoreBase::IndexVector EnumIndexVector;
-    typedef EnumStoreBase::EnumVector  EnumVector;
+    typedef IEnumStore::Index       EnumIndex;
+    typedef IEnumStore::IndexVector EnumIndexVector;
+    typedef IEnumStore::EnumVector  EnumVector;
 
     NumericAttribute(const vespalib::string & name, const AttributeVector::Config & cfg)
         : AttributeVector(name, cfg)

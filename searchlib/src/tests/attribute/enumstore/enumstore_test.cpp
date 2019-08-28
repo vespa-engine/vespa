@@ -15,7 +15,7 @@ size_t enumStoreAlign(size_t size)
     return (size + 15) & -UINT64_C(16);
 }
 
-// EnumStoreBase::Index(0,0) is reserved thus 16 bytes are reserved in buffer 0
+// IEnumStore::Index(0,0) is reserved thus 16 bytes are reserved in buffer 0
 const uint32_t RESERVED_BYTES = 16u;
 typedef EnumStoreT<NumericEntryType<uint32_t> > NumericEnumStore;
 
@@ -26,7 +26,7 @@ private:
     typedef EnumStoreT<NumericEntryType<float> > FloatEnumStore;
     typedef EnumStoreT<NumericEntryType<double> > DoubleEnumStore;
 
-    typedef EnumStoreBase::Index EnumIndex;
+    typedef IEnumStore::Index EnumIndex;
     typedef vespalib::GenerationHandler::generation_t generation_t;
 
     void testIndex();
@@ -445,7 +445,7 @@ EnumStoreTest::testCompaction(bool hasPostings)
     auto old_compaction_count = data_store_base.get_compaction_count();
 
     // perform compaction
-    EnumStoreBase::EnumIndexMap old2New;
+    IEnumStore::EnumIndexMap old2New;
     EXPECT_TRUE(ses.performCompaction(3 * entrySize, old2New));
     EXPECT_TRUE(ses.getRemaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).remaining() >= 3 * entrySize);
@@ -626,7 +626,7 @@ EnumStoreTest::testHoldListAndGeneration()
 
     // perform compaction
     uint32_t newEntrySize = StringEnumStore::alignEntrySize(8 + 1 + 8);
-    EnumStoreBase::EnumIndexMap old2New;
+    IEnumStore::EnumIndexMap old2New;
     EXPECT_TRUE(ses.performCompaction(5 * newEntrySize, old2New));
 
     // check readers again
@@ -715,7 +715,7 @@ EnumStoreTest::testMemoryUsage()
     EXPECT_EQUAL((num / 2) * entrySize + RESERVED_BYTES, usage.deadBytes());
     EXPECT_EQUAL(0u, usage.allocatedBytesOnHold());
 
-    EnumStoreBase::EnumIndexMap old2New;
+    IEnumStore::EnumIndexMap old2New;
     ses.performCompaction(400, old2New);
 
     // usage after compaction

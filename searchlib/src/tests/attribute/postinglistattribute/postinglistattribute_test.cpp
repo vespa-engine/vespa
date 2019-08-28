@@ -88,11 +88,11 @@ private:
     Int32PostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        multivalue::Value<EnumStoreBase::Index> >
+        multivalue::Value<IEnumStore::Index> >
     Int32ArrayPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        multivalue::WeightedValue<EnumStoreBase::Index> >
+        multivalue::WeightedValue<IEnumStore::Index> >
     Int32WsetPostingListAttribute;
 
     typedef SingleValueNumericPostingAttribute<
@@ -100,11 +100,11 @@ private:
     FloatPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        multivalue::Value<EnumStoreBase::Index> >
+        multivalue::Value<IEnumStore::Index> >
     FloatArrayPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        multivalue::WeightedValue<EnumStoreBase::Index> >
+        multivalue::WeightedValue<IEnumStore::Index> >
     FloatWsetPostingListAttribute;
 
     typedef SingleValueStringPostingAttribute StringPostingListAttribute;

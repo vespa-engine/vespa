@@ -6,7 +6,6 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/datastore.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -23,18 +22,11 @@ namespace attribute { class Status; }
 using EnumStoreComparator = datastore::EntryComparator;
 
 
-class EnumStoreBase
-{
+class EnumStoreBase : public IEnumStore {
 public:
-    using DataStoreType = datastore::DataStoreT<EnumStoreIndex>;
-    using EnumHandle = attribute::IAttributeVector::EnumHandle;
-    using EnumVector = EnumStoreEnumVector;
-    using Index = EnumStoreIndex;
-    using IndexVector = EnumStoreIndexVector;
+    using DataStoreType = datastore::DataStoreT<Index>;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    using EnumIndexMap = vespalib::hash_map<Index, Index, vespalib::hash<Index>, std::equal_to<Index>,
-                                            vespalib::hashtable_base::and_modulator>;
 
     class EntryBase {
     protected:
@@ -63,8 +55,6 @@ public:
 
         static uint32_t size() { return 2*sizeof(uint32_t); }
     };
-
-    using IndexSet = std::set<Index, CompareEnumIndex>;
 
 protected:
 
@@ -131,14 +121,11 @@ public:
     void decRefCount(Index idx)           { getEntryBase(idx).decRefCount(); }
     
     // Only use when reading from enumerated attribute save files
-    void fixupRefCount(Index idx, uint32_t refCount) {
+    void fixupRefCount(Index idx, uint32_t refCount) override {
         getEntryBase(idx).setRefCount(refCount);
     } 
     
-    template <typename Tree>
-    void fixupRefCounts(const EnumVector &hist, Tree &tree);
-
-    uint32_t getNumUniques() const { return _enumDict->getNumUniques(); }
+    uint32_t getNumUniques() const override { return _enumDict->getNumUniques(); }
 
     uint32_t getRemaining() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).remaining();
@@ -146,8 +133,8 @@ public:
     uint32_t getCapacity() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).capacity();
     }
-    vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage getTreeMemoryUsage() const { return _enumDict->get_memory_usage(); }
+    vespalib::MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getTreeMemoryUsage() const override { return _enumDict->get_memory_usage(); }
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 
@@ -164,23 +151,15 @@ public:
     bool getPendingCompact() const { return _type.getPendingCompact(); }
     void clearPendingCompact() { _type.clearPendingCompact(); }
 
-    virtual void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const = 0;
-
     virtual ssize_t deserialize(const void *src, size_t available, size_t &initSpace) = 0;
     virtual ssize_t deserialize(const void *src, size_t available, Index &idx) = 0;
-    virtual bool foldedChange(const Index &idx1, const Index &idx2) = 0;
 
-    ssize_t deserialize0(const void *src, size_t available, IndexVector &idx);
-
-    template <typename Tree>
-    ssize_t deserialize(const void *src, size_t available, IndexVector &idx, Tree &tree);
+    ssize_t deserialize0(const void *src, size_t available, IndexVector &idx) override;
 
     ssize_t deserialize(const void *src, size_t available, IndexVector &idx) {
         return _enumDict->deserialize(src, available, idx);
     }
 
-    virtual void freeUnusedEnum(Index idx, IndexSet &unused) = 0;
-    virtual void freeUnusedEnums(bool movePostingIdx) = 0;
     virtual void freeUnusedEnums(const IndexSet& toRemove) = 0;
 
     void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
@@ -188,20 +167,20 @@ public:
 
     virtual bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) = 0;
 
-    IEnumStoreDictionary &getEnumStoreDict() { return *_enumDict; }
-    const IEnumStoreDictionary &getEnumStoreDict() const { return *_enumDict; }
+    IEnumStoreDictionary &getEnumStoreDict() override { return *_enumDict; }
+    const IEnumStoreDictionary &getEnumStoreDict() const override { return *_enumDict; }
     EnumPostingTree &getPostingDictionary() { return _enumDict->getPostingDictionary(); }
 
     const EnumPostingTree &getPostingDictionary() const {
         return _enumDict->getPostingDictionary();
     }
-    const datastore::DataStoreBase &get_data_store_base() const { return _store; }
+    const datastore::DataStoreBase &get_data_store_base() const override { return _store; }
 };
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStoreBase::Index & idx);
+vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx);
 
 extern template
-class datastore::DataStoreT<EnumStoreIndex>;
+class datastore::DataStoreT<IEnumStore::Index>;
 
 
 }

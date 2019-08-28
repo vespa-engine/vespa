@@ -22,10 +22,10 @@ protected:
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
-    using EnumIndexVector = EnumStoreBase::IndexVector;
+    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
-    using EnumVector = EnumStoreBase::EnumVector;
+    using EnumVector = IEnumStore::EnumVector;
     using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;

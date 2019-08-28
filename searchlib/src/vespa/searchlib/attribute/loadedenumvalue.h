@@ -125,7 +125,7 @@ class SaveEnumHist
     vespalib::ArrayRef<uint32_t> _hist;
 
 public:
-    SaveEnumHist(EnumStoreBase::EnumVector &enumHist)
+    SaveEnumHist(IEnumStore::EnumVector &enumHist)
         : _hist(enumHist)
     {
     }

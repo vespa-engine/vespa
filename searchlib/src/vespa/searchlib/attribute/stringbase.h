@@ -22,9 +22,9 @@ class StringAttribute : public AttributeVector
 public:
     typedef vespalib::Array<uint32_t> OffsetVector;
     typedef const char *                  LoadedValueType;
-    typedef EnumStoreBase::Index          EnumIndex;
-    typedef EnumStoreBase::IndexVector    EnumIndexVector;
-    typedef EnumStoreBase::EnumVector     EnumVector;
+    typedef IEnumStore::Index          EnumIndex;
+    typedef IEnumStore::IndexVector    EnumIndexVector;
+    typedef IEnumStore::EnumVector     EnumVector;
     typedef attribute::LoadedStringVector LoadedVector;
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StringAttribute);

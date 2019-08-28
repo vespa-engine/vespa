@@ -12,7 +12,7 @@ namespace search {
 class IWeightedIndexVector {
 public:
     virtual ~IWeightedIndexVector() = default;
-    using WeightedIndex = multivalue::WeightedValue<EnumStoreBase::Index>;
+    using WeightedIndex = multivalue::WeightedValue<IEnumStore::Index>;
     /**
      * Provides a reference to the underlying enum/weight pairs.
      * This method should only be invoked if @ref getCollectionType(docId) returns CollectionType::WEIGHTED_SET.
@@ -49,11 +49,11 @@ protected:
     using generation_t = typename B::BaseClass::generation_t;
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
-    using EnumIndex = typename EnumStoreBase::Index;
-    using EnumIndexMap = EnumStoreBase::EnumIndexMap;
-    using EnumIndexVector = typename EnumStoreBase::IndexVector;
+    using EnumIndex = IEnumStore::Index;
+    using EnumIndexMap = IEnumStore::EnumIndexMap;
+    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
-    using EnumVector = typename EnumStoreBase::EnumVector;
+    using EnumVector = IEnumStore::EnumVector;
     using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;

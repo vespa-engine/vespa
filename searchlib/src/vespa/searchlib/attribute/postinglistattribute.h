@@ -19,16 +19,16 @@ namespace search {
 class EnumPostingPair
 {
 private:
-    EnumStoreBase::Index _idx;
+    IEnumStore::Index _idx;
     const datastore::EntryComparator *_cmp;
 public:
-    EnumPostingPair(EnumStoreBase::Index idx, const datastore::EntryComparator *cmp)
+    EnumPostingPair(IEnumStore::Index idx, const datastore::EntryComparator *cmp)
         : _idx(idx),
           _cmp(cmp)
     { }
 
     bool operator<(const EnumPostingPair &rhs) const { return (*_cmp)(_idx, rhs._idx); }
-    EnumStoreBase::Index getEnumIdx() const { return _idx; }
+    IEnumStore::Index getEnumIdx() const { return _idx; }
 };
 
 
@@ -41,7 +41,7 @@ protected:
     using AggregationTraits = attribute::PostingListTraits<DataType>;
     using DocId = AttributeVector::DocId;
     using EntryRef = datastore::EntryRef;
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename AggregationTraits::PostingList;
     using PostingMap = std::map<EnumPostingPair, PostingChange<P> >;
@@ -49,9 +49,9 @@ protected:
     PostingList _postingList;
     AttributeVector &_attr;
     EnumPostingTree &_dict;
-    EnumStoreBase   &_esb;
+    IEnumStore      &_esb;
 
-    PostingListAttributeBase(AttributeVector &attr, EnumStoreBase &enumStore);
+    PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
     virtual ~PostingListAttributeBase();
 
     virtual void updatePostings(PostingMap & changePost) = 0;
@@ -82,7 +82,7 @@ public:
 
     using Dictionary = EnumPostingTree;
     using EntryRef = datastore::EntryRef;
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
     using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;

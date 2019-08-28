@@ -142,7 +142,7 @@ EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findEnum(Type value, EnumStoreBase::EnumHandle &e) const
+EnumStoreT<EntryType>::findEnum(Type value, IEnumStore::EnumHandle &e) const
 {
     ComparatorType cmp(*this, value);
     Index idx;
@@ -154,7 +154,7 @@ EnumStoreT<EntryType>::findEnum(Type value, EnumStoreBase::EnumHandle &e) const
 }
 
 template <typename EntryType>
-std::vector<EnumStoreBase::EnumHandle>
+std::vector<IEnumStore::EnumHandle>
 EnumStoreT<EntryType>::findFoldedEnums(Type value) const
 {
     FoldedComparatorType cmp(*this, value);
@@ -283,7 +283,7 @@ EnumStoreT<EntryType>::addEnum(Type value, Index & newIdx)
 template <typename DictionaryType>
 struct TreeBuilderInserter {
     static void insert(typename DictionaryType::Builder & builder,
-                       EnumStoreBase::Index enumIdx,
+                       IEnumStore::Index enumIdx,
                        datastore::EntryRef postingIdx)
     {
         (void) postingIdx;
@@ -294,7 +294,7 @@ struct TreeBuilderInserter {
 template <>
 struct TreeBuilderInserter<EnumPostingTree> {
     static void insert(EnumPostingTree::Builder & builder,
-                       EnumStoreBase::Index enumIdx,
+                       IEnumStore::Index enumIdx,
                        datastore::EntryRef postingIdx)
     {
         builder.insert(enumIdx, postingIdx);

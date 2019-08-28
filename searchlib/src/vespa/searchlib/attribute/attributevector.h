@@ -43,7 +43,7 @@ namespace search {
     template <typename T> class ComponentGuard;
     class AttributeReadGuard;
     class AttributeSaver;
-    class EnumStoreBase;
+    class IEnumStore;
     class IAttributeSaveTarget;
     struct IDocumentWeightAttribute;
     class QueryTermSimple;
@@ -550,7 +550,7 @@ public:
     attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
                                                       const attribute::SearchContextParams &params) const override;
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
-    virtual const EnumStoreBase *getEnumStoreBase() const;
+    virtual const IEnumStore *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
 
 private:

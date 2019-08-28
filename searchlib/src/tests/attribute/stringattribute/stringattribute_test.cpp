@@ -330,12 +330,12 @@ void StringAttributeTest::testDefaultValueOnAddDoc(AttributeVector & v)
     EXPECT_EQUAL(0u, v.getNumDocs());
     v.addReservedDoc();
     EXPECT_EQUAL(1u, v.getNumDocs());
-    EXPECT_TRUE( EnumStoreBase::Index(EntryRef(v.getEnum(0))).valid() );
+    EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(0))).valid() );
     uint32_t doc(7);
     EXPECT_TRUE( v.addDoc(doc) );
     EXPECT_EQUAL(1u, doc);
     EXPECT_EQUAL(2u, v.getNumDocs());
-    EXPECT_TRUE( EnumStoreBase::Index(EntryRef(v.getEnum(doc))).valid() );
+    EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
     EXPECT_EQUAL(0u, strlen(v.getString(doc, NULL, 0)));
 }
 
@@ -357,7 +357,7 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
         EXPECT_TRUE( doc == i );
         EXPECT_TRUE( v.getNumDocs() == i + 1 );
         EXPECT_TRUE( v.getValueCount(doc) == 1 );
-        EXPECT_TRUE( ! EnumStoreBase::Index(EntryRef(v.getEnum(doc))).valid() );
+        EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
     }
 
     std::map<vespalib::string, uint32_t> enums;
@@ -366,7 +366,7 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
         sprintf(tmp, "enum%u", i % 10);
         EXPECT_TRUE( v.update(i, tmp) );
         EXPECT_TRUE( v.getValueCount(i) == 1 );
-        EXPECT_TRUE( ! EnumStoreBase::Index(EntryRef(v.getEnum(i))).valid() );
+        EXPECT_TRUE( ! IEnumStore::Index(EntryRef(v.getEnum(i))).valid() );
         if ((i % 10) == 9) {
             v.commit();
             for (uint32_t j = i - 9; j <= i; ++j) {

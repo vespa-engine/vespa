@@ -13,8 +13,8 @@ using search::multivalue::WeightedValue;
 namespace search {
 namespace attribute {
 
-template class MultiValueMapping<Value<EnumStoreIndex>>;
-template class MultiValueMapping<WeightedValue<EnumStoreIndex>>;
+template class MultiValueMapping<Value<IEnumStore::Index>>;
+template class MultiValueMapping<WeightedValue<IEnumStore::Index>>;
 template class MultiValueMapping<Value<int8_t>>;
 template class MultiValueMapping<WeightedValue<int8_t>>;
 template class MultiValueMapping<Value<int16_t>>;
