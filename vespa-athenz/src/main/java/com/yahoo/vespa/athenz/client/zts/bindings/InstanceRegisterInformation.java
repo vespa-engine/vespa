@@ -4,10 +4,9 @@ package com.yahoo.vespa.athenz.client.zts.bindings;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.Pkcs10CsrUtils;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 
 /**
  * Used for serializing request to ZTS
@@ -26,23 +25,21 @@ public class InstanceRegisterInformation {
     private final String service;
     @JsonProperty("attestationData")
     private final String attestationData;
-    @JsonProperty("ssh")
-    private final String ssh = null; // Not needed
+    @JsonProperty("hostname")
+    private final String hostname;
     @JsonProperty("csr")
     private final String csr;
-    @JsonProperty("token")
-    private final boolean token;
 
     public InstanceRegisterInformation(AthenzIdentity providerIdentity,
                                        AthenzIdentity instanceIdentity,
                                        String attestationData,
-                                       Pkcs10Csr csr,
-                                       boolean requestServiceToken) {
+                                       String hostname,
+                                       Pkcs10Csr csr) {
         this.provider = providerIdentity.getFullName();
         this.domain = instanceIdentity.getDomain().getName();
         this.service = instanceIdentity.getName();
         this.attestationData = attestationData;
         this.csr = Pkcs10CsrUtils.toPem(csr);
-        this.token = requestServiceToken;
+        this.hostname = hostname;
     }
 }

@@ -5,7 +5,6 @@ import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
@@ -30,9 +29,8 @@ public interface ZtsClient extends AutoCloseable {
      */
     InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
                                       AthenzIdentity instanceIdentity,
-                                      String instanceId, // TODO Remove this parameter (unused/unnecessary)
+                                      String hostname,
                                       String attestationData,
-                                      boolean requestServiceToken,
                                       Pkcs10Csr csr);
 
     /**
@@ -43,7 +41,7 @@ public interface ZtsClient extends AutoCloseable {
     InstanceIdentity refreshInstance(AthenzIdentity providerIdentity,
                                      AthenzIdentity instanceIdentity,
                                      String instanceId,
-                                     boolean requestServiceToken,
+                                     String hostname,
                                      Pkcs10Csr csr);
 
     /**

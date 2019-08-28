@@ -34,11 +34,13 @@ public class CsrGenerator {
 
     public Pkcs10Csr generateInstanceCsr(AthenzIdentity instanceIdentity,
                                          VespaUniqueInstanceId instanceId,
+                                         String hostname,
                                          Set<String> ipAddresses,
                                          KeyPair keyPair) {
         X500Principal subject = new X500Principal(String.format("OU=%s, CN=%s", providerService, instanceIdentity.getFullName()));
         // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
         // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
+        // and SAN dnsname <hostname> (note: ZTS will verify that there is a DNS A record with hostname having the remote ip)
         Pkcs10CsrBuilder pkcs10CsrBuilder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(
                         DNS_NAME,
@@ -48,6 +50,9 @@ public class CsrGenerator {
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
                 .addSubjectAlternativeName(DNS_NAME, getIdentitySAN(instanceId));
+        if (hostname != null) {
+            pkcs10CsrBuilder.addSubjectAlternativeName(DNS_NAME, hostname);
+        }
         ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP_ADDRESS, ip)));
         return pkcs10CsrBuilder.build();
     }

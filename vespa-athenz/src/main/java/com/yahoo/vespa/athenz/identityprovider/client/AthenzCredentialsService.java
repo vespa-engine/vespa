@@ -75,6 +75,7 @@ class AthenzCredentialsService {
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
+                /*hostname*/null, // no hostname in tenant certificates
                 document.ipAddresses(),
                 keyPair);
 
@@ -83,9 +84,8 @@ class AthenzCredentialsService {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             tenantIdentity,
-                            null,
+                            /*hostname*/null,
                             EntityBindingsMapper.toAttestationData(document),
-                            false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
             writeCredentialsToDisk(keyPair.getPrivate(), certificate, document);
@@ -98,6 +98,7 @@ class AthenzCredentialsService {
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
+                /*hostname*/null, // no hostname in tenant certificates
                 document.ipAddresses(),
                 newKeyPair);
 
@@ -106,8 +107,8 @@ class AthenzCredentialsService {
                     ztsClient.refreshInstance(
                             configserverIdentity,
                             tenantIdentity,
+                            /*hostname*/null,
                             document.providerUniqueId().asDottedString(),
-                            false,
                             csr);
             X509Certificate certificate = instanceIdentity.certificate();
             writeCredentialsToDisk(newKeyPair.getPrivate(), certificate, document);
