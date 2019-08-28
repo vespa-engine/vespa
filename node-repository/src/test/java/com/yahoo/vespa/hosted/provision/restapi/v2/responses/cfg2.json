@@ -12,6 +12,7 @@
   "minCpuCores": 2.0,
   "fastDisk": true,
   "bandwidth": 10000.0,
+  "bandwidthGbps": 10.0,
   "environment": "BARE_METAL",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
