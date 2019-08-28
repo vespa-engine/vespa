@@ -25,21 +25,17 @@ public class InstanceRegisterInformation {
     private final String service;
     @JsonProperty("attestationData")
     private final String attestationData;
-    @JsonProperty("hostname")
-    private final String hostname;
     @JsonProperty("csr")
     private final String csr;
 
     public InstanceRegisterInformation(AthenzIdentity providerIdentity,
                                        AthenzIdentity instanceIdentity,
                                        String attestationData,
-                                       String hostname,
                                        Pkcs10Csr csr) {
         this.provider = providerIdentity.getFullName();
         this.domain = instanceIdentity.getDomain().getName();
         this.service = instanceIdentity.getName();
         this.attestationData = attestationData;
         this.csr = Pkcs10CsrUtils.toPem(csr);
-        this.hostname = hostname;
     }
 }

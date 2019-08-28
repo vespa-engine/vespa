@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
-import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
@@ -157,34 +156,6 @@ public class InstanceValidator {
 
         if(! nodeIpAddresses.containsAll(ips)) {
             log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
-            return false;
-        }
-
-        // Validate hostname
-        boolean hasValidHostname =
-                confirmation.getInstanceHostname()
-                        .map(requestHostname -> validateHostname(vespaUniqueInstanceId, node, requestHostname))
-                        .orElse(true);
-        if (!hasValidHostname) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static boolean validateHostname(VespaUniqueInstanceId vespaUniqueInstanceId, Node node, String requestedHostname) {
-        String nodeHostname = node.hostname();
-        if (vespaUniqueInstanceId.type() == IdentityType.TENANT) {
-            log.log(LogLevel.WARNING, "Instance hostname not allowed in tenant certificates");
-            return false;
-        }
-        if (!nodeHostname.equals(requestedHostname)) {
-            log.log(LogLevel.WARNING,
-                    String.format(
-                            "Invalid instance confirmation: request instance hostname is '%s', but node repository has '%s'",
-                            requestedHostname,
-                            nodeHostname));
-
             return false;
         }
         return true;

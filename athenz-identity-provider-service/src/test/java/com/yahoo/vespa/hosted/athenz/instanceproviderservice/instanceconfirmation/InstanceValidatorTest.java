@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
@@ -122,7 +123,7 @@ public class InstanceValidatorTest {
         nodeList = allocateNode(nodeList, node, applicationId);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.NODE, node.hostname(), List.of(nodeIp));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
         assertTrue(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -139,41 +140,7 @@ public class InstanceValidatorTest {
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
         // Add invalid ip to list of ip addresses
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.NODE, node.hostname(), List.of(nodeIp, "::ff"));
-
-        assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
-    }
-
-    @Test
-    public void rejects_invalid_hostname() {
-        NodeRepository nodeRepository = mock(NodeRepository.class);
-        InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository);
-
-        List<Node> nodeList = createNodes(10);
-        Node node = nodeList.get(0);
-        nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodeRepository.getNodes()).thenReturn(nodeList);
-        String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
-
-        // Add invalid ip to list of ip addresses
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.NODE, "invalidhostname", List.of(nodeIp));
-
-        assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
-    }
-
-    @Test
-    public void rejects_hostname_for_tenant_certificates() {
-        NodeRepository nodeRepository = mock(NodeRepository.class);
-        InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository);
-
-        List<Node> nodeList = createNodes(10);
-        Node node = nodeList.get(0);
-        nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodeRepository.getNodes()).thenReturn(nodeList);
-        String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
-
-        // Add invalid ip to list of ip addresses
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.TENANT, node.hostname(), List.of(nodeIp));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp, "::ff"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -185,7 +152,7 @@ public class InstanceValidatorTest {
 
         List<Node> nodeList = createNodes(10);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, IdentityType.NODE, nodeList.get(0).hostname(), List.of("::11"));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of("::11"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
 
@@ -206,11 +173,10 @@ public class InstanceValidatorTest {
         return createInstanceConfirmation(vespaUniqueInstanceId, domain, service, signedIdentityDocument);
     }
 
-    private InstanceConfirmation createRefreshInstanceConfirmation(ApplicationId applicationId, String domain, String service, IdentityType identityType, String hostname, List<String> ips) {
-        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", identityType);
+    private InstanceConfirmation createRefreshInstanceConfirmation(ApplicationId applicationId, String domain, String service, List<String> ips) {
+        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
         InstanceConfirmation instanceConfirmation = createInstanceConfirmation(vespaUniqueInstanceId, domain, service, null);
         instanceConfirmation.set("sanIP", String.join(",", ips));
-        instanceConfirmation.set(InstanceConfirmation.HOSTNAME_ATTRIBUTE, hostname);
         return instanceConfirmation;
     }
 
