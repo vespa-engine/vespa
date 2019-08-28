@@ -2,11 +2,15 @@
 
 #pragma once
 
-#include "enumstore.h"
+#include "i_enum_store_dictionary.h"
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search::attribute {
+namespace search {
+
+namespace datastore { class EntryComparator; }
+
+namespace attribute {
 
 /**
  * Search context helper for enumerated attributes, used to eliminate
@@ -19,16 +23,16 @@ class EnumHintSearchContext : public IPostingListSearchContext
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint64_t                _numValues; // attr.getStatus().getNumValues();
-    
+
 protected:
     EnumHintSearchContext(const IEnumStoreDictionary &dictionary,
                           uint32_t docIdLimit,
                           uint64_t numValues);
     ~EnumHintSearchContext();
 
-    void lookupTerm(const EnumStoreComparator &comp);
-    void lookupRange(const EnumStoreComparator &low, const EnumStoreComparator &high);
-    
+    void lookupTerm(const datastore::EntryComparator &comp);
+    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
+
     queryeval::SearchIterator::UP
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
@@ -36,4 +40,5 @@ protected:
     unsigned int approximateHits() const override;
 };
 
+}
 }

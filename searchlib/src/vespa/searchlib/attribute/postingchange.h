@@ -2,11 +2,13 @@
 
 #pragma once
 
+#include "i_enum_store.h"
 #include "postingdata.h"
-#include "enumstorebase.h"
 #include <vespa/vespalib/util/array.h>
 
 namespace search {
+
+namespace datastore { class EntryComparator; }
 
 class GrowableBitVector;
 
@@ -48,7 +50,7 @@ class EnumIndexMapper
 {
 public:
     virtual ~EnumIndexMapper() { }
-    virtual IEnumStore::Index map(IEnumStore::Index original, const EnumStoreComparator & compare) const;
+    virtual IEnumStore::Index map(IEnumStore::Index original, const datastore::EntryComparator& compare) const;
     virtual bool hasFold() const { return false; }
 };
 
@@ -60,7 +62,7 @@ private:
 public:
     template <typename MultivalueMapping>
     static PostingMap compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-                              const EnumStoreComparator & compare, const EnumIndexMapper & mapper);
+                              const datastore::EntryComparator & compare, const EnumIndexMapper & mapper);
 };
 
 template <>

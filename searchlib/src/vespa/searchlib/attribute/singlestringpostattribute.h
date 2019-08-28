@@ -72,7 +72,7 @@ private:
                                 std::map<DocId, EnumIndex> &currEnumIndices);
 
     void
-    makePostingChange(const EnumStoreComparator *cmp,
+    makePostingChange(const datastore::EntryComparator *cmp,
                       Dictionary &dict,
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);

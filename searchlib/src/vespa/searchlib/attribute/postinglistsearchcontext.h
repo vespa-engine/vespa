@@ -52,8 +52,8 @@ protected:
 
     ~PostingListSearchContext();
 
-    void lookupTerm(const EnumStoreComparator &comp);
-    void lookupRange(const EnumStoreComparator &low, const EnumStoreComparator &high);
+    void lookupTerm(const datastore::EntryComparator &comp);
+    void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
     void lookupSingle();
     virtual bool useThis(const DictionaryConstIterator & it) const {
         (void) it;

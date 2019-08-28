@@ -53,7 +53,7 @@ SingleValueNumericPostingAttribute<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::
-makePostingChange(const EnumStoreComparator *cmpa,
+makePostingChange(const datastore::EntryComparator *cmpa,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {

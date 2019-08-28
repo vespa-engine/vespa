@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "enum_store_dictionary.h"
 #include "postinglisttraits.h"
-#include "enumstorebase.h"
 #include <set>
 
 namespace search {

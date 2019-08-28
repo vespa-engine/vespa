@@ -2,7 +2,6 @@
 
 #include "enum_store_dictionary.h"
 #include "enumstore.h"
-#include "enumstorebase.h"
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
-#include "enumstorebase.h"
+#include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include <vespa/searchlib/common/sort.h>
 

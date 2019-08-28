@@ -44,7 +44,7 @@ PostingListSearchContext::~PostingListSearchContext() = default;
 
 
 void
-PostingListSearchContext::lookupTerm(const EnumStoreComparator &comp)
+PostingListSearchContext::lookupTerm(const datastore::EntryComparator &comp)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), comp);
     _upperDictItr = _lowerDictItr;
@@ -56,8 +56,8 @@ PostingListSearchContext::lookupTerm(const EnumStoreComparator &comp)
 
 
 void
-PostingListSearchContext::lookupRange(const EnumStoreComparator &low,
-                                      const EnumStoreComparator &high)
+PostingListSearchContext::lookupRange(const datastore::EntryComparator &low,
+                                      const datastore::EntryComparator &high)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;

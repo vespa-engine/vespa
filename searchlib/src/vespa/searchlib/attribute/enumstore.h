@@ -3,7 +3,7 @@
 #pragma once
 
 #include "enum_store_dictionary.h"
-#include "enumstorebase.h"
+#include "i_enum_store.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/btree/btreenode.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -74,7 +74,7 @@ struct FloatingPointCompareHelper
 // EnumStoreT
 //-----------------------------------------------------------------------------
 template <class EntryType>
-class EnumStoreT : public EnumStoreBase
+class EnumStoreT : public IEnumStore
 {
     friend class EnumStoreTest;
 public:
@@ -82,9 +82,31 @@ public:
     using ComparatorType = EnumStoreComparatorT<EntryType>;
     using FoldedComparatorType = EnumStoreFoldedComparatorT<EntryType>;
     using EnumStoreType = EnumStoreT<EntryType>;
-    using EnumStoreBase::deserialize;
-    using EnumStoreBase::fixupRefCounts;
-    using EnumStoreBase::reset;
+    using DataStoreType = datastore::DataStoreT<Index>;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+
+    class EntryBase {
+    protected:
+        char * _data;
+    public:
+        EntryBase(void * data) : _data(static_cast<char *>(data)) {}
+        uint32_t getRefCount() const {
+            return *(reinterpret_cast<uint32_t *>(_data) + 1);
+        }
+        void incRefCount() {
+            uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
+            ++(*dst);
+        }
+        void decRefCount() {
+            uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
+            --(*dst);
+        }
+        void setRefCount(uint32_t refCount) {
+            uint32_t *dst = reinterpret_cast<uint32_t *>(_data) + 1;
+            *dst = refCount;
+        }
+        static uint32_t size() { return 2*sizeof(uint32_t); }
+    };
 
     class Entry : public EntryBase {
     public:
@@ -92,9 +114,40 @@ public:
         Type getValue() const;
         static uint32_t fixedSize() { return EntryBase::size() + EntryType::fixedSize(); }
     };
+
+    class EnumBufferType : public datastore::BufferType<char> {
+    private:
+        size_t _minSizeNeeded; // lower cap for sizeNeeded
+        size_t _deadElems;     // dead elements in active buffer
+        bool   _pendingCompact;
+        bool   _wantCompact;
+    public:
+        EnumBufferType();
+        size_t calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const override;
+        void setSizeNeededAndDead(size_t sizeNeeded, size_t deadElems) {
+            _minSizeNeeded = sizeNeeded;
+            _deadElems = deadElems;
+        }
+        void onFree(size_t usedElems) override {
+            datastore::BufferType<char>::onFree(usedElems);
+            _pendingCompact = _wantCompact;
+            _wantCompact = false;
+        }
+        void setWantCompact() { _wantCompact = true; }
+        bool getPendingCompact() const { return _pendingCompact; }
+        void clearPendingCompact() { _pendingCompact = false; }
+    };
+
     static void insertEntry(char * dst, uint32_t refCount, Type value);
 
 private:
+    IEnumStoreDictionary *_enumDict;
+    DataStoreType         _store;
+    EnumBufferType        _type;
+    std::vector<uint32_t> _toHoldBuffers; // used during compaction
+
+    static const uint32_t TYPE_ID = 0;
+
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
 
@@ -102,10 +155,21 @@ private:
         memcpy(dst, &value, sizeof(Type));
     }
 
-protected:
-    typedef IEnumStore::IndexSet IndexSet;
-    using EnumStoreBase::_store;
-    using EnumStoreBase::TYPE_ID;
+    EntryBase getEntryBase(Index idx) const {
+        return EntryBase(const_cast<DataStoreType &>(_store).getEntry<char>(idx));
+    }
+    datastore::BufferState & getBuffer(uint32_t bufferIdx) {
+        return _store.getBufferState(bufferIdx);
+    }
+    const datastore::BufferState & getBuffer(uint32_t bufferIdx) const {
+        return _store.getBufferState(bufferIdx);
+    }
+    bool validIndex(Index idx) const {
+        return (idx.valid() && idx.offset() < _store.getBufferState(idx.bufferId()).size());
+    }
+    uint32_t getBufferIndex(datastore::BufferState::State status);
+    void postCompact();
+    bool preCompact(uint64_t bytesNeeded);
 
     Entry getEntry(Index idx) const {
         return Entry(const_cast<DataStoreType &>(_store).getEntry<char>(idx));
@@ -114,18 +178,70 @@ protected:
     void freeUnusedEnum(Index idx, IndexSet & unused) override;
 
 public:
-    EnumStoreT(uint64_t initBufferSize, bool hasPostings)
-        : EnumStoreBase(initBufferSize, hasPostings)
-    {
+    EnumStoreT(uint64_t initBufferSize, bool hasPostings);
+    virtual ~EnumStoreT();
+
+    void reset(uint64_t initBufferSize);
+
+    uint32_t getRefCount(Index idx) const { return getEntryBase(idx).getRefCount(); }
+    void incRefCount(Index idx)           { getEntryBase(idx).incRefCount(); }
+    void decRefCount(Index idx)           { getEntryBase(idx).decRefCount(); }
+
+    // Only use when reading from enumerated attribute save files
+    void fixupRefCount(Index idx, uint32_t refCount) override {
+        getEntryBase(idx).setRefCount(refCount);
     }
+
+    uint32_t getNumUniques() const override { return _enumDict->getNumUniques(); }
+
+    uint32_t getRemaining() const {
+        return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).remaining();
+    }
+    uint32_t getCapacity() const {
+        return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).capacity();
+    }
+    vespalib::MemoryUsage getMemoryUsage() const override { return _store.getMemoryUsage(); }
+    vespalib::MemoryUsage getTreeMemoryUsage() const override { return _enumDict->get_memory_usage(); }
+
+    vespalib::AddressSpace getAddressSpaceUsage() const;
+
+    void transferHoldLists(generation_t generation);
+    void trimHoldLists(generation_t firstUsed);
+
+    static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
+
+    // Align buffers and entries to 4 bytes boundary.
+    static uint64_t alignBufferSize(uint64_t val) { return Index::align(val); }
+    static uint32_t alignEntrySize(uint32_t val) { return Index::align(val); }
+
+    void fallbackResize(uint64_t bytesNeeded);
+    bool getPendingCompact() const { return _type.getPendingCompact(); }
+    void clearPendingCompact() { _type.clearPendingCompact(); }
+
+    ssize_t deserialize0(const void *src, size_t available, IndexVector &idx) override;
+
+    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) {
+        return _enumDict->deserialize(src, available, idx);
+    }
+
+    void fixupRefCounts(const EnumVector &hist) { _enumDict->fixupRefCounts(hist); }
+    void freezeTree() { _enumDict->freeze(); }
+
+    IEnumStoreDictionary &getEnumStoreDict() override { return *_enumDict; }
+    const IEnumStoreDictionary &getEnumStoreDict() const override { return *_enumDict; }
+    EnumPostingTree &getPostingDictionary() { return _enumDict->getPostingDictionary(); }
+
+    const EnumPostingTree &getPostingDictionary() const {
+        return _enumDict->getPostingDictionary();
+    }
+    const datastore::DataStoreBase &get_data_store_base() const override { return _store; }
+
 
     bool getValue(Index idx, Type & value) const;
     Type     getValue(uint32_t idx) const { return getValue(Index(datastore::EntryRef(idx))); }
     Type     getValue(Index idx)    const { return getEntry(idx).getValue(); }
 
-    static uint32_t
-    getEntrySize(Type value)
-    {
+    static uint32_t getEntrySize(Type value) {
         return alignEntrySize(EntryBase::size() + EntryType::size(value));
     }
 
@@ -192,17 +308,17 @@ public:
     }
 
     void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const override;
-    ssize_t deserialize(const void *src, size_t available, size_t &initSpace) override;
-    ssize_t deserialize(const void *src, size_t available, Index &idx) override;
+    ssize_t deserialize(const void *src, size_t available, size_t &initSpace);
+    ssize_t deserialize(const void *src, size_t available, Index &idx);
     bool foldedChange(const Index &idx1, const Index &idx2) override;
     virtual bool findEnum(Type value, IEnumStore::EnumHandle &e) const;
     virtual std::vector<IEnumStore::EnumHandle> findFoldedEnums(Type value) const;
     void addEnum(Type value, Index &newIdx);
     virtual bool findIndex(Type value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
-    void freeUnusedEnums(const IndexSet& toRemove) override;
+    void freeUnusedEnums(const IndexSet& toRemove);
     void reset(Builder &builder);
-    bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New) override;
+    bool performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New);
 
 private:
     template <typename Dictionary>
@@ -215,12 +331,18 @@ private:
     void performCompaction(Dictionary &dict, EnumIndexMap & old2New);
 };
 
+vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx);
+
+extern template
+class datastore::DataStoreT<IEnumStore::Index>;
+
+
 template <typename EntryType>
 inline typename EntryType::Type
 EnumStoreT<EntryType>::Entry::getValue() const // implementation for numeric
 {
     Type dst;
-    const char * src = _data + EntryBase::size();
+    const char * src = this->_data + EntryBase::size();
     memcpy(&dst, src, sizeof(Type));
     return dst;
 }

@@ -2,15 +2,15 @@
 
 #pragma once
 
+#include "no_loaded_vector.h"
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/changevector.h>
+#include <vespa/searchlib/attribute/i_enum_store.h>
+#include <vespa/searchlib/attribute/loadedenumvalue.h>
 #include <vespa/searchlib/util/foldedstringcompare.h>
+#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/regexp.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/attribute/loadedenumvalue.h>
-#include "no_loaded_vector.h"
-#include <vespa/searchlib/attribute/changevector.h>
 
 namespace search {
 

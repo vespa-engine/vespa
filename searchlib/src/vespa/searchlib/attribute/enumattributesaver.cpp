@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumattributesaver.h"
+#include "i_enum_store_dictionary.h"
 #include "iattributesavetarget.h"
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.hpp>
