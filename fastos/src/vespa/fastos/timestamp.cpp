@@ -43,7 +43,7 @@ int64_t ClockSystem::now()
 }
 
 time_t time() {
-    return duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+    return system_clock::to_time_t(system_clock::now());
 }
 
 }

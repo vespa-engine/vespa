@@ -3,7 +3,7 @@
 #include "state_api_adapter.h"
 #include "metricmanager.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-
+#include <vespa/fastos/timestamp.h>
 
 namespace metrics {
 
@@ -30,7 +30,7 @@ StateApiAdapter::getTotalMetrics(const vespalib::string &consumer)
     _manager.updateMetrics(true);
     metrics::MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
-    time_t currentTime = MetricManager::Timer::secondsSinceEpoch();
+    time_t currentTime = fastos::time();
    auto generated = std::make_unique<metrics::MetricSnapshot>(
            "Total metrics from start until current time", 0,
            _manager.getTotalMetricSnapshot(guard).getMetrics(),

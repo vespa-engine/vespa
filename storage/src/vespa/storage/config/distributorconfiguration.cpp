@@ -3,6 +3,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastos/timestamp.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -124,7 +125,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
         // Always changes.
         _lastGarbageCollectionChange = 1;
     } else if (_garbageCollectionSelection != config.garbagecollection.selectiontoremove) {
-        _lastGarbageCollectionChange = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+        _lastGarbageCollectionChange = fastos::time();
     }
 
     _garbageCollectionSelection = config.garbagecollection.selectiontoremove;

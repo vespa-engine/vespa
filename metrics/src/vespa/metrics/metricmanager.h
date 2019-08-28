@@ -70,7 +70,6 @@ public:
 
     struct Timer {
         virtual ~Timer() {}
-        static time_t secondsSinceEpoch();
         virtual time_t getTime() const;
         virtual time_t getTimeInMilliSecs() const { return getTime() * 1000; }
     };
