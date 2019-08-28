@@ -18,11 +18,8 @@ public class InstanceRefreshInformation {
     @JsonProperty("csr")
     @JsonSerialize(using = Pkcs10CsrSerializer.class)
     private final Pkcs10Csr csr;
-    @JsonProperty("hostname")
-    private final String hostname;
 
-    public InstanceRefreshInformation(Pkcs10Csr csr, String hostname) {
+    public InstanceRefreshInformation(Pkcs10Csr csr) {
         this.csr = csr;
-        this.hostname = hostname;
     }
 }

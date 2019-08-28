@@ -29,7 +29,6 @@ public interface ZtsClient extends AutoCloseable {
      */
     InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
                                       AthenzIdentity instanceIdentity,
-                                      String hostname,
                                       String attestationData,
                                       Pkcs10Csr csr);
 
@@ -41,7 +40,6 @@ public interface ZtsClient extends AutoCloseable {
     InstanceIdentity refreshInstance(AthenzIdentity providerIdentity,
                                      AthenzIdentity instanceIdentity,
                                      String instanceId,
-                                     String hostname,
                                      Pkcs10Csr csr);
 
     /**

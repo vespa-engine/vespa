@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * InstanceConfirmation object as per Athenz InstanceConfirmation API.
@@ -28,8 +27,6 @@ import java.util.Optional;
  * @author bjorncs
  */
 public class InstanceConfirmation {
-
-    static final String HOSTNAME_ATTRIBUTE = "hostname";
 
     @JsonProperty("provider") public final String provider;
     @JsonProperty("domain") public final String domain;
@@ -54,10 +51,6 @@ public class InstanceConfirmation {
     @JsonAnySetter
     public void set(String name, String value) {
         attributes.put(name, value);
-    }
-
-    public Optional<String> getInstanceHostname() {
-        return Optional.ofNullable(attributes.get(HOSTNAME_ATTRIBUTE));
     }
 
     @Override

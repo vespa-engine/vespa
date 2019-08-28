@@ -155,19 +155,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private void registerIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
-        Pkcs10Csr csr =
-                csrGenerator.generateInstanceCsr(
-                        context.identity(),
-                        signedIdentityDocument.providerUniqueId(),
-                        signedIdentityDocument.instanceHostname(),
-                        signedIdentityDocument.ipAddresses(),
-                        keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
+                context.identity(), signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
         try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,
                             context.identity(),
-                            signedIdentityDocument.instanceHostname(),
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
@@ -180,13 +174,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private void refreshIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        Pkcs10Csr csr = csrGenerator
-                .generateInstanceCsr(
-                        context.identity(),
-                        identityDocument.providerUniqueId(),
-                        identityDocument.instanceHostname(),
-                        identityDocument.ipAddresses(),
-                        keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
+                context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
                 new SslContextBuilder()
                         .withKeyStore(privateKeyFile, certificateFile)
@@ -199,7 +188,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 configserverIdentity,
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
-                                identityDocument.instanceHostname(),
                                 csr);
                 writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
                         certificateFile, instanceIdentity.certificate());
