@@ -12,8 +12,11 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -32,10 +35,13 @@ import java.util.Set;
 // TODO: Remove header/body concept on Vespa 8
 public class DocumentType extends StructuredDataType {
 
+    private static final String ALL = "[all]";
+    public static final String DOCUMENT = "[document]";
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
     private StructDataType headerType;
     private StructDataType bodyType;
     private List<DocumentType> inherits = new ArrayList<>(1);
+    private Map<String, Set<Field>> fieldSets = new HashMap<>();
 
     /**
      * Creates a new document type and registers it with the document type manager.
@@ -71,9 +77,7 @@ public class DocumentType extends StructuredDataType {
         type.headerType = headerType.clone();
         type.bodyType = bodyType.clone();
         type.inherits = new ArrayList<>(inherits.size());
-        for (DocumentType inherited : inherits) {
-            type.inherits.add(inherited);
-        }
+        type.inherits.addAll(inherits);
         return type;
     }
 
@@ -137,7 +141,7 @@ public class DocumentType extends StructuredDataType {
         header.clearFields();
         body.clearFields();
 
-        for (Field field : fieldSet()) {
+        for (Field field : getAllUniqueFields()) {
             (field.isHeader() ? header : body).addField(field);
         }
         headerType.assign(header);
@@ -180,6 +184,30 @@ public class DocumentType extends StructuredDataType {
         }
         StructDataType struct = (field.isHeader() ? headerType : bodyType);
         struct.addField(field);
+    }
+
+    // Do not use, public only for testing
+    public void addFieldSets(Map<String, Collection<String>> fieldSets) {
+        for (Map.Entry<String, Collection<String>> entry : fieldSets.entrySet()) {
+
+            Set<Field> fields = new LinkedHashSet<>(entry.getValue().size());
+            for (DocumentType parent : inherits) {
+                Set<Field> parentFieldSet = parent.fieldSet(entry.getKey());
+                if (parentFieldSet != null) {
+                    fields.addAll(parentFieldSet);
+                }
+            }
+            for (Field orderedField : getAllUniqueFields()) {
+                if (entry.getValue().contains(orderedField.getName())) {
+                    fields.add(orderedField);
+                }
+            }
+
+            this.fieldSets.put(entry.getKey(), ImmutableSet.copyOf(fields));
+        }
+        if ( ! this.fieldSets.containsKey(ALL)) {
+            this.fieldSets.put(ALL, getAllUniqueFields());
+        }
     }
 
     /**
@@ -251,7 +279,7 @@ public class DocumentType extends StructuredDataType {
      *                  TODO Add strict type checking no duplicate fields are allowed
      */
     private void verifyTypeConsistency(DocumentType superType) {
-        for (Field f : fieldSet()) {
+        for (Field f : getAllUniqueFields()) {
             Field supField = superType.getField(f.getName());
             if (supField != null) {
                 if (!f.getDataType().equals(supField.getDataType())) {
@@ -343,9 +371,6 @@ public class DocumentType extends StructuredDataType {
         return getField(name) != null;
     }
 
-    //@Override
-
-
     public int getFieldCount() {
         return headerType.getFieldCount() + bodyType.getFieldCount();
     }
@@ -385,6 +410,14 @@ public class DocumentType extends StructuredDataType {
         return ImmutableList.copyOf(collection);
     }
 
+    private Set<Field> getAllUniqueFields() {
+        Map<String, Field> map = new LinkedHashMap<>();
+        for (Field field : getFields()) { // Uniqify on field name
+            map.put(field.getName(), field);
+        }
+        return ImmutableSet.copyOf(map.values());
+    }
+
     /**
      * <p>Returns an ordered set snapshot of all fields of this documenttype,
      * <i>except the fields of Document</i>.
@@ -402,11 +435,19 @@ public class DocumentType extends StructuredDataType {
      * @return an unmodifiable snapshot of the fields in this type
      */
     public Set<Field> fieldSet() {
-        Map<String, Field> map = new LinkedHashMap<>();
-        for (Field field : getFields()) { // Uniqify on field name
-            map.put(field.getName(), field);
-        }
-        return ImmutableSet.copyOf(map.values());
+        return fieldSet(DOCUMENT);
+    }
+
+    /**
+     * This is identical to @link fieldSet, but in addition extra hidden synthetic fields are returned.
+     * @return an unmodifiable snapshot of the all fields in this type
+     */
+    public Set<Field> fieldSetAll() {
+        return fieldSet(ALL);
+    }
+
+    public Set<Field> fieldSet(String name) {
+        return fieldSets.get(name);
     }
 
     /**
@@ -415,7 +456,7 @@ public class DocumentType extends StructuredDataType {
      * @return An iterator for iterating the fields in this documenttype.
      */
     public Iterator<Field> fieldIteratorThisTypeOnly() {
-        return new Iterator<Field>() {
+        return new Iterator<>() {
             Iterator<Field> headerIt = headerType.getFields().iterator();
             Iterator<Field> bodyIt = bodyType.getFields().iterator();
 

@@ -8,6 +8,9 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.log.LogLevel;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -152,6 +155,11 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
             type.inherit(parentType);
         }
+        Map<String, Collection<String>> fieldSets = new HashMap<>(doc.fieldsets().size());
+        for (Map.Entry<String, DocumentmanagerConfig.Datatype.Documenttype.Fieldsets> entry: doc.fieldsets().entrySet()) {
+            fieldSets.put(entry.getKey(), entry.getValue().fields());
+        }
+        type.addFieldSets(fieldSets);
         manager.register(type);
     }
 

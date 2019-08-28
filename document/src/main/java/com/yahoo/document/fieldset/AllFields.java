@@ -15,7 +15,7 @@ public class AllFields implements FieldSet {
     }
 
     @Override
-    public FieldSet clone() throws CloneNotSupportedException {
+    public FieldSet clone() {
         return new AllFields();
     }
 }

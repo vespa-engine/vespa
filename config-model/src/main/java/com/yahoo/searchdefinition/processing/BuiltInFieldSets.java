@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.DocumentType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Search;
@@ -15,7 +16,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class BuiltInFieldSets extends Processor {
 
-    private static final String DOC_FIELDSET_NAME = "[document]";
     public static final String SEARCH_FIELDSET_NAME = "[search]";     // Public due to oddities in position handling.
     public static final String INTERNAL_FIELDSET_NAME = "[internal]"; // This one populated from misc places
 
@@ -43,7 +43,7 @@ public class BuiltInFieldSets extends Processor {
             if (docField instanceof SDField && ((SDField) docField).isExtraField()) {
                 continue; // skip
             }
-            search.fieldSets().addBuiltInFieldSetItem(DOC_FIELDSET_NAME, docField.getName());
+            search.fieldSets().addBuiltInFieldSetItem(DocumentType.DOCUMENT, docField.getName());
         }
     }
 
