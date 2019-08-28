@@ -66,8 +66,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     @Override
     public InstanceIdentity registerInstance(AthenzIdentity providerIdentity,
                                              AthenzIdentity instanceIdentity,
-                                             String hostname,
                                              String attestationData,
+                                             String hostname,
                                              Pkcs10Csr csr) {
         InstanceRegisterInformation payload =
                 new InstanceRegisterInformation(providerIdentity, instanceIdentity, attestationData, hostname, csr);
