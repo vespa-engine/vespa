@@ -12,12 +12,12 @@ using attribute::LoadedNumericValue;
 template <typename P>
 PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
-                         EnumStoreBase &enumStore)
+                         IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.getPostingDictionary(), attr.getStatus(),
+      _postingList(enumStore.getEnumStoreDict().getPostingDictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.getPostingDictionary()),
+      _dict(enumStore.getEnumStoreDict().getPostingDictionary()),
       _esb(enumStore)
 { }
 
@@ -53,7 +53,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
 {
     clearAllPostings();
     uint32_t docIdLimit = _attr.getNumDocs();
-    EnumStoreBase &enumStore = _esb;
+    IEnumStore &enumStore = _esb;
     EntryRef newIndex;
     PostingChange<P> postings;
     if (loaded.empty()) {

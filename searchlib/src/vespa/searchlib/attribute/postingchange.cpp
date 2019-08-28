@@ -101,8 +101,8 @@ removeDupRemovals(std::vector<uint32_t> &removals)
 
 }
 
-EnumStoreBase::Index
-EnumIndexMapper::map(EnumStoreBase::Index original, const EnumStoreComparator & compare) const
+IEnumStore::Index
+EnumIndexMapper::map(IEnumStore::Index original, const EnumStoreComparator & compare) const
 {
     (void) compare;
     return original;
@@ -163,7 +163,7 @@ PostingChange<P>::apply(GrowableBitVector &bv)
 template <typename WeightedIndex>
 class ActualChangeComputer {
 public:
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<EnumIndex>>;
     using WeightedIndexVector = std::vector<WeightedIndex>;
     void compute(const WeightedIndex * entriesNew, size_t szNew,
@@ -219,7 +219,7 @@ private:
 template <typename WeightedIndex>
 class MergeDupIterator {
     using InnerIter = typename std::vector<WeightedIndex>::const_iterator;
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using Entry = multivalue::WeightedValue<EnumIndex>;
     InnerIter _cur;
     InnerIter _end;
@@ -350,7 +350,7 @@ template class PostingChange<AttributeWeightPosting>;
 
 typedef PostingChange<btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
 typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
-typedef EnumStoreBase::Index EnumIndex;
+typedef IEnumStore::Index EnumIndex;
 typedef multivalue::WeightedValue<EnumIndex> WeightedIndex; 
 typedef multivalue::Value<EnumIndex> ValueIndex; 
 

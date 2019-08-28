@@ -14,7 +14,7 @@ SingleValueEnumAttributeSaver::
 SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                               const attribute::AttributeHeader &header,
                               EnumIndexCopyVector &&indices,
-                              const EnumStoreBase &enumStore)
+                              const IEnumStore &enumStore)
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _enumSaver(enumStore)

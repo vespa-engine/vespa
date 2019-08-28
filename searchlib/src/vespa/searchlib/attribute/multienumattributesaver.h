@@ -7,7 +7,7 @@
 
 namespace search {
 
-/*
+/**
  * Class for saving an enumerated multivalue attribute.
  *
  * Template argument MultiValueT is either  multivalue::Value<ValueType> or
@@ -33,7 +33,7 @@ public:
     MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                                  const attribute::AttributeHeader &header,
                                  const MultiValueMapping &mvMapping,
-                                 const EnumStoreBase &enumStore);
+                                 const IEnumStore &enumStore);
     ~MultiValueEnumAttributeSaver() override;
 };
 

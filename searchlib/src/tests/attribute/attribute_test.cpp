@@ -1638,9 +1638,9 @@ AttributeTest::testStatus()
     fillString(values, 16);
     uint32_t numDocs = 100;
     // No posting list
-    static constexpr size_t LeafNodeSize = 4 + sizeof(EnumStoreBase::Index) * EnumTreeTraits::LEAF_SLOTS;
+    static constexpr size_t LeafNodeSize = 4 + sizeof(IEnumStore::Index) * EnumTreeTraits::LEAF_SLOTS;
     static constexpr size_t InternalNodeSize =
-        8 + (sizeof(EnumStoreBase::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
+        8 + (sizeof(IEnumStore::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
     static constexpr size_t NestedVectorSize = 24; // sizeof(vespalib::Array)
 
     {
@@ -1683,7 +1683,7 @@ AttributeTest::testStatus()
         expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
         // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
+        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }

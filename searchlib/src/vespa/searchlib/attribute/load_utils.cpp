@@ -26,7 +26,7 @@ INSTANTIATE_ARRAY(ValueType, Saver); \
 INSTANTIATE_WSET(ValueType, Saver)
 
 #define INSTANTIATE_ENUM(Saver) \
-INSTANTIATE_SINGLE_ARRAY_WSET(EnumStoreIndex, Saver)
+INSTANTIATE_SINGLE_ARRAY_WSET(IEnumStore::Index, Saver)
 
 #define INSTANTIATE_VALUE(ValueType) \
 INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, NoSaveLoadedEnum)

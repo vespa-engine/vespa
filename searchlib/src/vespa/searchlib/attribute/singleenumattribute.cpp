@@ -29,7 +29,7 @@ AttributeVector::DocId
 SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
 {
     incGeneration = _enumIndices.isFull();
-    _enumIndices.push_back(EnumStoreBase::Index());
+    _enumIndices.push_back(IEnumStore::Index());
     return _enumIndices.size() - 1;
 }
 

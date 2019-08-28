@@ -8,7 +8,7 @@
 namespace search {
 
 EnumAttributeSaver::
-EnumAttributeSaver(const EnumStoreBase &enumStore)
+EnumAttributeSaver(const IEnumStore &enumStore)
     : _enumStore(enumStore),
       _enumerator(_enumStore.getEnumStoreDict(), _enumStore.get_data_store_base())
 {
@@ -34,6 +34,6 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 
 namespace search::datastore {
 
-template class UniqueStoreEnumerator<EnumStoreIndex>;
+template class UniqueStoreEnumerator<IEnumStore::Index>;
 
 }

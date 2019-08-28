@@ -83,11 +83,11 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
 }
 
 template
-class btree::BTreeBuilder<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeBuilder<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template class EnumStoreT< StringEntryType >;

@@ -26,7 +26,7 @@ protected:
     using Dictionary = EnumPostingTree;
     using DictionaryConstIterator = Dictionary::ConstIterator;
     using FrozenDictionary = Dictionary::FrozenView;
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
 
     const FrozenDictionary _frozenDictionary;
     DictionaryConstIterator _lowerDictItr;
@@ -41,14 +41,14 @@ protected:
     datastore::EntryRef     _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
-    const EnumStoreBase    &_esb;
+    const IEnumStore       &_esb;
     uint32_t                _minBvDocFreq;
     const GrowableBitVector *_gbv; // bitvector if _useBitVector has been set
     const ISearchContext    &_baseSearchCtx;
 
 
     PostingListSearchContext(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                             const EnumStoreBase &esb, uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
+                             const IEnumStore &esb, uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext();
 
@@ -113,7 +113,7 @@ protected:
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
     PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
+                              bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
                               uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT();
 
@@ -151,7 +151,7 @@ protected:
     using Parent::singleHits;
 
     PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingList &postingList, const EnumStoreBase &esb,
+                                    bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
                                     uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     unsigned int approximateHits() const override;

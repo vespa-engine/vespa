@@ -48,7 +48,7 @@ class EnumIndexMapper
 {
 public:
     virtual ~EnumIndexMapper() { }
-    virtual EnumStoreBase::Index map(EnumStoreBase::Index original, const EnumStoreComparator & compare) const;
+    virtual IEnumStore::Index map(IEnumStore::Index original, const EnumStoreComparator & compare) const;
     virtual bool hasFold() const { return false; }
 };
 

@@ -256,7 +256,7 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
 
 void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
 void AttributeVector::onGenerationChange(generation_t generation) { (void) generation; }
-const EnumStoreBase * AttributeVector::getEnumStoreBase() const { return nullptr; }
+const IEnumStore * AttributeVector::getEnumStoreBase() const { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
 
 std::unique_ptr<FastOS_FileInterface>

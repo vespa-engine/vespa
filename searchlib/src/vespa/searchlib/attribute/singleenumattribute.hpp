@@ -217,7 +217,7 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 template <typename B>
 void
 SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         const EnumStoreBase::IndexVector &eidxs,
+                                         const IEnumStore::IndexVector &eidxs,
                                          LoadedEnumAttributeVector &loaded)
 {
     attribute::loadFromEnumeratedSingleValue(_enumIndices,
@@ -231,8 +231,8 @@ SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
 template <typename B>
 void
 SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         const EnumStoreBase::IndexVector &eidxs,
-                                         EnumStoreBase::EnumVector &enumHist)
+                                         const IEnumStore::IndexVector &eidxs,
+                                         IEnumStore::EnumVector &enumHist)
 {
     attribute::loadFromEnumeratedSingleValue(_enumIndices,
                                              getGenerationHolder(),

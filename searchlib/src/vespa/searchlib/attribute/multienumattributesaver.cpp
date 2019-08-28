@@ -21,7 +21,7 @@ namespace {
  */
 class DatWriter
 {
-    std::vector<EnumStoreIndex>           _indexes;
+    std::vector<IEnumStore::Index>        _indexes;
     const EnumAttributeSaver::Enumerator &_enumerator;
     std::unique_ptr<search::BufferWriter> _datWriter;
     std::function<bool()>                 _compaction_interferred;
@@ -80,7 +80,7 @@ MultiValueEnumAttributeSaver<MultiValueT>::
 MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                              const attribute::AttributeHeader &header,
                              const MultiValueMapping &mvMapping,
-                             const EnumStoreBase &enumStore)
+                             const IEnumStore &enumStore)
     : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping),
       _enumSaver(enumStore),
@@ -134,8 +134,8 @@ onSave(IAttributeSaveTarget &saveTarget)
     return !compaction_broke_save;
 }
 
-using EnumIdxArray = multivalue::Value<EnumStoreIndex>;
-using EnumIdxWset = multivalue::WeightedValue<EnumStoreIndex>;
+using EnumIdxArray = multivalue::Value<IEnumStore::Index>;
+using EnumIdxWset = multivalue::WeightedValue<IEnumStore::Index>;
 
 template class MultiValueEnumAttributeSaver<EnumIdxArray>;
 template class MultiValueEnumAttributeSaver<EnumIdxWset>;

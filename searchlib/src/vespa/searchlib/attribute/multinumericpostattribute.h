@@ -14,8 +14,8 @@ namespace search {
  * This class is used for both array and weighted set types.
  *
  * B: EnumAttribute<P, BaseClass>
- * M: multivalue::Value<EnumStoreBase::Index> (array) or
- *    multivalue::WeightedValue<EnumStoreBase::Index> (weighted set)
+ * M: multivalue::Value<IEnumStore::Index> (array) or
+ *    multivalue::WeightedValue<IEnumStore::Index> (weighted set)
  * M specifies the type stored in the MultiValueMapping
  */
 template <typename B, typename M>

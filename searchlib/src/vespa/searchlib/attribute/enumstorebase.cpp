@@ -207,73 +207,19 @@ EnumStoreBase::deserialize0(const void *src,
 }
 
 
-template <typename Tree>
-ssize_t
-EnumStoreBase::deserialize(const void *src,
-                               size_t available,
-                               IndexVector &idx,
-                               Tree &tree)
-{
-    ssize_t sz(deserialize0(src, available, idx));
-    if (sz >= 0) {
-        typename Tree::Builder builder(tree.getAllocator());
-        typedef IndexVector::const_iterator IT;
-        for (IT i(idx.begin()), ie(idx.end()); i != ie; ++i) {
-            builder.insert(*i, typename Tree::DataType());
-        }
-        tree.assign(builder);
-    }
-    return sz;
-}
-
-
-template <typename Tree>
-void
-EnumStoreBase::fixupRefCounts(const EnumVector &hist, Tree &tree)
-{
-    if ( hist.empty() )
-        return;
-    typename Tree::Iterator ti(tree.begin());
-    typedef EnumVector::const_iterator HistIT;
-
-    for (HistIT hi(hist.begin()), hie(hist.end()); hi != hie; ++hi, ++ti) {
-        assert(ti.valid());
-        fixupRefCount(ti.getKey(), *hi);
-    }
-    assert(!ti.valid());
-    freeUnusedEnums(false);
-}
-
-
-vespalib::asciistream & operator << (vespalib::asciistream & os, const EnumStoreBase::Index & idx) {
+vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx) {
     return os << "offset(" << idx.offset() << "), bufferId(" << idx.bufferId() << "), idx(" << idx.ref() << ")";
 }
 
 
-template class datastore::DataStoreT<EnumStoreIndex>;
-
-template
-ssize_t
-EnumStoreBase::deserialize<EnumTree>(const void *src, size_t available, IndexVector &idx, EnumTree &tree);
-
-template
-ssize_t
-EnumStoreBase::deserialize<EnumPostingTree>(const void *src, size_t available, IndexVector &idx, EnumPostingTree &tree);
-
-template
-void
-EnumStoreBase::fixupRefCounts<EnumTree>(const EnumVector &hist, EnumTree &tree);
-
-template
-void
-EnumStoreBase::fixupRefCounts<EnumPostingTree>(const EnumVector &hist, EnumPostingTree &tree);
+template class datastore::DataStoreT<IEnumStore::Index>;
 
 }
 
 namespace vespalib {
-template class RcuVectorBase<search::EnumStoreIndex>;
+template class RcuVectorBase<search::IEnumStore::Index>;
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::EnumStoreIndex, search::EnumStoreIndex,
-                                    vespalib::hash<search::EnumStoreIndex>, std::equal_to<search::EnumStoreIndex>,
+VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::IEnumStore::Index, search::IEnumStore::Index,
+                                    vespalib::hash<search::IEnumStore::Index>, std::equal_to<search::IEnumStore::Index>,
                                     vespalib::hashtable_base::and_modulator);

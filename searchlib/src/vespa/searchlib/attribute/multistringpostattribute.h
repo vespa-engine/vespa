@@ -14,8 +14,8 @@ namespace search {
  * This class is used for both array and weighted set types.
  *
  * B: EnumAttribute<StringAttribute>
- * T: multivalue::Value<EnumStoreBase::Index> (array) or
- *    multivalue::WeightedValue<EnumStoreBase::Index> (weighted set)
+ * T: multivalue::Value<IEnumStore::Index> (array) or
+ *    multivalue::WeightedValue<IEnumStore::Index> (weighted set)
  */
 template <typename B, typename T>
 class MultiValueStringPostingAttributeT
@@ -112,8 +112,8 @@ public:
     }
 };
 
-using ArrayStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> >;
-using WeightedSetStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> >;
+using ArrayStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<IEnumStore::Index> >;
+using WeightedSetStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<IEnumStore::Index> >;
 
 } // namespace search
 

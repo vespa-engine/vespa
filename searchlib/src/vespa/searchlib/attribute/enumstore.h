@@ -103,7 +103,7 @@ private:
     }
 
 protected:
-    typedef EnumStoreBase::IndexSet IndexSet;
+    typedef IEnumStore::IndexSet IndexSet;
     using EnumStoreBase::_store;
     using EnumStoreBase::TYPE_ID;
 
@@ -195,8 +195,8 @@ public:
     ssize_t deserialize(const void *src, size_t available, size_t &initSpace) override;
     ssize_t deserialize(const void *src, size_t available, Index &idx) override;
     bool foldedChange(const Index &idx1, const Index &idx2) override;
-    virtual bool findEnum(Type value, EnumStoreBase::EnumHandle &e) const;
-    virtual std::vector<EnumStoreBase::EnumHandle> findFoldedEnums(Type value) const;
+    virtual bool findEnum(Type value, IEnumStore::EnumHandle &e) const;
+    virtual std::vector<IEnumStore::EnumHandle> findFoldedEnums(Type value) const;
     void addEnum(Type value, Index &newIdx);
     virtual bool findIndex(Type value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
@@ -263,10 +263,10 @@ insertEntryValue(char * dst, Type value);
 
 
 extern template
-class btree::BTreeBuilder<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 extern template
-class btree::BTreeBuilder<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 extern template class EnumStoreT< StringEntryType >;

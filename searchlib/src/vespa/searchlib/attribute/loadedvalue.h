@@ -57,14 +57,14 @@ public:
         }
     };
 
-    EnumStoreBase::Index
+    IEnumStore::Index
     getEidx() const
     {
-        return EnumStoreBase::Index(datastore::EntryRef(_value._eidx));
+        return IEnumStore::Index(datastore::EntryRef(_value._eidx));
     }
 
     void
-    setEidx(EnumStoreBase::Index v)
+    setEidx(IEnumStore::Index v)
     {
         _value._eidx = v.ref();
     }
