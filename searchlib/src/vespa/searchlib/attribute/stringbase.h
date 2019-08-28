@@ -9,7 +9,7 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/attribute/enumstorebase.h>
 #include <vespa/searchlib/attribute/loadedenumvalue.h>
-#include <vespa/searchlib/attribute/loadedstringvalue.h>
+#include "no_loaded_vector.h"
 #include <vespa/searchlib/attribute/changevector.h>
 
 namespace search {
@@ -25,7 +25,7 @@ public:
     typedef IEnumStore::Index          EnumIndex;
     typedef IEnumStore::IndexVector    EnumIndexVector;
     typedef IEnumStore::EnumVector     EnumVector;
-    typedef attribute::LoadedStringVector LoadedVector;
+    using LoadedVector = NoLoadedVector;
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StringAttribute);
     bool append(DocId doc, const vespalib::string & v, int32_t weight) {
@@ -73,7 +73,6 @@ protected:
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
-    typedef attribute::LoadedStringVectorReal LoadedVectorR;
     virtual void fillPostings(LoadedVector & loaded);
     virtual void fillEnum(LoadedVector & loaded);
     virtual void fillValues(LoadedVector & loaded);

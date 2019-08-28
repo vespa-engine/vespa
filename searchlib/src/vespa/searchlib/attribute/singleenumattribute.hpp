@@ -204,12 +204,14 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 {
-    uint32_t numDocs = this->getNumDocs();
-    getGenerationHolder().clearHoldLists();
-    _enumIndices.reset();
-    _enumIndices.unsafe_reserve(numDocs);
-    for (DocId doc = 0; doc < numDocs; ++doc, loaded.next()) {
-        _enumIndices.push_back(loaded.read().getEidx());
+    if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
+        uint32_t numDocs = this->getNumDocs();
+        getGenerationHolder().clearHoldLists();
+        _enumIndices.reset();
+        _enumIndices.unsafe_reserve(numDocs);
+        for (DocId doc = 0; doc < numDocs; ++doc, loaded.next()) {
+            _enumIndices.push_back(loaded.read().getEidx());
+        }
     }
 }
 

@@ -220,61 +220,61 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 handleFillPostings(LoadedVector &loaded)
 {
-    clearAllPostings();
-    EntryRef newIndex;
-    PostingChange<P> postings;
-    uint32_t docIdLimit = _attr.getNumDocs();
-    _postingList.resizeBitVectors(docIdLimit, docIdLimit);
-    if ( ! loaded.empty() ) {
-        vespalib::Array<typename LoadedVector::Type> similarValues;
-        auto value = loaded.read();
-        LoadedValueType prev = value.getValue();
-        for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
-            value = loaded.read();
-            if (FoldedComparatorType::compareFolded(prev, value.getValue()) == 0) {
-                // for single value attributes loaded[numDocs] is used
-                // for default value but we don't want to add an
-                // invalid docId to the posting list.
-                if (value._docId < docIdLimit) {
-                    postings.add(value._docId, value.getWeight());
+    if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
+        clearAllPostings();
+        EntryRef newIndex;
+        PostingChange<P> postings;
+        uint32_t docIdLimit = _attr.getNumDocs();
+        _postingList.resizeBitVectors(docIdLimit, docIdLimit);
+        if ( ! loaded.empty() ) {
+            vespalib::Array<typename LoadedVector::Type> similarValues;
+            auto value = loaded.read();
+            LoadedValueType prev = value.getValue();
+            for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
+                value = loaded.read();
+                if (FoldedComparatorType::compareFolded(prev, value.getValue()) == 0) {
+                    // for single value attributes loaded[numDocs] is used
+                    // for default value but we don't want to add an
+                    // invalid docId to the posting list.
+                    if (value._docId < docIdLimit) {
+                        postings.add(value._docId, value.getWeight());
+                        similarValues.push_back(value);
+                    }
+                } else {
+                    postings.removeDups();
+                    newIndex = EntryRef();
+                    _postingList.apply(newIndex,
+                                       &postings._additions[0],
+                                       &postings._additions[0] +
+                                       postings._additions.size(),
+                                       &postings._removals[0],
+                                       &postings._removals[0] +
+                                       postings._removals.size());
+                    postings.clear();
+                    if (value._docId < docIdLimit) {
+                        postings.add(value._docId, value.getWeight());
+                    }
+                    similarValues[0]._pidx = newIndex;
+                    for (size_t j(0), k(similarValues.size()); j < k; j++) {
+                        loaded.write(similarValues[j]);
+                    }
+                    similarValues.clear();
                     similarValues.push_back(value);
+                    prev = value.getValue();
                 }
-            } else {
-                postings.removeDups();
-
-                newIndex = EntryRef();
-                _postingList.apply(newIndex,
-                                   &postings._additions[0],
-                                   &postings._additions[0] +
-                                   postings._additions.size(),
-                                   &postings._removals[0],
-                                   &postings._removals[0] +
-                                   postings._removals.size());
-                postings.clear();
-                if (value._docId < docIdLimit) {
-                    postings.add(value._docId, value.getWeight());
-                }
-                similarValues[0]._pidx = newIndex;
-                for (size_t j(0), k(similarValues.size()); j < k; j++) {
-                    loaded.write(similarValues[j]);
-                }
-                similarValues.clear();
-                similarValues.push_back(value);
-                prev = value.getValue();
             }
-        }
-
-        postings.removeDups();
-        newIndex = EntryRef();
-        _postingList.apply(newIndex,
-                           &postings._additions[0],
-                           &postings._additions[0] +
-                           postings._additions.size(),
-                           &postings._removals[0],
-                           &postings._removals[0] + postings._removals.size());
-        similarValues[0]._pidx = newIndex;
-        for (size_t i(0), m(similarValues.size()); i < m; i++) {
-            loaded.write(similarValues[i]);
+            postings.removeDups();
+            newIndex = EntryRef();
+            _postingList.apply(newIndex,
+                               &postings._additions[0],
+                               &postings._additions[0] +
+                               postings._additions.size(),
+                               &postings._removals[0],
+                               &postings._removals[0] + postings._removals.size());
+            similarValues[0]._pidx = newIndex;
+            for (size_t i(0), m(similarValues.size()); i < m; i++) {
+                loaded.write(similarValues[i]);
+            }
         }
     }
 }
@@ -359,7 +359,7 @@ PostingListAttributeSubBase<AttributePosting,
 
 template class
 PostingListAttributeSubBase<AttributePosting,
-                            attribute::LoadedStringVector,
+                            NoLoadedVector,
                             const char *,
                             EnumStoreT<StringEntryType > >;
 
@@ -401,7 +401,7 @@ PostingListAttributeSubBase<AttributeWeightPosting,
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
-                            attribute::LoadedStringVector,
+                            NoLoadedVector,
                             const char *,
                             EnumStoreT<StringEntryType > >;
 

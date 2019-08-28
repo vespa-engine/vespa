@@ -5,6 +5,7 @@
 #include "attributevector.h"
 #include "loadedenumvalue.h"
 #include "enumstore.h"
+#include "no_loaded_vector.h"
 #include <set>
 
 namespace search {
