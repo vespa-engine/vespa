@@ -26,28 +26,30 @@ EnumAttribute<B>::~EnumAttribute()
 template <typename B>
 void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
 {
-    typename EnumStore::Builder builder;
-    if (!loaded.empty()) {
-        auto value = loaded.read();
-        LoadedValueType prev = value.getValue();
-        uint32_t prevRefCount(0);
-        EnumIndex index = builder.insert(value.getValue(), value._pidx.ref());
-        for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
-            value = loaded.read();
-            if (EnumStore::ComparatorType::compare(prev, value.getValue()) != 0) {
-                builder.updateRefCount(prevRefCount);
-                index = builder.insert(value.getValue(), value._pidx.ref());
-                prev = value.getValue();
-                prevRefCount = 1;
-            } else {
-                prevRefCount++;
+    if constexpr(!std::is_same_v<LoadedVector, NoLoadedVector>) {
+        typename EnumStore::Builder builder;
+        if (!loaded.empty()) {
+            auto value = loaded.read();
+            LoadedValueType prev = value.getValue();
+            uint32_t prevRefCount(0);
+            EnumIndex index = builder.insert(value.getValue(), value._pidx.ref());
+            for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
+                value = loaded.read();
+                if (EnumStore::ComparatorType::compare(prev, value.getValue()) != 0) {
+                    builder.updateRefCount(prevRefCount);
+                    index = builder.insert(value.getValue(), value._pidx.ref());
+                    prev = value.getValue();
+                    prevRefCount = 1;
+                } else {
+                    prevRefCount++;
+                }
+                value.setEidx(index);
+                loaded.write(value);
             }
-            value.setEidx(index);
-            loaded.write(value);
+            builder.updateRefCount(prevRefCount);
         }
-        builder.updateRefCount(prevRefCount);
+        _enumStore.reset(builder);
     }
-    _enumStore.reset(builder);
 }
 
 

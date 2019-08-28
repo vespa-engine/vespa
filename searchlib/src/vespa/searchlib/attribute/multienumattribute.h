@@ -6,6 +6,7 @@
 #include "enumstorebase.h"
 #include "loadedenumvalue.h"
 #include "multivalue.h"
+#include "no_loaded_vector.h"
 
 namespace search {
 

@@ -13,6 +13,7 @@
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/entry_comparator.h>
 #include <vespa/vespalib/datastore/entryref.h>
+#include <map>
 
 namespace search {
 
