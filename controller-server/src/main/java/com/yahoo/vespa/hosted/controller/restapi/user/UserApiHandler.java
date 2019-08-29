@@ -14,8 +14,8 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
-import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
+import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
@@ -183,12 +183,14 @@ public class UserApiHandler extends LoggingRequestHandler {
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
-        if (   role.definition() == RoleDefinition.tenantOwner
-            && users.listUsers(role).equals(List.of(user)))
+        List<User> currentUsers = users.listUsers(role);
+        if (role.definition() == RoleDefinition.tenantOwner
+                && currentUsers.size() == 1
+                && currentUsers.get(0).email().equals(user.value()))
             throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
 
         users.removeUsers(role, List.of(user));
-        return new MessageResponse(user + " is no longer a member of " + role);
+        return new MessageResponse(user+" is no longer a member of "+role);
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
