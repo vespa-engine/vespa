@@ -203,11 +203,18 @@ public class RoutingPolicies {
             this.application = application;
             this.zone = zone;
             this.list = loadBalancers.stream()
-                                     // DNS no longer needs to maintain for load balancer in other states
-                                     // (e.g. inactive) than the following
-                                     .filter(lb -> lb.state() == LoadBalancer.State.active ||
-                                                   lb.state() == LoadBalancer.State.reserved)
+                                     .filter(AllocatedLoadBalancers::shouldUpdatePolicy)
                                      .collect(Collectors.toUnmodifiableList());
+        }
+
+        private static boolean shouldUpdatePolicy(LoadBalancer loadBalancer) {
+            switch (loadBalancer.state()) {
+                case active:
+                case reserved: // This allows DNS updates to happen early, while an application is being prepared.
+                    return true;
+            }
+            // Any other state, such as inactive, is ignored.
+            return false;
         }
 
     }
