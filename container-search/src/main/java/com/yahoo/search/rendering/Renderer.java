@@ -47,7 +47,7 @@ abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<R
             throw new RuntimeException(e);
         }
         finally {
-            if (writer !=null)
+            if (writer != null)
                 try { writer.close(); } catch (IOException e2) {};
         }
         SettableFuture<Boolean> completed = SettableFuture.create();

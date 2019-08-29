@@ -9,7 +9,6 @@ search simple {
 
     field title type string {
       indexing: summary | index
-      # index-to: title, default
       index: prefix
       rank-type: identity
       rank-type default: about
@@ -19,7 +18,6 @@ search simple {
     }
 
     field description type string {
-      # index-to: default, description
       indexing: summary | index
       summary: full
       summary dyndesc: dynamic
@@ -38,7 +36,6 @@ search simple {
 
     field chatter type string {
       indexing: index
-      # index-to: default
       rank-type: about
     }
 
@@ -56,7 +53,6 @@ search simple {
     field measurement type int {
       indexing: attribute | summary
       rank-type: empty
-      # index-to: measurement
     }
 
     field smallattribute type array<byte> {
