@@ -2036,11 +2036,11 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     AddressSpaceUsage after = attrPtr->getAddressSpaceUsage();
     if (attrPtr->hasEnum()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 16u);
-        EXPECT_EQUAL(before.enumStoreUsage().dead(), 16u);
+        EXPECT_EQUAL(before.enumStoreUsage().used(), 1u);
+        EXPECT_EQUAL(before.enumStoreUsage().dead(), 1u);
         EXPECT_GREATER(after.enumStoreUsage().used(), before.enumStoreUsage().used());
-        EXPECT_EQUAL(after.enumStoreUsage().limit(), before.enumStoreUsage().limit());
-        EXPECT_EQUAL(34359738368u, after.enumStoreUsage().limit()); // EnumStoreBase::DataStoreType::RefType::offsetSize()
+        EXPECT_GREATER_EQUAL(after.enumStoreUsage().limit(), before.enumStoreUsage().limit());
+        EXPECT_GREATER(after.enumStoreUsage().limit(), 4200000000u);
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT enum", attrName.c_str());
         EXPECT_EQUAL(before.enumStoreUsage().used(), 0u);

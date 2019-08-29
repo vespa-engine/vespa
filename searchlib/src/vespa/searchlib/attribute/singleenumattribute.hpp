@@ -102,8 +102,8 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
-    total.merge(this->_enumStore.getMemoryUsage());
-    total.merge(this->_enumStore.getTreeMemoryUsage());
+    total.merge(this->_enumStore.getValuesMemoryUsage());
+    total.merge(this->_enumStore.getDictionaryMemoryUsage());
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(_enumIndices.size(), this->_enumStore.getNumUniques(), total.allocatedBytes(),

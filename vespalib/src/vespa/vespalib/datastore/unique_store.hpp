@@ -28,9 +28,15 @@ using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
+    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>())
+{
+}
+
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict)
     : _allocator(),
       _store(_allocator.get_data_store()),
-      _dict(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>())
+      _dict(std::move(dict))
 {
 }
 
@@ -175,6 +181,13 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
     vespalib::MemoryUsage usage = _store.getMemoryUsage();
     usage.merge(_dict->get_memory_usage());
     return usage;
+}
+
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+vespalib::AddressSpace
+UniqueStore<EntryT, RefT, Compare, Allocator>::get_address_space_usage() const
+{
+    return _allocator.get_data_store().getAddressSpaceUsage();
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
