@@ -378,6 +378,7 @@ protected:
         return value;
     }
 
+    virtual vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const;
     virtual vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const;
     virtual vespalib::AddressSpace getMultiValueAddressSpaceUsage() const;
     void logEnumStoreEvent(const char *reason, const char *stage);

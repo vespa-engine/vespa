@@ -77,8 +77,8 @@ void
 convertEnumStoreToSlime(const IEnumStore &enumStore, Cursor &object)
 {
     object.setLong("numUniques", enumStore.getNumUniques());
-    convertMemoryUsageToSlime(enumStore.getMemoryUsage(), object.setObject("memoryUsage"));
-    convertMemoryUsageToSlime(enumStore.getTreeMemoryUsage(), object.setObject("treeMemoryUsage"));
+    convertMemoryUsageToSlime(enumStore.getValuesMemoryUsage(), object.setObject("valuesMemoryUsage"));
+    convertMemoryUsageToSlime(enumStore.getDictionaryMemoryUsage(), object.setObject("dictionaryMemoryUsage"));
 }
 
 void

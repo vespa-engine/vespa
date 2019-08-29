@@ -42,6 +42,7 @@ public:
         return get_wrapped(ref).value();
     }
     DataStoreType& get_data_store() { return _store; }
+    const DataStoreType& get_data_store() const { return _store; }
 };
 
 }

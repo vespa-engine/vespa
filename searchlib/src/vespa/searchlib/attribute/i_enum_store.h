@@ -22,7 +22,7 @@ class IEnumStoreDictionary;
  */
 class IEnumStore {
 public:
-    using Index = datastore::AlignedEntryRefT<31, 4>;
+    using Index = datastore::EntryRefT<22>;
     using IndexVector = vespalib::Array<Index>;
     using EnumHandle = attribute::IAttributeVector::EnumHandle;
     using EnumVector = vespalib::Array<uint32_t>;
@@ -52,8 +52,8 @@ public:
     virtual const IEnumStoreDictionary& getEnumStoreDict() const = 0;
     virtual const datastore::DataStoreBase& get_data_store_base() const = 0;
     virtual uint32_t getNumUniques() const = 0;
-    virtual vespalib::MemoryUsage getMemoryUsage() const = 0;
-    virtual vespalib::MemoryUsage getTreeMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getValuesMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage getDictionaryMemoryUsage() const = 0;
 
 
     template <typename TreeT>

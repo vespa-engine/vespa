@@ -47,7 +47,7 @@ public:
 void
 Test::requireThatNumericComparatorIsWorking()
 {
-    NumericEnumStore es(1024, false);
+    NumericEnumStore es(false);
     EnumIndex e1, e2;
     es.addEnum(10, e1);
     es.addEnum(30, e2);
@@ -63,7 +63,7 @@ Test::requireThatNumericComparatorIsWorking()
 void
 Test::requireThatFloatComparatorIsWorking()
 {
-    FloatEnumStore es(1024, false);
+    FloatEnumStore es(false);
     EnumIndex e1, e2, e3;
     es.addEnum(10.5, e1);
     es.addEnum(30.5, e2);
@@ -83,7 +83,7 @@ Test::requireThatFloatComparatorIsWorking()
 void
 Test::requireThatStringComparatorIsWorking()
 {
-    StringEnumStore es(1024, false);
+    StringEnumStore es(false);
     EnumIndex e1, e2, e3;
     es.addEnum("Aa", e1);
     es.addEnum("aa", e2);
@@ -102,7 +102,7 @@ Test::requireThatStringComparatorIsWorking()
 void
 Test::requireThatComparatorWithTreeIsWorking()
 {
-    NumericEnumStore es(2048, false);
+    NumericEnumStore es(false);
     vespalib::GenerationHandler g;
     TreeType t;
     NodeAllocator m;
@@ -129,7 +129,7 @@ Test::requireThatComparatorWithTreeIsWorking()
 void
 Test::requireThatFoldedComparatorIsWorking()
 {
-    StringEnumStore es(1024, false);
+    StringEnumStore es(false);
     EnumIndex e1, e2, e3, e4;
     es.addEnum("Aa", e1);
     es.addEnum("aa", e2);
