@@ -48,12 +48,14 @@ private:
     using IAttributeContext = search::attribute::IAttributeContext;
     using DocsumRequest = search::engine::DocsumRequest;
     using Properties = search::fef::Properties;
+    using my_clock = std::chrono::steady_clock;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
     search::fef::RankSetup::SP    _rankSetup;
     ViewResolver                  _viewResolver;
     std::mutex                    _statsLock;
     MatchingStats                 _stats;
+    my_clock::time_point          _startTime;
     const vespalib::Clock        &_clock;
     QueryLimiter                 &_queryLimiter;
     uint32_t                      _distributionKey;
