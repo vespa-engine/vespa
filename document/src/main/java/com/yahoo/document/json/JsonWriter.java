@@ -29,7 +29,6 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -264,7 +263,7 @@ public class JsonWriter implements DocumentWriter {
      *            the document to be serialized
      * @return the input document serialised as UTF-8 encoded JSON
      */
-    public static byte[] toByteArray(@NonNull Document document) {
+    public static byte[] toByteArray(Document document) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonWriter writer = new JsonWriter(out);
         writer.write(document);
@@ -280,7 +279,7 @@ public class JsonWriter implements DocumentWriter {
      * @return a document remove operation serialised as UTF-8 encoded JSON for
      *         the input document ID
      */
-    public static byte[] documentRemove(@NonNull DocumentId docId) {
+    public static byte[] documentRemove(DocumentId docId) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             JsonGenerator throwAway = jsonFactory.createGenerator(out);

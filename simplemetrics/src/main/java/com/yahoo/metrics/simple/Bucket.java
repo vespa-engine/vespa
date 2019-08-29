@@ -16,8 +16,6 @@ import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
 import com.yahoo.log.LogLevel;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * An aggregation of data which is only written to from a single thread.
  *
@@ -136,7 +134,7 @@ public class Bucket {
         return names;
     }
 
-    public Collection<Map.Entry<Point, UntypedMetric>> getValuesForMetric(@NonNull String metricName) {
+    public Collection<Map.Entry<Point, UntypedMetric>> getValuesForMetric(String metricName) {
         List<Map.Entry<Point, UntypedMetric>> singleMetric = new ArrayList<>();
         for (Map.Entry<Identifier, UntypedMetric> entry : values.entrySet()) {
             if (metricName.equals(entry.getKey().getName())) {
@@ -146,7 +144,7 @@ public class Bucket {
         return singleMetric;
     }
 
-    public Map<Point, UntypedMetric> getMapForMetric(@NonNull String metricName) {
+    public Map<Point, UntypedMetric> getMapForMetric(String metricName) {
         Map<Point, UntypedMetric> result = new HashMap<>();
         for (Map.Entry<Identifier, UntypedMetric> entry : values.entrySet()) {
             if (metricName.equals(entry.getKey().getName())) {

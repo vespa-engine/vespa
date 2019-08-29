@@ -3,8 +3,6 @@ package com.yahoo.prelude.query;
 
 import java.util.Iterator;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * An immutable and'ing of a collection of sub-expressions. It does not extend
  * AndItem to avoid code using instanceof handling it as an AndItem.
@@ -41,7 +39,6 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         return "SAND";
     }
 
-    @NonNull
     public String getIndexName() {
         if (getItemCount() == 0) {
             return "";

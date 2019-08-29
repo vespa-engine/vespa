@@ -3,8 +3,6 @@ package com.yahoo.vespa.config;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 /**
  * Class for holding the key when doing cache look-ups and other management of config instances.
@@ -13,11 +11,8 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  */
 public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable<ConfigKey<?>> {
 
-    @NonNull
     private final String name;
-    @NonNull
     private final String configId;
-    @NonNull
     private final String namespace;
 
     // The two fields below are only set when ConfigKey is constructed from a config class. Can be null
@@ -97,27 +92,22 @@ public class ConfigKey<CONFIGCLASS extends ConfigInstance> implements Comparable
         return hash;
     }
 
-    @NonNull
     public String getName() {
         return name;
     }
 
-    @NonNull
     public String getConfigId() {
         return configId;
     }
 
-    @NonNull
     public String getNamespace() {
         return namespace;
     }
 
-    @Nullable
     public Class<CONFIGCLASS> getConfigClass() {
         return configClass;
     }
 
-    @Nullable
     public String getMd5() {
         return md5;
     }

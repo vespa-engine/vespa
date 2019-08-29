@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Superclass for all leaf nodes in a {@link ConfigInstance}.
  * <p>
@@ -66,7 +64,7 @@ public abstract class LeafNode<T> extends Node implements Cloneable {
     }
 
     // TODO: should throw exception instead of return false.
-    protected abstract boolean doSetValue(@NonNull String value);
+    protected abstract boolean doSetValue(String value);
 
     /**
      * This method is meant for internal use in the configuration

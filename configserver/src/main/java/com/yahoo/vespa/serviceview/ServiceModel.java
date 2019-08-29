@@ -19,8 +19,6 @@ import com.yahoo.vespa.serviceview.bindings.ModelResponse;
 import com.yahoo.vespa.serviceview.bindings.ServicePort;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 
 /**
@@ -37,7 +35,6 @@ public final class ServiceModel {
     /**
      * An ordered list of the clusters in this config model.
      */
-    @NonNull
     public final ImmutableList<Cluster> clusters;
 
     ServiceModel(ModelResponse modelConfig) {
@@ -155,7 +152,7 @@ public final class ServiceModel {
         }
     }
 
-    private Service getFirstServiceInstanceByType(@NonNull String typeName) {
+    private Service getFirstServiceInstanceByType(String typeName) {
         for (Cluster c : clusters) {
             for (Service s : c.services) {
                 if (typeName.equals(s.serviceType)) {

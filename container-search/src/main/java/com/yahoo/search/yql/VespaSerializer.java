@@ -102,8 +102,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Serialize Vespa query trees to YQL+ strings.
  *
@@ -1391,7 +1389,7 @@ public class VespaSerializer {
                 .append("\": ").append(length).append("}");
     }
 
-    private static String normalizeIndexName(@NonNull String indexName) {
+    private static String normalizeIndexName(String indexName) {
         if (indexName.length() == 0) {
             return "default";
         } else {

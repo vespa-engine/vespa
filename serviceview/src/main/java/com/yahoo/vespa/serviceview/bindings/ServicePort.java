@@ -6,8 +6,6 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Splitter;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * View of {@link com.yahoo.cloud.config.ModelConfig.Hosts.Services.Ports}.
  *
@@ -28,7 +26,7 @@ public class ServicePort {
      * @return true if all argument tags are present for this port, false
      *         otherwise
      */
-    public boolean hasTags(@NonNull String... tag) {
+    public boolean hasTags(String... tag) {
         if (tags == null) {
             return false;
         }

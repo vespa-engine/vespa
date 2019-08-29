@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -44,7 +42,7 @@ public class PathNode extends LeafNode<Path> {
     }
 
     @Override
-    protected boolean doSetValue(@NonNull String stringVal) {
+    protected boolean doSetValue(String stringVal) {
         throw new UnsupportedOperationException("doSetValue should not be necessary since the library anymore!");
     }
 

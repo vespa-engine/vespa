@@ -23,7 +23,6 @@ import com.yahoo.vespa.model.container.component.Servlet;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.utils.FileSender;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         this.modelEvaluation = modelEvaluation;
     }
 
-    public final void addRestApi(@NonNull RestApi restApi) {
+    public final void addRestApi(RestApi restApi) {
         restApiGroup.addComponent(ComponentId.fromString(restApi.getBindingPath()), restApi);
     }
 
@@ -125,7 +124,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return servletGroup.getComponentMap();
     }
 
-    public final void addServlet(@NonNull Servlet servlet) {
+    public final void addServlet(Servlet servlet) {
         servletGroup.addComponent(servlet.getGlobalComponentId(), servlet);
     }
 

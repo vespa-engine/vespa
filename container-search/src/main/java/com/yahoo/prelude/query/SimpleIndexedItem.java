@@ -3,8 +3,6 @@ package com.yahoo.prelude.query;
 
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -22,11 +20,9 @@ import java.nio.ByteBuffer;
  */
 public abstract class SimpleIndexedItem extends SimpleTaggableItem implements IndexedItem {
 
-    @NonNull
     private String index = "";
 
     /** The name of the index this belongs to, or "" (never null) if not specified */
-    @NonNull
     public String getIndexName() {
         return index;
     }

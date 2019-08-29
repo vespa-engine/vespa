@@ -23,7 +23,6 @@ import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -262,7 +261,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         return Optional.of(local);
     }
 
-    private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {
+    private static Optional<String> quotedSummaryClass(String summaryClass) {
         return Optional.of(summaryClass == null ? "[null]" : quote(summaryClass));
     }
 

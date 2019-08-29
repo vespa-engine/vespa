@@ -4,8 +4,6 @@ package com.yahoo.metrics.simple;
 import com.google.common.annotations.Beta;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
-
 /**
  * A gauge metric, i.e. a bucket of arbitrary sample values. Create a gauge
  * metric by declaring it with {@link MetricReceiver#declareGauge(String)} or
@@ -15,7 +13,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  */
 @Beta
 public class Gauge {
-    @Nullable
+
     private final Point defaultPosition;
     private final String name;
     private final MetricReceiver receiver;

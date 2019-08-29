@@ -56,8 +56,6 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -330,7 +328,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return processingChains;
     }
 
-    @NonNull
     public SearchChains getSearchChains() {
         if (containerSearch == null)
             throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
@@ -338,7 +335,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return containerSearch.getChains();
     }
 
-    @Nullable
     public ContainerSearch getSearch() {
         return containerSearch;
     }
@@ -352,12 +348,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addChild(http);
     }
 
-    @Nullable
     public Http getHttp() {
         return http;
     }
 
-    @Nullable
     public ContainerDocproc getDocproc() {
         return containerDocproc;
     }
@@ -366,7 +360,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.containerDocproc = containerDocproc;
     }
 
-    @Nullable
     public ContainerDocumentApi getDocumentApi() {
         return containerDocumentApi;
     }
@@ -375,7 +368,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.containerDocumentApi = containerDocumentApi;
     }
 
-    @NonNull
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
             throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
