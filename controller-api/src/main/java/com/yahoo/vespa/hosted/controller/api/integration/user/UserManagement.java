@@ -25,6 +25,6 @@ public interface UserManagement {
     void removeUsers(Role role, Collection<UserId> users);
 
     /** Returns all users in the given role, or throws if the role does not exist. */
-    List<UserId> listUsers(Role role);
+    List<User> listUsers(Role role);
 
 }

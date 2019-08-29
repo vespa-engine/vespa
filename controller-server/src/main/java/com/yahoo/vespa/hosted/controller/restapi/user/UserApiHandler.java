@@ -15,6 +15,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
@@ -129,11 +130,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         for (Role role : roles)
             rolesArray.addString(valueOf(role));
 
-        Map<UserId, List<Role>> memberships = new LinkedHashMap<>();
+        Map<User, List<Role>> memberships = new LinkedHashMap<>();
         List<Role> allRoles = new ArrayList<>(superRoles); // Membership in a super role may imply membership in a role.
         allRoles.addAll(roles);
         for (Role role : allRoles)
-            for (UserId user : users.listUsers(role)) {
+            for (User user : users.listUsers(role)) {
                 memberships.putIfAbsent(user, new ArrayList<>());
                 memberships.get(user).add(role);
             }
@@ -141,7 +142,15 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor usersArray = root.setArray("users");
         memberships.forEach((user, userRoles) -> {
             Cursor userObject = usersArray.addObject();
-            userObject.setString("name", user.value());
+            userObject.setString("name", user.name());
+            userObject.setString("email", user.email());
+            if (user.nickname() != null) {
+                userObject.setString("nickname", user.nickname());
+            }
+            if (user.picture()!= null) {
+                userObject.setString("picture", user.picture());
+            }
+
             Cursor rolesObject = userObject.setObject("roles");
             for (Role role : roles) {
                 Cursor roleObject = rolesObject.setObject(valueOf(role));
