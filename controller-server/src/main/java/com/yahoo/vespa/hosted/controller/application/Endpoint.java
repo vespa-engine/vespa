@@ -219,7 +219,7 @@ public class Endpoint {
     public static String createHashedCn(ApplicationId application, SystemName system) {
         var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
         var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
-        return base32encoded + dnsSuffix(system, false);
+        return 'v' + base32encoded + dnsSuffix(system, false);
     }
 
     /** Build an endpoint for given application */
