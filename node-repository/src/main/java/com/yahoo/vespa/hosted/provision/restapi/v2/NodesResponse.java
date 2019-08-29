@@ -152,7 +152,8 @@ class NodesResponse extends HttpResponse {
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setBool("fastDisk", node.flavor().hasFastDisk());
-        object.setDouble("bandwidth", 1000 * node.flavor().getBandwidthGbps());
+        object.setDouble("bandwidth", 1000 * node.flavor().getBandwidthGbps()); // TODO: Remove after all clients migrated to bandwidthGbps
+        object.setDouble("bandwidthGbps", node.flavor().getBandwidthGbps());
         object.setString("environment", node.flavor().getType().name());
         node.allocation().ifPresent(allocation -> {
             toSlime(allocation.owner(), object.setObject("owner"));
