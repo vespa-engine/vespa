@@ -1742,7 +1742,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     var rotationStatus = controllerTester.controller().globalRoutingService().getHealthStatus(rotation.name());
                     var statusMap = new LinkedHashMap<ZoneId, RotationState>();
                     rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
-                    return new RotationStatus(Map.of(rotation.id(), statusMap));
+                    return RotationStatus.from(Map.of(rotation.id(), statusMap));
                 })
                 .orElse(RotationStatus.EMPTY);
     }
