@@ -15,6 +15,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.Field;
 import com.yahoo.document.Generated;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
@@ -1014,6 +1015,18 @@ public class DocumentGenPluginTest {
         Music4 book = new Music4(new DocumentId("id:music4:music4::0"));
         book.setPos(new Music4.Position().setX(7).setY(8));
         assertEquals(new Music4.Position().setX(7).setY(8), book.getPos());
+        assertEquals(1, book.getFieldCount());
+        int numIteratedValues = 0;
+        for (Iterator<Map.Entry<Field, FieldValue>> it = book.iterator(); it.hasNext(); numIteratedValues++) {
+            Map.Entry<Field, FieldValue> entry = it.next();
+        }
+        assertEquals(book.getFieldCount(), numIteratedValues);
+        Field posZcurve = book.getField(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(posZcurve);
+        assertNotEquals(book.getDataType().fieldSet(), book.getDataType().fieldSetAll());
+        assertFalse(book.getDataType().fieldSet().contains(posZcurve));
+        assertTrue(book.getDataType().fieldSetAll().contains(posZcurve));
+        assertTrue(book.getDataType().getFields().contains(posZcurve));
     }
     
 }
