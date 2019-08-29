@@ -150,7 +150,7 @@ private:
     void load(AttributePtr v, const vespalib::string &name);
 
     template <typename VectorType, typename BufferType>
-    void checkLoad(AttributePtr v, const vespalib::string &name, AttributePtr ev);
+    AttributePtr checkLoad(Config cfg, const vespalib::string &name, AttributePtr ev);
 
     template <typename VectorType, typename BufferType>
     void testReload(AttributePtr v0, AttributePtr v1, AttributePtr v2,
@@ -564,13 +564,14 @@ EnumeratedSaveTest::load(AttributePtr v, const vespalib::string &name)
 }
 
 template <typename VectorType, typename BufferType>
-void
-EnumeratedSaveTest::checkLoad(AttributePtr v, const vespalib::string &name,
+EnumeratedSaveTest::AttributePtr
+EnumeratedSaveTest::checkLoad(Config cfg, const vespalib::string &name,
                               AttributePtr ev)
 {
-    v->setBaseFileName(name);
+    AttributePtr v = AttributeFactory::createAttribute(name, cfg);
     EXPECT_TRUE(v->load());
     compare<VectorType, BufferType>(as<VectorType>(v), as<VectorType>(ev));
+    return v;
 }
 
 
@@ -600,27 +601,29 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
                               !flagAttr;
     
 
-    AttributePtr v = make(cfg, pref, fastSearch);
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0", v0)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2", v2)));
+    Config check_cfg(cfg);
+    check_cfg.setFastSearch(fastSearch);
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
 
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0", v0)));
+    AttributePtr v;
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1", v1)));
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2", v2)));
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
 
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0_e", v0)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1_e", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2_e", v2)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0_e", v0)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1_e", v1)));
+    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2_e", v2)));
 
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "0_e", v0)));
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "0_e", v0)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "1_e", v1)));
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "1_e", v1)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
-    TEST_DO((checkLoad<VectorType, BufferType>(v, pref + "2_e", v2)));
+    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "2_e", v2)));
     TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
 
     saveMemDuringCompaction(*v);
@@ -675,11 +678,11 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
     MemAttr::SP emv1 = saveBoth(v1);
     MemAttr::SP emv2 = saveBoth(v2);
 
-    AttributePtr v = make(cfg, pref, true);
-    checkLoad<VectorType, BufferType>(v, pref + "0_ee", v0);
-    checkLoad<VectorType, BufferType>(v, pref + "1_ee", v1);
-    checkLoad<VectorType, BufferType>(v, pref + "2_ee", v2);
-    v.reset();
+    Config check_cfg(cfg);
+    check_cfg.setFastSearch(true);
+    checkLoad<VectorType, BufferType>(check_cfg, pref + "0_ee", v0);
+    checkLoad<VectorType, BufferType>(check_cfg, pref + "1_ee", v1);
+    checkLoad<VectorType, BufferType>(check_cfg, pref + "2_ee", v2);
 
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,

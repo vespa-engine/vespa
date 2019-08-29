@@ -436,6 +436,7 @@ AttributeVector::isEnumeratedSaveFormat() const
 
 bool
 AttributeVector::load() {
+    assert(!_loaded);
     bool loaded = onLoad();
     if (loaded) {
         commit();
