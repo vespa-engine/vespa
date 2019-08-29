@@ -75,9 +75,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
-    private static final String METRICS_HANDLER_BINDING = "/metrics/v1";
-    private static final String PROMETHEUS_HANDLER_BINDING = "/prometheus/v1";
-
     static final class AppDimensionNames {
         static final String ZONE = "zone";
         static final String APPLICATION_ID = "applicationId";  // tenant.app.instance
@@ -112,8 +109,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(RpcServer.class);
         addMetricsProxyComponent(SystemPollerProvider.class);
         addMetricsProxyComponent(VespaMetrics.class);
-        addHttpHandler(MetricsHandler.class, METRICS_HANDLER_BINDING);
-        addHttpHandler(PrometheusHandler.class, PROMETHEUS_HANDLER_BINDING);
+        addHttpHandler(MetricsHandler.class, MetricsHandler.V1_PATH);
+        addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {

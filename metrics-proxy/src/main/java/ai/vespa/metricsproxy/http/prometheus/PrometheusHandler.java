@@ -35,7 +35,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
  */
 public class PrometheusHandler extends ThreadedHttpRequestHandler {
 
-    static final String V1_PATH = "/prometheus/v1";
+    public static final String V1_PATH = "/prometheus/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
 
     private final ValuesFetcher valuesFetcher;
