@@ -215,7 +215,7 @@ public class Endpoint {
 
     }
 
-    /** Create a DNS name based on a hash of the ApplicationId. This should always be < 64 characters long. */
+    /** Create a DNS name based on a hash of the ApplicationId. This should always be less than 64 characters long. */
     public static String createHashedCn(ApplicationId application, SystemName system) {
         var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
         var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
