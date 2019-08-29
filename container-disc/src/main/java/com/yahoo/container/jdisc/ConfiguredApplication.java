@@ -17,6 +17,7 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
+import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
@@ -78,6 +79,7 @@ public final class ConfiguredApplication implements Application {
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    private final SessionCache sessionCache;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -123,6 +125,7 @@ public final class ConfiguredApplication implements Application {
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
+        this.sessionCache = new SessionCache(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
     }
 
@@ -319,6 +322,7 @@ public final class ConfiguredApplication implements Application {
                 bind(OsgiFramework.class).toInstance(restrictedOsgiFramework);
                 bind(com.yahoo.jdisc.Timer.class).toInstance(timerSingleton);
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
+                bind(SessionCache.class).toInstance(sessionCache); // Needed by e.g. FeedHandler
             }
         });
     }
