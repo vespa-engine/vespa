@@ -100,9 +100,9 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
-        var rotationStatus = new RotationStatus(Map.of(new RotationId("my-rotation"),
-                                                       Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
-                                                              ZoneId.from("prod", "us-east-3"), RotationState.out)));
+        var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
+                                                        Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
+                                                               ZoneId.from("prod", "us-east-3"), RotationState.out)));
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),

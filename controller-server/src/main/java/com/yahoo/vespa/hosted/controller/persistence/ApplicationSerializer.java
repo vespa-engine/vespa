@@ -414,7 +414,7 @@ public class ApplicationSerializer {
         var statusMap = new LinkedHashMap<RotationId, Map<ZoneId, RotationState>>();
         object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
                                                                               singleRotationStatusFromSlime(statusObject.field(statusField))));
-        return new RotationStatus(statusMap);
+        return RotationStatus.from(statusMap);
     }
 
     private Map<ZoneId, RotationState> singleRotationStatusFromSlime(Inspector object) {

@@ -18,7 +18,7 @@ public class RotationStatus {
 
     private final Map<RotationId, Map<ZoneId, RotationState>> status;
 
-    public RotationStatus(Map<RotationId, Map<ZoneId, RotationState>> status) {
+    private RotationStatus(Map<RotationId, Map<ZoneId, RotationState>> status) {
         this.status = Map.copyOf(Objects.requireNonNull(status));
     }
 
@@ -56,6 +56,10 @@ public class RotationStatus {
     @Override
     public int hashCode() {
         return Objects.hash(status);
+    }
+
+    public static RotationStatus from(Map<RotationId, Map<ZoneId, RotationState>> status) {
+        return status.isEmpty() ? EMPTY : new RotationStatus(status);
     }
 
 }
