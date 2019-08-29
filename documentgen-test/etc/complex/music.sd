@@ -21,6 +21,9 @@ search music {
       field year type int {
          indexing: attribute|index|summary
       }
+      field eitheror type bool {
+         indexing: attribute|summary
+      } 
       annotation recordlabel {}
    
       annotation person {

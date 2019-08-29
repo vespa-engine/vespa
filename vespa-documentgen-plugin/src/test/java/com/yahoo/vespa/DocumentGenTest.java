@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -23,6 +24,7 @@ public class DocumentGenTest {
         Map<String, Search> searches = mojo.getSearches();
         assertEquals(searches.size(),1);
         assertEquals(searches.get("music").getDocument("music").getField("title").getDataType(), DataType.STRING);
+        assertEquals(searches.get("music").getDocument("music").getField("eitheror").getDataType(), DataType.BOOL);
     }
 
     @Test

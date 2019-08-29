@@ -894,6 +894,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.DOCUMENT.equals(dt)) return "com.yahoo.document.Document";
         if (DataType.URI.equals(dt)) return "java.net.URI";
         if (DataType.BYTE.equals(dt)) return "java.lang.Byte";
+        if (DataType.BOOL.equals(dt)) return "java.lang.Boolean";
         if (DataType.TAG.equals(dt)) return "java.lang.String";
         if (dt instanceof StructDataType) return className(dt.getName());
         if (dt instanceof WeightedSetDataType) return "java.util.Map<"+toJavaType(((WeightedSetDataType)dt).getNestedType())+",java.lang.Integer>";
@@ -921,6 +922,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.DOCUMENT.equals(dt)) return "com.yahoo.document.DataType.DOCUMENT";
         if (DataType.URI.equals(dt)) return "com.yahoo.document.DataType.URI";
         if (DataType.BYTE.equals(dt)) return "com.yahoo.document.DataType.BYTE";
+        if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
         if (dt instanceof StructDataType) return "new com.yahoo.document.StructDataType(\""+dt.getName()+"\")";
         if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+
