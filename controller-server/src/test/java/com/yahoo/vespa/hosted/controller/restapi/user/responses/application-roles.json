@@ -10,6 +10,7 @@
   "users": [
     {
       "name": "owner@tenant",
+      "email":"owner@tenant",
       "roles": {
         "applicationAdmin": {
           "explicit": false,
@@ -31,6 +32,7 @@
     },
     {
       "name": "operator@tenant",
+      "email":"operator@tenant",
       "roles": {
         "applicationAdmin": {
           "explicit": true,
@@ -52,6 +54,7 @@
     },
     {
       "name": "reader@app",
+      "email":"reader@app",
       "roles": {
         "applicationAdmin": {
           "explicit": false,
