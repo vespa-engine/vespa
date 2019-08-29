@@ -75,7 +75,7 @@ public class SingleValueReader {
                 update = ValueUpdate.createDivide(Double.valueOf(buffer.currentText()));
                 break;
             default:
-                throw new IllegalArgumentException("Operation \"" + buffer.currentName() + "\" not implemented.");
+                throw new IllegalArgumentException("Operation '" + buffer.currentName() + "' not implemented.");
         }
         return update;
     }

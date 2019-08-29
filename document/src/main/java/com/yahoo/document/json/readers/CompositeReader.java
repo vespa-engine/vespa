@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
@@ -39,9 +40,8 @@ public class CompositeReader {
         } else if (fieldValue instanceof TensorFieldValue) {
             TensorReader.fillTensor(buffer, (TensorFieldValue) fieldValue);
         } else {
-            throw new IllegalStateException("Has created a composite field"
-                    + " value the reader does not know how to handle: "
-                    + fieldValue.getClass().getName() + " This is a bug. token = " + token);
+            throw new IllegalArgumentException("Expected a " + fieldValue.getClass().getName() + " but got an " +
+                                               (token == JsonToken.START_OBJECT ? "object" : "array" ));
         }
         expectCompositeEnd(buffer.currentToken());
     }
