@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
@@ -216,8 +217,9 @@ public class Endpoint {
 
     /** Create a DNS name based on a hash of the ApplicationId. This should always be < 64 characters long. */
     public static String createHashedCn(ApplicationId application, SystemName system) {
-        var appIdHash = Hashing.farmHashFingerprint64().hashString(application.serializedForm(), Charset.defaultCharset()).toString();
-        return appIdHash + dnsSuffix(system, false);
+        var hashCode = Hashing.sha1().hashString(application.serializedForm(), Charset.defaultCharset());
+        var base32encoded = BaseEncoding.base32().omitPadding().lowerCase().encode(hashCode.asBytes());
+        return base32encoded + dnsSuffix(system, false);
     }
 
     /** Build an endpoint for given application */
