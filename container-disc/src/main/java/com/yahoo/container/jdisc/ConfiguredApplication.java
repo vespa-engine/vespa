@@ -76,7 +76,6 @@ public final class ConfiguredApplication implements Application {
     private final SubscriberFactory subscriberFactory;
     private final ContainerActivator activator;
     private final String configId;
-    private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
 
@@ -118,15 +117,13 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory) throws ListenFailedException {
+                                 SubscriberFactory subscriberFactory) {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
-
-        applicationWithLegacySetup = new ContainerDiscApplication(configId);
     }
 
     @Override
@@ -139,7 +136,7 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        intitializeAndActivateContainer(builder);
+        initializeAndActivateContainer(builder);
         startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
@@ -183,7 +180,6 @@ public final class ConfiguredApplication implements Application {
             supervisor.transport().shutdown().join();
     }
 
-    @SuppressWarnings("deprecation")
     private static void hackToInitializeServer(QrConfig config) {
         try {
             Container.get().setupFileAcquirer(config.filedistributor());
@@ -224,7 +220,7 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private void intitializeAndActivateContainer(ContainerBuilder builder) {
+    private void initializeAndActivateContainer(ContainerBuilder builder) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
@@ -252,7 +248,7 @@ public final class ConfiguredApplication implements Application {
 
                     // Block until new config arrives, and it should be applied
                     configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
-                    intitializeAndActivateContainer(builder);
+                    initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -325,7 +321,6 @@ public final class ConfiguredApplication implements Application {
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
             }
         });
-        modules.install(applicationWithLegacySetup.getMbusBindings());
     }
 
     @Override
@@ -376,15 +371,9 @@ public final class ConfiguredApplication implements Application {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         long delayMillis = 50 * 1000;
-        shutdownDeadlineExecutor.schedule(new Runnable() {
-
-            @Override
-            public void run() {
-                com.yahoo.protect.Process.logAndDie(
-                        "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                                "drain their request content channels.", true);
-            }
-        }, delayMillis, TimeUnit.MILLISECONDS);
+        shutdownDeadlineExecutor.schedule(() -> com.yahoo.protect.Process.logAndDie(
+                "Timed out waiting for application shutdown. Please check that all your request handlers " +
+                        "drain their request content channels.", true), delayMillis, TimeUnit.MILLISECONDS);
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,
