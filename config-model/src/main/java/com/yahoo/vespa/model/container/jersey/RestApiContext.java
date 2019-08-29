@@ -10,7 +10,6 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +36,6 @@ public class RestApiContext extends SimpleComponent implements
 
     private final String bindingPath;
 
-    @Nullable
     private ApplicationContainerCluster containerCluster;
 
     public RestApiContext(AbstractConfigProducer<?> ancestor, String bindingPath) {

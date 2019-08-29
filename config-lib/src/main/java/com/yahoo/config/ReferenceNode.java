@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * A ReferenceNode class represents a reference (that is a config-id)
  * in a {@link ConfigInstance}.
@@ -44,7 +42,7 @@ public class ReferenceNode extends LeafNode<String> {
     }
 
     @Override
-    protected boolean doSetValue(@NonNull String value) {
+    protected boolean doSetValue(String value) {
         this.value = stripQuotes(value);
         return true;
     }

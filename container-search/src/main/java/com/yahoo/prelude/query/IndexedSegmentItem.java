@@ -3,8 +3,6 @@ package com.yahoo.prelude.query;
 
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -22,7 +20,6 @@ import java.nio.ByteBuffer;
  */
 public abstract class IndexedSegmentItem extends TaggableSegmentItem implements IndexedItem {
 
-    @NonNull
     private String index = "";
 
     protected IndexedSegmentItem(String rawWord, String current, boolean isFromQuery, boolean stemmed, Substring origin) {
@@ -32,7 +29,6 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
     /**
      * The name of the index this belongs to, or "" (never null) if not specified
      **/
-    @NonNull
     public String getIndexName() {
         return index;
     }

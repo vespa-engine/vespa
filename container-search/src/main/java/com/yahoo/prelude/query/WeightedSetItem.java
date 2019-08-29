@@ -5,8 +5,6 @@ import com.yahoo.collections.CopyOnWriteHashMap;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,7 +25,6 @@ import java.util.Map;
  */
 public class WeightedSetItem extends SimpleTaggableItem {
 
-    @NonNull
     private String indexName = "";
 
     private CopyOnWriteHashMap<Object,Integer> set = new CopyOnWriteHashMap<>(1000);
@@ -99,7 +96,6 @@ public class WeightedSetItem extends SimpleTaggableItem {
         }
     }
 
-    @NonNull
     public String getIndexName() {
         return indexName;
     }

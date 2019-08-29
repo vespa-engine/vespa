@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Represents a long in a configuration tree.
  * @author gjoranv
@@ -32,7 +30,7 @@ public class LongNode extends LeafNode<Long> {
     }
 
     @Override
-    protected boolean doSetValue(@NonNull String value) {
+    protected boolean doSetValue(String value) {
         try {
             this.value = Long.parseLong(value);
             return true;

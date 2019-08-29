@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Represents a 'file' in a {@link ConfigInstance}, usually a filename.
  *
@@ -33,7 +31,7 @@ public class FileNode extends LeafNode<FileReference> {
     }
 
     @Override
-    protected boolean doSetValue(@NonNull String stringVal) {
+    protected boolean doSetValue(String stringVal) {
         value = new FileReference(ReferenceNode.stripQuotes(stringVal));
         return true;
     }

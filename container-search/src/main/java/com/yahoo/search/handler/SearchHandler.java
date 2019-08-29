@@ -35,7 +35,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
@@ -50,7 +49,7 @@ import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
-import edu.umd.cs.findbugs.annotations.NonNull;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -308,7 +307,6 @@ public class SearchHandler extends LoggingRequestHandler {
         return result.hits().getErrorHit() == null ? 0 : 1;
     }
 
-    @NonNull
     private Renderer<Result> toRendererCopy(ComponentSpecification format) {
         Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(format);
         renderer = perRenderingCopy(renderer);
@@ -374,7 +372,6 @@ public class SearchHandler extends LoggingRequestHandler {
         return perRenderingCopy(renderer);
     }
 
-    @NonNull
     private Renderer<Result> perRenderingCopy(Renderer<Result> renderer) {
         Renderer<Result> copy = renderer.clone();
         copy.init();

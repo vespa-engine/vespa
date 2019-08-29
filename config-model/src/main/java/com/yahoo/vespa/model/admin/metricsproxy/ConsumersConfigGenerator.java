@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 
-import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +61,7 @@ class ConsumersConfigGenerator {
                                    new MetricSet(original.getMetricSet().getId(), combinedMetrics.values()));
     }
 
-    private static Metric combineMetrics(@Nullable Metric original, Metric newMetric) {
+    private static Metric combineMetrics(Metric original, Metric newMetric) {
         return original != null ? newMetric.addDimensionsFrom(original) : newMetric;
     }
 

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -23,7 +22,7 @@ public class UpdateHostResponse {
     @JsonCreator
     public UpdateHostResponse(
             @JsonProperty(FIELD_NAME_HOSTNAME) final String hostname,
-            @JsonProperty(FIELD_NAME_REASON) @Nullable final HostStateChangeDenialReason hostStateChangeDenialReason) {
+            @JsonProperty(FIELD_NAME_REASON) final HostStateChangeDenialReason hostStateChangeDenialReason) {
         this.hostname = hostname;
         this.hostStateChangeDenialReason = hostStateChangeDenialReason;
     }
@@ -33,7 +32,7 @@ public class UpdateHostResponse {
         return hostname;
     }
 
-    @JsonProperty(FIELD_NAME_REASON) @Nullable
+    @JsonProperty(FIELD_NAME_REASON)
     public HostStateChangeDenialReason reason() {
         return hostStateChangeDenialReason;
     }

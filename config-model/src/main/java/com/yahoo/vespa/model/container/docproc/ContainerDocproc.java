@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -89,11 +88,9 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         //intentionally high, getMaxQueueMbSize() will probably kick in before this one!
     }
 
-    @Nullable
     private Integer getMaxQueueMbSize() {
         return options.maxQueueMbSize;
     }
-
 
     private Integer getMaxQueueTimeMs() {
         return options.maxQueueTimeMs;

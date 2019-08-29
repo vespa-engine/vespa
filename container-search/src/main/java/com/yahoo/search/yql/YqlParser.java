@@ -77,8 +77,6 @@ import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserFactory;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * The YQL query language.
  *
@@ -234,7 +232,6 @@ public class YqlParser implements Parser {
         this.environment = environment;
     }
 
-    @NonNull
     @Override
     public QueryTree parse(Parsable query) {
         indexFactsSession = indexFacts.newSession(query.getSources(), query.getRestrict());
@@ -267,7 +264,6 @@ public class YqlParser implements Parser {
         docTypes = new HashSet<>(indexFactsSession.documentTypes());
     }
 
-    @NonNull
     private QueryTree buildTree(OperatorNode<?> filterPart) {
         Preconditions.checkArgument(filterPart.getArguments().length == 2,
                                     "Expected 2 arguments to filter, got %s.",
@@ -395,7 +391,6 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    @NonNull
     private Item buildWeightedSet(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -403,7 +398,6 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getIndex(args.get(0))));
     }
 
-    @NonNull
     private Item buildDotProduct(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -411,7 +405,6 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
     }
 
-    @NonNull
     private Item buildPredicate(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
@@ -474,7 +467,6 @@ public class YqlParser implements Parser {
         }
     }
 
-    @NonNull
     private Item buildWand(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
@@ -496,10 +488,9 @@ public class YqlParser implements Parser {
         return fillWeightedSet(ast, args.get(1), out);
     }
 
-    @NonNull
     private WeightedSetItem fillWeightedSet(OperatorNode<ExpressionOperator> ast,
                                             OperatorNode<ExpressionOperator> arg,
-                                            @NonNull WeightedSetItem out) {
+                                            WeightedSetItem out) {
         addItems(arg, out);
         return leafStyleSettings(ast, out);
     }
@@ -515,7 +506,7 @@ public class YqlParser implements Parser {
             return prefix + leaf;
         }
     }
-    @NonNull
+
     private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, SAME_ELEMENT);
 
@@ -529,7 +520,6 @@ public class YqlParser implements Parser {
         return sameElement;
     }
 
-    @NonNull
     private Item instantiatePhraseItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, PHRASE);
 
@@ -564,7 +554,6 @@ public class YqlParser implements Parser {
         return leafStyleSettings(ast, phrase);
     }
 
-    @NonNull
     private Item instantiatePhraseSegmentItem(String field, OperatorNode<ExpressionOperator> ast, boolean forcePhrase) {
         Substring origin = getOrigin(ast);
         Boolean stem = getAnnotation(ast, STEM, Boolean.class, Boolean.TRUE, STEM_DESCRIPTION);
@@ -600,7 +589,6 @@ public class YqlParser implements Parser {
         return phrase;
     }
 
-    @NonNull
     private Item instantiateNearItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, NEAR);
 
@@ -616,7 +604,6 @@ public class YqlParser implements Parser {
         return near;
     }
 
-    @NonNull
     private Item instantiateONearItem(String field, OperatorNode<ExpressionOperator> ast) {
         assertHasFunctionName(ast, ONEAR);
 
@@ -632,7 +619,6 @@ public class YqlParser implements Parser {
         return onear;
     }
 
-    @NonNull
     private Item fetchUserQuery() {
         Preconditions.checkState(!queryParser, "Tried inserting user query into itself.");
         Preconditions.checkState(userQuery != null,
@@ -641,7 +627,6 @@ public class YqlParser implements Parser {
         return userQuery.getModel().getQueryTree().getRoot();
     }
 
-    @NonNull
     private Item buildUserInput(OperatorNode<ExpressionOperator> ast) {
         // TODO add support for default arguments if property results in nothing
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
@@ -702,7 +687,6 @@ public class YqlParser implements Parser {
         ToolBox.visit(new AnnotationPropagator(ast), item);
     }
 
-    @NonNull
     private Item parseUserInput(String grammar, String defaultIndex, String wordData,
                                 Language language, boolean allowNullItem) {
         Query.Type parseAs = Query.Type.getType(grammar);
@@ -721,7 +705,6 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    @NonNull
     private OperatorNode<?> parseYqlProgram() {
         OperatorNode<?> ast;
         try {
@@ -766,7 +749,6 @@ public class YqlParser implements Parser {
         return ast;
     }
 
-    @NonNull
     private OperatorNode<?> fetchSorting(OperatorNode<?> ast) {
         if (ast.getOperator() != SequenceOperator.SORT) return ast;
 
@@ -840,7 +822,6 @@ public class YqlParser implements Parser {
         return ast.getArgument(0);
     }
 
-    @NonNull
     private OperatorNode<?> fetchOffsetAndHits(OperatorNode<?> ast) {
         if (ast.getOperator() == SequenceOperator.OFFSET) {
             offset = ast.<OperatorNode<?>> getArgument(1).<Integer> getArgument(0);
@@ -860,7 +841,6 @@ public class YqlParser implements Parser {
         return ast;
     }
 
-    @NonNull
     private OperatorNode<?> fetchSummaryFields(OperatorNode<?> ast) {
         if (ast.getOperator() != SequenceOperator.PROJECT) return ast;
 
@@ -1032,7 +1012,7 @@ public class YqlParser implements Parser {
         return convertVarArgs(spec, 1, new RankItem());
     }
 
-    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, @NonNull CompositeItem out) {
+    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out) {
         Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
@@ -1277,7 +1257,6 @@ public class YqlParser implements Parser {
      */
     // TODO: Clean up such that there is one way to look up an Index instance
     //       which always expands first, but not using getIndex, which performs checks that doesn't always work
-    @NonNull
     private Item instantiateWordItem(String field,
                                      String rawWord,
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
@@ -1389,7 +1368,7 @@ public class YqlParser implements Parser {
         wordStyleSettings(ast, wordItem);
     }
 
-    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, @NonNull T out) {
+    private <T extends TaggableItem> T leafStyleSettings(OperatorNode<?> ast, T out) {
         {
             Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
             if (connectivity != null) {
@@ -1473,7 +1452,7 @@ public class YqlParser implements Parser {
     public void setQueryParser(boolean queryParser) { this.queryParser = queryParser; }
 
     @Beta
-    public void setUserQuery(@NonNull Query userQuery) { this.userQuery = userQuery; }
+    public void setUserQuery(Query userQuery) { this.userQuery = userQuery; }
 
     @Beta
     public Set<String> getYqlSummaryFields() { return yqlSummaryFields; }

@@ -6,22 +6,18 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Model a single cluster of services in the Vespa model.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public final class Cluster implements Comparable<Cluster> {
-    @NonNull
+
     public final String name;
-    @NonNull
     public final String type;
     /**
      * An ordered list of the service instances in this cluster.
      */
-    @NonNull
     public final ImmutableList<Service> services;
 
     public Cluster(String name, String type, List<Service> services) {

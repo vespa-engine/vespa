@@ -10,24 +10,18 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.text.Utf8;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Model a single service instance as a sortable object.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class Service implements Comparable<Service> {
-    @NonNull
+
     public final String serviceType;
-    @NonNull
     public final String host;
     public final int statePort;
-    @NonNull
     public final String configId;
-    @NonNull
     public final List<Integer> ports;
-    @NonNull
     public final String name;
 
     public Service(String serviceType, String host, int statePort, String clusterName, String clusterType,

@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -117,7 +116,7 @@ public class HostResource implements Comparable<HostResource> {
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
     public Optional<Flavor> getFlavor() { return flavor; }
 
-    public void addClusterMembership(@Nullable ClusterMembership clusterMembership) {
+    public void addClusterMembership(ClusterMembership clusterMembership) {
         if (clusterMembership != null)
             clusterMemberships.add(clusterMembership);
     }
