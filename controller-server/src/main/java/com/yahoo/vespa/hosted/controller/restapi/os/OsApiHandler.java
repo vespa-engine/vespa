@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.component.Version;
@@ -102,7 +102,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
         StringJoiner response = new StringJoiner(", ", "Requested firmware checks in ", ".");
         for (ZoneId zone : zones) {
-            controller.configServer().nodeRepository().requestFirmwareCheck(zone);
+            controller.serviceRegistry().configServer().nodeRepository().requestFirmwareCheck(zone);
             response.add(zone.value());
         }
         return new MessageResponse(response.toString());
@@ -115,7 +115,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
         StringJoiner response = new StringJoiner(", ", "Cancelled firmware checks in ", ".");
         for (ZoneId zone : zones) {
-            controller.configServer().nodeRepository().cancelFirmwareCheck(zone);
+            controller.serviceRegistry().configServer().nodeRepository().cancelFirmwareCheck(zone);
             response.add(zone.value());
         }
         return new MessageResponse(response.toString());

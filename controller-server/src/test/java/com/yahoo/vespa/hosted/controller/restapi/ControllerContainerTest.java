@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.Networking;
@@ -64,9 +64,7 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.restapi.cost.NoopCostReportConsumer'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
@@ -76,8 +74,8 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher' />\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +

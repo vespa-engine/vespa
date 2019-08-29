@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.MultiPartStreamer;
@@ -39,7 +39,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -59,6 +58,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
@@ -1039,7 +1039,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Application already exists\"}",
                               400);
 
-        ConfigServerMock configServer = (ConfigServerMock) container.components().getComponent(ConfigServerMock.class.getName());
+        ConfigServerMock configServer = serviceRegistry().configServerMock();
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE, null));
         
         // POST (deploy) an application with an invalid application package
@@ -1723,8 +1723,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
-    private MemoryGlobalRoutingService globalRoutingService() {
-        return (MemoryGlobalRoutingService) tester.container().components().getComponent(MemoryGlobalRoutingService.class.getName());
+    private ServiceRegistryMock serviceRegistry() {
+        return (ServiceRegistryMock) tester.container().components().getComponent(ServiceRegistryMock.class.getName());
     }
 
     private MockContactRetriever contactRetriever() {
@@ -1732,14 +1732,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
-        globalRoutingService().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
+        serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
     }
 
     private RotationStatus rotationStatus(Application application) {
         return controllerTester.controller().applications().rotationRepository().getRotation(application)
                 .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().globalRoutingService().getHealthStatus(rotation.name());
+                    var rotationStatus = controllerTester.controller().serviceRegistry().globalRoutingService().getHealthStatus(rotation.name());
                     var statusMap = new LinkedHashMap<ZoneId, RotationState>();
                     rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
                     return RotationStatus.from(Map.of(rotation.id(), statusMap));

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ClusterSpec;
@@ -37,7 +37,7 @@ public class ClusterInfoMaintainer extends Maintainer {
     ClusterInfoMaintainer(Controller controller, Duration duration, JobControl jobControl) {
         super(controller, duration, jobControl);
         this.controller = controller;
-        this.nodeRepository = controller.configServer().nodeRepository();
+        this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
 
     private static String clusterId(NodeRepositoryNode node) {

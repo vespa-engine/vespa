@@ -23,16 +23,14 @@ public class NameServiceDispatcher extends Maintainer {
     private final NameService nameService;
     private final int requestCount;
 
-    public NameServiceDispatcher(Controller controller, Duration interval, JobControl jobControl,
-                                 NameService nameService) {
-        this(controller, interval, jobControl, nameService, defaultRequestCount);
+    public NameServiceDispatcher(Controller controller, Duration interval, JobControl jobControl) {
+        this(controller, interval, jobControl, defaultRequestCount);
     }
 
-    public NameServiceDispatcher(Controller controller, Duration interval, JobControl jobControl,
-                                 NameService nameService, int requestCount) {
+    public NameServiceDispatcher(Controller controller, Duration interval, JobControl jobControl, int requestCount) {
         super(controller, interval, jobControl);
         this.db = controller.curator();
-        this.nameService = nameService;
+        this.nameService = controller.serviceRegistry().nameService();
         this.requestCount = requestCount;
     }
 

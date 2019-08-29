@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.container.JDisc;
@@ -13,6 +13,7 @@ import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
@@ -52,7 +53,11 @@ public class ContainerTester {
     }
 
     public ConfigServerMock configServer() {
-        return (ConfigServerMock) container.components().getComponent(ConfigServerMock.class.getName());
+        return serviceRegistry().configServerMock();
+    }
+
+    public ServiceRegistryMock serviceRegistry() {
+        return (ServiceRegistryMock) container.components().getComponent(ServiceRegistryMock.class.getName());
     }
 
     public void computeVersionStatus() {

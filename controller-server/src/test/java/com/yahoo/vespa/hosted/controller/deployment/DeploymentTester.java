@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
@@ -76,7 +76,6 @@ public class DeploymentTester {
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
         this.nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofHours(12),
                                                                new JobControl(tester.controller().curator()),
-                                                               controllerTester().nameService(),
                                                                Integer.MAX_VALUE);
     }
 
@@ -98,7 +97,7 @@ public class DeploymentTester {
 
     public ControllerTester controllerTester() { return tester; }
 
-    public ConfigServerMock configServer() { return tester.configServer(); }
+    public ConfigServerMock configServer() { return tester.serviceRegistry().configServerMock(); }
 
     public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
 

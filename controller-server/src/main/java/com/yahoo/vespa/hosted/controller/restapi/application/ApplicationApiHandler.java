@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
@@ -380,7 +380,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse nodes(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
-        List<Node> nodes = controller.configServer().nodeRepository().list(zone, id);
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(zone, id);
 
         Slime slime = new Slime();
         Cursor nodesArray = slime.setObject().setArray("nodes");
@@ -438,7 +438,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-        InputStream logStream = controller.configServer().getLogs(deployment, queryParameters);
+        InputStream logStream = controller.serviceRegistry().configServer().getLogs(deployment, queryParameters);
         return new HttpResponse(200) {
             @Override
             public void render(OutputStream outputStream) throws IOException {

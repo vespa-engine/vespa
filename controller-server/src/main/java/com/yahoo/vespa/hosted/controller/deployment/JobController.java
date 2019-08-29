@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
@@ -377,7 +377,7 @@ public class JobController {
 
     public void deactivateTester(TesterId id, JobType type) {
         try {
-            controller.configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
+            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
         }
         catch (NotFoundException ignored) {
             // Already gone -- great!

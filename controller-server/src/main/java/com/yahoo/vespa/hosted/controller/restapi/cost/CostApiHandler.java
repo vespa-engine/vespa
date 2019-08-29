@@ -28,7 +28,7 @@ public class CostApiHandler extends LoggingRequestHandler {
     public CostApiHandler(Context ctx, Controller controller, SelfHostedCostConfig selfHostedCostConfig) {
         super(ctx);
         this.controller = controller;
-        this.nodeRepository = controller.configServer().nodeRepository();
+        this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.selfHostedCostConfig = selfHostedCostConfig;
     }
 
