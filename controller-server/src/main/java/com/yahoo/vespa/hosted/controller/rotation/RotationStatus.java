@@ -34,8 +34,7 @@ public class RotationStatus {
     /** Get status of deployment in given rotation, if any */
     public RotationState of(RotationId rotation, Deployment deployment) {
         return of(rotation).entrySet().stream()
-                           // TODO(mpolden): Change to exact comparison after September 2019
-                           .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
+                           .filter(kv -> kv.getKey().equals(deployment.zone()))
                            .map(Map.Entry::getValue)
                            .findFirst()
                            .orElse(RotationState.unknown);

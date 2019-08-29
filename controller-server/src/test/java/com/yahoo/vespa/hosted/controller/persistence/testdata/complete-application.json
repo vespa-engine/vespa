@@ -519,14 +519,16 @@
       "endpointId": "default"
     }
   ],
-  "rotationStatus": [
+  "rotationStatus2": [
     {
-      "status": "out",
-      "hostname": "host1.fqdn"
-    },
-    {
-      "status": "in",
-      "hostname": "host2.fqdn"
+      "rotationId": "rotation-foo",
+      "status": [
+        {
+          "environment": "prod",
+          "region": "us-east-3",
+          "state": "in"
+        }
+      ]
     }
   ]
 }
