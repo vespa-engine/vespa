@@ -25,6 +25,8 @@ using ProtoDocsumRequest = ProtoConverter::ProtoDocsumRequest;
 using ProtoDocsumReply = ProtoConverter::ProtoDocsumReply;
 using ProtoMonitorRequest = ProtoConverter::ProtoMonitorRequest;
 using ProtoMonitorReply = ProtoConverter::ProtoMonitorReply;
+using QueryStats = SearchProtocolMetrics::QueryStats;
+using DocsumStats = SearchProtocolMetrics::DocsumStats;
 
 namespace {
 
@@ -79,11 +81,13 @@ bool decode_message(const FRT_Values &src, MSG &dst) {
 
 struct SearchRequestDecoder : SearchRequest::Source::Decoder {
     FRT_RPCRequest &rpc; // valid until Return is called
+    QueryStats &stats;
     RelativeTime relative_time;
-    SearchRequestDecoder(FRT_RPCRequest &rpc_in)
-        : rpc(rpc_in), relative_time(std::make_unique<FastosClock>()) {}
+    SearchRequestDecoder(FRT_RPCRequest &rpc_in, QueryStats &stats_in)
+        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<FastosClock>()) {}
     std::unique_ptr<SearchRequest> decode() override {
         ProtoSearchRequest msg;
+        stats.request_size = (*rpc.GetParams())[2]._data._len;
         if (!decode_message(*rpc.GetParams(), msg)) {
             LOG(warning, "got bad protobuf search request over rpc (unable to decode)");
             return std::unique_ptr<SearchRequest>(nullptr);
@@ -94,18 +98,24 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
     }
 };
 
-std::unique_ptr<SearchRequest::Source::Decoder> search_request_decoder(FRT_RPCRequest &rpc) {
-    return std::make_unique<SearchRequestDecoder>(rpc);
+std::unique_ptr<SearchRequest::Source::Decoder> search_request_decoder(FRT_RPCRequest &rpc, QueryStats &stats) {
+    return std::make_unique<SearchRequestDecoder>(rpc, stats);
 }
 
 // allocated in the stash of the request it is completing; no self-delete needed
 struct SearchCompletionHandler : SearchClient {
     FRT_RPCRequest &req;
-    SearchCompletionHandler(FRT_RPCRequest &req_in) : req(req_in) {}
+    SearchProtocolMetrics &metrics;
+    QueryStats stats;
+    SearchCompletionHandler(FRT_RPCRequest &req_in, SearchProtocolMetrics &metrics_in)
+        : req(req_in), metrics(metrics_in), stats() {}
     void searchDone(SearchReply::UP reply) override {
         ProtoSearchReply msg;
         ProtoConverter::search_reply_to_proto(*reply, msg);
         encode_search_reply(msg, *req.GetReturn());
+        stats.reply_size = (*req.GetReturn())[2]._data._len;
+        stats.latency = reply->request->getTimeUsed().sec();
+        metrics.update_query_metrics(stats);
         req.Return();
     }
 };
@@ -114,33 +124,42 @@ struct SearchCompletionHandler : SearchClient {
 
 struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
     FRT_RPCRequest &rpc; // valid until Return is called
+    DocsumStats &stats;
     RelativeTime relative_time;
-    DocsumRequestDecoder(FRT_RPCRequest &rpc_in)
-        : rpc(rpc_in), relative_time(std::make_unique<FastosClock>()) {}
+    DocsumRequestDecoder(FRT_RPCRequest &rpc_in, DocsumStats &stats_in)
+        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<FastosClock>()) {}
     std::unique_ptr<DocsumRequest> decode() override {
         ProtoDocsumRequest msg;
+        stats.request_size = (*rpc.GetParams())[2]._data._len;
         if (!decode_message(*rpc.GetParams(), msg)) {
             LOG(warning, "got bad protobuf docsum request over rpc (unable to decode)");
             return std::unique_ptr<DocsumRequest>(nullptr);
         }
+        stats.requested_documents = msg.global_ids_size();
         auto req = std::make_unique<DocsumRequest>(std::move(relative_time), true);
         ProtoConverter::docsum_request_from_proto(msg, *req);
         return req;
     }
 };
 
-std::unique_ptr<DocsumRequest::Source::Decoder> docsum_request_decoder(FRT_RPCRequest &rpc) {
-    return std::make_unique<DocsumRequestDecoder>(rpc);
+std::unique_ptr<DocsumRequest::Source::Decoder> docsum_request_decoder(FRT_RPCRequest &rpc, DocsumStats &stats) {
+    return std::make_unique<DocsumRequestDecoder>(rpc, stats);
 }
 
 // allocated in the stash of the request it is completing; no self-delete needed
 struct GetDocsumsCompletionHandler : DocsumClient {
     FRT_RPCRequest &req;
-    GetDocsumsCompletionHandler(FRT_RPCRequest &req_in) : req(req_in) {}
+    SearchProtocolMetrics &metrics;
+    DocsumStats stats;
+    GetDocsumsCompletionHandler(FRT_RPCRequest &req_in, SearchProtocolMetrics &metrics_in)
+        : req(req_in), metrics(metrics_in), stats() {}
     void getDocsumsDone(DocsumReply::UP reply) override {
         ProtoDocsumReply msg;
         ProtoConverter::docsum_reply_to_proto(*reply, msg);
         encode_message(msg, *req.GetReturn());
+        stats.reply_size = (*req.GetReturn())[2]._data._len;
+        stats.latency = reply->request->getTimeUsed().sec();
+        metrics.update_docsum_metrics(stats);
         req.Return();
     }
 };
@@ -179,7 +198,8 @@ ProtoRpcAdapter::ProtoRpcAdapter(SearchServer &search_server,
     : _search_server(search_server),
       _docsum_server(docsum_server),
       _monitor_server(monitor_server),
-      _online(false)
+      _online(false),
+      _metrics()
 {
     FRT_ReflectionBuilder rb(&orb);
     //-------------------------------------------------------------------------
@@ -207,8 +227,8 @@ ProtoRpcAdapter::rpc_search(FRT_RPCRequest *req)
         return req->SetError(FRTE_RPC_METHOD_FAILED, "Server not online");
     }
     req->Detach();
-    auto &client = req->getStash().create<SearchCompletionHandler>(*req);
-    auto reply = _search_server.search(search_request_decoder(*req), client);
+    auto &client = req->getStash().create<SearchCompletionHandler>(*req, _metrics);
+    auto reply = _search_server.search(search_request_decoder(*req, client.stats), client);
     if (reply) {
         client.searchDone(std::move(reply));
     }
@@ -221,8 +241,8 @@ ProtoRpcAdapter::rpc_getDocsums(FRT_RPCRequest *req)
         return req->SetError(FRTE_RPC_METHOD_FAILED, "Server not online");
     }
     req->Detach();
-    auto &client = req->getStash().create<GetDocsumsCompletionHandler>(*req);
-    auto reply = _docsum_server.getDocsums(docsum_request_decoder(*req), client);
+    auto &client = req->getStash().create<GetDocsumsCompletionHandler>(*req, _metrics);
+    auto reply = _docsum_server.getDocsums(docsum_request_decoder(*req, client.stats), client);
     if (reply) {
         client.getDocsumsDone(std::move(reply));
     }

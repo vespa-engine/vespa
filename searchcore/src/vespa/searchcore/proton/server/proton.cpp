@@ -321,6 +321,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId());
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks = std::make_unique<RPCHooks>(rpcParams);
+    _metricsEngine->addExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
 
     waitForInitDone();
 

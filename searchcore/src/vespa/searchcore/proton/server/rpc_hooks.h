@@ -99,6 +99,7 @@ public:
     RPCHooksBase(const RPCHooksBase &) = delete;
     RPCHooksBase & operator = (const RPCHooksBase &) = delete;
     RPCHooksBase(Params &params);
+    auto &proto_rpc_adapter_metrics() { return _proto_rpc_adapter->metrics(); }
     void set_online();
     virtual ~RPCHooksBase();
     void close();

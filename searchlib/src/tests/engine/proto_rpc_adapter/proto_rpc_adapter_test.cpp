@@ -9,6 +9,8 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
+#include <thread>
+#include <chrono>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winline"
@@ -25,6 +27,8 @@ using ProtoDocsumRequest = ProtoRpcAdapter::ProtoDocsumRequest;
 using ProtoDocsumReply = ProtoRpcAdapter::ProtoDocsumReply;
 using ProtoMonitorRequest = ProtoRpcAdapter::ProtoMonitorRequest;
 using ProtoMonitorReply = ProtoRpcAdapter::ProtoMonitorReply;
+using QueryStats = SearchProtocolMetrics::QueryStats;
+using DocsumStats = SearchProtocolMetrics::DocsumStats;
 
 struct MySearchServer : SearchServer {
     SearchReply::UP search(SearchRequest::Source src, SearchClient &client) override {
@@ -32,6 +36,8 @@ struct MySearchServer : SearchServer {
         assert(req);
         auto reply = std::make_unique<SearchReply>();
         reply->totalHitCount = req->offset; // simplified search implementation
+        reply->request = std::move(req);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         client.searchDone(std::move(reply)); // simplified async response
         return std::unique_ptr<SearchReply>();
     }
@@ -46,6 +52,8 @@ struct MyDocsumServer : DocsumServer {
         auto &list = reply->_root->setArray();
         list.addObject().setBool("use_root_slime", req->useRootSlime());
         list.addObject().setString("ranking", req->ranking);
+        reply->request = std::move(req);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         client.getDocsumsDone(std::move(reply)); // simplified async response
         return std::unique_ptr<DocsumReply>();
     }
@@ -80,6 +88,38 @@ struct ProtoRpcAdapterTest : ::testing::Test {
 
 //-----------------------------------------------------------------------------
 
+TEST(QueryMetricTest, require_that_update_query_metrics_works_as_intended) {
+    SearchProtocolMetrics metrics;
+    QueryStats stats;
+    stats.latency = 0.25;
+    stats.request_size = 1000;
+    stats.reply_size = 500;
+    metrics.update_query_metrics(stats);
+    EXPECT_EQ(metrics.query().latency.getCount(), 1);
+    EXPECT_EQ(metrics.query().latency.getTotal(), 0.25);
+    EXPECT_EQ(metrics.query().request_size.getCount(), 1);
+    EXPECT_EQ(metrics.query().request_size.getTotal(), 1000);
+    EXPECT_EQ(metrics.query().reply_size.getCount(), 1);
+    EXPECT_EQ(metrics.query().reply_size.getTotal(), 500);
+}
+
+TEST(DocsumMetricTest, require_that_update_docsum_metrics_works_as_intended) {
+    SearchProtocolMetrics metrics;
+    DocsumStats stats;
+    stats.latency = 0.25;
+    stats.request_size = 1000;
+    stats.reply_size = 500;
+    stats.requested_documents = 10;
+    metrics.update_docsum_metrics(stats);
+    EXPECT_EQ(metrics.docsum().latency.getCount(), 1);
+    EXPECT_EQ(metrics.docsum().latency.getTotal(), 0.25);
+    EXPECT_EQ(metrics.docsum().request_size.getCount(), 1);
+    EXPECT_EQ(metrics.docsum().request_size.getTotal(), 1000);
+    EXPECT_EQ(metrics.docsum().reply_size.getCount(), 1);
+    EXPECT_EQ(metrics.docsum().reply_size.getTotal(), 500);
+    EXPECT_EQ(metrics.docsum().requested_documents.getValue(), 10);
+}
+
 TEST_F(ProtoRpcAdapterTest, require_that_plain_rpc_ping_works) {
     auto target = connect();
     auto *req = new FRT_RPCRequest();
@@ -110,6 +150,12 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_search_works) {
         rpc->SubRef();
     }
     target->SubRef();
+    SearchProtocolMetrics &metrics = adapter.metrics();
+    EXPECT_EQ(metrics.query().latency.getCount(), 2);
+    EXPECT_GT(metrics.query().latency.getTotal(), 0.0);
+    EXPECT_GT(metrics.query().request_size.getTotal(), 0);
+    EXPECT_GT(metrics.query().reply_size.getTotal(), 0);
+    EXPECT_EQ(metrics.docsum().latency.getCount(), 0);
 }
 
 TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_getDocsums_works) {
@@ -118,6 +164,9 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_getDocsums_works) {
         auto *rpc = new FRT_RPCRequest();
         ProtoDocsumRequest req;
         req.set_rank_profile("mlr");
+        req.add_global_ids("foo");
+        req.add_global_ids("bar");
+        req.add_global_ids("baz");
         ProtoRpcAdapter::encode_docsum_request(req, *rpc);
         target->InvokeSync(rpc, 60.0);
         if (online) {
@@ -136,6 +185,13 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_getDocsums_works) {
         rpc->SubRef();
     }
     target->SubRef();
+    SearchProtocolMetrics &metrics = adapter.metrics();
+    EXPECT_EQ(metrics.query().latency.getCount(), 0);
+    EXPECT_EQ(metrics.docsum().latency.getCount(), 2);
+    EXPECT_GT(metrics.docsum().latency.getTotal(), 0.0);
+    EXPECT_GT(metrics.docsum().request_size.getTotal(), 0);
+    EXPECT_GT(metrics.docsum().reply_size.getTotal(), 0);
+    EXPECT_EQ(metrics.docsum().requested_documents.getValue(), 6);
 }
 
 TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_ping_works) {
@@ -157,6 +213,9 @@ TEST_F(ProtoRpcAdapterTest, require_that_proto_rpc_ping_works) {
         rpc->SubRef();
     }
     target->SubRef();
+    SearchProtocolMetrics &metrics = adapter.metrics();
+    EXPECT_EQ(metrics.query().latency.getCount(), 0);
+    EXPECT_EQ(metrics.docsum().latency.getCount(), 0);
 }
 
 //-----------------------------------------------------------------------------

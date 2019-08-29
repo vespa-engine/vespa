@@ -23,6 +23,7 @@ vespa_add_library(searchlib_engine OBJECT
     proto_converter.cpp
     proto_rpc_adapter.cpp
     request.cpp
+    search_protocol_metrics.cpp
     searchreply.cpp
     searchrequest.cpp
     trace.cpp
