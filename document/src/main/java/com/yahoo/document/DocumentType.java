@@ -398,6 +398,13 @@ public class DocumentType extends StructuredDataType {
         return field;
     }
 
+    /**
+     * All fields defined in the document and its parents
+     * This is for internal use
+     * Use {@link #fieldSet()} instead or {@link #fieldSetAll()} if you really want all fields
+     * @return All fields defined in the document and its parents
+     */
+    @Override
     public Collection<Field> getFields() {
         Collection<Field> collection = new LinkedList<>();
 
@@ -439,7 +446,7 @@ public class DocumentType extends StructuredDataType {
     }
 
     /**
-     * This is identical to @link fieldSet, but in addition extra hidden synthetic fields are returned.
+     * This is identical to {@link #fieldSet()} fieldSet}, but in addition extra hidden synthetic fields are returned.
      * @return an unmodifiable snapshot of the all fields in this type
      */
     public Set<Field> fieldSetAll() {
