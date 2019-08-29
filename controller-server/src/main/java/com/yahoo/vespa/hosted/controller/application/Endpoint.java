@@ -1,12 +1,14 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
+import com.google.common.hash.Hashing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Objects;
 
 /**
@@ -210,6 +212,12 @@ public class Endpoint {
             return new Port(port, false);
         }
 
+    }
+
+    /** Create a DNS name based on a hash of the ApplicationId. This should always be < 64 characters long. */
+    public static String createHashedCn(ApplicationId application, SystemName system) {
+        var appIdHash = Hashing.farmHashFingerprint64().hashString(application.serializedForm(), Charset.defaultCharset()).toString();
+        return appIdHash + dnsSuffix(system, false);
     }
 
     /** Build an endpoint for given application */
