@@ -99,17 +99,19 @@ public class DocumentGenPluginTest {
     @Test
     public void testRealBasic() {
         Music music = getMusicBasic();
-        assertEquals(music.getFieldCount(), 6);
-        assertEquals(music.getArtist(), "Astroburger");
-        assertEquals(music.getWeight_src(), 10.654f, 0);
-        assertEquals(music.getYear(), (Integer)2005);
-        assertEquals(music.getUri(), "http://astro.burger");
+        assertEquals(7, music.getFieldCount());
+        assertEquals("Astroburger", music.getArtist());
+        assertEquals(10.654f, music.getWeight_src(), 0);
+        assertEquals((Integer)2005, music.getYear());
+        assertEquals("http://astro.burger", music.getUri());
+        assertFalse(music.getEitheror());
         music.setUri(null);
-        assertEquals(music.getUri(), null);
+        assertNull(music.getUri());
         music.setUri("https://astro.burger");
-        assertEquals(music.getUri(), "https://astro.burger");
+        assertEquals("https://astro.burger", music.getUri());
         music.setYear(2006);
-        assertEquals(music.getYear(), (Integer)2006);
+        assertEquals((Integer)2006, music.getYear());
+        music.setEitheror(true);
         assertTrue(music.getEitheror());
     }
 
@@ -773,7 +775,7 @@ public class DocumentGenPluginTest {
         music.setYear(2005);
         music.setUri("http://astro.burger");
         music.setWeight_src(10.654f);
-        music.setEitheror(true);
+        music.setEitheror(false);
         return music;
     }
 
