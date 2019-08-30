@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import static ai.vespa.metricsproxy.http.RestApiUtil.resourceListResponse;
 import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;

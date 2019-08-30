@@ -6,18 +6,13 @@ package ai.vespa.metricsproxy.http.prometheus;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.http.ErrorResponse;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
-import ai.vespa.metricsproxy.http.JsonResponse;
 import ai.vespa.metricsproxy.http.TextResponse;
-import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
@@ -25,13 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-import static ai.vespa.metricsproxy.http.RestApiUtil.resourceListResponse;
 import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
-import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 
 /**
  * @author gjoranv
