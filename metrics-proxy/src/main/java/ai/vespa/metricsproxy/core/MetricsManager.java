@@ -149,6 +149,10 @@ public class MetricsManager {
         externalMetrics.setExtraMetrics(packets);
     }
 
+    public Map<DimensionId, String> getExtraDimensions() {
+        return this.extraDimensions;
+    }
+
     /**
      * Returns a space separated list of all distinct service names.
      */
