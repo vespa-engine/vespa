@@ -1408,6 +1408,7 @@ public class JsonReaderTestCase {
                                                        "    'something': {",
                                                        "      'modify': {} }}}"));
             reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
             assertEquals("Error in 'something': A modify update can only be applied to tensor fields. Field 'something' is of type 'string'",
