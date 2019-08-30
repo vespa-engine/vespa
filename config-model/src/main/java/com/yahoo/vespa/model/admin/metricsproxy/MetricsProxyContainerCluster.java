@@ -10,6 +10,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.Yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
@@ -112,6 +113,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(VespaMetrics.class);
         addHttpHandler(MetricsHandler.class, MetricsHandler.V1_PATH);
         addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
+        addHttpHandler(YamasHandler.class, YamasHandler.V1_PATH);
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
