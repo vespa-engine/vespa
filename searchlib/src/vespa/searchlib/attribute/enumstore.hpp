@@ -14,174 +14,44 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/datastore/unique_store.hpp>
+#include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/bufferwriter.h>
 
 namespace search {
 
-namespace {
-
-const uint32_t dummy_enum_value = 0;
-
-}
-
 template <typename EntryType>
-EnumStoreT<EntryType>::EnumBufferType::EnumBufferType()
-    : datastore::BufferType<char>(Index::align(1),
-                                  Index::offsetSize() / Index::align(1),
-                                  Index::offsetSize() / Index::align(1)),
-      _minSizeNeeded(0),
-      _deadElems(0),
-      _pendingCompact(false),
-      _wantCompact(false)
+void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet& unused)
 {
-}
-
-template <typename EntryType>
-size_t
-EnumStoreT<EntryType>::EnumBufferType::calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
-{
-    (void) resizing;
-    size_t reservedElements = getReservedElements(bufferId);
-    sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
-    size_t usedElems = _activeUsedElems;
-    if (_lastUsedElems != nullptr) {
-        usedElems += *_lastUsedElems;
-    }
-    assert((usedElems % _arraySize) == 0);
-    double growRatio = 1.5f;
-    uint64_t maxSize = static_cast<uint64_t>(_maxArrays) * _arraySize;
-    uint64_t newSize = usedElems - _deadElems + sizeNeeded;
-    if (usedElems != 0) {
-        newSize *= growRatio;
-    }
-    newSize += reservedElements;
-    newSize = alignBufferSize(newSize);
-    assert((newSize % _arraySize) == 0);
-    if (newSize <= maxSize) {
-        return newSize / _arraySize;
-    }
-    newSize = usedElems - _deadElems + sizeNeeded + reservedElements + 1000000;
-    newSize = alignBufferSize(newSize);
-    assert((newSize % _arraySize) == 0);
-    if (newSize <= maxSize) {
-        return _maxArrays;
-    }
-    failNewSize(newSize, maxSize);
-    return 0;
-}
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::
-insertEntry(char * dst, uint32_t refCount, Type value)
-{
-    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
-    uint32_t pos = sizeof(uint32_t);
-    memcpy(dst + pos, &refCount, sizeof(uint32_t));
-    pos += sizeof(uint32_t);
-    insertEntryValue(dst + pos, value);
-}
-
-template <>
-void
-EnumStoreT<StringEntryType>::
-insertEntryValue(char * dst, Type value);
-
-template <typename EntryType>
-uint32_t
-EnumStoreT<EntryType>::getBufferIndex(datastore::BufferState::State status)
-{
-    for (uint32_t i = 0; i < _store.getNumBuffers(); ++i) {
-        if (_store.getBufferState(i).getState() == status) {
-            return i;
-        }
-    }
-    return Index::numBuffers();
-}
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::postCompact()
-{
-    _store.finishCompact(_toHoldBuffers);
-}
-
-template <typename EntryType>
-bool
-EnumStoreT<EntryType>::preCompact(uint64_t bytesNeeded)
-{
-    if (getBufferIndex(datastore::BufferState::FREE) == Index::numBuffers()) {
-        return false;
-    }
-    uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & activeBuf = _store.getBufferState(activeBufId);
-    _type.setSizeNeededAndDead(bytesNeeded, activeBuf.getDeadElems());
-    _toHoldBuffers = _store.startCompact(TYPE_ID);
-    return true;
-}
-
-template <typename EntryType>
-void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
-{
-    Entry e = getEntry(idx);
-    if (e.getRefCount() == 0) {
-        Type value = e.getValue();
-        if (unused.insert(idx).second) {
-            _store.incDead(idx, getEntrySize(value));
-        }
+    const auto& entry = get_entry_base(idx);
+    if (entry.get_ref_count() == 0) {
+        unused.insert(idx);
+        _store.get_allocator().hold(idx);
     }
 }
 
 template <typename EntryType>
-EnumStoreT<EntryType>::EnumStoreT(uint64_t initBufferSize, bool hasPostings)
-    : _enumDict(nullptr),
-      _store(),
-      _type(),
-      _toHoldBuffers()
+EnumStoreT<EntryType>::EnumStoreT(bool has_postings)
+    : _store(make_enum_store_dictionary(*this, has_postings)),
+      _dict(static_cast<IEnumStoreDictionary&>(_store.get_dictionary()))
 {
-    if (hasPostings) {
-        _enumDict = new EnumStoreDictionary<EnumPostingTree>(*this);
-    } else {
-        _enumDict = new EnumStoreDictionary<EnumTree>(*this);
-    }
-    _store.addType(&_type);
-    _type.setSizeNeededAndDead(initBufferSize, 0);
-    _store.initActiveBuffers();
 }
 
 template <typename EntryType>
-EnumStoreT<EntryType>::~EnumStoreT()
-{
-    _store.clearHoldLists();
-    _store.dropBuffers();
-    delete _enumDict;
-}
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::reset(uint64_t initBufferSize)
-{
-    _store.clearHoldLists();
-    _store.dropBuffers();
-    _type.setSizeNeededAndDead(initBufferSize, 0);
-    _store.initActiveBuffers();
-    _enumDict->onReset();
-}
+EnumStoreT<EntryType>::~EnumStoreT() = default;
 
 template <typename EntryType>
 vespalib::AddressSpace
 EnumStoreT<EntryType>::getAddressSpaceUsage() const
 {
-    const datastore::BufferState &activeState = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-    return vespalib::AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
+    return _store.get_address_space_usage();
 }
 
 template <typename EntryType>
 void
 EnumStoreT<EntryType>::transferHoldLists(generation_t generation)
 {
-    _enumDict->transfer_hold_lists(generation);
     _store.transferHoldLists(generation);
 }
 
@@ -190,52 +60,24 @@ void
 EnumStoreT<EntryType>::trimHoldLists(generation_t firstUsed)
 {
     // remove generations in the range [0, firstUsed>
-    _enumDict->trim_hold_lists(firstUsed);
     _store.trimHoldLists(firstUsed);
 }
 
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::failNewSize(uint64_t minNewSize, uint64_t maxSize)
-{
-    throw vespalib::IllegalStateException(vespalib::make_string("EnumStoreT::failNewSize: Minimum new size (%" PRIu64 ") exceeds max size (%" PRIu64 ")", minNewSize, maxSize));
-}
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::fallbackResize(uint64_t bytesNeeded)
-{
-    uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
-    size_t reservedElements = _type.getReservedElements(activeBufId);
-    _type.setSizeNeededAndDead(bytesNeeded, reservedElements);
-    _type.setWantCompact();
-    _store.fallbackResize(activeBufId, bytesNeeded);
-}
 
 template <typename EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize0(const void *src,
+EnumStoreT<EntryType>::deserialize0(const void* src,
                                     size_t available,
-                                    IndexVector &idx)
+                                    IndexVector& idx)
 {
     size_t left = available;
-    size_t initSpace = Index::align(1);
-    const char * p = static_cast<const char *>(src);
-    while (left > 0) {
-        ssize_t sz = deserialize(p, left, initSpace);
-        if (sz < 0)
-            return sz;
-        p += sz;
-        left -= sz;
-    }
-    reset(initSpace);
-    left = available;
-    p = static_cast<const char *>(src);
+    const char* p = static_cast<const char*>(src);
     Index idx1;
     while (left > 0) {
         ssize_t sz = deserialize(p, left, idx1);
-        if (sz < 0)
+        if (sz < 0) {
             return sz;
+        }
         p += sz;
         left -= sz;
         idx.push_back(idx1);
@@ -245,80 +87,44 @@ EnumStoreT<EntryType>::deserialize0(const void *src,
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::getValue(Index idx, Type & value) const
+EnumStoreT<EntryType>::getValue(Index idx, DataType& value) const
 {
-    if (!validIndex(idx)) {
+    if (!idx.valid()) {
         return false;
     }
-    value = getEntry(idx).getValue();
+    value = _store.get(idx);
     return true;
 }
 
 template <typename EntryType>
-EnumStoreT<EntryType>::Builder::Builder()
-    : _uniques(),
-      _bufferSize(Index::align(1))
-{ }
-
-template <typename EntryType>
-EnumStoreT<EntryType>::Builder::~Builder() { }
+EnumStoreT<EntryType>::Builder::~Builder() = default;
 
 template <class EntryType>
 void
-EnumStoreT<EntryType>::writeValues(BufferWriter &writer, const Index *idxs, size_t count) const
+EnumStoreT<EntryType>::writeValues(BufferWriter& writer, const Index* idxs, size_t count) const
 {
-    size_t sz(EntryType::fixedSize());
-    for (uint32_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
         Index idx = idxs[i];
-        const char *src(_store.getEntry<char>(idx) + EntryBase::size());
-        writer.write(src, sz);
+        writer.write(&_store.get(idx), sizeof(DataType));
     }
 }
 
 template <class EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize(const void *src, size_t available, size_t &initSpace)
+EnumStoreT<EntryType>::deserialize(const void* src, size_t available, Index& idx)
 {
-    (void) src;
-    size_t sz(EntryType::fixedSize());
-    if (available < sz)
+    if (available < sizeof(DataType)) {
         return -1;
-    uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
-    initSpace += entrySize;
-    return sz;
-}
-
-template <class EntryType>
-ssize_t
-EnumStoreT<EntryType>::deserialize(const void *src, size_t available, Index &idx)
-{
-    size_t sz(EntryType::fixedSize());
-    if (available < sz)
-        return -1;
-    uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
-    uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
-    if (buffer.remaining() < entrySize) {
-        HDR_ABORT("not enough space");
     }
-    uint64_t offset = buffer.size();
-    Index newIdx(offset, activeBufferId);
-    char *dst(_store.getEntry<char>(newIdx));
-    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
-    uint32_t pos = sizeof(uint32_t);
-    uint32_t refCount(0);
-    memcpy(dst + pos, &refCount, sizeof(uint32_t));
-    pos += sizeof(uint32_t);
-    memcpy(dst + pos, src, sz);
-    buffer.pushed_back(entrySize);
+    const auto* value = static_cast<const DataType*>(src);
+    Index prev_idx = idx;
+    idx = _store.get_allocator().allocate(*value);
 
-    if (idx.valid()) {
-        assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);
+    if (prev_idx.valid()) {
+        assert(ComparatorType::compare(getValue(prev_idx), *value) < 0);
     }
-    idx = newIdx;
-    return sz;
+    return sizeof(DataType);
 }
-
 
 template <class EntryType>
 bool
@@ -329,14 +135,13 @@ EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
     return cmpres < 0;
 }
 
-
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findEnum(Type value, IEnumStore::EnumHandle &e) const
+EnumStoreT<EntryType>::findEnum(DataType value, IEnumStore::EnumHandle &e) const
 {
     ComparatorType cmp(*this, value);
     Index idx;
-    if (_enumDict->findFrozenIndex(cmp, idx)) {
+    if (_dict.findFrozenIndex(cmp, idx)) {
         e = idx.ref();
         return true;
     }
@@ -345,21 +150,19 @@ EnumStoreT<EntryType>::findEnum(Type value, IEnumStore::EnumHandle &e) const
 
 template <typename EntryType>
 std::vector<IEnumStore::EnumHandle>
-EnumStoreT<EntryType>::findFoldedEnums(Type value) const
+EnumStoreT<EntryType>::findFoldedEnums(DataType value) const
 {
     FoldedComparatorType cmp(*this, value);
-    return _enumDict->findMatchingEnums(cmp);
+    return _dict.findMatchingEnums(cmp);
 }
-
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findIndex(Type value, Index &idx) const
+EnumStoreT<EntryType>::findIndex(DataType value, Index &idx) const
 {
     ComparatorType cmp(*this, value);
-    return _enumDict->findIndex(cmp, idx);
+    return _dict.findIndex(cmp, idx);
 }
-
 
 template <typename EntryType>
 void
@@ -368,12 +171,11 @@ EnumStoreT<EntryType>::freeUnusedEnums(bool movePostingIdx)
     ComparatorType cmp(*this);
     if (EntryType::hasFold() && movePostingIdx) {
         FoldedComparatorType fcmp(*this);
-        _enumDict->freeUnusedEnums(cmp, &fcmp);
+        _dict.freeUnusedEnums(cmp, &fcmp);
     } else {
-        _enumDict->freeUnusedEnums(cmp, nullptr);
+        _dict.freeUnusedEnums(cmp, nullptr);
     }
 }
-
 
 template <typename EntryType>
 void
@@ -382,34 +184,18 @@ EnumStoreT<EntryType>::freeUnusedEnums(const IndexSet& toRemove)
     ComparatorType cmp(*this);
     if (EntryType::hasFold()) {
         FoldedComparatorType fcmp(*this);
-        _enumDict->freeUnusedEnums(toRemove, cmp, &fcmp);
+        _dict.freeUnusedEnums(toRemove, cmp, &fcmp);
     } else {
-        _enumDict->freeUnusedEnums(toRemove, cmp, nullptr);
+        _dict.freeUnusedEnums(toRemove, cmp, nullptr);
     }
 }
-
 
 template <typename EntryType>
 template <typename Dictionary>
 void
-EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
+EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx, Dictionary& dict)
 {
     typedef typename Dictionary::Iterator DictionaryIterator;
-    uint32_t entrySize = this->getEntrySize(value);
-    uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
-#ifdef LOG_ENUM_STORE
-    LOG(info,
-        "addEnum(): buffer[%u]: capacity = %" PRIu64
-        ", size = %" PRIu64 ", remaining = %" PRIu64
-        ", dead = %" PRIu64 ", entrySize = %u",
-        activeBufferId, buffer.capacity(),
-        buffer.size(), buffer.remaining(),
-        buffer._deadElems, entrySize);
-#endif
-    if (buffer.remaining() < entrySize) {
-        HDR_ABORT("not enough space");
-    }
 
     // check if already present
     ComparatorType cmp(*this, value);
@@ -420,33 +206,31 @@ EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
         return;
     }
 
-    uint64_t offset = buffer.size();
-    newIdx = Index(offset, activeBufferId);
-    char * dst = _store.template getEntry<char>(newIdx);
-    this->insertEntry(dst, 0, value);
-    buffer.pushed_back(entrySize);
-    assert(Index::pad(offset) == 0);
+    newIdx = _store.get_allocator().allocate(value);
 
+    // TODO: Move this logic to "add/insert" on the dictionary
     // update tree with new index
     dict.insert(it, newIdx, typename Dictionary::DataType());
 
-    // Copy posting list idx from next entry if same
-    // folded value.
+    // Copy posting list idx from next entry if same folded value.
     // Only for string posting list attributes, i.e. dictionary has
     // data and entry type has folded compare.
     if (DictionaryIterator::hasData() && EntryType::hasFold()) {
         FoldedComparatorType foldCmp(*this);
         ++it;
-        if (!it.valid() || foldCmp(newIdx, it.getKey()))
+        if (!it.valid() || foldCmp(newIdx, it.getKey())) {
             return;  // Next entry does not use same posting list
+        }
         --it;
         --it;
-        if (it.valid() && !foldCmp(it.getKey(), newIdx))
+        if (it.valid() && !foldCmp(it.getKey(), newIdx)) {
             return;  // Previous entry uses same posting list
-        if (it.valid())
+        }
+        if (it.valid()) {
             ++it;
-        else
+        } else {
             it.begin();
+        }
         assert(it.valid() && it.getKey() == newIdx);
         ++it;
         typename Dictionary::DataType pidx(it.getData());
@@ -458,148 +242,15 @@ EnumStoreT<EntryType>::addEnum(Type value, Index &newIdx, Dictionary &dict)
     }
 }
 
-
 template <typename EntryType>
 void
-EnumStoreT<EntryType>::addEnum(Type value, Index & newIdx)
+EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx)
 {
-    if (_enumDict->hasData()) {
-        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary());
+    if (_dict.hasData()) {
+        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumPostingTree> &>(_dict).getDictionary());
     } else {
-        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary());
+        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumTree> &>(_dict).getDictionary());
     }
 }
 
-template <typename DictionaryType>
-struct TreeBuilderInserter {
-    static void insert(typename DictionaryType::Builder & builder,
-                       IEnumStore::Index enumIdx,
-                       datastore::EntryRef postingIdx)
-    {
-        (void) postingIdx;
-        builder.insert(enumIdx, typename DictionaryType::DataType());
-    }
-};
-
-template <>
-struct TreeBuilderInserter<EnumPostingTree> {
-    static void insert(EnumPostingTree::Builder & builder,
-                       IEnumStore::Index enumIdx,
-                       datastore::EntryRef postingIdx)
-    {
-        builder.insert(enumIdx, postingIdx);
-    }
-};
-
-
-template <typename EntryType>
-template <typename Dictionary>
-void
-EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
-{
-    typedef typename Dictionary::Builder DictionaryBuilder;
-    reset(builder.getBufferSize());
-
-    DictionaryBuilder treeBuilder(dict.getAllocator());
-    uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & state = _store.getBufferState(activeBufferId);
-
-    // insert entries and update DictionaryBuilder
-    const typename Builder::Uniques & uniques = builder.getUniques();
-    for (typename Builder::Uniques::const_iterator iter = uniques.begin();
-         iter != uniques.end(); ++iter)
-    {
-        uint64_t offset = state.size();
-        Index idx(offset, activeBufferId);
-        char * dst = _store.template getEntry<char>(idx);
-        this->insertEntry(dst, iter->_refCount, iter->_value);
-        state.pushed_back(iter->_sz);
-
-        // update DictionaryBuilder with enum index and posting index
-        TreeBuilderInserter<Dictionary>::insert(treeBuilder, idx, datastore::EntryRef(iter->_pidx));
-    }
-
-    // reset Dictionary
-    dict.assign(treeBuilder); // destructive copy of treeBuilder
 }
-
-
-template <typename EntryType>
-void
-EnumStoreT<EntryType>::reset(Builder &builder)
-{
-    if (_enumDict->hasData()) {
-        reset(builder, static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary());
-    } else {
-        reset(builder, static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary());
-    }
-}
-
-
-template <typename EntryType>
-template <typename Dictionary>
-void
-EnumStoreT<EntryType>::performCompaction(Dictionary &dict, EnumIndexMap & old2New)
-{
-    typedef typename Dictionary::Iterator DictionaryIterator;
-    uint32_t freeBufferIdx = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
-    // copy entries from active buffer to free buffer
-    for (DictionaryIterator iter = dict.begin(); iter.valid(); ++iter) {
-        Index activeIdx = iter.getKey();
-
-        Entry e = this->getEntry(activeIdx);
-
-        // At this point the tree shall never reference any empty stuff.
-        assert(e.getRefCount() > 0);
-#ifdef LOG_ENUM_STORE
-        LOG(info, "performCompaction(): copy entry: enum = %u, refCount = %u, value = %s",
-            e.getEnum(), e.getRefCount(), e.getValue());
-#endif
-        Type value = e.getValue();
-        uint32_t refCount = e.getRefCount();
-        uint32_t entrySize = this->getEntrySize(value);
-
-        uint64_t offset = freeBuf.size();
-        Index newIdx = Index(offset, freeBufferIdx);
-        char * dst = _store.template getEntry<char>(newIdx);
-        // insert entry into free buffer
-        this->insertEntry(dst, refCount, value);
-#ifdef LOG_ENUM_STORE
-        LOG(info, "performCompaction(): new entry: refCount = %u, value = %s", 0, value);
-#endif
-        freeBuf.pushed_back(entrySize);
-        assert(Index::pad(offset) == 0);
-#ifdef LOG_ENUM_STORE
-        LOG(info,
-            "performCompaction(): new index: offset = %" PRIu64
-            ", bufferIdx = %u",
-            offset, freeBufferIdx);
-#endif
-
-        // update tree with new index
-        std::atomic_thread_fence(std::memory_order_release);
-        iter.writeKey(newIdx);
-
-        old2New[activeIdx] = newIdx;
-    }
-    this->postCompact();
-}
-
-
-template <typename EntryType>
-bool
-EnumStoreT<EntryType>::performCompaction(uint64_t bytesNeeded, EnumIndexMap & old2New)
-{
-    if ( ! this->preCompact(bytesNeeded) ) {
-        return false;
-    }
-    if (_enumDict->hasData()) {
-        performCompaction(static_cast<EnumStoreDictionary<EnumPostingTree> *>(_enumDict)->getDictionary(), old2New);
-    } else {
-        performCompaction(static_cast<EnumStoreDictionary<EnumTree> *>(_enumDict)->getDictionary(), old2New);
-    }
-    return true;
-}
-
-} // namespace search

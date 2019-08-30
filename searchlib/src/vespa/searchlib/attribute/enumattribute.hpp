@@ -13,7 +13,7 @@ EnumAttribute<B>::
 EnumAttribute(const vespalib::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _enumStore(0, cfg.fastSearch())
+      _enumStore(cfg.fastSearch())
 {
     this->setEnum(true);
 }
@@ -27,7 +27,7 @@ template <typename B>
 void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
 {
     if constexpr(!std::is_same_v<LoadedVector, NoLoadedVector>) {
-        typename EnumStore::Builder builder;
+        auto builder = _enumStore.make_builder();
         if (!loaded.empty()) {
             auto value = loaded.read();
             LoadedValueType prev = value.getValue();
@@ -36,7 +36,7 @@ void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
             for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
                 value = loaded.read();
                 if (EnumStore::ComparatorType::compare(prev, value.getValue()) != 0) {
-                    builder.updateRefCount(prevRefCount);
+                    builder.set_ref_count_for_last_value(prevRefCount);
                     index = builder.insert(value.getValue(), value._pidx.ref());
                     prev = value.getValue();
                     prevRefCount = 1;
@@ -46,9 +46,9 @@ void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
                 value.setEidx(index);
                 loaded.write(value);
             }
-            builder.updateRefCount(prevRefCount);
+            builder.set_ref_count_for_last_value(prevRefCount);
         }
-        _enumStore.reset(builder);
+        builder.build();
     }
 }
 
@@ -93,48 +93,18 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
         considerAttributeChange(data, newUniques);
     }
 
-    uint64_t extraBytesNeeded = 0;
-    for (const auto & data : newUniques) {
-        extraBytesNeeded += _enumStore.getEntrySize(data.raw());
-    }
-
-    do {
-        // perform compaction on EnumStore if necessary
-        if (extraBytesNeeded > this->_enumStore.getRemaining() ||
-            this->_enumStore.getPendingCompact())
-        {
-            this->logEnumStoreEvent("enumstorecompact", "reserve");
-            this->removeAllOldGenerations();
-            this->_enumStore.clearPendingCompact();
-            EnumIndexMap old2New(this->_enumStore.getNumUniques()*3);
-            this->logEnumStoreEvent("enumstorecompact", "start");
-            if (!this->_enumStore.performCompaction(extraBytesNeeded, old2New)) {
-                this->logEnumStoreEvent("enumstorecompact", "failed_compact");
-                // fallback to resize strategy
-                this->_enumStore.fallbackResize(extraBytesNeeded);
-                this->logEnumStoreEvent("enumstorecompact", "fallbackresize_complete");
-                if (extraBytesNeeded > this->_enumStore.getRemaining()) {
-                    HDR_ABORT("Cannot fallbackResize enumStore");
-                }
-                break;  // fallback resize performed instead of compaction.
-            }
-
-            // update underlying structure with new EnumIndex values.
-            reEnumerate(old2New);
-            // Clear scratch enumeration
-            for (auto & data : this->_changes) {
-                data._enumScratchPad = ChangeBase::UNSET_ENUM;
-            }
-            this->logEnumStoreEvent("enumstorecompact", "complete");
-        }
-    } while (0);
-
     // insert new unique values in EnumStore
     for (const auto & data : newUniques) {
         updater.add(data.raw());
     }
 }
 
+template <typename B>
+vespalib::MemoryUsage
+EnumAttribute<B>::getEnumStoreValuesMemoryUsage() const
+{
+    return _enumStore.getValuesMemoryUsage();
+}
 
 template <typename B>
 vespalib::AddressSpace

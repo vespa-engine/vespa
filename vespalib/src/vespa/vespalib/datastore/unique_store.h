@@ -44,6 +44,7 @@ private:
 
 public:
     UniqueStore();
+    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict);
     ~UniqueStore();
     UniqueStoreAddResult add(EntryConstRefType value);
     EntryRef find(EntryConstRefType value);
@@ -51,6 +52,12 @@ public:
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::AddressSpace get_address_space_usage() const;
+
+    // TODO: Consider exposing only the needed functions from allocator
+    Allocator& get_allocator() { return _allocator; }
+    const Allocator& get_allocator() const { return _allocator; }
+    IUniqueStoreDictionary& get_dictionary() { return *_dict; }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation);

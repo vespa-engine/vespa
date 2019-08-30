@@ -218,6 +218,12 @@ AttributeVector::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, u
     _status.updateStatistics(numValues, numUniqueValue, allocated, used, dead, onHold);
 }
 
+vespalib::MemoryUsage
+AttributeVector::getEnumStoreValuesMemoryUsage() const
+{
+    return vespalib::MemoryUsage();
+}
+
 vespalib::AddressSpace
 AttributeVector::getEnumStoreAddressSpaceUsage() const
 {
@@ -715,7 +721,7 @@ AttributeVector::getEstimatedSaveByteSize() const
     uint64_t idxFileSize = 0;
     uint64_t udatFileSize = 0;
     size_t fixedWidth = getFixedWidth();
-    vespalib::AddressSpace enumAddressSpace(getEnumStoreAddressSpaceUsage());
+    vespalib::MemoryUsage values_mem_usage = getEnumStoreValuesMemoryUsage();
 
     if (hasMultiValue()) {
         idxFileSize = headerSize + sizeof(uint32_t) * (docIdLimit + 1);
@@ -723,13 +729,15 @@ AttributeVector::getEstimatedSaveByteSize() const
     if (hasWeightedSetType()) {
         weightFileSize = headerSize + sizeof(int32_t) * totalValueCount;
     }
-    if (hasEnum() && getEnumeratedSave()) {
-        datFileSize =  headerSize + 4 * totalValueCount;
+    if (hasEnum()) {
+        datFileSize =  headerSize + sizeof(uint32_t) * totalValueCount;
         if (fixedWidth != 0) {
             udatFileSize = headerSize + fixedWidth * uniqueValueCount;
         } else {
-            udatFileSize = headerSize + enumAddressSpace.used()
-                           - 8 * uniqueValueCount;
+            size_t unique_values_bytes = values_mem_usage.usedBytes() -
+                    (values_mem_usage.deadBytes() + values_mem_usage.allocatedBytesOnHold());
+            size_t ref_count_mem_usage = sizeof(uint32_t) * uniqueValueCount;
+            udatFileSize = headerSize + unique_values_bytes - ref_count_mem_usage;
         }
     } else {
         BasicType::Type basicType(getBasicType());
@@ -744,12 +752,7 @@ AttributeVector::getEstimatedSaveByteSize() const
             datFileSize = headerSize + memorySize;
             break;
         case BasicType::Type::STRING:
-            assert(hasEnum());
-            datFileSize = headerSize;
-            if (uniqueValueCount > 0) {
-                double avgEntrySize = (static_cast<double>(enumAddressSpace.used()) / uniqueValueCount) - 8;
-                datFileSize += avgEntrySize * totalValueCount;
-            }
+            abort();
             break;
         default:
             datFileSize = headerSize + fixedWidth * totalValueCount;
