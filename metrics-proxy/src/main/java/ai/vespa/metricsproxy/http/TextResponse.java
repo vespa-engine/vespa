@@ -11,23 +11,21 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 
 /**
+ * @author yj-jtakagi
  * @author gjoranv
  */
-public class JsonResponse extends HttpResponse {
+public class TextResponse extends HttpResponse {
+
     private final byte[] data;
 
-    public JsonResponse(int code, String data) {
+    public TextResponse(int code, String data) {
         super(code);
         this.data = data.getBytes(Charset.forName(DEFAULT_CHARACTER_ENCODING));
-    }
-
-    @Override
-    public String getContentType() {
-        return "application/json";
     }
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
         outputStream.write(data);
     }
+
 }
