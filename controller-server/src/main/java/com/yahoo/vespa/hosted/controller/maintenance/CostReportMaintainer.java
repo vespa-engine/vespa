@@ -13,8 +13,6 @@ import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfi
 import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumSet;
-import java.util.Objects;
-import java.util.logging.Logger;
 
 /**
  * Periodically calculate and store cost allocation for properties.
@@ -23,8 +21,6 @@ import java.util.logging.Logger;
  * @author andreer
  */
 public class CostReportMaintainer extends Maintainer {
-
-    private static final Logger log = Logger.getLogger(CostReportMaintainer.class.getName());
 
     private final CostReportConsumer consumer;
     private final NodeRepository nodeRepository;
@@ -36,13 +32,11 @@ public class CostReportMaintainer extends Maintainer {
     public CostReportMaintainer(Controller controller, Duration interval,
                                 CostReportConsumer consumer,
                                 JobControl jobControl,
-                                NodeRepository nodeRepository,
-                                Clock clock,
                                 SelfHostedCostConfig selfHostedCostConfig) {
         super(controller, interval, jobControl, "CostReportMaintainer", EnumSet.of(SystemName.main));
         this.consumer = consumer;
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "node repository must be non-null");
-        this.clock = clock;
+        this.nodeRepository = controller.configServer().nodeRepository();
+        this.clock = controller.clock();
         this.selfHostedCostConfig = selfHostedCostConfig;
     }
 
@@ -50,4 +44,5 @@ public class CostReportMaintainer extends Maintainer {
     protected void maintain() {
         consumer.Consume(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller(), clock, selfHostedCostConfig, CloudName.from("yahoo")));
     }
+
 }

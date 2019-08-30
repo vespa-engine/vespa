@@ -59,6 +59,58 @@ public class NodeRepositoryMock implements NodeRepository {
                              .orElseThrow(() -> new NoSuchElementException("No node with the hostname " + hostName + " is known."));
     }
 
+    public void addNodes(ZoneId zone, List<Node> nodes) {
+        nodeRepository.put(zone, nodes.stream().collect(Collectors.toMap(Node::hostname, Function.identity())));
+    }
+
+    public void addFixedNodes(ZoneId zone) {
+        var nodeA = new Node(HostName.from("hostA"),
+                             Node.State.active,
+                             NodeType.tenant,
+                             Optional.of(ApplicationId.from("tenant1", "app1", "default")),
+                             Version.fromString("7.42"),
+                             Version.fromString("7.42"),
+                             Version.fromString("7.6"),
+                             Version.fromString("7.6"),
+                             Node.ServiceState.expectedUp,
+                             0,
+                             0,
+                             0,
+                             0,
+                             24,
+                             24,
+                             500,
+                             1000,
+                             false,
+                             10,
+                             "C-2B/24/500",
+                             "clusterA",
+                             Node.ClusterType.container);
+        var nodeB = new Node(HostName.from("hostB"),
+                             Node.State.active,
+                             NodeType.tenant,
+                             Optional.of(ApplicationId.from("tenant2", "app2", "default")),
+                             Version.fromString("7.42"),
+                             Version.fromString("7.42"),
+                             Version.fromString("7.6"),
+                             Version.fromString("7.6"),
+                             Node.ServiceState.expectedUp,
+                             0,
+                             0,
+                             0,
+                             0,
+                             40,
+                             24,
+                             500,
+                             1000,
+                             false,
+                             20,
+                             "C-2C/24/500",
+                             "clusterB",
+                             Node.ClusterType.container);
+        addNodes(zone, List.of(nodeA, nodeB));
+    }
+
     @Override
     public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
         throw new UnsupportedOperationException();
@@ -87,6 +139,11 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public NodeList listNodes(ZoneId zone, ApplicationId application) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<Node> list(ZoneId zone) {
+        return List.copyOf(nodeRepository.getOrDefault(zone, Map.of()).values());
     }
 
     @Override
@@ -129,6 +186,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                             node.diskGb(),
                                             node.bandwidthGbps(),
                                             node.fastDisk(),
+                                            node.cost(),
                                             node.canonicalFlavor(),
                                             node.clusterId(),
                                             node.clusterType()))
@@ -137,12 +195,10 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void requestFirmwareCheck(ZoneId zone) {
-        ;
     }
 
     @Override
     public void cancelFirmwareCheck(ZoneId zone) {
-        ;
     }
 
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
@@ -179,6 +235,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.diskGb(),
                                                            node.bandwidthGbps(),
                                                            node.fastDisk(),
+                                                           node.cost(),
                                                            node.canonicalFlavor(),
                                                            node.clusterId(),
                                                            node.clusterType()));
@@ -203,6 +260,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.diskGb(),
                                                            node.bandwidthGbps(),
                                                            node.fastDisk(),
+                                                           node.cost(),
                                                            node.canonicalFlavor(),
                                                            node.clusterId(),
                                                            node.clusterType()));
@@ -227,6 +285,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.diskGb(),
                                                            node.bandwidthGbps(),
                                                            node.fastDisk(),
+                                                           node.cost(),
                                                            node.canonicalFlavor(),
                                                            node.clusterId(),
                                                            node.clusterType()));
@@ -251,6 +310,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.diskGb(),
                                                            node.bandwidthGbps(),
                                                            node.fastDisk(),
+                                                           node.cost(),
                                                            node.canonicalFlavor(),
                                                            node.clusterId(),
                                                            node.clusterType()));

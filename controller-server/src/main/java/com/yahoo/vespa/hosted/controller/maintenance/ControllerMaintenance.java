@@ -6,9 +6,12 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.*;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -16,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +62,7 @@ public class ControllerMaintenance extends AbstractComponent {
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
-                                 NameService nameService, NodeRepository nodeRepository,
+                                 NameService nameService,
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
                                  MeteringClient meteringClient,
@@ -77,7 +79,7 @@ public class ControllerMaintenance extends AbstractComponent {
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(1), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
         readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
-        clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl, nodeRepository);
+        clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
@@ -86,9 +88,9 @@ public class ControllerMaintenance extends AbstractComponent {
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
-        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, nodeRepository, Clock.systemUTC(), selfHostedCostConfig);
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, nodeRepository, Clock.systemUTC(), metric, meteringClient);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl, nameService);
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, meteringClient);
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);

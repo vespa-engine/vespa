@@ -34,30 +34,18 @@ public interface NodeRepository {
 
     NodeList listNodes(ZoneId zone, ApplicationId application);
 
+    /** List all nodes in given zone */
+    default List<Node> list(ZoneId zone) {
+        return listNodes(zone).nodes().stream()
+                              .map(NodeRepository::toNode)
+                              .collect(Collectors.toUnmodifiableList());
+    }
+
     /** List all nodes in zone owned by given application */
     default List<Node> list(ZoneId zone, ApplicationId application) {
         return listNodes(zone, application).nodes().stream()
-                .map(n -> new Node(com.yahoo.config.provision.HostName.from(n.getHostname()),
-                        fromJacksonState(n.getState()),
-                        fromJacksonType(n.getType()), Optional.of(application),
-                        Version.fromString(n.getVespaVersion()),
-                        Version.fromString(n.getWantedVespaVersion()),
-                        Version.fromString(n.getCurrentOsVersion()),
-                        Version.fromString(n.getWantedOsVersion()),
-                        fromBoolean(n.getAllowedToBeDown()),
-                        n.getCurrentRestartGeneration(),
-                        n.getRestartGeneration(),
-                        n.getCurrentRebootGeneration(),
-                        n.getRebootGeneration(),
-                        n.getMinCpuCores(),
-                        n.getMinMainMemoryAvailableGb(),
-                        n.getMinDiskAvailableGb(),
-                        n.getBandwidth() / 1000,
-                        n.getFastDisk(),
-                        n.getCanonicalFlavor(),
-                        n.getMembership().clusterid,
-                        clusterTypeOf(n.getMembership().clustertype)))
-                .collect(Collectors.toUnmodifiableList());
+                                           .map(NodeRepository::toNode)
+                                           .collect(Collectors.toUnmodifiableList());
     }
 
     /** List all nodes in states, in zone owned by given application */
@@ -79,9 +67,35 @@ public interface NodeRepository {
     /** Cancels firmware checks on all hosts in the given zone. */
     void cancelFirmwareCheck(ZoneId zone);
 
+    private static Node toNode(NodeRepositoryNode node) {
+        var application = Optional.ofNullable(node.getOwner())
+                                  .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
+                                                                   owner.getInstance()));
+        return new Node(com.yahoo.config.provision.HostName.from(node.getHostname()),
+                        fromJacksonState(node.getState()),
+                        fromJacksonType(node.getType()),
+                        application,
+                        Version.fromString(node.getVespaVersion()),
+                        Version.fromString(node.getWantedVespaVersion()),
+                        Version.fromString(node.getCurrentOsVersion()),
+                        Version.fromString(node.getWantedOsVersion()),
+                        fromBoolean(node.getAllowedToBeDown()),
+                        node.getCurrentRestartGeneration(),
+                        node.getRestartGeneration(),
+                        node.getCurrentRebootGeneration(),
+                        node.getRebootGeneration(),
+                        node.getMinCpuCores(),
+                        node.getMinMainMemoryAvailableGb(),
+                        node.getMinDiskAvailableGb(),
+                        node.getBandwidth() / 1000,
+                        node.getFastDisk(),
+                        node.getCost() == null ? 0 : node.getCost(),
+                        node.getCanonicalFlavor(),
+                        node.getMembership().clusterid,
+                        clusterTypeOf(node.getMembership().clustertype));
+    }
 
-
-    private Node.ClusterType clusterTypeOf(String type) {
+    private static Node.ClusterType clusterTypeOf(String type) {
         switch (type) {
             case "admin": return Node.ClusterType.admin;
             case "content": return Node.ClusterType.content;

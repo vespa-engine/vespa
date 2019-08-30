@@ -36,6 +36,7 @@ public class Node {
     private final double diskGb;
     private final double bandwidthGbps;
     private final boolean fastDisk;
+    private final int cost;
     private final String canonicalFlavor;
     private final String clusterId;
     private final ClusterType clusterType;
@@ -43,7 +44,7 @@ public class Node {
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, String canonicalFlavor, String clusterId, ClusterType clusterType) {
+                double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.state = state;
         this.type = type;
@@ -62,6 +63,7 @@ public class Node {
         this.diskGb = diskGb;
         this.bandwidthGbps = bandwidthGbps;
         this.fastDisk = fastDisk;
+        this.cost = cost;
         this.canonicalFlavor = canonicalFlavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
@@ -72,7 +74,7 @@ public class Node {
                 Version currentVersion, Version wantedVersion) {
         this(hostname, state, type, owner, currentVersion, wantedVersion,
              Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
-                2, 8, 50, 1, true, "d-2-8-50", "cluster", ClusterType.container);
+             2, 8, 50, 1, true, 0, "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
@@ -143,6 +145,10 @@ public class Node {
 
     public boolean fastDisk() {
         return fastDisk;
+    }
+
+    public int cost() {
+        return cost;
     }
 
     public String canonicalFlavor() {

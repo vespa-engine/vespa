@@ -1,11 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
-import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
@@ -13,28 +12,29 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author olaa
  */
 public class ResourceMeterMaintainerTest {
 
+    private final ControllerTester tester = new ControllerTester();
     private final double DELTA = Double.MIN_VALUE;
-    private NodeRepositoryClientMock nodeRepository = new NodeRepositoryClientMock();
     private MockMeteringClient snapshotConsumer = new MockMeteringClient();
     private MetricsMock metrics = new MetricsMock();
 
     @Test
     public void testMaintainer() {
-        ControllerTester tester = new ControllerTester();
+        var awsZone = ZoneApiMock.newBuilder().withId("prod.aws-us-east-1").withCloud("aws").build();
         tester.zoneRegistry().setZones(
                 ZoneApiMock.newBuilder().withId("prod.us-east-3").build(),
                 ZoneApiMock.newBuilder().withId("prod.us-west-1").build(),
                 ZoneApiMock.newBuilder().withId("prod.us-central-1").build(),
-                ZoneApiMock.newBuilder().withId("prod.aws-us-east-1").withCloud("aws").build());
+                awsZone);
+        tester.configServer().nodeRepository().addFixedNodes(awsZone.getId());
 
-        ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), nodeRepository, tester.clock(), metrics, snapshotConsumer);
+        ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
         List<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 
@@ -54,4 +54,5 @@ public class ResourceMeterMaintainerTest {
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
         assertEquals(1112.0d, (Double) metrics.getMetric("metering_total_reported"), DELTA);
     }
+
 }

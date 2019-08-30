@@ -2,25 +2,29 @@ package com.yahoo.vespa.hosted.controller.restapi.cost;
 
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
+import java.text.SimpleDateFormat;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.Comparator;
-import java.util.List;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
+/**
+ * @author ldalves
+ */
 public class CostCalculator {
 
     private static final double SELF_HOSTED_DISCOUNT = .5;
@@ -31,52 +35,45 @@ public class CostCalculator {
                                                       SelfHostedCostConfig selfHostedCostConfig,
                                                       CloudName cloudName) {
 
-        String date = LocalDate.now(clock).toString();
+        var date = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(clock.instant()));
 
-        List<NodeRepositoryNode> nodes = controller.zoneRegistry().zones()
-                .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
-                .flatMap(zone -> uncheck(() -> nodeRepository.listNodes(zone.getId()).nodes().stream()))
-                .filter(node -> node.getOwner() != null && !node.getOwner().getTenant().equals("hosted-vespa"))
-                .collect(Collectors.toList());
+        // Group properties by tenant name
+        Map<TenantName, Property> propertyByTenantName = controller.tenants().asList().stream()
+                                                                   .filter(AthenzTenant.class::isInstance)
+                                                                   .collect(Collectors.toMap(Tenant::name,
+                                                                                             tenant -> ((AthenzTenant) tenant).property()));
 
-        if (cloudName.equals(CloudName.from("yahoo")))
-            selfHostedCostConfig.properties().stream().map(property -> {
-                NodeRepositoryNode selfHostedNode = new NodeRepositoryNode();
+        // Sum up allocations
+        Map<Property, ResourceAllocation> allocationByProperty = new HashMap<>();
+        var nodes = controller.zoneRegistry().zones()
+                              .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
+                              .flatMap(zone -> uncheck(() -> nodeRepository.list(zone.getId()).stream()))
+                              .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().value().equals("hosted-vespa"))
+                              .collect(Collectors.toList());
+        var totalAllocation = ResourceAllocation.ZERO;
+        for (var node : nodes) {
+            Property property = propertyByTenantName.get(node.owner().get().tenant());
+            if (property == null) continue;
+            var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
+            var nodeAllocation = new ResourceAllocation(node.vcpu(), node.memoryGb(), node.diskGb());
+            allocationByProperty.put(property, allocation.plus(nodeAllocation));
+            totalAllocation = totalAllocation.plus(nodeAllocation);
+        }
 
-                NodeOwner owner = new NodeOwner();
-                owner.tenant = property.name();
-                selfHostedNode.setOwner(owner);
-                selfHostedNode.setMinCpuCores(property.cpuCores() * SELF_HOSTED_DISCOUNT);
-                selfHostedNode.setMinMainMemoryAvailableGb(property.memoryGb() * SELF_HOSTED_DISCOUNT);
-                selfHostedNode.setMinDiskAvailableGb(property.diskGb() * SELF_HOSTED_DISCOUNT);
+        // Add fixed allocations from config
+        if (cloudName.equals(CloudName.from("yahoo"))) {
+            for (var propertyEntry : selfHostedCostConfig.properties()) {
+                var property = new Property(propertyEntry.name());
+                var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
+                var fixedAllocation = new ResourceAllocation(propertyEntry.cpuCores() * SELF_HOSTED_DISCOUNT,
+                                                             propertyEntry.memoryGb() * SELF_HOSTED_DISCOUNT,
+                                                             propertyEntry.diskGb()  * SELF_HOSTED_DISCOUNT);
+                allocationByProperty.put(property, allocation.plus(fixedAllocation));
+                totalAllocation = totalAllocation.plus(fixedAllocation);
+            }
+        }
 
-                return selfHostedNode;
-            }).forEach(nodes::add);
-
-        ResourceAllocation totalResourceAllocation = ResourceAllocation.from(nodes);
-
-        Map<String, Property> propertyByTenantName = controller.tenants().asList().stream()
-                .filter(AthenzTenant.class::isInstance)
-                .collect(Collectors.toMap(
-                        tenant -> tenant.name().value(),
-                        tenant -> ((AthenzTenant) tenant).property()
-                ));
-
-        selfHostedCostConfig.properties().stream()
-                .map(SelfHostedCostConfig.Properties::name)
-                .forEach(name -> propertyByTenantName.put(name, new Property(name)));
-
-        Map<Property, ResourceAllocation> resourceShareByProperty = nodes.stream()
-                .filter(node -> propertyByTenantName.containsKey(node.getOwner().tenant))
-                .collect(Collectors.groupingBy(
-                        node -> propertyByTenantName.get(node.getOwner().tenant),
-                        Collectors.collectingAndThen(
-                                Collectors.toList(),
-                                ResourceAllocation::from
-                        )
-                ));
-
-        return toCsv(resourceShareByProperty, date, totalResourceAllocation);
+        return toCsv(allocationByProperty, date, totalAllocation);
     }
 
     private static String toCsv(Map<Property, ResourceAllocation> resourceShareByProperty, String date, ResourceAllocation totalResourceAllocation) {
@@ -91,4 +88,5 @@ public class CostCalculator {
                 .collect(Collectors.joining("\n"));
         return header + entries;
     }
+
 }
