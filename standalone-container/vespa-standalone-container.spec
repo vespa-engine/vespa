@@ -55,6 +55,7 @@ declare -a modules=(
   jdisc_http_service
   model-evaluation
   model-integration
+  security-tools
   security-utils
   simplemetrics
   standalone-container
@@ -71,11 +72,22 @@ cp vespajlib/target/vespajlib.jar "$jars_dir"
 
 declare -a libexec_files=(
   standalone-container/src/main/sh/standalone-container.sh
+  security-tools/src/main/sh/vespa-curl-wrapper
 )
 declare libexec_dir=%buildroot%_prefix/libexec/vespa
 mkdir -p "$libexec_dir"
 for file in "${libexec_files[@]}"; do
   cp "$file" "$libexec_dir"
+done
+
+declare -a bin_files=(
+  security-tools/src/main/sh/vespa-security-env
+)
+
+declare bin_dir=%buildroot%_prefix/bin
+mkdir -p "$bin_dir"
+for file in "${bin_files[@]}"; do
+  cp "$file" "$bin_dir"
 done
 
 %clean
