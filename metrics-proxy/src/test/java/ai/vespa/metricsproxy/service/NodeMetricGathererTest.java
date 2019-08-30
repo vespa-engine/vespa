@@ -1,4 +1,5 @@
-package ai.vespa.metricsproxy.gatherer;
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.HealthMetric;
@@ -8,8 +9,6 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
-import ai.vespa.metricsproxy.service.VespaService;
-import ai.vespa.metricsproxy.service.VespaServices;
 import org.junit.Test;
 
 import java.nio.file.Path;

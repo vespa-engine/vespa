@@ -1,5 +1,5 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.gatherer;
+package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
@@ -7,7 +7,6 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
 import ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil;
-import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
 import org.json.JSONException;
@@ -28,8 +27,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Fetches miscellaneous system metrics for node, including
+ *  - Current coredump processing
+ *  - Health of Vespa services
+ *  - Host life
+ *
  * @author olaa
  */
+
+
 public class NodeMetricGatherer {
 
     private static final int COREDUMP_AGE_IN_MINUTES = 12600;
@@ -123,7 +129,7 @@ public class NodeMetricGatherer {
         int statusCode = 0;
         String statusMessage = "OK";
         try {
-            upTime = getHostLife(Path.of("/proc/uptime")); // ??
+            upTime = getHostLife(Path.of("/proc/uptime"));
         } catch (IOException e) {
             upTime = 0d;
             statusCode = 1;

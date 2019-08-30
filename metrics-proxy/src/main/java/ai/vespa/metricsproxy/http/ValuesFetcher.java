@@ -9,7 +9,6 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
-import ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil;
 import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.time.Instant;
@@ -18,7 +17,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 
 /**
  * Generates metrics values in json format for the metrics/v1 rest api.
