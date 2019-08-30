@@ -123,6 +123,9 @@ public class QueryTree extends CompositeItem {
         if (a == null || a instanceof NullItem) {
             return b;
         }
+        else if (b == null || b instanceof NullItem) {
+            return a;
+        }
         else if (a instanceof NotItem && b instanceof NotItem) {
             NotItem notItemA = (NotItem)a;
             NotItem notItemB = (NotItem)b;
