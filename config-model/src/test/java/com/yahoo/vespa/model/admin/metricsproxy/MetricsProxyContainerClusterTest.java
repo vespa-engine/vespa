@@ -6,7 +6,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.http.MetricsHandler;
-import ai.vespa.metricsproxy.http.Yamas.YamasHandler;
+import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import com.yahoo.component.ComponentSpecification;

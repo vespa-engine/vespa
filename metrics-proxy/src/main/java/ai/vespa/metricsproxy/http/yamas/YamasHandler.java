@@ -1,9 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.http.Yamas;
+package ai.vespa.metricsproxy.http.yamas;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.service.NodeMetricGatherer;
+import ai.vespa.metricsproxy.node.NodeMetricGatherer;
 import ai.vespa.metricsproxy.http.ErrorResponse;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
 import ai.vespa.metricsproxy.http.JsonResponse;
