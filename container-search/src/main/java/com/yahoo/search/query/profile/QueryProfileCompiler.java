@@ -75,10 +75,11 @@ public class QueryProfileCompiler {
             variants.addAll(collectVariantsInThis(path, ((BackedOverridableQueryProfile) profile).getBacking(), currentVariant));
 
         Set<DimensionBindingForPath> parentVariants = new HashSet<>();
-        for (QueryProfile inheritedProfile : profile.inherited())
+        for (QueryProfile inheritedProfile : profile.inherited()) {
             parentVariants = collectVariants(path, inheritedProfile, currentVariant);
-        variants.addAll(parentVariants);
-        variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
+            variants.addAll(parentVariants);
+            variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
+        }
         return variants;
     }
 
