@@ -79,6 +79,7 @@ vespa_define_module(
     src/tests/attribute/document_weight_iterator
     src/tests/attribute/enumeratedsave
     src/tests/attribute/enumstore
+    src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/extendattributes
     src/tests/attribute/guard
     src/tests/attribute/imported_attribute_vector
