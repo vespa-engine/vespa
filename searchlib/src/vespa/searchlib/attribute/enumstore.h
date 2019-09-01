@@ -96,6 +96,8 @@ public:
 private:
     UniqueStoreType _store;
     IEnumStoreDictionary& _dict;
+    vespalib::MemoryUsage _cached_values_memory_usage;
+    vespalib::AddressSpace _cached_values_address_space_usage;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
@@ -243,6 +245,9 @@ public:
     bool findIndex(DataType value, Index &idx) const;
     void freeUnusedEnums(bool movePostingidx) override;
     void freeUnusedEnums(const IndexSet& toRemove);
+    vespalib::MemoryUsage update_stat() override;
+    std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;
 
 private:
     template <typename Dictionary>

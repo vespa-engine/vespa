@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/datastore/unique_store.hpp>
+#include <vespa/vespalib/datastore/unique_store_remapper.h>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -100,14 +101,16 @@ struct TestBase : public ::testing::Test {
         store.trimHoldLists(generation);
     }
     void compactWorst() {
-        ICompactionContext::UP ctx = store.compactWorst();
+        auto remapper = store.compact_worst(true, true);
         std::vector<EntryRef> refs;
         for (const auto &elem : refStore) {
             refs.push_back(elem.first);
         }
         refs.push_back(EntryRef());
         std::vector<EntryRef> compactedRefs = refs;
-        ctx->compact(ArrayRef<EntryRef>(compactedRefs));
+        remapper->remap(ArrayRef<EntryRef>(compactedRefs));
+        remapper->done();
+        remapper.reset();
         ASSERT_FALSE(refs.back().valid());
         refs.pop_back();
         ReferenceStore compactedRefStore;

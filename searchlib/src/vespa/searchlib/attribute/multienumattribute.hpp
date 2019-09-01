@@ -7,8 +7,17 @@
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/vespalib/datastore/unique_store_remapper.h>
 
 namespace search {
+
+namespace multienumattribute {
+
+template <typename WeightedIndex>
+void
+remap_enum_store_refs(const IEnumStore::EnumIndexRemapper& remapper, AttributeVector& v, attribute::MultiValueMapping<WeightedIndex>& multi_value_mapping);
+
+}
 
 template <typename B, typename M>
 bool
@@ -36,29 +45,6 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
             c._enumScratchPad = idx.ref();
         }
     }
-}
-
-template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::reEnumerate(const EnumIndexMap & old2new)
-{
-    // update MultiValueMapping with new EnumIndex values.
-    this->logEnumStoreEvent("compactfixup", "drain");
-    {
-        EnumModifier enumGuard(this->getEnumModifier());
-        this->logEnumStoreEvent("compactfixup", "start");
-        for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
-            vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
-            WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
-            for (uint32_t i = 0; i < indices.size(); ++i) {
-                EnumIndex oldIndex = indices[i].value();
-                indices[i] = WeightedIndex(old2new[oldIndex], indices[i].weight());
-            }
-            std::atomic_thread_fence(std::memory_order_release);
-            this->_mvMapping.replace(doc, indices);
-        }
-    }
-    this->logEnumStoreEvent("compactfixup", "complete");
 }
 
 template <typename B, typename M>
@@ -175,6 +161,14 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
+    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    if (remapper) {
+        multienumattribute::remap_enum_store_refs(*remapper, *this, this->_mvMapping);
+        remapper->done();
+        remapper.reset();
+        this->incGeneration();
+        this->updateStat(true);
+    }
 }
 
 template <typename B, typename M>
@@ -183,8 +177,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
 {
     // update statistics
     vespalib::MemoryUsage total;
-    total.merge(this->_enumStore.getValuesMemoryUsage());
-    total.merge(this->_enumStore.getDictionaryMemoryUsage());
+    total.merge(this->_enumStore.update_stat());
     total.merge(this->_mvMapping.updateStat());
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);

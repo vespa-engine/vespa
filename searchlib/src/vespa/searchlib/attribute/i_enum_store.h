@@ -12,9 +12,16 @@
 
 namespace search {
 
-namespace datastore { class DataStoreBase; }
+namespace datastore {
+
+class DataStoreBase;
+
+template <typename> class UniqueStoreRemapper;
+
+}
 
 class BufferWriter;
+class CompactionStrategy;
 class IEnumStoreDictionary;
 
 /**
@@ -26,9 +33,7 @@ public:
     using IndexVector = vespalib::Array<Index>;
     using EnumHandle = attribute::IAttributeVector::EnumHandle;
     using EnumVector = vespalib::Array<uint32_t>;
-
-    using EnumIndexMap = vespalib::hash_map<Index, Index, vespalib::hash<Index>, std::equal_to<Index>,
-                                            vespalib::hashtable_base::and_modulator>;
+    using EnumIndexRemapper = datastore::UniqueStoreRemapper<Index>;
 
     struct CompareEnumIndex {
         using Index = IEnumStore::Index;
@@ -54,6 +59,9 @@ public:
     virtual uint32_t getNumUniques() const = 0;
     virtual vespalib::MemoryUsage getValuesMemoryUsage() const = 0;
     virtual vespalib::MemoryUsage getDictionaryMemoryUsage() const = 0;
+    virtual vespalib::MemoryUsage update_stat() = 0;
+    virtual std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) = 0;
+    virtual std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) = 0;
 
 
     template <typename TreeT>

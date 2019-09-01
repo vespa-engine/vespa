@@ -18,6 +18,7 @@
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/searchcommon/common/compaction_strategy.h>
 
 namespace search {
 
@@ -34,7 +35,9 @@ void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet& unused)
 template <typename EntryType>
 EnumStoreT<EntryType>::EnumStoreT(bool has_postings)
     : _store(make_enum_store_dictionary(*this, has_postings)),
-      _dict(static_cast<IEnumStoreDictionary&>(_store.get_dictionary()))
+      _dict(static_cast<IEnumStoreDictionary&>(_store.get_dictionary())),
+      _cached_values_memory_usage(),
+      _cached_values_address_space_usage(0, 0, (1ull << 32))
 {
 }
 
@@ -251,6 +254,50 @@ EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx)
     } else {
         addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumTree> &>(_dict).getDictionary());
     }
+}
+
+template <typename EntryType>
+vespalib::MemoryUsage
+EnumStoreT<EntryType>::update_stat()
+{
+    auto &store = _store.get_allocator().get_data_store();
+    _cached_values_memory_usage = store.getMemoryUsage();
+    _cached_values_address_space_usage = store.getAddressSpaceUsage();
+    auto retval = _cached_values_memory_usage;
+    retval.merge(_dict.get_memory_usage());
+    return retval;
+}
+
+namespace {
+
+// minimum dead bytes in enum store before consider compaction
+constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
+constexpr size_t DEAD_ADDRESS_SPACE_SLACK = 0x10000u;
+
+}
+template <typename EntryType>
+std::unique_ptr<IEnumStore::EnumIndexRemapper>
+EnumStoreT<EntryType>::consider_compact(const CompactionStrategy& compaction_strategy)
+{
+    size_t used_bytes = _cached_values_memory_usage.usedBytes();
+    size_t dead_bytes = _cached_values_memory_usage.deadBytes();
+    size_t used_address_space = _cached_values_address_space_usage.used();
+    size_t dead_address_space = _cached_values_address_space_usage.dead();
+    bool compact_memory = ((dead_bytes >= DEAD_BYTES_SLACK) &&
+                           (used_bytes * compaction_strategy.getMaxDeadBytesRatio() < dead_bytes));
+    bool compact_address_space = ((dead_address_space >= DEAD_ADDRESS_SPACE_SLACK) &&
+                                  (used_address_space * compaction_strategy.getMaxDeadAddressSpaceRatio() < dead_address_space));
+    if (compact_memory || compact_address_space) {
+        return compact_worst(compact_memory, compact_address_space);
+    }
+    return std::unique_ptr<IEnumStore::EnumIndexRemapper>();
+}
+
+template <typename EntryType>
+std::unique_ptr<IEnumStore::EnumIndexRemapper>
+EnumStoreT<EntryType>::compact_worst(bool compact_memory, bool compact_address_space)
+{
+    return _store.compact_worst(compact_memory, compact_address_space);
 }
 
 }
