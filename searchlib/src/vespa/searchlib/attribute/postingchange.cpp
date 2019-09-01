@@ -101,8 +101,8 @@ removeDupRemovals(std::vector<uint32_t> &removals)
 
 }
 
-EnumStoreBase::Index
-EnumIndexMapper::map(EnumStoreBase::Index original, const EnumStoreComparator & compare) const
+IEnumStore::Index
+EnumIndexMapper::map(IEnumStore::Index original, const datastore::EntryComparator& compare) const
 {
     (void) compare;
     return original;
@@ -163,21 +163,21 @@ PostingChange<P>::apply(GrowableBitVector &bv)
 template <typename WeightedIndex>
 class ActualChangeComputer {
 public:
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using AlwaysWeightedIndexVector = std::vector<multivalue::WeightedValue<EnumIndex>>;
     using WeightedIndexVector = std::vector<WeightedIndex>;
     void compute(const WeightedIndex * entriesNew, size_t szNew,
                  const WeightedIndex * entriesOld, size_t szOld,
                  AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
 
-    ActualChangeComputer(const EnumStoreComparator &compare, const EnumIndexMapper &mapper);
+    ActualChangeComputer(const datastore::EntryComparator& compare, const EnumIndexMapper& mapper);
     ~ActualChangeComputer();
 
 private:
     WeightedIndexVector _oldEntries;
     WeightedIndexVector _newEntries;
     vespalib::hash_map<uint32_t, uint32_t> _cachedMapping;
-    const EnumStoreComparator &_compare;
+    const datastore::EntryComparator &_compare;
     const EnumIndexMapper &_mapper;
     const bool _hasFold;
 
@@ -219,7 +219,7 @@ private:
 template <typename WeightedIndex>
 class MergeDupIterator {
     using InnerIter = typename std::vector<WeightedIndex>::const_iterator;
-    using EnumIndex = EnumStoreBase::Index;
+    using EnumIndex = IEnumStore::Index;
     using Entry = multivalue::WeightedValue<EnumIndex>;
     InnerIter _cur;
     InnerIter _end;
@@ -262,7 +262,7 @@ public:
 };
 
 template <typename WeightedIndex>
-ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const EnumStoreComparator &compare,
+ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const datastore::EntryComparator &compare,
                                                           const EnumIndexMapper &mapper)
     : _oldEntries(),
       _newEntries(),
@@ -318,7 +318,7 @@ template <typename MultivalueMapping>
 PostingMap
 PostingChangeComputerT<WeightedIndex, PostingMap>::
 compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
-        const EnumStoreComparator & compare, const EnumIndexMapper & mapper)
+        const datastore::EntryComparator & compare, const EnumIndexMapper & mapper)
 {
     typedef ActualChangeComputer<WeightedIndex> AC;
     AC actualChange(compare, mapper);
@@ -350,7 +350,7 @@ template class PostingChange<AttributeWeightPosting>;
 
 typedef PostingChange<btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
 typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
-typedef EnumStoreBase::Index EnumIndex;
+typedef IEnumStore::Index EnumIndex;
 typedef multivalue::WeightedValue<EnumIndex> WeightedIndex; 
 typedef multivalue::Value<EnumIndex> ValueIndex; 
 
@@ -362,13 +362,13 @@ typedef std::vector<std::pair<uint32_t, std::vector<ValueIndex>>> DocIndicesValu
 template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
              ::compute<WeightedMultiValueMapping>(const WeightedMultiValueMapping &,
                                                    const DocIndicesWeighted &,
-                                                   const EnumStoreComparator &,
+                                                   const datastore::EntryComparator &,
                                                    const EnumIndexMapper &);
 
 template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
              ::compute<ValueMultiValueMapping>(const ValueMultiValueMapping &,
                                                 const DocIndicesValue &,
-                                                const EnumStoreComparator &,
+                                                const datastore::EntryComparator &,
                                                 const EnumIndexMapper &);
 
 }

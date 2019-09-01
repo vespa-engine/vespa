@@ -2,7 +2,6 @@
 package com.yahoo.config;
 
 import com.yahoo.config.text.StringUtilities;
-import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
  * A StringNode class represents a string in a {@link ConfigInstance}.
@@ -110,7 +109,7 @@ public class StringNode extends LeafNode<String> {
      * @param value the new value of this node.
      */
     @Override
-    protected boolean doSetValue(@NonNull String value) {
+    protected boolean doSetValue(String value) {
         if (value.startsWith("\"") && value.endsWith("\""))
             this.value = unescapeQuotedString(value);
         else {

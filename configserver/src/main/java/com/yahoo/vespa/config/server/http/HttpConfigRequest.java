@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.annotation.Nullable;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.yahoo.collections.Tuple2;
@@ -154,7 +152,7 @@ public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
     private static boolean configNameNotFound(final ConfigKey<?> requestKey, Set<ConfigKey<?>> allConfigsProduced) {
         return !Iterables.any(allConfigsProduced, new Predicate<ConfigKey<?>>() {
             @Override
-            public boolean apply(@Nullable ConfigKey<?> k) {
+            public boolean apply(ConfigKey<?> k) {
                 return k.getName().equals(requestKey.getName()) && k.getNamespace().equals(requestKey.getNamespace());
             }
         });

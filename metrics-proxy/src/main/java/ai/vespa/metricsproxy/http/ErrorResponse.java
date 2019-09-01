@@ -15,12 +15,12 @@ import static java.util.logging.Level.WARNING;
 /**
  * @author gjoranv
  */
-class ErrorResponse extends JsonResponse {
+public class ErrorResponse extends JsonResponse {
     private static Logger log = Logger.getLogger(ErrorResponse.class.getName());
 
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    ErrorResponse(int code, String message) {
+    public ErrorResponse(int code, String message) {
         super(code, asErrorJson(message));
     }
 

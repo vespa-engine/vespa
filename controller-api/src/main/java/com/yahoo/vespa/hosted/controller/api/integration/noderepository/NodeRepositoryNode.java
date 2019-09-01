@@ -84,6 +84,8 @@ public class NodeRepositoryNode {
     private Double minCpuCores;
     @JsonProperty("bandwidth")
     private Double bandwidth;
+    @JsonProperty("bandwidthGbps")
+    private Double bandwidthGbps;
     @JsonProperty("fastDisk")
     private Boolean fastDisk;
     @JsonProperty("description")
@@ -359,6 +361,14 @@ public class NodeRepositoryNode {
         this.bandwidth = bandwidth;
     }
 
+    public Double getBandwidthGbps() {
+        return bandwidthGbps;
+    }
+
+    public void setBandwidthGbps(Double bandwidthGbps) {
+        this.bandwidthGbps = bandwidthGbps;
+    }
+
     public Boolean getFastDisk() {
         return fastDisk;
     }
@@ -457,6 +467,7 @@ public class NodeRepositoryNode {
                ", cost=" + cost +
                ", minCpuCores=" + minCpuCores +
                ", bandwidth=" + bandwidth +
+               ", bandwidthGbps=" + bandwidthGbps +
                ", fastDisk=" + fastDisk +
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +

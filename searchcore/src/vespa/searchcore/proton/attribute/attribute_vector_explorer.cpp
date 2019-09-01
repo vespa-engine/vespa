@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_vector_explorer.h"
-#include <vespa/searchlib/attribute/enumstorebase.h>
+#include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/ipostinglistattributebase.h>
@@ -10,7 +10,7 @@
 using search::attribute::Status;
 using search::AddressSpaceUsage;
 using search::AttributeVector;
-using search::EnumStoreBase;
+using search::IEnumStore;
 using vespalib::AddressSpace;
 using vespalib::MemoryUsage;
 using search::attribute::MultiValueMappingBase;
@@ -74,7 +74,7 @@ convertMemoryUsageToSlime(const MemoryUsage &usage, Cursor &object)
 }
 
 void
-convertEnumStoreToSlime(const EnumStoreBase &enumStore, Cursor &object)
+convertEnumStoreToSlime(const IEnumStore &enumStore, Cursor &object)
 {
     object.setLong("numUniques", enumStore.getNumUniques());
     convertMemoryUsageToSlime(enumStore.getMemoryUsage(), object.setObject("memoryUsage"));
@@ -119,7 +119,7 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         convertStatusToSlime(status, object.setObject("status"));
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
-        const EnumStoreBase *enumStore = attr.getEnumStoreBase();
+        const IEnumStore *enumStore = attr.getEnumStoreBase();
         if (enumStore) {
             convertEnumStoreToSlime(*enumStore, object.setObject("enumStore"));
         }

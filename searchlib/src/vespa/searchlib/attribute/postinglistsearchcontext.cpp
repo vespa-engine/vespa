@@ -15,7 +15,7 @@ PostingListSearchContext(const Dictionary &dictionary,
                          uint32_t docIdLimit,
                          uint64_t numValues,
                          bool hasWeight,
-                         const EnumStoreBase &esb,
+                         const IEnumStore &esb,
                          uint32_t minBvDocFreq,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)
@@ -44,7 +44,7 @@ PostingListSearchContext::~PostingListSearchContext() = default;
 
 
 void
-PostingListSearchContext::lookupTerm(const EnumStoreComparator &comp)
+PostingListSearchContext::lookupTerm(const datastore::EntryComparator &comp)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), comp);
     _upperDictItr = _lowerDictItr;
@@ -56,8 +56,8 @@ PostingListSearchContext::lookupTerm(const EnumStoreComparator &comp)
 
 
 void
-PostingListSearchContext::lookupRange(const EnumStoreComparator &low,
-                                      const EnumStoreComparator &high)
+PostingListSearchContext::lookupRange(const datastore::EntryComparator &low,
+                                      const datastore::EntryComparator &high)
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;

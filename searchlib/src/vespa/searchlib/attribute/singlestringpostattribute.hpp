@@ -51,7 +51,7 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::
-makePostingChange(const EnumStoreComparator *cmpa,
+makePostingChange(const datastore::EntryComparator *cmpa,
                   Dictionary &dict,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)

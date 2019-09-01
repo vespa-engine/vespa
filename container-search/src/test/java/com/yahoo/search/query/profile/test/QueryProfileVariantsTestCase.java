@@ -72,7 +72,7 @@ public class QueryProfileVariantsTestCase {
         QueryProfile parent = new QueryProfile("parent");
         parent.setDimensions(new String[] { "parentDim" });
         parent.set("property", "defaultValue", null);
-        parent.set("property", "variantValue", new String[] {"V2" }, null);
+        parent.set("property", "variantValue", new String[] { "V2" }, null);
 
         QueryProfile child = new QueryProfile("child");
         child.addInherited(parent);
@@ -82,7 +82,32 @@ public class QueryProfileVariantsTestCase {
         CompiledQueryProfile cchild = child.compile(null);
         assertEquals("defaultValue", new Query("?query=test",               cchild).properties().get("property"));
         assertEquals("variantValue", new Query("?parentDim=V2",             cchild).properties().get("property"));
+        assertEquals("defaultValue", new Query("?childDim=V1",              cchild).properties().get("property"));
         assertEquals("variantValue", new Query("?parentDim=V2&childDim=V1", cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2&childDim=NO", cchild).properties().get("property"));
+    }
+
+    @Test
+    public void testInheritedVariantsMultipleInheritance() {
+        QueryProfile parent = new QueryProfile("parent");
+        parent.setDimensions(new String[] { "parentDim" });
+        parent.set("property", "defaultValue", null);
+        parent.set("property", "variantValue", new String[] { "V2" }, null);
+
+        QueryProfile otherParent = new QueryProfile("otherParent");
+
+        QueryProfile child = new QueryProfile("child");
+        child.addInherited(parent);
+        child.addInherited(otherParent);
+        child.setDimensions(new String[] { "childDim" });
+        child.set("otherProperty", "otherPropertyValue", new String[] { "V1" }, null);
+
+        CompiledQueryProfile cchild = child.compile(null);
+        assertEquals("defaultValue", new Query("?query=test",               cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2",             cchild).properties().get("property"));
+        assertEquals("defaultValue", new Query("?childDim=V1",              cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2&childDim=V1", cchild).properties().get("property"));
+        assertEquals("variantValue", new Query("?parentDim=V2&childDim=NO", cchild).properties().get("property"));
     }
 
     @Test

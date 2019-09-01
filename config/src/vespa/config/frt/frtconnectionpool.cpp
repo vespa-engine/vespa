@@ -102,14 +102,15 @@ FRTConnectionPool::getNextHashBased()
     return nextFRTConnection;
 }
 
+
+
 const std::vector<FRTConnection *> &
 FRTConnectionPool::getReadySources(std::vector<FRTConnection*> & readySources) const
 {
     readySources.clear();
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
-        int64_t tnow = time(0);
-        tnow *= 1000;
+        int64_t tnow = FRTConnection::milliSecsSinceEpoch();
         int64_t timestamp = tnow;
         if (source->getSuspendedUntil() < timestamp) {
             readySources.push_back(source);
@@ -124,8 +125,7 @@ FRTConnectionPool::getSuspendedSources(std::vector<FRTConnection*> & suspendedSo
     suspendedSources.clear();
     for (const auto & entry : _connections) {
         FRTConnection* source = entry.second.get();
-        int64_t tnow = time(0);
-        tnow *= 1000;
+        int64_t tnow = FRTConnection::milliSecsSinceEpoch();
         int64_t timestamp = tnow;
         if (source->getSuspendedUntil() >= timestamp) {
             suspendedSources.push_back(source);

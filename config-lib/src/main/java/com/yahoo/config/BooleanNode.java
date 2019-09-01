@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * The BooleanNode class represents a boolean in a configuration tree.
  */
@@ -30,7 +28,7 @@ public class BooleanNode extends LeafNode<Boolean> {
     }
 
     @Override
-    protected boolean doSetValue(@NonNull String value) {
+    protected boolean doSetValue(String value) {
         if (! value.equalsIgnoreCase("false") && ! value.equalsIgnoreCase("true")) {
             return false;
         }

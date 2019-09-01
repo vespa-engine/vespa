@@ -41,7 +41,6 @@ vespa_add_library(searchlib_attribute OBJECT
     enumhintsearchcontext.cpp
     enum_store_dictionary.cpp
     enumstore.cpp
-    enumstorebase.cpp
     extendableattributes.cpp
     fixedsourceselector.cpp
     flagattribute.cpp
@@ -59,7 +58,6 @@ vespa_add_library(searchlib_attribute OBJECT
     load_utils.cpp
     loadedenumvalue.cpp
     loadednumericvalue.cpp
-    loadedstringvalue.cpp
     loadedvalue.cpp
     multi_value_mapping.cpp
     multi_value_mapping_base.cpp

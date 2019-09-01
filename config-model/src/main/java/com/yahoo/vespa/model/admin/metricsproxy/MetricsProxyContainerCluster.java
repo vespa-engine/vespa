@@ -10,6 +10,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -22,6 +23,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -73,8 +75,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final Path METRICS_PROXY_BUNDLE_FILE = absoluteBundlePath((Paths.get(METRICS_PROXY_NAME + JAR_WITH_DEPS.suffix)));
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
-    private static final String METRICS_HANDLER_BINDING = "/metrics/v1";
-
     static final class AppDimensionNames {
         static final String ZONE = "zone";
         static final String APPLICATION_ID = "applicationId";  // tenant.app.instance
@@ -98,7 +98,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
-        addGenericMetricsHandler();
     }
 
     private void addClusterComponents() {
@@ -110,13 +109,15 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(RpcServer.class);
         addMetricsProxyComponent(SystemPollerProvider.class);
         addMetricsProxyComponent(VespaMetrics.class);
+        addHttpHandler(MetricsHandler.class, MetricsHandler.V1_PATH);
+        addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
     }
 
-    private void addGenericMetricsHandler() {
+    private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
         Handler<AbstractConfigProducer<?>> metricsHandler = new Handler<>(
-                new ComponentModel(MetricsHandler.class.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
-        metricsHandler.addServerBindings("http://*" + METRICS_HANDLER_BINDING,
-                                         "http://*" + METRICS_HANDLER_BINDING + "/*");
+                new ComponentModel(clazz.getName(), null, METRICS_PROXY_BUNDLE_NAME, null));
+        metricsHandler.addServerBindings("http://*" + bindingPath,
+                                         "http://*" + bindingPath + "/*");
         addComponent(metricsHandler);
     }
 

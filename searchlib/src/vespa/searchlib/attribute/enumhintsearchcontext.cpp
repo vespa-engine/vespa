@@ -25,15 +25,15 @@ EnumHintSearchContext::~EnumHintSearchContext() = default;
 
 
 void
-EnumHintSearchContext::lookupTerm(const EnumStoreComparator &comp)
+EnumHintSearchContext::lookupTerm(const datastore::EntryComparator &comp)
 {
     _uniqueValues = _dict_snapshot->count(comp);
 }
 
 
 void
-EnumHintSearchContext::lookupRange(const EnumStoreComparator &low,
-                                   const EnumStoreComparator &high)
+EnumHintSearchContext::lookupRange(const datastore::EntryComparator &low,
+                                   const datastore::EntryComparator &high)
 {
     _uniqueValues = _dict_snapshot->count_in_range(low, high);
 }

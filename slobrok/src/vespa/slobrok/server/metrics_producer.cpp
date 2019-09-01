@@ -7,7 +7,14 @@
 
 namespace slobrok {
 
+using namespace std::chrono;
+
 namespace {
+
+time_t
+secondsSinceEpoch() {
+    return duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+}
 
 class MetricsSnapshotter : public FNET_Task
 {
@@ -100,14 +107,13 @@ MetricsProducer::MetricsProducer(const RPCHooks &hooks,
     : _rpcHooks(hooks),
       _lastMetrics(RPCHooks::Metrics::zero()),
       _producer(),
-      _startTime(time(NULL)),
+      _startTime(secondsSinceEpoch()),
       _lastSnapshotStart(_startTime),
       _snapshotter(new MetricsSnapshotter(transport, *this))
 {
 }
 
-MetricsProducer::~MetricsProducer() {
-}
+MetricsProducer::~MetricsProducer() = default;
 
 vespalib::string
 MetricsProducer::getMetrics(const vespalib::string &consumer)
@@ -118,7 +124,7 @@ MetricsProducer::getMetrics(const vespalib::string &consumer)
 vespalib::string
 MetricsProducer::getTotalMetrics(const vespalib::string &)
 {
-    uint32_t now = time(NULL);
+    uint32_t now = secondsSinceEpoch();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
     RPCHooks::Metrics start = RPCHooks::Metrics::zero();
     return makeSnapshot(start, current, _startTime, now);
@@ -128,7 +134,7 @@ MetricsProducer::getTotalMetrics(const vespalib::string &)
 void
 MetricsProducer::snapshot()
 {
-    uint32_t now = time(NULL);
+    uint32_t now = secondsSinceEpoch();
     RPCHooks::Metrics current = _rpcHooks.getMetrics();
     _producer.setMetrics(makeSnapshot(_lastMetrics, current, _lastSnapshotStart, now));
     _lastMetrics = current;

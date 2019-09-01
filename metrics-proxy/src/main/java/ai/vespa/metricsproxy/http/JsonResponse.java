@@ -13,10 +13,10 @@ import java.nio.charset.Charset;
 /**
  * @author gjoranv
  */
-class JsonResponse extends HttpResponse {
+public class JsonResponse extends HttpResponse {
     private final byte[] data;
 
-    JsonResponse(int code, String data) {
+    public JsonResponse(int code, String data) {
         super(code);
         this.data = data.getBytes(Charset.forName(DEFAULT_CHARACTER_ENCODING));
     }

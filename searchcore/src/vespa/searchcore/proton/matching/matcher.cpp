@@ -38,6 +38,8 @@ namespace proton::matching {
 
 namespace {
 
+constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60;
+
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
@@ -135,6 +137,7 @@ Matcher::Matcher(const search::index::Schema &schema, const Properties &props, c
       _viewResolver(ViewResolver::createFromSchema(schema)),
       _statsLock(),
       _stats(),
+      _startTime(my_clock::now()),
       _clock(clock),
       _queryLimiter(queryLimiter),
       _distributionKey(distributionKey)
@@ -337,12 +340,15 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             if (adjustedDuration < 0) {
                 adjustedDuration = 0;
             }
-            _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, adjustedDuration);
+            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT);
+            if (allowedSoftTimeoutFactorAdjustment) {
+                _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, adjustedDuration);
+            }
             LOG(info, "Triggered softtimeout factor adjustment. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
-                      ", factor adjusted from %1.3f to %1.3f",
+                      ", factor %sadjusted from %1.3f to %1.3f",
                 covered, numActiveLids,
                 request.getTimeout().sec(), my_stats.doomOvertime().sec(), softLimit.sec(), duration.sec(),
-                request.ranking.c_str(), old, _stats.softDoomFactor());
+                request.ranking.c_str(), (allowedSoftTimeoutFactorAdjustment ? "" : "NOT "), old, _stats.softDoomFactor());
         }
     }
     return reply;

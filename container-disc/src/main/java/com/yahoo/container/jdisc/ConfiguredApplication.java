@@ -4,7 +4,6 @@ package com.yahoo.container.jdisc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
@@ -17,6 +16,7 @@ import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
+import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
@@ -77,10 +77,10 @@ public final class ConfiguredApplication implements Application {
     private final SubscriberFactory subscriberFactory;
     private final ContainerActivator activator;
     private final String configId;
-    private final ContainerDiscApplication applicationWithLegacySetup;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
     private final SlobrokConfigSubscriber slobrokConfigSubscriber;
+    private final SessionCache sessionCache;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
     private final FilterChainRepository defaultFilterChainRepository =
@@ -120,16 +120,15 @@ public final class ConfiguredApplication implements Application {
     public ConfiguredApplication(ContainerActivator activator,
                                  OsgiFramework osgiFramework,
                                  com.yahoo.jdisc.Timer timer,
-                                 SubscriberFactory subscriberFactory) throws ListenFailedException {
+                                 SubscriberFactory subscriberFactory) {
         this.activator = activator;
         this.osgiFramework = osgiFramework;
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
         this.slobrokConfigSubscriber = new SlobrokConfigSubscriber(configId);
+        this.sessionCache = new SessionCache(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
-
-        applicationWithLegacySetup = new ContainerDiscApplication(configId);
     }
 
     @Override
@@ -141,7 +140,7 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        intitializeAndActivateContainer(builder);
+        initializeAndActivateContainer(builder);
         startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange);
         portWatcher.setDaemon(true);
@@ -184,7 +183,6 @@ public final class ConfiguredApplication implements Application {
             supervisor.transport().shutdown().join();
     }
 
-    @SuppressWarnings("deprecation")
     private static void hackToInitializeServer(QrConfig config) {
         try {
             Container.get().setupFileAcquirer(config.filedistributor());
@@ -225,7 +223,7 @@ public final class ConfiguredApplication implements Application {
         }
     }
 
-    private void intitializeAndActivateContainer(ContainerBuilder builder) {
+    private void initializeAndActivateContainer(ContainerBuilder builder) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
@@ -253,7 +251,7 @@ public final class ConfiguredApplication implements Application {
 
                     // Block until new config arrives, and it should be applied
                     configurer.getNewComponentGraph(builder.guiceModules().activate(), qrConfig.restartOnDeploy());
-                    intitializeAndActivateContainer(builder);
+                    initializeAndActivateContainer(builder);
                 } catch (ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -324,9 +322,9 @@ public final class ConfiguredApplication implements Application {
                 bind(OsgiFramework.class).toInstance(restrictedOsgiFramework);
                 bind(com.yahoo.jdisc.Timer.class).toInstance(timerSingleton);
                 bind(FilterChainRepository.class).toInstance(defaultFilterChainRepository);
+                bind(SessionCache.class).toInstance(sessionCache); // Needed by e.g. FeedHandler
             }
         });
-        modules.install(applicationWithLegacySetup.getMbusBindings());
     }
 
     @Override
@@ -377,15 +375,9 @@ public final class ConfiguredApplication implements Application {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         long delayMillis = 50 * 1000;
-        shutdownDeadlineExecutor.schedule(new Runnable() {
-
-            @Override
-            public void run() {
-                com.yahoo.protect.Process.logAndDie(
-                        "Timed out waiting for application shutdown. Please check that all your request handlers " +
-                                "drain their request content channels.", true);
-            }
-        }, delayMillis, TimeUnit.MILLISECONDS);
+        shutdownDeadlineExecutor.schedule(() -> com.yahoo.protect.Process.logAndDie(
+                "Timed out waiting for application shutdown. Please check that all your request handlers " +
+                        "drain their request content channels.", true), delayMillis, TimeUnit.MILLISECONDS);
     }
 
     private static void addHandlerBindings(ContainerBuilder builder,

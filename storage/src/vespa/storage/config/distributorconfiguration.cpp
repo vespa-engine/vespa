@@ -3,10 +3,13 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastos/timestamp.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorconfiguration");
+
+using namespace std::chrono;
 
 namespace storage {
 
@@ -38,7 +41,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
-DistributorConfiguration::~DistributorConfiguration() { }
+DistributorConfiguration::~DistributorConfiguration() = default;
 
 namespace {
 
@@ -60,8 +63,7 @@ DistributorConfiguration::containsTimeStatement(const std::string& documentSelec
 {
     TimeVisitor visitor;
     try {
-        document::select::Parser parser(*_component.getTypeRepo(),
-                                        _component.getBucketIdFactory());
+        document::select::Parser parser(*_component.getTypeRepo(), _component.getBucketIdFactory());
 
         std::unique_ptr<document::select::Node> node = parser.parse(documentSelection);
         node->visit(visitor);
@@ -123,7 +125,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
         // Always changes.
         _lastGarbageCollectionChange = 1;
     } else if (_garbageCollectionSelection != config.garbagecollection.selectiontoremove) {
-        _lastGarbageCollectionChange = time(NULL);
+        _lastGarbageCollectionChange = fastos::time();
     }
 
     _garbageCollectionSelection = config.garbagecollection.selectiontoremove;

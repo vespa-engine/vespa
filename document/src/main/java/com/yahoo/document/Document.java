@@ -15,14 +15,13 @@ import com.yahoo.document.serialization.SerializationException;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.Serializer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -228,7 +227,7 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public Iterator<Map.Entry<Field, FieldValue>> iterator() {
-        return new Iterator<Map.Entry<Field, FieldValue>>() {
+        return new Iterator<>() {
 
             private Iterator<Map.Entry<Field, FieldValue>> headerIt = header.iterator();
             private Iterator<Map.Entry<Field, FieldValue>> bodyIt = body.iterator();
@@ -259,7 +258,7 @@ public class Document extends StructuredFieldValue {
     }
 
     public String toString() {
-        return "document '" + String.valueOf(docId) + "' of type '" + getDataType().getName() + "'";
+        return "document '" + docId + "' of type '" + getDataType().getName() + "'";
     }
 
     public String toXML(String indent) {
@@ -293,11 +292,7 @@ public class Document extends StructuredFieldValue {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         JsonWriter writer = new JsonWriter(buffer);
         writer.write(this);
-        try {
-            return buffer.toString("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return buffer.toString(StandardCharsets.UTF_8);
     }
 
     /** Returns true if the argument is a document which has the same set of values */

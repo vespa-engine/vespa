@@ -4,8 +4,6 @@ package com.yahoo.prelude.query;
 import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -21,7 +19,6 @@ import java.nio.ByteBuffer;
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
     private int N;
-    @NonNull
     private String index;
     private int scoreThreshold = 0;
 
@@ -56,7 +53,6 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         this.index = toSet;
     }
 
-    @NonNull
     public String getIndexName() {
         return index;
     }

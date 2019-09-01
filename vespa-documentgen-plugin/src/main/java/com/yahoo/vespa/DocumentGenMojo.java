@@ -19,6 +19,7 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Component;
@@ -35,6 +36,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -463,7 +465,7 @@ public class DocumentGenMojo extends AbstractMojo {
         exportStructTypeGetter(docType.getName()+".body", docType.allBody().getFields(), out, 1, "getBodyStructType", "com.yahoo.document.StructDataType");
 
         Collection<Field> allUniqueFields = getAllUniqueFields(multiExtends, docType.getAllFields());
-        exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
+        exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, docType.getFieldSets(),out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
         exportCopyConstructor(className, out, 1, true);
 
         exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? allUniqueFields : docType.getFields(), out, 1, true);
@@ -567,7 +569,7 @@ public class DocumentGenMojo extends AbstractMojo {
             out.write(ind(ind)+"public "+className+"(com.yahoo.document.datatypes.StructuredFieldValue src) {\n"+
                     ind(ind+1)+"super("+className+".type);\n");
         }
-        out.write(ind() + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();");
+        out.write(ind() + "ConcreteDocumentFactory factory = new ConcreteDocumentFactory();\n");
         out.write(
                 ind(ind+1)+"for (java.util.Iterator<java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>>i=src.iterator() ; i.hasNext() ; ) {\n" +
                 ind(ind+2)+"java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> e = i.next();\n" +
@@ -608,9 +610,25 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write(ind(ind+1) + "}\n");
         out.write(ind(ind) + "));\n");
     }
-    private static void exportExtendedStructTypeGetter(String className, String name, Collection<Field> fields, Writer out, int ind, String methodName, String retType) throws IOException {
-        out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n" +
-                ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
+    private static void exportFieldSetDefinition(Set<FieldSet> fieldSets, Writer out, int ind) throws IOException {
+        out.write(ind(ind) + "java.util.Map<java.lang.String, java.util.Collection<java.lang.String>> fieldSets = new java.util.HashMap<>();\n");
+        for (FieldSet fieldSet : fieldSets) {
+            out.write(ind(ind) + "fieldSets.put(\"" + fieldSet.getName() + "\", java.util.Arrays.asList(");
+            int count = 0;
+            for (String field : fieldSet.getFieldNames()) {
+                out.write("\"" + field + "\"");
+                if (++count != fieldSet.getFieldNames().size()) {
+                    out.write(",");
+                }
+            }
+            out.write("));\n");
+        }
+        out.write(ind(ind) + "ret.addFieldSets(fieldSets);\n");
+    }
+    private static void exportExtendedStructTypeGetter(String className, String name, Collection<Field> fields, Set<FieldSet> fieldSets,
+                                                       Writer out, int ind, String methodName, String retType) throws IOException {
+        out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n");
+        out.write(ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
         for (Field f : fields) {
             if (f.getDataType().equals(DataType.STRING)) {
                 addExtendedStringField(className, f, out, ind + 1);
@@ -618,6 +636,10 @@ public class DocumentGenMojo extends AbstractMojo {
                 addExtendedField(className, f, out, ind + 1);
             }
         }
+        if (fieldSets != null) {
+            exportFieldSetDefinition(fieldSets, out, ind+1);
+        }
+
         out.write(ind(ind+1)+"return ret;\n");
         out.write(ind(ind)+"}\n\n");
     }
@@ -759,7 +781,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind+2)+"super("+structClassName+".type);\n" +
                 ind(ind+1)+"}\n\n");
                 exportCopyConstructor(structClassName, out, ind+1, false);
-                exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
+                exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), null, out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
                 exportAssign(structType, structClassName, out, ind+1);
                 exportFieldsAndAccessors(structClassName, structType.getFields(), out, ind+1, true);
 
@@ -894,6 +916,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.DOCUMENT.equals(dt)) return "com.yahoo.document.Document";
         if (DataType.URI.equals(dt)) return "java.net.URI";
         if (DataType.BYTE.equals(dt)) return "java.lang.Byte";
+        if (DataType.BOOL.equals(dt)) return "java.lang.Boolean";
         if (DataType.TAG.equals(dt)) return "java.lang.String";
         if (dt instanceof StructDataType) return className(dt.getName());
         if (dt instanceof WeightedSetDataType) return "java.util.Map<"+toJavaType(((WeightedSetDataType)dt).getNestedType())+",java.lang.Integer>";
@@ -921,6 +944,7 @@ public class DocumentGenMojo extends AbstractMojo {
         if (DataType.DOCUMENT.equals(dt)) return "com.yahoo.document.DataType.DOCUMENT";
         if (DataType.URI.equals(dt)) return "com.yahoo.document.DataType.URI";
         if (DataType.BYTE.equals(dt)) return "com.yahoo.document.DataType.BYTE";
+        if (DataType.BOOL.equals(dt)) return "com.yahoo.document.DataType.BOOL";
         if (DataType.TAG.equals(dt)) return "com.yahoo.document.DataType.TAG";
         if (dt instanceof StructDataType) return "new com.yahoo.document.StructDataType(\""+dt.getName()+"\")";
         if (dt instanceof WeightedSetDataType) return "new com.yahoo.document.WeightedSetDataType("+toJavaReference(((WeightedSetDataType)dt).getNestedType())+", "+

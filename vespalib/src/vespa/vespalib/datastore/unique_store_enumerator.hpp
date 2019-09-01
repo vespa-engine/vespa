@@ -3,6 +3,8 @@
 #pragma once
 
 #include "unique_store_enumerator.h"
+#include <vespa/vespalib/datastore/bufferstate.h>
+#include <vespa/vespalib/datastore/datastorebase.h>
 
 namespace search::datastore {
 

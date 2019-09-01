@@ -24,7 +24,7 @@ public:
     SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
                                   const attribute::AttributeHeader &header,
                                   EnumIndexCopyVector &&indices,
-                                  const EnumStoreBase &enumStore);
+                                  const IEnumStore &enumStore);
 
     virtual ~SingleValueEnumAttributeSaver();
 };

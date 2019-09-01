@@ -82,7 +82,7 @@ public class RotationStatusUpdater extends Maintainer {
                                         .collect(Collectors.toMap(Map.Entry::getKey, (kv) -> from(kv.getValue())));
             statusMap.put(assignedRotation.rotationId(), rotationStatus);
         }
-        return new RotationStatus(statusMap);
+        return RotationStatus.from(statusMap);
     }
 
     private static RotationState from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {

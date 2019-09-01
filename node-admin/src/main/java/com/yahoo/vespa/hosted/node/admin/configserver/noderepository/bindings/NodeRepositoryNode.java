@@ -60,6 +60,8 @@ public class NodeRepositoryNode {
     public Boolean fastDisk;
     @JsonProperty("bandwidth")
     public Double bandwidth;
+    @JsonProperty("bandwidthGbps")
+    public Double bandwidthGbps;
     @JsonProperty("environment")
     public String environment;
     @JsonProperty("type")
@@ -111,6 +113,7 @@ public class NodeRepositoryNode {
                 ", failCount=" + failCount +
                 ", fastDisk=" + fastDisk +
                 ", bandwidth=" + bandwidth +
+                ", bandwidthGbps=" + bandwidthGbps +
                 ", environment='" + environment + '\'' +
                 ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +

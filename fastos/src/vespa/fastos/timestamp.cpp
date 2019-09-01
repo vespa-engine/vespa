@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "timestamp.h"
+#include <chrono>
 #include <cmath>
 #include <sys/time.h>
+
+using namespace std::chrono;
 
 namespace fastos {
 
@@ -37,6 +40,10 @@ int64_t ClockSystem::now()
     ns *= TimeStamp::NANO;
     ns += timeNow.tv_usec*1000;
     return ns;
+}
+
+time_t time() {
+    return system_clock::to_time_t(system_clock::now());
 }
 
 }

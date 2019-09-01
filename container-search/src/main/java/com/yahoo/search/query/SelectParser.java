@@ -46,7 +46,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -225,7 +224,6 @@ public class SelectParser implements Parser {
         return operations;
     }
 
-    @NonNull
     private Item buildFunctionCall(String key, Inspector value) {
         switch (key) {
             case WAND:
@@ -358,7 +356,6 @@ public class SelectParser implements Parser {
         return annotations.get(annotationName);
     }
 
-    @NonNull
     private CompositeItem buildAnd(String key, Inspector value) {
         AndItem andItem = new AndItem();
         addItemsFromInspector(andItem, value);
@@ -366,7 +363,6 @@ public class SelectParser implements Parser {
         return andItem;
     }
 
-    @NonNull
     private CompositeItem buildNotAnd(String key, Inspector value) {
         NotItem notItem = new NotItem();
         addItemsFromInspector(notItem, value);
@@ -374,14 +370,12 @@ public class SelectParser implements Parser {
         return notItem;
     }
 
-    @NonNull
     private CompositeItem buildOr(String key, Inspector value) {
         OrItem orItem = new OrItem();
         addItemsFromInspector(orItem, value);
         return orItem;
     }
 
-    @NonNull
     private CompositeItem buildWeakAnd(String key, Inspector value) {
         WeakAndItem weakAnd = new WeakAndItem();
         addItemsFromInspector(weakAnd, value);
@@ -401,8 +395,7 @@ public class SelectParser implements Parser {
         return weakAnd;
     }
 
-    @NonNull
-    private <T extends TaggableItem> T leafStyleSettings(Inspector annotations, @NonNull T out) {
+    private <T extends TaggableItem> T leafStyleSettings(Inspector annotations, T out) {
         {
             if (annotations != null) {
                 Inspector  itemConnectivity= getAnnotationAsInspectorOrNull(CONNECTIVITY, getAnnotationMapFromAnnotationInspector(annotations));
@@ -597,29 +590,23 @@ public class SelectParser implements Parser {
         return leafStyleSettings(annotations, range);
     }
 
-    @NonNull
     private IntItem buildGreaterThanOrEquals(String field, String bound) {
         return new IntItem("[" + bound + ";]", field);
 
     }
 
-    @NonNull
     private IntItem buildLessThanOrEquals(String field, String bound) {
         return new IntItem("[;" + bound + "]", field);
     }
 
-    @NonNull
     private IntItem buildGreaterThan(String field, String bound) {
         return new IntItem(">" + bound, field);
-
     }
 
-    @NonNull
     private IntItem buildLessThan(String field, String bound) {
         return new IntItem("<" + bound, field);
     }
 
-    @NonNull
     private IntItem instantiateRangeItem(Number lowerBound, Number upperBound, String field, boolean bounds_left_open, boolean bounds_right_open) {
         Preconditions.checkArgument(lowerBound != null && upperBound != null && field != null,
                 "Expected 3 NonNull-arguments");
@@ -665,7 +652,7 @@ public class SelectParser implements Parser {
         return fillWeightedSet(value, children, out);
     }
 
-    private WeightedSetItem fillWeightedSet(Inspector value, HashMap<Integer, Inspector> children, @NonNull WeightedSetItem out) {
+    private WeightedSetItem fillWeightedSet(Inspector value, HashMap<Integer, Inspector> children, WeightedSetItem out) {
         addItems(children, out);
 
         return leafStyleSettings(getAnnotations(value), out);
@@ -707,7 +694,6 @@ public class SelectParser implements Parser {
         });
     }
 
-    @NonNull
     private Item buildRegExpSearch(String key, Inspector value) {
         assertHasOperator(key, MATCHES);
         HashMap<Integer, Inspector> children = childMap(value);
@@ -717,7 +703,6 @@ public class SelectParser implements Parser {
         return leafStyleSettings(getAnnotations(value), regExp);
     }
 
-    @NonNull
     private Item buildWeightedSet(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
@@ -725,7 +710,6 @@ public class SelectParser implements Parser {
         return fillWeightedSet(value, children, new WeightedSetItem(field));
     }
 
-    @NonNull
     private Item buildDotProduct(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
@@ -733,7 +717,6 @@ public class SelectParser implements Parser {
         return fillWeightedSet(value, children, new DotProductItem(field));
     }
 
-    @NonNull
     private Item buildPredicate(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
@@ -762,14 +745,12 @@ public class SelectParser implements Parser {
         return leafStyleSettings(getAnnotations(value), item);
     }
 
-    @NonNull
     private CompositeItem buildRank(String key, Inspector value) {
         RankItem rankItem = new RankItem();
         addItemsFromInspector(rankItem, value);
         return rankItem;
     }
 
-    @NonNull
     private Item buildTermSearch(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         String field = children.get(0).asString();
@@ -788,7 +769,6 @@ public class SelectParser implements Parser {
         return actualKey[0];
     }
 
-    @NonNull
     private Item instantiateLeafItem(String field, String key, Inspector value) {
         List<Inspector> possibleLeafFunction = valueListFromInspector(value);
         String possibleLeafFunctionName = (possibleLeafFunction.size() > 1) ? getInspectorKey(possibleLeafFunction.get(1)) : "";
@@ -801,7 +781,6 @@ public class SelectParser implements Parser {
         }
     }
 
-    @NonNull
     private Item instantiateCompositeLeaf(String field, String key, Inspector value) {
         switch (key) {
             case SAME_ELEMENT:
@@ -821,7 +800,6 @@ public class SelectParser implements Parser {
         }
     }
 
-    @NonNull
     private Item instantiateWordItem(String field, String key, Inspector value) {
         var children = childMap(value);
         if (children.size() < 2)
@@ -831,7 +809,6 @@ public class SelectParser implements Parser {
         return instantiateWordItem(field, wordData, key, value, false, decideParsingLanguage(value, wordData));
     }
 
-    @NonNull
     private Item instantiateWordItem(String field, String rawWord, String key, Inspector value, boolean exactMatch, Language language) {
         String wordData = rawWord;
         HashMap<String, Inspector> annotations = getAnnotationMap(value);
@@ -849,7 +826,6 @@ public class SelectParser implements Parser {
         Preconditions.checkArgument((prefixMatch ? 1 : 0)
                         + (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
                 "Only one of prefix, substring and suffix can be set.");
-        @NonNull
         final TaggableItem wordItem;
 
         if (exactMatch) {
@@ -956,8 +932,6 @@ public class SelectParser implements Parser {
         return null;
     }
 
-
-    @NonNull
     private Item instantiateSameElementItem(String field, String key, Inspector value) {
         assertHasOperator(key, SAME_ELEMENT);
 
@@ -970,7 +944,6 @@ public class SelectParser implements Parser {
         return sameElement;
     }
 
-    @NonNull
     private Item instantiatePhraseItem(String field, String key, Inspector value) {
         assertHasOperator(key, PHRASE);
 
@@ -988,7 +961,6 @@ public class SelectParser implements Parser {
         return leafStyleSettings(getAnnotations(value), phrase);
     }
 
-    @NonNull
     private Item instantiateNearItem(String field, String key, Inspector value) {
         assertHasOperator(key, NEAR);
 
@@ -1009,7 +981,6 @@ public class SelectParser implements Parser {
         return near;
     }
 
-    @NonNull
     private Item instantiateONearItem(String field, String key, Inspector value) {
         assertHasOperator(key, ONEAR);
 
@@ -1028,8 +999,6 @@ public class SelectParser implements Parser {
         return onear;
     }
 
-
-    @NonNull
     private Item instantiateEquivItem(String field, String key, Inspector value) {
 
         HashMap<Integer, Inspector> children = childMap(value);
@@ -1067,7 +1036,6 @@ public class SelectParser implements Parser {
     }
 
     //  Not in use yet
-    @NonNull
     private String getIndex(String field) {
         Preconditions.checkArgument(indexFactsSession.isIndex(field), "Field '%s' does not exist.", field);
         //return indexFactsSession.getCanonicName(field);

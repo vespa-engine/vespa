@@ -437,6 +437,7 @@
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
       "public boolean isA(java.lang.String)",
       "public void addField(com.yahoo.document.Field)",
+      "public void addFieldSets(java.util.Map)",
       "public com.yahoo.document.Field addField(java.lang.String, com.yahoo.document.DataType)",
       "public com.yahoo.document.Field addHeaderField(java.lang.String, com.yahoo.document.DataType)",
       "public void inherit(com.yahoo.document.DocumentType)",
@@ -450,6 +451,8 @@
       "public com.yahoo.document.Field removeField(java.lang.String)",
       "public java.util.Collection getFields()",
       "public java.util.Set fieldSet()",
+      "public java.util.Set fieldSetAll()",
+      "public java.util.Set fieldSet(java.lang.String)",
       "public java.util.Iterator fieldIteratorThisTypeOnly()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -462,6 +465,7 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
+      "public static final java.lang.String DOCUMENT",
       "public static final int classId"
     ]
   },

@@ -2,10 +2,10 @@
 search music4 {
     document music4 inherits music3 {
         field mu4 type string {
-
+            indexing:attribute|summary
         }
         field pos type position {
-
+            indexing:attribute|summary
         }
     }
 }

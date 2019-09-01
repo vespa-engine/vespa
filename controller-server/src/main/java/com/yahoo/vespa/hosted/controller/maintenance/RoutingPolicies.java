@@ -74,7 +74,7 @@ public class RoutingPolicies {
      */
     public void refresh(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone) {
         if (!controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) return;
-        var lbs = new LoadBalancers(application, zone, controller.configServer().getLoadBalancers(application, zone));
+        var lbs = new AllocatedLoadBalancers(application, zone, controller.configServer().getLoadBalancers(application, zone));
         try (var lock = db.lockRoutingPolicies()) {
             removeObsoleteEndpointsFromDns(lbs, deploymentSpec, lock);
             storePoliciesOf(lbs, deploymentSpec, lock);
@@ -84,7 +84,7 @@ public class RoutingPolicies {
     }
 
     /** Create global endpoints for given route, if any */
-    private void registerEndpointsInDns(LoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void registerEndpointsInDns(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(get(loadBalancers.application));
 
         // Create DNS record for each routing ID
@@ -103,7 +103,7 @@ public class RoutingPolicies {
     }
 
     /** Store routing policies for given route */
-    private void storePoliciesOf(LoadBalancers loadBalancers, DeploymentSpec spec, @SuppressWarnings("unused") Lock lock) {
+    private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, DeploymentSpec spec, @SuppressWarnings("unused") Lock lock) {
         Set<RoutingPolicy> policies = new LinkedHashSet<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
             RoutingPolicy policy = createPolicy(loadBalancers.application, spec, loadBalancers.zone, loadBalancer);
@@ -129,7 +129,7 @@ public class RoutingPolicies {
     }
 
     /** Remove obsolete policies for given route and their CNAME records */
-    private void removeObsoletePolicies(LoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var allPolicies = new LinkedHashSet<>(get(loadBalancers.application));
         var removalCandidates = new HashSet<>(allPolicies);
         var activeLoadBalancers = loadBalancers.list.stream()
@@ -147,7 +147,7 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced global endpoints for given route from DNS */
-    private void removeObsoleteEndpointsFromDns(LoadBalancers loadBalancers, DeploymentSpec deploymentSpec, @SuppressWarnings("unused") Lock lock) {
+    private void removeObsoleteEndpointsFromDns(AllocatedLoadBalancers loadBalancers, DeploymentSpec deploymentSpec, @SuppressWarnings("unused") Lock lock) {
         var zonePolicies = get(loadBalancers.application, loadBalancers.zone);
         var removalCandidates = routingTableFrom(zonePolicies).keySet();
         var activeRoutingIds = routingIdsFrom(loadBalancers, deploymentSpec);
@@ -159,7 +159,7 @@ public class RoutingPolicies {
     }
 
     /** Compute routing IDs from given load balancers */
-    private static Set<RoutingId> routingIdsFrom(LoadBalancers loadBalancers, DeploymentSpec spec) {
+    private static Set<RoutingId> routingIdsFrom(AllocatedLoadBalancers loadBalancers, DeploymentSpec spec) {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
         for (var loadBalancer : loadBalancers.list) {
             for (var endpointId : endpointIdsOf(loadBalancer, loadBalancers.zone, spec)) {
@@ -192,17 +192,29 @@ public class RoutingPolicies {
                    .collect(Collectors.toSet());
     }
 
-    /** Load balancers for a particular deployment */
-    private static class LoadBalancers {
+    /** Load balancers allocated to a deployment */
+    private static class AllocatedLoadBalancers {
 
         private final ApplicationId application;
         private final ZoneId zone;
         private final List<LoadBalancer> list;
 
-        private LoadBalancers(ApplicationId application, ZoneId zone, List<LoadBalancer> list) {
+        private AllocatedLoadBalancers(ApplicationId application, ZoneId zone, List<LoadBalancer> loadBalancers) {
             this.application = application;
             this.zone = zone;
-            this.list = list;
+            this.list = loadBalancers.stream()
+                                     .filter(AllocatedLoadBalancers::shouldUpdatePolicy)
+                                     .collect(Collectors.toUnmodifiableList());
+        }
+
+        private static boolean shouldUpdatePolicy(LoadBalancer loadBalancer) {
+            switch (loadBalancer.state()) {
+                case active:
+                case reserved: // This allows DNS updates to happen early, while an application is being prepared.
+                    return true;
+            }
+            // Any other state, such as inactive, is ignored.
+            return false;
         }
 
     }

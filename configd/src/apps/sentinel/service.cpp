@@ -4,6 +4,7 @@
 #include "output-connection.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/fastos/timestamp.h>
 
 #include <csignal>
 #include <unistd.h>
@@ -156,7 +157,7 @@ Service::start()
         LOG(warning, "tried to start '%s' in REMOVING state", name().c_str());
         return;
     }
-    time_t now = time(0);
+    time_t now = fastos::time();
     _last_start = now;
 
 // make a pipe, close the good ends of it, mark it close-on-exec
@@ -322,7 +323,7 @@ Service::youExited(int status)
 
     if (! expectedDeath) {
         // make sure the service does not restart in a tight loop:
-        time_t now = time(0);
+        time_t now = fastos::time();
         unsigned int diff = now - _last_start;
         if (diff < MAX_RESTART_PENALTY) {
             incrementRestartPenalty();
@@ -420,7 +421,7 @@ bool
 Service::wantsRestart() const
 {
     if (_state == RESTARTING) {
-        time_t now = time(0);
+        time_t now = fastos::time();
         if (now > _last_start + _restartPenalty) {
             return true;
         }

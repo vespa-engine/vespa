@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributevector.h"
+#include "i_enum_store.h"
 #include "multi_value_mapping.h"
 #include "multi_value_mapping.hpp"
 #include "multivalue.h"
-#include "enumstorebase.h"
-#include "attributevector.h"
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
@@ -13,8 +13,8 @@ using search::multivalue::WeightedValue;
 namespace search {
 namespace attribute {
 
-template class MultiValueMapping<Value<EnumStoreIndex>>;
-template class MultiValueMapping<WeightedValue<EnumStoreIndex>>;
+template class MultiValueMapping<Value<IEnumStore::Index>>;
+template class MultiValueMapping<WeightedValue<IEnumStore::Index>>;
 template class MultiValueMapping<Value<int8_t>>;
 template class MultiValueMapping<WeightedValue<int8_t>>;
 template class MultiValueMapping<Value<int16_t>>;

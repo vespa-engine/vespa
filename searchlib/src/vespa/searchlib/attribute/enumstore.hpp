@@ -5,6 +5,7 @@
 #include "enumstore.h"
 #include "enumcomparator.h"
 
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
@@ -25,15 +26,49 @@ const uint32_t dummy_enum_value = 0;
 }
 
 template <typename EntryType>
-void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
+EnumStoreT<EntryType>::EnumBufferType::EnumBufferType()
+    : datastore::BufferType<char>(Index::align(1),
+                                  Index::offsetSize() / Index::align(1),
+                                  Index::offsetSize() / Index::align(1)),
+      _minSizeNeeded(0),
+      _deadElems(0),
+      _pendingCompact(false),
+      _wantCompact(false)
 {
-    Entry e = getEntry(idx);
-    if (e.getRefCount() == 0) {
-        Type value = e.getValue();
-        if (unused.insert(idx).second) {
-            _store.incDead(idx, getEntrySize(value));
-        }
+}
+
+template <typename EntryType>
+size_t
+EnumStoreT<EntryType>::EnumBufferType::calcArraysToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
+{
+    (void) resizing;
+    size_t reservedElements = getReservedElements(bufferId);
+    sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
+    size_t usedElems = _activeUsedElems;
+    if (_lastUsedElems != nullptr) {
+        usedElems += *_lastUsedElems;
     }
+    assert((usedElems % _arraySize) == 0);
+    double growRatio = 1.5f;
+    uint64_t maxSize = static_cast<uint64_t>(_maxArrays) * _arraySize;
+    uint64_t newSize = usedElems - _deadElems + sizeNeeded;
+    if (usedElems != 0) {
+        newSize *= growRatio;
+    }
+    newSize += reservedElements;
+    newSize = alignBufferSize(newSize);
+    assert((newSize % _arraySize) == 0);
+    if (newSize <= maxSize) {
+        return newSize / _arraySize;
+    }
+    newSize = usedElems - _deadElems + sizeNeeded + reservedElements + 1000000;
+    newSize = alignBufferSize(newSize);
+    assert((newSize % _arraySize) == 0);
+    if (newSize <= maxSize) {
+        return _maxArrays;
+    }
+    failNewSize(newSize, maxSize);
+    return 0;
 }
 
 template <typename EntryType>
@@ -52,6 +87,161 @@ template <>
 void
 EnumStoreT<StringEntryType>::
 insertEntryValue(char * dst, Type value);
+
+template <typename EntryType>
+uint32_t
+EnumStoreT<EntryType>::getBufferIndex(datastore::BufferState::State status)
+{
+    for (uint32_t i = 0; i < _store.getNumBuffers(); ++i) {
+        if (_store.getBufferState(i).getState() == status) {
+            return i;
+        }
+    }
+    return Index::numBuffers();
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::postCompact()
+{
+    _store.finishCompact(_toHoldBuffers);
+}
+
+template <typename EntryType>
+bool
+EnumStoreT<EntryType>::preCompact(uint64_t bytesNeeded)
+{
+    if (getBufferIndex(datastore::BufferState::FREE) == Index::numBuffers()) {
+        return false;
+    }
+    uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
+    datastore::BufferState & activeBuf = _store.getBufferState(activeBufId);
+    _type.setSizeNeededAndDead(bytesNeeded, activeBuf.getDeadElems());
+    _toHoldBuffers = _store.startCompact(TYPE_ID);
+    return true;
+}
+
+template <typename EntryType>
+void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet & unused)
+{
+    Entry e = getEntry(idx);
+    if (e.getRefCount() == 0) {
+        Type value = e.getValue();
+        if (unused.insert(idx).second) {
+            _store.incDead(idx, getEntrySize(value));
+        }
+    }
+}
+
+template <typename EntryType>
+EnumStoreT<EntryType>::EnumStoreT(uint64_t initBufferSize, bool hasPostings)
+    : _enumDict(nullptr),
+      _store(),
+      _type(),
+      _toHoldBuffers()
+{
+    if (hasPostings) {
+        _enumDict = new EnumStoreDictionary<EnumPostingTree>(*this);
+    } else {
+        _enumDict = new EnumStoreDictionary<EnumTree>(*this);
+    }
+    _store.addType(&_type);
+    _type.setSizeNeededAndDead(initBufferSize, 0);
+    _store.initActiveBuffers();
+}
+
+template <typename EntryType>
+EnumStoreT<EntryType>::~EnumStoreT()
+{
+    _store.clearHoldLists();
+    _store.dropBuffers();
+    delete _enumDict;
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::reset(uint64_t initBufferSize)
+{
+    _store.clearHoldLists();
+    _store.dropBuffers();
+    _type.setSizeNeededAndDead(initBufferSize, 0);
+    _store.initActiveBuffers();
+    _enumDict->onReset();
+}
+
+template <typename EntryType>
+vespalib::AddressSpace
+EnumStoreT<EntryType>::getAddressSpaceUsage() const
+{
+    const datastore::BufferState &activeState = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
+    return vespalib::AddressSpace(activeState.size(), activeState.getDeadElems(), DataStoreType::RefType::offsetSize());
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::transferHoldLists(generation_t generation)
+{
+    _enumDict->transfer_hold_lists(generation);
+    _store.transferHoldLists(generation);
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::trimHoldLists(generation_t firstUsed)
+{
+    // remove generations in the range [0, firstUsed>
+    _enumDict->trim_hold_lists(firstUsed);
+    _store.trimHoldLists(firstUsed);
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::failNewSize(uint64_t minNewSize, uint64_t maxSize)
+{
+    throw vespalib::IllegalStateException(vespalib::make_string("EnumStoreT::failNewSize: Minimum new size (%" PRIu64 ") exceeds max size (%" PRIu64 ")", minNewSize, maxSize));
+}
+
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::fallbackResize(uint64_t bytesNeeded)
+{
+    uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
+    size_t reservedElements = _type.getReservedElements(activeBufId);
+    _type.setSizeNeededAndDead(bytesNeeded, reservedElements);
+    _type.setWantCompact();
+    _store.fallbackResize(activeBufId, bytesNeeded);
+}
+
+template <typename EntryType>
+ssize_t
+EnumStoreT<EntryType>::deserialize0(const void *src,
+                                    size_t available,
+                                    IndexVector &idx)
+{
+    size_t left = available;
+    size_t initSpace = Index::align(1);
+    const char * p = static_cast<const char *>(src);
+    while (left > 0) {
+        ssize_t sz = deserialize(p, left, initSpace);
+        if (sz < 0)
+            return sz;
+        p += sz;
+        left -= sz;
+    }
+    reset(initSpace);
+    left = available;
+    p = static_cast<const char *>(src);
+    Index idx1;
+    while (left > 0) {
+        ssize_t sz = deserialize(p, left, idx1);
+        if (sz < 0)
+            return sz;
+        p += sz;
+        left -= sz;
+        idx.push_back(idx1);
+    }
+    return available - left;
+}
 
 template <typename EntryType>
 bool
@@ -142,7 +332,7 @@ EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findEnum(Type value, EnumStoreBase::EnumHandle &e) const
+EnumStoreT<EntryType>::findEnum(Type value, IEnumStore::EnumHandle &e) const
 {
     ComparatorType cmp(*this, value);
     Index idx;
@@ -154,7 +344,7 @@ EnumStoreT<EntryType>::findEnum(Type value, EnumStoreBase::EnumHandle &e) const
 }
 
 template <typename EntryType>
-std::vector<EnumStoreBase::EnumHandle>
+std::vector<IEnumStore::EnumHandle>
 EnumStoreT<EntryType>::findFoldedEnums(Type value) const
 {
     FoldedComparatorType cmp(*this, value);
@@ -283,7 +473,7 @@ EnumStoreT<EntryType>::addEnum(Type value, Index & newIdx)
 template <typename DictionaryType>
 struct TreeBuilderInserter {
     static void insert(typename DictionaryType::Builder & builder,
-                       EnumStoreBase::Index enumIdx,
+                       IEnumStore::Index enumIdx,
                        datastore::EntryRef postingIdx)
     {
         (void) postingIdx;
@@ -294,7 +484,7 @@ struct TreeBuilderInserter {
 template <>
 struct TreeBuilderInserter<EnumPostingTree> {
     static void insert(EnumPostingTree::Builder & builder,
-                       EnumStoreBase::Index enumIdx,
+                       IEnumStore::Index enumIdx,
                        datastore::EntryRef postingIdx)
     {
         builder.insert(enumIdx, postingIdx);
@@ -308,7 +498,7 @@ void
 EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
 {
     typedef typename Dictionary::Builder DictionaryBuilder;
-    EnumStoreBase::reset(builder.getBufferSize());
+    reset(builder.getBufferSize());
 
     DictionaryBuilder treeBuilder(dict.getAllocator());
     uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);

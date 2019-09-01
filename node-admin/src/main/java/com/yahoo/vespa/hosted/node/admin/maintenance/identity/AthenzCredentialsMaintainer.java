@@ -162,9 +162,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                     ztsClient.registerInstance(
                             configserverIdentity,
                             context.identity(),
-                            signedIdentityDocument.providerUniqueId().asDottedString(),
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
-                            false,
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
             writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
@@ -190,7 +188,6 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 configserverIdentity,
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
-                                false,
                                 csr);
                 writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
                         certificateFile, instanceIdentity.certificate());

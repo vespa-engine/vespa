@@ -15,6 +15,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.Field;
 import com.yahoo.document.Generated;
 import com.yahoo.document.MapDataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
@@ -99,17 +100,20 @@ public class DocumentGenPluginTest {
     @Test
     public void testRealBasic() {
         Music music = getMusicBasic();
-        assertEquals(music.getFieldCount(), 6);
-        assertEquals(music.getArtist(), "Astroburger");
-        assertEquals(music.getWeight_src(), 10.654f, 0);
-        assertEquals(music.getYear(), (Integer)2005);
-        assertEquals(music.getUri(), "http://astro.burger");
+        assertEquals(7, music.getFieldCount());
+        assertEquals("Astroburger", music.getArtist());
+        assertEquals(10.654f, music.getWeight_src(), 0);
+        assertEquals((Integer)2005, music.getYear());
+        assertEquals("http://astro.burger", music.getUri());
+        assertFalse(music.getEitheror());
         music.setUri(null);
-        assertEquals(music.getUri(), null);
+        assertNull(music.getUri());
         music.setUri("https://astro.burger");
-        assertEquals(music.getUri(), "https://astro.burger");
+        assertEquals("https://astro.burger", music.getUri());
         music.setYear(2006);
-        assertEquals(music.getYear(), (Integer)2006);
+        assertEquals((Integer)2006, music.getYear());
+        music.setEitheror(true);
+        assertTrue(music.getEitheror());
     }
 
     @Test
@@ -772,6 +776,7 @@ public class DocumentGenPluginTest {
         music.setYear(2005);
         music.setUri("http://astro.burger");
         music.setWeight_src(10.654f);
+        music.setEitheror(false);
         return music;
     }
 
@@ -1010,6 +1015,18 @@ public class DocumentGenPluginTest {
         Music4 book = new Music4(new DocumentId("id:music4:music4::0"));
         book.setPos(new Music4.Position().setX(7).setY(8));
         assertEquals(new Music4.Position().setX(7).setY(8), book.getPos());
+        assertEquals(1, book.getFieldCount());
+        int numIteratedValues = 0;
+        for (Iterator<Map.Entry<Field, FieldValue>> it = book.iterator(); it.hasNext(); numIteratedValues++) {
+            Map.Entry<Field, FieldValue> entry = it.next();
+        }
+        assertEquals(book.getFieldCount(), numIteratedValues);
+        Field posZcurve = book.getField(PositionDataType.getZCurveFieldName("pos"));
+        assertNotNull(posZcurve);
+        assertNotEquals(book.getDataType().fieldSet(), book.getDataType().fieldSetAll());
+        assertFalse(book.getDataType().fieldSet().contains(posZcurve));
+        assertTrue(book.getDataType().fieldSetAll().contains(posZcurve));
+        assertTrue(book.getDataType().getFields().contains(posZcurve));
     }
     
 }

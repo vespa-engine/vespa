@@ -8,8 +8,8 @@ LOG_SETUP(".searchlib.attribute.multi_string_post_attribute");
 
 namespace search {
 
-EnumStoreBase::Index
-StringEnumIndexMapper::map(EnumStoreBase::Index original, const EnumStoreComparator & compare) const
+IEnumStore::Index
+StringEnumIndexMapper::map(IEnumStore::Index original, const datastore::EntryComparator& compare) const
 {
     return _dictionary.find(original, compare).getKey();
 }

@@ -6,7 +6,6 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -115,7 +114,6 @@ public class Xml {
     /**
      * @return The root element of each xml file under pathFromAppRoot/ in the app package
      */
-    @NonNull
     public static List<Element> allElemsFromPath(ApplicationPackage app, String pathFromAppRoot) {
         List<Element> ret = new ArrayList<>();
         List<NamedReader> files = null;

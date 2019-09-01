@@ -24,9 +24,9 @@ public:
 protected:
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
-    using EnumIndex = EnumStoreBase::Index;
-    using EnumIndexVector = EnumStoreBase::IndexVector;
-    using EnumVector = EnumStoreBase::EnumVector;
+    using EnumIndex = IEnumStore::Index;
+    using EnumIndexVector = IEnumStore::IndexVector;
+    using EnumVector = IEnumStore::EnumVector;
     using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;

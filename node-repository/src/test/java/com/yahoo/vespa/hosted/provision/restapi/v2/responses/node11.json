@@ -13,6 +13,7 @@
   "minCpuCores": 1.0,
   "fastDisk": true,
   "bandwidth": 300.0,
+  "bandwidthGbps": 0.3,
   "environment": "DOCKER_CONTAINER",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,

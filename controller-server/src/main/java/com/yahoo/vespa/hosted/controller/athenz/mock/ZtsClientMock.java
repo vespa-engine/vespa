@@ -1,17 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.api.AwsTemporaryCredentials;
 import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.zts.Identity;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
-import com.yahoo.security.Pkcs10Csr;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -45,12 +44,12 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public InstanceIdentity registerInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String instanceId, String attestationData, boolean requestServiceToken, Pkcs10Csr csr) {
+    public InstanceIdentity registerInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String attestationData, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public InstanceIdentity refreshInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String instanceId, boolean requestServiceToken, Pkcs10Csr csr) {
+    public InstanceIdentity refreshInstance(AthenzIdentity providerIdentity, AthenzIdentity instanceIdentity, String instanceId, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 

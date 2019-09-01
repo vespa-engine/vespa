@@ -84,20 +84,22 @@ template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
 {
-    uint32_t numDocs(this->getNumDocs());
-    size_t numValues = loaded.size();
-    size_t count = 0;
-    WeightedIndexVector indices;
-    this->_mvMapping.prepareLoadFromMultiValue();
-    for (DocId doc = 0; doc < numDocs; ++doc) {
-        for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
-            indices.push_back(WeightedIndex(v->getEidx(), v->getWeight()));
+    if constexpr(!std::is_same_v<LoadedVector, NoLoadedVector>) {
+        uint32_t numDocs(this->getNumDocs());
+        size_t numValues = loaded.size();
+        size_t count = 0;
+        WeightedIndexVector indices;
+        this->_mvMapping.prepareLoadFromMultiValue();
+        for (DocId doc = 0; doc < numDocs; ++doc) {
+            for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
+                indices.push_back(WeightedIndex(v->getEidx(), v->getWeight()));
+            }
+            this->checkSetMaxValueCount(indices.size());
+            this->_mvMapping.set(doc, indices);
+            indices.clear();
         }
-        this->checkSetMaxValueCount(indices.size());
-        this->_mvMapping.set(doc, indices);
-        indices.clear();
+        this->_mvMapping.doneLoadFromMultiValue();
     }
-    this->_mvMapping.doneLoadFromMultiValue();
 }
 
 

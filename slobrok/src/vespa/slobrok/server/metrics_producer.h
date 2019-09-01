@@ -26,7 +26,7 @@ public:
     void snapshot();
 
     MetricsProducer(const RPCHooks &hooks, FNET_Transport &transport);
-    ~MetricsProducer();
+    ~MetricsProducer() override;
 };
 
 

@@ -126,6 +126,16 @@ createAttribute(stringref attrName, const search::attribute::Config &cfg)
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
 
+vespalib::string
+replace_suffix(AttributeVector &v, const vespalib::string &suffix)
+{
+    vespalib::string name = v.getName();
+    if (name.size() >= suffix.size()) {
+        name.resize(name.size() - suffix.size());
+    }
+    return name + suffix;
+}
+
 }
 
 namespace search {
@@ -147,14 +157,14 @@ private:
     template <typename VectorType, typename BufferType>
     void compare(VectorType & a, VectorType & b);
 
-    void testReloadInt(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c, size_t numDocs);
-    void testReloadString(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c, size_t numDocs);
+    void testReloadInt(const AttributePtr & a, size_t numDocs);
+    void testReloadString(const AttributePtr & a, size_t numDocs);
     template <typename VectorType, typename BufferType>
-    void testReload(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c);
-    void testMemorySaverInt(const AttributePtr & a, const AttributePtr & b, size_t numDocs);
-    void testMemorySaverString(const AttributePtr & a, const AttributePtr & b, size_t numDocs);
+    void testReload(const AttributePtr & a);
+    void testMemorySaverInt(const AttributePtr & a, size_t numDocs);
+    void testMemorySaverString(const AttributePtr & a, size_t numDocs);
     template <typename VectorType, typename BufferType>
-    void testMemorySaver(const AttributePtr & a, const AttributePtr & b);
+    void testMemorySaver(const AttributePtr & a);
 
     void testReload();
     void testHasLoadData();
@@ -406,40 +416,37 @@ void AttributeTest::compare(VectorType & a, VectorType & b)
     delete [] av;
 }
 
-void AttributeTest::testReloadInt(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c, size_t numDocs)
+void AttributeTest::testReloadInt(const AttributePtr & a, size_t numDocs)
 {
     addDocs(a, numDocs);
-    addDocs(b, numDocs);
     populate(static_cast<IntegerAttribute &>(*a.get()), 17);
-    populate(static_cast<IntegerAttribute &>(*b.get()), 17);
     if (a->hasWeightedSetType()) {
-        testReload<IntegerAttribute, IntegerAttribute::WeightedInt>(a, b, c);
+        testReload<IntegerAttribute, IntegerAttribute::WeightedInt>(a);
     } else {
-        testReload<IntegerAttribute, IntegerAttribute::largeint_t>(a, b, c);
+        testReload<IntegerAttribute, IntegerAttribute::largeint_t>(a);
     }
 }
 
 
-void AttributeTest::testReloadString(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c, size_t numDocs)
+void AttributeTest::testReloadString(const AttributePtr & a, size_t numDocs)
 {
     addDocs(a, numDocs);
-    addDocs(b, numDocs);
     populate(static_cast<StringAttribute &>(*a.get()), 17);
-    populate(static_cast<StringAttribute &>(*b.get()), 17);
     if (a->hasWeightedSetType()) {
-        testReload<StringAttribute, StringAttribute::WeightedString>(a, b, c);
+        testReload<StringAttribute, StringAttribute::WeightedString>(a);
     } else {
-        testReload<StringAttribute, string>(a, b, c);
+        testReload<StringAttribute, string>(a);
     }
 }
 
 template <typename VectorType, typename BufferType>
-void AttributeTest::testReload(const AttributePtr & a, const AttributePtr & b, const AttributePtr & c)
+void AttributeTest::testReload(const AttributePtr & a)
 {
     LOG(info, "testReload: vector '%s'", a->getName().c_str());
 
-    compare<VectorType, BufferType>
-        (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
+    auto b = createAttribute(replace_suffix(*a, "2"), a->getConfig());
+    auto c = createAttribute(replace_suffix(*a, "3"), a->getConfig());
+
     a->setCreateSerialNum(43u);
     EXPECT_TRUE( a->save(b->getBaseFileName()) );
     a->commit(true);
@@ -479,134 +486,102 @@ void AttributeTest::testReload()
     // CollectionType::SINGLE
     {
         AttributePtr iv1 = createAttribute("sint32_1", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("sint32_2", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("sint32_3", Config(BasicType::INT32, CollectionType::SINGLE));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("suint4_1", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("suint4_2", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("suint4_3", Config(BasicType::UINT4, CollectionType::SINGLE));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("suint2_1", Config(BasicType::UINT2, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("suint2_2", Config(BasicType::UINT2, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("suint2_3", Config(BasicType::UINT2, CollectionType::SINGLE));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("suint1_1", Config(BasicType::BOOL, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("suint1_2", Config(BasicType::BOOL, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("suint1_3", Config(BasicType::BOOL, CollectionType::SINGLE));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("sfsint32_1", cfg);
-        AttributePtr iv2 = createAttribute("sfsint32_2", cfg);
-        AttributePtr iv3 = createAttribute("sfsint32_3", cfg);
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     // CollectionType::ARRAY
     {
         Config cfg(BasicType::INT8, CollectionType::ARRAY);
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("flag_1", cfg);
-        AttributePtr iv2 = createAttribute("flag_2", cfg);
-        AttributePtr iv3 = createAttribute("flag_3", cfg);
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("aint32_1", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv2 = createAttribute("aint32_2", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv3 = createAttribute("aint32_3", Config(BasicType::INT32, CollectionType::ARRAY));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::ARRAY);
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("afsint32_1", cfg);
-        AttributePtr iv2 = createAttribute("afsint32_2", cfg);
-        AttributePtr iv3 = createAttribute("afsint32_3", cfg);
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     // CollectionType::WSET
     {
         AttributePtr iv1 = createAttribute("wint32_1", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv2 = createAttribute("wint32_2", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv3 = createAttribute("wint32_3", Config(BasicType::INT32, CollectionType::WSET));
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
     {
         Config cfg(BasicType::INT32, CollectionType::WSET);
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("wfsint32_1", cfg);
-        AttributePtr iv2 = createAttribute("wfsint32_2", cfg);
-        AttributePtr iv3 = createAttribute("wfsint32_3", cfg);
-        testReloadInt(iv1, iv2, iv3, 0);
-        testReloadInt(iv1, iv2, iv3, 100);
+        testReloadInt(iv1, 0);
+        testReloadInt(iv1, 100);
     }
 
 
     // StringAttribute
     {
         AttributePtr iv1 = createAttribute("sstring_1", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("sstring_2", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv3 = createAttribute("sstring_3", Config(BasicType::STRING, CollectionType::SINGLE));
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("astring_1", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv2 = createAttribute("astring_2", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv3 = createAttribute("astring_3", Config(BasicType::STRING, CollectionType::ARRAY));
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("wstring_1", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv2 = createAttribute("wstring_2", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv3 = createAttribute("wstring_3", Config(BasicType::STRING, CollectionType::WSET));
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("sfsstring_1", cfg);
-        AttributePtr iv2 = createAttribute("sfsstring_2", cfg);
-        AttributePtr iv3 = createAttribute("sfsstring_3", cfg);
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("afsstring_1", cfg);
-        AttributePtr iv2 = createAttribute("afsstring_2", cfg);
-        AttributePtr iv3 = createAttribute("afsstring_3", cfg);
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::WSET));
         cfg.setFastSearch(true);
         AttributePtr iv1 = createAttribute("wsfsstring_1", cfg);
-        AttributePtr iv2 = createAttribute("wsfsstring_2", cfg);
-        AttributePtr iv3 = createAttribute("wsfsstring_3", cfg);
-        testReloadString(iv1, iv2, iv3, 0);
-        testReloadString(iv1, iv2, iv3, 100);
+        testReloadString(iv1, 0);
+        testReloadString(iv1, 100);
     }
 }
 
@@ -644,35 +619,36 @@ void AttributeTest::testHasLoadData()
 }
 
 void
-AttributeTest::testMemorySaverInt(const AttributePtr & a, const AttributePtr & b, size_t numDocs)
+AttributeTest::testMemorySaverInt(const AttributePtr & a, size_t numDocs)
 {
     addDocs(a, numDocs);
     populate(static_cast<IntegerAttribute &>(*a.get()), 21);
     if (a->hasWeightedSetType()) {
-        testMemorySaver<IntegerAttribute, IntegerAttribute::WeightedInt>(a, b);
+        testMemorySaver<IntegerAttribute, IntegerAttribute::WeightedInt>(a);
     } else {
-        testMemorySaver<IntegerAttribute, IntegerAttribute::largeint_t>(a, b);
+        testMemorySaver<IntegerAttribute, IntegerAttribute::largeint_t>(a);
     }
 }
 
 void
-AttributeTest::testMemorySaverString(const AttributePtr & a, const AttributePtr & b, size_t numDocs)
+AttributeTest::testMemorySaverString(const AttributePtr & a, size_t numDocs)
 {
     addDocs(a, numDocs);
     populate(static_cast<StringAttribute &>(*a.get()), 21);
     if (a->hasWeightedSetType()) {
-        testMemorySaver<StringAttribute, StringAttribute::WeightedString>(a, b);
+        testMemorySaver<StringAttribute, StringAttribute::WeightedString>(a);
     } else {
-        testMemorySaver<StringAttribute, string>(a, b);
+        testMemorySaver<StringAttribute, string>(a);
     }
 }
 
 template <typename VectorType, typename BufferType>
 void
-AttributeTest::testMemorySaver(const AttributePtr & a, const AttributePtr & b)
+AttributeTest::testMemorySaver(const AttributePtr & a)
 {
     LOG(info, "testMemorySaver: vector '%s'", a->getName().c_str());
 
+    auto b = createAttribute(replace_suffix(*a, "2ms"), a->getConfig());
     AttributeMemorySaveTarget saveTarget;
     EXPECT_TRUE(a->save(saveTarget, b->getBaseFileName()));
     FastOS_StatInfo statInfo;
@@ -692,40 +668,33 @@ AttributeTest::testMemorySaver()
     // CollectionType::SINGLE
     {
         AttributePtr iv1 = createAttribute("sint32_1ms", Config(BasicType::INT32, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("sint32_2ms", Config(BasicType::INT32, CollectionType::SINGLE));
-        testMemorySaverInt(iv1, iv2, 100);
+        testMemorySaverInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("suint4_1ms", Config(BasicType::UINT4, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("suint4_2ms", Config(BasicType::UINT4, CollectionType::SINGLE));
-        testMemorySaverInt(iv1, iv2, 100);
+        testMemorySaverInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("sstr_1ms", Config(BasicType::STRING, CollectionType::SINGLE));
-        AttributePtr iv2 = createAttribute("sstr_2ms", Config(BasicType::STRING, CollectionType::SINGLE));
-        testMemorySaverString(iv1, iv2, 100);
+        testMemorySaverString(iv1, 100);
     }
     // CollectionType::ARRAY
     {
         AttributePtr iv1 = createAttribute("aint32_1ms", Config(BasicType::INT32, CollectionType::ARRAY));
-        AttributePtr iv2 = createAttribute("aint32_2ms", Config(BasicType::INT32, CollectionType::ARRAY));
-        testMemorySaverInt(iv1, iv2, 100);
+        testMemorySaverInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("astr_1ms", Config(BasicType::STRING, CollectionType::ARRAY));
-        AttributePtr iv2 = createAttribute("astr_2ms", Config(BasicType::STRING, CollectionType::ARRAY));
-        testMemorySaverString(iv1, iv2, 100);
+        testMemorySaverString(iv1, 100);
     }
     // CollectionType::WSET
     {
         AttributePtr iv1 = createAttribute("wint32_1ms", Config(BasicType::INT32, CollectionType::WSET));
-        AttributePtr iv2 = createAttribute("wint32_2ms", Config(BasicType::INT32, CollectionType::WSET));
-        testMemorySaverInt(iv1, iv2, 100);
+        testMemorySaverInt(iv1, 100);
     }
     {
         AttributePtr iv1 = createAttribute("wstr_1ms", Config(BasicType::STRING, CollectionType::WSET));
-        AttributePtr iv2 = createAttribute("wstr_2ms", Config(BasicType::STRING, CollectionType::WSET));
-        testMemorySaverString(iv1, iv2, 100);
+        testMemorySaverString(iv1, 100);
     }
 }
 
@@ -1638,9 +1607,9 @@ AttributeTest::testStatus()
     fillString(values, 16);
     uint32_t numDocs = 100;
     // No posting list
-    static constexpr size_t LeafNodeSize = 4 + sizeof(EnumStoreBase::Index) * EnumTreeTraits::LEAF_SLOTS;
+    static constexpr size_t LeafNodeSize = 4 + sizeof(IEnumStore::Index) * EnumTreeTraits::LEAF_SLOTS;
     static constexpr size_t InternalNodeSize =
-        8 + (sizeof(EnumStoreBase::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
+        8 + (sizeof(IEnumStore::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
     static constexpr size_t NestedVectorSize = 24; // sizeof(vespalib::Array)
 
     {
@@ -1683,7 +1652,7 @@ AttributeTest::testStatus()
         expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
         // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
+        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(IEnumStore::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }

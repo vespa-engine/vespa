@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.hpp"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
 #include <vespa/log/log.h>
@@ -82,12 +84,18 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     return sz;
 }
 
+vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx) {
+    return os << "offset(" << idx.offset() << "), bufferId(" << idx.bufferId() << "), idx(" << idx.ref() << ")";
+}
+
+template class datastore::DataStoreT<IEnumStore::Index>;
+
 template
-class btree::BTreeBuilder<EnumStoreBase::Index, btree::BTreeNoLeafData, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeBuilder<EnumStoreBase::Index, datastore::EntryRef, btree::NoAggregated,
+class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
 template class EnumStoreT< StringEntryType >;
@@ -99,3 +107,11 @@ template class EnumStoreT<NumericEntryType<float> >;
 template class EnumStoreT<NumericEntryType<double> >;
 
 } // namespace search
+
+namespace vespalib {
+    template class RcuVectorBase<search::IEnumStore::Index>;
+}
+
+VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::IEnumStore::Index, search::IEnumStore::Index,
+        vespalib::hash<search::IEnumStore::Index>, std::equal_to<search::IEnumStore::Index>,
+        vespalib::hashtable_base::and_modulator);

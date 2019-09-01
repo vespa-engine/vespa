@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumattributesaver.h"
+#include "i_enum_store_dictionary.h"
 #include "iattributesavetarget.h"
 #include <vespa/vespalib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.hpp>
@@ -8,7 +9,7 @@
 namespace search {
 
 EnumAttributeSaver::
-EnumAttributeSaver(const EnumStoreBase &enumStore)
+EnumAttributeSaver(const IEnumStore &enumStore)
     : _enumStore(enumStore),
       _enumerator(_enumStore.getEnumStoreDict(), _enumStore.get_data_store_base())
 {
@@ -34,6 +35,6 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 
 namespace search::datastore {
 
-template class UniqueStoreEnumerator<EnumStoreIndex>;
+template class UniqueStoreEnumerator<IEnumStore::Index>;
 
 }

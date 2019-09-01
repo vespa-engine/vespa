@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/attribute/enumstorebase.h>
+#include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/vespalib/datastore/entryref.h>
 
 namespace search
@@ -57,14 +57,14 @@ public:
         }
     };
 
-    EnumStoreBase::Index
+    IEnumStore::Index
     getEidx() const
     {
-        return EnumStoreBase::Index(datastore::EntryRef(_value._eidx));
+        return IEnumStore::Index(datastore::EntryRef(_value._eidx));
     }
 
     void
-    setEidx(EnumStoreBase::Index v)
+    setEidx(IEnumStore::Index v)
     {
         _value._eidx = v.ref();
     }

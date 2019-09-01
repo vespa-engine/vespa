@@ -19,8 +19,6 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.query.Presentation;
 import com.yahoo.search.searchchain.Execution;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-
 /**
  * Ensure the fields specified in {@link Presentation#getSummaryFields()} are
  * available after filling phase.
@@ -48,7 +46,6 @@ public class FieldFiller extends Searcher {
             docType.put(summary.name(), fields);
         }
 
-        @NonNull
         private Map<String, Set<String>> getOrCreateDocType(String dbName) {
             Map<String, Set<String>> docType = db.get(dbName);
             if (docType == null) {

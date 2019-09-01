@@ -272,8 +272,17 @@ public class RoutingPoliciesTest {
                                      ClusterSpec.Id.from("c" + i),
                                      HostName.from("lb-" + i + "--" + application.serializedForm() +
                                                    "--" + zone.value()),
+                                     LoadBalancer.State.active,
                                      Optional.of("dns-zone-1")));
         }
+        // Add an inactive load balancers that should be ignored
+        loadBalancers.add(new LoadBalancer("inactive-LB-0-Z-" + zone.value(),
+                                           application,
+                                           ClusterSpec.Id.from("c0"),
+                                           HostName.from("lb-0--" + application.serializedForm() +
+                                                         "--" + zone.value()),
+                                           LoadBalancer.State.inactive,
+                                           Optional.of("dns-zone-1")));
         return loadBalancers;
     }
 

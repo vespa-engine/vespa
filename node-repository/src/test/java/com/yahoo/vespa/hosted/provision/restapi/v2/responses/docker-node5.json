@@ -12,6 +12,7 @@
   "minCpuCores": 4.0,
   "fastDisk": true,
   "bandwidth": 20000.0,
+  "bandwidthGbps": 20.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",

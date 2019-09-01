@@ -84,6 +84,9 @@ private:
     TimeStamp _stopTime;
 };
 
+time_t time();
+
+
 typedef StopWatchT<ClockSystem> TickStopWatch;
 typedef TickStopWatch          StopWatch;
 

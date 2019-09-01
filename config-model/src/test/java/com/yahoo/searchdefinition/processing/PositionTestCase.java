@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -31,7 +32,7 @@ public class PositionTestCase {
                 "src/test/examples/position_inherited.sd"));
 
         Search search = sb.getSearch("position_inherited");
-        FieldSet fieldSet = search.getDocument().getFieldSets().builtInFieldSets().get("[document]"); // TODO why is this not public in BuiltInFieldSets?
+        FieldSet fieldSet = search.getDocument().getFieldSets().builtInFieldSets().get(DocumentType.DOCUMENT);
         assertFalse(fieldSet.getFieldNames().contains(PositionDataType.getZCurveFieldName("pos")));
     }
 

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "i_enum_store.h"
 #include "load_utils.hpp"
-#include "multivalue.h"
-#include "enumstorebase.h"
 #include "loadedenumvalue.h"
 #include "multi_value_mapping.h"
+#include "multivalue.h"
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
@@ -26,7 +26,7 @@ INSTANTIATE_ARRAY(ValueType, Saver); \
 INSTANTIATE_WSET(ValueType, Saver)
 
 #define INSTANTIATE_ENUM(Saver) \
-INSTANTIATE_SINGLE_ARRAY_WSET(EnumStoreIndex, Saver)
+INSTANTIATE_SINGLE_ARRAY_WSET(IEnumStore::Index, Saver)
 
 #define INSTANTIATE_VALUE(ValueType) \
 INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, NoSaveLoadedEnum)

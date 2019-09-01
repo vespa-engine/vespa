@@ -5,6 +5,7 @@
 #include "attributevector.h"
 #include "loadedenumvalue.h"
 #include "enumstore.h"
+#include "no_loaded_vector.h"
 #include <set>
 
 namespace search {
@@ -51,15 +52,15 @@ public:
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 protected:
-    using EnumIndex = EnumStoreBase::Index;
-    using EnumIndexMap = EnumStoreBase::EnumIndexMap;
+    using EnumIndex = IEnumStore::Index;
+    using EnumIndexMap = IEnumStore::EnumIndexMap;
 
     EnumStore _enumStore;
 
     EnumStore &       getEnumStore()       { return _enumStore; }
     const EnumStore & getEnumStore() const { return _enumStore; }
 
-    const EnumStoreBase * getEnumStoreBase() const override { return &_enumStore; }
+    const IEnumStore* getEnumStoreBase() const override { return &_enumStore; }
     EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
 
     void fillPostings(LoadedVector & loaded) override { (void) loaded; }

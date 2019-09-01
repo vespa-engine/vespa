@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "address_space_usage.h"
-#include "enumstorebase.h"
+#include "i_enum_store.h"
 
 namespace search {
 
@@ -21,7 +21,7 @@ AddressSpaceUsage::AddressSpaceUsage(const AddressSpace &enumStoreUsage_,
 AddressSpace
 AddressSpaceUsage::defaultEnumStoreUsage()
 {
-    return AddressSpace(0, 0, EnumStoreBase::DataStoreType::RefType::offsetSize());
+    return AddressSpace(0, 0, IEnumStore::Index::offsetSize());
 }
 
 AddressSpace

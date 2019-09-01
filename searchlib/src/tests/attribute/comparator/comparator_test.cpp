@@ -24,7 +24,7 @@ typedef EnumStoreT<StringEntryType> StringEnumStore;
 typedef EnumStoreComparatorT<StringEntryType> StringComparator;
 typedef EnumStoreFoldedComparatorT<StringEntryType> FoldedStringComparator;
 
-typedef EnumStoreBase::Index EnumIndex;
+typedef IEnumStore::Index EnumIndex;
 
 typedef BTreeRoot<EnumIndex, BTreeNoLeafData,
                   btree::NoAggregated,

@@ -391,6 +391,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.canonicalFlavor());
+            nodeObject.setDouble("vcpu", node.vcpu());
+            nodeObject.setDouble("memoryGb", node.memoryGb());
+            nodeObject.setDouble("diskGb", node.diskGb());
+            nodeObject.setDouble("bandwidthGbps", node.bandwidthGbps());
+            nodeObject.setBool("fastDisk", node.fastDisk());
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
         }

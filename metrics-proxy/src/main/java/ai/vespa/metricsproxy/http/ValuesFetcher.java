@@ -33,7 +33,7 @@ public class ValuesFetcher {
     private final VespaServices vespaServices;
     private final MetricsConsumers metricsConsumers;
 
-    ValuesFetcher(MetricsManager metricsManager,
+    public ValuesFetcher(MetricsManager metricsManager,
                   VespaServices vespaServices,
                   MetricsConsumers metricsConsumers) {
         this.metricsManager = metricsManager;
@@ -41,14 +41,13 @@ public class ValuesFetcher {
         this.metricsConsumers = metricsConsumers;
     }
 
-    public String fetch(String requestedConsumer) throws JsonRenderingException {
+    public List<MetricsPacket> fetch(String requestedConsumer) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer);
 
-        List<MetricsPacket> metrics = metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now())
+        return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now())
                 .stream()
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
                 .collect(Collectors.toList());
-        return toGenericJsonModel(metrics).serialize();
     }
 
     private ConsumerId getConsumerOrDefault(String consumer) {

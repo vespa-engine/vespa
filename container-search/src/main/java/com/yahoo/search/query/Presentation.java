@@ -10,13 +10,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.rendering.RendererRegistry;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
 
 /**
  * Parameters deciding how the result of a query should be presented
@@ -69,7 +66,6 @@ public class Presentation implements Cloneable {
     private boolean timing = false;
 
     /** Set of explicitly requested summary fields, instead of summary classes */
-    @NonNull
     private Set<String> summaryFields = LazySet.newHashSet();
 
     private static final Splitter COMMA_SPLITTER = Splitter.on(',').omitEmptyStrings().trimResults();
@@ -95,24 +91,22 @@ public class Presentation implements Cloneable {
     public void setBolding(boolean bolding) { this.bolding = bolding; }
 
     /** Get the name of the format desired for result rendering. */
-    @NonNull
     public ComponentSpecification getRenderer() { return format; }
 
     /** Set the desired format for result rendering. If null, use the default renderer. */
-    public void setRenderer(@Nullable ComponentSpecification format) {
+    public void setRenderer(ComponentSpecification format) {
         this.format = (format != null) ? format : RendererRegistry.defaultRendererId.toSpecification();
     }
 
     /**
      * Get the name of the format desired for result rendering.
      */
-    @NonNull
     public String getFormat() { return format.getName(); }
 
     /**
      * Set the desired format for result rendering. If null, use the default renderer.
      */
-    public void setFormat(@Nullable String format) {
+    public void setFormat(String format) {
         setRenderer(ComponentSpecification.fromString(format));
     }
 
@@ -168,7 +162,6 @@ public class Presentation implements Cloneable {
      *
      * @return the set of names of requested fields, never null
      */
-    @NonNull
     public Set<String> getSummaryFields() {
         return summaryFields;
     }

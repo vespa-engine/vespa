@@ -91,6 +91,8 @@ public class MetricsReporter extends Maintainer {
             boolean wantToRestart = currentRestartGeneration < wantedRestartGeneration;
             metric.set("wantToRestart", wantToRestart ? 1 : 0, context);
 
+            metric.set("retired", allocation.get().membership().retired() ? 1 : 0, context);
+
             Version wantedVersion = allocation.get().membership().cluster().vespaVersion();
             double wantedVersionNumber = getVersionAsNumber(wantedVersion);
             metric.set("wantedVespaVersion", wantedVersionNumber, context);
