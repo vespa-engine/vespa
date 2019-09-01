@@ -15,8 +15,6 @@ size_t enumStoreAlign(size_t size)
     return (size + 15) & -UINT64_C(16);
 }
 
-// IEnumStore::Index(0,0) is reserved thus 16 bytes are reserved in buffer 0
-const uint32_t RESERVED_BYTES = 16u;
 using NumericEnumStore = EnumStoreT<NumericEntryType<uint32_t> >;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
