@@ -4,7 +4,6 @@ package ai.vespa.metricsproxy.node;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -19,10 +18,6 @@ public class FileWrapper {
 
     Stream<Path> walkTree(Path path) throws IOException {
         return Files.walk(path);
-    }
-
-    Instant getLastModifiedTime(Path path) throws IOException {
-        return Files.getLastModifiedTime(path).toInstant();
     }
 
     boolean isRegularFile(Path path) {

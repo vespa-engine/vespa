@@ -8,7 +8,6 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -19,16 +18,9 @@ public class HostLifeGathererTest {
 
     @Test
     public void host_is_alive() {
-        List<MetricsPacket> actualPackets = HostLifeGatherer.gatherHostLifeMetrics(new MockFileWrapper())
-                .stream()
-                .map(MetricsPacket.Builder::build)
-                .collect(Collectors.toList());
+        MetricsPacket packet = HostLifeGatherer.gatherHostLifeMetrics(new MockFileWrapper()).build();
 
-        assertEquals(1, actualPackets.size());
-
-        MetricsPacket packet = actualPackets.get(0);
-
-        Map<MetricId, Number> expectedMetrics = Map.of(MetricId.toMetricId("uptime"), 123d, MetricId.toMetricId("alive"), 1d);
+        Map<MetricId, Number> expectedMetrics = Map.of(MetricId.toMetricId("uptime"), 123d, MetricId.toMetricId("alive"), 1);
         assertEquals("host_life", packet.service.id);
         assertEquals(0, packet.statusCode);
         assertEquals(expectedMetrics, packet.metrics());

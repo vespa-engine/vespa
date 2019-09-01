@@ -7,8 +7,6 @@ import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +28,6 @@ import static ai.vespa.metricsproxy.node.ServiceHealthGatherer.gatherServiceHeal
 
 public class NodeMetricGatherer {
 
-    protected static final JSONObject ROUTING_JSON = createRoutingJSON();
     private final VespaServices vespaServices;
     private final ApplicationDimensions applicationDimensions;
     private final NodeDimensions nodeDimensions;
@@ -47,9 +44,9 @@ public class NodeMetricGatherer {
     public List<MetricsPacket> gatherMetrics()  {
         FileWrapper fileWrapper = new FileWrapper();
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
-        metricPacketBuilders.addAll(gatherCoredumpMetrics(fileWrapper));
+        metricPacketBuilders.add(gatherCoredumpMetrics(fileWrapper));
         metricPacketBuilders.addAll(gatherServiceHealthMetrics(vespaServices));
-        metricPacketBuilders.addAll(gatherHostLifeMetrics(fileWrapper));
+        metricPacketBuilders.add(gatherHostLifeMetrics(fileWrapper));
 
         return metricPacketBuilders.stream()
                 .map(metricPacketBuilder ->
@@ -57,15 +54,6 @@ public class NodeMetricGatherer {
                     .putDimensionsIfAbsent(nodeDimensions.getDimensions())
                     .putDimensionsIfAbsent(metricsManager.getExtraDimensions()).build()
         ).collect(Collectors.toList());
-    }
-
-    private static JSONObject createRoutingJSON() {
-        try {
-            JSONObject jsonObject = new JSONObject("{\"yamas\":{\"namespaces\":[\"Vespa\"]}}");
-            return jsonObject;
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }
