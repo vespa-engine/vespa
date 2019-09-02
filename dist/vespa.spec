@@ -43,6 +43,7 @@ BuildRequires: vespa-openssl-devel >= 1.1.1c-1
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
+BuildRequires: openssl-devel
 %if 0%{?fc29}
 BuildRequires: llvm-devel >= 7.0.0
 BuildRequires: boost-devel >= 1.66
@@ -61,6 +62,12 @@ BuildRequires: boost-devel >= 1.69
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
+%if 0%{?fc32}
+BuildRequires: llvm-devel >= 8.0.0
+BuildRequires: boost-devel >= 1.69
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
 %endif
 BuildRequires: xxhash-devel >= 0.6.5
 BuildRequires: lz4-devel
@@ -68,7 +75,6 @@ BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 BuildRequires: java-11-openjdk-devel
-BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: git
@@ -117,6 +123,7 @@ Requires: vespa-protobuf >= 3.7.0-4
 %endif
 %if 0%{?fedora}
 Requires: vespa-protobuf >= 3.7.0-4
+Requires: openssl-libs
 %if 0%{?fc29}
 Requires: llvm-libs >= 7.0.0
 %define _vespa_llvm_version 7
@@ -126,6 +133,10 @@ Requires: llvm-libs >= 8.0.0
 %define _vespa_llvm_version 8
 %endif
 %if 0%{?fc31}
+Requires: llvm-libs >= 8.0.0
+%define _vespa_llvm_version 8
+%endif
+%if 0%{?fc32}
 Requires: llvm-libs >= 8.0.0
 %define _vespa_llvm_version 8
 %endif
