@@ -4,6 +4,7 @@ package com.yahoo.container.jdisc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigInstance;
@@ -12,6 +13,7 @@ import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
+import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
@@ -47,6 +49,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -79,7 +82,7 @@ public final class ConfiguredApplication implements Application {
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
-    private final SlobrokConfigSubscriber slobrokConfigSubscriber;
+    private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
     private final SessionCache sessionCache;
 
     //TODO: FilterChainRepository should instead always be set up in the model.
@@ -126,7 +129,9 @@ public final class ConfiguredApplication implements Application {
         this.timerSingleton = timer;
         this.subscriberFactory = subscriberFactory;
         this.configId = System.getProperty("config.id");
-        this.slobrokConfigSubscriber = new SlobrokConfigSubscriber(configId);
+        this.slobrokConfigSubscriber = (subscriberFactory instanceof CloudSubscriberFactory)
+                ? Optional.of(new SlobrokConfigSubscriber(configId))
+                : Optional.empty();
         this.sessionCache = new SessionCache(configId);
         this.restrictedOsgiFramework = new DisableOsgiFramework(new RestrictedBundleContext(osgiFramework.bundleContext()));
     }
@@ -134,7 +139,7 @@ public final class ConfiguredApplication implements Application {
     @Override
     public void start() {
         qrConfig = getConfig(QrConfig.class);
-        slobrokRegistrator = registerInSlobrok(slobrokConfigSubscriber, qrConfig);
+        slobrokRegistrator = registerInSlobrok(qrConfig);
 
         hackToInitializeServer(qrConfig);
 
@@ -151,7 +156,7 @@ public final class ConfiguredApplication implements Application {
      * The container has no rpc methods, but we still need an RPC sever
      * to register in Slobrok to enable orchestration
      */
-    private Register registerInSlobrok(SlobrokConfigSubscriber slobrokConfigSubscriber, QrConfig qrConfig) {
+    private Register registerInSlobrok(QrConfig qrConfig) {
         if ( ! qrConfig.rpc().enabled()) return null;
 
         // 1. Set up RPC server
@@ -165,13 +170,27 @@ public final class ConfiguredApplication implements Application {
         }
 
         // 2. Register it in slobrok
-        SlobrokList slobrokList = slobrokConfigSubscriber.getSlobroks();
+        SlobrokList slobrokList = getSlobrokList();
         Spec mySpec = new Spec(HostName.getLocalhost(), acceptor.port());
         slobrokRegistrator = new Register(supervisor, slobrokList, mySpec);
         slobrokRegistrator.registerName(qrConfig.rpc().slobrokId());
         log.log(LogLevel.INFO, "Registered name '" + qrConfig.rpc().slobrokId() +
                                "' at " + mySpec + " with: " + slobrokList);
         return slobrokRegistrator;
+    }
+
+    // Different ways of getting slobrok config depending on whether we have a subscriber (regular setup)
+    // or need to get the config directly (standalone container)
+    private SlobrokList getSlobrokList() {
+        SlobrokList slobrokList;
+        if (slobrokConfigSubscriber.isPresent()) {
+            slobrokList = slobrokConfigSubscriber.get().getSlobroks();
+        } else {
+            slobrokList = new SlobrokList();
+            SlobroksConfig slobrokConfig = getConfig(SlobroksConfig.class);
+            slobrokList.setup(slobrokConfig.slobrok().stream().map(SlobroksConfig.Slobrok::connectionspec).toArray(String[]::new));
+        }
+        return slobrokList;
     }
 
     private void unregisterInSlobrok() {
