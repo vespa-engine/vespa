@@ -25,7 +25,7 @@ public class CoredumpMetricGatherer {
 
 
     protected static MetricsPacket.Builder gatherCoredumpMetrics(FileWrapper fileWrapper) {
-        int coredumps = getCoredumpsFromLastPeriod(fileWrapper);
+        int coredumps = getNumberOfCoredumps(fileWrapper);
         return new MetricsPacket.Builder(ServiceId.toServiceId("system-coredumps-processing"))
         .timestamp(Instant.now().getEpochSecond())
         .statusCode(coredumps)
@@ -33,7 +33,7 @@ public class CoredumpMetricGatherer {
         .addConsumers(Set.of(ConsumerId.toConsumerId("Vespa")));
     }
 
-    private static int getCoredumpsFromLastPeriod(FileWrapper fileWrapper) {
+    private static int getNumberOfCoredumps(FileWrapper fileWrapper) {
         try {
             return (int) fileWrapper.walkTree(COREDUMP_PATH)
                     .filter(fileWrapper::isRegularFile)
