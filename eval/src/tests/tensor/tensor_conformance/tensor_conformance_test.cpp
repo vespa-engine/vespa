@@ -32,7 +32,7 @@ TEST("require that cross-language tensor conformance test spec can be generated"
     vespalib::string spec = module_src_path + "src/apps/tensor_conformance/test_spec.json";
     vespalib::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";
     EXPECT_EQUAL(system(make_string("%s generate > conformance_test_spec.json", binary.c_str()).c_str()), 0);
-    EXPECT_EQUAL(system(make_string("diff -u %s conformance_test_spec.json", spec.c_str()).c_str()), 0);
+    EXPECT_EQUAL(system(make_string("%s compare %s conformance_test_spec.json", binary.c_str(), spec.c_str()).c_str()), 0);
 }
 
 TEST("require that cross-language tensor conformance tests pass with production C++ expression evaluation") {
