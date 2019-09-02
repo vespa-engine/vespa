@@ -284,7 +284,7 @@ public class ConvertedModel {
         RankProfile.RankingExpressionFunction rankingExpressionFunctionOverridingConstant = profile.getFunctions().get(constantName);
         if (rankingExpressionFunctionOverridingConstant != null) {
             TensorType functionType = rankingExpressionFunctionOverridingConstant.function().getBody().type(profile.typeContext(queryProfiles));
-            if ( ! functionType.equals(constantValue.type()))
+            if ( ! constantValue.type().isAssignableTo(functionType))
                 throw new IllegalArgumentException("Function '" + constantName + "' replaces the constant with this name. " +
                                                    typeMismatchExplanation(constantValue.type(), functionType));
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later

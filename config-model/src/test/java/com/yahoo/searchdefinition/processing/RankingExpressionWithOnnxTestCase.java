@@ -145,7 +145,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this function is " +
+                            "Model refers input 'Placeholder' of type tensor<float>(d0[],d1[784]) but this function is " +
                             "not present in rank profile 'my_profile'",
                     Exceptions.toMessageString(expected));
         }
@@ -162,7 +162,7 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
+                            "Model refers input 'Placeholder'. The required type of this is tensor<float>(d0[],d1[784]), " +
                             "but this function returns tensor(d0[2],d5[10])",
                     Exceptions.toMessageString(expected));
         }
@@ -217,10 +217,10 @@ public class RankingExpressionWithOnnxTestCase {
         String rankProfile =
                 "  rank-profile my_profile {\n" +
                         "    function Placeholder() {\n" +
-                        "      expression: tensor(d0[2],d1[784])(0.0)\n" +
+                        "      expression: tensor<float>(d0[2],d1[784])(0.0)\n" +
                         "    }\n" +
                         "    function " + name + "_Variable() {\n" +
-                        "      expression: tensor(d1[10],d2[784])(0.0)\n" +
+                        "      expression: tensor<float>(d1[10],d2[784])(0.0)\n" +
                         "    }\n" +
                         "    first-phase {\n" +
                         "      expression: onnx('mnist_softmax.onnx')" +
