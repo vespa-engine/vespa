@@ -44,9 +44,7 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.ClusterInfo;
-import com.yahoo.vespa.config.server.metrics.MetricsAggregator;
-import com.yahoo.vespa.config.server.metrics.MetricsRetriever;
+import com.yahoo.vespa.config.server.metrics.ClusterMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -60,7 +58,6 @@ import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
@@ -74,15 +71,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -651,23 +643,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Metrics ------------------------------------------------------------------------
 
     public MetricsResponse getMetrics(ApplicationId applicationId) {
-        var clusters = getClustersOfApplication(applicationId);
-        var clusterMetrics = new ConcurrentHashMap<ClusterInfo, MetricsAggregator>();
-        ForkJoinPool pool = new ForkJoinPool(5);
-        pool.submit(() ->
-        clusters.parallelStream().forEach(cluster -> {
-            var metrics = MetricsRetriever.requestMetricsForCluster(cluster);
-            clusterMetrics.put(cluster, metrics);
-        }));
-        pool.shutdown();
-
-        try {
-            pool.awaitTermination(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        return new MetricsResponse(200, applicationId, clusterMetrics);
+        Application application = getApplication(applicationId);
+        return ClusterMetricsRetriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
@@ -799,29 +776,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
         return port;
-    }
-
-    /** Finds the hosts of an application, grouped by cluster name */
-    private Collection<ClusterInfo> getClustersOfApplication(ApplicationId applicationId) {
-        Application application = getApplication(applicationId);
-        Map<String, ClusterInfo> clusters = new HashMap<>();
-        application.getModel().getHosts().stream()
-                .filter(host -> host.getServices().stream().noneMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
-                .forEach(hostInfo -> {
-                            ClusterInfo clusterInfo = createClusterInfo(hostInfo);
-                            URI host = URI.create("http://" + hostInfo.getHostname() + ":" + MetricsProxyContainer.BASEPORT + "/metrics/v1/values?consumer=Vespa");
-                            clusters.computeIfAbsent(clusterInfo.getClusterId(), c -> clusterInfo).addHost(host);
-                        }
-                );
-        return clusters.values();
-
-    }
-
-    private ClusterInfo createClusterInfo(HostInfo hostInfo) {
-        return hostInfo.getServices().stream()
-                .map(ClusterInfo::fromServiceInfo)
-                .filter(Optional::isPresent)
-                .findFirst().get().orElseThrow();
     }
 
     /** Returns version to use when deploying application in given environment */
