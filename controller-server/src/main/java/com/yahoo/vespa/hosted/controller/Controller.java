@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
@@ -94,14 +93,13 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
-                      RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
                       MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider,
                       MeteringClient meteringClient, ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
-             metricsService, routingGenerator,
+             metricsService,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
              mavenRepository, applicationCertificateProvider, meteringClient, serviceRegistry);
@@ -110,7 +108,7 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry,
                       MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Clock clock,
+                      Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
@@ -134,10 +132,8 @@ public class Controller extends AbstractComponent {
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          serviceRegistry.configServer(),
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
-                                                          Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock
         );

@@ -78,7 +78,7 @@ public class InternalDeploymentTester {
                                                     "default",
                                                     1);
         jobs = tester.controller().jobController();
-        routing = tester.controllerTester().routingGenerator();
+        routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));

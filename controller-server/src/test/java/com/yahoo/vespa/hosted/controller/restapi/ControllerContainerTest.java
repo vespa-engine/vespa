@@ -86,7 +86,6 @@ public class ControllerContainerTest {
                "    </config>" +
                "  </component>" +
                "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +

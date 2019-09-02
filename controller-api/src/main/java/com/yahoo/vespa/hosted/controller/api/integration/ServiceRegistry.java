@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
 /**
  * This provides access to all service dependencies of the controller. Implementations of this are responsible for
@@ -19,5 +20,7 @@ public interface ServiceRegistry {
     NameService nameService();
 
     GlobalRoutingService globalRoutingService();
+
+    RoutingGenerator routingGenerator();
 
 }

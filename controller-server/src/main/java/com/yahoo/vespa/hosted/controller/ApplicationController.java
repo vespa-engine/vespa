@@ -130,14 +130,13 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
-                          RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
+                          BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
-        this.configServer = configServer;
-        this.routingGenerator = routingGenerator;
+        this.configServer = controller.serviceRegistry().configServer();
+        this.routingGenerator = controller.serviceRegistry().routingGenerator();
         this.routingPolicies = new RoutingPolicies(controller);
         this.clock = clock;
 

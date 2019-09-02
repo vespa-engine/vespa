@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
@@ -43,7 +42,6 @@ import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
-import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
@@ -87,17 +85,22 @@ public final class ControllerTester {
     private final ApplicationStoreMock applicationStore;
     private final MockBuildService buildService;
     private final MetricsServiceMock metricsService;
-    private final RoutingGeneratorMock routingGenerator;
     private final MockContactRetriever contactRetriever;
 
     private Controller controller;
 
     public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb,
                             MetricsServiceMock metricsService) {
-        this(new AthenzDbMock(), clock,
-             new ZoneRegistryMock(), curatorDb, rotationsConfig,
-             new ArtifactRepositoryMock(), new ApplicationStoreMock(), new MockBuildService(),
-             metricsService, new RoutingGeneratorMock(), new MockContactRetriever(),
+        this(new AthenzDbMock(),
+             clock,
+             new ZoneRegistryMock(),
+             curatorDb,
+             rotationsConfig,
+             new ArtifactRepositoryMock(),
+             new ApplicationStoreMock(),
+             new MockBuildService(),
+             metricsService,
+             new MockContactRetriever(),
              new ServiceRegistryMock());
     }
 
@@ -122,7 +125,7 @@ public final class ControllerTester {
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ArtifactRepositoryMock artifactRepository,
                              ApplicationStoreMock appStoreMock, MockBuildService buildService,
-                             MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
+                             MetricsServiceMock metricsService,
                              MockContactRetriever contactRetriever,
                              ServiceRegistryMock serviceRegistry) {
         this.athenzDb = athenzDb;
@@ -135,11 +138,10 @@ public final class ControllerTester {
         this.applicationStore = appStoreMock;
         this.buildService = buildService;
         this.metricsService = metricsService;
-        this.routingGenerator = routingGenerator;
         this.contactRetriever = contactRetriever;
         this.controller = createController(curator, rotationsConfig, clock, zoneRegistry,
                                            athenzDb, artifactRepository, appStoreMock, buildService,
-                                           metricsService, routingGenerator, serviceRegistry);
+                                           metricsService, serviceRegistry);
 
         // Make root logger use time from manual clock
         configureDefaultLogHandler(handler -> handler.setFilter(
@@ -185,8 +187,6 @@ public final class ControllerTester {
 
     public MetricsServiceMock metricsService() { return metricsService; }
 
-    public RoutingGeneratorMock routingGenerator() { return routingGenerator; }
-
     public MockContactRetriever contactRetriever() {
         return contactRetriever;
     }
@@ -199,7 +199,7 @@ public final class ControllerTester {
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, clock, zoneRegistry, athenzDb,
                                       artifactRepository, applicationStore, buildService, metricsService,
-                                      routingGenerator, serviceRegistry);
+                                      serviceRegistry);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -333,13 +333,11 @@ public final class ControllerTester {
                                                AthenzDbMock athensDb,
                                                ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                                                BuildService buildService, MetricsServiceMock metricsService,
-                                               RoutingGenerator routingGenerator,
                                                ServiceRegistryMock serviceRegistry) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                zoneRegistryMock,
                                                metricsService,
-                                               routingGenerator,
                                                clock,
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                artifactRepository,
