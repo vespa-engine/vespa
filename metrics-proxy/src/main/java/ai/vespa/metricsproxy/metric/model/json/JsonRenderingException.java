@@ -11,8 +11,8 @@ package ai.vespa.metricsproxy.metric.model.json;
  */
 public class JsonRenderingException extends RuntimeException {
 
-    JsonRenderingException(String message) {
-        super(message);
+    JsonRenderingException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }
