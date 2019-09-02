@@ -9,7 +9,6 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
 import ai.vespa.metricsproxy.http.TextResponse;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.json.JsonRenderingException;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -19,6 +18,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 import static ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil.toPrometheusModel;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
@@ -51,7 +51,8 @@ public class PrometheusHandler extends HttpHandlerBase {
         try {
             List<MetricsPacket> metrics =  valuesFetcher.fetch(consumer);
             return new TextResponse(OK, toPrometheusModel(metrics).serialize());
-        } catch (JsonRenderingException e) {
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             return new TextResponse(INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

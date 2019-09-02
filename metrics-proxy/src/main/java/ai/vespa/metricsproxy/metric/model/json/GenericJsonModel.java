@@ -37,8 +37,7 @@ public class GenericJsonModel {
         try {
             return mapper.writeValueAsString(this);
         } catch (IOException e) {
-            log.log(Level.WARNING, "Got exception when rendering metrics:", e);
-            throw new JsonRenderingException("Could not render metrics. Check the log for details.");
+            throw new JsonRenderingException("Could not render metrics. Check the log for details.", e);
         }
     }
 

@@ -42,9 +42,8 @@ public class PrometheusModel implements Enumeration<Collector.MetricFamilySample
         var writer = new StringWriter();
         try {
             TextFormat.write004(writer, this);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "Got exception when rendering metrics:", e);
-            throw new PrometheusRenderingException("Could not render metrics. Check the log for details.");
+        } catch (Exception e) {
+            throw new PrometheusRenderingException("Could not render metrics. Check the log for details.", e);
         }
         return writer.toString();
     }
