@@ -114,8 +114,10 @@ struct SearchCompletionHandler : SearchClient {
         ProtoConverter::search_reply_to_proto(*reply, msg);
         encode_search_reply(msg, *req.GetReturn());
         stats.reply_size = (*req.GetReturn())[2]._data._len;
-        stats.latency = reply->request->getTimeUsed().sec();
-        metrics.update_query_metrics(stats);
+        if (reply->request) {
+            stats.latency = reply->request->getTimeUsed().sec();
+            metrics.update_query_metrics(stats);
+        }
         req.Return();
     }
 };
@@ -158,8 +160,10 @@ struct GetDocsumsCompletionHandler : DocsumClient {
         ProtoConverter::docsum_reply_to_proto(*reply, msg);
         encode_message(msg, *req.GetReturn());
         stats.reply_size = (*req.GetReturn())[2]._data._len;
-        stats.latency = reply->request->getTimeUsed().sec();
-        metrics.update_docsum_metrics(stats);
+        if (reply->request) {
+            stats.latency = reply->request->getTimeUsed().sec();
+            metrics.update_docsum_metrics(stats);
+        }
         req.Return();
     }
 };
