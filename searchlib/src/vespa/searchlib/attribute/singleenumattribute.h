@@ -21,6 +21,7 @@ protected:
     using EnumHandle = AttributeVector::EnumHandle;
     using EnumIndex = IEnumStore::Index;
     using EnumIndexVector = vespalib::RcuVectorBase<EnumIndex>;
+    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using GenerationHolder = vespalib::GenerationHolder;
 
 public:
@@ -36,6 +37,7 @@ protected:
     EnumIndexVector _enumIndices;
 
     EnumIndexCopyVector getIndicesCopy(uint32_t size) const;
+    void remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v);
 };
 
 template <typename B>
@@ -45,7 +47,7 @@ protected:
     using ChangeVector = typename B::ChangeVector;
     using ChangeVectorIterator = typename B::ChangeVector::const_iterator;
     using DocId = typename B::DocId;
-    using EnumIndexMap = IEnumStore::EnumIndexMap;
+    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using EnumModifier = typename B::EnumModifier;
     using EnumStore = typename B::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
@@ -66,7 +68,6 @@ private:
 protected:
     // from EnumAttribute
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override;
-    void reEnumerate(const EnumIndexMap & old2New) override;
 
     // implemented by single value numeric enum attribute.
     virtual void considerUpdateAttributeChange(const Change & c) { (void) c; }

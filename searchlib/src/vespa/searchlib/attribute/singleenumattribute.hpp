@@ -7,6 +7,7 @@
 #include "ipostinglistattributebase.h"
 #include "singleenumattributesaver.h"
 #include "load_utils.h"
+#include <vespa/vespalib/datastore/unique_store_remapper.h>
 
 namespace search {
 
@@ -93,6 +94,14 @@ SingleValueEnumAttribute<B>::onCommit()
     freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
+    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    if (remapper) {
+        remap_enum_store_refs(*remapper, *this);
+        remapper->done();
+        remapper.reset();
+        this->incGeneration();
+        this->updateStat(true);
+    }
 }
 
 template <typename B>
@@ -102,8 +111,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
-    total.merge(this->_enumStore.getMemoryUsage());
-    total.merge(this->_enumStore.getTreeMemoryUsage());
+    total.merge(this->_enumStore.update_stat());
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(_enumIndices.size(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
@@ -133,32 +141,6 @@ SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, UniqueSet
         this->_defaultValue._doc = c._doc;
         considerUpdateAttributeChange(this->_defaultValue, newUniques);
     }
-}
-
-template <typename B>
-void
-SingleValueEnumAttribute<B>::reEnumerate(const EnumIndexMap & old2New)
-{
-    this->logEnumStoreEvent("reenumerate", "reserved");
-    auto newIndexes = std::make_unique<vespalib::Array<EnumIndex>>();
-    newIndexes->reserve(_enumIndices.capacity());
-    this->logEnumStoreEvent("reenumerate", "start");
-    for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
-        EnumIndex oldIdx = _enumIndices[i];
-        EnumIndex newIdx;
-        if (oldIdx.valid()) {
-            newIdx = old2New[oldIdx];
-        }
-        newIndexes->push_back_fast(newIdx);
-    }
-    this->logEnumStoreEvent("compactfixup", "drain");
-    {
-        EnumModifier enumGuard(this->getEnumModifier());
-        this->logEnumStoreEvent("compactfixup", "start");
-        _enumIndices.replaceVector(std::move(newIndexes));
-    }
-    this->logEnumStoreEvent("compactfixup", "complete");
-    this->logEnumStoreEvent("reenumerate", "complete");
 }
 
 template <typename B>

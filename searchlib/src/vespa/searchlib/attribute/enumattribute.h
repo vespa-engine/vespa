@@ -53,7 +53,7 @@ public:
 
 protected:
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexMap = IEnumStore::EnumIndexMap;
+    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
 
     EnumStore _enumStore;
 
@@ -77,7 +77,7 @@ protected:
      */
     void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
     virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
-    virtual void reEnumerate(const EnumIndexMap &) = 0;
+    vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
     vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const override;
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);

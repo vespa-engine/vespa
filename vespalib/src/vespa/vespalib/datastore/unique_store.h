@@ -7,7 +7,6 @@
 #include "datastore.h"
 #include "entry_comparator_wrapper.h"
 #include "entryref.h"
-#include "i_compaction_context.h"
 #include "i_unique_store_dictionary.h"
 #include "unique_store_add_result.h"
 #include "unique_store_allocator.h"
@@ -22,6 +21,9 @@ class UniqueStoreBuilder;
 template <typename RefT>
 class UniqueStoreEnumerator;
 
+template <typename RefT>
+class UniqueStoreRemapper;
+
 /**
  * Datastore for unique values of type EntryT that is accessed via a
  * 32-bit EntryRef.
@@ -35,6 +37,7 @@ public:
     using RefType = RefT;
     using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
+    using Remapper = UniqueStoreRemapper<RefT>;
     using EntryConstRefType = typename Allocator::EntryConstRefType;
 private:
     Allocator _allocator;
@@ -44,13 +47,20 @@ private:
 
 public:
     UniqueStore();
+    UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict);
     ~UniqueStore();
     UniqueStoreAddResult add(EntryConstRefType value);
     EntryRef find(EntryConstRefType value);
     EntryConstRefType get(EntryRef ref) const { return _allocator.get(ref); }
     void remove(EntryRef ref);
-    ICompactionContext::UP compactWorst();
+    std::unique_ptr<Remapper> compact_worst(bool compact_memory, bool compact_address_space);
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::AddressSpace get_address_space_usage() const;
+
+    // TODO: Consider exposing only the needed functions from allocator
+    Allocator& get_allocator() { return _allocator; }
+    const Allocator& get_allocator() const { return _allocator; }
+    IUniqueStoreDictionary& get_dictionary() { return *_dict; }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation);

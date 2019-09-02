@@ -10,78 +10,50 @@ LOG_SETUP(".searchlib.attribute.enum_store");
 
 namespace search {
 
-template <>
-void
-EnumStoreT<StringEntryType>::
-insertEntryValue(char * dst, Type value)
-{
-    strcpy(dst, value);
-}
 
 template <>
 void
-EnumStoreT<StringEntryType>::writeValues(BufferWriter &writer,
-                                         const Index *idxs,
+EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
+                                         const Index* idxs,
                                          size_t count) const
 {
-    for (uint32_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
         Index idx = idxs[i];
-        const char *src(_store.getEntry<char>(idx) +
-                        EntryBase::size());
+        const char* src = _store.get(idx);
         size_t sz = strlen(src) + 1;
         writer.write(src, sz);
     }
 }
 
-
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::deserialize(const void *src,
-                                            size_t available,
-                                            size_t &initSpace)
+EnumStoreT<StringEntryType>::deserialize(const void* src,
+                                         size_t available,
+                                         Index& idx)
 {
-    size_t slen = strlen(static_cast<const char *>(src));
-    size_t sz(StringEntryType::fixedSize() + slen);
-    if (available < sz)
+    const char* value = static_cast<const char*>(src);
+    size_t slen = strlen(value);
+    size_t sz = slen + 1;
+    if (available < sz) {
         return -1;
-    uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
-    initSpace += entrySize;
+    }
+    Index prev_idx = idx;
+    idx = _store.get_allocator().allocate(value);
+
+    if (prev_idx.valid()) {
+        assert(ComparatorType::compare(getValue(prev_idx), value) < 0);
+    }
     return sz;
 }
 
-
-template <>
-ssize_t
-EnumStoreT<StringEntryType>::deserialize(const void *src,
-                                            size_t available,
-                                            Index &idx)
+std::unique_ptr<datastore::IUniqueStoreDictionary>
+make_enum_store_dictionary(IEnumStore &store, bool has_postings)
 {
-    size_t slen = strlen(static_cast<const char *>(src));
-    size_t sz(StringEntryType::fixedSize() + slen);
-    if (available < sz)
-        return -1;
-    uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
-    uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
-    if (buffer.remaining() < entrySize) {
-        LOG_ABORT("Out of enumstore bufferspace");
+    if (has_postings) {
+        return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store);
+    } else {
+        return std::make_unique<EnumStoreDictionary<EnumTree>>(store);
     }
-    uint64_t offset = buffer.size();
-    Index newIdx(offset, activeBufferId);
-    char *dst(_store.getEntry<char>(newIdx));
-    memcpy(dst, &dummy_enum_value, sizeof(uint32_t));
-    uint32_t pos = sizeof(uint32_t);
-    uint32_t refCount(0);
-    memcpy(dst + pos, &refCount, sizeof(uint32_t));
-    pos += sizeof(uint32_t);
-    memcpy(dst + pos, src, sz);
-    buffer.pushed_back(entrySize);
-
-    if (idx.valid()) {
-        assert(ComparatorType::compare(getValue(idx), Entry(dst).getValue()) < 0);
-    }
-    idx = newIdx;
-    return sz;
 }
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx) {

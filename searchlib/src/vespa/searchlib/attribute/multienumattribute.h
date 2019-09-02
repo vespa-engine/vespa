@@ -51,7 +51,7 @@ protected:
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexMap = IEnumStore::EnumIndexMap;
+    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using EnumIndexVector = IEnumStore::IndexVector;
     using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
     using EnumVector = IEnumStore::EnumVector;
@@ -66,7 +66,6 @@ protected:
 
     // from EnumAttribute
     void considerAttributeChange(const Change & c, UniqueSet & newUniques) override; // same for both string and numeric
-    void reEnumerate(const EnumIndexMap &) override; // same for both string and numeric
 
     virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 

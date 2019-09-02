@@ -233,6 +233,7 @@ protected:
         mutable AttributeVector * _attr;
     };
 
+public:
     class EnumModifier
     {
         std::unique_lock<std::shared_timed_mutex> _enumLock;
@@ -254,6 +255,7 @@ protected:
     };
 
     EnumModifier getEnumModifier();
+protected:
     ValueModifier getValueModifier() { return ValueModifier(*this); }
 
     void updateCommittedDocIdLimit() {
@@ -378,13 +380,14 @@ protected:
         return value;
     }
 
+    virtual vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const;
     virtual vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const;
     virtual vespalib::AddressSpace getMultiValueAddressSpaceUsage() const;
-    void logEnumStoreEvent(const char *reason, const char *stage);
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
     bool isLoaded() const { return _loaded; }
+    void logEnumStoreEvent(const char *reason, const char *stage);
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
     size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }

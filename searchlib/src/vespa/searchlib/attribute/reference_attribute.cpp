@@ -299,10 +299,10 @@ ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy
 void
 ReferenceAttribute::compactWorst()
 {
-    datastore::ICompactionContext::UP compactionContext(_store.compactWorst());
-    if (compactionContext) {
-        compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0],
-                                                                _indices.size()));
+    auto remapper(_store.compact_worst(true, true));
+    if (remapper) {
+        remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
+        remapper->done();
     }
 }
 

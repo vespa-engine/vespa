@@ -176,6 +176,23 @@ UniqueStoreDictionary<DictionaryT, ParentT>::build(const std::vector<EntryRef> &
 }
 
 template <typename DictionaryT, typename ParentT>
+void
+UniqueStoreDictionary<DictionaryT, ParentT>::build_with_payload(const std::vector<EntryRef>& refs,
+                                                                const std::vector<uint32_t>& payloads)
+{
+    assert(refs.size() == payloads.size());
+    typename DictionaryType::Builder builder(_dict.getAllocator());
+    for (size_t i = 0; i < refs.size(); ++i) {
+        if constexpr (std::is_same_v<DataType, uint32_t>) {
+            builder.insert(refs[i], payloads[i]);
+        } else {
+            builder.insert(refs[i], DataType());
+        }
+    }
+    _dict.assign(builder);
+}
+
+template <typename DictionaryT, typename ParentT>
 std::unique_ptr<typename ParentT::ReadSnapshot>
 UniqueStoreDictionary<DictionaryT, ParentT>::get_read_snapshot() const
 {

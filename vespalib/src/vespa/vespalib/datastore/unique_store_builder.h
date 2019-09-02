@@ -23,6 +23,7 @@ class UniqueStoreBuilder {
     IUniqueStoreDictionary& _dict;
     std::vector<EntryRef> _refs;
     std::vector<uint32_t> _refCounts;
+
 public:
     UniqueStoreBuilder(Allocator& allocator, IUniqueStoreDictionary& dict, uint32_t uniqueValuesHint);
     ~UniqueStoreBuilder();

@@ -41,4 +41,27 @@ SingleValueEnumAttributeBase::getIndicesCopy(uint32_t size) const
     return EnumIndexCopyVector(&_enumIndices[0], &_enumIndices[0] + size);
 }
 
+void
+SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v)
+{
+    // update _enumIndices with new EnumIndex values after enum store has been compacted.
+    v.logEnumStoreEvent("reenumerate", "reserved");
+    auto new_indexes = std::make_unique<vespalib::Array<EnumIndex>>();
+    new_indexes->reserve(_enumIndices.capacity());
+    v.logEnumStoreEvent("reenumerate", "start");
+    for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
+        EnumIndex old_index = _enumIndices[i];
+        EnumIndex new_index = remapper.remap(old_index);
+        new_indexes->push_back_fast(new_index);
+    }
+    v.logEnumStoreEvent("compactfixup", "drain");
+    {
+        AttributeVector::EnumModifier enum_guard(v.getEnumModifier());
+        v.logEnumStoreEvent("compactfixup", "start");
+        _enumIndices.replaceVector(std::move(new_indexes));
+    }
+    v.logEnumStoreEvent("compactfixup", "complete");
+    v.logEnumStoreEvent("reenumerate", "complete");
+}
+
 }
