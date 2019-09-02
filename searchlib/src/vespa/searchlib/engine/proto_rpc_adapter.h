@@ -6,6 +6,8 @@
 #include "proto_converter.h"
 #include <atomic>
 
+#include "search_protocol_metrics.h"
+
 class FRT_Supervisor;
 
 namespace search::engine {
@@ -33,11 +35,14 @@ private:
     DocsumServer   &_docsum_server;
     MonitorServer  &_monitor_server;
     std::atomic<bool> _online;
+    SearchProtocolMetrics _metrics;
 public:
     ProtoRpcAdapter(SearchServer &search_server,
                     DocsumServer &docsum_server,
                     MonitorServer &monitor_server,
                     FRT_Supervisor &orb);
+
+    SearchProtocolMetrics &metrics() { return _metrics; }
 
     void set_online() { _online.store(true, std::memory_order_release); }
     bool is_online() const { return _online.load(std::memory_order_acquire); }
