@@ -27,19 +27,18 @@ import java.util.logging.Logger;
  */
 public class MetricsRetriever {
     private static final Logger log = Logger.getLogger(MetricsRetriever.class.getName());
-    private final HttpClient httpClient = HttpClientBuilder.create().build();
 
     /**
      * Call the metrics API on each host in the cluster and aggregate the metrics
      * into a single value.
      */
-    public MetricsAggregator requestMetricsForCluster(ClusterInfo clusterInfo) {
+    public static MetricsAggregator requestMetricsForCluster(ClusterInfo clusterInfo) {
         var aggregator = new MetricsAggregator();
         clusterInfo.getHostnames().forEach(host -> getHostMetrics(host, aggregator));
         return aggregator;
     }
 
-    private void getHostMetrics(URI hostURI, MetricsAggregator metrics) {
+    private static void getHostMetrics(URI hostURI, MetricsAggregator metrics) {
             Slime responseBody = doMetricsRequest(hostURI);
             var parseError = responseBody.get().field("error_message");
 
@@ -53,9 +52,10 @@ public class MetricsRetriever {
             });
     }
 
-    private Slime doMetricsRequest(URI hostURI) {
+    private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
         try {
+            HttpClient httpClient = HttpClientBuilder.create().build();
             HttpResponse response = httpClient.execute(get);
             InputStream is = response.getEntity().getContent();
             Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
@@ -66,7 +66,7 @@ public class MetricsRetriever {
         }
     }
 
-    private void parseService(Inspector service, MetricsAggregator metrics) {
+    private static void parseService(Inspector service, MetricsAggregator metrics) {
         String serviceName = service.field("name").asString();
         Instant timestamp = Instant.ofEpochSecond(service.field("timestamp").asLong());
         metrics.setTimestamp(timestamp);

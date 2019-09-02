@@ -55,7 +55,7 @@ public class MetricsRetrieverTest {
 
         compareAggregators(
                 new MetricsAggregator().addDocumentCount(6000.0),
-                metricsRetriever.requestMetricsForCluster(clusters.get(0))
+                MetricsRetriever.requestMetricsForCluster(clusters.get(0))
         );
 
         compareAggregators(
@@ -64,7 +64,7 @@ public class MetricsRetrieverTest {
                         .addContainerLatency(2000, 0)
                         .addQrLatency(3000, 43)
                         .addFeedLatency(3000, 43),
-                metricsRetriever.requestMetricsForCluster(clusters.get(1))
+                MetricsRetriever.requestMetricsForCluster(clusters.get(1))
         );
 
         wireMock.stop();
