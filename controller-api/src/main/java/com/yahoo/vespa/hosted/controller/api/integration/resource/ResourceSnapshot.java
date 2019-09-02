@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.time.Instant;
 import java.util.List;
@@ -24,18 +24,19 @@ public class ResourceSnapshot {
         this.timestamp = timestamp;
     }
 
-    public static ResourceSnapshot from(List<NodeRepositoryNode> nodes, Instant timestamp) {
+    public static ResourceSnapshot from(List<Node> nodes, Instant timestamp) {
         Set<ApplicationId> applicationIds = nodes.stream()
-                .map(n -> ApplicationId.from(n.getOwner().tenant, n.getOwner().application, n.getOwner().instance))
-                .collect(Collectors.toSet());
+                                                 .filter(node -> node.owner().isPresent())
+                                                 .map(node -> node.owner().get())
+                                                 .collect(Collectors.toSet());
 
         if (applicationIds.size() != 1) throw new IllegalArgumentException("List of nodes can only represent one application");
 
         return new ResourceSnapshot(
                 applicationIds.iterator().next(),
-                nodes.stream().mapToDouble(NodeRepositoryNode::getMinCpuCores).sum(),
-                nodes.stream().mapToDouble(NodeRepositoryNode::getMinMainMemoryAvailableGb).sum(),
-                nodes.stream().mapToDouble(NodeRepositoryNode::getMinDiskAvailableGb).sum(),
+                nodes.stream().mapToDouble(Node::vcpu).sum(),
+                nodes.stream().mapToDouble(Node::memoryGb).sum(),
+                nodes.stream().mapToDouble(Node::diskGb).sum(),
                 timestamp
         );
     }

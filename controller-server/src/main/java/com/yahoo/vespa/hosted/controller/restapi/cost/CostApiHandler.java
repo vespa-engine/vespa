@@ -16,16 +16,19 @@ import java.util.Optional;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 
+/**
+ * @author ldalves
+ */
 public class CostApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final NodeRepository nodeRepository;
     private final SelfHostedCostConfig selfHostedCostConfig;
 
-    public CostApiHandler(Context ctx, Controller controller, NodeRepository nodeRepository, SelfHostedCostConfig selfHostedCostConfig) {
+    public CostApiHandler(Context ctx, Controller controller, SelfHostedCostConfig selfHostedCostConfig) {
         super(ctx);
         this.controller = controller;
-        this.nodeRepository = nodeRepository;
+        this.nodeRepository = controller.configServer().nodeRepository();
         this.selfHostedCostConfig = selfHostedCostConfig;
     }
 

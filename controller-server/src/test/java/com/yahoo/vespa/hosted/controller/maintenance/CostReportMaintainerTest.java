@@ -1,36 +1,39 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author ldalves
+ */
 public class CostReportMaintainerTest {
+
+    private final ControllerTester tester = new ControllerTester();
 
     @Test
     public void maintain() {
-        ControllerTester tester = new ControllerTester();
+        tester.clock().setInstant(Instant.EPOCH);
         tester.zoneRegistry().setZones(
                 ZoneApiMock.newBuilder().withId("prod.us-east-3").withCloud("yahoo").build(),
                 ZoneApiMock.newBuilder().withId("prod.us-west-1").withCloud("yahoo").build(),
                 ZoneApiMock.newBuilder().withId("prod.us-central-1").withCloud("yahoo").build(),
                 ZoneApiMock.newBuilder().withId("prod.eu-west-1").withCloud("yahoo").build());
+        addNodes();
 
-        CostReportConsumer mockConsumer = csv -> Assert.assertEquals(csv,
+        CostReportConsumer mockConsumer = csv -> assertEquals(
                 "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
                         "1970-01-01,Property1,96.0,96.0,2000.0,0.3055555555555555\n" +
                         "1970-01-01,Property3,128.0,96.0,2000.0,0.3333333333333333\n" +
-                        "1970-01-01,Property2,160.0,96.0,2000.0,0.3611111111111111");
+                        "1970-01-01,Property2,160.0,96.0,2000.0,0.3611111111111111",
+                csv);
 
         SelfHostedCostConfig costConfig = new SelfHostedCostConfig.Builder()
                 .properties(
@@ -49,9 +52,14 @@ public class CostReportMaintainerTest {
                 Duration.ofDays(1),
                 mockConsumer,
                 new JobControl(tester.curator()),
-                new NodeRepositoryClientMock(),
-                Clock.fixed(Instant.EPOCH, java.time.ZoneId.of("UTC")),
                 costConfig);
         maintainer.maintain();
     }
+
+    private void addNodes() {
+        for (var zone : tester.zoneRegistry().zones().all().zones()) {
+            tester.configServer().nodeRepository().addFixedNodes(zone.getId());
+        }
+    }
+
 }
