@@ -114,7 +114,7 @@ TestMaster::handleFailure(const vespalib::LockGuard &guard, bool fatal)
         }
         fprintf(stderr, "%s: ERROR: vital check failed, aborting\n",
                 _name.c_str());
-        LOG_ABORT("should not be reached");
+        std::_Exit(1);
     }
 }
 
