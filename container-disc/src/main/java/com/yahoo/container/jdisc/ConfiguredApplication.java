@@ -82,6 +82,9 @@ public final class ConfiguredApplication implements Application {
     private final String configId;
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
+    // Subscriber that is used when this is not a standalone-container. Subscribes
+    // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
+    // if slobrok config changes (typically slobroks moving to other nodes)
     private final Optional<SlobrokConfigSubscriber> slobrokConfigSubscriber;
     private final SessionCache sessionCache;
 
@@ -110,7 +113,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     /**
-     * Do not delete this method even if its empty.
+     * Do not delete this method even if it's empty.
      * Calling this methods forces this class to be loaded,
      * which runs the static block.
      */
@@ -153,7 +156,7 @@ public final class ConfiguredApplication implements Application {
     }
 
     /**
-     * The container has no rpc methods, but we still need an RPC sever
+     * The container has no RPC methods, but we still need an RPC sever
      * to register in Slobrok to enable orchestration
      */
     private Register registerInSlobrok(QrConfig qrConfig) {
@@ -360,6 +363,7 @@ public final class ConfiguredApplication implements Application {
 
         log.info("Stop: Shutting container down");
         configurer.shutdown(new Deconstructor(false));
+        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
         Container.get().shutdown();
 
         unregisterInSlobrok();
