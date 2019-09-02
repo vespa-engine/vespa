@@ -31,11 +31,8 @@ struct TestBase : public ::testing::Test {
 
     static std::vector<ValueType> values;
 
-    TestBase()
-        : store(),
-          refStore(),
-          generation(1)
-    {}
+    TestBase();
+    ~TestBase() override;
     void assertAdd(ValueConstRefType input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
@@ -131,6 +128,17 @@ struct TestBase : public ::testing::Test {
         return store.bufferState(ref).getArraySize();
     }
 };
+
+template <typename UniqueStoreT>
+TestBase<UniqueStoreT>::TestBase()
+    : store(),
+      refStore(),
+      generation(1)
+{
+}
+
+template <typename UniqueStoreT>
+TestBase<UniqueStoreT>::~TestBase() = default;
 
 using NumberUniqueStore  = UniqueStore<uint32_t>;
 using StringUniqueStore  = UniqueStore<std::string>;
