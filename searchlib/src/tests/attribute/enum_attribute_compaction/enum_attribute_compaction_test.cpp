@@ -61,7 +61,7 @@ public:
     void SetUp() override;
     virtual BasicType get_basic_type() const = 0;
     CollectionType get_collection_type() const noexcept { return GetParam(); }
-    void addDocs(uint32_t num_docs);
+    void add_docs(uint32_t num_docs);
     uint32_t count_changed_enum_handles(const std::vector<EnumHandle> &handles, uint32_t stride);
 };
 
@@ -74,7 +74,7 @@ CompactionTestBase::SetUp()
 }
 
 void
-CompactionTestBase::addDocs(uint32_t num_docs)
+CompactionTestBase::add_docs(uint32_t num_docs)
 {
     uint32_t start_doc;
     uint32_t end_doc;
@@ -177,7 +177,7 @@ CompactionTest<VectorType>::test_enum_store_compaction()
         doc_count /= 2;
     }
     std::vector<EnumHandle> enum_handles;
-    addDocs(doc_count);
+    add_docs(doc_count);
     enum_handles.emplace_back(_v->getEnum(0));
     uint32_t doc_id;
     for (doc_id = 1; doc_id < doc_count; ++doc_id) {
