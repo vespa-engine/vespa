@@ -351,7 +351,7 @@ public class InternalStepRunnerTest {
         tester.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
-        MockMailer mailer = ((MockMailer) tester.tester().controller().mailer());
+        MockMailer mailer = ((MockMailer) tester.tester().controller().serviceRegistry().mailer());
         assertEquals(1, mailer.inbox("a@b").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
                      mailer.inbox("a@b").get(0).subject());

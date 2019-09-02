@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -77,7 +76,6 @@ public class Controller extends AbstractComponent {
     private final ZoneRegistry zoneRegistry;
     private final ServiceRegistry serviceRegistry;
     private final MetricsService metricsService;
-    private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
@@ -95,13 +93,13 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
+                      BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
                       MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider,
                       MeteringClient meteringClient, ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, applicationCertificateProvider, meteringClient, serviceRegistry);
     }
 
@@ -112,7 +110,7 @@ public class Controller extends AbstractComponent {
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository,
+                      FlagSource flagSource, MavenRepository mavenRepository,
                       ApplicationCertificateProvider applicationCertificateProvider, MeteringClient meteringClient,
                       ServiceRegistry serviceRegistry) {
 
@@ -122,7 +120,6 @@ public class Controller extends AbstractComponent {
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
-        this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.applicationCertificateProvider = Objects.requireNonNull(applicationCertificateProvider);
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
@@ -158,10 +155,6 @@ public class Controller extends AbstractComponent {
     /** Returns the service registry of this */
     public ServiceRegistry serviceRegistry() {
         return serviceRegistry;
-    }
-
-    public Mailer mailer() {
-        return mailer;
     }
 
     /** Provides access to the feature flags of this */

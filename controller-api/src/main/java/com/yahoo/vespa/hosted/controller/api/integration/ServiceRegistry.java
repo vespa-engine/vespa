@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
@@ -22,5 +23,7 @@ public interface ServiceRegistry {
     GlobalRoutingService globalRoutingService();
 
     RoutingGenerator routingGenerator();
+
+    Mailer mailer();
 
 }

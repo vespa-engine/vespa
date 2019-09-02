@@ -6,9 +6,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -22,6 +24,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
     private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock();
+    private final MockMailer mockMailer = new MockMailer();
 
     @Override
     public ConfigServer configServer() {
@@ -36,6 +39,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public RoutingGenerator routingGenerator() {
         return routingGeneratorMock;
+    }
+
+    @Override
+    public Mailer mailer() {
+        return mockMailer;
     }
 
     @Override
