@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
  * @author Einar M R Rosenvinge
  */
 @SuppressWarnings("deprecation")
-public class V3HttpAPIMultiClusterTest extends TestOnCiBuildingSystemOnly {
+public class V3HttpAPIMultiClusterTest {
 
     private void writeDocuments(Session session) throws IOException {
         TestUtils.writeDocuments(session, documents);
