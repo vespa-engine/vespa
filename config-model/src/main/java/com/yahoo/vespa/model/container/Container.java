@@ -75,8 +75,6 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
-    protected final int numHttpServerPorts;
-
     protected Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, false, index);
     }
@@ -89,17 +87,22 @@ public abstract class Container extends AbstractService implements
         this.index = index;
 
         if (getHttp() == null) {
-            // TODO Vespa 8: set to 1. The second (health) port has not been used since Vespa 6 or earlier.
-            numHttpServerPorts = 2;
             addChild(defaultHttpServer);
-        } else if (getHttp().getHttpServer() == null) {
-            numHttpServerPorts = 0;
-        } else {
-            numHttpServerPorts = getHttp().getHttpServer().getConnectorFactories().size();
         }
         addBuiltinHandlers();
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
+    }
+
+    protected int getNumHttpServerPorts() {
+        if (getHttp() == null) {
+            // TODO Vespa 8: set to 1. The second (health) port has not been used since Vespa 6 or earlier.
+            return defaultHttpServer.getConnectorFactories().size()+1;
+        } else if (getHttp().getHttpServer() == null) {
+            return 0;
+        } else {
+            return getHttp().getHttpServer().getConnectorFactories().size();
+        }
     }
 
     /** True if this container is retired (slated for removal) */
@@ -164,6 +167,7 @@ public abstract class Container extends AbstractService implements
     }
 
     protected void tagServers() {
+        int numHttpServerPorts = getNumHttpServerPorts();
         int offset = 0;
         if (numHttpServerPorts > 0) {
             portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
@@ -228,6 +232,7 @@ public abstract class Container extends AbstractService implements
      * @return the number of ports needed by the Container
      */
     public int getPortCount() {
+        int numHttpServerPorts = getNumHttpServerPorts();
         // TODO Vespa 8: remove +2, only here for historical reasons
         int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2;
         return httpPorts + numMessageBusPorts() + numRpcPorts();
@@ -281,6 +286,7 @@ public abstract class Container extends AbstractService implements
     }
 
     private int getRpcPort() {
+        int numHttpServerPorts = getNumHttpServerPorts();
         return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + numMessageBusPorts()) : 0;
     }
 
@@ -288,6 +294,7 @@ public abstract class Container extends AbstractService implements
 
 
     private int getMessagingPort() {
+        int numHttpServerPorts = getNumHttpServerPorts();
         return messageBusEnabled() ? getRelativePort(numHttpServerPorts) : 0;
     }
 

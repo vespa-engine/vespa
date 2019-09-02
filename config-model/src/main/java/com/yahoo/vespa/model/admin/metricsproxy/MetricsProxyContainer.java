@@ -59,6 +59,7 @@ public class MetricsProxyContainer extends Container implements
     }
 
     int metricsRpcPortOffset() {
+        int numHttpServerPorts = getNumHttpServerPorts();
         if (numHttpServerPorts != 2) {
             throw new IllegalArgumentException("expecting 2 http server ports");
         }

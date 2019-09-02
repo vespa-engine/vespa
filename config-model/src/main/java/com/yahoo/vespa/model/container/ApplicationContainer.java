@@ -8,7 +8,6 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 
@@ -35,10 +34,14 @@ public final class ApplicationContainer extends Container {
 
         if (isHostedVespa && tlsSecrets.isPresent()) {
 
-            JettyHttpServer server = Optional.ofNullable(getHttp())
-                                             .map(Http::getHttpServer)
-                                             .orElse(getDefaultHttpServer());
-            if (server.getConnectorFactories().stream().noneMatch(connectorFactory -> connectorFactory instanceof HostedSslConnectorFactory)) {
+            // Only setup extra ssl connector if http is not specified or both http and server elements are specified
+            JettyHttpServer server = null;
+            if(getHttp() == null) {
+                server = getDefaultHttpServer();
+            } else if (getHttp().getHttpServer() != null) {
+                server = getHttp().getHttpServer();
+            }
+            if (server != null && server.getConnectorFactories().stream().noneMatch(connectorFactory -> connectorFactory instanceof HostedSslConnectorFactory)) {
                 String serverName = server.getComponentId().getName();
                 var connectorFactory = tlsCa
                         .map(caCert -> new HostedSslConnectorFactory(serverName, tlsSecrets.get(), caCert))
