@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
 
@@ -46,7 +47,10 @@ public class NodeMetricGatherer {
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
         metricPacketBuilders.add(gatherCoredumpMetrics(fileWrapper));
         metricPacketBuilders.addAll(gatherServiceHealthMetrics(vespaServices));
-        metricPacketBuilders.add(gatherHostLifeMetrics(fileWrapper));
+
+        if (SystemPollerProvider.runningOnLinux()) {
+            metricPacketBuilders.add(gatherHostLifeMetrics(fileWrapper));
+        }
 
         return metricPacketBuilders.stream()
                 .map(metricPacketBuilder ->
