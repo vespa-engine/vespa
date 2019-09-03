@@ -16,7 +16,6 @@
 
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
-#include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
@@ -28,7 +27,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
@@ -382,7 +380,7 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
     try {
         const std::shared_ptr<const DocumentTypeRepo> repo = bootstrapConfig->getDocumentTypeRepoSP();
         const document::DocumentType *docType = repo->getDocumentType(docTypeName.getName());
-        if (docType != NULL) {
+        if (docType != nullptr) {
             LOG(info, "Add document database: doctypename(%s), configid(%s)",
                 docTypeName.toString().c_str(), configId.c_str());
             return addDocumentDB(*docType, bucketSpace, bootstrapConfig, documentDBConfig, initializeThreads);
@@ -430,6 +428,7 @@ Proton::~Proton()
     }
     if (_rpcHooks) {
         _rpcHooks->close();
+        _metricsEngine->removeExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
     }
     if (_memoryFlushConfigUpdater) {
         _diskMemUsageSampler->notifier().removeDiskMemUsageListener(_memoryFlushConfigUpdater.get());
@@ -453,7 +452,7 @@ Proton::~Proton()
     if (_fs4Server) {
         _fs4Server->shutDown();
     }
-    if (_documentDBMap.size() > 0) {
+    if ( ! _documentDBMap.empty()) {
         size_t numCores = 4;
         const std::shared_ptr<proton::ProtonConfigSnapshot> pcsp = _protonConfigurer.getActiveConfigSnapshot();
         if (pcsp) {
@@ -568,7 +567,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
 
     std::lock_guard<std::shared_timed_mutex> guard(_mutex);
     DocTypeName docTypeName(docType.getName());
-    DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
+    auto it = _documentDBMap.find(docTypeName);
     if (it != _documentDBMap.end()) {
         return it->second;
     }
@@ -632,7 +631,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     DocumentDB::SP old;
     {
         std::lock_guard<std::shared_timed_mutex> guard(_mutex);
-        DocumentDBMap::iterator it = _documentDBMap.find(docTypeName);
+        auto it = _documentDBMap.find(docTypeName);
         if (it == _documentDBMap.end()) {
             return;
         }
@@ -855,9 +854,9 @@ const vespalib::string RESOURCE_USAGE = "resourceusage";
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
     explicit StateExplorerProxy(const StateExplorer &explorer_in) : explorer(explorer_in) {}
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override { explorer.get_state(inserter, full); }
-    virtual std::vector<vespalib::string> get_children_names() const override { return explorer.get_children_names(); }
-    virtual std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override { return explorer.get_child(name); }
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override { explorer.get_state(inserter, full); }
+    std::vector<vespalib::string> get_children_names() const override { return explorer.get_children_names(); }
+    std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override { return explorer.get_child(name); }
 };
 
 struct DocumentDBMapExplorer : vespalib::StateExplorer {
