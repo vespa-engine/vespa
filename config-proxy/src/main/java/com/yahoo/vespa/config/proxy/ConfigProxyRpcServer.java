@@ -221,15 +221,14 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     private void setMode(Request req) {
         dispatchRpcRequest(req, () -> {
             String suppliedMode = req.parameters().get(0).asString();
-            log.log(LogLevel.DEBUG, () -> "Supplied mode=" + suppliedMode);
             String[] s = new String[2];
-            if (Mode.validModeName(suppliedMode.toLowerCase())) {
+            try {
                 proxyServer.setMode(suppliedMode);
                 s[0] = "0";
                 s[1] = "success";
-            } else {
+            } catch (Exception e) {
                 s[0] = "1";
-                s[1] = "Could not set mode to '" + suppliedMode + "'. Legal modes are '" + Mode.modes() + "'";
+                s[1] = e.getMessage();
             }
 
             req.returnValues().add(new StringArray(s));

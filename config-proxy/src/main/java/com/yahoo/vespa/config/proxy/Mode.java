@@ -21,10 +21,6 @@ class Mode {
         DEFAULT, MEMORYCACHE
     }
 
-    Mode() {
-        this(ModeName.DEFAULT);
-    }
-
     Mode(ModeName modeName) {
         mode = modeName;
     }
@@ -38,7 +34,7 @@ class Mode {
                 mode = ModeName.MEMORYCACHE;
                 break;
             default:
-                throw new IllegalArgumentException("Unrecognized mode '" + modeString + "' supplied");
+                throw new IllegalArgumentException("Unrecognized mode '" + modeString + "' supplied. Legal modes are '" + Mode.modes() + "'");
         }
     }
 
@@ -50,16 +46,8 @@ class Mode {
         return mode.equals(ModeName.DEFAULT);
     }
 
-    boolean isMemoryCache() {
-        return mode.equals(ModeName.MEMORYCACHE);
-    }
-
     boolean requiresConfigSource() {
         return mode.equals(ModeName.DEFAULT);
-    }
-
-    static boolean validModeName(String modeString) {
-        return (modeString != null) && modes().contains(modeString);
     }
 
     static Set<String> modes() {

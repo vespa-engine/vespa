@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
@@ -41,7 +42,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = ProxyServer.createTestServer(source, client, memoryCache);
+        proxy = createTestServer(source, client, memoryCache);
     }
 
     @After
@@ -70,7 +71,7 @@ public class ProxyServerTest {
      */
     @Test
     public void testModeSwitch() {
-        ProxyServer proxy = ProxyServer.createTestServer(source);
+        ProxyServer proxy = createTestServer(source, client, new MemoryCache());
         assertTrue(proxy.getMode().isDefault());
 
         for (String mode : Mode.modes()) {
@@ -83,7 +84,7 @@ public class ProxyServerTest {
             proxy.setMode("invalid");
             assert (false);
         } catch (IllegalArgumentException e) {
-            assertEquals("Unrecognized mode 'invalid' supplied", e.getMessage());
+            assertEquals("Unrecognized mode 'invalid' supplied. Legal modes are '" + Mode.modes() + "'", e.getMessage());
         }
 
         // Also switch to DEFAULT mode, as that is not covered above
@@ -216,6 +217,12 @@ public class ProxyServerTest {
         ProxyServer.Properties properties = ProxyServer.getSystemProperties();
         assertThat(properties.configSources.length, is(1));
         assertThat(properties.configSources[0], is(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES));
+    }
+
+    private static ProxyServer createTestServer(ConfigSourceSet source,
+                                                ConfigSourceClient configSourceClient,
+                                                MemoryCache memoryCache) {
+        return new ProxyServer(null, source, ProxyServer.defaultTimingValues(), memoryCache, configSourceClient);
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {
