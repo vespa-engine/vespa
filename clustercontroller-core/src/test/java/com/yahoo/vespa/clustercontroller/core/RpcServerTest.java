@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +33,7 @@ import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,7 +43,7 @@ public class RpcServerTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(RpcServerTest.class.getName());
 
-    protected Supervisor supervisor;
+    private Supervisor supervisor;
 
     public void tearDown() throws Exception {
         if (supervisor != null) {
@@ -56,7 +56,7 @@ public class RpcServerTest extends FleetControllerTest {
     public void testRebinding() throws Exception {
         startingTest("RpcServerTest::testRebinding");
         Slobrok slobrok = new Slobrok();
-        String slobrokConnectionSpecs[] = new String[1];
+        String[] slobrokConnectionSpecs = new String[1];
         slobrokConnectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         RpcServer server = new RpcServer(timer, new Object(), "mycluster", 0, new BackOff());
         server.setSlobrokConnectionSpecs(slobrokConnectionSpecs, 0);
@@ -470,7 +470,7 @@ public class RpcServerTest extends FleetControllerTest {
         }
     }
 
-    public StorDistributionConfig getDistConfig(Set<Integer> nodes) {
+    private StorDistributionConfig getDistConfig(Set<Integer> nodes) {
         List<StorDistributionConfig.Group.Nodes.Builder> nodeList = new LinkedList<>();
         for (int i : nodes) {
             StorDistributionConfig.Group.Nodes.Builder nodeConfig = new StorDistributionConfig.Group.Nodes.Builder();
@@ -490,7 +490,7 @@ public class RpcServerTest extends FleetControllerTest {
     public void testSetNodeState() throws Exception {
         startingTest("RpcServerTest::testSetNodeState");
         FleetControllerOptions options = defaultOptions("mycluster");
-        Set<Integer> nodeIndexes = new TreeSet<>(Arrays.asList(new Integer[]{4, 6, 9, 10, 14, 16, 21, 22, 23, 25}));
+        Set<Integer> nodeIndexes = new TreeSet<>(List.of(4, 6, 9, 10, 14, 16, 21, 22, 23, 25));
         options.setStorageDistribution(new Distribution(getDistConfig(nodeIndexes)));
         setUpFleetController(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), false, nodeIndexes);
@@ -598,7 +598,7 @@ public class RpcServerTest extends FleetControllerTest {
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 
-        assertEquals(true, nodes.get(0).isDistributor());
+        assertTrue(nodes.get(0).isDistributor());
         nodes.get(0).disconnect();
         waitForState("version:\\d+ distributor:10 .0.s:d storage:10");
 
@@ -613,8 +613,8 @@ public class RpcServerTest extends FleetControllerTest {
             connection.invokeSync(req, timeoutS);
             assertEquals(req.errorMessage(), ErrorCode.NONE, req.errorCode());
             assertTrue(req.toString(), req.checkReturnTypes("SS"));
-            String slobrok[] = req.returnValues().get(0).asStringArray().clone();
-            String rpc[] = req.returnValues().get(1).asStringArray().clone();
+            String[] slobrok = req.returnValues().get(0).asStringArray().clone();
+            String[] rpc = req.returnValues().get(1).asStringArray().clone();
 
             assertEquals(20, slobrok.length);
             assertEquals(20, rpc.length);
@@ -622,13 +622,13 @@ public class RpcServerTest extends FleetControllerTest {
             // Verify that we can connect to all addresses returned.
             for (int i=0; i<20; ++i) {
                 if (slobrok[i].equals("storage/cluster.mycluster/distributor/0")) {
-                    if (j < 10 && !"".equals(rpc[i])) {
+                    if (i < 10 && !"".equals(rpc[i])) {
                         continue;
                     }
                     assertEquals(slobrok[i], "", rpc[i]);
                     continue;
                 }
-                assertTrue(slobrok[i], !rpc[i].equals(""));
+                assertNotEquals("", rpc[i]);
                 Request req2 = new Request("getnodestate2");
                 req2.parameters().add(new StringValue("unknown"));
                 Target connection2 = supervisor.connect(new Spec(rpc[i]));

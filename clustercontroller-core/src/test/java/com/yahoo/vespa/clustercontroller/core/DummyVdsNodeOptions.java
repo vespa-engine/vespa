@@ -9,5 +9,5 @@ import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
  */
 public class DummyVdsNodeOptions {
     // 0 - 4.1, 1 - 4.2-5.0.10, 2 - 5.0.11+, 3 - 6.220+, 4 - 7.24+
-    public int stateCommunicationVersion = RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION;
+    int stateCommunicationVersion = RPCCommunicator.ACTIVATE_CLUSTER_STATE_VERSION_RPC_VERSION;
 }

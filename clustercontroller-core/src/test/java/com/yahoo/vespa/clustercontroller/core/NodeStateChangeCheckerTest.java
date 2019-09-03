@@ -41,8 +41,8 @@ public class NodeStateChangeCheckerTest {
     private static final Node nodeStorage = new Node(NodeType.STORAGE, 1);
 
     private static final NodeState UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
-    public static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
-    public static final NodeState DOWN_NODE_STATE = createNodeState(State.DOWN, "RetireEarlyExpirer");
+    private static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
+    private static final NodeState DOWN_NODE_STATE = createNodeState(State.DOWN, "RetireEarlyExpirer");
 
     private static NodeState createNodeState(State state, String description) {
         return new NodeState(NodeType.STORAGE, state).setDescription(description);
@@ -129,7 +129,7 @@ public class NodeStateChangeCheckerTest {
                 nodeDistributor, defaultAllUpClusterState(), SetUnitStateRequest.Condition.FORCE,
                 UP_NODE_STATE, newState);
         assertTrue(result.settingWantedStateIsAllowed());
-        assertTrue(!result.wantedStateAlreadySet());
+        assertFalse(result.wantedStateAlreadySet());
     }
 
     @Test

@@ -28,7 +28,7 @@ public class HostInfoTest {
     }
 
     @Test
-    public void testEmptyJson() throws IOException {
+    public void testEmptyJson() {
         HostInfo hostInfo = HostInfo.createHostInfo("{}");
         assertThat(hostInfo.getVtag().getVersionOrNull(), is(nullValue()));
         assertThat(hostInfo.getDistributor().getStorageNodes().size(), is(0));

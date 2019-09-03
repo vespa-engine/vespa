@@ -9,7 +9,7 @@ import org.mockito.ArgumentMatcher;
 public class EventTimeIs extends ArgumentMatcher<Event> {
     private final long expected;
 
-    public EventTimeIs(long expected) {
+    private EventTimeIs(long expected) {
         this.expected = expected;
     }
 

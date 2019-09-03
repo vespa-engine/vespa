@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;

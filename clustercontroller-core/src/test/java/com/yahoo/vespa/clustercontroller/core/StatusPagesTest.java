@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -225,7 +225,6 @@ public class StatusPagesTest extends FleetControllerTest {
         assertTrue(content, content.contains("REPORTED"));
         assertTrue(content, content.contains("Altered node state in cluster state from"));
         //System.err.println(sb.toString());
-
     }
 
     @Test
@@ -283,7 +282,7 @@ public class StatusPagesTest extends FleetControllerTest {
 
     private static class DummyRequestHandler implements StatusPageServer.RequestHandler {
         private String returnData;
-        public DummyRequestHandler(String returnData) {
+        DummyRequestHandler(String returnData) {
             this.returnData = returnData;
         }
 
@@ -301,11 +300,7 @@ public class StatusPagesTest extends FleetControllerTest {
         if (handler == null) {
             return null;
         }
-        try {
-            return handler.handle(httpRequest).getOutputStream().toString("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "<ERROR>";
-        }
+        return handler.handle(httpRequest).getOutputStream().toString(StandardCharsets.UTF_8);
     }
 
     @Test
@@ -322,7 +317,7 @@ public class StatusPagesTest extends FleetControllerTest {
         assertNull(invokeHandler(router, "/blarg"));
     }
 
-    public String[] getResponseParts(String response) {
+    private String[] getResponseParts(String response) {
         int offset = response.indexOf("\r\n\r\n");
         if (offset == -1) {
             throw new IllegalStateException("No HTTP header delimiter found");
@@ -331,18 +326,6 @@ public class StatusPagesTest extends FleetControllerTest {
                 response.substring(0, offset + 2), // all header lines must have linebreaks
                 response.substring(offset + 4)
         };
-    }
-
-    private String getHeaderValue(String header, String name) {
-        int offset = header.indexOf(name + ": ");
-        if (offset == -1) {
-            throw new IllegalStateException("No HTTP header found for " + name);
-        }
-        int end = header.indexOf("\r\n", offset);
-        if (end == -1) {
-            throw new IllegalStateException("No EOL found for " + name);
-        }
-        return header.substring(offset + name.length() + 2, end);
     }
 
     @Test
@@ -369,7 +352,7 @@ public class StatusPagesTest extends FleetControllerTest {
                 "}";
             assertEquals(expected, body);
             // Check that it actually parses
-            JSONObject o = new JSONObject(expected);
+            new JSONObject(expected);
         }
     }
 

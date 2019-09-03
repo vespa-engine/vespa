@@ -2,14 +2,10 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertTrue;
 

@@ -9,7 +9,7 @@ import org.mockito.ArgumentMatcher;
 public class NodeEventWithDescription extends ArgumentMatcher<NodeEvent> {
     private final String expected;
 
-    public NodeEventWithDescription(String expected) {
+    private NodeEventWithDescription(String expected) {
         this.expected = expected;
     }
 

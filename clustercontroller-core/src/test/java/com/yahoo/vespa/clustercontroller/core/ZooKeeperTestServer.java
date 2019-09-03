@@ -20,7 +20,7 @@ public class ZooKeeperTestServer {
     private static final String DIR_PREFIX = "test_fltctrl_zk";
     private static final String DIR_POSTFIX = "sdir";
 
-    public ZooKeeperTestServer() throws IOException {
+    ZooKeeperTestServer() throws IOException {
         this(0);
     }
 
@@ -42,15 +42,15 @@ public class ZooKeeperTestServer {
         }
     }
 
-    public static ZooKeeperTestServer createWithFixedPort(int port) throws IOException {
+    static ZooKeeperTestServer createWithFixedPort(int port) throws IOException {
         return new ZooKeeperTestServer(port);
     }
 
-    public int getPort() {
+    private int getPort() {
         return factory.getLocalPort();
     }
 
-    public String getAddress() {
+    String getAddress() {
         return HostName.getLocalhost() + ":" + getPort();
     }
 
@@ -64,7 +64,7 @@ public class ZooKeeperTestServer {
         factory.shutdown();
     }
 
-    public void delete(File f) {
+    private void delete(File f) {
         if (f.isDirectory()) {
             for (File file : f.listFiles()) {
                 delete(file);

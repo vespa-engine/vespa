@@ -4,7 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
 import org.junit.Test;
 
 import java.util.ArrayList;

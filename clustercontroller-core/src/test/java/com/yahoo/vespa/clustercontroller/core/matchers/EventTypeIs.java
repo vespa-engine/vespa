@@ -8,7 +8,7 @@ import org.mockito.ArgumentMatcher;
 public class EventTypeIs extends ArgumentMatcher<NodeEvent> {
     private final NodeEvent.Type expected;
 
-    public EventTypeIs(NodeEvent.Type expected) {
+    private EventTypeIs(NodeEvent.Type expected) {
         this.expected = expected;
     }
 

@@ -13,7 +13,7 @@ public class ContentNodeStatsBuilder {
         this.nodeIndex = nodeIndex;
     }
 
-    public static ContentNodeStatsBuilder forNode(int nodeIndex) {
+    static ContentNodeStatsBuilder forNode(int nodeIndex) {
         return new ContentNodeStatsBuilder(nodeIndex);
     }
 
@@ -26,7 +26,7 @@ public class ContentNodeStatsBuilder {
         return this;
     }
 
-    public ContentNodeStats build() {
+    ContentNodeStats build() {
         return new ContentNodeStats(nodeIndex, stats);
     }
 }

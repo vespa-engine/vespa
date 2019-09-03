@@ -18,10 +18,10 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
@@ -33,8 +33,8 @@ public class MasterElectionTest extends FleetControllerTest {
 
     private static Logger log = Logger.getLogger(MasterElectionTest.class.getName());
 
-    protected Supervisor supervisor;
-    protected List<FleetController> fleetControllers = new ArrayList<>();
+    private Supervisor supervisor;
+    private List<FleetController> fleetControllers = new ArrayList<>();
 
     @Rule
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
@@ -60,9 +60,8 @@ public class MasterElectionTest extends FleetControllerTest {
         }
     }
 
-    public FleetControllerOptions adjustConfig(FleetControllerOptions o,
-                                               int fleetControllerIndex, int fleetControllerCount) throws Exception
-    {
+    private FleetControllerOptions adjustConfig(FleetControllerOptions o,
+                                                int fleetControllerIndex, int fleetControllerCount) {
         FleetControllerOptions options = o.clone();
         options.zooKeeperSessionTimeout = defaultZkSessionTimeoutInMillis();
         options.zooKeeperServerAddress = zooKeeperServer.getAddress();
@@ -73,7 +72,7 @@ public class MasterElectionTest extends FleetControllerTest {
         return options;
     }
 
-    protected void waitForZookeeperDisconnected() throws TimeoutException {
+    private void waitForZookeeperDisconnected() throws TimeoutException {
         long maxTime = System.currentTimeMillis() + timeoutMS;
         for(FleetController f : fleetControllers) {
             while (true) {
@@ -86,11 +85,11 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForCompleteCycles();
     }
 
-    protected void waitForCompleteCycle(int findex) {
+    private void waitForCompleteCycle(int findex) {
         fleetControllers.get(findex).waitForCompleteCycle(timeoutMS);
     }
 
-    protected void waitForCompleteCycles() {
+    private void waitForCompleteCycles() {
         for (int i = 0; i < fleetControllers.size(); ++i) {
             waitForCompleteCycle(i);
         }
@@ -137,7 +136,7 @@ public class MasterElectionTest extends FleetControllerTest {
             // Too few for there to be a master at this point
         for (int i=0; i<fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
-            assertEquals("Fleet controller " + i, false, fleetControllers.get(i).isMaster());
+            assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());
         }
 
         log.log(LogLevel.INFO, "STARTING FLEET CONTROLLER 2");
@@ -162,11 +161,11 @@ public class MasterElectionTest extends FleetControllerTest {
         // Too few for there to be a master at this point
         for (int i=0; i<fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
-            assertEquals(false, fleetControllers.get(i).isMaster());
+            assertFalse(fleetControllers.get(i).isMaster());
         }
     }
 
-    protected void waitForMaster(int master) {
+    private void waitForMaster(int master) {
         log.log(LogLevel.INFO, "Entering waitForMaster");
         boolean isOnlyMaster = false;
         for (int i=0; i < FleetControllerTest.timeoutMS; i+=100) {
@@ -207,11 +206,11 @@ public class MasterElectionTest extends FleetControllerTest {
             this.lastState = initialState;
         }
 
-        public static StrictlyIncreasingVersionChecker bootstrappedWith(ClusterState initialState) {
+        static StrictlyIncreasingVersionChecker bootstrappedWith(ClusterState initialState) {
             return new StrictlyIncreasingVersionChecker(initialState);
         }
 
-        public void updateAndVerify(ClusterState currentState) {
+        void updateAndVerify(ClusterState currentState) {
             final ClusterState last = lastState;
             lastState = currentState;
             if (currentState.getVersion() <= last.getVersion()) {
@@ -234,16 +233,16 @@ public class MasterElectionTest extends FleetControllerTest {
         fleetController = fleetControllers.get(0); // Required to prevent waitForStableSystem from NPE'ing
         waitForStableSystem();
         waitForMaster(0);
-        Arrays.asList(0, 1, 2, 3, 4).stream().forEach(this::waitForCompleteCycle);
+        Stream.of(0, 1, 2, 3, 4).forEach(this::waitForCompleteCycle);
         StrictlyIncreasingVersionChecker checker = StrictlyIncreasingVersionChecker.bootstrappedWith(
                 fleetControllers.get(0).getClusterState());
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
-        Arrays.asList(1, 2, 3, 4).stream().forEach(this::waitForCompleteCycle);
+        Stream.of(1, 2, 3, 4).forEach(this::waitForCompleteCycle);
         checker.updateAndVerify(fleetControllers.get(1).getClusterState());
         fleetControllers.get(1).shutdown();
         waitForMaster(2); // Still a quorum available
-        Arrays.asList(2, 3, 4).stream().forEach(this::waitForCompleteCycle);
+        Stream.of(2, 3, 4).forEach(this::waitForCompleteCycle);
         checker.updateAndVerify(fleetControllers.get(2).getClusterState());
     }
 
@@ -287,7 +286,7 @@ public class MasterElectionTest extends FleetControllerTest {
         // Noone can be master if server is unavailable
         log.log(LogLevel.INFO, "Checking master status");
         for (int i=0; i<fleetControllers.size(); ++i) {
-            assertEquals("Index " + i, false, fleetControllers.get(i).isMaster());
+            assertFalse("Index " + i, fleetControllers.get(i).isMaster());
         }
 
         zooKeeperServer = new ZooKeeperTestServer();
@@ -372,7 +371,7 @@ public class MasterElectionTest extends FleetControllerTest {
             for (int retry = 0; retry < FleetControllerTest.timeoutS * 10; ++retry) {
                 req = new Request("getMaster");
                 connections.get(nodeIndex).invokeSync(req, FleetControllerTest.timeoutS);
-                assertEquals(req.errorMessage(), false, req.isError());
+                assertFalse(req.errorMessage(), req.isError());
                 if (req.returnValues().get(0).asInt32() == 0 &&
                     req.returnValues().get(1).asString().equals("All 3 nodes agree that 0 is current master.")) {
                     break;
@@ -390,7 +389,7 @@ public class MasterElectionTest extends FleetControllerTest {
             // 5 minutes is not long enough period to wait before letting this node be master.
         timer.advanceTime(300 * 1000); // 5 minutes
 
-        int remainingNodes[] = { 1, 2 };
+        int[] remainingNodes = { 1, 2 };
         waitForMasterReason(
                 "2 of 3 nodes agree 1 should be master, but old master cooldown period of 3600000 ms has not passed yet. To ensure it has got time to realize it is no longer master before we elect a new one, currently there is no master.",
                 -1, connections, remainingNodes);
@@ -409,7 +408,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<FleetControllerTest.timeoutS * 10; ++i) {
             req = new Request("getMaster");
             connections.get(1).invokeSync(req, FleetControllerTest.timeoutS);
-            assertEquals(req.errorMessage(), false, req.isError());
+            assertFalse(req.errorMessage(), req.isError());
             if (req.returnValues().get(0).asInt32() != -1) break;
                 // We may have bad timing causing node not to have realized it is master yet
         }
@@ -419,7 +418,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (int i=0; i<FleetControllerTest.timeoutS * 10; ++i) {
             req = new Request("getMaster");
             connections.get(2).invokeSync(req, FleetControllerTest.timeoutS);
-            assertEquals(req.errorMessage(), false, req.isError());
+            assertFalse(req.errorMessage(), req.isError());
             if (req.returnValues().get(0).asInt32() != -1) break;
         }
         assertEquals(req.toString(), 1, req.returnValues().get(0).asInt32());

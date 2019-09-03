@@ -1,7 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
@@ -11,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -143,7 +145,7 @@ public class SystemStateBroadcasterTest {
     }
 
     private static class MockSetClusterStateRequest extends SetClusterStateRequest {
-        public MockSetClusterStateRequest(NodeInfo nodeInfo, int clusterStateVersion) {
+        MockSetClusterStateRequest(NodeInfo nodeInfo, int clusterStateVersion) {
             super(nodeInfo, clusterStateVersion);
         }
     }

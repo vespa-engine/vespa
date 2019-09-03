@@ -11,7 +11,7 @@ import java.util.Optional;
 public class NodeEventForBucketSpace extends ArgumentMatcher<NodeEvent> {
     private final Optional<String> bucketSpace;
 
-    public NodeEventForBucketSpace(Optional<String> bucketSpace) {
+    private NodeEventForBucketSpace(Optional<String> bucketSpace) {
         this.bucketSpace = bucketSpace;
     }
 

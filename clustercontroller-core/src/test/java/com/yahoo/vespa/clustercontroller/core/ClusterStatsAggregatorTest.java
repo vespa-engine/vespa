@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -12,19 +12,18 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author hakonhall
- * @since 5.34
  */
 public class ClusterStatsAggregatorTest {
 
     private static class Fixture {
         private ClusterStatsAggregator aggregator;
 
-        public Fixture(Set<Integer> distributorNodes,
+        Fixture(Set<Integer> distributorNodes,
                 Set<Integer> contentNodes) {
             aggregator = new ClusterStatsAggregator(distributorNodes, contentNodes);
         }
 
-        public void update(int distributorIndex, ContentClusterStatsBuilder clusterStats) {
+        void update(int distributorIndex, ContentClusterStatsBuilder clusterStats) {
             aggregator.updateForDistributor(distributorIndex, clusterStats.build());
         }
 
@@ -36,14 +35,14 @@ public class ClusterStatsAggregatorTest {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStatsForDistributor(distributorIndex));
         }
 
-        public boolean hasUpdatesFromAllDistributors() {
+        boolean hasUpdatesFromAllDistributors() {
             return aggregator.getAggregatedStats().hasUpdatesFromAllDistributors();
         }
 
     }
 
     private static class FourNodesFixture extends Fixture {
-        public FourNodesFixture() {
+        FourNodesFixture() {
             super(distributorNodes(1, 2), contentNodes(3, 4));
 
             update(1, new ContentClusterStatsBuilder()

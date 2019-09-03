@@ -34,14 +34,17 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -52,20 +55,20 @@ import java.util.stream.Collectors;
 public abstract class FleetControllerTest implements Waiter {
 
     private static Logger log = Logger.getLogger(FleetControllerTest.class.getName());
-    protected static final int DEFAULT_NODE_COUNT = 10;
+    private static final int DEFAULT_NODE_COUNT = 10;
 
-    protected Supervisor supervisor;
+    Supervisor supervisor;
     protected FakeTimer timer = new FakeTimer();
-    protected boolean usingFakeTimer = false;
+    boolean usingFakeTimer = false;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
-    protected ZooKeeperTestServer zooKeeperServer;
+    ZooKeeperTestServer zooKeeperServer;
     protected FleetController fleetController;
     protected List<DummyVdsNode> nodes = new ArrayList<>();
-    protected String testName;
+    private String testName;
 
-    public final static int timeoutS;
-    public final static int timeoutMS;
+    final static int timeoutS;
+    final static int timeoutMS;
     private final Waiter waiter = new Waiter.Impl(new DataRetriever() {
         @Override
         public Object getMonitor() { return timer; }
@@ -83,7 +86,7 @@ public abstract class FleetControllerTest implements Waiter {
         timeoutMS = timeoutS * 1000;
     }
 
-    class BackOff implements BackOffPolicy {
+    static class BackOff implements BackOffPolicy {
         private int counter = 0;
         public void reset() { counter = 0; }
         public double get() { ++counter; return 0.01; }
@@ -131,7 +134,7 @@ public abstract class FleetControllerTest implements Waiter {
         return opts;
     }
 
-    protected void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
+    void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         log.log(LogLevel.DEBUG, "Setting up system");
         slobrok = new Slobrok();
         this.options = options;
@@ -145,7 +148,7 @@ public abstract class FleetControllerTest implements Waiter {
         this.usingFakeTimer = useFakeTimer;
     }
 
-    protected FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
+    FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
         EventLog log = new EventLog(timer, metricUpdater);
@@ -197,13 +200,14 @@ public abstract class FleetControllerTest implements Waiter {
         }
     }
 
-    protected void stopFleetController() throws Exception {
+    void stopFleetController() throws Exception {
         if (fleetController != null) {
             fleetController.shutdown();
             fleetController = null;
         }
     }
-    protected void startFleetController() throws Exception {
+
+    void startFleetController() throws Exception {
         if (fleetController == null) {
             fleetController = createFleetController(usingFakeTimer, options, true, null);
         } else {
@@ -224,7 +228,7 @@ public abstract class FleetControllerTest implements Waiter {
         setUpVdsNodes(useFakeTimer, options, startDisconnected, nodeIndexes);
     }
     protected void setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, Set<Integer> nodeIndexes) throws Exception {
-        String connectionSpecs[] = new String[1];
+        String[] connectionSpecs = new String[1];
         connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         for (int nodeIndex : nodeIndexes) {
             nodes.add(new DummyVdsNode(useFakeTimer ? timer : new RealTimer(), options, connectionSpecs, this.options.clusterName, true, nodeIndex));
@@ -241,7 +245,7 @@ public abstract class FleetControllerTest implements Waiter {
      * the returned list is twice as large as configuredNodes.
      */
     protected List<DummyVdsNode> setUpVdsNodes(boolean useFakeTimer, DummyVdsNodeOptions options, boolean startDisconnected, List<ConfiguredNode> configuredNodes) throws Exception {
-        String connectionSpecs[] = new String[1];
+        String[] connectionSpecs = new String[1];
         connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         nodes = new ArrayList<>();
         final boolean distributor = true;
@@ -254,15 +258,15 @@ public abstract class FleetControllerTest implements Waiter {
         return nodes;
     }
 
-    protected static Set<Integer> asIntSet(Integer... idx) {
-        return Arrays.asList(idx).stream().collect(Collectors.toSet());
+    static Set<Integer> asIntSet(Integer... idx) {
+        return new HashSet<>(Arrays.asList(idx));
     }
 
-    protected static Set<ConfiguredNode> asConfiguredNodes(Set<Integer> indices) {
+    static Set<ConfiguredNode> asConfiguredNodes(Set<Integer> indices) {
         return indices.stream().map(idx -> new ConfiguredNode(idx, false)).collect(Collectors.toSet());
     }
 
-    protected void waitForStateExcludingNodeSubset(String expectedState, Set<Integer> excludedNodes) throws Exception {
+    void waitForStateExcludingNodeSubset(String expectedState, Set<Integer> excludedNodes) throws Exception {
         // Due to the implementation details of the test base, this.waitForState() will always
         // wait until all nodes added in the test have received the latest cluster state. Since we
         // want to entirely ignore node #6, it won't get a cluster state at all and the test will
@@ -286,7 +290,7 @@ public abstract class FleetControllerTest implements Waiter {
         subsetWaiter.waitForState(expectedState);
     }
 
-    protected static Map<NodeType, Integer> transitionTimes(int milliseconds) {
+    static Map<NodeType, Integer> transitionTimes(int milliseconds) {
         Map<NodeType, Integer> maxTransitionTime = new TreeMap<>();
         maxTransitionTime.put(NodeType.DISTRIBUTOR, milliseconds);
         maxTransitionTime.put(NodeType.STORAGE, milliseconds);
@@ -330,23 +334,11 @@ public abstract class FleetControllerTest implements Waiter {
     public ClusterState waitForInitProgressPassed(Node n, double progress) { return waiter.waitForInitProgressPassed(n, progress); }
     public ClusterState waitForClusterStateIncludingNodesWithMinUsedBits(int bitcount, int nodecount) { return waiter.waitForClusterStateIncludingNodesWithMinUsedBits(bitcount, nodecount); }
 
-    protected void waitForNodeStateReported(int nodeIndex, NodeState state, int ms) {
-        long timeoutAtTime = System.currentTimeMillis() + ms;
-        while (true) {
-            Node node = nodes.get(nodeIndex).getNode();
-            NodeState ns = fleetController.getReportedNodeState(node);
-            if ((ns == null && state == null) || (ns != null && state != null && ns.equals(state))) break;
-            if (System.currentTimeMillis() > timeoutAtTime) {
-                throw new IllegalStateException("Failed to find " + node + " in nodestate " + state + " before timeout of " + ms + " milliseconds.");
-            }
-        }
-    }
-
     public void wait(WaitCondition c, WaitTask wt, int timeoutMS) {
         waiter.wait(c, wt, timeoutMS);
     }
 
-    public void waitForCompleteCycle() {
+    void waitForCompleteCycle() {
         fleetController.waitForCompleteCycle(timeoutMS);
     }
 
@@ -354,7 +346,7 @@ public abstract class FleetControllerTest implements Waiter {
         verifyNodeEvents(n, exp, null);
     }
 
-    private class ExpectLine {
+    private static class ExpectLine {
         Pattern regex;
         int matchedCount = 0;
         int minCount = 1;
@@ -398,7 +390,7 @@ public abstract class FleetControllerTest implements Waiter {
      *   <li>The rest of the line is a regular expression.
      *   </ul>
      */
-    protected void verifyNodeEvents(Node n, String exp, String ignoreRegex) {
+    private void verifyNodeEvents(Node n, String exp, String ignoreRegex) {
         Pattern ignorePattern = (ignoreRegex == null ? null : Pattern.compile(ignoreRegex));
         List<NodeEvent> events = fleetController.getNodeEvents(n);
         String[] expectLines = exp.split("\n");
@@ -475,64 +467,13 @@ public abstract class FleetControllerTest implements Waiter {
         }
     }
 
-    protected String generateHostInfo(double averagePutLatency, long operationCount) {
-        return ("{\n" +
-                "  \"metrics\":\n" +
-                "  {\n" +
-                "    \"snapshot\":\n" +
-                "    {\n" +
-                "      \"from\":1335527020,\n" +
-                "      \"to\":1335527320\n" +
-                "    },\n" +
-                "    \"values\":\n" +
-                "    [\n" +
-                "      {\n" +
-                "        \"name\":\"vds.filestor.disk_0.allthreads.put.sum.latency\",\n" +
-                "        \"values\":\n" +
-                "        {\n" +
-                "          \"average\":" + averagePutLatency + ",\n" +
-                "          \"rate\":123.00000\n" +
-                "        }\n" +
-                "      },\n" +
-                "      {\n" +
-                "        \"name\":\"vds.filestor.disk_0.allthreads.operations\",\n" +
-                "        \"values\":\n" +
-                "        {\n" +
-                "          \"count\":" + operationCount + ",\n" +
-                "          \"rate\":3.266666\n" +
-                "        }\n" +
-                "      }\n" +
-                "    ]\n" +
-                "  }\n" +
-                "}\n");
-    }
-
-    protected String readFile(String filename) throws IOException {
-        FileInputStream stream = new FileInputStream(new File(filename));
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try {
-            byte [] buf = new byte[4096];
-            while (true) {
-                int read = stream.read(buf);
-                if (read<=0) {
-                    break;
-                }
-                output.write(buf, 0, read);
-            }
-            output.close();
-            return output.toString();
-        } finally {
-            stream.close();
-        }
-    }
-
     public static Set<ConfiguredNode> toNodes(Integer ... indexes) {
-        return Arrays.asList(indexes).stream()
+        return Arrays.stream(indexes)
                 .map(i -> new ConfiguredNode(i, false))
                 .collect(Collectors.toSet());
     }
 
-    protected void setWantedState(DummyVdsNode node, State state, String reason) {
+    void setWantedState(DummyVdsNode node, State state, String reason) {
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());
         }
@@ -544,10 +485,10 @@ public abstract class FleetControllerTest implements Waiter {
         req.parameters().add(new StringValue(ns.serialize()));
         connection.invokeSync(req, timeoutS);
         if (req.isError()) {
-            assertTrue("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage(), false);
+            fail("Failed to invoke setNodeState(): " + req.errorCode() + ": " + req.errorMessage());
         }
         if (!req.checkReturnTypes("s")) {
-            assertTrue("Failed to invoke setNodeState(): Invalid return types.", false);
+            fail("Failed to invoke setNodeState(): Invalid return types.");
         }
     }
 

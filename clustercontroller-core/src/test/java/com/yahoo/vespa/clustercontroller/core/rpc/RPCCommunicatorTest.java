@@ -6,7 +6,16 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vespa.clustercontroller.core.ActivateClusterStateVersionRequest;
+import com.yahoo.vespa.clustercontroller.core.ClusterFixture;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundleUtil;
+import com.yahoo.vespa.clustercontroller.core.Communicator;
+import com.yahoo.vespa.clustercontroller.core.FakeTimer;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -20,22 +29,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyDouble;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RPCCommunicatorTest {
 
-    public static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS = 10000;
-    public static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_START_PERCENTAGE = 80;
-    public static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_STOP_PERCENTAGE = 95;
-    public static final int INDEX = 0;
-    public static final int TEST_ITERATIONS = 500;
-    public static final int ROUNDTRIP_LATENCY_SECONDS = 2000;
+    private static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS = 10000;
+    private static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_START_PERCENTAGE = 80;
+    private static final int NODE_STATE_REQUEST_TIMEOUT_INTERVAL_STOP_PERCENTAGE = 95;
+    private static final int INDEX = 0;
+    private static final int TEST_ITERATIONS = 500;
+    private static final int ROUNDTRIP_LATENCY_SECONDS = 2000;
 
     @Test
-    public void testGenerateNodeStateRequestTimeoutMs() throws Exception {
+    public void testGenerateNodeStateRequestTimeoutMs() {
         final RPCCommunicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 null /* Timer */,
@@ -62,7 +73,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void testGenerateNodeStateRequestTimeoutMsWithUpdates() throws Exception {
+    public void testGenerateNodeStateRequestTimeoutMsWithUpdates() {
         final RPCCommunicator communicator = new RPCCommunicator(RPCCommunicator.createRealSupervisor(), null /* Timer */, INDEX, 1, 1, 100, 0);
         FleetControllerOptions fleetControllerOptions = new FleetControllerOptions(null /*clustername*/);
         fleetControllerOptions.nodeStateRequestTimeoutEarliestPercentage = 100;
@@ -74,7 +85,7 @@ public class RPCCommunicatorTest {
     }
 
     @Test
-    public void testRoundtripLatency() throws Exception {
+    public void testRoundtripLatency() {
         final Timer timer = new FakeTimer();
         final RPCCommunicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
@@ -94,9 +105,9 @@ public class RPCCommunicatorTest {
         when(nodeInfo.getReportedState()).thenReturn(new NodeState(NodeType.DISTRIBUTOR, State.UP));
         communicator.getNodeState(nodeInfo, null);
         Mockito.verify(target).invokeAsync(
-                (Request)any(),
+                any(),
                 eq(ROUNDTRIP_LATENCY_SECONDS + NODE_STATE_REQUEST_TIMEOUT_INTERVAL_MAX_MS/1000.0),
-                (RequestWaiter)any());
+                any());
     }
 
     private static class Fixture<RequestType> {

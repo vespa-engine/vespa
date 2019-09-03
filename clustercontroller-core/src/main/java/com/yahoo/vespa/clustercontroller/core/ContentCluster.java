@@ -10,7 +10,7 @@ import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRendrer;
+import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
 import java.util.*;
@@ -42,7 +42,7 @@ public class ContentCluster {
     }
 
     public void writeHtmlState(
-            final VdsClusterHtmlRendrer vdsClusterHtmlRendrer,
+            final VdsClusterHtmlRenderer vdsClusterHtmlRenderer,
             final StringBuilder sb,
             final Timer timer,
             final ClusterStateBundle state,
@@ -51,8 +51,8 @@ public class ContentCluster {
             final FleetControllerOptions options,
             final EventLog eventLog) {
 
-        final VdsClusterHtmlRendrer.Table table =
-                vdsClusterHtmlRendrer.createNewClusterHtmlTable(clusterName, slobrokGenerationCount);
+        final VdsClusterHtmlRenderer.Table table =
+                vdsClusterHtmlRenderer.createNewClusterHtmlTable(clusterName, slobrokGenerationCount);
 
         final List<Group> groups = LeafGroups.enumerateFrom(distribution.getRootGroup());
 

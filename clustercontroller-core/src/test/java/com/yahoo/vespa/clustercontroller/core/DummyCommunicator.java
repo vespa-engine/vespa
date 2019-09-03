@@ -16,18 +16,18 @@ import java.util.TreeMap;
 public class DummyCommunicator implements Communicator, NodeLookup {
 
     List<Node> newNodes;
-    Timer timer;
+    private Timer timer;
     private boolean shouldDeferDistributorClusterStateAcks = false;
     private List<Pair<Waiter<SetClusterStateRequest>, DummySetClusterStateRequest>> deferredClusterStateAcks = new ArrayList<>();
 
-    public void setShouldDeferDistributorClusterStateAcks(boolean shouldDeferDistributorClusterStateAcks) {
+    void setShouldDeferDistributorClusterStateAcks(boolean shouldDeferDistributorClusterStateAcks) {
         this.shouldDeferDistributorClusterStateAcks = shouldDeferDistributorClusterStateAcks;
     }
 
-    class DummyGetNodeStateRequest extends GetNodeStateRequest {
+    static class DummyGetNodeStateRequest extends GetNodeStateRequest {
         Waiter<GetNodeStateRequest> waiter;
 
-        public DummyGetNodeStateRequest(NodeInfo nodeInfo, Waiter<GetNodeStateRequest> waiter) {
+        DummyGetNodeStateRequest(NodeInfo nodeInfo, Waiter<GetNodeStateRequest> waiter) {
             super(nodeInfo);
 
             this.waiter = waiter;
@@ -39,17 +39,17 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         }
     }
 
-    public class DummySetClusterStateRequest extends SetClusterStateRequest {
+    public static class DummySetClusterStateRequest extends SetClusterStateRequest {
 
-        public DummySetClusterStateRequest(NodeInfo nodeInfo, ClusterState state) {
+        DummySetClusterStateRequest(NodeInfo nodeInfo, ClusterState state) {
             super(nodeInfo, state.getVersion());
         }
 
     }
 
-    public class DummyActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
+    public static class DummyActivateClusterStateVersionRequest extends ActivateClusterStateVersionRequest {
 
-        public DummyActivateClusterStateVersionRequest(NodeInfo nodeInfo, int stateVersion) {
+        DummyActivateClusterStateVersionRequest(NodeInfo nodeInfo, int stateVersion) {
             super(nodeInfo, stateVersion);
         }
 
@@ -57,7 +57,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
 
     private Map<Node, DummyGetNodeStateRequest> getNodeStateRequests = new TreeMap<>();
 
-    public DummyCommunicator(List<Node> nodeList, Timer timer) {
+    DummyCommunicator(List<Node> nodeList, Timer timer) {
         this.newNodes = nodeList;
         this.timer = timer;
     }
@@ -74,11 +74,11 @@ public class DummyCommunicator implements Communicator, NodeLookup {
 
     }
 
-    public boolean setNodeState(Node node, State state, String description) throws Exception {
+    public boolean setNodeState(Node node, State state, String description) {
         return setNodeState(node, new NodeState(node.getType(), state).setDescription(description), "");
     }
 
-    public boolean setNodeState(Node node, NodeState state, String hostInfo) throws Exception {
+    public boolean setNodeState(Node node, NodeState state, String hostInfo) {
         DummyGetNodeStateRequest req = getNodeStateRequests.remove(node);
 
         if (req == null) {
@@ -113,12 +113,12 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         waiter.done(req);
     }
 
-    public void sendAllDeferredDistributorClusterStateAcks() {
+    void sendAllDeferredDistributorClusterStateAcks() {
         deferredClusterStateAcks.forEach(reqAndWaiter -> reqAndWaiter.getFirst().done(reqAndWaiter.getSecond()));
         deferredClusterStateAcks.clear();
     }
 
-    public void sendPartialDeferredDistributorClusterStateAcks() {
+    void sendPartialDeferredDistributorClusterStateAcks() {
         if (deferredClusterStateAcks.isEmpty()) {
             throw new IllegalStateException("Tried to send partial ACKs with no ACKs deferred");
         }

@@ -11,13 +11,13 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChang
 public class ClusterControllerMock implements RemoteClusterControllerTaskScheduler {
     public RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
 
-    public int fleetControllerIndex;
-    public Integer fleetControllerMaster;
-    public StringBuilder events = new StringBuilder();
+    private int fleetControllerIndex;
+    Integer fleetControllerMaster;
+    private StringBuilder events = new StringBuilder();
 
-    public ClusterControllerMock(ContentCluster cluster, ClusterState state,
-                                 ClusterStateBundle publishedClusterStateBundle,
-                                 int fcIndex, Integer fcMaster) {
+    ClusterControllerMock(ContentCluster cluster, ClusterState state,
+                          ClusterStateBundle publishedClusterStateBundle,
+                          int fcIndex, Integer fcMaster) {
         this.fleetControllerIndex = fcIndex;
         this.fleetControllerMaster = fcMaster;
         context.cluster = cluster;

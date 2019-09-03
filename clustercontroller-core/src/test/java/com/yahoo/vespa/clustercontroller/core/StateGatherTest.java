@@ -13,7 +13,7 @@ public class StateGatherTest extends FleetControllerTest {
 
     public static Logger log = Logger.getLogger(StateGatherTest.class.getName());
 
-    public String getGetNodeStateReplyCounts(DummyVdsNode node) {
+    private String getGetNodeStateReplyCounts(DummyVdsNode node) {
         StringBuilder sb = new StringBuilder();
         sb.append("timedout ").append(node.timedOutStateReplies)
           .append(", outdated ").append(node.outdatedStateReplies)
@@ -33,7 +33,7 @@ public class StateGatherTest extends FleetControllerTest {
         options.nodeStateRequestTimeoutEarliestPercentage = 80;
         options.nodeStateRequestTimeoutLatestPercentage = 80;
         setUpFleetController(true, options);
-        String connectionSpecs[] = new String[1];
+        String[] connectionSpecs = new String[1];
         connectionSpecs[0] = "tcp/localhost:" + slobrok.port();
         DummyVdsNodeOptions dummyOptions = new DummyVdsNodeOptions();
         DummyVdsNode dnode = new DummyVdsNode(timer, dummyOptions, connectionSpecs, this.options.clusterName, true, 0);

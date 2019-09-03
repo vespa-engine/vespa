@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class NotMasterTest extends StateRestApiTest {
 
@@ -29,39 +30,39 @@ public class NotMasterTest extends StateRestApiTest {
             // Recursive cluster list does not work
         try{
             restAPI.getState(new StateRequest("", 1));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
             // Other requests does not work either
         try{
             restAPI.getState(new StateRequest("music", 0));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
         try{
             restAPI.getState(new StateRequest("music/storage", 0));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
         try{
             restAPI.getState(new StateRequest("music/storage/1", 0));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
         try{
             restAPI.getState(new StateRequest("music/storage/1/0", 0));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
         try{
             restAPI.setUnitState(new SetNodeStateTest.SetUnitStateRequestImpl("music/storage/1")
                                     .setNewState("user", "down", "test"));
-            assertTrue(false);
+            fail();
         } catch (UnknownMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
@@ -85,53 +86,53 @@ public class NotMasterTest extends StateRestApiTest {
         // Recursive cluster list does not work
         try{
             restAPI.getState(new StateRequest("", 1));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
         // Other requests does not work either
         try{
             restAPI.getState(new StateRequest("music", 0));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
         try{
             restAPI.getState(new StateRequest("music/storage", 0));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
         try{
             restAPI.getState(new StateRequest("music/storage/1", 0));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
         try{
             restAPI.getState(new StateRequest("music/storage/1/0", 0));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
         try{
             restAPI.setUnitState(new SetNodeStateTest.SetUnitStateRequestImpl("music/storage/1")
                     .setNewState("user", "down", "test"));
-            assertTrue(false);
+            fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertTrue(e.getHost().equals("otherhost"));
-            assertTrue(e.getPort() == getDefaults().vespaWebServicePort());
+            assertEquals("otherhost", e.getHost());
+            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
         }
     }
 }
