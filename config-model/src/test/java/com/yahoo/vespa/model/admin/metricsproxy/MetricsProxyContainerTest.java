@@ -72,7 +72,7 @@ public class MetricsProxyContainerTest {
         VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
-        int offset = container.metricsRpcPortOffset();
+        int offset = 3;
         assertEquals(2, container.getPortsMeta().getTagsAt(offset).size());
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("metrics"));
@@ -86,7 +86,7 @@ public class MetricsProxyContainerTest {
         VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
 
-        int offset = container.metricsRpcPortOffset() - 1;
+        int offset = 2;
         assertEquals(2, container.getPortsMeta().getTagsAt(offset).size());
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("rpc"));
         assertTrue(container.getPortsMeta().getTagsAt(offset).contains("admin"));
