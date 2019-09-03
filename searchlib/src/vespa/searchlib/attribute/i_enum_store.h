@@ -51,7 +51,7 @@ public:
     virtual ssize_t deserialize0(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
     virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;
-    virtual void freeUnusedEnums(bool movePostingIdx) = 0;
+    virtual void freeUnusedEnums() = 0;
     virtual bool foldedChange(const Index& idx1, const Index& idx2) = 0;
     virtual IEnumStoreDictionary& getEnumStoreDict() = 0;
     virtual const IEnumStoreDictionary& getEnumStoreDict() const = 0;
@@ -94,7 +94,7 @@ public:
             fixupRefCount(ti.getKey(), *hi);
         }
         assert(!ti.valid());
-        freeUnusedEnums(false);
+        freeUnusedEnums();
     }
 };
 

@@ -47,10 +47,14 @@ EnumStoreT<StringEntryType>::deserialize(const void* src,
 }
 
 std::unique_ptr<datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings)
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare)
 {
     if (has_postings) {
-        return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store);
+        if (folded_compare) {
+            return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(folded_compare));
+        } else {
+            return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store);
+        }
     } else {
         return std::make_unique<EnumStoreDictionary<EnumTree>>(store);
     }
