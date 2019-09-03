@@ -6,6 +6,7 @@
 #include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
+#include "enum_store_loaders.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
@@ -92,20 +93,29 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
-                                                    const EnumIndexVector& eidxs,
-                                                    LoadedEnumAttributeVector& loaded)
+                                                    enumstore::EnumeratedPostingsLoader& loader,
+                                                    size_t num_values)
 {
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveLoadedEnum(loaded));
+    loader.reserve_loaded_enums(num_values);
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
+                                                             vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             attribute::SaveLoadedEnum(loader.get_loaded_enums()));
+    loader.release_enum_indexes();
+    loader.sort_loaded_enums();
     this->checkSetMaxValueCount(maxvc);
 }
 
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
-                                                    const EnumIndexVector& eidxs,
-                                                    EnumVector& enumHist)
+                                                    enumstore::EnumeratedLoader& loader)
 {
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveEnumHist(enumHist));
+    loader.allocate_enums_histogram();
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
+                                                             vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             attribute::SaveEnumHist(loader.get_enums_histogram()));
+    loader.release_enum_indexes();
+    loader.set_ref_counts();
     this->checkSetMaxValueCount(maxvc);
 }
 

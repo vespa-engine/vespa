@@ -3,6 +3,7 @@
 #pragma once
 
 #include "no_loaded_vector.h"
+#include "enum_store_loaders.h"
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/changevector.h>
 #include <vespa/searchlib/attribute/i_enum_store.h>
@@ -78,9 +79,9 @@ private:
     virtual void fillValues(LoadedVector & loaded);
 
     virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
-    virtual void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, attribute::LoadedEnumAttributeVector &loaded);
-    virtual void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
-    virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
+    virtual void load_enumerated_data(ReaderBase &attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values);
+    virtual void load_enumerated_data(ReaderBase &attrReader, enumstore::EnumeratedLoader& loader);
+    virtual void fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader& loader);
     virtual void fixupEnumRefCounts(const EnumVector &enumHist);
 
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), NULL, 0); }

@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "enum_store_types.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
-#include <vespa/searchlib/attribute/i_enum_store.h>
+#include <cassert>
 
 namespace search
 {
@@ -126,7 +127,7 @@ class SaveEnumHist
     vespalib::ArrayRef<uint32_t> _hist;
 
 public:
-    SaveEnumHist(IEnumStore::EnumVector &enumHist)
+    SaveEnumHist(enumstore::EnumVector &enumHist)
         : _hist(enumHist)
     {
     }

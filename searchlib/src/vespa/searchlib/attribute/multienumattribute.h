@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "enum_store_loaders.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "multivalue.h"
@@ -74,8 +75,8 @@ protected:
     }
 
     void fillValues(LoadedVector & loaded) override;
-    void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
-    void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
+    void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values) override;
+    void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader) override;
     virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }
 
 public:

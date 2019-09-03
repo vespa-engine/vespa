@@ -332,33 +332,21 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
         numDocs = numValues;
     }
 
-    EnumIndexVector eidxs;
-    fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
-    LoadedEnumAttributeVector loaded;
-    EnumVector enumHist;
-    if (hasPostings()) {
-        loaded.reserve(numValues);
-    } else {
-        EnumVector(eidxs.size(), 0).swap(enumHist);
-    }
-    if(hasPostings()) {
-        load_enumerated_data(attrReader, eidxs, loaded);
-    } else {
-        load_enumerated_data(attrReader, eidxs, enumHist);
-    }
-
-    EnumIndexVector().swap(eidxs);
 
     if (hasPostings()) {
-        attribute::sortLoadedByEnum(loaded);
+        auto loader = this->getEnumStoreBase()->make_enumerated_postings_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
         }
-        fillPostingsFixupEnum(loaded);
+        fillPostingsFixupEnum(loader);
     } else {
-        fixupEnumRefCounts(enumHist);
+        auto loader = this->getEnumStoreBase()->make_enumerated_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        load_enumerated_data(attrReader, loader);
     }
     return true;
 }
@@ -403,19 +391,19 @@ StringAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
 }
 
 void
-StringAttribute::load_enumerated_data(ReaderBase&, const EnumIndexVector&, LoadedEnumAttributeVector&)
+StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedPostingsLoader&, size_t)
 {
     LOG_ABORT("Should not be reached");
 }
 
 void
-StringAttribute::load_enumerated_data(ReaderBase&, const EnumIndexVector&, EnumVector&)
+StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedLoader&)
 {
     LOG_ABORT("Should not be reached");
 }
 
 void
-StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector&)
+StringAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
 {
     LOG_ABORT("Should not be reached");
 }

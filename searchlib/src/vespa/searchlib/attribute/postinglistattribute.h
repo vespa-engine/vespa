@@ -61,7 +61,7 @@ protected:
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
-    void fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded);
+    void fillPostingsFixupEnumBase(enumstore::EnumeratedPostingsLoader& loader);
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,

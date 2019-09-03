@@ -49,14 +49,14 @@ PostingListAttributeBase<P>::clearAllPostings()
 
 template <typename P>
 void
-PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded)
+PostingListAttributeBase<P>::fillPostingsFixupEnumBase(enumstore::EnumeratedPostingsLoader& loader)
 {
     clearAllPostings();
     uint32_t docIdLimit = _attr.getNumDocs();
-    IEnumStore &enumStore = _esb;
     EntryRef newIndex;
     PostingChange<P> postings;
-    if (loaded.empty()) {
+    const auto& loaded_enums = loader.get_loaded_enums();
+    if (loaded_enums.empty()) {
         return;
     }
     uint32_t preve = 0;
@@ -65,10 +65,10 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
     auto itr = _dict.begin();
     auto posting_itr = itr;
     assert(itr.valid());
-    for (const auto& elem : loaded) {
+    for (const auto& elem : loaded_enums) {
         if (preve != elem.getEnum()) {
             assert(preve < elem.getEnum());
-            enumStore.fixupRefCount(itr.getKey(), refCount);
+            loader.set_ref_count(itr.getKey(), refCount);
             refCount = 0;
             while (preve != elem.getEnum()) {
                 ++itr;
@@ -76,7 +76,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
                 ++preve;
             }
             assert(itr.valid());
-            if (enumStore.foldedChange(posting_itr.getKey(), itr.getKey())) {
+            if (loader.is_folded_change(posting_itr.getKey(), itr.getKey())) {
                 postings.removeDups();
                 newIndex = EntryRef();
                 _postingList.apply(newIndex,
@@ -99,7 +99,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
         postings.add(elem.getDocId(), elem.getWeight());
     }
     assert(refCount != 0);
-    enumStore.fixupRefCount(itr.getKey(), refCount);
+    loader.set_ref_count(itr.getKey(), refCount);
     postings.removeDups();
     newIndex = EntryRef();
     _postingList.apply(newIndex,
@@ -108,7 +108,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
     posting_itr.writeData(newIndex);
-    enumStore.freeUnusedEnums();
+    loader.free_unused_enums();
 }
 
 template <typename P>

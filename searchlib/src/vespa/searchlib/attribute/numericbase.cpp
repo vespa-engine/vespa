@@ -20,22 +20,21 @@ NumericAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
 
 void
 NumericAttribute::load_enumerated_data(ReaderBase&,
-                                       const EnumIndexVector&,
-                                       LoadedEnumAttributeVector&)
+                                       enumstore::EnumeratedPostingsLoader&,
+                                       size_t)
 {
     LOG_ABORT("Should not be reached");
 }
 
 void
 NumericAttribute::load_enumerated_data(ReaderBase&,
-                                       const EnumIndexVector&,
-                                       EnumVector&)
+                                       enumstore::EnumeratedLoader&)
 {
     LOG_ABORT("Should not be reached");
 }
 
 void
-NumericAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector&)
+NumericAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
 {
     LOG_ABORT("Should not be reached");
 }

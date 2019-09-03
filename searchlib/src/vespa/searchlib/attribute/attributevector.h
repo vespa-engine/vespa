@@ -553,7 +553,8 @@ public:
     attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
                                                       const attribute::SearchContextParams &params) const override;
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
-    virtual const IEnumStore *getEnumStoreBase() const;
+    virtual const IEnumStore* getEnumStoreBase() const;
+    virtual IEnumStore* getEnumStoreBase();
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
 
 private:

@@ -88,13 +88,11 @@ protected:
     void fillValues(LoadedVector & loaded) override;
 
     void load_enumerated_data(ReaderBase& attrReader,
-                              const IEnumStore::IndexVector& eidxs,
-                              LoadedEnumAttributeVector& loaded) override;
-    
+                              enumstore::EnumeratedPostingsLoader& loader, size_t num_values) override;
+
     void load_enumerated_data(ReaderBase& attrReader,
-                              const IEnumStore::IndexVector& eidxs,
-                              IEnumStore::EnumVector& enumHist) override;
-    
+                              enumstore::EnumeratedLoader& loader) override;
+
     /**
      * Called when a new document has been added.
      *

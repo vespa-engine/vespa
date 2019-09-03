@@ -84,28 +84,20 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     uint64_t numValues = attrReader.getEnumCount();
     uint32_t numDocs = numValues;
 
-    EnumIndexVector eidxs;
-    this->fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
-    LoadedEnumAttributeVector loaded;
-    EnumVector enumHist;
     if (this->hasPostings()) {
-        loaded.reserve(numValues);
-        this->load_enumerated_data(attrReader, eidxs, loaded);
-    } else {
-        EnumVector(eidxs.size(), 0).swap(enumHist);
-        this->load_enumerated_data(attrReader, eidxs, enumHist);
-    }
-    EnumIndexVector().swap(eidxs);
-    if (this->hasPostings()) {
+        auto loader = this->getEnumStore().make_enumerated_postings_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        this->load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
         }
-        attribute::sortLoadedByEnum(loaded);
-        this->fillPostingsFixupEnum(loaded);
+        this->fillPostingsFixupEnum(loader);
     } else {
-        this->fixupEnumRefCounts(enumHist);
+        auto loader = this->getEnumStore().make_enumerated_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        this->load_enumerated_data(attrReader, loader);
     }
     return true;
 }

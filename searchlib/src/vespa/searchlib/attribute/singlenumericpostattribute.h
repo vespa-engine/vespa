@@ -89,7 +89,7 @@ public:
     void fillPostings(LoadedVector & loaded) override { handleFillPostings(loaded); }
     attribute::IPostingListAttributeBase *getIPostingListAttributeBase() override { return this; }
     const attribute::IPostingListAttributeBase *getIPostingListAttributeBase() const override { return this; }
-    void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override { fillPostingsFixupEnumBase(loaded); }
+    void fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader& loader) override { fillPostingsFixupEnumBase(loader); }
 };
 
 } // namespace search
