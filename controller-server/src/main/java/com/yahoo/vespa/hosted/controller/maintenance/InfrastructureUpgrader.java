@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -97,7 +97,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
     /** Find the minimum value of a version field in a zone */
     protected final Optional<Version> minVersion(ZoneApi zone, SystemApplication application, Function<Node, Version> versionField) {
         try {
-            return controller().configServer()
+            return controller().serviceRegistry().configServer()
                                .nodeRepository()
                                .list(zone.getId(), application.id())
                                .stream()

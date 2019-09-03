@@ -40,7 +40,7 @@ public class ResourceMeterMaintainer extends Maintainer {
                                    MeteringClient meteringClient) {
         super(controller, interval, jobControl, null, SystemName.all());
         this.clock = controller.clock();
-        this.nodeRepository = controller.configServer().nodeRepository();
+        this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.metric = metric;
         this.meteringClient = meteringClient;
     }

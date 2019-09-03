@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.inject.Inject;
@@ -13,8 +13,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -77,7 +76,7 @@ public class Controller extends AbstractComponent {
     private final JobController jobController;
     private final Clock clock;
     private final ZoneRegistry zoneRegistry;
-    private final ConfigServer configServer;
+    private final ServiceRegistry serviceRegistry;
     private final MetricsService metricsService;
     private final Mailer mailer;
     private final AuditLogger auditLogger;
@@ -86,7 +85,6 @@ public class Controller extends AbstractComponent {
     private final ApplicationCertificateProvider applicationCertificateProvider;
     private final MavenRepository mavenRepository;
     private final MeteringClient meteringClient;
-    private final GlobalRoutingService globalRoutingService;
 
     /**
      * Creates a controller 
@@ -95,22 +93,22 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      ZoneRegistry zoneRegistry, ConfigServer configServer, MetricsService metricsService,
+                      ZoneRegistry zoneRegistry, MetricsService metricsService,
                       RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
                       MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider,
-                      MeteringClient meteringClient, GlobalRoutingService globalRoutingService) {
+                      MeteringClient meteringClient, ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
-             configServer, metricsService, routingGenerator,
+             metricsService, routingGenerator,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
-             mavenRepository, applicationCertificateProvider, meteringClient, globalRoutingService);
+             mavenRepository, applicationCertificateProvider, meteringClient, serviceRegistry);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      ZoneRegistry zoneRegistry, ConfigServer configServer,
+                      ZoneRegistry zoneRegistry,
                       MetricsService metricsService,
                       RoutingGenerator routingGenerator, Clock clock,
                       AccessControl accessControl,
@@ -118,12 +116,12 @@ public class Controller extends AbstractComponent {
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository,
                       ApplicationCertificateProvider applicationCertificateProvider, MeteringClient meteringClient,
-                      GlobalRoutingService globalRoutingService) {
+                      ServiceRegistry serviceRegistry) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
-        this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
+        this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
@@ -131,13 +129,12 @@ public class Controller extends AbstractComponent {
         this.applicationCertificateProvider = Objects.requireNonNull(applicationCertificateProvider);
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
         this.meteringClient = Objects.requireNonNull(meteringClient, "MeteringClient cannot be null");
-        this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingSerivce cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          configServer,
+                                                          serviceRegistry.configServer(),
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
@@ -162,6 +159,11 @@ public class Controller extends AbstractComponent {
     /** Returns the instance controlling deployment jobs. */
     public JobController jobController() { return jobController; }
 
+    /** Returns the service registry of this */
+    public ServiceRegistry serviceRegistry() {
+        return serviceRegistry;
+    }
+
     public Mailer mailer() {
         return mailer;
     }
@@ -169,10 +171,6 @@ public class Controller extends AbstractComponent {
     /** Provides access to the feature flags of this */
     public FlagSource flagSource() {
         return flagSource;
-    }
-
-    public GlobalRoutingService globalRoutingService() {
-        return globalRoutingService;
     }
 
     public Clock clock() { return clock; }
@@ -185,14 +183,14 @@ public class Controller extends AbstractComponent {
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
-        return configServer.getApplicationView(tenantName, applicationName, instanceName, environment, region);
+        return serviceRegistry.configServer().getApplicationView(tenantName, applicationName, instanceName, environment, region);
     }
 
     // TODO: Model the response properly
     public Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName,
                                           String environment, String region, String serviceName, String restPath) {
-        return configServer.getServiceApiResponse(tenantName, applicationName, instanceName, environment, region,
-                                                  serviceName, restPath);
+        return serviceRegistry.configServer().getServiceApiResponse(tenantName, applicationName, instanceName, environment, region,
+                                                                    serviceName, restPath);
     }
 
     /** Replace the current version status by a new one */
@@ -288,10 +286,6 @@ public class Controller extends AbstractComponent {
 
     public MetricsService metricsService() {
         return metricsService;
-    }
-
-    public ConfigServer configServer() {
-        return configServer;
     }
 
     public SystemName system() {

@@ -35,7 +35,7 @@ public class RotationStatusUpdater extends Maintainer {
 
     public RotationStatusUpdater(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
-        this.service = controller.globalRoutingService();
+        this.service = controller.serviceRegistry().globalRoutingService();
         this.applications = controller.applications();
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
@@ -342,7 +342,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
-        List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
         List<String> statuses = nodes.stream()
                 .map(node -> String.format("%70s: %-16s%-25s%-32s%s",
                                            node.hostname(),
@@ -361,7 +361,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean servicesConverged(ApplicationId id, JobType type, Version platform, DualLogger logger) {
-        var convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
+        var convergence = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())),
                                                                        Optional.of(platform));
         if (convergence.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
@@ -461,7 +461,7 @@ public class InternalStepRunner implements StepRunner {
             try {
                 logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
                 List<LogEntry> entries = new ArrayList<>();
-                String logs = IOUtils.readAll(controller.configServer().getLogs(new DeploymentId(id.application(), zone),
+                String logs = IOUtils.readAll(controller.serviceRegistry().configServer().getLogs(new DeploymentId(id.application(), zone),
                                                                                      Collections.emptyMap()), // Get all logs.
                                               StandardCharsets.UTF_8);
                 for (String line : logs.split("\n")) {
@@ -619,7 +619,7 @@ public class InternalStepRunner implements StepRunner {
     private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
         for (ZoneId zone : zones)
-            clusters.put(zone, ImmutableList.copyOf(controller.configServer().getContentClusters(new DeploymentId(id, zone))));
+            clusters.put(zone, ImmutableList.copyOf(controller.serviceRegistry().configServer().getContentClusters(new DeploymentId(id, zone))));
         return clusters.build();
     }
 

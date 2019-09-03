@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableMap;
@@ -9,7 +9,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 
@@ -72,7 +71,7 @@ public class OsVersionStatus {
                 continue; // Avoid querying applications that are not eligible for OS upgrades
             }
             for (ZoneApi zone : zonesToUpgrade(controller)) {
-                controller.configServer().nodeRepository().list(zone.getId(), application.id()).stream()
+                controller.serviceRegistry().configServer().nodeRepository().list(zone.getId(), application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                           .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.getEnvironment(), zone.getRegionName()))
                           .forEach(node -> {

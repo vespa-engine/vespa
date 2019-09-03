@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.os;
 
 import com.yahoo.application.container.handler.Request;
@@ -11,7 +11,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
@@ -164,8 +163,7 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private NodeRepositoryMock nodeRepository() {
-        return ((ConfigServerMock) tester.containerTester().container().components()
-                                         .getComponent(ConfigServerMock.class.getName())).nodeRepository();
+        return tester.containerTester().serviceRegistry().configServerMock().nodeRepository();
     }
 
     private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {

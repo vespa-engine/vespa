@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -154,7 +154,7 @@ public class VersionStatus {
         ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
         for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (SystemApplication application : SystemApplication.all()) {
-                List<Node> eligibleForUpgradeApplicationNodes = controller.configServer().nodeRepository()
+                List<Node> eligibleForUpgradeApplicationNodes = controller.serviceRegistry().configServer().nodeRepository()
                         .list(zone.getId(), application.id()).stream()
                         .filter(SystemUpgrader::eligibleForUpgrade)
                         .collect(Collectors.toList());
