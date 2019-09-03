@@ -663,7 +663,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <client-authorize />",
                 "</container>");
         try {
-            createModel(root, clusterElem);
+            DeployState state = new DeployState.Builder().properties(
+                    new TestProperties()
+                            .setHostedVespa(true)
+                            .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+            createModel(root, state, null, clusterElem);
         } catch (RuntimeException e) {
             assertEquals(e.getMessage(), "client-authorize set, but security/clients.pem is missing");
             return;
