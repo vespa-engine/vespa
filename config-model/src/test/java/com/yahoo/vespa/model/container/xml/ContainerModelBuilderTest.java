@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -23,6 +24,7 @@ import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
@@ -30,19 +32,21 @@ import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
@@ -705,6 +709,39 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals("KMP_SETTING=1 KMP_AFFINITY=granularity=fine,verbose,compact,1,0 ", qrStartConfig.qrs().env());
     }
+
+    @Test
+    public void requireThatProvidingTlsSecretOpensPort4443() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                nodesXml,
+                "</container>" );
+
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+        createModel(root, state, null, clusterElem);
+        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
+
+        // Verify that there are two connectors
+        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().getConnectorFactories();
+        assertEquals(2, connectorFactories.size());
+        List<Integer> ports = connectorFactories.stream()
+                .map(ConnectorFactory::getListenPort)
+                .collect(Collectors.toList());
+        assertThat(ports, Matchers.containsInAnyOrder(8080, 4443));
+
+        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
+
+        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
+        tlsPort.getConfig(builder);
+
+
+        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
+        assertTrue(connectorConfig.ssl().enabled());
+        assertEquals("CERT", connectorConfig.ssl().certificate());
+        assertEquals("KEY", connectorConfig.ssl().privateKey());
+        assertEquals(4443, connectorConfig.listenPort());
+    }
+
 
     private Element generateContainerElementWithRenderer(String rendererId) {
         return DomBuilderTest.parse(

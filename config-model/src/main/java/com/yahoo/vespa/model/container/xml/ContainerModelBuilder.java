@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -57,7 +58,10 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
+import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.Http;
+import com.yahoo.vespa.model.container.http.JettyHttpServer;
+import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
 import com.yahoo.vespa.model.container.http.xml.HttpBuilder;
 import com.yahoo.vespa.model.container.jersey.xml.RestApiBuilder;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
@@ -192,19 +196,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
-        addTlsClientAuthority(deployState, spec, cluster);
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
-    }
-
-    private void addTlsClientAuthority(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        var clientAuthorized = XML.getChild(spec, "client-authorize");
-        if (clientAuthorized != null) {
-            if (deployState.tlsClientAuthority().isEmpty()) {
-                throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
-            }
-            cluster.useTlsClientAuthority(true);
-        }
     }
 
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
@@ -335,6 +328,33 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
+
+        // If the deployment contains certificate/private key reference, setup TLS port
+        if (deployState.tlsSecrets().isPresent()) {
+            boolean authorizeClient = XML.getChild(spec, "client-authorize") != null;
+            if (authorizeClient) {
+                if (deployState.tlsClientAuthority().isEmpty()) {
+                    throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
+                }
+            }
+
+            if(httpElement == null) {
+                cluster.setHttp(new Http(Collections.emptyList()));
+            }
+            if(cluster.getHttp().getHttpServer() == null) {
+                JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
+                cluster.getHttp().setHttpServer(defaultHttpServer);
+                defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
+
+            }
+            JettyHttpServer server = cluster.getHttp().getHttpServer();
+
+            String serverName = server.getComponentId().getName();
+            HostedSslConnectorFactory connectorFactory = authorizeClient
+                    ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get())
+                    : new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get());
+            server.addConnector(connectorFactory);
+        }
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
@@ -452,7 +472,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ApplicationContainerCluster cluster) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa(), cluster.getTlsSecrets(), cluster.getTlsClientAuthority());
+        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -518,7 +538,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
-            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa(), cluster.getTlsSecrets(), cluster.getTlsClientAuthority());
+            ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService(context.getDeployLogger());
@@ -707,7 +727,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa(), cluster.getTlsSecrets(), cluster.getTlsClientAuthority());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);

@@ -26,9 +26,7 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
                 parent,
                 id,
                 index,
-                deployState.isHosted(),
-                deployState.tlsSecrets(),
-                deployState.tlsClientAuthority()
+                deployState.isHosted()
         );
     }
 
