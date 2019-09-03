@@ -92,10 +92,10 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     EnumVector enumHist;
     if (this->hasPostings()) {
         loaded.reserve(numValues);
-        this->fillEnumIdx(attrReader, eidxs, loaded);
+        this->load_enumerated_data(attrReader, eidxs, loaded);
     } else {
         EnumVector(eidxs.size(), 0).swap(enumHist);
-        this->fillEnumIdx(attrReader, eidxs, enumHist);
+        this->load_enumerated_data(attrReader, eidxs, enumHist);
     }
     EnumIndexVector().swap(eidxs);
     if (this->hasPostings()) {

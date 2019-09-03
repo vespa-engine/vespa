@@ -74,8 +74,8 @@ protected:
     }
 
     void fillValues(LoadedVector & loaded) override;
-    void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
-    void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
+    void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
+    void load_enumerated_data(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
     virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }
 
 public:

@@ -358,9 +358,9 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     timer.SetNow();
     LOG(debug, "start fillEnumIdx");
     if(hasPostings()) {
-        fillEnumIdx(attrReader, eidxs, loaded);
+        load_enumerated_data(attrReader, eidxs, loaded);
     } else {
-        fillEnumIdx(attrReader, eidxs, enumHist);
+        load_enumerated_data(attrReader, eidxs, enumHist);
     }
     LOG(debug, "done fillEnumIdx, %8.3f s elapsed",
         timer.MilliSecsToNow() / 1000);
@@ -435,36 +435,33 @@ void StringAttribute::fillValues(LoadedVector & )
 }
 
 void
-StringAttribute::fillEnum0(const void *, size_t , EnumIndexVector &)
+StringAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
 {
-    fprintf(stderr, "StringAttribute::fillEnum0\n");
-}
-
-
-void
-StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, LoadedEnumAttributeVector &)
-{
-    fprintf(stderr, "StringAttribute::fillEnumIdx (loaded)\n");
-}
-
-
-void
-StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, EnumVector &)
-{
-    fprintf(stderr, "StringAttribute::fillEnumIdx (enumHist)\n");
-}
-
-
-void
-StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector &)
-{
-    fprintf(stderr, "StringAttribute::fillPostingsFixupEnum\n");
+    LOG_ABORT("Should not be reached");
 }
 
 void
-StringAttribute::fixupEnumRefCounts(const EnumVector &)
+StringAttribute::load_enumerated_data(ReaderBase&, const EnumIndexVector&, LoadedEnumAttributeVector&)
 {
-    fprintf(stderr, "StringAttribute::fixupEnumRefCounts\n");
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::load_enumerated_data(ReaderBase&, const EnumIndexVector&, EnumVector&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::fixupEnumRefCounts(const EnumVector&)
+{
+    LOG_ABORT("Should not be reached");
 }
 
 vespalib::MemoryUsage

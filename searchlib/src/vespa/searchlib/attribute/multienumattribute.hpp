@@ -91,9 +91,9 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
-                                           const EnumIndexVector &eidxs,
-                                           LoadedEnumAttributeVector &loaded)
+MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
+                                                    const EnumIndexVector& eidxs,
+                                                    LoadedEnumAttributeVector& loaded)
 {
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveLoadedEnum(loaded));
     this->checkSetMaxValueCount(maxvc);
@@ -101,9 +101,9 @@ MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
-                                           const EnumIndexVector &eidxs,
-                                           EnumVector &enumHist)
+MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
+                                                    const EnumIndexVector& eidxs,
+                                                    EnumVector& enumHist)
 {
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveEnumHist(enumHist));
     this->checkSetMaxValueCount(maxvc);

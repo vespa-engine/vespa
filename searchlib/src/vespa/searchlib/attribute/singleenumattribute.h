@@ -87,13 +87,13 @@ protected:
 
     void fillValues(LoadedVector & loaded) override;
 
-    void fillEnumIdx(ReaderBase &attrReader,
-                     const IEnumStore::IndexVector &eidxs,
-                     LoadedEnumAttributeVector &loaded) override;
+    void load_enumerated_data(ReaderBase& attrReader,
+                              const IEnumStore::IndexVector& eidxs,
+                              LoadedEnumAttributeVector& loaded) override;
     
-    void fillEnumIdx(ReaderBase &attrReader,
-                     const IEnumStore::IndexVector &eidxs,
-                     IEnumStore::EnumVector &enumHist) override;
+    void load_enumerated_data(ReaderBase& attrReader,
+                              const IEnumStore::IndexVector& eidxs,
+                              IEnumStore::EnumVector& enumHist) override;
     
     /**
      * Called when a new document has been added.

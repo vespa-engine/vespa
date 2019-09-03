@@ -3,6 +3,9 @@
 
 #include "numericbase.hpp"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.numericbase");
+
 namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
@@ -10,54 +13,37 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
 using attribute::LoadedEnumAttributeVector;
 
 void
-NumericAttribute::fillEnum0(const void *src,
-                           size_t srcLen,
-                           EnumIndexVector &eidxs)
+NumericAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
 {
-    (void) src;
-    (void) srcLen;
-    (void) eidxs;
-    fprintf(stderr, "NumericAttribute::fillEnum0\n");
-}
-
-
-void
-NumericAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             const EnumIndexVector &eidxs,
-                             LoadedEnumAttributeVector &loaded)
-{
-    (void) attrReader;
-    (void) eidxs;
-    (void) loaded;
-    fprintf(stderr, "NumericAttribute::fillEnumIdx (loaded)\n");
-}
-
-
-void
-NumericAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             const EnumIndexVector &eidxs,
-                             EnumVector &enumHist)
-{
-    (void) attrReader;
-    (void) eidxs;
-    (void) enumHist;
-    fprintf(stderr, "NumericAttribute::fillEnumIdx (enumHist)\n");
-}
-
-
-void
-NumericAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector &
-                                        loaded)
-{
-    (void) loaded;
-    fprintf(stderr, "NumericAttribute::fillPostingsFixupEnum\n");
+    LOG_ABORT("Should not be reached");
 }
 
 void
-NumericAttribute::fixupEnumRefCounts(const EnumVector &enumHist)
+NumericAttribute::load_enumerated_data(ReaderBase&,
+                                       const EnumIndexVector&,
+                                       LoadedEnumAttributeVector&)
 {
-    (void) enumHist;
-    fprintf(stderr, "NumericAttribute::fixupEnumRefCounts\n");
+    LOG_ABORT("Should not be reached");
+}
+
+void
+NumericAttribute::load_enumerated_data(ReaderBase&,
+                                       const EnumIndexVector&,
+                                       EnumVector&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+NumericAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+NumericAttribute::fixupEnumRefCounts(const EnumVector&)
+{
+    LOG_ABORT("Should not be reached");
 }
 
 template class NumericAttribute::Range<int8_t>;
