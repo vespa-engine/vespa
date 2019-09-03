@@ -1,10 +1,12 @@
 package com.yahoo.vespa.hosted.controller.api.integration.metrics;
 
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 
@@ -18,11 +20,18 @@ import java.util.function.Function;
  *
  * @author ogronnesby
  */
+// TODO: This module should not contain components. Move this to controller-server.
 public class ConfigServerMetricsService implements MetricsService {
+
     private final ConfigServer configServerClient;
 
-    public ConfigServerMetricsService(ConfigServer configServerClient) {
-        this.configServerClient = configServerClient;
+    @Inject
+    public ConfigServerMetricsService(ServiceRegistry serviceRegistry) {
+        this(serviceRegistry.configServer());
+    }
+
+    ConfigServerMetricsService(ConfigServer configServer) {
+        this.configServerClient = configServer;
     }
 
     @Override
