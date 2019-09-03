@@ -103,9 +103,8 @@ private:
 
     void buildSameElement(ProtonSameElement &n) {
         SameElementBuilder builder(_requestContext, _context);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            search::query::Node &node = *n.getChildren()[i];
-            builder.add_child(node);
+        for (search::query::Node *node : n.getChildren()) {
+            builder.add_child(*node);
         }
         _result = builder.build();
     }

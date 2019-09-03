@@ -32,10 +32,10 @@ CreateBlueprintVisitorHelper::getResult()
 void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, _requestContext);
-    for (size_t i = 0; i < n.getChildren().size(); ++i) {
+    for (const query::Node * child : n.getChildren()) {
         FieldSpecList fields;
         fields.add(phrase->getNextChildField(_field));
-        phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *n.getChildren()[i]));
+        phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child));
     }
     setResult(std::move(phrase));
 }
@@ -64,8 +64,7 @@ CreateBlueprintVisitorHelper::handleNumberTermAsText(query::NumberTerm &n)
 
 template <typename WS, typename NODE>
 void
-CreateBlueprintVisitorHelper::createWeightedSet(WS *bp, NODE &n) {
-    Blueprint::UP result(bp);
+CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n) {
     FieldSpecList fields;
     for (size_t i = 0; i < n.getChildren().size(); ++i) {
         fields.clear();
@@ -74,25 +73,21 @@ CreateBlueprintVisitorHelper::createWeightedSet(WS *bp, NODE &n) {
         uint32_t weight = getWeightFromNode(node).percent();
         bp->addTerm(_searchable.createBlueprint(_requestContext, fields, node), weight);
     }
-    setResult(std::move(result));
+    setResult(std::move(bp));
 }
 void
 CreateBlueprintVisitorHelper::visitWeightedSetTerm(query::WeightedSetTerm &n) {
-    WeightedSetTermBlueprint *bp = new WeightedSetTermBlueprint(_field);
-    createWeightedSet(bp, n);
+    createWeightedSet(std::make_unique<WeightedSetTermBlueprint>(_field), n);
 }
 void
 CreateBlueprintVisitorHelper::visitDotProduct(query::DotProduct &n) {
-    DotProductBlueprint *bp = new DotProductBlueprint(_field);
-    createWeightedSet(bp, n);
+    createWeightedSet(std::make_unique<DotProductBlueprint>(_field), n);
 }
 void
 CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n) {
-    ParallelWeakAndBlueprint *bp = new ParallelWeakAndBlueprint(_field,
-                                                                n.getTargetNumHits(),
-                                                                n.getScoreThreshold(),
-                                                                n.getThresholdBoostFactor());
-    createWeightedSet(bp, n);
+    createWeightedSet(std::make_unique<ParallelWeakAndBlueprint>(_field, n.getTargetNumHits(),
+                                                                 n.getScoreThreshold(), n.getThresholdBoostFactor()),
+                      n);
 }
 
 }

@@ -25,10 +25,7 @@ protected:
 
 public:
     CreateBlueprintVisitorHelper(Searchable &searchable, const FieldSpec &field, const IRequestContext & requestContext);
-    ~CreateBlueprintVisitorHelper();
-
-    template <typename T>
-    std::unique_ptr<T> make_UP(T *p) { return std::unique_ptr<T>(p); }
+    ~CreateBlueprintVisitorHelper() override;
 
     template <typename T>
     void setResult(std::unique_ptr<T> result) { _result = std::move(result); }
@@ -40,7 +37,7 @@ public:
     void visitPhrase(query::Phrase &n);
 
     template <typename WS, typename NODE>
-    void createWeightedSet(WS *bp, NODE &n);
+    void createWeightedSet(std::unique_ptr<WS> bp, NODE &n);
     void visitWeightedSetTerm(query::WeightedSetTerm &n);
     void visitDotProduct(query::DotProduct &n);
     void visitWandTerm(query::WandTerm &n);
