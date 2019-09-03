@@ -38,15 +38,12 @@ public:
     void fixupRefCounts(const EnumVector& hist) override;
 
     void removeUnusedEnums(const IndexSet& unused,
-                           const datastore::EntryComparator& cmp,
-                           const datastore::EntryComparator* fcmp);
+                           const datastore::EntryComparator& cmp);
 
-    void freeUnusedEnums(const datastore::EntryComparator& cmp,
-                         const datastore::EntryComparator* fcmp) override;
+    void freeUnusedEnums(const datastore::EntryComparator& cmp) override;
 
     void freeUnusedEnums(const IndexSet& toRemove,
-                         const datastore::EntryComparator& cmp,
-                         const datastore::EntryComparator* fcmp) override;
+                         const datastore::EntryComparator& cmp) override;
 
     bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const override;
     bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const override;
@@ -60,6 +57,27 @@ public:
     const EnumPostingTree & getPostingDictionary() const override;
 
     bool hasData() const override;
+};
+
+/**
+ * Concrete dictionary for an enum store that extends the
+ * functionality of a unique store dictionary.
+ *
+ * Special handling of value (posting list reference) is added to
+ * ensure that entries with same folded key share a posting list
+ * (e.g. case insensitive search) and posting list reference is found
+ * for the first of these entries.
+ */
+class EnumStoreFoldedDictionary : public EnumStoreDictionary<EnumPostingTree>
+{
+private:
+    std::unique_ptr<datastore::EntryComparator> _folded_compare;
+
+public:
+    EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<datastore::EntryComparator> folded_compare);
+    ~EnumStoreFoldedDictionary() override;
+    datastore::UniqueStoreAddResult add(const datastore::EntryComparator& comp, std::function<datastore::EntryRef(void)> insertEntry) override;
+    void remove(const datastore::EntryComparator& comp, datastore::EntryRef ref) override;
 };
 
 extern template

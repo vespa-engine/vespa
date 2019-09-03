@@ -108,7 +108,7 @@ PostingListAttributeBase<P>::fillPostingsFixupEnumBase(const LoadedEnumAttribute
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
     posting_itr.writeData(newIndex);
-    enumStore.freeUnusedEnums(false);
+    enumStore.freeUnusedEnums();
 }
 
 template <typename P>

@@ -42,11 +42,9 @@ public:
     virtual ssize_t deserialize(const void* src, size_t available, IndexVector& idx) = 0;
 
     virtual void fixupRefCounts(const EnumVector& hist) = 0;
-    virtual void freeUnusedEnums(const datastore::EntryComparator& cmp,
-                                 const datastore::EntryComparator* fcmp) = 0;
+    virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;
     virtual void freeUnusedEnums(const IndexSet& toRemove,
-                                 const datastore::EntryComparator& cmp,
-                                 const datastore::EntryComparator* fcmp) = 0;
+                                 const datastore::EntryComparator& cmp) = 0;
     virtual bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
     virtual bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
     virtual std::vector<attribute::IAttributeVector::EnumHandle>

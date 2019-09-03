@@ -14,6 +14,10 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.enum_store_dictionary");
 
+using search::datastore::EntryComparator;
+using search::datastore::EntryRef;
+using search::datastore::UniqueStoreAddResult;
+
 namespace search {
 
 using btree::BTreeNode;
@@ -76,44 +80,19 @@ EnumStoreDictionary<DictionaryT>::fixupRefCounts(const EnumVector& hist)
 template <typename DictionaryT>
 void
 EnumStoreDictionary<DictionaryT>::removeUnusedEnums(const IndexSet& unused,
-                                                    const datastore::EntryComparator& cmp,
-                                                    const datastore::EntryComparator* fcmp)
+                                                    const datastore::EntryComparator& cmp)
 {
-    using Iterator = typename DictionaryT::Iterator;
     if (unused.empty()) {
         return;
     }
-    Iterator it(BTreeNode::Ref(), this->_dict.getAllocator());
-    for (const auto& idx : unused) {
-        it.lower_bound(this->_dict.getRoot(), idx, cmp);
-        assert(it.valid() && !cmp(idx, it.getKey()));
-        if (Iterator::hasData() && fcmp != nullptr) {
-            typename DictionaryT::DataType pidx(it.getData());
-            this->_dict.remove(it);
-            if (!it.valid() || (*fcmp)(idx, it.getKey())) {
-                continue;  // Next entry does not use same posting list
-            }
-            --it;
-            if (it.valid() && !(*fcmp)(it.getKey(), idx)) {
-                continue;  // Previous entry uses same posting list
-            }
-            if (it.valid()) {
-                ++it;
-            } else {
-                it.begin();
-            }
-            this->_dict.thaw(it);
-            it.writeData(pidx);
-        } else {
-            this->_dict.remove(it);
-        }
-   }
+    for (const auto& ref : unused) {
+        this->remove(cmp, ref);
+    }
 }
 
 template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const datastore::EntryComparator& cmp,
-                                                  const datastore::EntryComparator* fcmp)
+EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
 
@@ -121,20 +100,19 @@ EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const datastore::EntryComparat
     for (auto iter = this->_dict.begin(); iter.valid(); ++iter) {
         _enumStore.freeUnusedEnum(iter.getKey(), unused);
     }
-    removeUnusedEnums(unused, cmp, fcmp);
+    removeUnusedEnums(unused, cmp);
 }
 
 template <typename DictionaryT>
 void
 EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const IndexSet& toRemove,
-                                                  const datastore::EntryComparator& cmp,
-                                                  const datastore::EntryComparator* fcmp)
+                                                  const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
     for (const auto& index : toRemove) {
         _enumStore.freeUnusedEnum(index, unused);
     }
-    removeUnusedEnums(unused, cmp, fcmp);
+    removeUnusedEnums(unused, cmp);
 }
 
 template <typename DictionaryT>
@@ -218,6 +196,51 @@ EnumStoreDictionary<DictionaryT>::hasData() const
     return DictionaryT::LeafNodeType::hasData();
 }
 
+EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> folded_compare)
+    : EnumStoreDictionary<EnumPostingTree>(enumStore),
+      _folded_compare(std::move(folded_compare))
+{
+}
+
+EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
+
+UniqueStoreAddResult
+EnumStoreFoldedDictionary::add(const EntryComparator &comp, std::function<EntryRef(void)> insertEntry)
+{
+    auto it = _dict.lowerBound(EntryRef(), comp);
+    if (it.valid() && !comp(EntryRef(), it.getKey())) {
+        // Entry already exists
+        return UniqueStoreAddResult(it.getKey(), false);
+    }
+    EntryRef newRef = insertEntry();
+    _dict.insert(it, newRef, EntryRef());
+    // Maybe move posting list reference from next entry
+    ++it;
+    if (it.valid() && it.getData().valid() && !(*_folded_compare)(newRef, it.getKey())) {
+        EntryRef posting_list_ref(it.getData());
+        _dict.thaw(it);
+        it.writeData(EntryRef());
+        --it;
+        assert(it.valid() && it.getKey() == newRef);
+        it.writeData(posting_list_ref);
+    }
+    return UniqueStoreAddResult(newRef, true);
+}
+
+void
+EnumStoreFoldedDictionary::remove(const EntryComparator &comp, EntryRef ref)
+{
+    assert(ref.valid());
+    auto it = _dict.lowerBound(ref, comp);
+    assert(it.valid() && it.getKey() == ref);
+    EntryRef posting_list_ref(it.getData());
+    _dict.remove(it);
+    // Maybe copy posting list reference to next entry
+    if (posting_list_ref.valid() && it.valid() && !it.getData().valid() && !(*_folded_compare)(ref, it.getKey())) {
+        this->_dict.thaw(it);
+        it.writeData(posting_list_ref);
+    }
+}
 
 template class EnumStoreDictionary<EnumTree>;
 

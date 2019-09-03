@@ -280,7 +280,7 @@ EnumStoreTest::testHoldListAndGeneration()
         ses.decRefCount(idx);
         EXPECT_EQUAL(0u, ses.getRefCount(idx));
     }
-    ses.freeUnusedEnums(true);
+    ses.freeUnusedEnums();
 
     // check readers again
     checkReaders(ses, sesGen, readers);
@@ -304,7 +304,7 @@ void
 decRefCount(NumericEnumStore& store, NumericEnumStore::Index idx)
 {
     store.decRefCount(idx);
-    store.freeUnusedEnums(false);
+    store.freeUnusedEnums();
     generation_t gen = 5;
     store.transferHoldLists(gen);
     store.trimHoldLists(gen + 1);

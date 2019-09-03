@@ -34,7 +34,7 @@ void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet& unused)
 
 template <typename EntryType>
 EnumStoreT<EntryType>::EnumStoreT(bool has_postings)
-    : _store(make_enum_store_dictionary(*this, has_postings)),
+    : _store(make_enum_store_dictionary(*this, has_postings, EntryType::hasFold() ? std::make_unique<FoldedComparatorType>(*this) : std::unique_ptr<datastore::EntryComparator>())),
       _dict(static_cast<IEnumStoreDictionary&>(_store.get_dictionary())),
       _cached_values_memory_usage(),
       _cached_values_address_space_usage(0, 0, (1ull << 32))
@@ -169,15 +169,10 @@ EnumStoreT<EntryType>::findIndex(DataType value, Index &idx) const
 
 template <typename EntryType>
 void
-EnumStoreT<EntryType>::freeUnusedEnums(bool movePostingIdx)
+EnumStoreT<EntryType>::freeUnusedEnums()
 {
     ComparatorType cmp(*this);
-    if (EntryType::hasFold() && movePostingIdx) {
-        FoldedComparatorType fcmp(*this);
-        _dict.freeUnusedEnums(cmp, &fcmp);
-    } else {
-        _dict.freeUnusedEnums(cmp, nullptr);
-    }
+    _dict.freeUnusedEnums(cmp);
 }
 
 template <typename EntryType>
@@ -185,75 +180,16 @@ void
 EnumStoreT<EntryType>::freeUnusedEnums(const IndexSet& toRemove)
 {
     ComparatorType cmp(*this);
-    if (EntryType::hasFold()) {
-        FoldedComparatorType fcmp(*this);
-        _dict.freeUnusedEnums(toRemove, cmp, &fcmp);
-    } else {
-        _dict.freeUnusedEnums(toRemove, cmp, nullptr);
-    }
-}
-
-template <typename EntryType>
-template <typename Dictionary>
-void
-EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx, Dictionary& dict)
-{
-    typedef typename Dictionary::Iterator DictionaryIterator;
-
-    // check if already present
-    ComparatorType cmp(*this, value);
-    DictionaryIterator it(btree::BTreeNode::Ref(), dict.getAllocator());
-    it.lower_bound(dict.getRoot(), Index(), cmp);
-    if (it.valid() && !cmp(Index(), it.getKey())) {
-        newIdx = it.getKey();
-        return;
-    }
-
-    newIdx = _store.get_allocator().allocate(value);
-
-    // TODO: Move this logic to "add/insert" on the dictionary
-    // update tree with new index
-    dict.insert(it, newIdx, typename Dictionary::DataType());
-
-    // Copy posting list idx from next entry if same folded value.
-    // Only for string posting list attributes, i.e. dictionary has
-    // data and entry type has folded compare.
-    if (DictionaryIterator::hasData() && EntryType::hasFold()) {
-        FoldedComparatorType foldCmp(*this);
-        ++it;
-        if (!it.valid() || foldCmp(newIdx, it.getKey())) {
-            return;  // Next entry does not use same posting list
-        }
-        --it;
-        --it;
-        if (it.valid() && !foldCmp(it.getKey(), newIdx)) {
-            return;  // Previous entry uses same posting list
-        }
-        if (it.valid()) {
-            ++it;
-        } else {
-            it.begin();
-        }
-        assert(it.valid() && it.getKey() == newIdx);
-        ++it;
-        typename Dictionary::DataType pidx(it.getData());
-        dict.thaw(it);
-        it.writeData(typename Dictionary::DataType());
-        --it;
-        assert(it.valid() && it.getKey() == newIdx);
-        it.writeData(pidx);
-    }
+    _dict.freeUnusedEnums(toRemove, cmp);
 }
 
 template <typename EntryType>
 void
 EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx)
 {
-    if (_dict.hasData()) {
-        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumPostingTree> &>(_dict).getDictionary());
-    } else {
-        addEnum(value, newIdx, static_cast<EnumStoreDictionary<EnumTree> &>(_dict).getDictionary());
-    }
+    ComparatorType cmp(*this, value);
+    auto add_result = _dict.add(cmp, [this, &value]() -> EntryRef { return _store.get_allocator().allocate(value); });
+    newIdx = add_result.ref();
 }
 
 template <typename EntryType>

@@ -243,20 +243,15 @@ public:
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(DataType value) const;
     void addEnum(DataType value, Index &newIdx);
     bool findIndex(DataType value, Index &idx) const;
-    void freeUnusedEnums(bool movePostingidx) override;
+    void freeUnusedEnums() override;
     void freeUnusedEnums(const IndexSet& toRemove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;
-
-private:
-    template <typename Dictionary>
-    void addEnum(DataType value, Index& newIdx, Dictionary& dict);
-
 };
 
 std::unique_ptr<datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings);
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare);
 
 vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx);
 
