@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 import com.google.common.base.Joiner;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Configserver;
@@ -25,11 +24,9 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
 
     private static final int ZK_CLIENT_PORT = 2181;
     private ClusterControllerContainerCluster containerCluster = null;
-    private final DeployState deployState;
 
-    public ClusterControllerCluster(AbstractConfigProducer parent, String subId, DeployState deployState) {
+    public ClusterControllerCluster(AbstractConfigProducer parent, String subId) {
         super(parent, subId);
-        this.deployState = deployState;
     }
 
     @Override
@@ -41,7 +38,6 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
             serverBuilder.id(container.index());
             builder.server(serverBuilder);
         }
-        builder.useRestrictedServerCnxnFactory( ! deployState.isHosted());
     }
 
     @Override

@@ -31,8 +31,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + zookeeperServerConfig.juteMaxBuffer());
-        if (zookeeperServerConfig.useRestrictedServerCnxnFactory())
-            System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
 
         writeConfigToDisk(zookeeperServerConfig);
         zkServerThread = new Thread(this, "zookeeper server");

@@ -311,7 +311,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
-                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", context.getDeployState()),
+                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
                                                               hosts,
                                                               clusterName,
                                                               true,
