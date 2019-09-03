@@ -6,18 +6,18 @@ import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 
 /** A wait task is something that is performed once in a while while waiting for something. */
 public abstract class WaitTask {
-    public static final int defaultTaskFrequencyMillis = 1;
+    static final int defaultTaskFrequencyMillis = 1;
 
     public abstract boolean performWaitTask();
 
-    public int getWaitTaskFrequencyInMillis() {
+    int getWaitTaskFrequencyInMillis() {
         return defaultTaskFrequencyMillis;
     }
 
     public static class StateResender extends WaitTask {
         public final FleetController fleetController;
 
-        public StateResender(FleetController fc) {
+        StateResender(FleetController fc) {
             fleetController = fc;
         }
 

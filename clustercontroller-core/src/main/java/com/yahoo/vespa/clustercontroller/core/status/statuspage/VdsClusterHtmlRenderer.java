@@ -15,11 +15,10 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
-
 /**
- * Renders webpage with status regarding cluster.
+ * Renders web page with cluster status.
  */
-public class VdsClusterHtmlRendrer {
+public class VdsClusterHtmlRenderer {
 
     private static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
 

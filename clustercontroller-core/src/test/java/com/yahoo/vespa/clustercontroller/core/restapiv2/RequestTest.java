@@ -5,12 +5,13 @@ import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailu
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class RequestTest {
 
     @Test
     public void testGetResultBeforeCompletion() {
-        Request<String> r = new Request<String>(Request.MasterState.MUST_BE_MASTER) {
+        Request<String> r = new Request<>(Request.MasterState.MUST_BE_MASTER) {
             @Override
             public String calculateResult(Context context) {
                 return "foo";
@@ -18,18 +19,18 @@ public class RequestTest {
         };
         try{
             r.getResult();
-            assertTrue(false);
+            fail();
         } catch (InternalFailure e) {
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
         r.notifyCompleted();
         try{
             r.getResult();
-            assertTrue(false);
+            fail();
         } catch (InternalFailure e) {
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
     }
 

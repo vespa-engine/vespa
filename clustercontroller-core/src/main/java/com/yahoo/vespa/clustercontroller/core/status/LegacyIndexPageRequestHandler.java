@@ -6,7 +6,7 @@ import com.yahoo.vespa.clustercontroller.core.*;
 import com.yahoo.vespa.clustercontroller.core.Timer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRendrer;
+import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 
 import java.util.*;
 
@@ -62,7 +62,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         if (masterElectionHandler.isAmongNthFirst(data.getOptions().stateGatherCount)) {
             // Table overview of all the nodes
             cluster.writeHtmlState(
-                    new VdsClusterHtmlRendrer(),
+                    new VdsClusterHtmlRenderer(),
                     content,
                     timer,
                     stateVersionTracker.getVersionedClusterStateBundle(),

@@ -32,6 +32,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
@@ -49,21 +50,21 @@ public class SetNodeStateTest extends StateRestApiTest {
         private TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
         private boolean probe = false;
 
-        public SetUnitStateRequestImpl(String req) {
+        SetUnitStateRequestImpl(String req) {
             super(req, 0);
         }
 
-        public SetUnitStateRequestImpl setCondition(Condition condition) {
+        SetUnitStateRequestImpl setCondition(Condition condition) {
             this.condition = condition;
             return this;
         }
 
-        public SetUnitStateRequestImpl setResponseWait(ResponseWait responseWait) {
+        SetUnitStateRequestImpl setResponseWait(ResponseWait responseWait) {
             this.responseWait = responseWait;
             return this;
         }
 
-        public SetUnitStateRequestImpl setNewState(
+        SetUnitStateRequestImpl setNewState(
                 final String type,
                 final String state,
                 final String reason) {
@@ -246,7 +247,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (OperationNotSupportedForUnitException e) {
             assertTrue(e.getMessage(), e.getMessage().contains(wrongUnitMessage));
         }
@@ -256,7 +257,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/distributor").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (OperationNotSupportedForUnitException e) {
             assertTrue(e.getMessage(), e.getMessage().contains(wrongUnitMessage));
         }
@@ -266,7 +267,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/1/0").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (OperationNotSupportedForUnitException e) {
             assertTrue(e.getMessage(), e.getMessage().contains(wrongUnitMessage));
         }
@@ -278,37 +279,37 @@ public class SetNodeStateTest extends StateRestApiTest {
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "foo").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/content").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/bah").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/10").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/1/0/1").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
         try{
             restAPI.setUnitState(new SetUnitStateRequestImpl(
                     "music/storage/1/bar").setNewState("user", "down", "testing"));
-            assertTrue(false);
+            fail();
         } catch (MissingUnitException e) {
         }
     }

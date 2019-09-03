@@ -56,7 +56,7 @@ public interface Waiter {
             return swc.getCurrentState();
         }
 
-        public ClusterState waitForState(String state) throws Exception {
+        public ClusterState waitForState(String state) {
             return waitForState(state, data.getTimeoutMS());
         }
         public ClusterState waitForStateInAllSpaces(String state) {
@@ -68,10 +68,10 @@ public interface Waiter {
         public ClusterState waitForState(String state, int timeoutMS) {
             return waitForState(state, timeoutMS, false, Collections.emptySet());
         }
-        public ClusterState waitForStableSystem() throws Exception {
+        public ClusterState waitForStableSystem() {
             return waitForStableSystem(data.getDummyNodes().size() / 2);
         }
-        public ClusterState waitForStableSystem(int nodeCount) throws Exception {
+        public ClusterState waitForStableSystem(int nodeCount) {
             WaitCondition.StateWait swc = new WaitCondition.RegexStateMatcher("version:\\d+ distributor:"+nodeCount+" storage:"+nodeCount, data.getFleetController(), data.getMonitor()).includeNotifyingNodes(data.getDummyNodes());
             wait(swc, new WaitTask.StateResender(data.getFleetController()), data.getTimeoutMS());
             return swc.getCurrentState();

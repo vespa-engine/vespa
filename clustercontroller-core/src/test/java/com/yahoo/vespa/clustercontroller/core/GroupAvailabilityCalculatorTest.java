@@ -22,10 +22,7 @@ public class GroupAvailabilityCalculatorTest {
         }
     }
 
-    private static GroupAvailabilityCalculator calcForFlatCluster(
-            final int nodeCount,
-            final double minNodeRatioPerGroup)
-    {
+    private static GroupAvailabilityCalculator calcForFlatCluster(int nodeCount, double minNodeRatioPerGroup) {
         return GroupAvailabilityCalculator.builder()
                 .withDistribution(DistributionBuilder.forFlatCluster(nodeCount))
                 .withMinNodeRatioPerGroup(minNodeRatioPerGroup)

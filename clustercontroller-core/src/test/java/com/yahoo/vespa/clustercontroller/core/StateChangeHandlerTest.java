@@ -27,14 +27,14 @@ import static org.junit.Assert.assertTrue;
 public class StateChangeHandlerTest {
 
     private static final Logger log = Logger.getLogger(StateChangeHandlerTest.class.getName());
-    private class Config {
+    private static class Config {
         int nodeCount = 3;
         int stableStateTime = 1000 * 60000;
         int maxSlobrokDisconnectPeriod = 60000;
         int maxPrematureCrashes = 3;
     }
 
-    private class TestNodeStateOrHostInfoChangeHandler implements NodeStateOrHostInfoChangeHandler {
+    private static class TestNodeStateOrHostInfoChangeHandler implements NodeStateOrHostInfoChangeHandler {
 
         LinkedList<String> events = new LinkedList<>();
 

@@ -29,7 +29,7 @@ public interface WaitCondition {
     abstract class StateWait implements WaitCondition {
         private final Object monitor;
         protected ClusterState currentState;
-        protected ClusterState convergedState;
+        ClusterState convergedState;
         private final SystemStateListener listener = new SystemStateListener() {
             @Override
             public void handleNewPublishedState(ClusterStateBundle state) {
@@ -48,14 +48,14 @@ public interface WaitCondition {
             }
         };
 
-        public StateWait(FleetController fc, Object monitor) {
+        protected StateWait(FleetController fc, Object monitor) {
             this.monitor = monitor;
             synchronized (this.monitor) {
                 fc.addSystemStateListener(listener);
             }
         }
 
-        public ClusterState getCurrentState() {
+        ClusterState getCurrentState() {
             synchronized (monitor) {
                 return currentState;
             }
@@ -70,22 +70,22 @@ public interface WaitCondition {
         private boolean checkAllSpaces = false;
         private Set<String> checkSpaceSubset = Collections.emptySet();
 
-        public RegexStateMatcher(String regex, FleetController fc, Object monitor) {
+        RegexStateMatcher(String regex, FleetController fc, Object monitor) {
             super(fc, monitor);
             pattern = Pattern.compile(regex);
         }
 
-        public RegexStateMatcher includeNotifyingNodes(Collection<DummyVdsNode> nodes) {
+        RegexStateMatcher includeNotifyingNodes(Collection<DummyVdsNode> nodes) {
             nodesToCheck = nodes;
             return this;
         }
 
-        public RegexStateMatcher checkAllSpaces(boolean checkAllSpaces) {
+        RegexStateMatcher checkAllSpaces(boolean checkAllSpaces) {
             this.checkAllSpaces = checkAllSpaces;
             return this;
         }
 
-        public RegexStateMatcher checkSpaceSubset(Set<String> spaces) {
+        RegexStateMatcher checkSpaceSubset(Set<String> spaces) {
             this.checkSpaceSubset = spaces;
             return this;
         }
@@ -163,11 +163,11 @@ public interface WaitCondition {
         }
     }
 
-    public class InitProgressPassedMatcher extends StateWait {
+    class InitProgressPassedMatcher extends StateWait {
         private final Node node;
         private final double minProgress;
 
-        public InitProgressPassedMatcher(Node n, double minProgress, FleetController fc, Object monitor) {
+        InitProgressPassedMatcher(Node n, double minProgress, FleetController fc, Object monitor) {
             super(fc, monitor);
             this.node = n;
             this.minProgress = minProgress;
@@ -195,7 +195,7 @@ public interface WaitCondition {
         private final int bitCount;
         private final int nodeCount;
 
-        public MinUsedBitsMatcher(int bitCount, int nodeCount, FleetController fc, Object monitor) {
+        MinUsedBitsMatcher(int bitCount, int nodeCount, FleetController fc, Object monitor) {
             super(fc, monitor);
             this.bitCount = bitCount;
             this.nodeCount = nodeCount;

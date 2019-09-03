@@ -1,8 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.ErrorCode;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.ListenFailedException;
+import com.yahoo.jrt.Method;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.BackOffPolicy;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
@@ -11,8 +20,12 @@ import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCUtil;
 
-import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -25,7 +38,7 @@ public class DummyVdsNode {
 
     public static Logger log = Logger.getLogger(DummyVdsNode.class.getName());
 
-    private String slobrokConnectionSpecs[];
+    private String[] slobrokConnectionSpecs;
     private String clusterName;
     private NodeType type;
     private int index;
@@ -39,15 +52,14 @@ public class DummyVdsNode {
     private final Timer timer;
     private boolean failSetSystemStateRequests = false;
     private boolean resetTimestampOnReconnect = false;
-    private long startTimestamp;
     private Map<Node, Long> highestStartTimestamps = new TreeMap<Node, Long>();
-    public int timedOutStateReplies = 0;
-    public int outdatedStateReplies = 0;
-    public int immediateStateReplies = 0;
-    public int setNodeStateReplies = 0;
+    int timedOutStateReplies = 0;
+    int outdatedStateReplies = 0;
+    int immediateStateReplies = 0;
+    int setNodeStateReplies = 0;
     private boolean registeredInSlobrok = false;
 
-    class Req {
+    static class Req {
         Request request;
         long timeout;
 
@@ -56,7 +68,7 @@ public class DummyVdsNode {
             this.timeout = timeout;
         }
     }
-    class BackOff implements BackOffPolicy {
+    static class BackOff implements BackOffPolicy {
         public void reset() {}
         public double get() { return 0.01; }
         public boolean shouldWarn(double v) { return false; }
@@ -113,11 +125,7 @@ public class DummyVdsNode {
         nodeState.setStartTimestamp(timer.getCurrentTimeInMillis() / 1000);
     }
 
-    public void resetStartTimestamp() {
-        resetTimestampOnReconnect = true;
-    }
-
-    public int getPendingNodeStateCount() { return waitingRequests.size(); }
+    int getPendingNodeStateCount() { return waitingRequests.size(); }
 
     public void shutdown() {
         messageResponder.interrupt();
@@ -125,9 +133,9 @@ public class DummyVdsNode {
         disconnect();
     }
 
-    public int connect() throws ListenFailedException, UnknownHostException {
+    public int connect() throws ListenFailedException {
         if (resetTimestampOnReconnect) {
-            startTimestamp = timer.getCurrentTimeInMillis() / 1000;
+            long startTimestamp = timer.getCurrentTimeInMillis() / 1000;
             nodeState.setStartTimestamp(startTimestamp);
             resetTimestampOnReconnect = false;
         }
@@ -146,23 +154,23 @@ public class DummyVdsNode {
         return (registeredInSlobrok && supervisor != null);
     }
 
-    public void registerSlobrok() {
+    void registerSlobrok() {
         register.registerName(getSlobrokName());
         register.registerName(getSlobrokName() + "/default");
         registeredInSlobrok = true;
     }
 
-    public void disconnectSlobrok() {
+    void disconnectSlobrok() {
         register.unregisterName(getSlobrokName());
         register.unregisterName(getSlobrokName() + "/default");
         registeredInSlobrok = false;
     }
 
-    public void disconnect() { disconnectImmediately(); }
-    public void disconnectImmediately() { disconnect(false, 0, false);  }
-    public void disconnectBreakConnection() { disconnect(true, FleetControllerTest.timeoutMS, false); }
-    public void disconnectAsShutdown() { disconnect(true, FleetControllerTest.timeoutMS, true); }
-    public void disconnect(boolean waitForPendingNodeStateRequest, long timeoutms, boolean setStoppingStateFirst) {
+    void disconnect() { disconnectImmediately(); }
+    void disconnectImmediately() { disconnect(false, 0, false);  }
+    void disconnectBreakConnection() { disconnect(true, FleetControllerTest.timeoutMS, false); }
+    void disconnectAsShutdown() { disconnect(true, FleetControllerTest.timeoutMS, true); }
+    private void disconnect(boolean waitForPendingNodeStateRequest, long timeoutms, boolean setStoppingStateFirst) {
         log.log(LogLevel.DEBUG, "Dummy node " + DummyVdsNode.this.toString() + ": Breaking connection." + (waitForPendingNodeStateRequest ? " Waiting for pending state first." : ""));
         if (waitForPendingNodeStateRequest) {
             this.waitForPendingGetNodeStateRequest(timeoutms);
@@ -198,7 +206,7 @@ public class DummyVdsNode {
 
     public int getStateCommunicationVersion() { return stateCommunicationVersion; }
 
-    public void waitForSystemStateVersion(int version, long timeout) {
+    void waitForSystemStateVersion(int version, long timeout) {
         try {
             long startTime = System.currentTimeMillis();
             while (getLatestSystemStateVersion().orElse(-1) < version) {
@@ -233,7 +241,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void waitForPendingGetNodeStateRequest(long timeout) {
+    private void waitForPendingGetNodeStateRequest(long timeout) {
         long startTime = System.currentTimeMillis();
         long endTime = startTime + timeout;
         log.log(LogLevel.DEBUG, "Dummy node " + this + " waiting for pending node state request.");
@@ -261,7 +269,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void replyToPendingNodeStateRequests() {
+    void replyToPendingNodeStateRequests() {
         for(Req req : waitingRequests) {
             log.log(LogLevel.DEBUG, "Dummy node " + this + " answering pending node state request.");
             req.request.returnValues().add(new StringValue(nodeState.serialize()));
@@ -297,7 +305,7 @@ public class DummyVdsNode {
         }
     }
 
-    public List<ClusterState> getSystemStatesReceived() {
+    List<ClusterState> getSystemStatesReceived() {
         synchronized(timer) {
             return clusterStateBundles.stream()
                     .map(ClusterStateBundle::getBaselineClusterState)
@@ -320,11 +328,11 @@ public class DummyVdsNode {
 
     public ClusterState getClusterState() {
         return Optional.ofNullable(getClusterStateBundle())
-                .map(b -> b.getBaselineClusterState())
+                .map(ClusterStateBundle::getBaselineClusterState)
                 .orElse(null);
     }
 
-    public String getSlobrokName() {
+    String getSlobrokName() {
         return "storage/cluster." + clusterName + "/" + type + "/" + index;
     }
 
@@ -415,7 +423,7 @@ public class DummyVdsNode {
         }
     }
 
-    public boolean sendGetNodeStateReply(int index) {
+    boolean sendGetNodeStateReply(int index) {
         for (Iterator<Req> it = waitingRequests.iterator(); it.hasNext(); ) {
              Req r = it.next();
              if (r.request.parameters().size() > 2 && r.request.parameters().get(2).asInt32() == index) {
@@ -488,7 +496,7 @@ public class DummyVdsNode {
         }
     }
 
-    public void failSetSystemState(boolean failSystemStateRequests) {
+    void failSetSystemState(boolean failSystemStateRequests) {
         synchronized (timer) {
             this.failSetSystemStateRequests = failSystemStateRequests;
         }

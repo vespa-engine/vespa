@@ -13,8 +13,8 @@ import java.util.logging.Logger;
  */
 public class FakeTimer implements Timer {
     private static Logger log = Logger.getLogger(FakeTimer.class.getName());
-        // Don't start at zero. Clock users may initialize a 'last run' entry with 0, and we want first time to always look like a timeout
-    long currentTime = (long)30 * 365 * 24 * 60 * 60 * 1000;
+    // Don't start at zero. Clock users may initialize a 'last run' entry with 0, and we want first time to always look like a timeout
+    private long currentTime = (long) 30 * 365 * 24 * 60 * 60 * 1000;
 
     public synchronized long getCurrentTimeInMillis() {
         return currentTime;

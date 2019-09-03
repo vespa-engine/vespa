@@ -15,17 +15,17 @@ import java.util.*;
 // TODO: Author
 public abstract class StateRestApiTest {
 
-    protected ClusterControllerMock books;
-    protected ClusterControllerMock music;
-    protected StateRestAPI restAPI;
-    protected JsonWriter jsonWriter = new JsonWriter();
-    protected Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
+    private ClusterControllerMock books;
+    ClusterControllerMock music;
+    StateRestAPI restAPI;
+    JsonWriter jsonWriter = new JsonWriter();
+    Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
 
     public static class StateRequest implements UnitStateRequest {
         private String[] path;
         private int recursive;
 
-        public StateRequest(String req, int recursive) {
+        StateRequest(String req, int recursive) {
             path = req.isEmpty() ? new String[0] : req.split("/");
             this.recursive = recursive;
         }
@@ -83,7 +83,7 @@ public abstract class StateRestApiTest {
         }, ccSockets);
     }
 
-    protected void initializeCluster(ContentCluster cluster, Collection<ConfiguredNode> nodes) {
+    private void initializeCluster(ContentCluster cluster, Collection<ConfiguredNode> nodes) {
         for (ConfiguredNode configuredNode : nodes) {
             for (NodeType type : NodeType.getTypes()) {
                 NodeState reported = new NodeState(type, State.UP);

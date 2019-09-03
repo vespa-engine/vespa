@@ -2,7 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NoZooKeeperTest extends FleetControllerTest {
 
@@ -15,7 +15,7 @@ public class NoZooKeeperTest extends FleetControllerTest {
         setUpVdsNodes(true, new DummyVdsNodeOptions());
         waitForStableSystem();
 
-        assertEquals(true, nodes.get(0).isDistributor());
+        assertTrue(nodes.get(0).isDistributor());
         nodes.get(0).disconnect();
         waitForState("version:\\d+ distributor:10 .0.s:d storage:10");
 

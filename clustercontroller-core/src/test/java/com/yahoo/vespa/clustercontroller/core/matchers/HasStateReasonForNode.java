@@ -13,7 +13,7 @@ public class HasStateReasonForNode extends ArgumentMatcher<Map<Node, NodeStateRe
     private final Node node;
     private final NodeStateReason expected;
 
-    public HasStateReasonForNode(Node node, NodeStateReason expected) {
+    private HasStateReasonForNode(Node node, NodeStateReason expected) {
         this.node = node;
         this.expected = expected;
     }

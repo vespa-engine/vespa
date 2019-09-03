@@ -5,7 +5,7 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.vdslib.state.ClusterState;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
 
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.MAY_HAVE_MERGES_PENDING;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.NODE_TOO_UNSTABLE;
@@ -42,7 +42,7 @@ public class MaintenanceWhenPendingGlobalMergesTest {
 
     private static class AnnotatedClusterStateBuilder extends AnnotatedClusterState.Builder {
 
-        public static AnnotatedClusterStateBuilder ofState(String stateStr) {
+        static AnnotatedClusterStateBuilder ofState(String stateStr) {
             return (AnnotatedClusterStateBuilder) new AnnotatedClusterStateBuilder().clusterState(stateStr);
         }
 

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vespa.clustercontroller.core.ClusterEvent;
-import com.yahoo.vespa.clustercontroller.core.NodeEvent;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
 import org.mockito.ArgumentMatcher;
@@ -10,7 +9,7 @@ import org.mockito.ArgumentMatcher;
 public class ClusterEventWithDescription extends ArgumentMatcher<ClusterEvent> {
     private final String expected;
 
-    public ClusterEventWithDescription(String expected) {
+    private ClusterEventWithDescription(String expected) {
         this.expected = expected;
     }
 

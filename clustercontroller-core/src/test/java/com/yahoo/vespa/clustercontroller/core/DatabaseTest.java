@@ -27,7 +27,7 @@ public class DatabaseTest extends FleetControllerTest {
     private static Logger log = Logger.getLogger(DatabaseTest.class.getName());
 
     // Note: different semantics than FleetControllerTest.setWantedState
-    protected void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
+    private void setWantedState(Node n, NodeState ns, Map<Node, NodeState> wantedStates) {
         int rpcPort = fleetController.getRpcPort();
         if (supervisor == null) {
             supervisor = new Supervisor(new Transport());

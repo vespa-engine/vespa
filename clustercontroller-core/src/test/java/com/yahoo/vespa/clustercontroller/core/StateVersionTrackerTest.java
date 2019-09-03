@@ -9,9 +9,7 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import org.junit.Test;
 
-import java.text.ParseException;
 import java.util.Arrays;
-import java.util.Optional;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;

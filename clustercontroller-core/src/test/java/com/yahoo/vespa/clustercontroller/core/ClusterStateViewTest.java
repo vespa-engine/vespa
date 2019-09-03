@@ -13,16 +13,14 @@ import static org.mockito.Mockito.*;
 
 /**
  * @author hakonhall
- * @since 5.34
  */
 public class ClusterStateViewTest {
-    final NodeInfo nodeInfo = mock(NodeInfo.class);
-    final Node node = mock(Node.class);
-    final ClusterStatsAggregator statsAggregator = mock(ClusterStatsAggregator.class);
-    final ClusterState clusterState = mock(ClusterState.class);
-    final ClusterStateView clusterStateView = new ClusterStateView(clusterState, statsAggregator);
+    private final NodeInfo nodeInfo = mock(NodeInfo.class);
+    private final ClusterStatsAggregator statsAggregator = mock(ClusterStatsAggregator.class);
+    private final ClusterState clusterState = mock(ClusterState.class);
+    private final ClusterStateView clusterStateView = new ClusterStateView(clusterState, statsAggregator);
 
-    HostInfo createHostInfo(String version) {
+    private HostInfo createHostInfo(String version) {
         return HostInfo.createHostInfo("{ \"cluster-state-version\": " + version + " }");
     }
 

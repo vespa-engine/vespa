@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.vdslib.state.NodeType;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 
 import static org.junit.Assert.assertFalse;
 
@@ -20,8 +17,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
-        options.nodes = DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())
-                .stream().collect(Collectors.toSet());
+        options.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount()));
         options.minNodeRatioPerGroup = minNodeRatio;
         options.maxTransitionTime = transitionTimes(0);
         return options;
@@ -40,8 +36,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
     private void reconfigureWithDistribution(DistributionBuilder.GroupBuilder groupBuilder) {
         FleetControllerOptions newOptions = this.options.clone();
-        newOptions.nodes = DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount())
-                .stream().collect(Collectors.toSet());
+        newOptions.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount()));
         newOptions.storageDistribution = DistributionBuilder.forHierarchicCluster(groupBuilder);
         updateConfigLive(newOptions);
     }

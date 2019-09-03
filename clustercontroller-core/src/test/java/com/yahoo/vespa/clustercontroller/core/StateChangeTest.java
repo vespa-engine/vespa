@@ -1,9 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.testutils.StateWaiter;
@@ -18,7 +23,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class StateChangeTest extends FleetControllerTest {
@@ -83,7 +91,6 @@ public class StateChangeTest extends FleetControllerTest {
         }
 
         assertEquals(correct, actual);
-
     }
 
     private static List<ConfiguredNode> createNodes(int count) {
@@ -184,7 +191,7 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         String desc = ctrl.getReportedNodeState(new Node(NodeType.DISTRIBUTOR, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Closed at other end") != -1);
+        assertTrue(desc, desc.contains("Closed at other end"));
 
         assertEquals("version:4 distributor:10 .0.s:d storage:10", ctrl.getSystemState().toString());
 
@@ -201,7 +208,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         assert(!ctrl.getReportedNodeState(new Node(NodeType.DISTRIBUTOR, 0)).hasDescription());
         desc = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Closed at other end") != -1);
+        assertTrue(desc, desc.contains("Closed at other end"));
 
         timer.advanceTime(options.maxTransitionTime.get(NodeType.STORAGE) + 1);
 
@@ -210,7 +217,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals("version:6 distributor:10 .0.t:12345678 storage:10 .0.s:d", ctrl.getSystemState().toString());
 
         desc = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Closed at other end") != -1);
+        assertTrue(desc, desc.contains("Closed at other end"));
 
         timer.advanceTime(1000);
 
@@ -249,7 +256,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals(1, ctrl.getCluster().getNodeInfo(new Node(NodeType.STORAGE, 0)).getPrematureCrashCount());
     }
 
-    public void tick(int timeMs) throws Exception {
+    private void tick(int timeMs) throws Exception {
         timer.advanceTime(timeMs);
         ctrl.tick();
     }
@@ -272,8 +279,8 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         String desc = ctrl.getReportedNodeState(new Node(NodeType.DISTRIBUTOR, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Received signal 15 (SIGTERM - Termination signal)") != -1
-                      || desc.indexOf("controlled shutdown") != -1);
+        assertTrue(desc, desc.contains("Received signal 15 (SIGTERM - Termination signal)")
+                      || desc.contains("controlled shutdown"));
 
         tick(1000);
 
@@ -286,15 +293,15 @@ public class StateChangeTest extends FleetControllerTest {
 
         assert(!ctrl.getReportedNodeState(new Node(NodeType.DISTRIBUTOR, 0)).hasDescription());
         desc = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Received signal 15 (SIGTERM - Termination signal)") != -1
-                      || desc.indexOf("controlled shutdown") != -1);
+        assertTrue(desc, desc.contains("Received signal 15 (SIGTERM - Termination signal)")
+                      || desc.contains("controlled shutdown"));
 
         tick(options.maxTransitionTime.get(NodeType.STORAGE) + 1);
 
         assertEquals("version:6 distributor:10 storage:10 .0.s:d", ctrl.getSystemState().toString());
         desc = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 0)).getDescription();
-        assertTrue(desc, desc.indexOf("Received signal 15 (SIGTERM - Termination signal)") != -1
-                      || desc.indexOf("controlled shutdown") != -1);
+        assertTrue(desc, desc.contains("Received signal 15 (SIGTERM - Termination signal)")
+                      || desc.contains("controlled shutdown"));
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 0), State.UP, "");
 
@@ -381,7 +388,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         NodeState ns = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6));
-        assertTrue(ns.toString(), ns.getDescription().indexOf("Connection error: Closed at other end") != -1);
+        assertTrue(ns.toString(), ns.getDescription().contains("Connection error: Closed at other end"));
 
         tick(1000);
 
@@ -441,7 +448,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         NodeState ns = ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6));
-        assertTrue(ns.toString(), ns.getDescription().indexOf("Connection error: Closed at other end") != -1);
+        assertTrue(ns.toString(), ns.getDescription().contains("Connection error: Closed at other end"));
 
         tick(1000);
 
@@ -926,7 +933,7 @@ public class StateChangeTest extends FleetControllerTest {
      * Class for testing states of all nodes. Will fail in constructor with
      * debug message on non-expected results.
      */
-    abstract class StateMessageChecker {
+    abstract static class StateMessageChecker {
         StateMessageChecker(final List<DummyVdsNode> nodes) {
             for (final DummyVdsNode node : nodes) {
                 final List<ClusterState> states = node.getSystemStatesReceived();
@@ -992,8 +999,8 @@ public class StateChangeTest extends FleetControllerTest {
 
         setUpVdsNodes(true, new DummyVdsNodeOptions(), true);
 
-        for (int i=0; i<nodes.size(); ++i) {
-            nodes.get(i).connect();
+        for (DummyVdsNode node : nodes) {
+            node.connect();
         }
         // Marking one node as 'initializing' improves testing of state later on.
         nodes.get(3).setNodeState(State.INITIALIZING);
@@ -1088,7 +1095,7 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals("version:6 bits:17 distributor:10 storage:10", ctrl.getSystemState().toString());
     }
 
-    private void setMinUsedBitsForAllNodes(int bits) throws Exception {
+    private void setMinUsedBitsForAllNodes(int bits) {
         for (int i = 0; i < 10; ++i) {
             communicator.setNodeState(new Node(NodeType.STORAGE, i), new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(bits), "");
         }
@@ -1106,7 +1113,7 @@ public class StateChangeTest extends FleetControllerTest {
         fleetController.addSystemStateListener(waiter);
 
         // Simulate netsplit. Take node down without node booting
-        assertEquals(true, nodes.get(0).isDistributor());
+        assertTrue(nodes.get(0).isDistributor());
         nodes.get(0).disconnectImmediately();
         waiter.waitForState("version:\\d+ distributor:10 .0.s:d storage:10", timeoutMS);
 
@@ -1133,13 +1140,13 @@ public class StateChangeTest extends FleetControllerTest {
             } else {
                 for (ConfiguredNode i : options.nodes) {
                     Node nodeId = new Node(NodeType.STORAGE, i.index());
-                    assertTrue(nodeId.toString(), lastState.getNodeState(nodeId).getStartTimestamp() == 0);
+                    assertEquals(nodeId.toString(), 0, lastState.getNodeState(nodeId).getStartTimestamp());
                 }
             }
 
             for (ConfiguredNode i : options.nodes) {
                 Node nodeId = new Node(NodeType.DISTRIBUTOR, i.index());
-                assertTrue(nodeId.toString(), lastState.getNodeState(nodeId).getStartTimestamp() == 0);
+                assertEquals(nodeId.toString(), 0, lastState.getNodeState(nodeId).getStartTimestamp());
             }
         }
     }

@@ -12,46 +12,46 @@ import java.util.stream.IntStream;
 
 public class DistributionBuilder {
     // TODO support nested groups
-    public static class GroupBuilder {
+    static class GroupBuilder {
         final int groupCount;
-        public List<Integer> groupsWithNodeCount;
+        List<Integer> groupsWithNodeCount;
 
-        public GroupBuilder(int groupCount) {
+        GroupBuilder(int groupCount) {
             this.groupCount = groupCount;
         }
 
-        public GroupBuilder(int... nodeCounts) {
+        GroupBuilder(int... nodeCounts) {
             this.groupCount = nodeCounts.length;
             this.groupsWithNodeCount = IntStream.of(nodeCounts).boxed()
                     .collect(Collectors.toList());
         }
 
-        public GroupBuilder eachWithNodeCount(int nodeCount) {
+        GroupBuilder eachWithNodeCount(int nodeCount) {
             groupsWithNodeCount = IntStream.range(0, groupCount)
                     .map(i -> nodeCount).boxed()
                     .collect(Collectors.toList());
             return this;
         }
 
-        public int totalNodeCount() {
+        int totalNodeCount() {
             return groupsWithNodeCount.stream().reduce(0, Integer::sum);
         }
 
-        public String groupDistributionSpec() {
+        String groupDistributionSpec() {
             return IntStream.range(0, groupCount).mapToObj(i -> "1")
                     .collect(Collectors.joining("|")) + "|*";
         }
     }
 
-    public static GroupBuilder withGroups(int groups) {
+    static GroupBuilder withGroups(int groups) {
         return new GroupBuilder(groups);
     }
 
-    public static GroupBuilder withGroupNodes(int... nodeCounts) {
+    static GroupBuilder withGroupNodes(int... nodeCounts) {
         return new GroupBuilder(nodeCounts);
     }
 
-    public static List<ConfiguredNode> buildConfiguredNodes(int nodeCount) {
+    static List<ConfiguredNode> buildConfiguredNodes(int nodeCount) {
         return IntStream.range(0, nodeCount)
                 .mapToObj(i -> new ConfiguredNode(i, false))
                 .collect(Collectors.toList());
@@ -82,7 +82,7 @@ public class DistributionBuilder {
         return new Distribution(new StorDistributionConfig(configBuilder));
     }
 
-    public static Distribution forHierarchicCluster(GroupBuilder root) {
+    static Distribution forHierarchicCluster(GroupBuilder root) {
         List<ConfiguredNode> nodes = buildConfiguredNodes(root.totalNodeCount());
 
         StorDistributionConfig.Builder configBuilder = new StorDistributionConfig.Builder();

@@ -14,17 +14,17 @@ public class ClusterStatsChangeTrackerTest {
     private static class StatsBuilder {
         private final ContentClusterStatsBuilder builder = new ContentClusterStatsBuilder();
 
-        public StatsBuilder bucketsPending(int contentNodeIndex) {
+        StatsBuilder bucketsPending(int contentNodeIndex) {
             builder.add(contentNodeIndex, "global", 5, 1);
             return this;
         }
 
-        public StatsBuilder inSync(int contentNodeIndex) {
+        StatsBuilder inSync(int contentNodeIndex) {
             builder.add(contentNodeIndex, "global", 5, 0);
             return this;
         }
 
-        public ContentClusterStats build() {
+        ContentClusterStats build() {
             return builder.build();
         }
     }
@@ -47,17 +47,17 @@ public class ClusterStatsChangeTrackerTest {
             tracker = new ClusterStatsChangeTracker(aggregator.getAggregatedStats(), minMergeCompletionRatio);
         }
 
-        public static Fixture empty() {
+        static Fixture empty() {
             return new Fixture(Sets.newHashSet(0, 1), 1.0);
         }
 
-        public static Fixture fromStats(StatsBuilder builder) {
+        static Fixture fromStats(StatsBuilder builder) {
             Fixture result = new Fixture(Sets.newHashSet(0, 1), 1.0);
             result.updateStats(builder);
             return result;
         }
 
-        public void newAggregatedStats(StatsBuilder builder) {
+        void newAggregatedStats(StatsBuilder builder) {
             aggregator = new ClusterStatsAggregator(Sets.newHashSet(1), contentNodeIndices);
             updateStats(builder);
             tracker.updateAggregatedStats(aggregator.getAggregatedStats(), minMergeCompletionRatio);
@@ -67,7 +67,7 @@ public class ClusterStatsChangeTrackerTest {
             aggregator.updateForDistributor(1, builder.build());
         }
 
-        public boolean statsHaveChanged() {
+        boolean statsHaveChanged() {
             return tracker.statsHaveChanged();
         }
 

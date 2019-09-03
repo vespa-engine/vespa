@@ -4,7 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.google.common.collect.Sets;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRendrer;
+import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONWriter;
 import org.junit.Before;
@@ -12,30 +12,28 @@ import org.junit.Test;
 
 import java.io.StringWriter;
 import java.io.Writer;
-import java.text.ParseException;
 import java.util.TreeMap;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class ContentClusterHtmlRendrerTest {
-    VdsClusterHtmlRendrer rendrer = new VdsClusterHtmlRendrer();
-    final static int slobrokGeneration = 34;
-    final static String clusterName = "clustername";
-    final TreeMap<Integer, NodeInfo> storageNodeInfoByIndex = new TreeMap<>();
-    final TreeMap<Integer, NodeInfo> distributorNodeInfoByIndex = new TreeMap<>();
-    String result;
+    private VdsClusterHtmlRenderer renderer = new VdsClusterHtmlRenderer();
+    private final static int slobrokGeneration = 34;
+    private final static String clusterName = "clustername";
+    private final TreeMap<Integer, NodeInfo> storageNodeInfoByIndex = new TreeMap<>();
+    private final TreeMap<Integer, NodeInfo> distributorNodeInfoByIndex = new TreeMap<>();
+    private String result;
 
     @Before
-    public void before() throws JSONException, ParseException {
+    public void before() throws JSONException {
         final ClusterStateBundle stateBundle = ClusterStateBundle.ofBaselineOnly(
                 AnnotatedClusterState.withoutAnnotations(
                         ClusterState.stateFromString("version:34633 bits:24 distributor:211 storage:211")));
-        final ClusterState state = stateBundle.getBaselineClusterState();
         final EventLog eventLog = new EventLog(new FakeTimer(), null);
 
-        final VdsClusterHtmlRendrer.Table table = rendrer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
+        final VdsClusterHtmlRenderer.Table table = renderer.createNewClusterHtmlTable(clusterName, slobrokGeneration);
 
         final ContentCluster contentCluster = mock(ContentCluster.class);
 
@@ -71,7 +69,7 @@ public class ContentClusterHtmlRendrerTest {
     }
 
     @Test
-    public void testVtagRendering() throws Exception {
+    public void testVtagRendering() {
         // 9 distribution nodes should have green tag on release1.
         assertThat(result.split("<td bgcolor=\"#c0ffc0\" align=\"right\"><nobr>release1</nobr></td>").length, is(10));
         // 1 distribution node should have warning on release1bad.

@@ -15,7 +15,7 @@ public class ContentClusterStatsBuilder {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
     }
 
-    public ContentClusterStatsBuilder addInvalid(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
+    ContentClusterStatsBuilder addInvalid(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.invalid(bucketsTotal, bucketsPending));
     }
 
@@ -38,7 +38,7 @@ public class ContentClusterStatsBuilder {
         return this;
     }
 
-    public ContentClusterStats build() {
+    ContentClusterStats build() {
         Map<Integer, ContentNodeStats> nodeToStatsMap = new HashMap<>();
         stats.forEach((nodeIndex, nodeStatsBuilder) ->
                 nodeToStatsMap.put(nodeIndex, nodeStatsBuilder.build()));
