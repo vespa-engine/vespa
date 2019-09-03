@@ -36,7 +36,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.integration.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
@@ -347,7 +346,6 @@ public final class ControllerTester {
                                                () -> "test-controller",
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
-                                               new ApplicationCertificateMock(),
                                                new MockMeteringClient(),
                                                serviceRegistry);
         // Calculate initial versions
