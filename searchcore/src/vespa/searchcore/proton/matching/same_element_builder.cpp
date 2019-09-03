@@ -4,11 +4,15 @@
 #include "querynodes.h"
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/same_element_blueprint.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 
 using search::queryeval::Blueprint;
 using search::queryeval::EmptyBlueprint;
+using search::queryeval::AndBlueprint;
 using search::queryeval::FieldSpecList;
+using search::queryeval::FieldSpec;
 using search::queryeval::IRequestContext;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::Searchable;
@@ -17,18 +21,25 @@ namespace proton::matching {
 
 namespace {
 
+FieldSpec createfilterSpec(const FieldSpec & fs) {
+    return FieldSpec(fs.getName(),fs.getFieldId(), fs.getHandle(), true);
+}
+
 class SameElementBuilderVisitor : public search::query::CustomTypeVisitor<ProtonNodeTypes>
 {
 private:
     const IRequestContext &_requestContext;
     ISearchContext        &_context;
-    SameElementBlueprint  &_result;
+    SameElementBlueprint  &_sameElement;
+    AndBlueprint          &_andFilter;
 
 public:
-    SameElementBuilderVisitor(const IRequestContext &requestContext, ISearchContext &context, SameElementBlueprint &result)
+    SameElementBuilderVisitor(const IRequestContext &requestContext, ISearchContext &context, SameElementBlueprint &sameElement, AndBlueprint & andFilter)
         : _requestContext(requestContext),
           _context(context),
-          _result(result) {}
+          _sameElement(sameElement),
+          _andFilter(andFilter)
+    {}
 
     template <class TermNode>
     void visitTerm(const TermNode &n) {
@@ -36,10 +47,12 @@ public:
             const ProtonTermData::FieldEntry &field = n.field(0);
             assert(field.getFieldId() != search::fef::IllegalFieldId);
             assert(field.getHandle() == search::fef::IllegalHandle);
-            FieldSpecList field_spec;
-            field_spec.add(_result.getNextChildField(field.field_name, field.getFieldId()));
+            FieldSpecList field_spec, filter_field_spec;
+            field_spec.add(_sameElement.getNextChildField(field.field_name, field.getFieldId()));
             Searchable &searchable = field.attribute_field ? _context.getAttributes() : _context.getIndexes();
-            _result.addTerm(searchable.createBlueprint(_requestContext, field_spec, n));
+            _sameElement.addTerm(searchable.createBlueprint(_requestContext, field_spec, n));
+            filter_field_spec.add(createfilterSpec(field_spec[0]));
+            _andFilter.addChild(searchable.createBlueprint(_requestContext, filter_field_spec, n));
         }
     }
 
@@ -74,24 +87,27 @@ public:
 SameElementBuilder::SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context)
     : _requestContext(requestContext),
       _context(context),
-      _result(std::make_unique<SameElementBlueprint>())
+      _sameElement(std::make_unique<SameElementBlueprint>()),
+      _andFilter(std::make_unique<AndBlueprint>())
 {
 }
 
+SameElementBuilder::~SameElementBuilder() = default;
 void
 SameElementBuilder::add_child(search::query::Node &node)
 {
-    SameElementBuilderVisitor visitor(_requestContext, _context, *_result);
+    SameElementBuilderVisitor visitor(_requestContext, _context, *_sameElement, *_andFilter);
     node.accept(visitor);
 }
 
 Blueprint::UP
 SameElementBuilder::build()
 {
-    if (!_result || _result->terms().empty()) {
+    if (!_sameElement || _sameElement->terms().empty()) {
         return std::make_unique<EmptyBlueprint>();
     }
-    return std::move(_result);
+    _andFilter->addChild(std::move(_sameElement));
+    return std::move(_andFilter);
 }
 
 } // namespace proton::matching

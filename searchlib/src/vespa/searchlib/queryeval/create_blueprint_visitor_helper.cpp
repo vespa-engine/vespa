@@ -8,6 +8,7 @@
 #include "wand/parallel_weak_and_blueprint.h"
 #include "simple_phrase_blueprint.h"
 #include "weighted_set_term_blueprint.h"
+#include "intermediate_blueprints.h"
 #include "split_float.h"
 
 namespace search::queryeval {
@@ -29,15 +30,26 @@ CreateBlueprintVisitorHelper::getResult()
         : std::make_unique<EmptyBlueprint>(_field);
 }
 
+namespace {
+
+FieldSpec createfilterSpec(const FieldSpec & fs) {
+    return FieldSpec(fs.getName(),fs.getFieldId(), fs.getHandle(), true);
+}
+
+}
 void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
     auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, _requestContext);
+    auto andFilter = std::make_unique<AndBlueprint>();
     for (const query::Node * child : n.getChildren()) {
-        FieldSpecList fields;
+        FieldSpecList fields, filterFields;
         fields.add(phrase->getNextChildField(_field));
         phrase->addTerm(_searchable.createBlueprint(_requestContext, fields, *child));
+        filterFields.add(createfilterSpec(fields[0]));
+        andFilter->addChild(_searchable.createBlueprint(_requestContext, filterFields, *child));
     }
-    setResult(std::move(phrase));
+    andFilter->addChild(std::move(phrase));
+    setResult(std::move(andFilter));
 }
 
 void
@@ -85,8 +97,7 @@ CreateBlueprintVisitorHelper::visitDotProduct(query::DotProduct &n) {
 }
 void
 CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n) {
-    createWeightedSet(std::make_unique<ParallelWeakAndBlueprint>(_field, n.getTargetNumHits(),
-                                                                 n.getScoreThreshold(), n.getThresholdBoostFactor()),
+    createWeightedSet(std::make_unique<ParallelWeakAndBlueprint>(_field, n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor()),
                       n);
 }
 
