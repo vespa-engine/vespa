@@ -54,8 +54,8 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
-        boolean useFdispatchByDefault();
-        boolean dispatchWithProtobuf();
+        default boolean useFdispatchByDefault() { return false; } // TODO Remove once no longer used by old config models
+        default boolean dispatchWithProtobuf() { return true; } // TODO Remove once no longer used by old config models
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }
