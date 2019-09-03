@@ -98,8 +98,6 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private final ExecutionFactory executionFactory;
 
-    private final boolean enableGroupingSessionCache;
-
     private final class MeanConnections implements Callback {
 
         @Override
@@ -127,7 +125,6 @@ public class SearchHandler extends LoggingRequestHandler {
              accessLog,
              QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
              executionFactory,
-             queryProfileConfig.enableGroupingSessionCache(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
              Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
     }
@@ -138,11 +135,9 @@ public class SearchHandler extends LoggingRequestHandler {
                          AccessLog accessLog,
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
-                         boolean enableGroupingSessionCache,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
-        this.enableGroupingSessionCache = enableGroupingSessionCache;
         this.queryProfileRegistry = queryProfileRegistry;
         this.executionFactory = executionFactory;
 
@@ -251,9 +246,6 @@ public class SearchHandler extends LoggingRequestHandler {
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
         Query query = new Query(request, requestMap, queryProfile);
-        if (!enableGroupingSessionCache) {
-            query.setGroupingSessionCache(false);
-        }
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());

@@ -36,7 +36,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     private final List<AbstractSearchCluster> systems = new LinkedList<>();
     private final Options options;
-    private final boolean enableGroupingSessionCache;
 
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
@@ -45,8 +44,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
-
-        this.enableGroupingSessionCache = cluster.enableGroupingSessionCache();
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
@@ -90,7 +87,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         if (queryProfiles!=null) {
             queryProfiles.getConfig(builder);
         }
-        builder.enableGroupingSessionCache(enableGroupingSessionCache);
     }
 
     @Override

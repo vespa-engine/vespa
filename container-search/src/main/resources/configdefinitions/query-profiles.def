@@ -86,9 +86,8 @@ queryprofiletype[].field[].mandatory bool default=false
 # A space-separated list of aliases of this field name. Aliases are case insensitive
 queryprofiletype[].field[].alias string default=""
 
-# Temporary feature flag for enabling grouping session cache by default
-# TODO Remove me once grouping session cache rollout is complete and cache is enabled by default
-enableGroupingSessionCache bool default=false
+# TODO Remove once no longer used by old config models
+enableGroupingSessionCache bool default=true
 
 
 
