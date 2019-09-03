@@ -332,20 +332,8 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
         numDocs = numValues;
     }
 
-    LOG(debug,
-        "StringAttribute::onLoadEnumerated: attribute '%s' %u docs, %u values",
-        getBaseFileName().c_str(),
-        (unsigned int) numDocs,
-        (unsigned int) numValues);
     EnumIndexVector eidxs;
-    FastOS_Time timer;
-    FastOS_Time timer0;
-    timer0.SetNow();
-    LOG(debug, "start fillEnum0");
-    timer.SetNow();
     fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
-    LOG(debug, "done fillEnum0, %u unique values, %8.3f s elapsed",
-        (unsigned int) eidxs.size(), timer.MilliSecsToNow() / 1000);
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
     LoadedEnumAttributeVector loaded;
@@ -355,49 +343,23 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     } else {
         EnumVector(eidxs.size(), 0).swap(enumHist);
     }
-    timer.SetNow();
-    LOG(debug, "start fillEnumIdx");
     if(hasPostings()) {
         load_enumerated_data(attrReader, eidxs, loaded);
     } else {
         load_enumerated_data(attrReader, eidxs, enumHist);
     }
-    LOG(debug, "done fillEnumIdx, %8.3f s elapsed",
-        timer.MilliSecsToNow() / 1000);
 
     EnumIndexVector().swap(eidxs);
 
     if (hasPostings()) {
-        LOG(debug, "start sort loaded");
-        timer.SetNow();
-        
         attribute::sortLoadedByEnum(loaded);
-        
-        LOG(debug, "done sort loaded, %8.3f s elapsed", timer.MilliSecsToNow() / 1000);
-
-        LOG(debug, "start fillPostingsFixupEnum");
-        timer.SetNow();
-        
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
         }
         fillPostingsFixupEnum(loaded);
-        
-        LOG(debug, "done fillPostingsFixupEnum, %8.3f s elapsed",
-            timer.MilliSecsToNow() / 1000);
     } else {
-        LOG(debug, "start fixupEnumRefCounts");
-        timer.SetNow();
-        
         fixupEnumRefCounts(enumHist);
-        
-        LOG(debug, "done fixupEnumRefCounts, %8.3f s elapsed",
-            timer.MilliSecsToNow() / 1000);
     }
-
-    LOG(debug, "attribute '%s', loaded, %8.3f s elapsed",
-        getBaseFileName().c_str(),
-        timer0.MilliSecsToNow() / 1000);
     return true;
 }
 
