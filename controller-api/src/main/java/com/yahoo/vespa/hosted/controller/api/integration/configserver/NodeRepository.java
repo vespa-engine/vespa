@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
@@ -75,33 +76,37 @@ public interface NodeRepository {
                         fromJacksonState(node.getState()),
                         fromJacksonType(node.getType()),
                         application,
-                        Version.fromString(node.getVespaVersion()),
-                        Version.fromString(node.getWantedVespaVersion()),
-                        Version.fromString(node.getCurrentOsVersion()),
-                        Version.fromString(node.getWantedOsVersion()),
+                        versionFrom(node.getVespaVersion()),
+                        versionFrom(node.getWantedVespaVersion()),
+                        versionFrom(node.getCurrentOsVersion()),
+                        versionFrom(node.getWantedOsVersion()),
                         fromBoolean(node.getAllowedToBeDown()),
-                        node.getCurrentRestartGeneration(),
-                        node.getRestartGeneration(),
-                        node.getCurrentRebootGeneration(),
-                        node.getRebootGeneration(),
-                        node.getMinCpuCores(),
-                        node.getMinMainMemoryAvailableGb(),
-                        node.getMinDiskAvailableGb(),
-                        node.getBandwidth() / 1000,
-                        node.getFastDisk(),
-                        node.getCost() == null ? 0 : node.getCost(),
+                        toInt(node.getCurrentRestartGeneration()),
+                        toInt(node.getRestartGeneration()),
+                        toInt(node.getCurrentRebootGeneration()),
+                        toInt(node.getRebootGeneration()),
+                        toDouble(node.getMinCpuCores()),
+                        toDouble(node.getMinMainMemoryAvailableGb()),
+                        toDouble(node.getMinDiskAvailableGb()),
+                        toDouble(node.getBandwidth()) / 1000,
+                        toBoolean(node.getFastDisk()),
+                        toInt(node.getCost()),
                         node.getCanonicalFlavor(),
-                        node.getMembership().clusterid,
-                        clusterTypeOf(node.getMembership().clustertype));
+                        clusterIdOf(node.getMembership()),
+                        clusterTypeOf(node.getMembership()));
     }
 
-    private static Node.ClusterType clusterTypeOf(String type) {
-        switch (type) {
+    private static String clusterIdOf(NodeMembership nodeMembership) {
+        return nodeMembership == null ? "" : nodeMembership.clusterid;
+    }
+
+    private static Node.ClusterType clusterTypeOf(NodeMembership nodeMembership) {
+        switch (nodeMembership.clustertype) {
             case "admin": return Node.ClusterType.admin;
             case "content": return Node.ClusterType.content;
             case "container": return Node.ClusterType.container;
-            default: throw new IllegalArgumentException("Unknown cluster type '" + type + "'.");
         }
+        return Node.ClusterType.unknown;
     }
 
     // Convert Jackson type to config.provision type
@@ -127,8 +132,8 @@ public interface NodeRepository {
             case dirty: return Node.State.dirty;
             case failed: return Node.State.failed;
             case parked: return Node.State.parked;
-            default: throw new IllegalArgumentException("Unknown state: " + state);
         }
+        return Node.State.unknown;
     }
 
     private static Node.ServiceState fromBoolean(Boolean allowedDown) {
@@ -136,4 +141,21 @@ public interface NodeRepository {
                 ? Node.ServiceState.unorchestrated
                 : allowedDown ? Node.ServiceState.allowedDown : Node.ServiceState.expectedUp;
     }
+
+    private static boolean toBoolean(Boolean b) {
+        return b == null ? false : b;
+    }
+
+    private static double toDouble(Double d) {
+        return d == null ? 0 : d;
+    }
+
+    private static int toInt(Integer i) {
+        return i == null ? 0 : i;
+    }
+
+    private static Version versionFrom(String s) {
+        return s == null ? Version.emptyVersion : Version.fromString(s);
+    }
+
 }

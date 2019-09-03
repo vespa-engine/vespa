@@ -185,7 +185,8 @@ public class Node {
         inactive,
         dirty,
         failed,
-        parked
+        parked,
+        unknown,
     }
 
     /** Known node states with regards to service orchestration */
@@ -199,7 +200,8 @@ public class Node {
     public enum ClusterType {
         admin,
         container,
-        content
+        content,
+        unknown
     }
 
 }
