@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingSe
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 
@@ -39,6 +41,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
     private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
+    private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
 
     @Override
     public ConfigServer configServer() {
@@ -83,6 +86,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public OwnershipIssues ownershipIssues() {
         return dummyOwnershipIssues;
+    }
+
+    @Override
+    public DeploymentIssues deploymentIssues() {
+        return loggingDeploymentIssues;
     }
 
     @Override
