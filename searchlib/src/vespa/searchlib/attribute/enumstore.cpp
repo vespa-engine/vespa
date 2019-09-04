@@ -12,11 +12,9 @@ namespace search {
 template <>
 void
 EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
-                                         const Index* idxs,
-                                         size_t count) const
+                                         const vespalib::ConstArrayRef<Index>& idxs) const
 {
-    for (size_t i = 0; i < count; ++i) {
-        Index idx = idxs[i];
+    for (const auto& idx : idxs) {
         const char* src = _store.get(idx);
         size_t sz = strlen(src) + 1;
         writer.write(src, sz);
