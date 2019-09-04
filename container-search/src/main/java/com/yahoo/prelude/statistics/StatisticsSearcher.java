@@ -152,11 +152,12 @@ public class StatisticsSearcher extends Searcher {
         peakQpsReporter.countQuery();
     }
 
-    private Metric.Context getChainMetricContext(String chainName) {
+    private Metric.Context getChainMetricContext(String chainName, String endpoint) {
         Metric.Context context = chainContexts.get(chainName);
         if (context == null) {
             Map<String, String> dimensions = new HashMap<>();
             dimensions.put("chain", chainName);
+            dimensions.put("endpoint", endpoint);
             context = this.metric.createContext(dimensions);
             chainContexts.put(chainName, context);
         }
@@ -227,7 +228,7 @@ public class StatisticsSearcher extends Searcher {
             return execution.search(query);
         }
 
-        Metric.Context metricContext = getChainMetricContext(execution.chain().getId().stringValue());
+        Metric.Context metricContext = getChainMetricContext(execution.chain().getId().stringValue(), query.getHttpRequest().getHeader("Host"));
 
         incrQueryCount(metricContext);
         logQuery(query);
