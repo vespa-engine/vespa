@@ -385,12 +385,6 @@ void StringAttribute::fillValues(LoadedVector & )
 }
 
 void
-StringAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
-{
-    LOG_ABORT("Should not be reached");
-}
-
-void
 StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedPostingsLoader&, size_t)
 {
     LOG_ABORT("Should not be reached");
@@ -404,12 +398,6 @@ StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedLoader&)
 
 void
 StringAttribute::load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader&)
-{
-    LOG_ABORT("Should not be reached");
-}
-
-void
-StringAttribute::fixupEnumRefCounts(const EnumVector&)
 {
     LOG_ABORT("Should not be reached");
 }

@@ -23,11 +23,9 @@ protected:
         : AttributeVector(name, cfg)
     { }
 
-    virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
     virtual void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values);
     virtual void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader);
     virtual void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
-    virtual void fixupEnumRefCounts(const EnumVector &enumHist);
     bool onAddDoc(DocId) override { return true; }
 
     template<typename T>

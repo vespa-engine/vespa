@@ -78,11 +78,9 @@ private:
     virtual void load_enum_store(LoadedVector& loaded);
     virtual void fillValues(LoadedVector & loaded);
 
-    virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
     virtual void load_enumerated_data(ReaderBase &attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values);
     virtual void load_enumerated_data(ReaderBase &attrReader, enumstore::EnumeratedLoader& loader);
     virtual void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
-    virtual void fixupEnumRefCounts(const EnumVector &enumHist);
 
     largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), NULL, 0); }
     double getFloat(DocId doc)    const override;
