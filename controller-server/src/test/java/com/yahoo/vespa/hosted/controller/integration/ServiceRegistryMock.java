@@ -7,6 +7,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
@@ -42,6 +44,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
     private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
+    private final MemoryEntityService memoryEntityService = new MemoryEntityService();
 
     @Override
     public ConfigServer configServer() {
@@ -91,6 +94,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public DeploymentIssues deploymentIssues() {
         return loggingDeploymentIssues;
+    }
+
+    @Override
+    public EntityService entityService() {
+        return memoryEntityService;
     }
 
     @Override

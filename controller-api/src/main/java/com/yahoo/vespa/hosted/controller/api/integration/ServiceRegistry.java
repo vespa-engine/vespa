@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
@@ -43,5 +44,7 @@ public interface ServiceRegistry {
     OwnershipIssues ownershipIssues();
 
     DeploymentIssues deploymentIssues();
+
+    EntityService entityService();
 
 }
