@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
 import java.util.List;
 import java.util.Optional;
@@ -110,6 +111,12 @@ public class Flags {
             "Provision a new docker host when we otherwise can't allocate a docker node",
             "Takes effect on next deployment",
             APPLICATION_ID);
+
+    public static final UnboundListFlag<PreprovisionCapacity> PREPROVISION_CAPACITY = defineListFlag(
+            "preprovision-capacity", List.of(), PreprovisionCapacity.class,
+            "List of node resources and their count that should be present in zone to receive new deployments. When a " +
+            "preprovisioned is taken, new will be provisioned within next iteration of maintainer.",
+            "Takes effect on next iteration of HostProivisionMaintainer.");
 
     public static final UnboundListFlag<String> DISABLED_DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
             "disabled-dynamic-provisioning-flavors", List.of(), String.class,
