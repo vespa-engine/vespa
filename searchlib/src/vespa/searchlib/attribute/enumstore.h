@@ -110,6 +110,8 @@ private:
         return _store.get_allocator().get_wrapped(idx);
     }
 
+    ssize_t deserialize_internal(const void* src, size_t available, IndexVector& idx);
+
 public:
     EnumStoreT(bool has_postings);
     virtual ~EnumStoreT();
@@ -135,11 +137,7 @@ public:
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
 
-    ssize_t deserialize0(const void *src, size_t available, IndexVector &idx) override;
-
-    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override {
-        return _dict.deserialize(src, available, idx);
-    }
+    ssize_t deserialize(const void* src, size_t available, IndexVector& idx) override;
 
     void fixupRefCounts(const EnumVector &hist) override { _dict.fixupRefCounts(hist); }
     void freezeTree() { _store.freeze(); }

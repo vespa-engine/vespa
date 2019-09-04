@@ -39,7 +39,6 @@ public:
 
     virtual uint32_t getNumUniques() const = 0;
     virtual void writeAllValues(BufferWriter& writer, btree::BTreeNode::Ref rootRef) const = 0;
-    virtual ssize_t deserialize(const void* src, size_t available, IndexVector& idx) = 0;
 
     virtual void fixupRefCounts(const EnumVector& hist) = 0;
     virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;

@@ -62,15 +62,6 @@ EnumStoreDictionary<DictionaryT>::writeAllValues(BufferWriter& writer,
 }
 
 template <typename DictionaryT>
-ssize_t
-EnumStoreDictionary<DictionaryT>::deserialize(const void* src,
-                                              size_t available,
-                                              IndexVector& idx)
-{
-    return _enumStore.deserialize(src, available, idx, this->_dict);
-}
-
-template <typename DictionaryT>
 void
 EnumStoreDictionary<DictionaryT>::fixupRefCounts(const EnumVector& hist)
 {

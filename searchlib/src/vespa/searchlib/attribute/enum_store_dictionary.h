@@ -34,7 +34,6 @@ public:
 
     uint32_t getNumUniques() const override;
     void writeAllValues(BufferWriter& writer, btree::BTreeNode::Ref rootRef) const override;
-    ssize_t deserialize(const void* src, size_t available, IndexVector& idx) override;
     void fixupRefCounts(const EnumVector& hist) override;
 
     void removeUnusedEnums(const IndexSet& unused,
