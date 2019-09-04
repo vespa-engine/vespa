@@ -59,7 +59,6 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
-        assertFalse(config.useRestrictedServerCnxnFactory());
     }
 
     @Test
@@ -70,7 +69,6 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
-        assertTrue(config.useRestrictedServerCnxnFactory());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -124,12 +122,11 @@ public class ConfigserverClusterTest {
 
     @SuppressWarnings("varargs")
     private static <T> void assertZookeeperServerProperty(
-            List<ZookeeperServerConfig.Server> zkServers, Function<ZookeeperServerConfig.Server, T> properyMapper, T... expectedProperties) {
-        List<T> actualPropertyValues = zkServers.stream().map(properyMapper).collect(Collectors.toList());
+            List<ZookeeperServerConfig.Server> zkServers, Function<ZookeeperServerConfig.Server, T> propertyMapper, T... expectedProperties) {
+        List<T> actualPropertyValues = zkServers.stream().map(propertyMapper).collect(Collectors.toList());
         List<T> expectedPropertyValues = Arrays.asList(expectedProperties);
         assertEquals(expectedPropertyValues, actualPropertyValues);
     }
-
 
     private static TestOptions createTestOptions(List<String> configServerHostnames, List<Integer> configServerZkIds) {
         return createTestOptions(configServerHostnames, configServerZkIds, true);

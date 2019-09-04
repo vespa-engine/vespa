@@ -212,7 +212,6 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertThat(config.myid(), is(id));
         Collection<Integer> serverIds = Collections2.transform(config.server(), ZookeeperServerConfig.Server::id);
         assertTrue(serverIds.contains(id));
-        assertTrue(config.useRestrictedServerCnxnFactory());
     }
 
     @Test
