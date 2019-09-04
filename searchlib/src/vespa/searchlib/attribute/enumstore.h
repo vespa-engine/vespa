@@ -207,8 +207,7 @@ public:
             : _store(store),
               _possibly_unused()
         {}
-        // TODO: Rename to insert()
-        void add(DataType value) {
+        void insert(DataType value) {
             Index idx;
             _store.addEnum(value, idx);
             _possibly_unused.insert(idx);

@@ -72,7 +72,7 @@ EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
 
     // insert new unique values in EnumStore
     for (const auto & data : newUniques) {
-        updater.add(data.raw());
+        updater.insert(data.raw());
     }
 }
 
