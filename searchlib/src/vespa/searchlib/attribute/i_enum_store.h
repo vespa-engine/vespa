@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "enum_store_loaders.h"
+#include "enum_store_types.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -29,10 +31,10 @@ class IEnumStoreDictionary;
  */
 class IEnumStore {
 public:
-    using Index = datastore::EntryRefT<22>;
-    using IndexVector = vespalib::Array<Index>;
-    using EnumHandle = attribute::IAttributeVector::EnumHandle;
-    using EnumVector = vespalib::Array<uint32_t>;
+    using Index = enumstore::Index;
+    using IndexVector = enumstore::IndexVector;
+    using EnumHandle = enumstore::EnumHandle;
+    using EnumVector = enumstore::EnumVector;
     using EnumIndexRemapper = datastore::UniqueStoreRemapper<Index>;
 
     struct CompareEnumIndex {
@@ -49,10 +51,12 @@ public:
 
     virtual void writeValues(BufferWriter& writer, const Index* idxs, size_t count) const = 0;
     virtual ssize_t deserialize0(const void* src, size_t available, IndexVector& idx) = 0;
+    virtual ssize_t deserialize(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
+    virtual void fixupRefCounts(const EnumVector& histogram) = 0;
     virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;
     virtual void freeUnusedEnums() = 0;
-    virtual bool foldedChange(const Index& idx1, const Index& idx2) = 0;
+    virtual bool foldedChange(const Index& idx1, const Index& idx2) const = 0;
     virtual IEnumStoreDictionary& getEnumStoreDict() = 0;
     virtual const IEnumStoreDictionary& getEnumStoreDict() const = 0;
     virtual const datastore::DataStoreBase& get_data_store_base() const = 0;
@@ -63,9 +67,16 @@ public:
     virtual std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) = 0;
 
+    enumstore::EnumeratedLoader make_enumerated_loader() {
+        return enumstore::EnumeratedLoader(*this);
+    }
+
+    enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader() {
+        return enumstore::EnumeratedPostingsLoader(*this);
+    }
 
     template <typename TreeT>
-    ssize_t deserialize(const void *src,
+    ssize_t deserialize(const void* src,
                         size_t available,
                         IndexVector& idx,
                         TreeT& tree) {

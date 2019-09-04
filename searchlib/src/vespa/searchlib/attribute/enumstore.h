@@ -3,7 +3,9 @@
 #pragma once
 
 #include "enum_store_dictionary.h"
+#include "enum_store_loaders.h"
 #include "i_enum_store.h"
+#include "loadedenumvalue.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/btree/btreenode.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -109,7 +111,7 @@ private:
     }
 
 public:
-    EnumStoreT(bool hasPostings);
+    EnumStoreT(bool has_postings);
     virtual ~EnumStoreT();
 
     uint32_t getRefCount(Index idx) const { return get_entry_base(idx).get_ref_count(); }
@@ -135,11 +137,11 @@ public:
 
     ssize_t deserialize0(const void *src, size_t available, IndexVector &idx) override;
 
-    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) {
+    ssize_t deserialize(const void *src, size_t available, IndexVector &idx) override {
         return _dict.deserialize(src, available, idx);
     }
 
-    void fixupRefCounts(const EnumVector &hist) { _dict.fixupRefCounts(hist); }
+    void fixupRefCounts(const EnumVector &hist) override { _dict.fixupRefCounts(hist); }
     void freezeTree() { _store.freeze(); }
 
     IEnumStoreDictionary &getEnumStoreDict() override { return _dict; }
@@ -238,7 +240,7 @@ public:
     void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const override;
     ssize_t deserialize(const void *src, size_t available, size_t &initSpace);
     ssize_t deserialize(const void *src, size_t available, Index &idx);
-    bool foldedChange(const Index &idx1, const Index &idx2) override;
+    bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(DataType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(DataType value) const;
     void addEnum(DataType value, Index &newIdx);

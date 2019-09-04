@@ -197,35 +197,36 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
     }
 }
 
-
 template <typename B>
 void
-SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         const IEnumStore::IndexVector &eidxs,
-                                         LoadedEnumAttributeVector &loaded)
+SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
+                                                  enumstore::EnumeratedPostingsLoader& loader,
+                                                  size_t num_values)
 {
+    loader.reserve_loaded_enums(num_values);
     attribute::loadFromEnumeratedSingleValue(_enumIndices,
                                              getGenerationHolder(),
                                              attrReader,
-                                             eidxs,
-                                             attribute::SaveLoadedEnum(loaded));
+                                             loader.get_enum_indexes(),
+                                             attribute::SaveLoadedEnum(loader.get_loaded_enums()));
+    loader.release_enum_indexes();
+    loader.sort_loaded_enums();
 }
     
-
 template <typename B>
 void
-SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         const IEnumStore::IndexVector &eidxs,
-                                         IEnumStore::EnumVector &enumHist)
+SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
+                                                  enumstore::EnumeratedLoader& loader)
 {
+    loader.allocate_enums_histogram();
     attribute::loadFromEnumeratedSingleValue(_enumIndices,
                                              getGenerationHolder(),
                                              attrReader,
-                                             eidxs,
-                                             attribute::SaveEnumHist(enumHist));
+                                             loader.get_enum_indexes(),
+                                             attribute::SaveEnumHist(loader.get_enums_histogram()));
+    loader.release_enum_indexes();
+    loader.set_ref_counts();
 }
-    
-
 
 template <typename B>
 void

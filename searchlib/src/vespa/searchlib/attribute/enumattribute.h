@@ -61,12 +61,11 @@ protected:
     const EnumStore & getEnumStore() const { return _enumStore; }
 
     const IEnumStore* getEnumStoreBase() const override { return &_enumStore; }
+    IEnumStore* getEnumStoreBase() override { return &_enumStore; }
     EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
 
     void fillPostings(LoadedVector & loaded) override { (void) loaded; }
     void fillEnum(LoadedVector & loaded) override;
-    void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs) override;
-    void fixupEnumRefCounts(const EnumVector &enumHist) override;
     uint64_t getUniqueValueCount() const override;
 
     static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }

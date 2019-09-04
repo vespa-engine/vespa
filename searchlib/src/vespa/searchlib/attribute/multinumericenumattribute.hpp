@@ -60,29 +60,22 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
     assert(numValues == enumCount);
     (void) enumCount;
 
-    EnumIndexVector eidxs;
-    this->fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
     this->_mvMapping.reserve(numDocs);
-    LoadedEnumAttributeVector loaded;
-    EnumVector enumHist;
+
     if (this->hasPostings()) {
-        loaded.reserve(numValues);
-        this->fillEnumIdx(attrReader, eidxs, loaded);
-    } else {
-        EnumVector(eidxs.size(), 0).swap(enumHist);
-        this->fillEnumIdx(attrReader, eidxs, enumHist);
-    }
-    EnumIndexVector().swap(eidxs);
-    if (this->hasPostings()) {
+        auto loader = this->getEnumStore().make_enumerated_postings_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        this->load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
         }
-        attribute::sortLoadedByEnum(loaded);
-        this->fillPostingsFixupEnum(loaded);
+        this->fillPostingsFixupEnum(loader);
     } else {
-        this->fixupEnumRefCounts(enumHist);
+        auto loader = this->getEnumStore().make_enumerated_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        this->load_enumerated_data(attrReader, loader);
     }
     return true;
 }

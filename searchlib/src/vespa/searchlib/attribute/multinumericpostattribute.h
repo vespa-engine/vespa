@@ -108,8 +108,8 @@ public:
         return this;
     }
 
-    void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override {
-        fillPostingsFixupEnumBase(loaded);
+    void fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader& loader) override {
+        fillPostingsFixupEnumBase(loader);
     }
 };
 

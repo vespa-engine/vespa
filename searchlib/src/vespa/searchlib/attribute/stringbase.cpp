@@ -332,72 +332,22 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
         numDocs = numValues;
     }
 
-    LOG(debug,
-        "StringAttribute::onLoadEnumerated: attribute '%s' %u docs, %u values",
-        getBaseFileName().c_str(),
-        (unsigned int) numDocs,
-        (unsigned int) numValues);
-    EnumIndexVector eidxs;
-    FastOS_Time timer;
-    FastOS_Time timer0;
-    timer0.SetNow();
-    LOG(debug, "start fillEnum0");
-    timer.SetNow();
-    fillEnum0(udatBuffer->buffer(), udatBuffer->size(), eidxs);
-    LOG(debug, "done fillEnum0, %u unique values, %8.3f s elapsed",
-        (unsigned int) eidxs.size(), timer.MilliSecsToNow() / 1000);
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);
-    LoadedEnumAttributeVector loaded;
-    EnumVector enumHist;
-    if (hasPostings()) {
-        loaded.reserve(numValues);
-    } else {
-        EnumVector(eidxs.size(), 0).swap(enumHist);
-    }
-    timer.SetNow();
-    LOG(debug, "start fillEnumIdx");
-    if(hasPostings()) {
-        fillEnumIdx(attrReader, eidxs, loaded);
-    } else {
-        fillEnumIdx(attrReader, eidxs, enumHist);
-    }
-    LOG(debug, "done fillEnumIdx, %8.3f s elapsed",
-        timer.MilliSecsToNow() / 1000);
-
-    EnumIndexVector().swap(eidxs);
 
     if (hasPostings()) {
-        LOG(debug, "start sort loaded");
-        timer.SetNow();
-        
-        attribute::sortLoadedByEnum(loaded);
-        
-        LOG(debug, "done sort loaded, %8.3f s elapsed", timer.MilliSecsToNow() / 1000);
-
-        LOG(debug, "start fillPostingsFixupEnum");
-        timer.SetNow();
-        
+        auto loader = this->getEnumStoreBase()->make_enumerated_postings_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
         }
-        fillPostingsFixupEnum(loaded);
-        
-        LOG(debug, "done fillPostingsFixupEnum, %8.3f s elapsed",
-            timer.MilliSecsToNow() / 1000);
+        fillPostingsFixupEnum(loader);
     } else {
-        LOG(debug, "start fixupEnumRefCounts");
-        timer.SetNow();
-        
-        fixupEnumRefCounts(enumHist);
-        
-        LOG(debug, "done fixupEnumRefCounts, %8.3f s elapsed",
-            timer.MilliSecsToNow() / 1000);
+        auto loader = this->getEnumStoreBase()->make_enumerated_loader();
+        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        load_enumerated_data(attrReader, loader);
     }
-
-    LOG(debug, "attribute '%s', loaded, %8.3f s elapsed",
-        getBaseFileName().c_str(),
-        timer0.MilliSecsToNow() / 1000);
     return true;
 }
 
@@ -435,36 +385,33 @@ void StringAttribute::fillValues(LoadedVector & )
 }
 
 void
-StringAttribute::fillEnum0(const void *, size_t , EnumIndexVector &)
+StringAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
 {
-    fprintf(stderr, "StringAttribute::fillEnum0\n");
-}
-
-
-void
-StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, LoadedEnumAttributeVector &)
-{
-    fprintf(stderr, "StringAttribute::fillEnumIdx (loaded)\n");
-}
-
-
-void
-StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, EnumVector &)
-{
-    fprintf(stderr, "StringAttribute::fillEnumIdx (enumHist)\n");
-}
-
-
-void
-StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector &)
-{
-    fprintf(stderr, "StringAttribute::fillPostingsFixupEnum\n");
+    LOG_ABORT("Should not be reached");
 }
 
 void
-StringAttribute::fixupEnumRefCounts(const EnumVector &)
+StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedPostingsLoader&, size_t)
 {
-    fprintf(stderr, "StringAttribute::fixupEnumRefCounts\n");
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedLoader&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
+{
+    LOG_ABORT("Should not be reached");
+}
+
+void
+StringAttribute::fixupEnumRefCounts(const EnumVector&)
+{
+    LOG_ABORT("Should not be reached");
 }
 
 vespalib::MemoryUsage

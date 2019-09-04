@@ -52,35 +52,12 @@ void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
     }
 }
 
-
-template <typename B>
-void
-EnumAttribute<B>::fillEnum0(const void *src,
-                            size_t srcLen,
-                            EnumIndexVector &eidxs)
-{
-    ssize_t sz = _enumStore.deserialize(src, srcLen, eidxs);
-    assert(static_cast<size_t>(sz) == srcLen);
-    (void) sz;
-}
-
-
-template <typename B>
-void
-EnumAttribute<B>::fixupEnumRefCounts(const EnumVector &enumHist)
-{
-    _enumStore.fixupRefCounts(enumHist);
-}
-
-
 template <typename B>
 uint64_t
 EnumAttribute<B>::getUniqueValueCount() const
 {
     return _enumStore.getNumUniques();
 }
-
-
 
 template <typename B>
 void

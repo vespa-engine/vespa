@@ -131,7 +131,7 @@ EnumStoreT<EntryType>::deserialize(const void* src, size_t available, Index& idx
 
 template <class EntryType>
 bool
-EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2)
+EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2) const
 {
     int cmpres = FoldedComparatorType::compareFolded(getValue(idx1), getValue(idx2));
     assert(cmpres <= 0);

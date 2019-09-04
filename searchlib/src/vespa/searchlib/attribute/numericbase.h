@@ -5,6 +5,7 @@
 #include "attributevector.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
+#include "enum_store_loaders.h"
 #include <vespa/searchlib/common/sort.h>
 
 namespace search {
@@ -23,10 +24,9 @@ protected:
     { }
 
     virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
-    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs,
-                             attribute::LoadedEnumAttributeVector &loaded);
-    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
-    virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
+    virtual void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedPostingsLoader& loader, size_t num_values);
+    virtual void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader);
+    virtual void fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader& loader);
     virtual void fixupEnumRefCounts(const EnumVector &enumHist);
     bool onAddDoc(DocId) override { return true; }
 
