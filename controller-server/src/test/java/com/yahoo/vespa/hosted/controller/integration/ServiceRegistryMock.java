@@ -12,10 +12,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandl
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 
@@ -36,6 +38,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
+    private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
 
     @Override
     public ConfigServer configServer() {
@@ -75,6 +78,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public IssueHandler issueHandler() {
         return mockIssueHandler;
+    }
+
+    @Override
+    public OwnershipIssues ownershipIssues() {
+        return dummyOwnershipIssues;
     }
 
     @Override
