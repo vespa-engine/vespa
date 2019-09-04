@@ -232,7 +232,7 @@ public:
     }
 
     // TODO: Change to sending enum indexes as const array ref.
-    void writeValues(BufferWriter& writer, const vespalib::ConstArrayRef<Index>& idxs) const override;
+    void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const override;
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(DataType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(DataType value) const;
@@ -256,7 +256,7 @@ class datastore::DataStoreT<IEnumStore::Index>;
 template <>
 void
 EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
-                                         const vespalib::ConstArrayRef<IEnumStore::Index>& idxs) const;
+                                         vespalib::ConstArrayRef<IEnumStore::Index> idxs) const;
 
 template <>
 ssize_t

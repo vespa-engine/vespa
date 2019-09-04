@@ -177,7 +177,7 @@ UniqueStoreDictionary<DictionaryT, ParentT>::build(const std::vector<EntryRef> &
 
 template <typename DictionaryT, typename ParentT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT>::build(const vespalib::ConstArrayRef<EntryRef>& refs)
+UniqueStoreDictionary<DictionaryT, ParentT>::build(vespalib::ConstArrayRef<EntryRef> refs)
 {
     typename DictionaryType::Builder builder(_dict.getAllocator());
     for (const auto& ref : refs) {

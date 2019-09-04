@@ -46,7 +46,7 @@ public:
     virtual uint32_t get_num_uniques() const = 0;
     virtual vespalib::MemoryUsage get_memory_usage() const = 0;
     virtual void build(const std::vector<EntryRef> &refs, const std::vector<uint32_t> &ref_counts, std::function<void(EntryRef)> hold) = 0;
-    virtual void build(const vespalib::ConstArrayRef<EntryRef>& refs) = 0;
+    virtual void build(vespalib::ConstArrayRef<EntryRef> refs) = 0;
     virtual void build_with_payload(const std::vector<EntryRef>& refs, const std::vector<uint32_t>& payloads) = 0;
     virtual std::unique_ptr<ReadSnapshot> get_read_snapshot() const = 0;
     virtual EntryRef get_frozen_root() const = 0;

@@ -131,7 +131,7 @@ EnumStoreT<EntryType>::NonEnumeratedLoader::~NonEnumeratedLoader() = default;
 
 template <class EntryType>
 void
-EnumStoreT<EntryType>::writeValues(BufferWriter& writer, const vespalib::ConstArrayRef<Index>& idxs) const
+EnumStoreT<EntryType>::writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const
 {
     for (const auto& idx : idxs) {
         writer.write(&_store.get(idx), sizeof(DataType));
