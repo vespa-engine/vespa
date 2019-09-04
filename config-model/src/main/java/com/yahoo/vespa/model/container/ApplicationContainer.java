@@ -1,18 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.http.Http;
-import com.yahoo.vespa.model.container.http.JettyHttpServer;
-import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
-
-import java.util.Optional;
 
 /**
  * A container that is typically used by container clusters set up from the user application.
@@ -25,27 +19,14 @@ public final class ApplicationContainer extends Container {
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
-        this(parent, name, false, index, isHostedVespa, tlsSecrets, tlsCa);
+    public ApplicationContainer(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
+        this(parent, name, false, index, isHostedVespa);
     }
 
-    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa, Optional<TlsSecrets> tlsSecrets, Optional<String> tlsCa) {
+    public ApplicationContainer(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
         super(parent, name, retired, index);
         this.isHostedVespa = isHostedVespa;
 
-        if (isHostedVespa && tlsSecrets.isPresent()) {
-
-            JettyHttpServer server = Optional.ofNullable(getHttp())
-                                             .map(Http::getHttpServer)
-                                             .orElse(getDefaultHttpServer());
-            if (server.getConnectorFactories().stream().noneMatch(connectorFactory -> connectorFactory instanceof HostedSslConnectorFactory)) {
-                String serverName = server.getComponentId().getName();
-                var connectorFactory = tlsCa
-                        .map(caCert -> new HostedSslConnectorFactory(serverName, tlsSecrets.get(), caCert))
-                        .orElseGet(() -> new HostedSslConnectorFactory(serverName, tlsSecrets.get()));
-                server.addConnector(connectorFactory);
-            }
-        }
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }
 
