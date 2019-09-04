@@ -34,15 +34,15 @@ void EnumStoreT<EntryType>::freeUnusedEnum(Index idx, IndexSet& unused)
 
 template <typename EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize_internal(const void* src,
-                                            size_t available,
-                                            IndexVector& idx)
+EnumStoreT<EntryType>::load_unique_values_internal(const void* src,
+                                                   size_t available,
+                                                   IndexVector& idx)
 {
     size_t left = available;
     const char* p = static_cast<const char*>(src);
     Index idx1;
     while (left > 0) {
-        ssize_t sz = deserialize(p, left, idx1);
+        ssize_t sz = load_unique_value(p, left, idx1);
         if (sz < 0) {
             return sz;
         }
@@ -51,6 +51,23 @@ EnumStoreT<EntryType>::deserialize_internal(const void* src,
         idx.push_back(idx1);
     }
     return available - left;
+}
+
+template <class EntryType>
+ssize_t
+EnumStoreT<EntryType>::load_unique_value(const void* src, size_t available, Index& idx)
+{
+    if (available < sizeof(DataType)) {
+        return -1;
+    }
+    const auto* value = static_cast<const DataType*>(src);
+    Index prev_idx = idx;
+    idx = _store.get_allocator().allocate(*value);
+
+    if (prev_idx.valid()) {
+        assert(ComparatorType::compare(getValue(prev_idx), *value) < 0);
+    }
+    return sizeof(DataType);
 }
 
 template <typename EntryType>
@@ -89,9 +106,9 @@ EnumStoreT<EntryType>::trimHoldLists(generation_t firstUsed)
 
 template <typename EntryType>
 ssize_t
-EnumStoreT<EntryType>::deserialize(const void* src, size_t available, IndexVector& idx)
+EnumStoreT<EntryType>::load_unique_values(const void* src, size_t available, IndexVector& idx)
 {
-    ssize_t sz = deserialize_internal(src, available, idx);
+    ssize_t sz = load_unique_values_internal(src, available, idx);
     if (sz >= 0) {
         _dict.build(idx);
     }
@@ -110,7 +127,7 @@ EnumStoreT<EntryType>::getValue(Index idx, DataType& value) const
 }
 
 template <typename EntryType>
-EnumStoreT<EntryType>::Builder::~Builder() = default;
+EnumStoreT<EntryType>::NonEnumeratedLoader::~NonEnumeratedLoader() = default;
 
 template <class EntryType>
 void
@@ -120,23 +137,6 @@ EnumStoreT<EntryType>::writeValues(BufferWriter& writer, const Index* idxs, size
         Index idx = idxs[i];
         writer.write(&_store.get(idx), sizeof(DataType));
     }
-}
-
-template <class EntryType>
-ssize_t
-EnumStoreT<EntryType>::deserialize(const void* src, size_t available, Index& idx)
-{
-    if (available < sizeof(DataType)) {
-        return -1;
-    }
-    const auto* value = static_cast<const DataType*>(src);
-    Index prev_idx = idx;
-    idx = _store.get_allocator().allocate(*value);
-
-    if (prev_idx.valid()) {
-        assert(ComparatorType::compare(getValue(prev_idx), *value) < 0);
-    }
-    return sizeof(DataType);
 }
 
 template <class EntryType>

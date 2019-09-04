@@ -20,7 +20,7 @@ protected:
 public:
     EnumeratedLoaderBase(IEnumStore& store);
     const IndexVector& get_enum_indexes() const { return _indexes; }
-    void read_unique_values(const void* src, size_t available);
+    void load_unique_values(const void* src, size_t available);
     void release_enum_indexes() {
         IndexVector().swap(_indexes);
     }

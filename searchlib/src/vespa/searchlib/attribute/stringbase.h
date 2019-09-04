@@ -75,7 +75,7 @@ protected:
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
-    virtual void fillEnum(LoadedVector & loaded);
+    virtual void load_enum_store(LoadedVector& loaded);
     virtual void fillValues(LoadedVector & loaded);
 
     virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);

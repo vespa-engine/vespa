@@ -110,7 +110,8 @@ private:
         return _store.get_allocator().get_wrapped(idx);
     }
 
-    ssize_t deserialize_internal(const void* src, size_t available, IndexVector& idx);
+    ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
+    ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
 public:
     EnumStoreT(bool has_postings);
@@ -137,7 +138,7 @@ public:
     void transferHoldLists(generation_t generation);
     void trimHoldLists(generation_t firstUsed);
 
-    ssize_t deserialize(const void* src, size_t available, IndexVector& idx) override;
+    ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 
     void fixupRefCounts(const EnumVector &hist) override { _dict.fixupRefCounts(hist); }
     void freezeTree() { _store.freeze(); }
@@ -158,13 +159,10 @@ public:
     DataType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
     DataType getValue(Index idx) const { return _store.get(idx); }
 
-    // TODO: Implement helper class to populate enum store when loading from enumerated save files.
-
     /**
-     * Used when building enum store from non-enumerated save files.
-     * TODO: Find better name.
+     * Helper class used to load an enum store from non-enumerated save files.
      */
-    class Builder {
+    class NonEnumeratedLoader {
     private:
         AllocatorType& _allocator;
         datastore::IUniqueStoreDictionary& _dict;
@@ -172,15 +170,15 @@ public:
         std::vector<uint32_t> _payloads;
 
     public:
-        Builder(AllocatorType& allocator, datastore::IUniqueStoreDictionary& dict)
+        NonEnumeratedLoader(AllocatorType& allocator, datastore::IUniqueStoreDictionary& dict)
             : _allocator(allocator),
               _dict(dict),
               _refs(),
               _payloads()
         {
         }
-        ~Builder();
-        Index insert(const DataType& value, uint32_t posting_idx = 0) {
+        ~NonEnumeratedLoader();
+        Index insert(const DataType& value, uint32_t posting_idx) {
             EntryRef new_ref = _allocator.allocate(value);
             _refs.emplace_back(new_ref);
             _payloads.emplace_back(posting_idx);
@@ -190,13 +188,13 @@ public:
             assert(!_refs.empty());
             _allocator.get_wrapped(_refs.back()).set_ref_count(ref_count);
         }
-        void build() {
+        void build_dictionary() {
             _dict.build_with_payload(_refs, _payloads);
         }
     };
 
-    Builder make_builder() {
-        return Builder(_store.get_allocator(), _dict);
+    NonEnumeratedLoader make_non_enumerated_loader() {
+        return NonEnumeratedLoader(_store.get_allocator(), _dict);
     }
 
     class BatchUpdater {
@@ -236,8 +234,6 @@ public:
 
     // TODO: Change to sending enum indexes as const array ref.
     void writeValues(BufferWriter &writer, const Index *idxs, size_t count) const override;
-    ssize_t deserialize(const void *src, size_t available, size_t &initSpace);
-    ssize_t deserialize(const void *src, size_t available, Index &idx);
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(DataType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(DataType value) const;
@@ -266,9 +262,9 @@ EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
 
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::deserialize(const void* src,
-                                         size_t available,
-                                         Index& idx);
+EnumStoreT<StringEntryType>::load_unique_value(const void* src,
+                                               size_t available,
+                                               Index& idx);
 
 
 extern template

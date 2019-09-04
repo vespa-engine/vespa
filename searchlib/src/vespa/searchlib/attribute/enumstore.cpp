@@ -9,7 +9,6 @@ LOG_SETUP(".searchlib.attribute.enum_store");
 
 namespace search {
 
-
 template <>
 void
 EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
@@ -26,9 +25,9 @@ EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
 
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::deserialize(const void* src,
-                                         size_t available,
-                                         Index& idx)
+EnumStoreT<StringEntryType>::load_unique_value(const void* src,
+                                               size_t available,
+                                               Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);

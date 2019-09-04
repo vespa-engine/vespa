@@ -51,7 +51,7 @@ public:
     virtual ~IEnumStore() = default;
 
     virtual void writeValues(BufferWriter& writer, const Index* idxs, size_t count) const = 0;
-    virtual ssize_t deserialize(const void* src, size_t available, IndexVector& idx) = 0;
+    virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
     virtual void fixupRefCounts(const EnumVector& histogram) = 0;
     virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;

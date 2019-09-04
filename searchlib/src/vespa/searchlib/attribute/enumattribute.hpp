@@ -24,20 +24,20 @@ EnumAttribute<B>::~EnumAttribute()
 }
 
 template <typename B>
-void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
+void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
 {
     if constexpr(!std::is_same_v<LoadedVector, NoLoadedVector>) {
-        auto builder = _enumStore.make_builder();
+        auto loader = _enumStore.make_non_enumerated_loader();
         if (!loaded.empty()) {
             auto value = loaded.read();
             LoadedValueType prev = value.getValue();
             uint32_t prevRefCount(0);
-            EnumIndex index = builder.insert(value.getValue(), value._pidx.ref());
+            EnumIndex index = loader.insert(value.getValue(), value._pidx.ref());
             for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
                 value = loaded.read();
                 if (EnumStore::ComparatorType::compare(prev, value.getValue()) != 0) {
-                    builder.set_ref_count_for_last_value(prevRefCount);
-                    index = builder.insert(value.getValue(), value._pidx.ref());
+                    loader.set_ref_count_for_last_value(prevRefCount);
+                    index = loader.insert(value.getValue(), value._pidx.ref());
                     prev = value.getValue();
                     prevRefCount = 1;
                 } else {
@@ -46,9 +46,9 @@ void EnumAttribute<B>::fillEnum(LoadedVector & loaded)
                 value.setEidx(index);
                 loaded.write(value);
             }
-            builder.set_ref_count_for_last_value(prevRefCount);
+            loader.set_ref_count_for_last_value(prevRefCount);
         }
-        builder.build();
+        loader.build_dictionary();
     }
 }
 
