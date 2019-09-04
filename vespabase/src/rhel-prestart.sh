@@ -8,6 +8,10 @@ findpath () {
     myname=${0}
     mypath=${myname%/*}
     myname=${myname##*/}
+    empty_if_start_slash=${mypath%%/*}
+    if [ "${empty_if_start_slash}" ]; then
+        mypath=$(pwd)/${mypath}
+    fi
     if [ "$mypath" ] && [ -d "$mypath" ]; then
         return
     fi
@@ -66,6 +70,7 @@ findhost () {
 }
 
 findroot
+findhost
 
 # END environment bootstrap section
 
