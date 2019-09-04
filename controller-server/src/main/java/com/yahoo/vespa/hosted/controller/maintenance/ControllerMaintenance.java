@@ -7,7 +7,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -60,7 +59,6 @@ public class ControllerMaintenance extends AbstractComponent {
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
-                                 ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
                                  Billing billing,
                                  SelfHostedCostConfig selfHostedCostConfig,
@@ -83,7 +81,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());

@@ -34,7 +34,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
@@ -1727,10 +1726,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         return (ServiceRegistryMock) tester.container().components().getComponent(ServiceRegistryMock.class.getName());
     }
 
-    private MockContactRetriever contactRetriever() {
-        return (MockContactRetriever) tester.container().components().getComponent(MockContactRetriever.class.getName());
-    }
-
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
@@ -1759,11 +1754,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void registerContact(long propertyId) {
         PropertyId p = new PropertyId(String.valueOf(propertyId));
-        contactRetriever().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()),
-                                                     URI.create("www.contacts.tld/" + p.id()),
-                                                     URI.create("www.properties.tld/" + p.id()),
-                                                     List.of(Collections.singletonList("alice"),
-                Collections.singletonList("bob")), "queue", Optional.empty()));
+        serviceRegistry().contactRetrieverMock().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()),
+                                                                           URI.create("www.contacts.tld/" + p.id()),
+                                                                           URI.create("www.properties.tld/" + p.id()),
+                                                                           List.of(Collections.singletonList("alice"),
+                                                                                   Collections.singletonList("bob")),
+                                                                           "queue", Optional.empty()));
     }
 
     private static class RequestBuilder implements Supplier<Request> {

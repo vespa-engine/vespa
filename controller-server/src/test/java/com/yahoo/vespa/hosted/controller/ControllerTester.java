@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
@@ -82,7 +81,6 @@ public final class ControllerTester {
     private final ApplicationStoreMock applicationStore;
     private final MockBuildService buildService;
     private final MetricsServiceMock metricsService;
-    private final MockContactRetriever contactRetriever;
 
     private Controller controller;
 
@@ -97,7 +95,6 @@ public final class ControllerTester {
              new ApplicationStoreMock(),
              new MockBuildService(),
              metricsService,
-             new MockContactRetriever(),
              new ServiceRegistryMock());
     }
 
@@ -123,7 +120,6 @@ public final class ControllerTester {
                              ArtifactRepositoryMock artifactRepository,
                              ApplicationStoreMock appStoreMock, MockBuildService buildService,
                              MetricsServiceMock metricsService,
-                             MockContactRetriever contactRetriever,
                              ServiceRegistryMock serviceRegistry) {
         this.athenzDb = athenzDb;
         this.clock = clock;
@@ -135,7 +131,6 @@ public final class ControllerTester {
         this.applicationStore = appStoreMock;
         this.buildService = buildService;
         this.metricsService = metricsService;
-        this.contactRetriever = contactRetriever;
         this.controller = createController(curator, rotationsConfig, clock, zoneRegistry,
                                            athenzDb, artifactRepository, appStoreMock, buildService,
                                            metricsService, serviceRegistry);
@@ -183,10 +178,6 @@ public final class ControllerTester {
     public MockBuildService buildService() { return buildService; }
 
     public MetricsServiceMock metricsService() { return metricsService; }
-
-    public MockContactRetriever contactRetriever() {
-        return contactRetriever;
-    }
 
     public Optional<Record> findCname(String name) {
         return serviceRegistry.nameService().findRecords(Record.Type.CNAME, RecordName.from(name)).stream().findFirst();

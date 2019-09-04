@@ -7,7 +7,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
@@ -30,6 +32,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockMailer mockMailer = new MockMailer();
     private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
+    private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
 
     @Override
     public ConfigServer configServer() {
@@ -62,6 +65,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
+    public ContactRetriever contactRetriever() {
+        return mockContactRetriever;
+    }
+
+    @Override
     public NameService nameService() {
         return memoryNameService;
     }
@@ -84,6 +92,10 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public RoutingGeneratorMock routingGeneratorMock() {
         return routingGeneratorMock;
+    }
+
+    public MockContactRetriever contactRetrieverMock() {
+        return mockContactRetriever;
     }
 
 }
