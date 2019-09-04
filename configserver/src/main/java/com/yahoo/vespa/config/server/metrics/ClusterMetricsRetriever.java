@@ -87,7 +87,9 @@ public class ClusterMetricsRetriever {
             is.close();
             return slime;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            // Usually caused by applications being deleted during metric retrieval
+            log.warning("Was unable to fetch metrics from " + hostURI);
+            return new Slime();
         }
     }
 
