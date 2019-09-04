@@ -85,10 +85,10 @@ public:
     using DataType = typename EntryType::Type;
     using ComparatorType = EnumStoreComparatorT<EntryType>;
     using AllocatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
-                                             datastore::UniqueStoreStringAllocator<Index>,
-                                             datastore::UniqueStoreAllocator<DataType, Index>>;
+                                             datastore::UniqueStoreStringAllocator<InternalIndex>,
+                                             datastore::UniqueStoreAllocator<DataType, InternalIndex>>;
 
-    using UniqueStoreType = datastore::UniqueStore<DataType, Index, ComparatorType, AllocatorType>;
+    using UniqueStoreType = datastore::UniqueStore<DataType, InternalIndex, ComparatorType, AllocatorType>;
     using FoldedComparatorType = EnumStoreFoldedComparatorT<EntryType>;
     using EnumStoreType = EnumStoreT<EntryType>;
     using EntryRef = datastore::EntryRef;
@@ -255,7 +255,6 @@ public:
 std::unique_ptr<datastore::IUniqueStoreDictionary>
 make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<datastore::EntryComparator> folded_compare);
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx);
 
 extern template
 class datastore::DataStoreT<IEnumStore::Index>;

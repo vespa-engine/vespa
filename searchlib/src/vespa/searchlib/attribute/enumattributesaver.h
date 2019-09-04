@@ -17,7 +17,7 @@ class IAttributeSaveTarget;
 class EnumAttributeSaver
 {
 public:
-    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::Index>;
+    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
 
 private:
     const IEnumStore  &_enumStore;

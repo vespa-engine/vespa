@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.hpp"
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
@@ -60,11 +59,8 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr
     }
 }
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx) {
-    return os << "offset(" << idx.offset() << "), bufferId(" << idx.bufferId() << "), idx(" << idx.ref() << ")";
-}
 
-template class datastore::DataStoreT<IEnumStore::Index>;
+template class datastore::DataStoreT<IEnumStore::InternalIndex>;
 
 template
 class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
@@ -88,6 +84,3 @@ namespace vespalib {
     template class RcuVectorBase<search::IEnumStore::Index>;
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::IEnumStore::Index, search::IEnumStore::Index,
-        vespalib::hash<search::IEnumStore::Index>, std::equal_to<search::IEnumStore::Index>,
-        vespalib::hashtable_base::and_modulator);

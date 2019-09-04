@@ -32,10 +32,11 @@ class IEnumStoreDictionary;
 class IEnumStore {
 public:
     using Index = enumstore::Index;
+    using InternalIndex = enumstore::InternalIndex;
     using IndexVector = enumstore::IndexVector;
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
-    using EnumIndexRemapper = datastore::UniqueStoreRemapper<Index>;
+    using EnumIndexRemapper = datastore::UniqueStoreRemapper<InternalIndex>;
 
     struct CompareEnumIndex {
         using Index = IEnumStore::Index;

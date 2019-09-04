@@ -21,7 +21,7 @@ AddressSpaceUsage::AddressSpaceUsage(const AddressSpace &enumStoreUsage_,
 AddressSpace
 AddressSpaceUsage::defaultEnumStoreUsage()
 {
-    return AddressSpace(0, 0, IEnumStore::Index::offsetSize());
+    return AddressSpace(0, 0, IEnumStore::InternalIndex::offsetSize());
 }
 
 AddressSpace

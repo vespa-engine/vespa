@@ -35,6 +35,6 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 
 namespace search::datastore {
 
-template class UniqueStoreEnumerator<IEnumStore::Index>;
+template class UniqueStoreEnumerator<IEnumStore::InternalIndex>;
 
 }
