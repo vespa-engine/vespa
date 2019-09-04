@@ -14,6 +14,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class ArrayReader {
+
     public static void fillArrayUpdate(TokenBuffer buffer, int initNesting, DataType valueType, List<FieldValue> arrayContents) {
         while (buffer.nesting() >= initNesting) {
             Preconditions.checkArgument(buffer.currentToken() != JsonToken.VALUE_NULL, "Illegal null value for array entry");
@@ -33,4 +34,5 @@ public class ArrayReader {
             buffer.next();
         }
     }
+
 }

@@ -237,8 +237,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
 
-    private HttpSearchResponse handleBody(HttpRequest request){
-
+    private HttpSearchResponse handleBody(HttpRequest request) {
         Map<String, String> requestMap = requestMapFromRequest(request);
 
         // Get query profile
@@ -269,13 +268,11 @@ public class SearchHandler extends LoggingRequestHandler {
         if (invalidReason != null) {
             result = new Result(query, ErrorMessage.createIllegalQuery(invalidReason));
         } else if (queryProfile == null && queryProfileName != null) {
-            result = new Result(
-                    query,
-                    ErrorMessage.createIllegalQuery("Could not resolve query profile '" + queryProfileName + "'"));
+            result = new Result(query,
+                                ErrorMessage.createIllegalQuery("Could not resolve query profile '" + queryProfileName + "'"));
         } else if (searchChain == null) {
-            result = new Result(
-                    query,
-                    ErrorMessage.createInvalidQueryParameter("No search chain named '" + searchChainName + "' was found"));
+            result = new Result(query,
+                                ErrorMessage.createInvalidQueryParameter("No search chain named '" + searchChainName + "' was found"));
         } else {
             String pathAndQuery = UriTools.rawRequest(request.getUri());
             result = search(pathAndQuery, query, searchChain);

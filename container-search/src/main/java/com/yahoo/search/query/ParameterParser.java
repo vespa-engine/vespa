@@ -18,15 +18,11 @@ public class ParameterParser {
      * a couple of valid examples are "s" and "ms". Only a very small subset of
      * SI prefixes are supported). If no unit is given, seconds are assumed.
      *
-     * @param value
-     *                some representation of a number of seconds
-     * @param defaultValue
-     *                returned if value is null
+     * @param value some representation of a number of seconds
+     * @param defaultValue returned if value is null
      * @return value as a number of milliseconds
-     * @throws NumberFormatException
-     *                 if value is not a Number instance and its String
-     *                 representation cannot be parsed as a number followed
-     *                 optionally by time unit
+     * @throws NumberFormatException if value is not a Number instance and its String
+     *         representation cannot be parsed as a number followed optionally by time unit
      */
     public static Long asMilliSeconds(Object value, Long defaultValue) {
         if (value == null) {
@@ -40,13 +36,12 @@ public class ParameterParser {
     }
 
     private static Long parseTime(String time) throws NumberFormatException {
-
         time = time.trim();
         try {
             int unitOffset = findUnitOffset(time);
             double measure = Double.valueOf(time.substring(0, unitOffset));
             double multiplier = parseUnit(time.substring(unitOffset));
-            return Long.valueOf((long) (measure * multiplier));
+            return (long) (measure * multiplier);
         } catch (RuntimeException e) {
             throw new IllegalArgumentException("Error parsing " + quote(time), e);
         }
@@ -85,4 +80,5 @@ public class ParameterParser {
         }
         return multiplier;
     }
+
 }

@@ -52,8 +52,8 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.text.Utf8;
+import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,7 +64,6 @@ import org.mockito.internal.matchers.Contains;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -84,6 +83,7 @@ import static org.junit.Assert.*;
  * Basic test of JSON streams to Vespa document instances.
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 public class JsonReaderTestCase {
 
@@ -1335,7 +1335,9 @@ public class JsonReaderTestCase {
             assertTensorAssignUpdate("tensor(x{},y{}):{}", createAssignUpdateWithTensor("{}", "dense_unbound_tensor"));
         }
         catch (IllegalArgumentException e) {
-            assertEquals("An indexed tensor must have a value", "Tensor of type tensor(x[],y[]) has no values", e.getMessage());
+            assertEquals("An indexed tensor must have a value",
+                         "Error in 'dense_unbound_tensor': Tensor of type tensor(x[],y[]) has no values",
+                         Exceptions.toMessageString(e));
         }
     }
 
@@ -1400,23 +1402,28 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_on_non_tensor_field_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A modify update can only be applied to tensor fields. Field 'something' is of type 'string'");
-        JsonReader reader = createReader(inputJson("{ 'update': 'id:unittest:smoke::doc1',",
-                "  'fields': {",
-                "    'something': {",
-                "      'modify': {} }}}"));
-        reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+        try {
+            JsonReader reader = createReader(inputJson("{ 'update': 'id:unittest:smoke::doc1',",
+                                                       "  'fields': {",
+                                                       "    'something': {",
+                                                       "      'modify': {} }}}"));
+            reader.readSingleDocument(DocumentParser.SupportedOperation.UPDATE, "id:unittest:smoke::doc1");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Error in 'something': A modify update can only be applied to tensor fields. Field 'something' is of type 'string'",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
     public void tensor_modify_update_on_dense_unbound_tensor_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A modify update cannot be applied to tensor types with indexed unbound dimensions. Field 'dense_unbound_tensor' has unsupported tensor type 'tensor(x[],y[])'");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace',",
-                "  'cells': [",
-                "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}"), "dense_unbound_tensor");
+        illegalTensorModifyUpdate("Error in 'dense_unbound_tensor': A modify update cannot be applied to tensor types with indexed unbound dimensions. Field 'dense_unbound_tensor' has unsupported tensor type 'tensor(x[],y[])'",
+                                  "dense_unbound_tensor",
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '0' }, 'value': 2.0 } ]}");
     }
 
     @Test
@@ -1448,57 +1455,57 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_modify_update_with_out_of_bound_cells_throws() {
-        exception.expect(IndexOutOfBoundsException.class);
-        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x[2],y[3])");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace',",
-                "  'cells': [",
-                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "dense_tensor");
+        illegalTensorModifyUpdate("Error in 'dense_tensor': Dimension 'y' has label '3' but type is tensor(x[2],y[3])",
+                                  "dense_tensor",
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_modify_update_with_out_of_bound_cells_throws_mixed() {
-        exception.expect(IndexOutOfBoundsException.class);
-        exception.expectMessage("Dimension 'y' has label '3' but type is tensor(x{},y[3])");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace',",
-                "  'cells': [",
-                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "mixed_tensor");
+        illegalTensorModifyUpdate("Error in 'mixed_tensor': Dimension 'y' has label '3' but type is tensor(x{},y[3])",
+                                  "mixed_tensor",
+                                  "{",
+                                  "  'operation': 'replace',",
+                                  "  'cells': [",
+                                  "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
 
     @Test
     public void tensor_modify_update_with_unknown_operation_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Unknown operation 'unknown' in modify update for field 'sparse_tensor'");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'unknown',",
-                "  'cells': [",
-                "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}"), "sparse_tensor");
+        illegalTensorModifyUpdate("Error in 'sparse_tensor': Unknown operation 'unknown' in modify update for field 'sparse_tensor'",
+                                  "sparse_tensor",
+                                  "{",
+                                  "  'operation': 'unknown',",
+                                   "  'cells': [",
+                                   "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_modify_update_without_operation_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Modify update for field 'sparse_tensor' does not contain an operation");
-        createTensorModifyUpdate(inputJson("{",
-                "  'cells': [] }"), "sparse_tensor");
+        illegalTensorModifyUpdate("Error in 'sparse_tensor': Modify update for field 'sparse_tensor' does not contain an operation",
+                                  "sparse_tensor",
+                                  "{",
+                                  "  'cells': [] }");
     }
 
     @Test
     public void tensor_modify_update_without_cells_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Modify update for field 'sparse_tensor' does not contain tensor cells");
-        createTensorModifyUpdate(inputJson("{",
-                "  'operation': 'replace' }"), "sparse_tensor");
+        illegalTensorModifyUpdate("Error in 'sparse_tensor': Modify update for field 'sparse_tensor' does not contain tensor cells",
+                                  "sparse_tensor",
+                                  "{",
+                                  "  'operation': 'replace' }");
     }
 
     @Test
     public void tensor_modify_update_with_unknown_content_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Unknown JSON string 'unknown' in modify update for field 'sparse_tensor'");
-        createTensorModifyUpdate(inputJson("{",
-                "  'unknown': 'here' }"), "sparse_tensor");
+        illegalTensorModifyUpdate("Error in 'sparse_tensor': Unknown JSON string 'unknown' in modify update for field 'sparse_tensor'",
+                                  "sparse_tensor",
+                                  "{",
+                                  "  'unknown': 'here' }");
     }
 
     @Test
@@ -1521,36 +1528,38 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_add_update_on_mixed_with_out_of_bound_dense_cells_throws() {
-        exception.expect(IndexOutOfBoundsException.class);
-        exception.expectMessage("Index 3 out of bounds for length 3");
-        createTensorAddUpdate(inputJson("{",
-                "  'cells': [",
-                "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}"), "mixed_tensor");
+        illegalTensorAddUpdate("Error in 'mixed_tensor': Index 3 out of bounds for length 3",
+                               "mixed_tensor",
+                               "{",
+                               "  'cells': [",
+                               "    { 'address': { 'x': '0', 'y': '3' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_add_update_on_dense_tensor_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("An add update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
-        createTensorAddUpdate(inputJson("{",
-                "  'cells': [] }"), "dense_tensor");
+        illegalTensorAddUpdate("Error in 'dense_tensor': An add update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'",
+                               "dense_tensor",
+                               "{",
+                               "  'cells': [] }");
     }
 
     @Test
     public void tensor_add_update_on_not_fully_specified_cell_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Missing a value for dimension y for tensor(x{},y{})");
-        createTensorAddUpdate(inputJson("{",
-                "  'cells': [",
-                "    { 'address': { 'x': 'a' }, 'value': 2.0 } ]}"), "sparse_tensor");
+        illegalTensorAddUpdate("Error in 'sparse_tensor': Missing a value for dimension y for tensor(x{},y{})",
+                               "sparse_tensor",
+                               "{",
+                               "  'cells': [",
+                               "    { 'address': { 'x': 'a' }, 'value': 2.0 } ]}");
     }
 
     @Test
     public void tensor_add_update_without_cells_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Add update for field 'sparse_tensor' does not contain tensor cells");
-        createTensorAddUpdate(inputJson("{}"), "sparse_tensor");
-        createTensorAddUpdate(inputJson("{}"), "mixed_tensor");
+        illegalTensorAddUpdate("Error in 'sparse_tensor': Add update for field 'sparse_tensor' does not contain tensor cells",
+                               "sparse_tensor",
+                               "{}");
+        illegalTensorAddUpdate("Error in 'mixed_tensor': Add update for field 'mixed_tensor' does not contain tensor cells",
+                               "mixed_tensor",
+                               "{}");
     }
 
     @Test
@@ -1573,37 +1582,40 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_remove_update_on_mixed_tensor_with_dense_addresses_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Indexed dimension address 'y' should not be specified in remove update");
-        createTensorRemoveUpdate(inputJson("{",
-                        "  'addresses': [",
-                        "    { 'x': '1', 'y': '0' },",
-                        "    { 'x': '2', 'y': '0' } ]}"), "mixed_tensor");
+        illegalTensorRemoveUpdate("Error in 'mixed_tensor': Indexed dimension address 'y' should not be specified in remove update",
+                                  "mixed_tensor",
+                                  "{",
+                                  "  'addresses': [",
+                                  "    { 'x': '1', 'y': '0' },",
+                                  "    { 'x': '2', 'y': '0' } ]}");
     }
 
     @Test
     public void tensor_remove_update_on_dense_tensor_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("A remove update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'");
-        createTensorRemoveUpdate(inputJson("{",
-                "  'addresses': [] }"), "dense_tensor");
+        illegalTensorRemoveUpdate("Error in 'dense_tensor': A remove update can only be applied to tensors with at least one sparse dimension. Field 'dense_tensor' has unsupported tensor type 'tensor(x[2],y[3])'",
+                                  "dense_tensor",
+                                  "{",
+                                  "  'addresses': [] }");
     }
 
     @Test
     public void tensor_remove_update_on_not_fully_specified_cell_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Missing a value for dimension y for tensor(x{},y{})");
-        createTensorRemoveUpdate(inputJson("{",
-                "  'addresses': [",
-                "    { 'x': 'a' } ]}"), "sparse_tensor");
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': Missing a value for dimension y for tensor(x{},y{})",
+                                  "sparse_tensor",
+                                  "{",
+                                  "  'addresses': [",
+                                  "    { 'x': 'a' } ]}");
     }
 
     @Test
     public void tensor_remove_update_without_cells_throws() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Remove update for field 'sparse_tensor' does not contain tensor addresses");
-        createTensorRemoveUpdate(inputJson("{'addresses': [] }"), "sparse_tensor");
-        createTensorRemoveUpdate(inputJson("{'addresses': [] }"), "mixed_tensor");
+        illegalTensorRemoveUpdate("Error in 'sparse_tensor': Remove update for field 'sparse_tensor' does not contain tensor addresses",
+                                  "sparse_tensor",
+                                  "{'addresses': [] }");
+
+        illegalTensorRemoveUpdate("Error in 'mixed_tensor': Remove update for field 'mixed_tensor' does not contain tensor addresses",
+                                  "mixed_tensor",
+                                  "{'addresses': [] }");
     }
 
     @Test
@@ -1676,6 +1688,36 @@ public class JsonReaderTestCase {
     }
 
     private static final String TENSOR_DOC_ID = "id:unittest:testtensor::0";
+
+    private void illegalTensorModifyUpdate(String expectedMessage, String field, String ... jsonLines) {
+        try {
+            createTensorModifyUpdate(inputJson(jsonLines), field);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals(expectedMessage, Exceptions.toMessageString(expected));
+        }
+    }
+
+    private void illegalTensorAddUpdate(String expectedMessage, String field, String ... jsonLines) {
+        try {
+            createTensorAddUpdate(inputJson(jsonLines), field);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals(expectedMessage, Exceptions.toMessageString(expected));
+        }
+    }
+
+    private void illegalTensorRemoveUpdate(String expectedMessage, String field, String ... jsonLines) {
+        try {
+            createTensorRemoveUpdate(inputJson(jsonLines), field);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals(expectedMessage, Exceptions.toMessageString(expected));
+        }
+    }
 
     private DocumentPut createPutWithoutTensor() {
         JsonReader reader = createReader(inputJson("[ { 'put': '" + TENSOR_DOC_ID + "', 'fields': { } } ]"));

@@ -100,13 +100,17 @@ public class VespaJsonDocumentReader {
             expectObjectStart(buffer.currentToken());
 
             String fieldName = buffer.currentName();
-            if (isFieldPath(fieldName)) {
-                addFieldPathUpdates(update, buffer, fieldName);
-            } else {
-                addFieldUpdates(update, buffer, fieldName);
+            try {
+                if (isFieldPath(fieldName)) {
+                    addFieldPathUpdates(update, buffer, fieldName);
+                } else {
+                    addFieldUpdates(update, buffer, fieldName);
+                }
+                expectObjectEnd(buffer.currentToken());
             }
-
-            expectObjectEnd(buffer.currentToken());
+            catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+                throw new IllegalArgumentException("Error in '" + fieldName + "'", e);
+            }
             buffer.next();
         }
     }
@@ -177,16 +181,14 @@ public class VespaJsonDocumentReader {
 
     private AssignFieldPathUpdate readAssignFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
         AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
-        FieldValue fv = SingleValueReader.readSingleValue(
-                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
         fieldPathUpdate.setNewValue(fv);
         return fieldPathUpdate;
     }
 
     private AddFieldPathUpdate readAddFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
         AddFieldPathUpdate fieldPathUpdate = new AddFieldPathUpdate(documentType, fieldPath);
-        FieldValue fv = SingleValueReader.readSingleValue(
-                buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
         fieldPathUpdate.setNewValues((Array) fv);
         return fieldPathUpdate;
     }
