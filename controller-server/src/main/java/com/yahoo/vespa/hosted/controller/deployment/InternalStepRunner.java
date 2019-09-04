@@ -226,7 +226,8 @@ public class InternalStepRunner implements StepRunner {
                                                                       logger.log("Restarting services on host " + hostname.id() + ".");
                                                                   });
             logger.log("Deployment successful.");
-            logger.log(prepareResponse.message);
+            if (prepareResponse.message != null)
+                logger.log(prepareResponse.message);
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
