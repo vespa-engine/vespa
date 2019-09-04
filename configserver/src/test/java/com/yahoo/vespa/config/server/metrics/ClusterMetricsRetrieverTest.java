@@ -1,117 +1,100 @@
 package com.yahoo.vespa.config.server.metrics;
 
-import com.yahoo.config.FileReference;
-import com.yahoo.config.model.api.FileDistribution;
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.config.provision.AllocatedHosts;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.buildergen.ConfigDefinition;
-import com.yahoo.vespa.config.server.application.Application;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import junit.framework.AssertionFailedError;
+import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.*;
+
 
 /**
  * @author olaa
  */
 public class ClusterMetricsRetrieverTest {
 
+    @Rule
+    public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
+
     @Test
-    public void getMetrics()  {
-        MockModel mockModel = new MockModel(mockHosts());
-        MockMetricsRetriever mockMetricsRetriever = new MockMetricsRetriever();
-        Application application = new Application(mockModel, null, 0, false,
-        null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
+    public void testMetricAggregation() throws IOException {
+        List<URI> hosts = List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"), URI.create("http://localhost:8080/3"));
 
-        ClusterMetricsRetriever clusterMetricsRetriever = new ClusterMetricsRetriever(mockMetricsRetriever);
-        clusterMetricsRetriever.getMetrics(application);
+        stubFor(get(urlEqualTo("/1"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(contentMetrics())));
 
-        assertEquals(2, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
+        stubFor(get(urlEqualTo("/2"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(contentMetrics())));
+
+        stubFor(get(urlEqualTo("/3"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(containerMetrics())));
+
+        ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
+        ClusterInfo expectedContainerCluster = new ClusterInfo("container_cluster_id", "container");
+
+        Map<ClusterInfo, MetricsAggregator> aggregatorMap = new ClusterMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+
+        compareAggregators(
+                new MetricsAggregator().addDocumentCount(6000.0),
+                aggregatorMap.get(expectedContentCluster)
+        );
+
+        compareAggregators(
+                new MetricsAggregator()
+                        .addContainerLatency(3000, 43)
+                        .addContainerLatency(2000, 0)
+                        .addQrLatency(3000, 43)
+                        .addFeedLatency(3000, 43),
+                aggregatorMap.get(expectedContainerCluster)
+
+        );
+        wireMock.stop();
     }
 
-    private Collection<HostInfo> mockHosts() {
-
-        HostInfo hostInfo1 = new HostInfo("host1",
-                List.of(new ServiceInfo("content", "searchnode", null, null, "", "host1"))
-        );
-        HostInfo hostInfo2 = new HostInfo("host2",
-                List.of(new ServiceInfo("default", "container", null, null, "", "host2"))
-        );
-        HostInfo hostInfo3 = new HostInfo("host3",
-                List.of(new ServiceInfo("default", "logserver",  null, null, "", "host3"))
-        );
-
-        return List.of(hostInfo1, hostInfo2, hostInfo3);
+    private String containerMetrics() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/container_metrics"));
     }
 
-    class MockMetricsRetriever extends MetricsRetriever {
-
-        Collection<URI> hosts = new ArrayList<>();
-
-        @Override
-        public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
-            this.hosts = hosts;
-
-            return Map.of(
-                    new ClusterInfo("content_cluster_id", "content"),
-                    new MetricsAggregator().addDocumentCount(1000),
-                    new ClusterInfo("container_cluster_id", "container"),
-                    new MetricsAggregator().addContainerLatency(123, 5)
-            );
-        }
+    private String contentMetrics() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/content_metrics"));
     }
 
-    class MockModel implements Model {
+    // Same tolerance value as used internally in MetricsAggregator.isZero
+    private static final double metricsTolerance = 0.001;
 
-        Collection<HostInfo> hosts;
+    private void compareAggregators(MetricsAggregator expected, MetricsAggregator actual) {
+        BiConsumer<Double, Double> assertDoubles = (a, b) -> assertEquals(a.doubleValue(), b.doubleValue(), metricsTolerance);
 
-        MockModel(Collection<HostInfo> hosts) {
-            this.hosts = hosts;
-        }
+        compareOptionals(expected.aggregateDocumentCount(), actual.aggregateDocumentCount(), assertDoubles);
+        compareOptionals(expected.aggregateQueryRate(), actual.aggregateQueryRate(), assertDoubles);
+        compareOptionals(expected.aggregateFeedRate(), actual.aggregateFeedRate(), assertDoubles);
+        compareOptionals(expected.aggregateQueryLatency(), actual.aggregateQueryLatency(), assertDoubles);
+        compareOptionals(expected.aggregateFeedLatency(), actual.aggregateFeedLatency(), assertDoubles);
+    }
 
-        @Override
-        public ConfigPayload getConfig(ConfigKey<?> configKey, ConfigDefinition targetDef) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Set<ConfigKey<?>> allConfigsProduced() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Collection<HostInfo> getHosts() {
-            return hosts;
-        }
-
-        @Override
-        public Set<String> allConfigIds() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void distributeFiles(FileDistribution fileDistribution) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Set<FileReference> fileReferences() { return new HashSet<>(); }
-
-        @Override
-        public AllocatedHosts allocatedHosts() {
-            throw new UnsupportedOperationException();
-        }
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static <T> void compareOptionals(Optional<T> a, Optional<T> b, BiConsumer<T, T> comparer) {
+        if (a.isPresent() != b.isPresent()) throw new AssertionFailedError("Both optionals are not present: " + a + ", " + b);
+        a.ifPresent(x -> b.ifPresent(y -> comparer.accept(x, y)));
     }
 }

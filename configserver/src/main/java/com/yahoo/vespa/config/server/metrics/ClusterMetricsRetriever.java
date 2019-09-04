@@ -1,56 +1,130 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
-import com.yahoo.config.model.api.HostInfo;
-import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
-import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
 
 /**
- * Finds all hosts we want to fetch metrics for, generates the appropriate URIs
- * and returns the metrics grouped by cluster.
+ * Client for reaching out to nodes in an application instance and get their
+ * metrics.
  *
  * @author olaa
+ * @author ogronnesby
  */
 public class ClusterMetricsRetriever {
 
-    private final MetricsRetriever metricsRetriever;
+    private static final Logger log = Logger.getLogger(ClusterMetricsRetriever.class.getName());
 
-    public ClusterMetricsRetriever() {
-        this(new MetricsRetriever());
+    private static final String VESPA_CONTAINER = "vespa.container";
+    private static final String VESPA_QRSERVER = "vespa.qrserver";
+    private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+
+    /**
+     * Call the metrics API on each host and aggregate the metrics
+     * into a single value, grouped by cluster.
+     */
+    public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        Map<ClusterInfo, MetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
+
+        Runnable retrieveMetricsJob = () ->
+                hosts.parallelStream().forEach(host ->
+                    getHostMetrics(host, clusterMetricsMap)
+                );
+
+        ForkJoinPool threadPool = new ForkJoinPool(5);
+        threadPool.submit(retrieveMetricsJob);
+        threadPool.shutdown();
+
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return clusterMetricsMap;
     }
 
-    public ClusterMetricsRetriever(MetricsRetriever metricsRetriever) {
-        this.metricsRetriever = metricsRetriever;
+    private static void getHostMetrics(URI hostURI, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+            Slime responseBody = doMetricsRequest(hostURI);
+            var parseError = responseBody.get().field("error_message");
+
+            if (parseError.valid()) {
+                log.info("Failed to retrieve metrics from " + hostURI + ": " + parseError.asString());
+            }
+
+            Inspector services = responseBody.get().field("services");
+            services.traverse((ArrayTraverser) (i, servicesInspector) ->
+                parseService(servicesInspector, clusterMetricsMap)
+            );
     }
 
-    public MetricsResponse getMetrics(Application application) {
-        var hosts = getHostsOfApplication(application);
-        var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new MetricsResponse(200, application.getId(), clusterMetrics);
+    private static Slime doMetricsRequest(URI hostURI) {
+        HttpGet get = new HttpGet(hostURI);
+        try {
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpResponse response = httpClient.execute(get);
+            InputStream is = response.getEntity().getContent();
+            Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
+            is.close();
+            return slime;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    private static Collection<URI> getHostsOfApplication(Application application) {
-        return application.getModel().getHosts().stream()
-                .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
-                .map(HostInfo::getHostname)
-                .map(ClusterMetricsRetriever::createMetricsProxyURI)
-                .collect(Collectors.toList());
-
+    private static void parseService(Inspector service, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+        String serviceName = service.field("name").asString();
+        service.field("metrics").traverse((ArrayTraverser) (i, metric) ->
+                addMetricsToAggeregator(serviceName, metric, clusterMetricsMap)
+        );
     }
 
-    private static Predicate<ServiceInfo> isLogserver() {
-        return serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver");
+    private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+        if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
+        Inspector values = metric.field("values");
+        ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
+        MetricsAggregator metricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new MetricsAggregator());
+
+        switch (serviceName) {
+            case "vespa.container":
+                metricsAggregator.addContainerLatency(
+                        values.field("query_latency.sum").asDouble(),
+                        values.field("query_latency.count").asDouble());
+                metricsAggregator.addFeedLatency(
+                        values.field("feed_latency.sum").asDouble(),
+                        values.field("feed_latency.count").asDouble());
+                break;
+            case "vespa.qrserver":
+                metricsAggregator.addQrLatency(
+                        values.field("query_latency.sum").asDouble(),
+                        values.field("query_latency.count").asDouble());
+                break;
+            case "vespa.distributor":
+                metricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
+                break;
+        }
     }
 
-    private static URI createMetricsProxyURI(String hostname) {
-        return URI.create("http://" + hostname + ":" + MetricsProxyContainer.BASEPORT + "/metrics/v1/values?consumer=Vespa");
+    private static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
+        return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
     }
-
 }

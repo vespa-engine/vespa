@@ -44,7 +44,7 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
-import com.yahoo.vespa.config.server.metrics.ClusterMetricsRetriever;
+import com.yahoo.vespa.config.server.metrics.ApplicationMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -644,8 +644,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public MetricsResponse getMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        ClusterMetricsRetriever clusterMetricsRetriever = new ClusterMetricsRetriever();
-        return clusterMetricsRetriever.getMetrics(application);
+        ApplicationMetricsRetriever applicationMetricsRetriever = new ApplicationMetricsRetriever();
+        return applicationMetricsRetriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
