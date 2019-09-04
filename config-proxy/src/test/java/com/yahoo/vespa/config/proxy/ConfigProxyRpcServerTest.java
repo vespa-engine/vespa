@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 public class ConfigProxyRpcServerTest {
     private static final String hostname = "localhost";
     private static final int port = 12345;
-    private static final String address = "tcp/" + hostname + ":" + port;
+    private static final String configSourceAddress = "tcp/" + hostname + ":" + port;
     private TestServer server;
     private TestClient client;
 
@@ -46,7 +46,7 @@ public class ConfigProxyRpcServerTest {
 
     @Test
     public void basic() {
-        ProxyServer proxy = ProxyServer.createTestServer(new MockConfigSource());
+        ProxyServer proxy = createTestServer(new MockConfigSource());
         Spec spec = new Spec("localhost", 12345);
         ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, new Supervisor(new Transport()), spec);
         assertThat(server.getSpec(), is(spec));
@@ -131,8 +131,8 @@ public class ConfigProxyRpcServerTest {
         assertThat(req.returnValues().size(), is(1));
         final String[] ret = req.returnValues().get(0).asStringArray();
         assertThat(ret.length, is(2));
-        assertThat(ret[0], is("Current source: " + address));
-        assertThat(ret[1], is("All sources:\n" + address + "\n"));
+        assertThat(ret[0], is("Current source: " + configSourceAddress));
+        assertThat(ret[1], is("All sources:\n" + configSourceAddress + "\n"));
     }
 
     /**
@@ -204,7 +204,7 @@ public class ConfigProxyRpcServerTest {
         ret = req.returnValues().get(0).asStringArray();
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("1"));
-        assertThat(ret[1], is("Could not set mode to '" + mode + "'. Legal modes are '" + Mode.modes() + "'"));
+        assertThat(ret[1], is("Unrecognized mode '" + mode + "' supplied. Legal modes are '" + Mode.modes() + "'"));
         assertThat(server.proxyServer().getMode().name(), is(oldMode));
     }
 
@@ -257,11 +257,15 @@ public class ConfigProxyRpcServerTest {
         assertThat(req.returnValues().get(0).asString(), is("success"));
     }
 
+    private static ProxyServer createTestServer(ConfigSourceSet source) {
+        return new ProxyServer(null, source, ProxyServer.defaultTimingValues(), new MemoryCache(), null);
+    }
+
     private static class TestServer implements AutoCloseable {
 
         private static final Spec SPEC = new Spec(0);
 
-        private final ProxyServer proxyServer = ProxyServer.createTestServer(new ConfigSourceSet(address));
+        private final ProxyServer proxyServer = createTestServer(new ConfigSourceSet(configSourceAddress));
         private final Supervisor supervisor = new Supervisor(new Transport());
         private final ConfigProxyRpcServer rpcServer = new ConfigProxyRpcServer(proxyServer, supervisor, SPEC);
         private final Acceptor acceptor;

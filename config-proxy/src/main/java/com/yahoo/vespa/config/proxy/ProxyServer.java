@@ -56,7 +56,6 @@ public class ProxyServer implements Runnable {
     private final MemoryCache memoryCache;
     private static final double timingValuesRatio = 0.8;
     private final static TimingValues defaultTimingValues;
-    private final boolean delayedResponseHandling;
     private final FileDistributionAndUrlDownload fileDistributionAndUrlDownload;
 
     private volatile Mode mode = new Mode(DEFAULT);
@@ -71,29 +70,16 @@ public class ProxyServer implements Runnable {
         defaultTimingValues = tv;
     }
 
-    private ProxyServer(Spec spec, ConfigSourceSet source, TimingValues timingValues,
-                        boolean delayedResponseHandling, MemoryCache memoryCache, ConfigSourceClient configClient) {
+    ProxyServer(Spec spec, ConfigSourceSet source, TimingValues timingValues,
+                MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.delayedResponses = new DelayedResponses();
         this.configSource = source;
         log.log(LogLevel.DEBUG, "Using config source '" + source);
         this.timingValues = timingValues;
-        this.delayedResponseHandling = delayedResponseHandling;
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
         this.configClient = createClient(rpcServer, delayedResponses, source, timingValues, memoryCache, configClient);
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
-    }
-
-    static ProxyServer createTestServer(ConfigSourceSet source) {
-        return createTestServer(source, null, new MemoryCache());
-    }
-
-    static ProxyServer createTestServer(ConfigSourceSet source,
-                                        ConfigSourceClient configSourceClient,
-                                        MemoryCache memoryCache) {
-        final boolean delayedResponseHandling = false;
-        return new ProxyServer(null, source, defaultTimingValues(), delayedResponseHandling,
-                               memoryCache, configSourceClient);
     }
 
     public void run() {
@@ -102,15 +88,11 @@ public class ProxyServer implements Runnable {
             t.setName("RpcServer");
             t.start();
         }
-        if (delayedResponseHandling) {
-            // Wait for 5 seconds initially, then run every second
-            delayedResponseScheduler = scheduler.scheduleAtFixedRate(new DelayedResponseHandler(delayedResponses,
-                                                                                                memoryCache,
-                                                                                                rpcServer),
-                                                                     5, 1, SECONDS);
-        } else {
-            log.log(LogLevel.INFO, "Running without delayed response handling");
-        }
+        // Wait for 5 seconds initially, then run every second
+        delayedResponseScheduler = scheduler.scheduleAtFixedRate(new DelayedResponseHandler(delayedResponses,
+                                                                                            memoryCache,
+                                                                                            rpcServer),
+                                                                 5, 1, SECONDS);
     }
 
     RawConfig resolveConfig(JRTServerConfigRequest req) {
@@ -132,20 +114,22 @@ public class ProxyServer implements Runnable {
     void setMode(String modeName) {
         if (modeName.equals(this.mode.name())) return;
 
-        log.log(LogLevel.INFO, "Switching from " + this.mode + " mode to " + modeName.toLowerCase() + " mode");
-        this.mode = new Mode(modeName);
+        String oldMode = this.mode.name();
         switch (mode.getMode()) {
             case MEMORYCACHE:
                 configClient.shutdownSourceConnections();
                 configClient = new MemoryCacheConfigClient(memoryCache);
+                this.mode = new Mode(modeName);
                 break;
             case DEFAULT:
                 flush();
                 configClient = createRpcClient();
+                this.mode = new Mode(modeName);
                 break;
             default:
-                throw new IllegalArgumentException("Not able to handle mode '" + modeName + "'");
+                throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
+        log.log(LogLevel.INFO, "Switching from '" + oldMode + "' mode to '" + modeName.toLowerCase() + "' mode");
     }
 
     private ConfigSourceClient createClient(RpcServer rpcServer, DelayedResponses delayedResponses,
@@ -197,7 +181,7 @@ public class ProxyServer implements Runnable {
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
         ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources,
-                                                  defaultTimingValues(), true, new MemoryCache(), null);
+                                                  defaultTimingValues(), new MemoryCache(), null);
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
         Thread proxyserverThread = new Thread(proxyServer);

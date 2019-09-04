@@ -75,7 +75,7 @@ class FileDistributionRpcServer {
 
 
     //---------------- RPC methods ------------------------------------
-    // TODO: Duplicate of code in FileAcquirereImpl. Find out where to put it. What about C++ code using this RPC call?
+    // TODO: Duplicate of code in FileAcquirerImpl. Find out where to put it. What about C++ code using this RPC call?
     private static final int baseErrorCode = 0x10000;
     private static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
 
