@@ -15,6 +15,15 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 
@@ -28,17 +37,36 @@ import java.util.logging.Logger;
 public class MetricsRetriever {
     private static final Logger log = Logger.getLogger(MetricsRetriever.class.getName());
 
+    private static final String VESPA_CONTAINER = "vespa.container";
+    private static final String VESPA_QRSERVER = "vespa.qrserver";
+    private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+
     /**
-     * Call the metrics API on each host in the cluster and aggregate the metrics
-     * into a single value.
+     * Call the metrics API on each host and aggregate the metrics
+     * into a single value, grouped by cluster.
      */
-    public static MetricsAggregator requestMetricsForCluster(ClusterInfo clusterInfo) {
-        var aggregator = new MetricsAggregator();
-        clusterInfo.getHostnames().forEach(host -> getHostMetrics(host, aggregator));
-        return aggregator;
+    public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
+        Map<ClusterInfo, MetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
+
+        Runnable retrieveMetricsJob = () ->
+                hosts.parallelStream().forEach(host ->
+                    getHostMetrics(host, clusterMetricsMap)
+                );
+
+        ForkJoinPool threadPool = new ForkJoinPool(5);
+        threadPool.submit(retrieveMetricsJob);
+        threadPool.shutdown();
+
+        try {
+            threadPool.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return clusterMetricsMap;
     }
 
-    private static void getHostMetrics(URI hostURI, MetricsAggregator metrics) {
+    private static void getHostMetrics(URI hostURI, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
             Slime responseBody = doMetricsRequest(hostURI);
             var parseError = responseBody.get().field("error_message");
 
@@ -47,9 +75,9 @@ public class MetricsRetriever {
             }
 
             Inspector services = responseBody.get().field("services");
-            services.traverse((ArrayTraverser) (i, servicesInspector) -> {
-                parseService(servicesInspector, metrics);
-            });
+            services.traverse((ArrayTraverser) (i, servicesInspector) ->
+                parseService(servicesInspector, clusterMetricsMap)
+            );
     }
 
     private static Slime doMetricsRequest(URI hostURI) {
@@ -66,32 +94,40 @@ public class MetricsRetriever {
         }
     }
 
-    private static void parseService(Inspector service, MetricsAggregator metrics) {
+    private static void parseService(Inspector service, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
         String serviceName = service.field("name").asString();
-        Instant timestamp = Instant.ofEpochSecond(service.field("timestamp").asLong());
-        metrics.setTimestamp(timestamp);
-        service.field("metrics").traverse((ArrayTraverser) (i, m) -> {
-            Inspector values = m.field("values");
-            switch (serviceName) {
-                case "vespa.container":
-                    metrics.addContainerLatency(
-                            values.field("query_latency.sum").asDouble(),
-                            values.field("query_latency.count").asDouble());
-                    metrics.addFeedLatency(
-                            values.field("feed_latency.sum").asDouble(),
-                            values.field("feed_latency.count").asDouble());
-                    break;
-                case "vespa.qrserver":
-                    metrics.addQrLatency(
-                            values.field("query_latency.sum").asDouble(),
-                            values.field("query_latency.count").asDouble());
-                    break;
-                case "vespa.distributor":
-                    metrics.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
-                    break;
-            }
-        });
-
+        service.field("metrics").traverse((ArrayTraverser) (i, metric) ->
+                addMetricsToAggeregator(serviceName, metric, clusterMetricsMap)
+        );
     }
 
+    private static void addMetricsToAggeregator(String serviceName, Inspector metric, Map<ClusterInfo, MetricsAggregator> clusterMetricsMap) {
+        if (!WANTED_METRIC_SERVICES.contains(serviceName)) return;
+        Inspector values = metric.field("values");
+        ClusterInfo clusterInfo = getClusterInfoFromDimensions(metric.field("dimensions"));
+        MetricsAggregator metricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new MetricsAggregator());
+
+        switch (serviceName) {
+            case "vespa.container":
+                metricsAggregator.addContainerLatency(
+                        values.field("query_latency.sum").asDouble(),
+                        values.field("query_latency.count").asDouble());
+                metricsAggregator.addFeedLatency(
+                        values.field("feed_latency.sum").asDouble(),
+                        values.field("feed_latency.count").asDouble());
+                break;
+            case "vespa.qrserver":
+                metricsAggregator.addQrLatency(
+                        values.field("query_latency.sum").asDouble(),
+                        values.field("query_latency.count").asDouble());
+                break;
+            case "vespa.distributor":
+                metricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
+                break;
+        }
+    }
+
+    private static ClusterInfo getClusterInfoFromDimensions(Inspector dimensions) {
+        return new ClusterInfo(dimensions.field("clusterid").asString(), dimensions.field("clustertype").asString());
+    }
 }

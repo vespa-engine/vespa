@@ -8,7 +8,11 @@
              "values": {
                   "vds.distributor.docsstored.average": 3000
 
-              }
+              },
+              "dimensions": {
+                  "clustertype": "content",
+                  "clusterid": "content_cluster_id"
+                }
             }
           ]
       }

@@ -14,7 +14,6 @@ public class MetricsAggregator {
     private LatencyMetrics qr;
     private LatencyMetrics container;
     private Double documentCount;
-    private Instant timestamp;
 
     public MetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
@@ -33,11 +32,6 @@ public class MetricsAggregator {
 
     public MetricsAggregator addDocumentCount(double count) {
         this.documentCount = (this.documentCount == null ? 0.0 : this.documentCount) + count;
-        return this;
-    }
-
-    public MetricsAggregator setTimestamp(Instant timestamp) {
-        this.timestamp = timestamp;
         return this;
     }
 
@@ -66,10 +60,6 @@ public class MetricsAggregator {
 
     public Optional<Double> aggregateDocumentCount() {
         return Optional.ofNullable(documentCount);
-    }
-
-    public Instant getTimestamp() {
-        return timestamp;
     }
 
     private LatencyMetrics combineLatency(LatencyMetrics metricsOrNull, double sum, double count) {

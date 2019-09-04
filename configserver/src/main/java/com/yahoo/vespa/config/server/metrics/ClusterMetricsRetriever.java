@@ -9,57 +9,39 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
- * @author olaa
+ * Finds all hosts we want to fetch metrics for, generates the appropriate URIs
+ * and returns the metrics grouped by cluster.
  *
- * Retrieves metrics for given application, grouped by cluster
+ * @author olaa
  */
 public class ClusterMetricsRetriever {
 
-    public static MetricsResponse getMetrics(Application application) {
-        var clusters = getClustersOfApplication(application);
-        var clusterMetrics = new ConcurrentHashMap<ClusterInfo, MetricsAggregator>();
+    private final MetricsRetriever metricsRetriever;
 
-        Runnable retrieveMetricsJob = () ->
-            clusters.parallelStream().forEach(cluster -> {
-                MetricsAggregator metrics = MetricsRetriever.requestMetricsForCluster(cluster);
-                clusterMetrics.put(cluster, metrics);
-            });
+    public ClusterMetricsRetriever() {
+        this(new MetricsRetriever());
+    }
 
-        ForkJoinPool threadPool = new ForkJoinPool(5);
-        threadPool.submit(retrieveMetricsJob);
-        threadPool.shutdown();
+    public ClusterMetricsRetriever(MetricsRetriever metricsRetriever) {
+        this.metricsRetriever = metricsRetriever;
+    }
 
-        try {
-            threadPool.awaitTermination(1, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
+    public MetricsResponse getMetrics(Application application) {
+        var hosts = getHostsOfApplication(application);
+        var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
         return new MetricsResponse(200, application.getId(), clusterMetrics);
     }
 
-    /** Finds the hosts of an application, grouped by cluster name */
-    private static Collection<ClusterInfo> getClustersOfApplication(Application application) {
-        Map<String, ClusterInfo> clusters = new HashMap<>();
-
-        application.getModel().getHosts().stream()
+    private static Collection<URI> getHostsOfApplication(Application application) {
+        return application.getModel().getHosts().stream()
                 .filter(host -> host.getServices().stream().noneMatch(isLogserver()))
-                .forEach(hostInfo -> {
-                            ClusterInfo clusterInfo = createClusterInfo(hostInfo);
-                            URI metricsProxyURI = createMetricsProxyURI(hostInfo.getHostname());
-                            clusters.computeIfAbsent(clusterInfo.getClusterId(), c -> clusterInfo).addHost(metricsProxyURI);
-                        }
-                );
-        return clusters.values();
+                .map(HostInfo::getHostname)
+                .map(ClusterMetricsRetriever::createMetricsProxyURI)
+                .collect(Collectors.toList());
 
     }
 
@@ -71,10 +53,4 @@ public class ClusterMetricsRetriever {
         return URI.create("http://" + hostname + ":" + MetricsProxyContainer.BASEPORT + "/metrics/v1/values?consumer=Vespa");
     }
 
-    private static ClusterInfo createClusterInfo(HostInfo hostInfo) {
-        return hostInfo.getServices().stream()
-                .map(ClusterInfo::fromServiceInfo)
-                .filter(Optional::isPresent)
-                .findFirst().get().orElseThrow();
-    }
 }

@@ -644,7 +644,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public MetricsResponse getMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        return ClusterMetricsRetriever.getMetrics(application);
+        ClusterMetricsRetriever clusterMetricsRetriever = new ClusterMetricsRetriever();
+        return clusterMetricsRetriever.getMetrics(application);
     }
 
     // ---------------- Misc operations ----------------------------------------------------------------
