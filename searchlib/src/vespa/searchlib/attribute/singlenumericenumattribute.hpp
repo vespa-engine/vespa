@@ -93,7 +93,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
         }
-        this->fillPostingsFixupEnum(loader);
+        this->load_posting_lists_and_update_enum_store(loader);
     } else {
         auto loader = this->getEnumStore().make_enumerated_loader();
         loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
@@ -136,7 +136,7 @@ SingleValueNumericEnumAttribute<B>::onLoad()
     }
 
     attribute::sortLoadedByValue(loaded);
-    this->fillPostings(loaded);
+    this->load_posting_lists(loaded);
     loaded.rewind();
     this->fillEnum(loaded);
     attribute::sortLoadedByDocId(loaded);

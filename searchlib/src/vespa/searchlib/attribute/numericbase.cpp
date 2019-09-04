@@ -34,7 +34,7 @@ NumericAttribute::load_enumerated_data(ReaderBase&,
 }
 
 void
-NumericAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
+NumericAttribute::load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader&)
 {
     LOG_ABORT("Should not be reached");
 }

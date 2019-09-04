@@ -64,7 +64,7 @@ protected:
     IEnumStore* getEnumStoreBase() override { return &_enumStore; }
     EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
 
-    void fillPostings(LoadedVector & loaded) override { (void) loaded; }
+    void load_posting_lists(LoadedVector& loaded) override { (void) loaded; }
     void fillEnum(LoadedVector & loaded) override;
     uint64_t getUniqueValueCount() const override;
 

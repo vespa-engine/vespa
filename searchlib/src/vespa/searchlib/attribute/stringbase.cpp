@@ -342,7 +342,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
         }
-        fillPostingsFixupEnum(loader);
+        load_posting_lists_and_update_enum_store(loader);
     } else {
         auto loader = this->getEnumStoreBase()->make_enumerated_loader();
         loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
@@ -372,7 +372,7 @@ StringAttribute::onAddDoc(DocId )
     return false;
 }
 
-void StringAttribute::fillPostings(LoadedVector &)
+void StringAttribute::load_posting_lists(LoadedVector&)
 {
 }
 
@@ -403,7 +403,7 @@ StringAttribute::load_enumerated_data(ReaderBase&, enumstore::EnumeratedLoader&)
 }
 
 void
-StringAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
+StringAttribute::load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader&)
 {
     LOG_ABORT("Should not be reached");
 }

@@ -90,7 +90,7 @@ protected:
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void fillEnum(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
-    virtual void fillPostings(LoadedVector &) {}
+    virtual void load_posting_lists(LoadedVector&) {}
 
     largeint_t getDefaultValue() const override { return defaultValue(); }
     bool isUndefined(DocId doc) const override { return get(doc) == defaultValue(); }

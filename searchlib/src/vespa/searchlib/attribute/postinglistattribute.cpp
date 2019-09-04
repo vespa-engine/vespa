@@ -49,7 +49,7 @@ PostingListAttributeBase<P>::clearAllPostings()
 
 template <typename P>
 void
-PostingListAttributeBase<P>::fillPostingsFixupEnumBase(enumstore::EnumeratedPostingsLoader& loader)
+PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader)
 {
     clearAllPostings();
     uint32_t docIdLimit = _attr.getNumDocs();
@@ -218,7 +218,7 @@ template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-handleFillPostings(LoadedVector &loaded)
+handle_load_posting_lists(LoadedVector& loaded)
 {
     if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
         clearAllPostings();
