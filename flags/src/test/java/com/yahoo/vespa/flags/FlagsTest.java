@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -90,7 +89,7 @@ public class FlagsTest {
 
     @Test
     public void testList() {
-        testGeneric(Flags.defineListFlag("list-id", List.of("a"), "desc", "mod"), List.of("a", "b", "c"));
+        testGeneric(Flags.defineListFlag("list-id", List.of("a"), String.class, "desc", "mod"), List.of("a", "b", "c"));
     }
 
     @Test
@@ -103,6 +102,9 @@ public class FlagsTest {
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
                 "description", "modification effect", FetchVector.Dimension.HOSTNAME),
                 instance);
+
+        testGeneric(Flags.defineListFlag("jackson-list-id", List.of(defaultInstance), ExampleJacksonClass.class, "desc", "mod"),
+                List.of(instance));
     }
 
     private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {

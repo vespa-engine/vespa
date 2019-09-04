@@ -9,14 +9,14 @@ import java.util.List;
  */
 @Immutable
 public class UnboundListFlag<T> extends UnboundFlagImpl<List<T>, ListFlag<T>, UnboundListFlag<T>> {
-    public UnboundListFlag(FlagId id, List<T> defaultValue) {
-        this(id, defaultValue, new FetchVector());
+    public UnboundListFlag(FlagId id, List<T> defaultValue, Class<T> clazz) {
+        this(id, defaultValue, clazz, new FetchVector());
     }
 
-    public UnboundListFlag(FlagId id, List<T> defaultValue, FetchVector defaultFetchVector) {
+    public UnboundListFlag(FlagId id, List<T> defaultValue, Class<T> clazz, FetchVector defaultFetchVector) {
         super(id, defaultValue, defaultFetchVector,
-                new JacksonArraySerializer<T>(),
-                UnboundListFlag::new,
+                new JacksonArraySerializer<T>(clazz),
+                (flagId, defVal, fetchVector) -> new UnboundListFlag<>(flagId, defVal, clazz, fetchVector),
                 ListFlag::new);
     }
 }

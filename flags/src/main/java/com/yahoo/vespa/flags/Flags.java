@@ -52,7 +52,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", List.of(),
+            "disabled-host-admin-tasks", List.of(), String.class,
             "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask) that should be skipped",
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
@@ -112,7 +112,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundListFlag<String> DISABLED_DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
-            "disabled-dynamic-provisioning-flavors", List.of(),
+            "disabled-dynamic-provisioning-flavors", List.of(), String.class,
             "List of disabled Vespa flavor names that cannot be used for dynamic provisioning",
             "Takes effect on next provisioning");
 
@@ -195,9 +195,10 @@ public class Flags {
     }
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
-    public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, String description,
-                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
-        return define(UnboundListFlag::new, flagId, defaultValue, description, modificationEffect, dimensions);
+    public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
+                                                        String description, String modificationEffect, FetchVector.Dimension... dimensions) {
+        return define((fid, dval, fvec) -> new UnboundListFlag<>(fid, dval, elementClass, fvec),
+                flagId, defaultValue, description, modificationEffect, dimensions);
     }
 
     @FunctionalInterface
