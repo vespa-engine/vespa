@@ -19,10 +19,8 @@ import static com.yahoo.vespa.http.client.TestUtils.getResults;
 import static com.yahoo.vespa.http.client.V3HttpAPITest.documents;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
- * Only runs on screwdriver to save time!
  *
  * @author Einar M R Rosenvinge
  */
