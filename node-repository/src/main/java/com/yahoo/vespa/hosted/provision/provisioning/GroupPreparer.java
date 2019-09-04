@@ -8,6 +8,10 @@ import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.ListFlag;
+import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -27,13 +31,15 @@ public class GroupPreparer {
     private final Optional<HostProvisioner> hostProvisioner;
     private final HostResourcesCalculator hostResourcesCalculator;
     private final BooleanFlag dynamicProvisioningEnabledFlag;
+    private final ListFlag<PreprovisionCapacity> preprovisionCapacityFlag;
 
     public GroupPreparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
-                         HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabledFlag) {
+                         HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.hostResourcesCalculator = hostResourcesCalculator;
-        this.dynamicProvisioningEnabledFlag = dynamicProvisioningEnabledFlag;
+        this.dynamicProvisioningEnabledFlag = Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource);
+        this.preprovisionCapacityFlag = Flags.PREPROVISION_CAPACITY.bindTo(flagSource);
     }
 
     /**
@@ -72,7 +78,7 @@ public class GroupPreparer {
                 prioritizer.addApplicationNodes();
                 prioritizer.addSurplusNodes(surplusActiveNodes);
                 prioritizer.addReadyNodes();
-                prioritizer.addNewDockerNodes(dynamicProvisioningEnabled);
+                prioritizer.addNewDockerNodes(dynamicProvisioningEnabled && preprovisionCapacityFlag.value().isEmpty());
 
                 // Allocate from the prioritized list
                 NodeAllocation allocation = new NodeAllocation(nodeList, application, cluster, requestedNodes,

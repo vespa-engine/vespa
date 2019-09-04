@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-class NodePrioritizer {
+public class NodePrioritizer {
 
     /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
     public static final List<Node.State> ALLOCATABLE_HOST_STATES =

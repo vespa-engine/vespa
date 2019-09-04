@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.lang.MutableInteger;
-import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -28,12 +28,12 @@ class Preparer {
     private final int spareCount;
 
     public Preparer(NodeRepository nodeRepository, int spareCount, Optional<HostProvisioner> hostProvisioner,
-                    HostResourcesCalculator hostResourcesCalculator, BooleanFlag dynamicProvisioningEnabled,
+                    HostResourcesCalculator hostResourcesCalculator, FlagSource flagSource,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
         this.nodeRepository = nodeRepository;
         this.spareCount = spareCount;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
-        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, dynamicProvisioningEnabled);
+        this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner, hostResourcesCalculator, flagSource);
     }
 
     /** Prepare all required resources for the given application and cluster */

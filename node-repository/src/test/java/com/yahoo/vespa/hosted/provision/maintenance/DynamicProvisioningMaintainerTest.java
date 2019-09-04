@@ -7,13 +7,14 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -26,12 +27,15 @@ import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,9 +47,12 @@ import static com.yahoo.vespa.hosted.provision.maintenance.DynamicProvisioningMa
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -56,7 +63,9 @@ import static org.mockito.Mockito.when;
 public class DynamicProvisioningMaintainerTest {
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
-    private final FlagSource flagSource = new InMemoryFlagSource().withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource()
+            .withBooleanFlag(Flags.ENABLE_DYNAMIC_PROVISIONING.id(), true)
+            .withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(), PreprovisionCapacity.class);
     private final DynamicProvisioningMaintainer maintainer = new DynamicProvisioningMaintainer(
             tester.nodeRepository, Duration.ofDays(1), hostProvisioner, flagSource);
 
@@ -94,17 +103,38 @@ public class DynamicProvisioningMaintainerTest {
     }
 
     @Test
-    public void finds_nodes_that_need_deprovisioning() {
+    public void finds_nodes_that_need_deprovisioning_without_pre_provisioning() {
         addNodes();
-        Node host2 = tester.nodeRepository.getNode("host2").orElseThrow();
-        Node host3 = tester.nodeRepository.getNode("host3").orElseThrow();
 
-        maintainer.deprovisionExcess(tester.nodeRepository.list());
-        verify(hostProvisioner).deprovision(eq(host2));
-        verify(hostProvisioner).deprovision(eq(host3));
+        maintainer.convergeToCapacity(tester.nodeRepository.list());
+        verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
+        verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host3")));
         verifyNoMoreInteractions(hostProvisioner);
         assertFalse(tester.nodeRepository.getNode("host2").isPresent());
         assertFalse(tester.nodeRepository.getNode("host3").isPresent());
+    }
+
+    @Test
+    public void does_not_deprovision_when_preprovisioning_enabled() {
+        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(1, 3, 2, 1)), PreprovisionCapacity.class);
+        addNodes();
+
+        maintainer.convergeToCapacity(tester.nodeRepository.list());
+        verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2"))); // host2 because it is failed
+        verifyNoMoreInteractions(hostProvisioner);
+    }
+
+    @Test
+    public void provision_deficit_and_deprovision_excess() {
+        flagSource.withListFlag(Flags.PREPROVISION_CAPACITY.id(), List.of(new PreprovisionCapacity(1, 3, 2, 1), new PreprovisionCapacity(2, 3, 2, 2)), PreprovisionCapacity.class);
+        addNodes();
+
+        maintainer.convergeToCapacity(tester.nodeRepository.list());
+        assertFalse(tester.nodeRepository.getNode("host2").isPresent());
+        assertTrue(tester.nodeRepository.getNode("host3").isPresent());
+        verify(hostProvisioner).deprovision(argThatLambda(node -> node.hostname().equals("host2")));
+        verify(hostProvisioner, times(2)).provisionHosts(argThatLambda(list -> list.size() == 1), eq(new NodeResources(2, 3, 2, 1)), any());
+        verifyNoMoreInteractions(hostProvisioner);
     }
 
     @Test
@@ -112,7 +142,7 @@ public class DynamicProvisioningMaintainerTest {
         Node host2 = tester.addNode("host2", Optional.empty(), NodeType.host, Node.State.failed, Optional.of(tenantApp));
         doThrow(new RuntimeException()).when(hostProvisioner).deprovision(eq(host2));
 
-        maintainer.deprovisionExcess(tester.nodeRepository.list());
+        maintainer.convergeToCapacity(tester.nodeRepository.list());
 
         assertEquals(1, tester.nodeRepository.getNodes().size());
         verify(hostProvisioner).deprovision(eq(host2));
@@ -136,6 +166,14 @@ public class DynamicProvisioningMaintainerTest {
                 createNode("proxyhost2", Optional.empty(), NodeType.proxyhost, Node.State.active, Optional.of(proxyHostApp)),
                 createNode("proxy2", Optional.of("proxyhost2"), NodeType.proxy, Node.State.active, Optional.of(proxyApp)))
                 .forEach(node -> tester.nodeRepository.database().addNodesInState(List.of(node), node.state()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T argThatLambda(Predicate<T> predicate) {
+        return argThat(new BaseMatcher<T>() {
+            @Override public boolean matches(Object item) { return predicate.test((T) item); }
+            @Override public void describeTo(Description description) { }
+        });
     }
 
     static class HostProvisionerTester {
