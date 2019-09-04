@@ -928,7 +928,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testMeteringResponses() {
-        MockMeteringClient mockMeteringClient = (MockMeteringClient) controllerTester.controller().meteringClient();
+        MockMeteringClient mockMeteringClient = (MockMeteringClient) controllerTester.containerTester().serviceRegistry().meteringService();
 
         // Mock response for MeteringClient
         ResourceAllocation currentSnapshot = new ResourceAllocation(1, 2, 3);

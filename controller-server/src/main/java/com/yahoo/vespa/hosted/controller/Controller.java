@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
@@ -79,7 +78,6 @@ public class Controller extends AbstractComponent {
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
     private final MavenRepository mavenRepository;
-    private final MeteringClient meteringClient;
 
     /**
      * Creates a controller 
@@ -93,12 +91,12 @@ public class Controller extends AbstractComponent {
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
                       MavenRepository mavenRepository,
-                      MeteringClient meteringClient, ServiceRegistry serviceRegistry) {
+                      ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
-             mavenRepository, meteringClient, serviceRegistry);
+             mavenRepository, serviceRegistry);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
@@ -109,7 +107,6 @@ public class Controller extends AbstractComponent {
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
-                      MeteringClient meteringClient,
                       ServiceRegistry serviceRegistry) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
@@ -120,7 +117,6 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
-        this.meteringClient = Objects.requireNonNull(meteringClient, "MeteringClient cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
@@ -284,10 +280,6 @@ public class Controller extends AbstractComponent {
 
     public AuditLogger auditLogger() {
         return auditLogger;
-    }
-
-    public MeteringClient meteringClient() {
-        return meteringClient;
     }
 
     /** Returns all other roles the given tenant role implies. */

@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRet
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -63,7 +62,6 @@ public class ControllerMaintenance extends AbstractComponent {
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  ContactRetriever contactRetriever,
                                  CostReportConsumer reportConsumer,
-                                 MeteringClient meteringClient,
                                  Billing billing,
                                  SelfHostedCostConfig selfHostedCostConfig,
                                  IssueHandler issueHandler,
@@ -88,7 +86,7 @@ public class ControllerMaintenance extends AbstractComponent {
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, meteringClient);
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);

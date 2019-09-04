@@ -29,7 +29,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -346,7 +345,6 @@ public final class ControllerTester {
                                                () -> "test-controller",
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
-                                               new MockMeteringClient(),
                                                serviceRegistry);
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
