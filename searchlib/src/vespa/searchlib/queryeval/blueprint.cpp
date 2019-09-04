@@ -66,6 +66,7 @@ Blueprint::min(const std::vector<HitEstimate> &data)
 Blueprint::State::State(const FieldSpecBaseList &fields_in)
     : _fields(fields_in),
       _estimate(),
+      _cost_tier(COST_TIER_NORMAL),
       _tree_size(1),
       _allow_termwise_eval(true)
 {
@@ -154,6 +155,7 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visitor.openStruct("estimate", "HitEstimate");
     visitor.visitBool("empty", state.estimate().empty);
     visitor.visitInt("estHits", state.estimate().estHits);
+    visitor.visitInt("cost_tier", state.cost_tier());
     visitor.visitInt("tree_size", state.tree_size());
     visitor.visitInt("allow_termwise_eval", state.allow_termwise_eval());
     visitor.closeStruct();
@@ -168,7 +170,7 @@ namespace blueprint {
 void
 StateCache::updateState() const
 {
-    calculateState().swap(_state);
+    _state = calculateState();
     _stale = false;
 }
 
@@ -202,6 +204,16 @@ IntermediateBlueprint::calculateEstimate() const
         estimates.push_back(child->getState().estimate());
     }
     return combine(estimates);
+}
+
+uint32_t
+IntermediateBlueprint::calculate_cost_tier() const
+{
+    uint32_t cost_tier = State::COST_TIER_MAX;
+    for (const Blueprint * child : _children) {
+        cost_tier = std::min(cost_tier, child->getState().cost_tier());
+    }
+    return cost_tier;
 }
 
 uint32_t
@@ -290,6 +302,7 @@ IntermediateBlueprint::calculateState() const
 {
     State state(exposeFields());
     state.estimate(calculateEstimate());
+    state.cost_tier(calculate_cost_tier());
     state.allow_termwise_eval(infer_allow_termwise_eval());
     state.tree_size(calculate_tree_size());
     return state;
@@ -513,6 +526,13 @@ void
 LeafBlueprint::setEstimate(HitEstimate est)
 {
     _state.estimate(est);
+    notifyChange();
+}
+
+void
+LeafBlueprint::set_cost_tier(uint32_t value)
+{
+    _state.cost_tier(value);
     notifyChange();
 }
 

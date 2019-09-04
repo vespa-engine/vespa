@@ -2,6 +2,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/vespalib/objects/visit.hpp>
+#include <cassert>
 
 namespace search::queryeval {
 
@@ -124,6 +125,11 @@ public:
         setEstimate(HitEstimate(hits, empty));
         return *this;
     }
+
+    MyLeaf &cost_tier(uint32_t value) {
+        set_cost_tier(value);
+        return *this;
+    }
 };
 
 //-----------------------------------------------------------------------------
@@ -133,18 +139,27 @@ class MyLeafSpec
 private:
     FieldSpecBaseList      _fields;
     Blueprint::HitEstimate _estimate;
+    uint32_t               _cost_tier;
 
 public:
     explicit MyLeafSpec(uint32_t estHits, bool empty = false)
-        : _fields(), _estimate(estHits, empty) {}
+        : _fields(), _estimate(estHits, empty), _cost_tier(0) {}
 
     MyLeafSpec &addField(uint32_t fieldId, uint32_t handle) {
         _fields.add(FieldSpecBase(fieldId, handle));
         return *this;
     }
+    MyLeafSpec &cost_tier(uint32_t value) {
+        assert(value > 0);
+        _cost_tier = value;
+        return *this;
+    }
     MyLeaf *create() const {
         MyLeaf *leaf = new MyLeaf(_fields);
         leaf->estimate(_estimate.estHits, _estimate.empty);
+        if (_cost_tier > 0) {
+            leaf->cost_tier(_cost_tier);
+        }
         return leaf;
     }
 };

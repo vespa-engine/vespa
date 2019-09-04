@@ -1335,4 +1335,65 @@ TEST("require that ANDNOT without children is optimized to empty search") {
     EXPECT_EQUAL(expect_up->asString(), top_up->asString());
 }
 
+TEST("require that highest cost tier sorts last for OR") {
+    //-------------------------------------------------------------------------
+    Blueprint::UP top_up(
+            ap((new OrBlueprint())->
+               addChild(ap(MyLeafSpec(50).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(3).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(10).cost_tier(1).create()))));
+    //-------------------------------------------------------------------------
+    Blueprint::UP expect_up(
+            ap((new OrBlueprint())->
+               addChild(ap(MyLeafSpec(50).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(3).create()))));
+    //-------------------------------------------------------------------------
+    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
+    top_up = Blueprint::optimize(std::move(top_up));
+    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    expect_up = Blueprint::optimize(std::move(expect_up));
+    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+}
+
+TEST("require that highest cost tier sorts last for AND") {
+    //-------------------------------------------------------------------------
+    Blueprint::UP top_up(
+            ap((new AndBlueprint())->
+               addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(3).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(50).cost_tier(1).create()))));
+    //-------------------------------------------------------------------------
+    Blueprint::UP expect_up(
+            ap((new AndBlueprint())->
+               addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(50).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(3).create()))));
+    //-------------------------------------------------------------------------
+    EXPECT_NOT_EQUAL(expect_up->asString(), top_up->asString());
+    top_up = Blueprint::optimize(std::move(top_up));
+    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+    expect_up = Blueprint::optimize(std::move(expect_up));
+    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+}
+
+TEST("require that intermediate cost tier is minimum cost tier of children") {
+    Blueprint::UP bp1(
+            ap((new AndBlueprint())->
+               addChild(ap(MyLeafSpec(10).cost_tier(1).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(3).create()))));
+    Blueprint::UP bp2(
+            ap((new AndBlueprint())->
+               addChild(ap(MyLeafSpec(10).cost_tier(3).create())).
+               addChild(ap(MyLeafSpec(20).cost_tier(2).create())).
+               addChild(ap(MyLeafSpec(30).cost_tier(2).create()))));
+    EXPECT_EQUAL(bp1->getState().cost_tier(), 1u);
+    EXPECT_EQUAL(bp2->getState().cost_tier(), 2u);
+}
+
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }
