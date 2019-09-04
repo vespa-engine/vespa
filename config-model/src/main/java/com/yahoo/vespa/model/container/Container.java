@@ -263,12 +263,6 @@ public abstract class Container extends AbstractService implements
             allocatedRpcPort = from.allocatePort("rpc/admin");
             ++off;
         }
-        // TODO: remove this
-        if (getHttp() == null) {
-            from.allocatePort("unused/" + off);
-            ++off;
-            from.allocatePort("unused/" + off);
-        }
     }
 
     protected int allocatedSearchPort = 0;
