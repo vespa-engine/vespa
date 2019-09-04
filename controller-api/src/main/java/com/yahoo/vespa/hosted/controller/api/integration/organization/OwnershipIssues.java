@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
-import com.yahoo.config.provision.ApplicationId;
-
 import java.util.Optional;
 
 /**
@@ -21,12 +19,12 @@ public interface OwnershipIssues {
      * Ensure ownership of the given application has been recently confirmed by the given user.
      *
      * @param issueId ID of the previous ownership issue filed for the given application.
-     * @param applicationId ID of the application for which to file an issue.
-     * @param asignee Issue asignee
+     * @param summary Summary of an application for which to file an issue.
+     * @param assignee Issue assignee
      * @param contact Contact info for the application tenant
      * @return ID of the created issue, if one was created.
      */
-    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact);
+    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, User assignee, Contact contact);
 
     /**
      * Make sure the given ownership confirmation request is acted upon, unless it is already acknowledged.
@@ -41,4 +39,5 @@ public interface OwnershipIssues {
      * @return The owner of the application, if it has been confirmed.
      */
     Optional<User> getConfirmedOwner(IssueId issueId);
+
 }

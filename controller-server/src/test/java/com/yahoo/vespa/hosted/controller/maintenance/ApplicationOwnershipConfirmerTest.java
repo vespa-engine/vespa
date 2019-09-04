@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -107,7 +108,7 @@ public class ApplicationOwnershipConfirmerTest {
         private Optional<User> owner = Optional.empty();
 
         @Override
-        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact) {
+        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationSummary summary, User assignee, Contact contact) {
             return response;
         }
 
