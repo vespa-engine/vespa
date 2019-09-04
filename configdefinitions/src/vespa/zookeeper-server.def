@@ -6,7 +6,7 @@ zooKeeperConfigFile string default="conf/zookeeper/zookeeper.cfg"
 
 # Use a connection factory that is controlled by vespa_zkfacade__restrict environment variable
 # See RestrictedServerCnxnFactory for details
-# TODO: Remove when Vespa 7.103 is the latest 7 version in use
+# TODO: Remove when Vespa 7.103 is the oldest 7 version in use
 useRestrictedServerCnxnFactory bool default=false
 
 
