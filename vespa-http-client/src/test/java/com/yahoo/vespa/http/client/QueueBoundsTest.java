@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * Only runs on screwdriver to save time!
  *
  * @author Einar M R Rosenvinge
  */

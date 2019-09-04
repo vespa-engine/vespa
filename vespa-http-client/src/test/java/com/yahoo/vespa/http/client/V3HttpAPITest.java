@@ -24,7 +24,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 /**
- * Only runs on screwdriver to save time!
  *
  * @author Einar M R Rosenvinge
  */
