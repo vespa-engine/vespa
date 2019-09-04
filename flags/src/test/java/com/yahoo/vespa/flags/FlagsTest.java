@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -70,28 +70,27 @@ public class FlagsTest {
     public void testString() {
         testGeneric(Flags.defineStringFlag("string-id", "default value", "description",
                 "modification effect", FetchVector.Dimension.ZONE_ID, FetchVector.Dimension.HOSTNAME),
-                "default value", "other value");
+                "other value");
     }
 
     @Test
     public void testInt() {
-        testGeneric(Flags.defineIntFlag("int-id", 2, "desc", "mod"), 2, 3);
+        testGeneric(Flags.defineIntFlag("int-id", 2, "desc", "mod"), 3);
     }
 
     @Test
     public void testLong() {
-        testGeneric(Flags.defineLongFlag("long-id", 1L, "desc", "mod"), 1L, 2L);
+        testGeneric(Flags.defineLongFlag("long-id", 1L, "desc", "mod"), 2L);
     }
 
     @Test
     public void testDouble() {
-        testGeneric(Flags.defineDoubleFlag("double-id", 3.142, "desc", "mod"), 3.142, 2.718);
+        testGeneric(Flags.defineDoubleFlag("double-id", 3.142, "desc", "mod"), 2.718);
     }
 
     @Test
     public void testList() {
-        testGeneric(Flags.defineListFlag("list-id", Collections.singletonList("a"), "desc", "mod"),
-                Collections.singletonList("a"), Arrays.asList("a", "b", "c"));
+        testGeneric(Flags.defineListFlag("list-id", List.of("a"), "desc", "mod"), List.of("a", "b", "c"));
     }
 
     @Test
@@ -103,10 +102,10 @@ public class FlagsTest {
 
         testGeneric(Flags.defineJacksonFlag("jackson-id", defaultInstance, ExampleJacksonClass.class,
                 "description", "modification effect", FetchVector.Dimension.HOSTNAME),
-                defaultInstance, instance);
+                instance);
     }
 
-    private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T defaultValue, T value) {
+    private <T> void testGeneric(UnboundFlag<T, ?, ?> unboundFlag, T value) {
         FlagSource source = mock(FlagSource.class);
         Flag<T, ?> flag = unboundFlag.bindTo(source);
 
@@ -114,7 +113,7 @@ public class FlagsTest {
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(flag.serializer().serialize(value)));
 
-        assertThat(flag.boxedValue(), equalTo(defaultValue));
+        assertThat(flag.boxedValue(), equalTo(unboundFlag.defaultValue()));
         assertThat(flag.boxedValue(), equalTo(value));
 
         assertTrue(Flags.getFlag(unboundFlag.id()).isPresent());
