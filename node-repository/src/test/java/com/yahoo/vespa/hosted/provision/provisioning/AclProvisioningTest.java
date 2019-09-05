@@ -51,11 +51,11 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
-        Node host = node.parentHostname().flatMap(tester.nodeRepository()::getNode).get();
+        List<Node> host = node.parentHostname().flatMap(tester.nodeRepository()::getNode).map(List::of).orElseGet(List::of);
         Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers, List.of(host)),
+        assertAcls(List.of(activeNodes, proxyNodes, configServers, host),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    nodeAcls.get());
     }
