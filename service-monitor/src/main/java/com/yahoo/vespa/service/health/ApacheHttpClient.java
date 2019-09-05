@@ -47,6 +47,7 @@ class ApacheHttpClient implements AutoCloseable {
                 };
 
         return VespaHttpClientBuilder.createWithBasicConnectionManager()
+                .setUserAgent("service-monitor")
                 .setKeepAliveStrategy(keepAliveStrategy)
                 .disableAutomaticRetries()
                 .setDefaultRequestConfig(requestConfig)
