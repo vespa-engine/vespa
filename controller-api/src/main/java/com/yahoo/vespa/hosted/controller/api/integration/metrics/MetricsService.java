@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.metrics;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.Map;
@@ -18,12 +16,6 @@ public interface MetricsService {
     ApplicationMetrics getApplicationMetrics(ApplicationId application);
 
     DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone);
-
-    /**
-     * Get status for a global rotation
-     * @param rotationName The fully qualified domain name of the rotation
-     */
-    Map<HostName, RotationStatus> getRotationStatus(String rotationName);
 
     Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone);
 
