@@ -8,12 +8,9 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -96,9 +93,7 @@ public class NodePrioritizer {
      * @return The list of nodes sorted by PrioritizableNode::compare
      */
     List<PrioritizableNode> prioritize() {
-        List<PrioritizableNode> priorityList = new ArrayList<>(nodes.values());
-        Collections.sort(priorityList);
-        return priorityList;
+        return nodes.values().stream().sorted().collect(Collectors.toList());
     }
 
     /**
@@ -222,14 +217,6 @@ public class NodePrioritizer {
         return builder.build();
     }
 
-    static boolean isPreferredNodeToBeRelocated(List<Node> nodes, Node node, Node parent) {
-        NodeList list = new NodeList(nodes);
-        return list.childrenOf(parent).asList().stream()
-                   .min(NodePrioritizer::compareForRelocation)
-                   .filter(n -> n.equals(node))
-                   .isPresent();
-    }
-
     private boolean isReplacement(int nofNodesInCluster, int nodeFailedNodes) {
         if (nodeFailedNodes == 0) return false;
 
@@ -243,29 +230,6 @@ public class NodePrioritizer {
 
     private boolean isDocker() {
         return resources(requestedNodes) != null;
-    }
-
-    private static int compareForRelocation(Node a, Node b) {
-        // Choose smallest node
-        int capacity = NodeResourceComparator.defaultOrder().compare(a.flavor().resources(), b.flavor().resources());
-        if (capacity != 0) return capacity;
-
-        // Choose unallocated over allocated (this case is when we have ready docker nodes)
-        if (!a.allocation().isPresent() && b.allocation().isPresent()) return -1;
-        if (a.allocation().isPresent() && !b.allocation().isPresent()) return 1;
-
-        // Choose container over content nodes
-        if (a.allocation().isPresent() && b.allocation().isPresent()) {
-            if (a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
-                !b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
-                return -1;
-            if (!a.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container) &&
-                b.allocation().get().membership().cluster().type().equals(ClusterSpec.Type.container))
-                return 1;
-        }
-
-        // To get a stable algorithm - choose lexicographical from hostname
-        return a.hostname().compareTo(b.hostname());
     }
 
 }
