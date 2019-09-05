@@ -52,6 +52,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerClus
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.LEGACY_APPLICATION;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.TENANT;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.ZONE;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.AppDimensionNames.SYSTEM;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.getDefaultPublicConsumer;
 import static com.yahoo.vespa.model.admin.monitoring.MetricSet.emptyMetricSet;
 import static com.yahoo.vespa.model.admin.monitoring.VespaMetricsConsumer.getVespaMetricsConsumer;
@@ -77,6 +78,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
 
     static final class AppDimensionNames {
+        static final String SYSTEM = "system";
         static final String ZONE = "zone";
         static final String APPLICATION_ID = "applicationId";  // tenant.app.instance
         static final String TENANT = "tenantName";
@@ -204,6 +206,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     private Map<String, String> applicationDimensions() {
         Map<String, String> dimensions = new LinkedHashMap<>();
+        dimensions.put(SYSTEM, getZone().system().value());
         dimensions.put(ZONE, zoneString(getZone()));
         dimensions.put(APPLICATION_ID, serializeWithDots(applicationId));
         dimensions.put(TENANT, applicationId.tenant().value());

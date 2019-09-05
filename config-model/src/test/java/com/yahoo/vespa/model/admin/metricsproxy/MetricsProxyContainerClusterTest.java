@@ -270,6 +270,7 @@ public class MetricsProxyContainerClusterTest {
         VespaModel hostedModel = getModel(servicesWithAdminOnly(), hosted);
         ApplicationDimensionsConfig config = getApplicationDimensionsConfig(hostedModel);
 
+        assertEquals(Zone.defaultZone().system().value(), config.dimensions(AppDimensionNames.SYSTEM));
         assertEquals(zoneString(Zone.defaultZone()), config.dimensions(AppDimensionNames.ZONE));
         assertEquals(MY_TENANT, config.dimensions(AppDimensionNames.TENANT));
         assertEquals(MY_APPLICATION, config.dimensions(AppDimensionNames.APPLICATION));
