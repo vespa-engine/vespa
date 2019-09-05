@@ -261,10 +261,10 @@ public class DynamicDockerAllocationTest {
     }
 
     @Test(expected = OutOfCapacityException.class)
-    public void allocation_should_fail_when_host_is_not_active() {
+    public void allocation_should_fail_when_host_is_not_in_allocatable_state() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32);
-        deployZoneApp(tester);
+        tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32).forEach(node ->
+                tester.nodeRepository().fail(node.hostname(), Agent.system, getClass().getSimpleName()));
 
         ApplicationId application = tester.makeApplicationId();
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, new NodeResources(1, 1, 1, 1));

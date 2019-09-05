@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -33,8 +31,11 @@ import java.util.stream.Collectors;
  *
  * @author smorgrav
  */
-class NodePrioritizer {
+public class NodePrioritizer {
 
+    /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
+    public static final List<Node.State> ALLOCATABLE_HOST_STATES =
+            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
@@ -44,20 +45,18 @@ class NodePrioritizer {
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
-    private final NodeFlavors flavors;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, NameResolver nameResolver, NodeFlavors flavors, HostResourcesCalculator hostResourcesCalculator) {
+                    int spares, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
         this.nameResolver = nameResolver;
-        this.flavors = flavors;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
         int nofFailedNodes = (int) allNodes.asList().stream()
@@ -122,7 +121,8 @@ class NodePrioritizer {
      *                    already have nodes allocated to this tenant
      */
     void addNewDockerNodes(boolean exclusively) {
-        LockedNodeList candidates = allNodes;
+        LockedNodeList candidates = allNodes
+                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()));
 
         if (exclusively) {
             Set<String> candidateHostnames = candidates.asList().stream()
@@ -133,11 +133,7 @@ class NodePrioritizer {
                                                        .flatMap(node -> node.parentHostname().stream())
                                                        .collect(Collectors.toSet());
 
-            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()))
-                                   .filter(node -> EnumSet.of(Node.State.provisioned, Node.State.ready, Node.State.active)
-                                                          .contains(node.state()));
-        } else {
-            candidates = candidates.filter(node -> node.state() == Node.State.active);
+            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()));
         }
 
         addNewDockerNodesOn(candidates);
@@ -184,7 +180,7 @@ class NodePrioritizer {
      * Add existing nodes allocated to the application
      */
     void addApplicationNodes() {
-        List<Node.State> legalStates = Arrays.asList(Node.State.active, Node.State.inactive, Node.State.reserved);
+        EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.asList().stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))
                 .filter(node -> legalStates.contains(node.state()))

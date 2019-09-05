@@ -1,8 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.Collection;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -34,6 +37,15 @@ public class JsonNodeRawFlag implements RawFlag {
 
     public <T> T toJacksonClass(Class<T> jacksonClass) {
         return uncheck(() -> mapper.treeToValue(jsonNode, jacksonClass));
+    }
+
+    public <T> T toJacksonClass(JavaType jacksonClass) {
+        return uncheck(() -> mapper.readValue(jsonNode.toString(), jacksonClass));
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static JavaType constructCollectionType(Class<? extends Collection> collectionClass, Class<?> elementClass) {
+        return mapper.getTypeFactory().constructCollectionType(collectionClass, elementClass);
     }
 
     @Override

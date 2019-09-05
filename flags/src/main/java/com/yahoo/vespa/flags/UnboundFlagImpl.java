@@ -55,4 +55,9 @@ public abstract class UnboundFlagImpl<T, F extends Flag<T, F>, U extends Unbound
     public FlagSerializer<T> serializer() {
         return serializer;
     }
+
+    @Override
+    public T defaultValue() {
+        return defaultValue;
+    }
 }

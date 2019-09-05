@@ -44,8 +44,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final MetricsReporter metricsReporter;
     private final InfrastructureProvisioner infrastructureProvisioner;
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
-    private final Optional<HostProvisionMaintainer> hostProvisionMaintainer;
-    private final Optional<HostDeprovisionMaintainer> hostDeprovisionMaintainer;
+    private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
     private final CapacityReportMaintainer capacityReportMaintainer;
 
     @Inject
@@ -78,10 +77,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, durationFromEnv("infrastructure_provision_interval").orElse(defaults.infrastructureProvisionInterval));
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->
                 new LoadBalancerExpirer(nodeRepository, durationFromEnv("load_balancer_expirer_interval").orElse(defaults.loadBalancerExpirerInterval), lbService));
-        hostProvisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostProvisionMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.hostProvisionerInterval), hostProvisioner, flagSource));
-        hostDeprovisionMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
-                new HostDeprovisionMaintainer(nodeRepository, durationFromEnv("host_deprovisioner_interval").orElse(defaults.hostDeprovisionerInterval), hostProvisioner, flagSource));
+        dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
+                new DynamicProvisioningMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.dynamicProvisionerInterval), hostProvisioner, flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("capacity_report_interval").orElse(defaults.capacityReportInterval));
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
@@ -104,8 +101,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         metricsReporter.deconstruct();
         infrastructureProvisioner.deconstruct();
         loadBalancerExpirer.ifPresent(Maintainer::deconstruct);
-        hostProvisionMaintainer.ifPresent(Maintainer::deconstruct);
-        hostDeprovisionMaintainer.ifPresent(Maintainer::deconstruct);
+        dynamicProvisioningMaintainer.ifPresent(Maintainer::deconstruct);
     }
 
     private static Optional<Duration> durationFromEnv(String envVariable) {
@@ -148,8 +144,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration retiredInterval;
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
-        private final Duration hostProvisionerInterval;
-        private final Duration hostDeprovisionerInterval;
+        private final Duration dynamicProvisionerInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -168,8 +163,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             loadBalancerExpirerInterval = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
-            hostProvisionerInterval = Duration.ofMinutes(5);
-            hostDeprovisionerInterval = Duration.ofMinutes(5);
+            dynamicProvisionerInterval = Duration.ofMinutes(5);
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

@@ -17,7 +17,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -66,7 +65,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 zone.environment() == Environment.prod ? SPARE_CAPACITY_PROD : SPARE_CAPACITY_NONPROD,
                                      provisionServiceProvider.getHostProvisioner(),
                                      provisionServiceProvider.getHostResourcesCalculator(),
-                                     Flags.ENABLE_DYNAMIC_PROVISIONING.bindTo(flagSource),
+                                     flagSource,
                                      loadBalancerProvisioner);
         this.activator = new Activator(nodeRepository, loadBalancerProvisioner);
     }

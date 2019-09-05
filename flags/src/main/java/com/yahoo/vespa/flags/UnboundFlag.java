@@ -2,15 +2,13 @@
 package com.yahoo.vespa.flags;
 
 /**
- * @author hakonhall
- */
-
-/**
  * Interface of an unbound flag.
  *
  * @param <T> Type of boxed value, e.g. Integer
  * @param <F> Type of flag, e.g. IntFlag
  * @param <U> Type of unbound flag, e.g. UnboundIntFlag
+ *
+ * @author hakonhall
  */
 public interface UnboundFlag<T, F extends Flag<T, F>, U extends UnboundFlag<T, F, U>> {
     /** The flag ID. */
@@ -24,4 +22,7 @@ public interface UnboundFlag<T, F extends Flag<T, F>, U extends UnboundFlag<T, F
 
     /** Binds to a flag source, returning a (bound) flag. */
     F bindTo(FlagSource source);
+
+    /** Returns the default value of the flag */
+    T defaultValue();
 }

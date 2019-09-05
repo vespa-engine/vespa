@@ -1,17 +1,23 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.fasterxml.jackson.databind.JavaType;
+
 import java.util.List;
 
 /**
  * @author freva
  */
 public class JacksonArraySerializer<T> implements FlagSerializer<List<T>> {
+    private final JavaType type;
 
-    @SuppressWarnings("unchecked")
+    public JacksonArraySerializer(Class<T> clazz) {
+        type = JsonNodeRawFlag.constructCollectionType(List.class, clazz);
+    }
+
     @Override
     public List<T> deserialize(RawFlag rawFlag) {
-        return (List<T>) JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).toJacksonClass(List.class);
+        return JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).toJacksonClass(type);
     }
 
     @Override
