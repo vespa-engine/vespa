@@ -75,6 +75,7 @@ public class Deployment {
     }
 
     /** Returns utilization of the clusters allocated to this */
+    // TODO(mpolden): No longer updated. Remove this and associated serialization
     public Map<Id, ClusterUtilization> clusterUtils() {
         return clusterUtilization;
     }
