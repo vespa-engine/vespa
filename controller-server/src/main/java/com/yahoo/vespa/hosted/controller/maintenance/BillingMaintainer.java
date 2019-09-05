@@ -16,9 +16,9 @@ public class BillingMaintainer extends Maintainer {
 
     private final Billing billing;
 
-    public BillingMaintainer(Controller controller, Duration interval, JobControl jobControl, Billing billing) {
+    public BillingMaintainer(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl, BillingMaintainer.class.getSimpleName(), EnumSet.of(SystemName.cd));
-        this.billing = billing;
+        this.billing = controller.serviceRegistry().billingService();
     }
 
     @Override

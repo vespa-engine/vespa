@@ -10,10 +10,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -49,6 +51,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
+    private final MockBilling mockBilling = new MockBilling();
 
     @Override
     public ConfigServer configServer() {
@@ -108,6 +111,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public CostReportConsumer costReportConsumer() {
         return costReportConsumerMock;
+    }
+
+    @Override
+    public Billing billingService() {
+        return mockBilling;
     }
 
     @Override
