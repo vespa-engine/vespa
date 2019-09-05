@@ -31,17 +31,13 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** This node does not exist in the node repository yet */
     final boolean isNewNode;
 
-    /** True if exact flavor is specified by the allocation request and this node has this flavor */
-    final boolean preferredOnFlavor;
-
-    private PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode, boolean preferredOnFlavor) {
+    private PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode) {
         this.node = node;
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
         this.violatesSpares = violatesSpares;
         this.isSurplusNode = isSurplusNode;
         this.isNewNode = isNewNode;
-        this.preferredOnFlavor = preferredOnFlavor;
     }
 
     /**
@@ -56,24 +52,24 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (!other.violatesSpares && this.violatesSpares) return 1;
 
         // Choose active nodes
-        if (this.node.state().equals(Node.State.active) && !other.node.state().equals(Node.State.active)) return -1;
-        if (other.node.state().equals(Node.State.active) && !this.node.state().equals(Node.State.active)) return 1;
+        if (this.node.state() == Node.State.active && other.node.state() != Node.State.active) return -1;
+        if (other.node.state() == Node.State.active && this.node.state() != Node.State.active) return 1;
 
         // Choose active node that is not retired first (surplus is active but retired)
         if (!this.isSurplusNode && other.isSurplusNode) return -1;
         if (!other.isSurplusNode && this.isSurplusNode) return 1;
 
         // Choose inactive nodes
-        if (this.node.state().equals(Node.State.inactive) && !other.node.state().equals(Node.State.inactive)) return -1;
-        if (other.node.state().equals(Node.State.inactive) && !this.node.state().equals(Node.State.inactive)) return 1;
+        if (this.node.state() == Node.State.inactive && other.node.state() != Node.State.inactive) return -1;
+        if (other.node.state() == Node.State.inactive && this.node.state() != Node.State.inactive) return 1;
 
         // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
         if (isInNodeRepoAndReserved(this) && !isInNodeRepoAndReserved(other)) return -1;
         if (isInNodeRepoAndReserved(other) && !isInNodeRepoAndReserved(this)) return 1;
 
         // Choose ready nodes
-        if (this.node.state().equals(Node.State.ready) && !other.node.state().equals(Node.State.ready)) return -1;
-        if (other.node.state().equals(Node.State.ready) && !this.node.state().equals(Node.State.ready)) return 1;
+        if (this.node.state() == Node.State.ready && other.node.state() != Node.State.ready) return -1;
+        if (other.node.state() == Node.State.ready && this.node.state() != Node.State.ready) return 1;
 
         if ( ! this.node.state().equals(other.node.state()))
             throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
@@ -110,7 +106,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         private boolean violatesSpares;
         private boolean isSurplusNode;
         private boolean isNewNode;
-        private boolean preferredOnFlavor;
 
         Builder(Node node) {
             this.node = node;
@@ -140,14 +135,9 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
             isNewNode = newNode;
             return this;
         }
-
-        Builder withPreferredOnFlavor(boolean preferredOnFlavor) {
-            this.preferredOnFlavor = preferredOnFlavor;
-            return this;
-        }
         
         PrioritizableNode build() {
-            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode, preferredOnFlavor);
+            return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode);
         }
     }
 

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -44,20 +42,18 @@ class NodePrioritizer {
     private final ApplicationId appId;
     private final ClusterSpec clusterSpec;
     private final NameResolver nameResolver;
-    private final NodeFlavors flavors;
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
 
     NodePrioritizer(LockedNodeList allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    int spares, NameResolver nameResolver, NodeFlavors flavors, HostResourcesCalculator hostResourcesCalculator) {
+                    int spares, NameResolver nameResolver, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = allNodes;
         this.capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
         this.nameResolver = nameResolver;
-        this.flavors = flavors;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
         int nofFailedNodes = (int) allNodes.asList().stream()
@@ -184,7 +180,7 @@ class NodePrioritizer {
      * Add existing nodes allocated to the application
      */
     void addApplicationNodes() {
-        List<Node.State> legalStates = Arrays.asList(Node.State.active, Node.State.inactive, Node.State.reserved);
+        EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.asList().stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))
                 .filter(node -> legalStates.contains(node.state()))

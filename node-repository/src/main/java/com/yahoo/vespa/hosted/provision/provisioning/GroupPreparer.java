@@ -67,7 +67,6 @@ public class GroupPreparer {
                 LockedNodeList nodeList = nodeRepository.list(allocationLock);
                 NodePrioritizer prioritizer = new NodePrioritizer(nodeList, application, cluster, requestedNodes,
                                                                   spareCount, nodeRepository.nameResolver(),
-                                                                  nodeRepository.getAvailableFlavors(),
                                                                   hostResourcesCalculator);
 
                 prioritizer.addApplicationNodes();
