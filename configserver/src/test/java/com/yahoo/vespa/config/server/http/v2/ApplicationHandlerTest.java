@@ -270,7 +270,7 @@ public class ApplicationHandlerTest {
 
     private void assertApplicationGeneration(String url, long expectedGeneration) throws IOException {
         HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"generation\":" + expectedGeneration + "}");
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"generation\":" + expectedGeneration + ",\"configModelVersions\":[\"7.0.0\"]}");
     }
 
     private void assertApplicationExists(ApplicationId applicationId, Zone zone) throws IOException {
