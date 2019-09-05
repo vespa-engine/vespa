@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -12,14 +13,19 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -54,8 +60,8 @@ public class AclProvisioningTest {
         Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers),
-                   Set.of("10.2.3.0/24", "10.4.5.0/24"),
+        assertAcls(Arrays.asList(activeNodes, proxyNodes, configServers, dockerHost),
+                   ImmutableSet.of("10.2.3.0/24", "10.4.5.0/24"),
                    nodeAcls.get());
     }
 
@@ -76,7 +82,7 @@ public class AclProvisioningTest {
         List<Node> tenantNodes = tester.nodeRepository().getNodes(NodeType.tenant);
 
         // Trusted nodes are all proxy-, config-, and, tenant-nodes
-        assertAcls(List.of(proxyNodes, configServers, tenantNodes), nodeAcls);
+        assertAcls(Arrays.asList(proxyNodes, configServers, tenantNodes), nodeAcls);
     }
 
     @Test
@@ -97,7 +103,7 @@ public class AclProvisioningTest {
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is all tenant nodes, all proxy nodes and all config servers
-        assertAcls(List.of(tenantNodes, proxyNodes, configServers), nodeAcls);
+        assertAcls(Arrays.asList(tenantNodes, proxyNodes, configServers), nodeAcls);
     }
 
     @Test
@@ -118,7 +124,7 @@ public class AclProvisioningTest {
         List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes is all config servers and all proxy nodes
-        assertAcls(List.of(proxyNodes, configServers), nodeAcls);
+        assertAcls(Arrays.asList(proxyNodes, configServers), nodeAcls);
     }
 
     @Test
@@ -142,7 +148,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
             assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
-            assertAcls(List.of(configServers, dockerNodes), nodeAcl);
+            assertAcls(Arrays.asList(configServers, dockerNodes), nodeAcl);
         }
     }
 
@@ -156,8 +162,8 @@ public class AclProvisioningTest {
 
         // Controllers and hosts all trust each other
         List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
-        assertAcls(List.of(controllers), controllerAcls);
-        assertEquals(Set.of(4443, 443), controllerAcls.get(0).trustedPorts());
+        assertAcls(Collections.singletonList(controllers), controllerAcls);
+        assertEquals(ImmutableSet.of(22, 4443, 443), controllerAcls.get(0).trustedPorts());
     }
 
     @Test
@@ -179,9 +185,9 @@ public class AclProvisioningTest {
 
         assertEquals(3, nodeAcls.get(0).trustedNodes().size());
         Iterator<Node> trustedNodes = nodeAcls.get(0).trustedNodes().iterator();
-        assertEquals(Set.of("127.0.1.1"), trustedNodes.next().ipAddresses());
-        assertEquals(Set.of("127.0.1.2"), trustedNodes.next().ipAddresses());
-        assertEquals(Set.of("127.0.1.3"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.1"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.2"), trustedNodes.next().ipAddresses());
+        assertEquals(singleton("127.0.1.3"), trustedNodes.next().ipAddresses());
     }
 
     private List<Node> deploy(int nodeCount) {
@@ -196,7 +202,7 @@ public class AclProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"), false);
         List<HostSpec> prepared = tester.prepare(application, cluster, capacity, 1);
-        tester.activate(application, Set.copyOf(prepared));
+        tester.activate(application, new HashSet<>(prepared));
         return tester.getNodes(application, Node.State.active).asList();
     }
 
@@ -205,12 +211,12 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expectedNodes, List<NodeAcl> actual) {
-        assertAcls(expectedNodes, Set.of(), actual);
+        assertAcls(expectedNodes, emptySet(), actual);
     }
 
     private static void assertAcls(List<List<Node>> expectedNodes, Set<String> expectedNetworks, List<NodeAcl> actual) {
         List<Node> expectedTrustedNodes = expectedNodes.stream()
-                .flatMap(List::stream)
+                .flatMap(Collection::stream)
                 .distinct()
                 .sorted(Comparator.comparing(Node::hostname))
                 .collect(Collectors.toList());
