@@ -4,10 +4,10 @@
       "name": "ApplicationOwnershipConfirmer"
     },
     {
-      "name": "AwsEventReporterMaintainer"
+      "name": "BillingMaintainer"
     },
     {
-      "name": "BillingMaintainer"
+      "name": "CloudEventReporter"
     },
     {
       "name": "ClusterInfoMaintainer"

@@ -5,7 +5,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -44,7 +43,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ResourceMeterMaintainer resourceMeterMaintainer;
     private final NameServiceDispatcher nameServiceDispatcher;
     private final BillingMaintainer billingMaintainer;
-    private final AwsEventReporterMaintainer awsEventReporterMaintainer;
+    private final CloudEventReporter cloudEventReporter;
     private final RotationStatusUpdater rotationStatusUpdater;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -52,8 +51,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  Controller controller,
                                  CuratorDb curator,
                                  JobControl jobControl,
-                                 Metric metric,
-                                 AwsEventFetcher awsEventFetcher) {
+                                 Metric metric) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -75,7 +73,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), jobControl, controller.serviceRegistry().costReportConsumer());
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl);
-        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, controller.serviceRegistry().issueHandler(), awsEventFetcher);
+        cloudEventReporter = new CloudEventReporter(controller, Duration.ofDays(1), jobControl);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 
@@ -105,7 +103,7 @@ public class ControllerMaintenance extends AbstractComponent {
         resourceMeterMaintainer.deconstruct();
         nameServiceDispatcher.deconstruct();
         billingMaintainer.deconstruct();
-        awsEventReporterMaintainer.deconstruct();
+        cloudEventReporter.deconstruct();
         rotationStatusUpdater.deconstruct();
     }
 

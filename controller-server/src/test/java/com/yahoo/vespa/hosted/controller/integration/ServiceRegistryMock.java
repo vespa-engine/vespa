@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
@@ -52,6 +54,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
     private final MockBilling mockBilling = new MockBilling();
+    private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
 
     @Override
     public ConfigServer configServer() {
@@ -116,6 +119,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public Billing billingService() {
         return mockBilling;
+    }
+
+    @Override
+    public AwsEventFetcher eventFetcherService() {
+        return mockAwsEventFetcher;
     }
 
     @Override
