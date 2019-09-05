@@ -11,6 +11,10 @@
                   "document.count": 300000,
                   "feed.rate": 23.0,
                   "write_latency.sum": 2000
+              },
+              "dimensions": {
+                  "clustertype": "container",
+                  "clusterid": "container_cluster_id"
               }
             },
             {
@@ -20,7 +24,11 @@
                   "feed_latency.count": 43.0,
                   "feed_latency.sum": 3000
 
-              }
+              },
+              "dimensions": {
+                  "clustertype": "container",
+                  "clusterid": "container_cluster_id"
+                }
             }
           ]
       },
@@ -33,6 +41,10 @@
            "values": {
                 "query_latency.count": 43.0,
                 "query_latency.sum": 3000
+            },
+            "dimensions": {
+              "clustertype": "container",
+              "clusterid": "container_cluster_id"
             }
           }
         ]

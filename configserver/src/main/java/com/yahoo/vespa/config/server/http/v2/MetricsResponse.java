@@ -32,7 +32,7 @@ public class MetricsResponse extends HttpResponse {
         for (var entry : aggregatedMetrics.entrySet()) {
             Cursor cluster = clusters.addObject();
             cluster.setString("clusterId", entry.getKey().getClusterId());
-            cluster.setString("clusterType", entry.getKey().getClusterType().name());
+            cluster.setString("clusterType", entry.getKey().getClusterType());
 
             MetricsAggregator aggregator = entry.getValue();
             Cursor metrics = cluster.setObject("metrics");

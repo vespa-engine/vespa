@@ -10,6 +10,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
@@ -24,19 +25,14 @@ import static org.junit.Assert.*;
 /**
  * @author olaa
  */
-public class MetricsRetrieverTest {
+public class ClusterMetricsRetrieverTest {
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
 
     @Test
     public void testMetricAggregation() throws IOException {
-        var metricsRetriever = new MetricsRetriever();
-
-        var clusters = List.of(
-                new ClusterInfo("cluster1", ClusterInfo.ClusterType.content, List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"))),
-                new ClusterInfo("cluster2", ClusterInfo.ClusterType.container, List.of(URI.create("http://localhost:8080/3")))
-        );
+        List<URI> hosts = List.of(URI.create("http://localhost:8080/1"), URI.create("http://localhost:8080/2"), URI.create("http://localhost:8080/3"));
 
         stubFor(get(urlEqualTo("/1"))
                 .willReturn(aResponse()
@@ -53,9 +49,14 @@ public class MetricsRetrieverTest {
                         .withStatus(200)
                         .withBody(containerMetrics())));
 
+        ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
+        ClusterInfo expectedContainerCluster = new ClusterInfo("container_cluster_id", "container");
+
+        Map<ClusterInfo, MetricsAggregator> aggregatorMap = new ClusterMetricsRetriever().requestMetricsGroupedByCluster(hosts);
+
         compareAggregators(
                 new MetricsAggregator().addDocumentCount(6000.0),
-                metricsRetriever.requestMetricsForCluster(clusters.get(0))
+                aggregatorMap.get(expectedContentCluster)
         );
 
         compareAggregators(
@@ -64,9 +65,9 @@ public class MetricsRetrieverTest {
                         .addContainerLatency(2000, 0)
                         .addQrLatency(3000, 43)
                         .addFeedLatency(3000, 43),
-                metricsRetriever.requestMetricsForCluster(clusters.get(1))
-        );
+                aggregatorMap.get(expectedContainerCluster)
 
+        );
         wireMock.stop();
     }
 
