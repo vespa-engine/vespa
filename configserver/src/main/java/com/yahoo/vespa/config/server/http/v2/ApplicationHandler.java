@@ -13,7 +13,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
@@ -21,9 +20,9 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -113,9 +112,7 @@ public class ApplicationHandler extends HttpHandler {
             return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
         }
 
-        return new GetApplicationResponse(Response.Status.OK,
-                                          applicationRepository.getApplicationGeneration(applicationId),
-                                          applicationRepository.getApplicationVersions(applicationId));
+        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
     }
 
     @Override
@@ -247,11 +244,9 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static class GetApplicationResponse extends JSONResponse {
-        GetApplicationResponse(int status, long generation, List<Version> versions) {
+        GetApplicationResponse(int status, long generation) {
             super(status);
             object.setLong("generation", generation);
-            Cursor versionsArray = object.setArray("configModelVersions");
-            versions.forEach(version -> versionsArray.addString(version.toFullString()));
         }
     }
 

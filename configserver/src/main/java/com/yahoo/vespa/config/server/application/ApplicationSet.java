@@ -96,8 +96,4 @@ public final class ApplicationSet {
         return new ArrayList<>(applications.values());
     }
 
-    public List<Version> getAllApplicationVersions() {
-        return new ArrayList<>(applications.keySet());
-    }
-
 }

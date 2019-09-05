@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -19,11 +20,13 @@ import com.yahoo.vespa.config.server.application.ApplicationMapper;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.application.VersionDoesNotExistException;
+import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 
 import java.time.Clock;
@@ -32,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import static java.util.stream.Collectors.toSet;
 
