@@ -38,7 +38,7 @@ public class SystemPollerProvider implements Provider<SystemPoller> {
         return poller;
     }
 
-    private static boolean runningOnLinux() {
+    public static boolean runningOnLinux() {
         return getOs().contains("nux");
     }
 

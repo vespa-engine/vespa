@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
-import static ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil.toGenericJsonModel;
 
 /**
  * Generates metrics values in json format for the metrics/v1 rest api.
