@@ -51,10 +51,11 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
+        Node host = node.parentHostname().flatMap(tester.nodeRepository()::getNode).get();
         Supplier<List<NodeAcl>> nodeAcls = () -> tester.nodeRepository().getNodeAcls(node, false);
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers),
+        assertAcls(List.of(activeNodes, proxyNodes, configServers, List.of(host)),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    nodeAcls.get());
     }
@@ -142,7 +143,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
             assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
-            assertAcls(List.of(configServers, dockerNodes), nodeAcl);
+            assertAcls(List.of(configServers, dockerNodes, List.of(dockerHostNodeUnderTest)), nodeAcl);
         }
     }
 

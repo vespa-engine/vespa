@@ -207,8 +207,10 @@ public class NodeRepository extends AbstractComponent {
         Set<String> trustedNetworks = new LinkedHashSet<>();
 
         // For all cases below, trust:
+        // - parent host (for health checks and metrics)
         // - nodes in same application
         // - load balancers allocated to application
+        candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
             loadBalancers.owner(allocation.owner()).asList().stream()
