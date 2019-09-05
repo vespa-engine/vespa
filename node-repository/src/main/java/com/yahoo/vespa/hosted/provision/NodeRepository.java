@@ -209,6 +209,7 @@ public class NodeRepository extends AbstractComponent {
         // For all cases below, trust:
         // - nodes in same application
         // - load balancers allocated to application
+        // - ssh
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
             loadBalancers.owner(allocation.owner()).asList().stream()
@@ -216,13 +217,17 @@ public class NodeRepository extends AbstractComponent {
                          .map(LoadBalancerInstance::networks)
                          .forEach(trustedNetworks::addAll);
         });
+        trustedPorts.add(22);
 
         switch (node.type()) {
             case tenant:
                 // Tenant nodes in other states than ready, trust:
                 // - config servers
                 // - proxy nodes
+                // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
+                //   we migrate away from IPv4-only nodes
                 trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
+                trustedNodes.addAll(candidates.parentsOf(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
