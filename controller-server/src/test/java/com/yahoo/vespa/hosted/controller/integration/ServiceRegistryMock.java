@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
