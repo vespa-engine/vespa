@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -62,7 +61,6 @@ public class ControllerMaintenance extends AbstractComponent {
                                  CostReportConsumer reportConsumer,
                                  Billing billing,
                                  SelfHostedCostConfig selfHostedCostConfig,
-                                 IssueHandler issueHandler,
                                  AwsEventFetcher awsEventFetcher) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
@@ -86,7 +84,7 @@ public class ControllerMaintenance extends AbstractComponent {
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
-        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
+        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, controller.serviceRegistry().issueHandler(), awsEventFetcher);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 

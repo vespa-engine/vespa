@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
@@ -34,5 +35,7 @@ public interface ServiceRegistry {
     MeteringClient meteringService();
 
     ContactRetriever contactRetriever();
+
+    IssueHandler issueHandler();
 
 }

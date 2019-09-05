@@ -69,7 +69,6 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.restapi.cost.NoopCostReportConsumer'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher' />\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
