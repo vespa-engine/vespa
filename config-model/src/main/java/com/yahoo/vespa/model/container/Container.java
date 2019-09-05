@@ -75,8 +75,6 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
-    protected int numHttpServerPorts = 0;
-
     protected Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, false, index);
     }
@@ -158,24 +156,6 @@ public abstract class Container extends AbstractService implements
         if (getHttp() == null) {
             initDefaultJettyConnector();
         }
-
-        tagServers();
-    }
-
-    protected void tagServers() {
-        int offset = 0;
-        if (numHttpServerPorts > 0) {
-            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
-        }
-        for (int i = 1; i < numHttpServerPorts; i++)
-            portsMeta.on(offset++).tag("http").tag("external");
-
-        if (messageBusEnabled()) {
-            portsMeta.on(offset++).tag("rpc").tag("messaging");
-        }
-        if (rpcServerEnabled()) {
-            portsMeta.on(offset++).tag("rpc").tag("admin");
-        }
     }
 
     private int getPort(ConnectorFactory connectorFactory) {
@@ -233,35 +213,38 @@ public abstract class Container extends AbstractService implements
     @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = BASEPORT;
-        int off = 2;
+        int offset = 0;
         if (getHttp() == null) {
             if (requireSpecificPorts) {
                 allocatedSearchPort = from.requirePort(start, "http");
             } else {
                 allocatedSearchPort = from.allocatePort("http");
             }
+            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
             // XXX unused - remove:
             from.allocatePort("http/1");
-            // XXX change to 1:
-            numHttpServerPorts = 2;
+            portsMeta.on(offset++).tag("http").tag("external");
         } else if (getHttp().getHttpServer() == null) {
             // no http server ports
-            numHttpServerPorts = 0;
         } else {
             for (ConnectorFactory connectorFactory : getHttp().getHttpServer().getConnectorFactories()) {
                 int port = getPort(connectorFactory);
                 String name = "http/" + connectorFactory.getName();
                 from.requirePort(port, name);
-                ++numHttpServerPorts;
+                if (offset == 0) {
+                    portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
+                } else {
+                    portsMeta.on(offset++).tag("http").tag("external");
+                }
             }
         }
         if (messageBusEnabled()) {
             allocatedMessagingPort = from.allocatePort("messaging");
-            ++off;
+            portsMeta.on(offset++).tag("rpc").tag("messaging");
         }
         if (rpcServerEnabled()) {
             allocatedRpcPort = from.allocatePort("rpc/admin");
-            ++off;
+            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 

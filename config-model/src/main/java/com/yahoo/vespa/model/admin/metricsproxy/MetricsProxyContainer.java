@@ -85,10 +85,12 @@ public class MetricsProxyContainer extends Container implements
             throw new IllegalArgumentException("unexpected HTTP setup");
         }
         allocatedSearchPort = from.wantPort(start++, "http");
+        portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
+
         // XXX remove:
         from.wantPort(start++, "http/1");
-        // XXX change to 1:
-        numHttpServerPorts = 2;
+        portsMeta.on(1).tag("unused");
+
         if (numMessageBusPorts() != 0) {
             throw new IllegalArgumentException("expecting 0 message bus ports");
         }
@@ -96,18 +98,14 @@ public class MetricsProxyContainer extends Container implements
             throw new IllegalArgumentException("expecting 1 rpc port");
         }
         allocatedRpcPort = from.wantPort(start++, "rpc/admin");
+        portsMeta.on(2).tag("rpc").tag("admin");
         metricsRpcPort = from.wantPort(start++, "rpc/metrics");
+        portsMeta.on(3).tag("rpc").tag("metrics");
     }
 
     @Override
     public int getPortCount() {
         return 4;
-    }
-
-    @Override
-    protected void tagServers() {
-        super.tagServers();
-        portsMeta.on(3).tag("rpc").tag("metrics");
     }
 
     @Override
