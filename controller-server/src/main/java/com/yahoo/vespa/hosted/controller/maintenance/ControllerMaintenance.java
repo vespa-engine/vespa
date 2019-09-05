@@ -7,7 +7,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -51,7 +50,6 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig,
-                                 ApiAuthorityConfig apiAuthorityConfig,
                                  Controller controller,
                                  CuratorDb curator,
                                  JobControl jobControl,
