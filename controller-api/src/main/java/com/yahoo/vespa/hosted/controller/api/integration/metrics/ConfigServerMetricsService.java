@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -51,12 +50,6 @@ public class ConfigServerMetricsService implements MetricsService {
                 weightedAverageLatency(metrics, ClusterMetrics::queriesPerSecond, ClusterMetrics::queryLatency),
                 weightedAverageLatency(metrics, ClusterMetrics::feedPerSecond, ClusterMetrics::feedLatency)
         );
-    }
-
-    @Override
-    public Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone) {
-        // TODO(ogronnesby): Need a backing source for this data
-        return Map.of();
     }
 
     private double weightedAverageLatency(List<ClusterMetrics> metrics,

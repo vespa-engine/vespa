@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.metrics;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 
-import java.util.Map;
-
 /**
  * A service which returns metric values on request
  *
@@ -16,8 +14,6 @@ public interface MetricsService {
     ApplicationMetrics getApplicationMetrics(ApplicationId application);
 
     DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone);
-
-    Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone);
 
     class DeploymentMetrics {
 

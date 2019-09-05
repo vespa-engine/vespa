@@ -36,12 +36,4 @@ public class MetricsServiceMock extends AbstractComponent implements MetricsServ
                                      metrics.getOrDefault("writeLatencyMillis", 5D));
     }
 
-    @Override
-    public Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone) {
-        Map<String, SystemMetrics> result = new HashMap<>();
-        SystemMetrics system = new SystemMetrics(55.54, 69.90, 34.59);
-        result.put("default", system);
-        return result;
-    }
-
 }
