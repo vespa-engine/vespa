@@ -83,7 +83,6 @@ public class StatisticsSearcher extends Searcher {
     private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state }
 
     private Metric metric;
-    private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
     private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
     private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
     private Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
@@ -153,15 +152,10 @@ public class StatisticsSearcher extends Searcher {
     }
 
     private Metric.Context getChainMetricContext(String chainName, String endpoint) {
-        Metric.Context context = chainContexts.get(chainName);
-        if (context == null) {
-            Map<String, String> dimensions = new HashMap<>();
-            dimensions.put("chain", chainName);
-            dimensions.put("endpoint", endpoint);
-            context = this.metric.createContext(dimensions);
-            chainContexts.put(chainName, context);
-        }
-        return context;
+        Map<String, String> dimensions = new HashMap<>();
+        dimensions.put("chain", chainName);
+        dimensions.put("endpoint", endpoint);
+        return this.metric.createContext(dimensions);
     }
 
     private Metric.Context getDegradedMetricContext(String chainName, Coverage coverage) {
