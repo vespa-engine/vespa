@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The node resources required by an application cluster
@@ -93,14 +92,6 @@ public class NodeResources {
                                  bandwidthGbps + other.bandwidthGbps,
                                  combine(this.diskSpeed, other.diskSpeed));
     }
-
-    // TODO: Remove after August 2019
-    public Optional<String> legacyName() {
-        return Optional.of(toString());
-    }
-
-    // TODO: Remove after August 2019
-    public boolean allocateByLegacyName() { return false; }
 
     private boolean isInterchangeableWith(NodeResources other) {
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)

@@ -118,27 +118,6 @@ public class Flavor {
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
 
-    // TODO: Remove after August 2019
-    public String canonicalName() { return name; }
-
-    // TODO: Remove after August 2019
-    public boolean satisfies(Flavor flavor) { return this.equals(flavor); }
-
-    // TODO: Remove after August 2019
-    public boolean isStock() { return false; }
-
-    // TODO: Remove after August 2019
-    public boolean isRetired() { return false; }
-
-    // TODO: Remove after August 2019
-    public boolean isCanonical() { return false; }
-
-    // TODO: Remove after August 2019
-    public List<Flavor> replaces() { return Collections.emptyList(); }
-
-    // TODO: Remove after August 2019
-    public void freeze() {}
-
     @Override
     public int hashCode() { return Objects.hash(name, flavorOverrides); }
 
