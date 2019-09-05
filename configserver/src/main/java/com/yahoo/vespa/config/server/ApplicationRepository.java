@@ -304,12 +304,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
-        // Keep manually deployed tenant applications on the latest version, don't change version otherwise
-        // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
-        Version version = decideVersion(application, zone().environment(), newSession.getVespaVersion(), bootstrap);
-                
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, version,
+                                                 false /* don't validate as this is already deployed */, newSession.getVespaVersion(),
                                                  bootstrap));
     }
 
