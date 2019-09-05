@@ -138,7 +138,7 @@ void
 AndNotBlueprint::sort(std::vector<Blueprint*> &children) const
 {
     if (children.size() > 2) {
-        std::sort(children.begin() + 1, children.end(), GreaterEstimate());
+        std::sort(children.begin() + 1, children.end(), TieredGreaterEstimate());
     }
 }
 
@@ -211,7 +211,7 @@ AndBlueprint::get_replacement()
 void
 AndBlueprint::sort(std::vector<Blueprint*> &children) const
 {
-    std::sort(children.begin(), children.end(), LessEstimate());
+    std::sort(children.begin(), children.end(), TieredLessEstimate());
 }
 
 bool
@@ -288,7 +288,7 @@ OrBlueprint::get_replacement()
 void
 OrBlueprint::sort(std::vector<Blueprint*> &children) const
 {
-    std::sort(children.begin(), children.end(), GreaterEstimate());
+    std::sort(children.begin(), children.end(), TieredGreaterEstimate());
 }
 
 bool
@@ -379,7 +379,7 @@ NearBlueprint::exposeFields() const
 void
 NearBlueprint::sort(std::vector<Blueprint*> &children) const
 {
-    std::sort(children.begin(), children.end(), LessEstimate());
+    std::sort(children.begin(), children.end(), TieredLessEstimate());
 }
 
 bool

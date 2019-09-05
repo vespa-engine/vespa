@@ -31,7 +31,7 @@ public:
     }
 
     virtual void sort(std::vector<Blueprint*> &children) const override {
-        std::sort(children.begin(), children.end(), GreaterEstimate());
+        std::sort(children.begin(), children.end(), TieredGreaterEstimate());
     }
 
     virtual bool inheritStrict(size_t i) const override {
@@ -672,6 +672,7 @@ getExpectedBlueprint()
            "    estimate: HitEstimate {\n"
            "        empty: false\n"
            "        estHits: 9\n"
+           "        cost_tier: 1\n"
            "        tree_size: 2\n"
            "        allow_termwise_eval: 0\n"
            "    }\n"
@@ -690,6 +691,7 @@ getExpectedBlueprint()
            "            estimate: HitEstimate {\n"
            "                empty: false\n"
            "                estHits: 9\n"
+           "                cost_tier: 1\n"
            "                tree_size: 1\n"
            "                allow_termwise_eval: 1\n"
            "            }\n"
@@ -718,6 +720,7 @@ getExpectedSlimeBlueprint() {
            "        '[type]': 'HitEstimate',"
            "        empty: false,"
            "        estHits: 9,"
+           "        cost_tier: 1,"
            "        tree_size: 2,"
            "        allow_termwise_eval: 0"
            "    },"
@@ -741,6 +744,7 @@ getExpectedSlimeBlueprint() {
            "                '[type]': 'HitEstimate',"
            "                empty: false,"
            "                estHits: 9,"
+           "                cost_tier: 1,"
            "                tree_size: 1,"
            "                allow_termwise_eval: 1"
            "            },"

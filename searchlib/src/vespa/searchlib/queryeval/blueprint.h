@@ -57,18 +57,21 @@ public:
     private:
         FieldSpecBaseList _fields;
         HitEstimate       _estimate;
+        uint32_t          _cost_tier;
         uint32_t          _tree_size;
         bool              _allow_termwise_eval;
 
     public:
+        static constexpr uint32_t COST_TIER_NORMAL = 1;
+        static constexpr uint32_t COST_TIER_EXPENSIVE = 2;
+        static constexpr uint32_t COST_TIER_MAX = 999;
+
         State(const FieldSpecBaseList &fields_in);
+        State(const State &rhs) = delete;
+        State(State &&rhs) = default;
+        State &operator=(const State &rhs) = delete;
+        State &operator=(State &&rhs) = default;
         ~State();
-        void swap(State & rhs) {
-            _fields.swap(rhs._fields);
-            std::swap(_estimate, rhs._estimate);
-            std::swap(_tree_size, rhs._tree_size);
-            std::swap(_allow_termwise_eval, rhs._allow_termwise_eval);
-        }
 
         bool isTermLike() const { return !_fields.empty(); }
         const FieldSpecBaseList &fields() const { return _fields; }
@@ -95,6 +98,8 @@ public:
         uint32_t tree_size() const { return _tree_size; }
         void allow_termwise_eval(bool value) { _allow_termwise_eval = value; }
         bool allow_termwise_eval() const { return _allow_termwise_eval; }
+        void cost_tier(uint32_t value) { _cost_tier = value; }
+        uint32_t cost_tier() const { return _cost_tier; }
     };
 
     // utility that just takes maximum estimate
@@ -103,17 +108,27 @@ public:
     // utility that just takes minium estimate
     static HitEstimate min(const std::vector<HitEstimate> &data);
 
-    // utility to get the greater estimate to sort first
-    struct GreaterEstimate {
+    // utility to get the greater estimate to sort first, higher tiers last
+    struct TieredGreaterEstimate {
         bool operator () (Blueprint * const &a, Blueprint * const &b) const {
-            return (b->getState().estimate() < a->getState().estimate());
+            const auto &lhs = a->getState();
+            const auto &rhs = b->getState();
+            if (lhs.cost_tier() != rhs.cost_tier()) {
+                return (lhs.cost_tier() < rhs.cost_tier());
+            }
+            return (rhs.estimate() < lhs.estimate());
         }
     };
 
-    // utility to get the lesser estimate to sort first
-    struct LessEstimate {
+    // utility to get the lesser estimate to sort first, higher tiers last
+    struct TieredLessEstimate {
         bool operator () (Blueprint * const &a, const Blueprint * const &b) const {
-            return (a->getState().estimate() < b->getState().estimate());
+            const auto &lhs = a->getState();
+            const auto &rhs = b->getState();
+            if (lhs.cost_tier() != rhs.cost_tier()) {
+                return (lhs.cost_tier() < rhs.cost_tier());
+            }
+            return (lhs.estimate() < rhs.estimate());
         }
     };
 
@@ -226,6 +241,7 @@ public:
 private:
     Children _children;
     HitEstimate calculateEstimate() const;
+    uint32_t calculate_cost_tier() const;
     uint32_t calculate_tree_size() const;
     bool infer_allow_termwise_eval() const;
 
@@ -285,6 +301,7 @@ private:
 protected:
     void optimize(Blueprint* &self) override final;
     void setEstimate(HitEstimate est);
+    void set_cost_tier(uint32_t value);
     void set_allow_termwise_eval(bool value);
     void set_tree_size(uint32_t value);
 
