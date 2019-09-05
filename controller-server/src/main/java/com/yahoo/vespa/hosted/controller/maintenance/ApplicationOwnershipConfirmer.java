@@ -2,19 +2,21 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -28,10 +30,12 @@ import java.util.logging.Level;
 public class ApplicationOwnershipConfirmer extends Maintainer {
 
     private final OwnershipIssues ownershipIssues;
+    private final ApplicationController applications;
 
     public ApplicationOwnershipConfirmer(Controller controller, Duration interval, JobControl jobControl, OwnershipIssues ownershipIssues) {
         super(controller, interval, jobControl);
         this.ownershipIssues = ownershipIssues;
+        this.applications = controller.applications();
     }
 
     @Override
@@ -54,7 +58,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                                Tenant tenant = tenantOf(application.id());
                                tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
                                    ownershipIssues.confirmOwnership(application.ownershipIssueId(),
-                                                                    application.id(),
+                                                                    summaryOf(application.id()),
                                                                     determineAssignee(tenant, application),
                                                                     contact)
                                                   .ifPresent(newIssueId -> store(newIssueId, application.id()));
@@ -65,6 +69,19 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                            }
                        });
 
+    }
+
+    private ApplicationSummary summaryOf(ApplicationId application) {
+        var app = applications.require(application);
+        var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
+        for (var kv : app.deployments().entrySet()) {
+            var zone = kv.getKey();
+            var deploymentMetrics = kv.getValue().metrics();
+            metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
+                                                            deploymentMetrics.queriesPerSecond(),
+                                                            deploymentMetrics.writesPerSecond()));
+        }
+        return new ApplicationSummary(app.id(), app.activity().lastQueried(), app.activity().lastWritten(), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
