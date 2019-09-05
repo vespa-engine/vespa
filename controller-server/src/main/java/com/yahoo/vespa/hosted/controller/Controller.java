@@ -14,15 +14,12 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
@@ -78,11 +75,9 @@ public class Controller extends AbstractComponent {
     private final ZoneRegistry zoneRegistry;
     private final ServiceRegistry serviceRegistry;
     private final MetricsService metricsService;
-    private final Mailer mailer;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
-    private final ApplicationCertificateProvider applicationCertificateProvider;
     private final MavenRepository mavenRepository;
     private final MeteringClient meteringClient;
 
@@ -94,28 +89,27 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
-                      RoutingGenerator routingGenerator,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Mailer mailer, FlagSource flagSource,
-                      MavenRepository mavenRepository, ApplicationCertificateProvider applicationCertificateProvider,
+                      BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
+                      MavenRepository mavenRepository,
                       MeteringClient meteringClient, ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
-             metricsService, routingGenerator,
+             metricsService,
              Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, mailer, flagSource,
-             mavenRepository, applicationCertificateProvider, meteringClient, serviceRegistry);
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
+             mavenRepository, meteringClient, serviceRegistry);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry,
                       MetricsService metricsService,
-                      RoutingGenerator routingGenerator, Clock clock,
+                      Clock clock,
                       AccessControl accessControl,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
-                      Mailer mailer, FlagSource flagSource, MavenRepository mavenRepository,
-                      ApplicationCertificateProvider applicationCertificateProvider, MeteringClient meteringClient,
+                      FlagSource flagSource, MavenRepository mavenRepository,
+                      MeteringClient meteringClient,
                       ServiceRegistry serviceRegistry) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
@@ -124,9 +118,7 @@ public class Controller extends AbstractComponent {
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
-        this.mailer = Objects.requireNonNull(mailer, "Mailer cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
-        this.applicationCertificateProvider = Objects.requireNonNull(applicationCertificateProvider);
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
         this.meteringClient = Objects.requireNonNull(meteringClient, "MeteringClient cannot be null");
 
@@ -134,10 +126,8 @@ public class Controller extends AbstractComponent {
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          serviceRegistry.configServer(),
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
-                                                          Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock
         );
@@ -162,10 +152,6 @@ public class Controller extends AbstractComponent {
     /** Returns the service registry of this */
     public ServiceRegistry serviceRegistry() {
         return serviceRegistry;
-    }
-
-    public Mailer mailer() {
-        return mailer;
     }
 
     /** Provides access to the feature flags of this */
@@ -298,10 +284,6 @@ public class Controller extends AbstractComponent {
 
     public AuditLogger auditLogger() {
         return auditLogger;
-    }
-
-    public ApplicationCertificateProvider applicationCertificateProvider() {
-        return applicationCertificateProvider;
     }
 
     public MeteringClient meteringClient() {

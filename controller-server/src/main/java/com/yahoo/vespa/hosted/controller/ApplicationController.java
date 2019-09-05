@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -125,30 +124,26 @@ public class ApplicationController {
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
-    private final ApplicationCertificateProvider applicationCertificateProvider;
     private final DeploymentSpecValidator deploymentSpecValidator;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
-                          RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
+                          BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
-        this.configServer = configServer;
-        this.routingGenerator = routingGenerator;
-        this.routingPolicies = new RoutingPolicies(controller);
+        this.configServer = controller.serviceRegistry().configServer();
+        this.routingGenerator = controller.serviceRegistry().routingGenerator();
         this.clock = clock;
-
         this.artifactRepository = artifactRepository;
         this.applicationStore = applicationStore;
-        this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
 
-        this.provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
-        this.applicationCertificateProvider = controller.applicationCertificateProvider();
-        this.deploymentSpecValidator = new DeploymentSpecValidator(controller);
+        routingPolicies = new RoutingPolicies(controller);
+        rotationRepository = new RotationRepository(rotationsConfig, this, curator);
+        deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
+        provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
+        deploymentSpecValidator = new DeploymentSpecValidator(controller);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -512,7 +507,7 @@ public class ApplicationController {
         if(applicationCertificate.isPresent())
             return applicationCertificate;
 
-        ApplicationCertificate newCertificate = applicationCertificateProvider.requestCaSignedCertificate(application.id());
+        ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider().requestCaSignedCertificate(application.id());
         curator.writeApplicationCertificate(application.id(), newCertificate);
 
         return Optional.of(newCertificate);

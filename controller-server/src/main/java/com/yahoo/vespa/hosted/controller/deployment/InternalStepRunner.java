@@ -546,15 +546,15 @@ public class InternalStepRunner implements StepRunner {
 
         try {
             if (run.status() == outOfCapacity && run.id().type().isProduction())
-                controller.mailer().send(mails.outOfCapacity(run.id(), recipients));
+                controller.serviceRegistry().mailer().send(mails.outOfCapacity(run.id(), recipients));
             if (run.status() == deploymentFailed)
-                controller.mailer().send(mails.deploymentFailure(run.id(), recipients));
+                controller.serviceRegistry().mailer().send(mails.deploymentFailure(run.id(), recipients));
             if (run.status() == installationFailed)
-                controller.mailer().send(mails.installationFailure(run.id(), recipients));
+                controller.serviceRegistry().mailer().send(mails.installationFailure(run.id(), recipients));
             if (run.status() == testFailure)
-                controller.mailer().send(mails.testFailure(run.id(), recipients));
+                controller.serviceRegistry().mailer().send(mails.testFailure(run.id(), recipients));
             if (run.status() == error)
-                controller.mailer().send(mails.systemError(run.id(), recipients));
+                controller.serviceRegistry().mailer().send(mails.systemError(run.id(), recipients));
         }
         catch (RuntimeException e) {
             logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
