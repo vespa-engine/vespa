@@ -32,10 +32,11 @@ class IEnumStoreDictionary;
 class IEnumStore {
 public:
     using Index = enumstore::Index;
+    using InternalIndex = enumstore::InternalIndex;
     using IndexVector = enumstore::IndexVector;
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
-    using EnumIndexRemapper = datastore::UniqueStoreRemapper<Index>;
+    using EnumIndexRemapper = datastore::UniqueStoreRemapper<InternalIndex>;
 
     struct CompareEnumIndex {
         using Index = IEnumStore::Index;
@@ -49,9 +50,8 @@ public:
 
     virtual ~IEnumStore() = default;
 
-    virtual void writeValues(BufferWriter& writer, const Index* idxs, size_t count) const = 0;
-    virtual ssize_t deserialize0(const void* src, size_t available, IndexVector& idx) = 0;
-    virtual ssize_t deserialize(const void* src, size_t available, IndexVector& idx) = 0;
+    virtual void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const = 0;
+    virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
     virtual void fixupRefCounts(const EnumVector& histogram) = 0;
     virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;
@@ -73,23 +73,6 @@ public:
 
     enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader() {
         return enumstore::EnumeratedPostingsLoader(*this);
-    }
-
-    template <typename TreeT>
-    ssize_t deserialize(const void* src,
-                        size_t available,
-                        IndexVector& idx,
-                        TreeT& tree) {
-        ssize_t sz(deserialize0(src, available, idx));
-        if (sz >= 0) {
-            typename TreeT::Builder builder(tree.getAllocator());
-            typedef IndexVector::const_iterator IT;
-            for (IT i(idx.begin()), ie(idx.end()); i != ie; ++i) {
-                builder.insert(*i, typename TreeT::DataType());
-            }
-            tree.assign(builder);
-        }
-        return sz;
     }
 
     template <typename TreeT>

@@ -88,15 +88,15 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     this->setCommittedDocIdLimit(numDocs);
     if (this->hasPostings()) {
         auto loader = this->getEnumStore().make_enumerated_postings_loader();
-        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
         this->load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
         }
-        this->fillPostingsFixupEnum(loader);
+        this->load_posting_lists_and_update_enum_store(loader);
     } else {
         auto loader = this->getEnumStore().make_enumerated_loader();
-        loader.read_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
         this->load_enumerated_data(attrReader, loader);
     }
     return true;
@@ -136,9 +136,9 @@ SingleValueNumericEnumAttribute<B>::onLoad()
     }
 
     attribute::sortLoadedByValue(loaded);
-    this->fillPostings(loaded);
+    this->load_posting_lists(loaded);
     loaded.rewind();
-    this->fillEnum(loaded);
+    this->load_enum_store(loaded);
     attribute::sortLoadedByDocId(loaded);
     loaded.rewind();
     this->fillValues(loaded);

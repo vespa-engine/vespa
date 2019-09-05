@@ -50,24 +50,15 @@ EnumStoreDictionary<DictionaryT>::writeAllValues(BufferWriter& writer,
     typename DictionaryT::Iterator it(rootRef, this->_dict.getAllocator());
     while (it.valid()) {
         if (idxs.size() >= idxs.capacity()) {
-            _enumStore.writeValues(writer, &idxs[0], idxs.size());
+            _enumStore.writeValues(writer, vespalib::ConstArrayRef(&idxs[0], idxs.size()));
             idxs.clear();
         }
         idxs.push_back(it.getKey());
         ++it;
     }
     if (!idxs.empty()) {
-        _enumStore.writeValues(writer, &idxs[0], idxs.size());
+        _enumStore.writeValues(writer, vespalib::ConstArrayRef(&idxs[0], idxs.size()));
     }
-}
-
-template <typename DictionaryT>
-ssize_t
-EnumStoreDictionary<DictionaryT>::deserialize(const void* src,
-                                              size_t available,
-                                              IndexVector& idx)
-{
-    return _enumStore.deserialize(src, available, idx, this->_dict);
 }
 
 template <typename DictionaryT>

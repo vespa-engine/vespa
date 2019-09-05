@@ -61,7 +61,7 @@ protected:
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
-    void fillPostingsFixupEnumBase(enumstore::EnumeratedPostingsLoader& loader);
+    void handle_load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
@@ -92,7 +92,7 @@ public:
 
     using Parent::clearAllPostings;
     using Parent::updatePostings;
-    using Parent::fillPostingsFixupEnumBase;
+    using Parent::handle_load_posting_lists_and_update_enum_store;
     using Parent::clearPostings;
     using Parent::_postingList;
     using Parent::_attr;
@@ -105,7 +105,7 @@ public:
     PostingListAttributeSubBase(AttributeVector &attr, EnumStore &enumStore);
     virtual ~PostingListAttributeSubBase();
 
-    void handleFillPostings(LoadedVector &loaded);
+    void handle_load_posting_lists(LoadedVector &loaded);
     void updatePostings(PostingMap &changePost) override;
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid) override;
 };

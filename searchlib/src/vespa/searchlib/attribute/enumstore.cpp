@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.hpp"
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
@@ -10,15 +9,12 @@ LOG_SETUP(".searchlib.attribute.enum_store");
 
 namespace search {
 
-
 template <>
 void
 EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
-                                         const Index* idxs,
-                                         size_t count) const
+                                         vespalib::ConstArrayRef<Index> idxs) const
 {
-    for (size_t i = 0; i < count; ++i) {
-        Index idx = idxs[i];
+    for (const auto& idx : idxs) {
         const char* src = _store.get(idx);
         size_t sz = strlen(src) + 1;
         writer.write(src, sz);
@@ -27,9 +23,9 @@ EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
 
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::deserialize(const void* src,
-                                         size_t available,
-                                         Index& idx)
+EnumStoreT<StringEntryType>::load_unique_value(const void* src,
+                                               size_t available,
+                                               Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);
@@ -60,11 +56,8 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr
     }
 }
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const IEnumStore::Index & idx) {
-    return os << "offset(" << idx.offset() << "), bufferId(" << idx.bufferId() << "), idx(" << idx.ref() << ")";
-}
 
-template class datastore::DataStoreT<IEnumStore::Index>;
+template class datastore::DataStoreT<IEnumStore::InternalIndex>;
 
 template
 class btree::BTreeBuilder<IEnumStore::Index, btree::BTreeNoLeafData, btree::NoAggregated,
@@ -88,6 +81,3 @@ namespace vespalib {
     template class RcuVectorBase<search::IEnumStore::Index>;
 }
 
-VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(search::IEnumStore::Index, search::IEnumStore::Index,
-        vespalib::hash<search::IEnumStore::Index>, std::equal_to<search::IEnumStore::Index>,
-        vespalib::hashtable_base::and_modulator);

@@ -13,12 +13,6 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
 using attribute::LoadedEnumAttributeVector;
 
 void
-NumericAttribute::fillEnum0(const void*, size_t, EnumIndexVector&)
-{
-    LOG_ABORT("Should not be reached");
-}
-
-void
 NumericAttribute::load_enumerated_data(ReaderBase&,
                                        enumstore::EnumeratedPostingsLoader&,
                                        size_t)
@@ -34,13 +28,7 @@ NumericAttribute::load_enumerated_data(ReaderBase&,
 }
 
 void
-NumericAttribute::fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader&)
-{
-    LOG_ABORT("Should not be reached");
-}
-
-void
-NumericAttribute::fixupEnumRefCounts(const EnumVector&)
+NumericAttribute::load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader&)
 {
     LOG_ABORT("Should not be reached");
 }

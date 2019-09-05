@@ -13,9 +13,9 @@ EnumeratedLoaderBase::EnumeratedLoaderBase(IEnumStore& store)
 }
 
 void
-EnumeratedLoaderBase::read_unique_values(const void* src, size_t available)
+EnumeratedLoaderBase::load_unique_values(const void* src, size_t available)
 {
-    ssize_t sz = _store.deserialize(src, available, _indexes);
+    ssize_t sz = _store.load_unique_values(src, available, _indexes);
     assert(static_cast<size_t>(sz) == available);
 }
 

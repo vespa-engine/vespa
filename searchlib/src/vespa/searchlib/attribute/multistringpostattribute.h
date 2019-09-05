@@ -73,8 +73,8 @@ private:
 
     using PostingParent::_postingList;
     using PostingParent::clearAllPostings;
-    using PostingParent::handleFillPostings;
-    using PostingParent::fillPostingsFixupEnumBase;
+    using PostingParent::handle_load_posting_lists;
+    using PostingParent::handle_load_posting_lists_and_update_enum_store;
     using PostingParent::forwardedOnAddDoc;
 
     void freezeEnumDictionary() override;
@@ -99,16 +99,16 @@ public:
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
     
-    void fillPostings(LoadedVector & loaded) override {
-        handleFillPostings(loaded);
+    void load_posting_lists(LoadedVector& loaded) override {
+        handle_load_posting_lists(loaded);
     }
 
     attribute::IPostingListAttributeBase * getIPostingListAttributeBase() override { return this; }
 
     const attribute::IPostingListAttributeBase * getIPostingListAttributeBase()  const override { return this; }
 
-    void fillPostingsFixupEnum(enumstore::EnumeratedPostingsLoader& loader) override {
-        fillPostingsFixupEnumBase(loader);
+    void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader) override {
+        handle_load_posting_lists_and_update_enum_store(loader);
     }
 };
 
