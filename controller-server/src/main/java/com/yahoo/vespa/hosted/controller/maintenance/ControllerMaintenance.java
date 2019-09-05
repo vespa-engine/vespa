@@ -10,8 +10,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -53,11 +51,13 @@ public class ControllerMaintenance extends AbstractComponent {
     private final RotationStatusUpdater rotationStatusUpdater;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
-                                 JobControl jobControl, Metric metric,
-                                 CostReportConsumer reportConsumer,
+    public ControllerMaintenance(MaintainerConfig maintainerConfig,
+                                 ApiAuthorityConfig apiAuthorityConfig,
+                                 Controller controller,
+                                 CuratorDb curator,
+                                 JobControl jobControl,
+                                 Metric metric,
                                  Billing billing,
-                                 SelfHostedCostConfig selfHostedCostConfig,
                                  AwsEventFetcher awsEventFetcher) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
@@ -78,7 +78,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
-        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), jobControl, controller.serviceRegistry().costReportConsumer());
         resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, controller.serviceRegistry().issueHandler(), awsEventFetcher);

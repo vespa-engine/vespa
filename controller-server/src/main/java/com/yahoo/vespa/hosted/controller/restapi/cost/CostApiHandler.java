@@ -7,9 +7,9 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
-import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -23,13 +23,13 @@ public class CostApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final NodeRepository nodeRepository;
-    private final SelfHostedCostConfig selfHostedCostConfig;
+    private final CostReportConsumer costReportConsumer;
 
-    public CostApiHandler(Context ctx, Controller controller, SelfHostedCostConfig selfHostedCostConfig) {
+    public CostApiHandler(Context ctx, Controller controller) {
         super(ctx);
         this.controller = controller;
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.selfHostedCostConfig = selfHostedCostConfig;
+        this.costReportConsumer = controller.serviceRegistry().costReportConsumer();
     }
 
     @Override
@@ -43,7 +43,7 @@ public class CostApiHandler extends LoggingRequestHandler {
         if (path.matches("/cost/v1/csv")) {
             Optional<String> cloudProperty = Optional.ofNullable(request.getProperty("cloud"));
             CloudName cloud = cloudProperty.map(CloudName::from).orElse(CloudName.defaultName());
-            return new StringResponse(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller, Clock.systemUTC(), selfHostedCostConfig, cloud));
+            return new StringResponse(CostCalculator.resourceShareByPropertyToCsv(nodeRepository, controller, Clock.systemUTC(), costReportConsumer.fixedAllocations(), cloud));
         }
 
         return ErrorResponse.notFoundError("Nothing at " + path);

@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
-import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -32,7 +31,7 @@ public class CostCalculator {
     public static String resourceShareByPropertyToCsv(NodeRepository nodeRepository,
                                                       Controller controller,
                                                       Clock clock,
-                                                      SelfHostedCostConfig selfHostedCostConfig,
+                                                      Map<Property, ResourceAllocation> fixedAllocations,
                                                       CloudName cloudName) {
 
         var date = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(clock.instant()));
@@ -62,14 +61,12 @@ public class CostCalculator {
 
         // Add fixed allocations from config
         if (cloudName.equals(CloudName.from("yahoo"))) {
-            for (var propertyEntry : selfHostedCostConfig.properties()) {
-                var property = new Property(propertyEntry.name());
+            for (var kv : fixedAllocations.entrySet()) {
+                var property = kv.getKey();
                 var allocation = allocationByProperty.getOrDefault(property, ResourceAllocation.ZERO);
-                var fixedAllocation = new ResourceAllocation(propertyEntry.cpuCores() * SELF_HOSTED_DISCOUNT,
-                                                             propertyEntry.memoryGb() * SELF_HOSTED_DISCOUNT,
-                                                             propertyEntry.diskGb()  * SELF_HOSTED_DISCOUNT);
-                allocationByProperty.put(property, allocation.plus(fixedAllocation));
-                totalAllocation = totalAllocation.plus(fixedAllocation);
+                var discountedFixedAllocation = kv.getValue().multiply(SELF_HOSTED_DISCOUNT);
+                allocationByProperty.put(property, allocation.plus(discountedFixedAllocation));
+                totalAllocation = totalAllocation.plus(discountedFixedAllocation);
             }
         }
 

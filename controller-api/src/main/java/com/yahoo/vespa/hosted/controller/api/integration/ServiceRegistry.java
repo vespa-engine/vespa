@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandl
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -46,5 +47,7 @@ public interface ServiceRegistry {
     DeploymentIssues deploymentIssues();
 
     EntityService entityService();
+
+    CostReportConsumer costReportConsumer();
 
 }

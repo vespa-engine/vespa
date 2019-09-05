@@ -1,13 +1,15 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
+import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,21 +30,15 @@ public class CostReportMaintainerTest {
                 ZoneApiMock.newBuilder().withId("prod.eu-west-1").withCloud("yahoo").build());
         addNodes();
 
-        CostReportConsumer mockConsumer = csv -> assertEquals(
-                "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
+        CostReportConsumerMock costReportConsumer = new CostReportConsumerMock(
+                (csv) -> assertEquals(
+                        "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n" +
                         "1970-01-01,Property1,96.0,96.0,2000.0,0.3055555555555555\n" +
                         "1970-01-01,Property3,128.0,96.0,2000.0,0.3333333333333333\n" +
                         "1970-01-01,Property2,160.0,96.0,2000.0,0.3611111111111111",
-                csv);
-
-        SelfHostedCostConfig costConfig = new SelfHostedCostConfig.Builder()
-                .properties(
-                        new SelfHostedCostConfig.Properties.Builder()
-                                .name("Property3")
-                                .cpuCores(256)
-                                .memoryGb(192)
-                                .diskGb(4000))
-                .build();
+                        csv),
+                Map.of(new Property("Property3"), new ResourceAllocation(256, 192, 4000))
+        );
 
 
         tester.createTenant("tenant1", "app1", 1L);
@@ -50,9 +46,8 @@ public class CostReportMaintainerTest {
         CostReportMaintainer maintainer = new CostReportMaintainer(
                 tester.controller(),
                 Duration.ofDays(1),
-                mockConsumer,
                 new JobControl(tester.curator()),
-                costConfig);
+                costReportConsumer);
         maintainer.maintain();
     }
 

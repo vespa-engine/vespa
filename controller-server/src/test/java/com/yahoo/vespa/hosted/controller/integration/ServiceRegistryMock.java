@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIss
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
+import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -45,6 +47,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
+    private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
 
     @Override
     public ConfigServer configServer() {
@@ -99,6 +102,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public EntityService entityService() {
         return memoryEntityService;
+    }
+
+    @Override
+    public CostReportConsumer costReportConsumer() {
+        return costReportConsumerMock;
     }
 
     @Override
