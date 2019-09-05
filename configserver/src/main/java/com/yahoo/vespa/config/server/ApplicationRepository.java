@@ -304,12 +304,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession newSession = tenant.getSessionFactory().createSessionFromExisting(activeSession, logger, true, timeoutBudget);
         tenant.getLocalSessionRepo().addSession(newSession);
 
-        // Keep manually deployed tenant applications on the latest version, don't change version otherwise
-        // TODO: Remove this and always use version from session once controller starts upgrading manual deployments
-        Version version = decideVersion(application, zone().environment(), newSession.getVespaVersion(), bootstrap);
-                
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, timeout, clock,
-                                                 false /* don't validate as this is already deployed */, version,
+                                                 false /* don't validate as this is already deployed */, newSession.getVespaVersion(),
                                                  bootstrap));
     }
 
@@ -785,18 +781,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
         return port;
-    }
-
-    /** Returns version to use when deploying application in given environment */
-    static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
-        if (     environment.isManuallyDeployed()
-            &&   sessionVersion.getMajor() == Vtag.currentVersion.getMajor()
-            && ! HOSTED_VESPA_TENANT.equals(application.tenant()) // Never change version of system applications
-            && ! application.instance().isTester() // Never upgrade tester containers
-            && ! bootstrap) { // Do not use current version when bootstrapping config server
-            return Vtag.currentVersion;
-        }
-        return sessionVersion;
     }
 
     public Slime createDeployLog() {
