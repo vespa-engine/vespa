@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import org.junit.Test;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -20,17 +21,17 @@ public class HostLifeGathererTest {
     public void host_is_alive() {
         MetricsPacket packet = HostLifeGatherer.gatherHostLifeMetrics(new MockFileWrapper()).build();
 
-        Map<MetricId, Number> expectedMetrics = Map.of(MetricId.toMetricId("uptime"), 123d, MetricId.toMetricId("alive"), 1);
         assertEquals("host_life", packet.service.id);
         assertEquals(0, packet.statusCode);
-        assertEquals(expectedMetrics, packet.metrics());
+        assertEquals(123l, packet.metrics().get(MetricId.toMetricId("uptime")));
+        assertEquals(1, packet.metrics().get(MetricId.toMetricId("alive")));
 
     }
 
     static class MockFileWrapper extends FileWrapper {
         @Override
-        List<String> readAllLines(Path path) {
-            return List.of("123 432");
+        long getFileAgeInSeconds(Path path) {
+            return 123;
         }
     }
 }

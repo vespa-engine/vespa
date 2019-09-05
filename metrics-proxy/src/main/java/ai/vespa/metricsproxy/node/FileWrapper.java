@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.node;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -12,8 +13,9 @@ import java.util.stream.Stream;
  */
 public class FileWrapper {
 
-    List<String> readAllLines(Path path) throws IOException {
-        return Files.readAllLines(path);
+    long getFileAgeInSeconds(Path path) throws IOException {
+        Instant lastModifiedTime = Files.getLastModifiedTime(path).toInstant();
+        return Instant.now().getEpochSecond() - lastModifiedTime.getEpochSecond();
     }
 
     Stream<Path> walkTree(Path path) throws IOException {
