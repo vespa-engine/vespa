@@ -6,6 +6,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLOCATABLE_HOST_STATES;
+
 /**
  * A node with additional information required to prioritize it for allocation.
  *
@@ -74,9 +76,10 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if ( ! this.node.state().equals(other.node.state()))
             throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
 
-        // Choose exact flavor
-        if (this.preferredOnFlavor && !other.preferredOnFlavor) return -1;
-        if (other.preferredOnFlavor && !this.preferredOnFlavor) return 1;
+        // Choose nodes where host is in more desirable state
+        int thisHostStatePri = this.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
+        int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
+        if (thisHostStatePri != otherHostStatePri) return thisHostStatePri - otherHostStatePri;
 
         // Choose docker node over non-docker node (is this to differentiate between docker replaces non-docker flavors?)
         if (this.parent.isPresent() && !other.parent.isPresent()) return -1;

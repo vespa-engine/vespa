@@ -33,6 +33,9 @@ import java.util.stream.Collectors;
  */
 class NodePrioritizer {
 
+    /** Node states in which host can get new nodes allocated in, ordered by preference (ascending) */
+    public static final List<Node.State> ALLOCATABLE_HOST_STATES =
+            List.of(Node.State.provisioned, Node.State.ready, Node.State.active);
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
@@ -118,7 +121,8 @@ class NodePrioritizer {
      *                    already have nodes allocated to this tenant
      */
     void addNewDockerNodes(boolean exclusively) {
-        LockedNodeList candidates = allNodes;
+        LockedNodeList candidates = allNodes
+                .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()));
 
         if (exclusively) {
             Set<String> candidateHostnames = candidates.asList().stream()
@@ -129,11 +133,7 @@ class NodePrioritizer {
                                                        .flatMap(node -> node.parentHostname().stream())
                                                        .collect(Collectors.toSet());
 
-            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()))
-                                   .filter(node -> EnumSet.of(Node.State.provisioned, Node.State.ready, Node.State.active)
-                                                          .contains(node.state()));
-        } else {
-            candidates = candidates.filter(node -> node.state() == Node.State.active);
+            candidates = candidates.filter(node -> candidateHostnames.contains(node.hostname()));
         }
 
         addNewDockerNodesOn(candidates);
