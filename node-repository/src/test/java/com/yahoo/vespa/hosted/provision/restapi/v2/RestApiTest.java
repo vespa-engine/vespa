@@ -381,11 +381,6 @@ public class RestApiTest {
     }
 
     @Test
-    public void acl_request_by_docker_host() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/acl/dockerhost1.yahoo.com?children=true"), "acl-docker-host.json");
-    }
-
-    @Test
     public void test_invalid_requests() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/node-does-not-exist",
                                    new byte[0], Request.Method.GET),
