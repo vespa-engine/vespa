@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
@@ -46,6 +47,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final CloudEventReporter cloudEventReporter;
     private final RotationStatusUpdater rotationStatusUpdater;
 
+    @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig,
                                  Controller controller,
