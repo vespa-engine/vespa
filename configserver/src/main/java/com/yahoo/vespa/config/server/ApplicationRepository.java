@@ -783,18 +783,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return port;
     }
 
-    /** Returns version to use when deploying application in given environment */
-    static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
-        if (     environment.isManuallyDeployed()
-            &&   sessionVersion.getMajor() == Vtag.currentVersion.getMajor()
-            && ! HOSTED_VESPA_TENANT.equals(application.tenant()) // Never change version of system applications
-            && ! application.instance().isTester() // Never upgrade tester containers
-            && ! bootstrap) { // Do not use current version when bootstrapping config server
-            return Vtag.currentVersion;
-        }
-        return sessionVersion;
-    }
-
     public Slime createDeployLog() {
         Slime deployLog = new Slime();
         deployLog.setObject();

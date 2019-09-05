@@ -207,34 +207,6 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void decideVersion() {
-        ApplicationId regularApp = ApplicationId.from("tenant1", "application1", "default");
-        ApplicationId systemApp = ApplicationId.from("hosted-vespa", "routing", "default");
-        ApplicationId testerApp = ApplicationId.from("tenant1", "application1", "default-t");
-        Version sessionVersion = new Version(Vtag.currentVersion.getMajor(), 0);
-        Version oldSessionVersion = Version.fromString("5.0");
-
-        // Always use session version for system application
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, sessionVersion, false));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, sessionVersion, false));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, sessionVersion, false));
-
-        // Always use session version for tester application
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.prod, sessionVersion, false));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.dev, sessionVersion, false));
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.perf, sessionVersion, false));
-
-        // Target for regular application depends on environment and major compatibility
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, sessionVersion, false));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, false));
-        assertEquals(oldSessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, oldSessionVersion, false));
-
-        // If bootstrap, version should be target version
-        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, true));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, sessionVersion, false));
-    }
-
-    @Test
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
 
