@@ -108,7 +108,7 @@ public class DynamicProvisioningMaintainer extends Maintainer {
                 .collect(Collectors.toList());
 
 
-        for (Iterator<NodeResources> it = preProvisionCapacity.iterator(); it.hasNext();) {
+        for (Iterator<NodeResources> it = preProvisionCapacity.iterator(); it.hasNext() && !removableHosts.isEmpty();) {
             NodeResources resources = it.next();
             removableHosts.stream()
                     .filter(host -> NodePrioritizer.ALLOCATABLE_HOST_STATES.contains(host.state()))
