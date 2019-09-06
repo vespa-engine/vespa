@@ -58,8 +58,9 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
-            "thin-pool-gb", 100,
-            "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB.",
+            "thin-pool-gb", -1,
+            "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB. " +
+                    "If <0, the default is used (which may depend on the zone and node type).",
             "Takes effect immediately (but used only during provisioning).",
             NODE_TYPE);
 
