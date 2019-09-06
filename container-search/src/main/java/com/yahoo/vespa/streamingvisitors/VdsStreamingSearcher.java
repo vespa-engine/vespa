@@ -163,8 +163,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             double elapsedMillis = durationInMillisFromNanoTime(timeStartedNanos);
             if ((effectiveTraceLevel > 0) && timeoutBadEnoughToBeReported(query, elapsedMillis)) {
                 tracingOptions.getTraceExporter().maybeExport(() -> new TraceDescription(visitor.getTrace(),
-                        String.format("Trace of %s which timed out after %.2g ms",
-                                      query.toString(), elapsedMillis)));
+                        String.format("Trace of %s which timed out after %.3g seconds",
+                                      query.toString(), elapsedMillis / 1000.0)));
             }
             return new Result(query, ErrorMessage.createTimeout(e.getMessage()));
         } catch (InterruptedException|IllegalArgumentException e) {
