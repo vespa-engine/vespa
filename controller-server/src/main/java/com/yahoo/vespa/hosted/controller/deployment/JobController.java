@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -76,10 +75,10 @@ public class JobController {
 
     private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
-    public JobController(Controller controller, RunDataStore runDataStore) {
+    public JobController(Controller controller) {
         this.controller = controller;
         this.curator = controller.curator();
-        this.logs = new BufferedLogStore(curator, runDataStore);
+        this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
         this.badges = new Badges(controller.zoneRegistry().badgeUrl());
     }

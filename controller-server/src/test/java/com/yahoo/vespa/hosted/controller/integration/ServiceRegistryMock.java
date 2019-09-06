@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIss
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
 
@@ -62,6 +64,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
     private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
+    private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
 
     @Override
     public ConfigServer configServer() {
@@ -146,6 +149,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ApplicationStore applicationStore() {
         return applicationStoreMock;
+    }
+
+    @Override
+    public RunDataStore runDataStore() {
+        return mockRunDataStore;
     }
 
     @Override

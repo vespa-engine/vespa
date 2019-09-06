@@ -65,4 +65,6 @@ public interface ServiceRegistry {
 
     ApplicationStore applicationStore();
 
+    RunDataStore runDataStore();
+
 }

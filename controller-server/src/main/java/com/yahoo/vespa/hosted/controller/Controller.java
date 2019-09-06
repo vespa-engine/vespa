@@ -12,7 +12,6 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
@@ -85,13 +84,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
                       AccessControl accessControl,
-                      BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
+                      BuildService buildService, FlagSource flagSource,
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
              Clock.systemUTC(), accessControl,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
+             buildService, com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
     }
 
@@ -100,7 +99,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService,
                       Clock clock,
                       AccessControl accessControl,
-                      BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
+                      BuildService buildService, Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
 
@@ -114,7 +113,7 @@ public class Controller extends AbstractComponent {
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
-        jobController = new JobController(this, runDataStore);
+        jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
