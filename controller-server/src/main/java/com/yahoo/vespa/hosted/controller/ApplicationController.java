@@ -128,7 +128,7 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          BuildService buildService, Clock clock) {
+                          Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.accessControl = accessControl;
@@ -140,7 +140,7 @@ public class ApplicationController {
 
         routingPolicies = new RoutingPolicies(controller);
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
+        deploymentTrigger = new DeploymentTrigger(controller, controller.serviceRegistry().buildService(), clock);
         provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
         deploymentSpecValidator = new DeploymentSpecValidator(controller);
 

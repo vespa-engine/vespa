@@ -11,7 +11,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
@@ -84,13 +83,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
                       AccessControl accessControl,
-                      BuildService buildService, FlagSource flagSource,
+                      FlagSource flagSource,
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
              Clock.systemUTC(), accessControl,
-             buildService, com.yahoo.net.HostName::getLocalhost, flagSource,
+             com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
     }
 
@@ -99,7 +98,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService,
                       Clock clock,
                       AccessControl accessControl,
-                      BuildService buildService, Supplier<String> hostnameSupplier,
+                      Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
 
@@ -116,7 +115,6 @@ public class Controller extends AbstractComponent {
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock
         );
         tenantController = new TenantController(this, curator, accessControl);

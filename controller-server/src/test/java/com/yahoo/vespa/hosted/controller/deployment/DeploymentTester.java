@@ -87,7 +87,7 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
-    public MockBuildService buildService() { return tester.buildService(); }
+    public MockBuildService buildService() { return tester.serviceRegistry().buildServiceMock(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
 

@@ -119,7 +119,7 @@ public final class ControllerTester {
         this.buildService = buildService;
         this.metricsService = metricsService;
         this.controller = createController(curator, rotationsConfig, clock, zoneRegistry,
-                                           athenzDb, buildService,
+                                           athenzDb,
                                            metricsService, serviceRegistry);
 
         // Make root logger use time from manual clock
@@ -158,8 +158,6 @@ public final class ControllerTester {
 
     public ServiceRegistryMock serviceRegistry() { return serviceRegistry; }
 
-    public MockBuildService buildService() { return buildService; }
-
     public MetricsServiceMock metricsService() { return metricsService; }
 
     public Optional<Record> findCname(String name) {
@@ -169,7 +167,7 @@ public final class ControllerTester {
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, clock, zoneRegistry, athenzDb,
-                                      buildService, metricsService,
+                                      metricsService,
                                       serviceRegistry);
     }
 
@@ -302,7 +300,7 @@ public final class ControllerTester {
                                                ManualClock clock,
                                                ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb,
-                                               BuildService buildService, MetricsServiceMock metricsService,
+                                               MetricsServiceMock metricsService,
                                                ServiceRegistryMock serviceRegistry) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
@@ -310,7 +308,6 @@ public final class ControllerTester {
                                                metricsService,
                                                clock,
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
-                                               buildService,
                                                () -> "test-controller",
                                                new InMemoryFlagSource(),
                                                new MockMavenRepository(),
