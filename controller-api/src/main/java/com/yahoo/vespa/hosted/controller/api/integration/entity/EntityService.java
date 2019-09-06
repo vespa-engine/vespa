@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * A service which provides access to business-specific entities.
@@ -15,5 +16,7 @@ public interface EntityService {
 
     /** List all properties known by the service */
     Map<PropertyId, Property> listProperties();
+
+    Optional<NodeEntity> findNode(String hostname);
 
 }

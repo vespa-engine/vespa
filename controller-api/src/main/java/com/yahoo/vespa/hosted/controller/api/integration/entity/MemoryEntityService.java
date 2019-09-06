@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author mpolden
@@ -16,6 +17,11 @@ public class MemoryEntityService implements EntityService {
     public Map<PropertyId, Property> listProperties() {
         return ImmutableMap.of(new PropertyId("1234"), new Property("foo"),
                                new PropertyId("4321"), new Property("bar"));
+    }
+
+    @Override
+    public Optional<NodeEntity> findNode(String hostname) {
+        return Optional.empty();
     }
 
 }
