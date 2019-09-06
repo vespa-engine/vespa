@@ -61,7 +61,7 @@ Zc4PostingReader<bigEndian>::read_doc_id_and_features(DocIdAndFeatures &features
             if (__builtin_expect(oCompr >= d._valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, d._);
                 _readContext.readComprBuffer();
-                UC64_DECODECONTEXT_STORE(o, d._);
+                UC64_DECODECONTEXT_LOAD(o, d._);
             }
             UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_ZCPOSTING_NUM_OCCS, EC);
             _no_skip.set_num_occs(val64 + 1);
