@@ -170,5 +170,10 @@
     }
   ],
   "trustedNetworks": [],
-  "trustedPorts": []
+  "trustedPorts": [
+    {
+      "port":22,
+      "trustedBy":"foo.yahoo.com"
+    }
+  ]
 }

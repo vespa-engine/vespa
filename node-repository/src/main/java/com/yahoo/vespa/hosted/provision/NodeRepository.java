@@ -207,9 +207,14 @@ public class NodeRepository extends AbstractComponent {
         Set<String> trustedNetworks = new LinkedHashSet<>();
 
         // For all cases below, trust:
+        // - SSH: If the Docker host has one container, and it is using the Docker host's network namespace,
+        //   opening up SSH to the Docker host is done here as a trusted port. For simplicity all nodes have
+        //   SSH opened (which is safe for 2 reasons: SSH daemon is not run inside containers, and NPT networks
+        //   will (should) not forward port 22 traffic to container).
         // - parent host (for health checks and metrics)
         // - nodes in same application
         // - load balancers allocated to application
+        trustedPorts.add(22);
         candidates.parentOf(node).ifPresent(trustedNodes::add);
         node.allocation().ifPresent(allocation -> {
             trustedNodes.addAll(candidates.owner(allocation.owner()).asList());
