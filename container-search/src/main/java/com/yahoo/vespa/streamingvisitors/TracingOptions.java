@@ -11,6 +11,17 @@ import com.yahoo.vespa.streamingvisitors.tracing.TraceExporter;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Encapsulates all trace-related components and options used by the streaming search Searcher.
+ *
+ * Provides a DEFAULT static instance which has the following characteristics:
+ *   - Approximately 1 query every 2 seconds is traced
+ *   - Trace level is set to 7 for traced queries
+ *   - Only emits traces for queries that have timed out and where the elapsed time is at least 5x
+ *     of the timeout specified in the query itself
+ *   - Emits traces to the Vespa log
+ *   - Only 1 trace every 10 seconds may be emitted to the log
+ */
 public class TracingOptions {
 
     private final SamplingStrategy samplingStrategy;
@@ -19,6 +30,13 @@ public class TracingOptions {
     private final int traceLevelOverride;
     private final double traceTimeoutMultiplierThreshold;
 
+    /**
+     * @param samplingStrategy used for choosing if a query should have its trace level implicitly altered.
+     * @param traceExporter used for emitting a visitor session trace to someplace it may be debugged later.
+     * @param clock monotonic clock used for relative time tracking.
+     * @param traceLevelOverride if a query is trace-sampled, its traceLevel will be set to this value
+     * @param traceTimeoutMultiplierThreshold only export traces if the elapsed time is > query timeout * this value
+     */
     public TracingOptions(SamplingStrategy samplingStrategy, TraceExporter traceExporter,
                           MonotonicNanoClock clock, int traceLevelOverride, double traceTimeoutMultiplierThreshold)
     {
