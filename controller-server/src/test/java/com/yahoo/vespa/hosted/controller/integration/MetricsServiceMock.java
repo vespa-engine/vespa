@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,19 +34,6 @@ public class MetricsServiceMock extends AbstractComponent implements MetricsServ
                                      metrics.getOrDefault("docoumentCount", 3D).longValue(),
                                      metrics.getOrDefault("queryLatencyMillis", 4D),
                                      metrics.getOrDefault("writeLatencyMillis", 5D));
-    }
-
-    @Override
-    public Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone) {
-        Map<String, SystemMetrics> result = new HashMap<>();
-        SystemMetrics system = new SystemMetrics(55.54, 69.90, 34.59);
-        result.put("default", system);
-        return result;
-    }
-
-    @Override
-    public Map<HostName, RotationStatus> getRotationStatus(String rotationName) {
-        return Map.of();
     }
 
 }

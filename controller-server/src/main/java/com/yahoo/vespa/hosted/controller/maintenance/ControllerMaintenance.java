@@ -42,7 +42,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final Upgrader upgrader;
     private final ReadyJobsTrigger readyJobsTrigger;
     private final ClusterInfoMaintainer clusterInfoMaintainer;
-    private final ClusterUtilizationMaintainer clusterUtilizationMaintainer;
     private final DeploymentMetricsMaintainer deploymentMetricsMaintainer;
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final SystemUpgrader systemUpgrader;
@@ -78,7 +77,6 @@ public class ControllerMaintenance extends AbstractComponent {
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
         readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
-        clusterUtilizationMaintainer = new ClusterUtilizationMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
@@ -108,7 +106,6 @@ public class ControllerMaintenance extends AbstractComponent {
         versionStatusUpdater.deconstruct();
         upgrader.deconstruct();
         readyJobsTrigger.deconstruct();
-        clusterUtilizationMaintainer.deconstruct();
         clusterInfoMaintainer.deconstruct();
         deploymentMetricsMaintainer.deconstruct();
         applicationOwnershipConfirmer.deconstruct();

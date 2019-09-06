@@ -12,7 +12,6 @@ import org.mockito.Mockito;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class ConfigServerMetricsServiceTest {
 
@@ -73,9 +72,4 @@ public class ConfigServerMetricsServiceTest {
         assertEquals(0.0, applicationMetrics.writeServiceQuality(), 0.001);
     }
 
-    @Test
-    public void test_not_implemented_metrics() {
-        assertTrue(service.getRotationStatus("foo").isEmpty());
-        assertTrue(service.getSystemMetrics(applicationId, zoneId).isEmpty());
-    }
 }

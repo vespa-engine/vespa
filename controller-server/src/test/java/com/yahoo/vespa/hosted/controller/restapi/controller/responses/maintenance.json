@@ -13,9 +13,6 @@
       "name": "ClusterInfoMaintainer"
     },
     {
-      "name": "ClusterUtilizationMaintainer"
-    },
-    {
       "name": "ContactInformationMaintainer"
     },
     {
