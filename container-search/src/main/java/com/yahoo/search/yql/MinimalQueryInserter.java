@@ -44,6 +44,7 @@ public class MinimalQueryInserter extends Searcher {
 
     @Inject
     public MinimalQueryInserter(Linguistics linguistics) {
+        // Warmup is needed to avoid a large 400ms init cost during first execution of yql code.
         warmup(linguistics);
     }
     MinimalQueryInserter() {
@@ -52,15 +53,15 @@ public class MinimalQueryInserter extends Searcher {
     static boolean warmup() {
         return warmup(new SimpleLinguistics());
     }
-    static boolean warmup(Linguistics linguistics) {
+    private static boolean warmup(Linguistics linguistics) {
         Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz';");
         Result result = insertQuery(query, new ParserEnvironment().setLinguistics(linguistics));
         if (result != null) {
-            log.warning("Something fishy. Reult = " + result.toString());
+            log.warning("Warmup code trigger an error. Error = " + result.toString());
             return false;
         }
         if ( ! "select * from sources where title contains \"xyz\";".equals(query.yqlRepresentation())) {
-            log.warning("Unexpected yql: " + query.yqlRepresentation());
+            log.warning("Warmup code generated unexpected yql: " + query.yqlRepresentation());
             return false;
         }
         return true;
