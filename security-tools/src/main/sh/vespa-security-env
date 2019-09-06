@@ -74,3 +74,5 @@ findhost
 
 # END environment bootstrap section
 
+exec java -Djava.awt.headless=true -cp ${VESPA_HOME}/lib/jars/security-tools-jar-with-dependencies.jar com.yahoo.vespa.security.tool.securityenv.Main "$@"
+
