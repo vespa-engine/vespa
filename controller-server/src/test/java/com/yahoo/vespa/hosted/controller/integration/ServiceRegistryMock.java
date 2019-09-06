@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
@@ -60,6 +61,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
     private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
+    private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
 
     @Override
     public ConfigServer configServer() {
@@ -139,6 +141,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public TesterCloud testerCloud() {
         return mockTesterCloud;
+    }
+
+    @Override
+    public ApplicationStore applicationStore() {
+        return applicationStoreMock;
     }
 
     @Override

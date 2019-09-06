@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
@@ -97,8 +96,6 @@ public class DeploymentTester {
     public ControllerTester controllerTester() { return tester; }
 
     public ConfigServerMock configServer() { return tester.serviceRegistry().configServerMock(); }
-
-    public ApplicationStoreMock applicationStore() { return tester.applicationStore(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));
