@@ -27,7 +27,6 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
-import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -59,11 +58,6 @@ public class ContainerControllerTester {
     }
 
     public Controller controller() { return containerTester.controller(); }
-
-    public ArtifactRepositoryMock artifactRepository() {
-        return (ArtifactRepositoryMock) containerTester.container().components()
-                                                       .getComponent(ArtifactRepositoryMock.class.getName());
-    }
 
     public Upgrader upgrader() { return upgrader; }
 
@@ -118,7 +112,7 @@ public class ContainerControllerTester {
 
     /** Notify the controller about a job completing */
     public BuildJob jobCompletion(JobType job) {
-        return new BuildJob(this::notifyJobCompletion, artifactRepository()).type(job);
+        return new BuildJob(this::notifyJobCompletion, containerTester.serviceRegistry().artifactRepositoryMock()).type(job);
     }
 
     // ---- Delegators:

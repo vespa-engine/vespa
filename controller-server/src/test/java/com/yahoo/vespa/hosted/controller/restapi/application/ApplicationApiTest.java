@@ -1417,7 +1417,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Version vespaVersion = new Version("6.1"); // system version from mock config server client
 
-        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.containerTester().serviceRegistry().artifactRepositoryMock())
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
@@ -1468,7 +1468,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
 
         // Report job failing with out of capacity
-        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.containerTester().serviceRegistry().artifactRepositoryMock())
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
@@ -1649,8 +1649,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ContainerTester tester = controllerTester.containerTester();
 
         // Trigger application change
-        controllerTester.artifactRepository().put(application, applicationPackage,"1.0." + buildNumber
-                                                                                  + "-commit1");
+        controllerTester.containerTester().serviceRegistry().artifactRepositoryMock()
+                        .put(application, applicationPackage,"1.0." + buildNumber + "-commit1");
         controllerTester.jobCompletion(JobType.component)
                         .application(application)
                         .projectId(projectId)

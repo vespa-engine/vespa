@@ -222,7 +222,7 @@ public class ControllerTest {
         ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
         runDeployment(tester, app.id(), applicationVersion, applicationPackage, source,101);
         assertEquals("Artifact is downloaded twice in staging and once for other zones", 5,
-                     tester.artifactRepository().hits(app.id(), applicationVersion.id()));
+                     tester.controllerTester().serviceRegistry().artifactRepositoryMock().hits(app.id(), applicationVersion.id()));
 
         // Application is upgraded. This makes deployment orchestration pick the last successful application version in
         // zones which do not have permanent deployments, e.g. test and staging

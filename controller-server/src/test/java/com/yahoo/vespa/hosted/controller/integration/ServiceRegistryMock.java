@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
@@ -55,6 +56,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
     private final MockBilling mockBilling = new MockBilling();
     private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
+    private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
 
     @Override
     public ConfigServer configServer() {
@@ -127,6 +129,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
+    public ArtifactRepository artifactRepository() {
+        return artifactRepositoryMock;
+    }
+
+    @Override
     public NameService nameService() {
         return memoryNameService;
     }
@@ -153,6 +160,10 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public MockContactRetriever contactRetrieverMock() {
         return mockContactRetriever;
+    }
+
+    public ArtifactRepositoryMock artifactRepositoryMock() {
+        return artifactRepositoryMock;
     }
 
 }

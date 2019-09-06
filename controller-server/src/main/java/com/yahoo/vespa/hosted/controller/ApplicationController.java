@@ -128,7 +128,7 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
-                          ArtifactRepository artifactRepository, ApplicationStore applicationStore,
+                          ApplicationStore applicationStore,
                           BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
@@ -136,7 +136,7 @@ public class ApplicationController {
         this.configServer = controller.serviceRegistry().configServer();
         this.routingGenerator = controller.serviceRegistry().routingGenerator();
         this.clock = clock;
-        this.artifactRepository = artifactRepository;
+        this.artifactRepository = controller.serviceRegistry().artifactRepository();
         this.applicationStore = applicationStore;
 
         routingPolicies = new RoutingPolicies(controller);
