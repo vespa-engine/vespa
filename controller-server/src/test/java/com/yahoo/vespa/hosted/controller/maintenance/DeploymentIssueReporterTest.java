@@ -72,7 +72,7 @@ public class DeploymentIssueReporterTest {
 
         tester.upgradeSystem(Version.fromString("6.2"));
 
-        Optional<Contact> contact = Optional.of(tester.controllerTester().serviceRegistry().contactRetrieverMock().contact());
+        Optional<Contact> contact = Optional.of(tester.controllerTester().contactRetriever().contact());
         tester.controllerTester().createTenant("tenant1", "domain1", 1L, contact);
         tester.controllerTester().createTenant("tenant2", "domain2", 1L, contact);
         tester.controllerTester().createTenant("tenant3", "domain3", 1L, contact);

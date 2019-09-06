@@ -809,7 +809,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        MeteringInfo meteringInfo = controller.serviceRegistry().meteringService().getResourceSnapshots(tenant, application);
+        MeteringInfo meteringInfo = controller.meteringClient().getResourceSnapshots(tenant, application);
 
         ResourceAllocation currentSnapshot = meteringInfo.getCurrentSnapshot();
         Cursor currentRate = root.setObject("currentrate");

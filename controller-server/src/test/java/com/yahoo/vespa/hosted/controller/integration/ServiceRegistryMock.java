@@ -3,30 +3,15 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -42,13 +27,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock();
     private final MockMailer mockMailer = new MockMailer();
     private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
-    private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
-    private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
-    private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
-    private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
-    private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
-    private final MemoryEntityService memoryEntityService = new MemoryEntityService();
-    private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
 
     @Override
     public ConfigServer configServer() {
@@ -76,41 +54,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public MeteringClient meteringService() {
-        return mockMeteringClient;
-    }
-
-    @Override
-    public ContactRetriever contactRetriever() {
-        return mockContactRetriever;
-    }
-
-    @Override
-    public IssueHandler issueHandler() {
-        return mockIssueHandler;
-    }
-
-    @Override
-    public OwnershipIssues ownershipIssues() {
-        return dummyOwnershipIssues;
-    }
-
-    @Override
-    public DeploymentIssues deploymentIssues() {
-        return loggingDeploymentIssues;
-    }
-
-    @Override
-    public EntityService entityService() {
-        return memoryEntityService;
-    }
-
-    @Override
-    public CostReportConsumer costReportConsumer() {
-        return costReportConsumerMock;
-    }
-
-    @Override
     public NameService nameService() {
         return memoryNameService;
     }
@@ -133,10 +76,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public RoutingGeneratorMock routingGeneratorMock() {
         return routingGeneratorMock;
-    }
-
-    public MockContactRetriever contactRetrieverMock() {
-        return mockContactRetriever;
     }
 
 }

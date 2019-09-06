@@ -4,14 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
@@ -35,19 +28,5 @@ public interface ServiceRegistry {
     Mailer mailer();
 
     ApplicationCertificateProvider applicationCertificateProvider();
-
-    MeteringClient meteringService();
-
-    ContactRetriever contactRetriever();
-
-    IssueHandler issueHandler();
-
-    OwnershipIssues ownershipIssues();
-
-    DeploymentIssues deploymentIssues();
-
-    EntityService entityService();
-
-    CostReportConsumer costReportConsumer();
 
 }
