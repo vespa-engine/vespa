@@ -14,6 +14,7 @@ class Model
 private:
     std::mt19937 _gen;
     size_t _less_percent;
+    size_t _invert_percent;
 
     size_t get_int(size_t min, size_t max) {
         std::uniform_int_distribution<size_t> dist(min, max);
@@ -41,17 +42,28 @@ private:
                                get_int(0, 4) / 4.0,
                                get_int(0, 4) / 4.0);
         } else {
-            return make_string("(%s<%g)",
-                               make_feature_name().c_str(),
-                               get_real(0.0, 1.0));
+            if (get_int(1,100) > _invert_percent) {
+                return make_string("(%s<%g)",
+                                   make_feature_name().c_str(),
+                                   get_real(0.0, 1.0));
+            } else {
+                return make_string("(!(%s>=%g))",
+                                   make_feature_name().c_str(),
+                                   get_real(0.0, 1.0));
+            }
         }
     }
 
 public:
-    explicit Model(size_t seed = 5489u) : _gen(seed), _less_percent(80) {}
+    explicit Model(size_t seed = 5489u) : _gen(seed), _less_percent(80), _invert_percent(0) {}
 
     Model &less_percent(size_t value) {
         _less_percent = value;
+        return *this;
+    }
+
+    Model &invert_percent(size_t value) {
+        _invert_percent = value;
         return *this;
     }
 
