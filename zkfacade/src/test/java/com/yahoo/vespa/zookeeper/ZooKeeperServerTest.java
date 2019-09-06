@@ -29,8 +29,8 @@ public class ZooKeeperServerTest {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
-        builder.server(newServer(1, "foo", 123, 321));
-        builder.myid(1);
+        builder.server(newServer(0, "foo", 123, 321));
+        builder.myid(0);
         createServer(builder);
         validateConfigFileSingleHost(cfgFile);
         validateIdFile(idFile, "");
@@ -42,9 +42,9 @@ public class ZooKeeperServerTest {
         File idFile = folder.newFile();
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
-        builder.server(newServer(1, "foo", 123, 321));
-        builder.server(newServer(2, "bar", 234, 432));
-        builder.server(newServer(3, "baz", 345, 543));
+        builder.server(newServer(0, "foo", 123, 321));
+        builder.server(newServer(1, "bar", 234, 432));
+        builder.server(newServer(2, "baz", 345, 543));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
         createServer(builder);
@@ -59,16 +59,16 @@ public class ZooKeeperServerTest {
     @Test(expected = RuntimeException.class)
     public void require_that_this_id_must_be_present_amongst_servers() {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
-        builder.server(newServer(2, "bar", 234, 432));
-        builder.server(newServer(3, "baz", 345, 543));
-        builder.myid(1);
+        builder.server(newServer(1, "bar", 234, 432));
+        builder.server(newServer(2, "baz", 345, 543));
+        builder.myid(0);
         createServer(builder);
     }
 
     @Test
     public void juteMaxBufferCanBeSet() throws IOException {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
-        builder.myid(1);
+        builder.myid(0);
         File idFile = folder.newFile();
         File cfgFile = folder.newFile();
 
@@ -110,7 +110,8 @@ public class ZooKeeperServerTest {
             "clientPort=2181\n" +
             "autopurge.purgeInterval=1\n" +
             "autopurge.snapRetainCount=15\n" +
-            "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n";
+            "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
+            "server.0=foo:321:123\n";
         validateConfigFile(cfgFile, expected);
     }
 
@@ -126,9 +127,9 @@ public class ZooKeeperServerTest {
                         "autopurge.purgeInterval=1\n" +
                         "autopurge.snapRetainCount=15\n" +
                         "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
-                        "server.1=foo:321:123\n" +
-                        "server.2=bar:432:234\n" +
-                        "server.3=baz:543:345\n";
+                        "server.0=foo:321:123\n" +
+                        "server.1=bar:432:234\n" +
+                        "server.2=baz:543:345\n";
         validateConfigFile(cfgFile, expected);
     }
 

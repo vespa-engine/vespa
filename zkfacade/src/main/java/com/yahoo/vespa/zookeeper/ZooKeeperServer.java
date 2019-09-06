@@ -70,12 +70,8 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         // Includes all available commands in 3.4, except 'wchc' and 'wchp'
         // Mandatory when using ZooKeeper 3.5
         sb.append("4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
-        if (config.server().size() > 1) {
-            ensureThisServerIsRepresented(config.myid(), config.server());
-            for (ZookeeperServerConfig.Server server : config.server()) {
-                addServerToCfg(sb, server);
-            }
-        }
+        ensureThisServerIsRepresented(config.myid(), config.server());
+        config.server().forEach(server -> addServerToCfg(sb, server));
         return sb.toString();
     }
 

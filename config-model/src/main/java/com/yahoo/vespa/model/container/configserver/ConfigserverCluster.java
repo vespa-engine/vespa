@@ -64,6 +64,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         }
 
         String myhostname = HostName.getLocalhost();
+        // TODO: Server index should be in interval [1, 254] according to doc,
+        // however, we cannot change this id for an existing server
         for (int i = 0; i < configServers.length; i++) {
             if (zookeeperIds[i] < 0) {
                 throw new IllegalArgumentException(String.format("Zookeeper ids cannot be negative, was %d for %s",
