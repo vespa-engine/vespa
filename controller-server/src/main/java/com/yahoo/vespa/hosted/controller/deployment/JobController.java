@@ -173,7 +173,7 @@ public class JobController {
     /** Returns an immutable map of all known runs for the given application and job type. */
     public Map<RunId, Run> runs(ApplicationId id, JobType type) {
         SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
-        last(id, type).ifPresent(run -> runs.putIfAbsent(run.id(), run));
+        last(id, type).ifPresent(run -> runs.put(run.id(), run));
         return ImmutableMap.copyOf(runs);
     }
 
