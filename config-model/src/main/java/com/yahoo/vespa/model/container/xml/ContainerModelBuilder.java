@@ -59,6 +59,7 @@ import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
+import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.http.JettyHttpServer;
 import com.yahoo.vespa.model.container.http.ssl.HostedSslConnectorFactory;
@@ -328,33 +329,35 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
-
         // If the deployment contains certificate/private key reference, setup TLS port
         if (deployState.tlsSecrets().isPresent()) {
-            boolean authorizeClient = XML.getChild(spec, "client-authorize") != null;
-            if (authorizeClient) {
-                if (deployState.tlsClientAuthority().isEmpty()) {
-                    throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
-                }
-            }
-
-            if(httpElement == null) {
-                cluster.setHttp(new Http(Collections.emptyList()));
-            }
-            if(cluster.getHttp().getHttpServer() == null) {
-                JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
-                cluster.getHttp().setHttpServer(defaultHttpServer);
-                defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
-
-            }
-            JettyHttpServer server = cluster.getHttp().getHttpServer();
-
-            String serverName = server.getComponentId().getName();
-            HostedSslConnectorFactory connectorFactory = authorizeClient
-                    ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get())
-                    : new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get());
-            server.addConnector(connectorFactory);
+            addTlsPort(deployState, spec, cluster);
         }
+    }
+
+    private void addTlsPort(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        boolean authorizeClient = XML.getChild(spec, "client-authorize") != null;
+        if (authorizeClient) {
+            if (deployState.tlsClientAuthority().isEmpty()) {
+                throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
+            }
+        }
+        if(cluster.getHttp() == null) {
+            Http http = new Http(Collections.emptyList());
+            http.setFilterChains(new FilterChains(cluster));
+            cluster.setHttp(http);
+        }
+        if(cluster.getHttp().getHttpServer() == null) {
+            JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
+            cluster.getHttp().setHttpServer(defaultHttpServer);
+            defaultHttpServer.addConnector(new ConnectorFactory("SearchServer", Defaults.getDefaults().vespaWebServicePort()));
+        }
+        JettyHttpServer server = cluster.getHttp().getHttpServer();
+        String serverName = server.getComponentId().getName();
+        HostedSslConnectorFactory connectorFactory = authorizeClient
+                ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get())
+                : new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get());
+        server.addConnector(connectorFactory);
     }
 
     private Http buildHttp(DeployState deployState, ApplicationContainerCluster cluster, Element httpElement) {
