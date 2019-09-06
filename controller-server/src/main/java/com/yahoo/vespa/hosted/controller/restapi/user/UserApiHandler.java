@@ -14,7 +14,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
-import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -130,11 +129,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         for (Role role : roles)
             rolesArray.addString(valueOf(role));
 
-        Map<User, List<Role>> memberships = new LinkedHashMap<>();
+        Map<UserId, List<Role>> memberships = new LinkedHashMap<>();
         List<Role> allRoles = new ArrayList<>(superRoles); // Membership in a super role may imply membership in a role.
         allRoles.addAll(roles);
         for (Role role : allRoles)
-            for (User user : users.listUsers(role)) {
+            for (UserId user : users.listUsers(role)) {
                 memberships.putIfAbsent(user, new ArrayList<>());
                 memberships.get(user).add(role);
             }
@@ -142,15 +141,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor usersArray = root.setArray("users");
         memberships.forEach((user, userRoles) -> {
             Cursor userObject = usersArray.addObject();
-            userObject.setString("name", user.name());
-            userObject.setString("email", user.email());
-            if (user.nickname() != null) {
-                userObject.setString("nickname", user.nickname());
-            }
-            if (user.picture()!= null) {
-                userObject.setString("picture", user.picture());
-            }
-
+            userObject.setString("name", user.value());
             Cursor rolesObject = userObject.setObject("roles");
             for (Role role : roles) {
                 Cursor roleObject = rolesObject.setObject(valueOf(role));
@@ -183,14 +174,12 @@ public class UserApiHandler extends LoggingRequestHandler {
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
-        List<User> currentUsers = users.listUsers(role);
-        if (role.definition() == RoleDefinition.tenantOwner
-                && currentUsers.size() == 1
-                && currentUsers.get(0).email().equals(user.value()))
+        if (   role.definition() == RoleDefinition.tenantOwner
+            && users.listUsers(role).equals(List.of(user)))
             throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
 
         users.removeUsers(role, List.of(user));
-        return new MessageResponse(user+" is no longer a member of "+role);
+        return new MessageResponse(user + " is no longer a member of " + role);
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
