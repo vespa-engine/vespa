@@ -110,8 +110,10 @@ public class ZooKeeperServerTest {
             "clientPort=2181\n" +
             "autopurge.purgeInterval=1\n" +
             "autopurge.snapRetainCount=15\n" +
-            "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
-            "server.0=foo:321:123\n";
+            "4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
+            "admin.enableServer=false\n" +
+            "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
+            "server.1=foo:321:123\n";
         validateConfigFile(cfgFile, expected);
     }
 
@@ -126,10 +128,12 @@ public class ZooKeeperServerTest {
                         "clientPort=2181\n" +
                         "autopurge.purgeInterval=1\n" +
                         "autopurge.snapRetainCount=15\n" +
-                        "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
-                        "server.0=foo:321:123\n" +
-                        "server.1=bar:432:234\n" +
-                        "server.2=baz:543:345\n";
+                        "4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
+                        "admin.enableServer=false\n" +
+                        "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n" +
+                        "server.1=foo:321:123\n" +
+                        "server.2=bar:432:234\n" +
+                        "server.3=baz:543:345\n";
         validateConfigFile(cfgFile, expected);
     }
 
