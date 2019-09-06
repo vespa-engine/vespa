@@ -33,7 +33,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** This node does not exist in the node repository yet */
     final boolean isNewNode;
 
-    private PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode) {
+    PrioritizableNode(Node node, NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean isSurplusNode, boolean isNewNode) {
         this.node = node;
         this.freeParentCapacity = freeParentCapacity;
         this.parent = parent;
@@ -73,17 +73,13 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (this.node.state() == Node.State.ready && other.node.state() != Node.State.ready) return -1;
         if (other.node.state() == Node.State.ready && this.node.state() != Node.State.ready) return 1;
 
-        if ( ! this.node.state().equals(other.node.state()))
+        if (this.node.state() != other.node.state())
             throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
 
         // Choose nodes where host is in more desirable state
         int thisHostStatePri = this.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
         int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
-        if (thisHostStatePri != otherHostStatePri) return thisHostStatePri - otherHostStatePri;
-
-        // Choose docker node over non-docker node (is this to differentiate between docker replaces non-docker flavors?)
-        if (this.parent.isPresent() && !other.parent.isPresent()) return -1;
-        if (other.parent.isPresent() && !this.parent.isPresent()) return 1;
+        if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
         // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
         int freeCapacity = NodeResourceComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
