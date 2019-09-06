@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import org.eclipse.jetty.util.security.CertificateUtils;
 
 import java.time.Instant;
 import java.util.EnumMap;
@@ -81,6 +83,7 @@ class RunSerializer {
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
+    private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -111,7 +114,10 @@ class RunSerializer {
                                .filter(Inspector::valid)
                                .map(end -> Instant.ofEpochMilli(end.asLong())),
                        runStatusOf(runObject.field(statusField).asString()),
-                       runObject.field(lastTestRecordField).asLong());
+                       runObject.field(lastTestRecordField).asLong(),
+                       Optional.of(runObject.field(testerCertificateField))
+                               .filter(Inspector::valid)
+                               .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -169,6 +175,7 @@ class RunSerializer {
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
+        run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));

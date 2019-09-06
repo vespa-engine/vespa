@@ -15,6 +15,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -36,14 +40,22 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.yolean.Exceptions;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,6 +105,7 @@ public class InternalStepRunner implements StepRunner {
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
+    static final Duration certificateTimeout = Duration.ofMinutes(300);
 
     private final Controller controller;
     private final TestConfigSerializer testConfigSerializer;
@@ -109,12 +122,12 @@ public class InternalStepRunner implements StepRunner {
         DualLogger logger = new DualLogger(id, step.get());
         try {
             switch (step.get()) {
+                case deployTester: return deployTester(id, logger);
                 case deployInitialReal: return deployInitialReal(id, logger);
                 case installInitialReal: return installInitialReal(id, logger);
                 case deployReal: return deployReal(id, logger);
-                case deployTester: return deployTester(id, logger);
-                case installReal: return installReal(id, logger);
                 case installTester: return installTester(id, logger);
+                case installReal: return installReal(id, logger);
                 case startTests: return startTests(id, logger);
                 case endTests: return endTests(id, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
@@ -428,6 +441,17 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
+        if (testerCertificate.isPresent()) {
+            try {
+                testerCertificate.get().checkValidity(Date.from(controller.clock().instant()));
+            }
+            catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                logger.log(INFO, "Tester certificate expired before tests could complete.");
+                return Optional.of(aborted);
+            }
+        };
+
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if ( ! testerEndpoint.isPresent()) {
             logger.log("Endpoints for tester not found -- trying again later.");
@@ -598,6 +622,16 @@ public class InternalStepRunner implements StepRunner {
 
         ZoneId zone = id.type().zone(controller.system());
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
+
+        if (controller.system().isPublic()) {
+            KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+            X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
+            X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, subject,
+                                                                             Instant.now(), Instant.now().plus(certificateTimeout),
+                                                                             SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
+                                                                .build();
+            controller.jobController().storeTesterCertificate(id, certificate);
+        }
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);

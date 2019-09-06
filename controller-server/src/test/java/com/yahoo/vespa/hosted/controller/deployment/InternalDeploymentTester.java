@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -48,6 +49,13 @@ public class InternalDeploymentTester {
             .upgradePolicy("default")
             .region("us-central-1")
             .parallel("us-west-1", "us-east-3")
+            .emailRole("author")
+            .emailAddress("b@a")
+            .build();
+    public static final ApplicationPackage publicCdApplicationPackage = new ApplicationPackageBuilder()
+            .athenzIdentity(AthenzDomain.from(ATHENZ_DOMAIN), AthenzService.from(ATHENZ_SERVICE))
+            .upgradePolicy("default")
+            .region("aws-us-east-1c")
             .emailRole("author")
             .emailAddress("b@a")
             .build();
@@ -98,7 +106,8 @@ public class InternalDeploymentTester {
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2, applicationPackage, new byte[0]);
+        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2,
+                           tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage, new byte[0]);
     }
 
     /**
