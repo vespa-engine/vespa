@@ -110,10 +110,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -154,10 +154,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -188,10 +188,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -264,12 +264,12 @@
             }
           },
           "steps": {
+            "deployTester": "succeeded",
             "deployInitialReal": "succeeded",
             "installInitialReal": "failed",
             "deployReal": "unfinished",
-            "installReal": "unfinished",
-            "deployTester": "succeeded",
             "installTester": "unfinished",
+            "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
             "copyVespaLogs": "succeeded",
@@ -306,12 +306,12 @@
             }
           },
           "steps": {
+            "deployTester": "succeeded",
             "deployInitialReal": "succeeded",
             "installInitialReal": "succeeded",
             "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "deployTester": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -352,12 +352,12 @@
             }
           },
           "steps": {
+            "deployTester": "succeeded",
             "deployInitialReal": "succeeded",
             "installInitialReal": "succeeded",
             "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "deployTester": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -388,12 +388,12 @@
             }
           },
           "steps": {
+            "deployTester": "succeeded",
             "deployInitialReal": "succeeded",
             "installInitialReal": "succeeded",
             "deployReal": "succeeded",
-            "installReal": "succeeded",
-            "deployTester": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "copyVespaLogs": "succeeded",
@@ -438,10 +438,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "unfinished",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "unfinished",
+            "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
             "deactivateTester": "unfinished",
@@ -479,10 +479,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "deactivateTester": "succeeded",
@@ -511,10 +511,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "deactivateTester": "succeeded",
@@ -584,10 +584,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "failed",
             "deactivateTester": "succeeded",
@@ -616,10 +616,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "deactivateTester": "succeeded",
@@ -690,18 +690,16 @@
             }
           },
           "steps": {
-            "deployReal": "failed",
-            "installReal": "unfinished",
-            "deployTester": "unfinished",
+            "deployTester": "failed",
+            "deployReal": "unfinished",
             "installTester": "unfinished",
+            "installReal": "unfinished",
             "startTests": "unfinished",
             "endTests": "unfinished",
             "deactivateTester": "succeeded",
             "report": "succeeded"
           },
-          "tasks": {
-            "deploy": "failed"
-          },
+          "tasks": {},
           "log": "https://some.url:43/root/production-us-east-3/run/2"
         },
         {
@@ -720,10 +718,10 @@
             }
           },
           "steps": {
-            "deployReal": "succeeded",
-            "installReal": "succeeded",
             "deployTester": "succeeded",
+            "deployReal": "succeeded",
             "installTester": "succeeded",
+            "installReal": "succeeded",
             "startTests": "succeeded",
             "endTests": "succeeded",
             "deactivateTester": "succeeded",
