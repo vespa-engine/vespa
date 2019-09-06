@@ -41,7 +41,7 @@ public class ApplicationOwnershipConfirmerTest {
 
     @Test
     public void testConfirmation() {
-        Optional<Contact> contact = Optional.of(tester.controllerTester().contactRetriever().contact());
+        Optional<Contact> contact = Optional.of(tester.controllerTester().serviceRegistry().contactRetrieverMock().contact());
         TenantName property = tester.controllerTester().createTenant("property", "domain", 1L, contact);
         tester.createAndDeploy(property, "application", 1, "default");
         Supplier<Application> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
@@ -69,7 +69,7 @@ public class ApplicationOwnershipConfirmerTest {
         assertEquals("Confirmation issue has been filed for property owned application.", issueId, propertyApp.get().ownershipIssueId());
         assertEquals("Confirmation issue has been filed for user owned application.", issueId, userApp.get().ownershipIssueId());
         assertTrue(issues.escalatedToTerminator);
-        assertTrue("Both applications have had their responses ensured.", issues.escalatedToContact && issues.escalatedToTerminator);
+        assertTrue("Both applications have had their responses ensured.", issues.escalatedToContact);
 
         // No new issue is created, so return empty now.
         issues.response = Optional.empty();

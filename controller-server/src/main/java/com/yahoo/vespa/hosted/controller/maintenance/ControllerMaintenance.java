@@ -7,16 +7,9 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.cost.config.SelfHostedCostConfig;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -57,20 +50,18 @@ public class ControllerMaintenance extends AbstractComponent {
     private final RotationStatusUpdater rotationStatusUpdater;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
-                                 JobControl jobControl, Metric metric,
-                                 DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
-                                 ContactRetriever contactRetriever,
-                                 CostReportConsumer reportConsumer,
-                                 MeteringClient meteringClient,
+    public ControllerMaintenance(MaintainerConfig maintainerConfig,
+                                 ApiAuthorityConfig apiAuthorityConfig,
+                                 Controller controller,
+                                 CuratorDb curator,
+                                 JobControl jobControl,
+                                 Metric metric,
                                  Billing billing,
-                                 SelfHostedCostConfig selfHostedCostConfig,
-                                 IssueHandler issueHandler,
                                  AwsEventFetcher awsEventFetcher) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
-        deploymentIssueReporter = new DeploymentIssueReporter(controller, deploymentIssues, maintenanceInterval, jobControl);
+        deploymentIssueReporter = new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), maintenanceInterval, jobControl);
         metricsReporter = new MetricsReporter(controller, metric, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(controller, Duration.ofMinutes(1), jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(1), jobControl);
@@ -78,17 +69,17 @@ public class ControllerMaintenance extends AbstractComponent {
         readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
         clusterInfoMaintainer = new ClusterInfoMaintainer(controller, Duration.ofHours(2), jobControl);
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
-        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
+        applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, controller.serviceRegistry().ownershipIssues());
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
-        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), reportConsumer, jobControl, selfHostedCostConfig);
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, meteringClient);
+        costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), jobControl, controller.serviceRegistry().costReportConsumer());
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
-        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, issueHandler, awsEventFetcher);
+        awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, controller.serviceRegistry().issueHandler(), awsEventFetcher);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 

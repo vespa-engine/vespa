@@ -41,5 +41,10 @@ public class ResourceAllocation {
         return new ResourceAllocation(cpuCores + allocation.cpuCores, memoryGb + allocation.memoryGb, diskGb + allocation.diskGb);
     }
 
+    /** Returns a copy of this with each resource multiplied by given factor */
+    public ResourceAllocation multiply(double multiplicand) {
+        return new ResourceAllocation(cpuCores * multiplicand, memoryGb * multiplicand, diskGb * multiplicand);
+    }
+
 }
 

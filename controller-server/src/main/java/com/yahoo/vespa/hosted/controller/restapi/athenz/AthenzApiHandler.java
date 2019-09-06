@@ -9,6 +9,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
@@ -35,10 +36,10 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     private final AthenzFacade athenz;
     private final EntityService properties;
 
-    public AthenzApiHandler(Context parentCtx, AthenzFacade athenz, EntityService properties) {
+    public AthenzApiHandler(Context parentCtx, AthenzFacade athenz, Controller controller) {
         super(parentCtx);
         this.athenz = athenz;
-        this.properties = properties;
+        this.properties = controller.serviceRegistry().entityService();
     }
 
     @Override

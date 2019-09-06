@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
@@ -27,9 +26,9 @@ public class ContactInformationMaintainer extends Maintainer {
 
     private final ContactRetriever contactRetriever;
 
-    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, ContactRetriever contactRetriever) {
+    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
-        this.contactRetriever = Objects.requireNonNull(contactRetriever, "organization must be non-null");
+        this.contactRetriever = controller.serviceRegistry().contactRetriever();
     }
 
     @Override

@@ -32,8 +32,7 @@ public class ContactInformationMaintainerTest {
     public void before() {
         tester = new ControllerTester();
         maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
-                                                      new JobControl(tester.controller().curator()),
-                                                      tester.contactRetriever());
+                                                      new JobControl(tester.controller().curator()));
     }
 
     @Test
@@ -53,7 +52,7 @@ public class ContactInformationMaintainerTest {
 
     private void registerContact(long propertyId, Contact contact) {
         PropertyId p = new PropertyId(String.valueOf(propertyId));
-        tester.contactRetriever().addContact(p, contact);
+        tester.serviceRegistry().contactRetrieverMock().addContact(p, contact);
     }
 
     private static Contact testContact() {
