@@ -88,7 +88,7 @@ public interface NodeRepository {
                         toDouble(node.getMinCpuCores()),
                         toDouble(node.getMinMainMemoryAvailableGb()),
                         toDouble(node.getMinDiskAvailableGb()),
-                        toDouble(node.getBandwidth()) / 1000,
+                        toDouble(node.getBandwidthGbps()),
                         toBoolean(node.getFastDisk()),
                         toInt(node.getCost()),
                         node.getCanonicalFlavor(),

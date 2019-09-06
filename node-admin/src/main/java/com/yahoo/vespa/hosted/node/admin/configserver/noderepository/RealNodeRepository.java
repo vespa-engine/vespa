@@ -179,7 +179,7 @@ public class RealNodeRepository implements NodeRepository {
                         node.minCpuCores,
                         node.minMainMemoryAvailableGb,
                         node.minDiskAvailableGb,
-                        node.bandwidth / 1000,
+                        node.bandwidthGbps,
                         node.fastDisk ? fast : slow),
                 node.ipAddresses,
                 node.additionalIpAddresses,
@@ -198,7 +198,7 @@ public class RealNodeRepository implements NodeRepository {
             node.minCpuCores = resources.vcpu();
             node.minMainMemoryAvailableGb = resources.memoryGb();
             node.minDiskAvailableGb = resources.diskGb();
-            node.bandwidth = resources.bandwidthGbps() * 1000;
+            node.bandwidthGbps = resources.bandwidthGbps();
             node.fastDisk = resources.diskSpeed() == NodeResources.DiskSpeed.fast;
         });
         node.type = addNode.nodeType.name();
