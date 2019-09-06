@@ -140,7 +140,7 @@ public class ExportPackageParser {
          a backslash followed by another backslash, a single or double quote, or one of the letters b,f,n,r or t
          a backslash followed by u followed by four hexadecimal digits ? */
     private static Pattern STRING_LITERAL_PATTERN = Pattern
-            .compile("\"" + "(?:[^\"\\p{Cntrl}\\\\]|\\\\[\\\\'\"bfnrt]|\\\\u[0-9a-fA-F]{4})+" + "\"");
+            .compile("\"(?:[^\"\\p{Cntrl}\\\\]+|\\\\[\\\\'\"bfnrt]|\\\\u[0-9a-fA-F]{4})+\"");
 
     private static Optional<String> parseStringLiteral(ParsingContext p) {
         return p.regexp(STRING_LITERAL_PATTERN).map(quoted -> quoted.substring(1, quoted.length() - 1));
