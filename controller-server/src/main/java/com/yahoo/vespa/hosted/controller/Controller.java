@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -87,13 +86,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
                       AccessControl accessControl,
-                      ApplicationStore applicationStore, TesterCloud testerCloud,
+                      ApplicationStore applicationStore,
                       BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
-             Clock.systemUTC(), accessControl, applicationStore, testerCloud,
+             Clock.systemUTC(), accessControl, applicationStore,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
     }
@@ -103,7 +102,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService,
                       Clock clock,
                       AccessControl accessControl,
-                      ApplicationStore applicationStore, TesterCloud testerCloud,
+                      ApplicationStore applicationStore,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
@@ -118,7 +117,7 @@ public class Controller extends AbstractComponent {
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
-        jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
+        jobController = new JobController(this, runDataStore);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),

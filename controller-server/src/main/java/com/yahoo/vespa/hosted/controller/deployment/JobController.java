@@ -76,11 +76,11 @@ public class JobController {
 
     private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
-    public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
+    public JobController(Controller controller, RunDataStore runDataStore) {
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, runDataStore);
-        this.cloud = testerCloud;
+        this.cloud = controller.serviceRegistry().testerCloud();
         this.badges = new Badges(controller.zoneRegistry().badgeUrl());
     }
 
