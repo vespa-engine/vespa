@@ -4,10 +4,10 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Marketplace;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
-import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
@@ -22,19 +22,19 @@ import java.util.List;
  */
 public class CloudAccessControl implements AccessControl {
 
-    private final Marketplace marketplace;
+    private static final BillingInfo defaultBillingInfo = new BillingInfo("customer", "Vespa");
+
     private final UserManagement userManagement;
 
     @Inject
-    public CloudAccessControl(Marketplace marketplace, UserManagement userManagement) {
-        this.marketplace = marketplace;
+    public CloudAccessControl(UserManagement userManagement) {
         this.userManagement = userManagement;
     }
 
     @Override
     public CloudTenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
-        CloudTenant tenant = new CloudTenant(spec.tenant(), marketplace.resolveCustomer(spec.getRegistrationToken()));
+        CloudTenant tenant = new CloudTenant(spec.tenant(), defaultBillingInfo);
 
         for (Role role : Roles.tenantRoles(spec.tenant()))
             userManagement.createRole(role);
