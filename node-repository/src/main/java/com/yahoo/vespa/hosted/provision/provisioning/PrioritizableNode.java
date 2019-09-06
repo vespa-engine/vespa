@@ -81,10 +81,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
-        // Choose docker node over non-docker node (is this to differentiate between docker replaces non-docker flavors?)
-        if (this.parent.isPresent() && !other.parent.isPresent()) return -1;
-        if (other.parent.isPresent() && !this.parent.isPresent()) return 1;
-
         // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
         int freeCapacity = NodeResourceComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
         if (freeCapacity != 0) return freeCapacity;
