@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 import java.util.List;
 
 /**
- * Consumes and retrieves snapshots of resourses allocated per application.
+ * Consumes and retrieves snapshots of resources allocated per application.
  *
  * @author olaa
  */

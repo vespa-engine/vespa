@@ -16,10 +16,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Automatically fetches scheduled events from AWS and submits issues detailing them.
+ *
  * @author mgimle
- * Automatically fetches scheduled events from AWS and submits issues detailing them to Jira.
  */
 public class AwsEventReporterMaintainer extends Maintainer {
+
     private static final Logger log = Logger.getLogger(AwsEventReporterMaintainer.class.getName());
 
     private final IssueHandler issueHandler;
@@ -53,4 +55,5 @@ public class AwsEventReporterMaintainer extends Maintainer {
             }
         }
     }
+
 }

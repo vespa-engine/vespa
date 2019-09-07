@@ -9,4 +9,5 @@ import com.yahoo.config.provision.ApplicationId;
 public interface Billing {
 
     void handleBilling(ApplicationId applicationId, String customerId);
+
 }
