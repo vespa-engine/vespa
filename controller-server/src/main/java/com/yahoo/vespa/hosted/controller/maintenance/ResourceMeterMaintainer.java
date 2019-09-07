@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -49,7 +48,6 @@ public class ResourceMeterMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         Collection<ResourceSnapshot> resourceSnapshots = getResourceSnapshots(allocatedNodes());
-
         meteringClient.consume(resourceSnapshots);
 
         metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
