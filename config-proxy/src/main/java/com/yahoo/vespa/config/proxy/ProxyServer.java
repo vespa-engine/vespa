@@ -114,8 +114,9 @@ public class ProxyServer implements Runnable {
     void setMode(String modeName) {
         if (modeName.equals(this.mode.name())) return;
 
-        String oldMode = this.mode.name();
-        switch (mode.getMode()) {
+        Mode oldMode = this.mode;
+        Mode newMode = new Mode(modeName);
+        switch (newMode.getMode()) {
             case MEMORYCACHE:
                 configClient.shutdownSourceConnections();
                 configClient = new MemoryCacheConfigClient(memoryCache);
@@ -129,7 +130,7 @@ public class ProxyServer implements Runnable {
             default:
                 throw new IllegalArgumentException("Cannot set invalid mode '" + modeName + "'");
         }
-        log.log(LogLevel.INFO, "Switching from '" + oldMode + "' mode to '" + modeName.toLowerCase() + "' mode");
+        log.log(LogLevel.INFO, "Switched from '" + oldMode.name().toLowerCase() + "' mode to '" + getMode().name().toLowerCase() + "' mode");
     }
 
     private ConfigSourceClient createClient(RpcServer rpcServer, DelayedResponses delayedResponses,
