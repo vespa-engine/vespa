@@ -438,7 +438,7 @@ public class ProvisioningTest {
                                                   ClusterSpec.Id.from("music"),
                                                   new com.yahoo.component.Version(4, 5, 6),
                                                   false);
-        tester.prepare(application, cluster, Capacity.fromNodeCount(5, Optional.empty(), false, false), 1);
+        tester.prepare(application, cluster, Capacity.fromCount(5, Optional.empty(), false, false), 1);
         // No exception; Success
     }
 

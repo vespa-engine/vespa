@@ -631,10 +631,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                               ClusterSpec.Id.from(cluster.getName()),
                                                               deployState.getWantedNodeVespaVersion(),
                                                               false);
-                Capacity capacity = Capacity.fromNodeCount(1,
-                                                           Optional.empty(),
-                                                           false,
-                                                           ! deployState.getProperties().isBootstrap());
+                Capacity capacity = Capacity.fromCount(1,
+                                                       Optional.empty(),
+                                                       false,
+                                                       ! deployState.getProperties().isBootstrap());
                 return hostSystem.allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
             }
         } else {

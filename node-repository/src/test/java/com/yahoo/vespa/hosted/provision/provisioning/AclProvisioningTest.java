@@ -37,16 +37,17 @@ public class AclProvisioningTest {
         List<Node> configServers = tester.makeConfigServers(3, "d-1-1-1", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, "d-1-1-1");
-        List<Node> dockerHost = tester.makeReadyNodes(1, "d-1-1-1", NodeType.host);
+        tester.makeReadyNodes(10, new NodeResources(1, 1, 1, 1));
+        List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 1, 1, 1), NodeType.host);
         ApplicationId zoneApplication = tester.makeApplicationId();
         deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.makeReadyVirtualDockerNodes(1, NodeResources.fromLegacyName("d-1-1-1"), dockerHost.get(0).hostname());
-        List<Node> proxyNodes = tester.makeReadyNodes(3, "d-1-1-1", NodeType.proxy);
+        tester.makeReadyVirtualDockerNodes(1,new NodeResources(1, 1, 1, 1),
+                                           dockerHost.get(0).hostname());
+        List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 1, 1, 1), NodeType.proxy);
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, NodeResources.fromLegacyName("d-1-1-1"), false, true));
+        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, new NodeResources(1, 1, 1, 1), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node

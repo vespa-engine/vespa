@@ -54,8 +54,8 @@ public class LoadBalancerProvisionerTest {
 
         // Provision a load balancer for each application
         var nodes = prepare(app1,
-                clusterRequest(ClusterSpec.Type.container, containerCluster1),
-                clusterRequest(ClusterSpec.Type.content, contentCluster));
+                            clusterRequest(ClusterSpec.Type.container, containerCluster1),
+                            clusterRequest(ClusterSpec.Type.content, contentCluster));
         assertEquals(1, lbApp1.get().size());
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbApp1.get().get(0).instance().reals().size());
         tester.activate(app1, nodes);
@@ -212,7 +212,7 @@ public class LoadBalancerProvisionerTest {
         if (dynamicDockerNodes) {
             makeDynamicDockerNodes(specs.length * 2, capacity.type());
         } else {
-            tester.makeReadyNodes(specs.length * 2, "d-1-1-1", capacity.type());
+            tester.makeReadyNodes(specs.length * 2, new NodeResources(1, 1, 1, 0.3), capacity.type());
         }
         Set<HostSpec> allNodes = new LinkedHashSet<>();
         for (ClusterSpec spec : specs) {
@@ -225,7 +225,8 @@ public class LoadBalancerProvisionerTest {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 1; i <= n; i++) {
             var node = Node.createDockerNode(Set.of(), "node" + i, "parent" + i,
-                                             NodeResources.fromLegacyName("d-1-1-1"), nodeType);
+                                             new NodeResources(1, 1, 1, 0.3),
+                                             nodeType);
             nodes.add(node);
         }
         nodes = tester.nodeRepository().database().addNodesInState(nodes, Node.State.reserved);
