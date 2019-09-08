@@ -69,14 +69,6 @@
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
     </dependency>
-      <!-- Needed to avoid issue with zookeeper importing this artifact, but we don't provide it -->
-<!--
-    <dependency>
-
-      <groupId>net.jpountz.lz4</groupId>
-      <artifactId>lz4</artifactId>
-    </dependency>
--->
   </dependencies>
   <build>
     <plugins>
