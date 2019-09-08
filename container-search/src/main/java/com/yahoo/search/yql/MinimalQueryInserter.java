@@ -47,7 +47,7 @@ public class MinimalQueryInserter extends Searcher {
         // Warmup is needed to avoid a large 400ms init cost during first execution of yql code.
         warmup(linguistics);
     }
-    MinimalQueryInserter() {
+    public MinimalQueryInserter() {
         this(new SimpleLinguistics());
     }
     static boolean warmup() {
