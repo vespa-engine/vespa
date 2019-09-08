@@ -46,24 +46,28 @@ public class CoredumpHandler {
     private final CoredumpReporter coredumpReporter;
     private final Path crashPatchInContainer;
     private final Path doneCoredumpsPath;
+    private final String operatorGroupName;
     private final Supplier<String> coredumpIdSupplier;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath path on host where processed core dumps are stored
+     * @param operatorGroupName name of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath) {
-        this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath, () -> UUID.randomUUID().toString());
+                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName) {
+        this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
+                operatorGroupName, () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, Supplier<String> coredumpIdSupplier) {
+                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
+        this.operatorGroupName = operatorGroupName;
         this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
@@ -157,7 +161,7 @@ public class CoredumpHandler {
                 .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
                 .setTimeout(Duration.ofMinutes(30))
                 .execute();
-        new UnixPath(compressedCoreFile).setPermissions("rw-r-----");
+        new UnixPath(compressedCoreFile).setGroup(operatorGroupName).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(coredumpDirectory.getFileName());
