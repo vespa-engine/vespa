@@ -2,6 +2,9 @@
 package com.yahoo.search.yql;
 
 import com.google.common.annotations.Beta;
+import com.google.inject.Inject;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -17,6 +20,8 @@ import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Before;
 import com.yahoo.yolean.chain.Provides;
+
+import java.util.logging.Logger;
 
 /**
  * Minimal combinator for YQL+ syntax and heuristically parsed user queries.
@@ -35,44 +40,62 @@ public class MinimalQueryInserter extends Searcher {
 
     private static final CompoundName MAX_HITS = new CompoundName("maxHits");
     private static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
+    private static Logger log = Logger.getLogger(MinimalQueryInserter.class.getName());
 
-    @Override
-    public Result search(Query query, Execution execution) {
-        if (query.properties().get(YQL) == null) return execution.search(query);
+    @Inject
+    public MinimalQueryInserter(Linguistics linguistics) {
+        // Warmup is needed to avoid a large 400ms init cost during first execution of yql code.
+        warmup(linguistics);
+    }
+    MinimalQueryInserter() {
+        this(new SimpleLinguistics());
+    }
+    static boolean warmup() {
+        return warmup(new SimpleLinguistics());
+    }
+    private static boolean warmup(Linguistics linguistics) {
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz';");
+        Result result = insertQuery(query, new ParserEnvironment().setLinguistics(linguistics));
+        if (result != null) {
+            log.warning("Warmup code trigger an error. Error = " + result.toString());
+            return false;
+        }
+        if ( ! "select * from sources where title contains \"xyz\";".equals(query.yqlRepresentation())) {
+            log.warning("Warmup code generated unexpected yql: " + query.yqlRepresentation());
+            return false;
+        }
+        return true;
+    }
 
-        ParserEnvironment env = ParserEnvironment.fromExecutionContext(execution.context());
+    private static Result insertQuery(Query query, ParserEnvironment env) {
         YqlParser parser = (YqlParser) ParserFactory.newInstance(Query.Type.YQL, env);
         parser.setQueryParser(false);
         parser.setUserQuery(query);
         QueryTree newTree;
         try {
-            newTree = parser.parse(Parsable.fromQueryModel(query.getModel())
-                                           .setQuery(query.properties().getString(YQL)));
+            Parsable parsable = Parsable.fromQueryModel(query.getModel()).setQuery(query.properties().getString(YQL));
+            newTree = parser.parse(parsable);
         } catch (RuntimeException e) {
-            return new Result(query, ErrorMessage.createInvalidQueryParameter(
-                              "Could not instantiate query from YQL", e));
+            return new Result(query, ErrorMessage.createInvalidQueryParameter("Could not instantiate query from YQL", e));
         }
         if (parser.getOffset() != null) {
             int maxHits = query.properties().getInteger(MAX_HITS);
             int maxOffset = query.properties().getInteger(MAX_OFFSET);
             if (parser.getOffset() > maxOffset) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested offset " + parser.getOffset()
-                                                                                  + ", but the max offset allowed is " + 
-                                                                                  maxOffset + "."));
+                        + ", but the max offset allowed is " + maxOffset + "."));
             }
             if (parser.getHits() > maxHits) {
                 return new Result(query, ErrorMessage.createInvalidQueryParameter("Requested " + parser.getHits()
-                                                                                  + " hits returned, but max hits allowed is " 
-                                                                                  + maxHits + "."));
-
+                        + " hits returned, but max hits allowed is " + maxHits + "."));
             }
         }
         query.getModel().getQueryTree().setRoot(newTree.getRoot());
         query.getPresentation().getSummaryFields().addAll(parser.getYqlSummaryFields());
         for (VespaGroupingStep step : parser.getGroupingSteps()) {
             GroupingRequest.newInstance(query)
-                           .setRootOperation(step.getOperation())
-                           .continuations().addAll(step.continuations());
+                    .setRootOperation(step.getOperation())
+                    .continuations().addAll(step.continuations());
         }
         if (parser.getYqlSources().size() == 0) {
             query.getModel().getSources().clear();
@@ -90,7 +113,15 @@ public class MinimalQueryInserter extends Searcher {
             query.getRanking().setSorting(parser.getSorting());
         }
         query.trace("YQL+ query parsed", true, 2);
-        return execution.search(query);
+        return null;
+    }
+
+    @Override
+    public Result search(Query query, Execution execution) {
+        if (query.properties().get(YQL) == null) return execution.search(query);
+
+        Result result = insertQuery(query, ParserEnvironment.fromExecutionContext(execution.context()));
+        return (result == null) ? execution.search(query) : result;
     }
 
 }

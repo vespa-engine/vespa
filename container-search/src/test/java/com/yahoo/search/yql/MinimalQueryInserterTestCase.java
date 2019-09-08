@@ -341,6 +341,11 @@ public class MinimalQueryInserterTestCase {
                      query.yqlRepresentation());
     }
 
+    @Test
+    public void verifyThatWarmupIsSane() {
+        assertTrue(MinimalQueryInserter.warmup());
+    }
+
 
     private static void assertGrouping(String expected, Query query) {
         List<String> actual = new ArrayList<>();
