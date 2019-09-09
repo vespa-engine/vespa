@@ -501,9 +501,16 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
             currentIndex++;
             if (currentIndex < offset || currentIndex >= highBound) {
-                i.remove();
                 handleRemovedHit(hit);
             }
+        }
+        if ((offset > 0) || (hits.size() > highBound)) {
+            ListenableArrayList<Hit> newHits = new ListenableArrayList<>(numHits);
+            for (int index = offset; index < Math.min(highBound, hits.size()); index++) {
+                newHits.add(hits.get(index));
+            }
+            hits = newHits;
+            unmodifiableHits = Collections.unmodifiableList(hits);
         }
     }
 
