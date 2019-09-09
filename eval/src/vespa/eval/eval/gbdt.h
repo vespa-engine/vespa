@@ -24,8 +24,9 @@ std::vector<const nodes::Node *> extract_trees(const nodes::Node &node);
  **/
 struct TreeStats {
     size_t size;
-    size_t num_less_checks;
-    size_t num_in_checks;
+    size_t num_less_checks;     // foo < 2.5
+    size_t num_in_checks;       // foo in [1,2,3]
+    size_t num_inverted_checks; // !(foo >= 2.5)
     size_t num_tuned_checks;
     size_t max_set_size;
     double expected_path_length;
@@ -49,6 +50,7 @@ struct ForestStats {
     std::vector<TreeSize> tree_sizes;
     size_t total_less_checks;
     size_t total_in_checks;
+    size_t total_inverted_checks;
     size_t total_tuned_checks;
     size_t max_set_size;
     double total_expected_path_length;

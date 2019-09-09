@@ -14,9 +14,10 @@ namespace {
 
 //-----------------------------------------------------------------------------
 
-constexpr uint32_t LEAF = 0; 
-constexpr uint32_t LESS = 1; 
-constexpr uint32_t IN   = 2; 
+constexpr uint32_t LEAF     = 0; 
+constexpr uint32_t LESS     = 1; 
+constexpr uint32_t IN       = 2; 
+constexpr uint32_t INVERTED = 3; 
 
 // layout:
 //
@@ -73,7 +74,7 @@ double general_find_leaf(const double *input, const uint32_t *pos, uint32_t node
             if (node_type == LEAF) {
                 return *as_double_ptr(pos);
             }
-        } else {
+        } else if (node_type == IN) {
             if (find_in(input[pos[0] >> 12], as_double_ptr(pos + 2),
                         as_double_ptr(pos + 2 + (2 * (pos[1] & 0xff)))))
             {
@@ -82,6 +83,17 @@ double general_find_leaf(const double *input, const uint32_t *pos, uint32_t node
             } else {
                 node_type = (pos[0] & 0xf);
                 pos += (2 + (2 * (pos[1] & 0xff))) + (pos[1] >> 8);
+            }
+            if (node_type == LEAF) {
+                return *as_double_ptr(pos);
+            }
+        } else {
+            if (input[pos[0] >> 12] >= *as_double_ptr(pos + 1)) {
+                node_type = (pos[0] & 0xf);
+                pos += 4 + pos[3];
+            } else {
+                node_type = (pos[0] & 0xf0) >> 4;
+                pos += 4;
             }
             if (node_type == LEAF) {
                 return *as_double_ptr(pos);
@@ -143,18 +155,42 @@ void encode_in(const nodes::In &in,
     model_out[meta_idx] |= ((IN << 8) | (left_type << 4) | right_type);
 }
 
+void encode_inverted(const nodes::Not &inverted,
+                     const nodes::Node &left_child, const nodes::Node &right_child,
+                     std::vector<uint32_t> &model_out)
+{
+    size_t meta_idx = model_out.size();
+    auto ge = nodes::as<nodes::GreaterEqual>(inverted.child());
+    assert(ge);
+    auto symbol = nodes::as<nodes::Symbol>(ge->lhs());
+    assert(symbol);
+    model_out.push_back(uint32_t(symbol->id()) << 12);
+    assert(ge->rhs().is_const());
+    encode_const(ge->rhs().get_const_value(), model_out);
+    size_t skip_idx = model_out.size();
+    model_out.push_back(0); // left child size placeholder
+    uint32_t left_type = encode_node(left_child, model_out);
+    model_out[skip_idx] = (model_out.size() - (skip_idx + 1));
+    uint32_t right_type = encode_node(right_child, model_out);
+    model_out[meta_idx] |= ((INVERTED << 8) | (left_type << 4) | right_type);
+}
+
 uint32_t encode_node(const nodes::Node &node_in, std::vector<uint32_t> &model_out) {
     auto if_node = nodes::as<nodes::If>(node_in);
     if (if_node) {
         auto less = nodes::as<nodes::Less>(if_node->cond());
         auto in = nodes::as<nodes::In>(if_node->cond());
+        auto inverted = nodes::as<nodes::Not>(if_node->cond());
         if (less) {
             encode_less(*less, if_node->true_expr(), if_node->false_expr(), model_out);
             return LESS;
-        } else {
-            assert(in);
+        } else if (in) {
             encode_in(*in, if_node->true_expr(), if_node->false_expr(), model_out);
             return IN;
+        } else {
+            assert(inverted);
+            encode_inverted(*inverted, if_node->true_expr(), if_node->false_expr(), model_out);
+            return INVERTED;
         }
     } else {
         assert(node_in.is_const());
@@ -192,7 +228,7 @@ Optimize::Result
 VMForest::less_only_optimize(const ForestStats &stats,
                              const std::vector<const nodes::Node *> &trees)
 {
-    if (stats.total_in_checks > 0) {
+    if ((stats.total_in_checks > 0) || (stats.total_inverted_checks > 0)) {
         return Optimize::Result();
     }
     return optimize(trees, less_only_eval);

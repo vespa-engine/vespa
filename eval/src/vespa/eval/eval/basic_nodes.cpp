@@ -118,6 +118,7 @@ If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_tr
 {
     auto less = as<Less>(cond());
     auto in = as<In>(cond());
+    auto inverted = as<Not>(cond());
     bool true_is_subtree = (true_expr().is_tree() || true_expr().is_const());
     bool false_is_subtree = (false_expr().is_tree() || false_expr().is_const());
     if (true_is_subtree && false_is_subtree) {
@@ -125,6 +126,10 @@ If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_tr
             _is_tree = (less->lhs().is_param() && less->rhs().is_const());
         } else if (in) {
             _is_tree = in->child().is_param();
+        } else if (inverted) {
+            if (auto ge = as<GreaterEqual>(inverted->child())) {
+                _is_tree = (ge->lhs().is_param() && ge->rhs().is_const());
+            }
         }
     }
 }
