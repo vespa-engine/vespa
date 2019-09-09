@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 
-import javax.annotation.Nonnull;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +27,6 @@ public interface RequestView {
      * Returns an immutable view of all values of a named header field.
      * Returns an empty list if no such header is present.
      */
-    @Nonnull
     List<String> getHeaders(String name);
 
     /**

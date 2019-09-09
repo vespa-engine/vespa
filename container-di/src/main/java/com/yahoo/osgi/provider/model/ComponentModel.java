@@ -4,14 +4,14 @@ package com.yahoo.osgi.provider.model;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import net.jcip.annotations.Immutable;
 
 /**
  * Describes how a component should be created.
  *
+ * Immutable
+ *
  * @author gjoranv
  */
-@Immutable
 public class ComponentModel {
 
     public final BundleInstantiationSpecification bundleInstantiationSpec;

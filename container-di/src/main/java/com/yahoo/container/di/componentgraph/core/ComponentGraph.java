@@ -17,7 +17,6 @@ import com.yahoo.container.di.componentgraph.cycle.CycleFinder;
 import com.yahoo.container.di.componentgraph.cycle.Graph;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ConfigKey;
-import net.jcip.annotations.NotThreadSafe;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -42,8 +41,9 @@ import static com.yahoo.container.di.componentgraph.core.Exceptions.removeStackT
  * @author Tony Vaagenes
  * @author gjoranv
  * @author ollivir
+ *
+ * Not thread safe.
  */
-@NotThreadSafe
 public class ComponentGraph {
 
     private static final Logger log = Logger.getLogger(ComponentGraph.class.getName());

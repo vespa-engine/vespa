@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.handler.CompletionHandler;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import java.io.IOException;
@@ -50,14 +49,14 @@ public class ServletOutputStreamWriter {
 
     private final Object monitor = new Object();
 
-    @GuardedBy("monitor")
+    // GuardedBy("monitor")
     private State state = State.NOT_STARTED;
 
-    @GuardedBy("state")
+    // GuardedBy("state")
     private final ServletOutputStream outputStream;
     private final Executor executor;
 
-    @GuardedBy("monitor")
+    // GuardedBy("monitor")
     private final Deque<ResponseContentPart> responseContentQueue = new ArrayDeque<>();
 
     private final MetricReporter metricReporter;

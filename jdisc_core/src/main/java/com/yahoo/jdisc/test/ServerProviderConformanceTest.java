@@ -17,7 +17,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.ServerProvider;
 
-import javax.annotation.CheckReturnValue;
 import java.io.Closeable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -2936,7 +2935,6 @@ public abstract class ServerProviderConformanceTest {
             }
         }
 
-        @CheckReturnValue
         private TaskHandle addTask() {
             final TaskHandle taskHandle = new TaskHandle();
             synchronized (taskMonitor) {

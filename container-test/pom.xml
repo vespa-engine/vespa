@@ -47,7 +47,7 @@
       <artifactId>airline</artifactId>
       <exclusions>
         <exclusion>
-          <!-- Prevent pulling in newer version than what we use -->
+          <!-- We need the version used by guava -->
           <groupId>com.google.code.findbugs</groupId>
           <artifactId>annotations</artifactId>
         </exclusion>
