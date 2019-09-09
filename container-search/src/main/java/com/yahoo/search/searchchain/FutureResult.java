@@ -48,7 +48,7 @@ public class FutureResult extends FutureTask<Result> {
             return new Result(getQuery(), createInterruptedError(e));
         }
         catch (ExecutionException e) {
-            return new Result(getQuery(), createExecutionError(e));
+            return new Result(getQuery(), createExecutionError((ExecutionException)e));
         }
     }
 
@@ -78,7 +78,7 @@ public class FutureResult extends FutureTask<Result> {
             // allow searchers to explicitly signal timeout rather than actually time out (useful for testing)
             if (e.getCause() instanceof com.yahoo.search.federation.TimeoutException)
                 return Optional.empty();
-            return Optional.of(new Result(getQuery(), createExecutionError(e)));
+            return Optional.of(new Result(getQuery(), createExecutionError((ExecutionException)e)));
         }
         catch (TimeoutException e) {
             return Optional.empty();
@@ -95,10 +95,10 @@ public class FutureResult extends FutureTask<Result> {
                                                    Exceptions.toMessageString(e));
     }
     
-    private ErrorMessage createExecutionError(Exception e) {
-        log.log(Level.WARNING,"Exception in " + execution + " for " + query,e);
-        return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " + Exceptions.toMessageString(e),
-                                                        e.getCause());
+    private ErrorMessage createExecutionError(ExecutionException e) {
+        log.log(Level.WARNING,"Exception in " + execution + " of " + query, e.getCause());
+        return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " +
+                                                        Exceptions.toMessageString(e.getCause()), e.getCause());
     }
 
     public ErrorMessage createTimeoutError() {
