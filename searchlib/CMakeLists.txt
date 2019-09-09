@@ -67,19 +67,19 @@ vespa_define_module(
     src/tests/aggregator
     src/tests/alignment
     src/tests/attribute
+    src/tests/attribute/attribute_operation
     src/tests/attribute/attributefilewriter
     src/tests/attribute/attributemanager
-    src/tests/attribute/attribute_operation
     src/tests/attribute/benchmark
     src/tests/attribute/bitvector
     src/tests/attribute/bitvector_search_cache
     src/tests/attribute/changevector
     src/tests/attribute/compaction
-    src/tests/attribute/comparator
     src/tests/attribute/document_weight_iterator
+    src/tests/attribute/enum_attribute_compaction
+    src/tests/attribute/enum_comparator
     src/tests/attribute/enumeratedsave
     src/tests/attribute/enumstore
-    src/tests/attribute/enum_attribute_compaction
     src/tests/attribute/extendattributes
     src/tests/attribute/guard
     src/tests/attribute/imported_attribute_vector

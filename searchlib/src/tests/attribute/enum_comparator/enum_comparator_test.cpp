@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
-LOG_SETUP("comparator_test");
+LOG_SETUP("enum_comparator_test");
 
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
