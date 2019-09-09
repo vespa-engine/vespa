@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("comparator_test");
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -14,22 +15,16 @@ namespace search {
 
 using namespace btree;
 
-typedef EnumStoreT<NumericEntryType<int32_t> > NumericEnumStore;
-typedef EnumStoreComparatorT<NumericEntryType<int32_t> > NumericComparator;
+using NumericEnumStore = EnumStoreT<NumericEntryType<int32_t> >;
+using FloatEnumStore = EnumStoreT<NumericEntryType<float> >;
+using StringEnumStore = EnumStoreT<StringEntryType>;
 
-typedef EnumStoreT<NumericEntryType<float> > FloatEnumStore;
-typedef EnumStoreComparatorT<NumericEntryType<float> > FloatComparator;
+using EnumIndex = IEnumStore::Index;
 
-typedef EnumStoreT<StringEntryType> StringEnumStore;
-typedef EnumStoreComparatorT<StringEntryType> StringComparator;
-typedef EnumStoreFoldedComparatorT<StringEntryType> FoldedStringComparator;
-
-typedef IEnumStore::Index EnumIndex;
-
-typedef BTreeRoot<EnumIndex, BTreeNoLeafData,
-                  btree::NoAggregated,
-                  const datastore::EntryComparatorWrapper> TreeType;
-typedef TreeType::NodeAllocatorType NodeAllocator;
+using TreeType = BTreeRoot<EnumIndex, BTreeNoLeafData,
+                           btree::NoAggregated,
+                           const datastore::EntryComparatorWrapper>;
+using NodeAllocator = TreeType::NodeAllocatorType;
 
 class Test : public vespalib::TestApp {
 private:
@@ -51,11 +46,11 @@ Test::requireThatNumericComparatorIsWorking()
     EnumIndex e1, e2;
     es.addEnum(10, e1);
     es.addEnum(30, e2);
-    NumericComparator cmp1(es);
+    auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2));
     EXPECT_TRUE(!cmp1(e2, e1));
     EXPECT_TRUE(!cmp1(e1, e1));
-    NumericComparator cmp2(es, 20);
+    auto cmp2 = es.make_comparator(20);
     EXPECT_TRUE(cmp2(EnumIndex(), e2));
     EXPECT_TRUE(!cmp2(e2, EnumIndex()));
 }
@@ -68,14 +63,14 @@ Test::requireThatFloatComparatorIsWorking()
     es.addEnum(10.5, e1);
     es.addEnum(30.5, e2);
     es.addEnum(std::numeric_limits<float>::quiet_NaN(), e3);
-    FloatComparator cmp1(es);
+    auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2));
     EXPECT_TRUE(!cmp1(e2, e1));
     EXPECT_TRUE(!cmp1(e1, e1));
     EXPECT_TRUE(cmp1(e3, e1));  // nan
     EXPECT_TRUE(!cmp1(e1, e3)); // nan
     EXPECT_TRUE(!cmp1(e3, e3)); // nan
-    FloatComparator cmp2(es, 20.5);
+    auto cmp2 = es.make_comparator(20.5);
     EXPECT_TRUE(cmp2(EnumIndex(), e2));
     EXPECT_TRUE(!cmp2(e2, EnumIndex()));
 }
@@ -88,13 +83,13 @@ Test::requireThatStringComparatorIsWorking()
     es.addEnum("Aa", e1);
     es.addEnum("aa", e2);
     es.addEnum("aB", e3);
-    StringComparator cmp1(es);
+    auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2)); // similar folded, fallback to regular
     EXPECT_TRUE(!cmp1(e2, e1));
     EXPECT_TRUE(!cmp1(e1, e1));
     EXPECT_TRUE(cmp1(e2, e3)); // folded compare
     EXPECT_TRUE(strcmp("aa", "aB") > 0); // regular
-    StringComparator cmp2(es, "AB");
+    auto cmp2 = es.make_comparator("AB");
     EXPECT_TRUE(cmp2(EnumIndex(), e3));
     EXPECT_TRUE(!cmp2(e3, EnumIndex()));
 }
@@ -108,7 +103,7 @@ Test::requireThatComparatorWithTreeIsWorking()
     NodeAllocator m;
     EnumIndex ei;
     for (int32_t v = 100; v > 0; --v) {
-        NumericComparator cmp(es, v);
+        auto cmp = es.make_comparator(v);
         EXPECT_TRUE(!t.find(EnumIndex(), m, cmp).valid());
         es.addEnum(v, ei);
         t.insert(ei, BTreeNoLeafData(), m, cmp);
@@ -135,13 +130,13 @@ Test::requireThatFoldedComparatorIsWorking()
     es.addEnum("aa", e2);
     es.addEnum("aB", e3);
     es.addEnum("Folded", e4);
-    FoldedStringComparator cmp1(es);
+    auto cmp1 = es.make_folded_comparator();
     EXPECT_TRUE(!cmp1(e1, e2)); // similar folded
     EXPECT_TRUE(!cmp1(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1(e2, e3)); // folded compare
     EXPECT_TRUE(!cmp1(e3, e2)); // folded compare
-    FoldedStringComparator cmp2(es, "fol", false);
-    FoldedStringComparator cmp3(es, "fol", true);
+    auto cmp2 = es.make_folded_comparator("fol", false);
+    auto cmp3 = es.make_folded_comparator("fol", true);
     EXPECT_TRUE(cmp2(EnumIndex(), e4));
     EXPECT_TRUE(!cmp2(e4, EnumIndex()));
     EXPECT_TRUE(!cmp3(EnumIndex(), e4)); // similar when prefix

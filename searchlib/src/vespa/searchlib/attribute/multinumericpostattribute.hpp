@@ -27,10 +27,10 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
 {
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore & enumStore = this->getEnumStore();
-    ComparatorType compare(enumStore);
+    auto comp = enumStore.make_comparator();
 
     EnumIndexMapper mapper;
-    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
+    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, comp, mapper));
     this->updatePostings(changePost);
     MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }
@@ -93,7 +93,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
     char *end = nullptr;
     int64_t int_term = strtoll(term.c_str(), &end, 10);
     if (*end == '\0') {
-        ComparatorType comp(self._enumStore, int_term);
+        auto comp = self._enumStore.make_comparator(int_term);
 
         dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
         if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {

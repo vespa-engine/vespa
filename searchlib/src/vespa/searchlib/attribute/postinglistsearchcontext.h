@@ -283,14 +283,14 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
 
     if (this->valid()) {
         if (this->isPrefix()) {
-            FoldedComparatorType comp(_enumStore, this->queryTerm()->getTerm(), true);
+            auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm(), true);
             this->lookupRange(comp, comp);
         } else if (this->isRegex()) {
             vespalib::string prefix(Regexp::get_prefix(this->queryTerm()->getTerm()));
-            FoldedComparatorType comp(_enumStore, prefix.c_str(), true);
+            auto comp = _enumStore.make_folded_comparator(prefix.c_str(), true);
             this->lookupRange(comp, comp);
         } else {
-            FoldedComparatorType comp(_enumStore, this->queryTerm()->getTerm());
+            auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm());
             this->lookupTerm(comp);
         }
         if (this->_uniqueValues == 1u) {
@@ -313,7 +313,7 @@ NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params_in, c
     this->_PLSTC = 8;
     if (valid()) {
         if (_low == _high) {
-            ComparatorType comp(_enumStore, _low);
+            auto comp = _enumStore.make_comparator(_low);
             this->lookupTerm(comp);
         } else if (_low < _high) {
             bool shouldApplyRangeLimit = (params().diversityAttribute() == nullptr) &&
@@ -338,8 +338,8 @@ getIterators(bool shouldApplyRangeLimit)
     bool isUnsigned = _toBeSearched.getInternalBasicType().isUnsigned();
     search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat, isUnsigned);
 
-    ComparatorType compLow(_enumStore, capped.lower());
-    ComparatorType compHigh(_enumStore, capped.upper());
+    auto compLow = _enumStore.make_comparator(capped.lower());
+    auto compHigh = _enumStore.make_comparator(capped.upper());
 
     this->lookupRange(compLow, compHigh);
     if (shouldApplyRangeLimit) {

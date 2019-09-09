@@ -4,6 +4,7 @@
 
 #include "enum_store_dictionary.h"
 #include "enum_store_loaders.h"
+#include "enumcomparator.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
@@ -20,9 +21,6 @@
 #include <cmath>
 
 namespace search {
-
-template <typename> class EnumStoreComparatorT;
-template <typename> class EnumStoreFoldedComparatorT;
 
 /**
  * Class representing a numeric entry type in a enum store.
@@ -51,29 +49,6 @@ public:
 };
 
 
-/**
- * Used to determine the ordering between two floating point values that can be NAN.
- **/
-struct FloatingPointCompareHelper
-{
-    template <typename T>
-    static int compare(T a, T b) {
-        if (std::isnan(a) && std::isnan(b)) {
-            return 0;
-        } else if (std::isnan(a)) {
-            return -1;
-        } else if (std::isnan(b)) {
-            return 1;
-        } else if (a < b) {
-            return -1;
-        } else if (a == b) {
-            return 0;
-        }
-        return 1;
-    }
-};
-
-
 //-----------------------------------------------------------------------------
 // EnumStoreT
 //-----------------------------------------------------------------------------
@@ -83,17 +58,19 @@ class EnumStoreT : public IEnumStore
     friend class EnumStoreTest;
 public:
     using DataType = typename EntryType::Type;
-    using ComparatorType = EnumStoreComparatorT<EntryType>;
+    using ComparatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
+                                              EnumStoreStringComparator,
+                                              EnumStoreComparator<DataType>>;
     using AllocatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
                                              datastore::UniqueStoreStringAllocator<InternalIndex>,
                                              datastore::UniqueStoreAllocator<DataType, InternalIndex>>;
-
     using UniqueStoreType = datastore::UniqueStore<DataType, InternalIndex, ComparatorType, AllocatorType>;
-    using FoldedComparatorType = EnumStoreFoldedComparatorT<EntryType>;
+    using FoldedComparatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
+                                                    EnumStoreFoldedStringComparator,
+                                                    ComparatorType>;
     using EnumStoreType = EnumStoreT<EntryType>;
     using EntryRef = datastore::EntryRef;
     using generation_t = vespalib::GenerationHandler::generation_t;
-
 
 private:
     UniqueStoreType _store;
@@ -108,6 +85,10 @@ private:
 
     const datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
+    }
+
+    static bool has_string_type() {
+        return std::is_same_v<DataType, const char *>;
     }
 
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
@@ -229,6 +210,22 @@ public:
 
     BatchUpdater make_batch_updater() {
         return BatchUpdater(*this);
+    }
+
+    ComparatorType make_comparator() const {
+        return ComparatorType(_store.get_data_store());
+    }
+
+    ComparatorType make_comparator(const DataType& fallback_value) const {
+        return ComparatorType(_store.get_data_store(), fallback_value);
+    }
+
+    FoldedComparatorType make_folded_comparator() const {
+        return FoldedComparatorType(_store.get_data_store());
+    }
+
+    FoldedComparatorType make_folded_comparator(const DataType& fallback_value, bool prefix = false) const {
+        return FoldedComparatorType(_store.get_data_store(), fallback_value, prefix);
     }
 
     // TODO: Change to sending enum indexes as const array ref.

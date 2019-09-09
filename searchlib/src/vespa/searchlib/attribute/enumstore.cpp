@@ -37,7 +37,8 @@ EnumStoreT<StringEntryType>::load_unique_value(const void* src,
     idx = _store.get_allocator().allocate(value);
 
     if (prev_idx.valid()) {
-        assert(ComparatorType::compare(getValue(prev_idx), value) < 0);
+        auto cmp = make_comparator(value);
+        assert(cmp(prev_idx, Index()));
     }
     return sz;
 }

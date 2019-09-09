@@ -2,173 +2,114 @@
 
 #pragma once
 
-#include "enumstore.h"
+#include "i_enum_store.h"
 #include <vespa/vespalib/datastore/entry_comparator.h>
+#include <vespa/vespalib/datastore/unique_store_comparator.h>
+#include <vespa/vespalib/datastore/unique_store_string_comparator.h>
 
 namespace search {
 
 /**
- * Template comparator class for the various entry types.
- **/
-template <typename EntryType>
-class EnumStoreComparatorT : public datastore::EntryComparator {
+ * Less-than comparator used for comparing values of type EntryT stored in an enum store.
+ */
+template <typename EntryT>
+class EnumStoreComparator : public datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex> {
 public:
-    using EnumStoreType = EnumStoreT<EntryType>;
+    using ParentType = datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
+    using DataStoreType = typename ParentType::DataStoreType;
+
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix = false);
+    EnumStoreComparator(const DataStoreType& data_store);
+
+    static bool equal(const EntryT& lhs, const EntryT& rhs);
+};
+
+/**
+ * Less-than comparator used for comparing strings stored in an enum store.
+ *
+ * The input string values are first folded, then compared.
+ * If they are equal, then it falls back to comparing without folding.
+ */
+class EnumStoreStringComparator : public datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex> {
 protected:
-    using EntryValue = typename EntryType::Type;
-    using EnumIndex = typename EnumStoreType::Index;
+    using ParentType = datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex>;
+    using DataStoreType = ParentType::DataStoreType;
+    using ParentType::get;
 
-    const EnumStoreType     & _enumStore;
-    EntryValue  _value;
-    EntryValue getValue(const datastore::EntryRef ref) const {
-        EnumIndex idx(ref);
-        if (idx.valid()) {
-            return _enumStore.getValue(idx);
-        }
-        return _value;
-    }
+    static int compare(const char* lhs, const char* rhs);
+
 public:
-    /**
-     * Creates a comparator using the given enum store.
-     **/
-    EnumStoreComparatorT(const EnumStoreType & enumStore)
-        : _enumStore(enumStore),
-          _value()
-    {}
-    /**
-     * Creates a comparator using the given enum store and that uses the
-     * given value during compare if the enum index is invalid.
-     **/
-    EnumStoreComparatorT(const EnumStoreType & enumStore, EntryValue value)
-        : _enumStore(enumStore),
-          _value(value)
-    {}
+    EnumStoreStringComparator(const DataStoreType& data_store);
 
-    static int compare(EntryValue lhs, EntryValue rhs) {
-        if (lhs < rhs) {
-            return -1;
-        } else if (lhs == rhs) {
-            return 0;
-        }
-        return 1;
+    /**
+     * Creates a comparator using the given low-level data store and that uses the
+     * given value during compare if the enum index is invalid.
+     */
+    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value);
+
+    static bool equal(const char* lhs, const char* rhs) {
+        return compare(lhs, rhs) == 0;
     }
+
     bool operator() (const datastore::EntryRef lhs, const datastore::EntryRef rhs) const override {
-        return compare(getValue(lhs), getValue(rhs)) < 0;
+        return compare(get(lhs), get(rhs)) < 0;
     }
 };
 
 
 /**
- * Template comparator class for the various entry types that uses folded compare.
- **/
-template <typename EntryType>
-class EnumStoreFoldedComparatorT : public EnumStoreComparatorT<EntryType> {
+ * Less-than comparator used for folded-only comparing strings stored in an enum store.
+ *
+ * The input string values are first folded, then compared.
+ * There is NO fallback if they are equal.
+ */
+class EnumStoreFoldedStringComparator : public EnumStoreStringComparator {
 private:
-    typedef EnumStoreComparatorT<EntryType> ParentType;
-    typedef typename ParentType::EnumStoreType EnumStoreType;
-    typedef typename ParentType::EnumIndex EnumIndex;
-    typedef typename ParentType::EntryValue EntryValue;
-    using ParentType::getValue;
+    using ParentType = EnumStoreStringComparator;
+
     bool   _prefix;
-    size_t _prefixLen;
+    size_t _prefix_len;
+
+    inline bool use_prefix() const { return _prefix; }
+    static int compare_folded(const char* lhs, const char* rhs);
+    static int compare_folded_prefix(const char* lhs, const char* rhs, size_t prefix_len);
+
 public:
     /**
-     * Creates a comparator using the given enum store.
+     * Creates a comparator using the given low-level data store.
+     *
      * @param prefix whether we should perform prefix compare.
-     **/
-    EnumStoreFoldedComparatorT(const EnumStoreType & enumStore, bool prefix = false);
+     */
+    EnumStoreFoldedStringComparator(const DataStoreType& data_store, bool prefix = false);
+
     /**
-     * Creates a comparator using the given enum store and that uses the
+     * Creates a comparator using the given low-level data store and that uses the
      * given value during compare if the enum index is invalid.
+     *
      * @param prefix whether we should perform prefix compare.
-     **/
-    EnumStoreFoldedComparatorT(const EnumStoreType & enumStore,
-                               EntryValue value, bool prefix = false);
-    inline bool getUsePrefix() const { return false; }
-    static int compareFolded(EntryValue lhs, EntryValue rhs) { return ParentType::compare(lhs, rhs); }
-    static int compareFoldedPrefix(EntryValue lhs, EntryValue rhs, size_t prefixLen) {
-        (void) prefixLen;
-        return ParentType::compare(lhs, rhs);
+     */
+    EnumStoreFoldedStringComparator(const DataStoreType& data_store,
+                                    const char* fallback_value, bool prefix = false);
+
+    static bool equal(const char* lhs, const char* rhs) {
+        return compare_folded(lhs, rhs) == 0;
     }
 
     bool operator() (const datastore::EntryRef lhs, const datastore::EntryRef rhs) const override {
-        if (getUsePrefix()) {
-            return compareFoldedPrefix(getValue(lhs),
-                                       getValue(rhs), _prefixLen) < 0;
+        if (use_prefix()) {
+            return compare_folded_prefix(get(lhs), get(rhs), _prefix_len) < 0;
         }
-        return compareFolded(getValue(lhs), getValue(rhs)) < 0;
+        return compare_folded(get(lhs), get(rhs)) < 0;
     }
 };
 
-template <>
-int
-EnumStoreComparatorT<NumericEntryType<float> >::compare(EntryValue lhs, EntryValue rhs);
+extern template class EnumStoreComparator<int8_t>;
+extern template class EnumStoreComparator<int16_t>;
+extern template class EnumStoreComparator<int32_t>;
+extern template class EnumStoreComparator<uint32_t>;
+extern template class EnumStoreComparator<int64_t>;
+extern template class EnumStoreComparator<float>;
+extern template class EnumStoreComparator<double>;
 
-template <>
-int
-EnumStoreComparatorT<NumericEntryType<double> >::compare(EntryValue lhs, EntryValue rhs);
-
-template <>
-int
-EnumStoreComparatorT<StringEntryType>::compare(EntryValue lhs, EntryValue rhs);
-
-
-template <typename EntryType>
-EnumStoreFoldedComparatorT<EntryType>::
-EnumStoreFoldedComparatorT(const EnumStoreType & enumStore, bool prefix)
-    : ParentType(enumStore),
-      _prefix(prefix),
-      _prefixLen(0u)
-{
 }
-
-template <typename EntryType>
-EnumStoreFoldedComparatorT<EntryType>::
-EnumStoreFoldedComparatorT(const EnumStoreType & enumStore,
-                           EntryValue value, bool prefix)
-    : ParentType(enumStore, value),
-      _prefix(prefix),
-      _prefixLen(0u)
-{
-}
-
-template <>
-EnumStoreFoldedComparatorT<StringEntryType>::
-EnumStoreFoldedComparatorT(const EnumStoreType & enumStore,
-                           EntryValue value, bool prefix);
-
-template <>
-int
-EnumStoreFoldedComparatorT<StringEntryType>::compareFolded(EntryValue lhs,
-        EntryValue rhs);
-
-template <>
-int
-EnumStoreFoldedComparatorT<StringEntryType>::
-compareFoldedPrefix(EntryValue lhs, EntryValue rhs, size_t prefixLen);
-
-template <>
-inline bool
-EnumStoreFoldedComparatorT<StringEntryType>::getUsePrefix() const
-{
-    return _prefix;
-}
-
-
-extern template class EnumStoreComparatorT<StringEntryType>;
-extern template class EnumStoreComparatorT<NumericEntryType<int8_t> >;
-extern template class EnumStoreComparatorT<NumericEntryType<int16_t> >;
-extern template class EnumStoreComparatorT<NumericEntryType<int32_t> >;
-extern template class EnumStoreComparatorT<NumericEntryType<int64_t> >;
-extern template class EnumStoreComparatorT<NumericEntryType<float> >;
-extern template class EnumStoreComparatorT<NumericEntryType<double> >;
-extern template class EnumStoreFoldedComparatorT<StringEntryType>;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<int8_t> >;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<int16_t> >;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<int32_t> >;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<int64_t> >;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<float> >;
-extern template class EnumStoreFoldedComparatorT<NumericEntryType<double> >;
-
-} // namespace search
 

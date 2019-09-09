@@ -1,11 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumcomparator.h"
-#include "enumstore.hpp"
 #include <vespa/searchlib/util/foldedstringcompare.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.enum_comparator");
 
 namespace search {
 
@@ -15,71 +11,82 @@ FoldedStringCompare _strCmp;
 
 }
 
-template <>
-int
-EnumStoreComparatorT<NumericEntryType<float> >::compare(EntryValue lhs, EntryValue rhs)
+template <typename EntryT>
+EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix)
+    : ParentType(data_store, fallback_value)
 {
-    return FloatingPointCompareHelper::compare(lhs, rhs);
+    (void) prefix;
 }
 
-template <>
-int
-EnumStoreComparatorT<NumericEntryType<double> >::compare(EntryValue lhs, EntryValue rhs)
+template <typename EntryT>
+EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store)
+    : ParentType(data_store)
 {
-    return FloatingPointCompareHelper::compare(lhs, rhs);
 }
 
-template <>
-EnumStoreFoldedComparatorT<StringEntryType>::
-EnumStoreFoldedComparatorT(const EnumStoreType & enumStore,
-                           EntryValue value, bool prefix)
-    : ParentType(enumStore, value),
+template <typename EntryT>
+bool
+EnumStoreComparator<EntryT>::equal(const EntryT& lhs, const EntryT& rhs)
+{
+    return !datastore::UniqueStoreComparatorHelper<EntryT>::less(lhs, rhs) &&
+            !datastore::UniqueStoreComparatorHelper<EntryT>::less(rhs, lhs);
+}
+
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store)
+    : ParentType(data_store, nullptr)
+{
+}
+
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value)
+    : ParentType(data_store, fallback_value)
+{
+}
+
+EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store, bool prefix)
+    : ParentType(data_store, nullptr),
       _prefix(prefix),
-      _prefixLen(0u)
+      _prefix_len(0u)
 {
-    if (getUsePrefix())
-        _prefixLen = _strCmp.size(value);
 }
 
-template <>
+EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store,
+                                                                 const char* fallback_value, bool prefix)
+    : ParentType(data_store, fallback_value),
+      _prefix(prefix),
+      _prefix_len(0u)
+{
+    if (use_prefix()) {
+        _prefix_len = _strCmp.size(fallback_value);
+    }
+}
+
 int
-EnumStoreComparatorT<StringEntryType>::compare(EntryValue lhs, EntryValue rhs)
+EnumStoreStringComparator::compare(const char* lhs, const char* rhs)
 {
     return _strCmp.compare(lhs, rhs);
 }
 
-template <>
 int
-EnumStoreFoldedComparatorT<StringEntryType>::compareFolded(EntryValue lhs,
-        EntryValue rhs)
+EnumStoreFoldedStringComparator::compare_folded(const char* lhs, const char* rhs)
 {
     return _strCmp.compareFolded(lhs, rhs);
 }
 
-template <>
 int
-EnumStoreFoldedComparatorT<StringEntryType>::
-compareFoldedPrefix(EntryValue lhs,
-                    EntryValue rhs,
-                    size_t prefixLen)
+EnumStoreFoldedStringComparator::compare_folded_prefix(const char* lhs,
+                                                       const char* rhs,
+                                                       size_t prefix_len)
 {
-    return _strCmp.compareFoldedPrefix(lhs, rhs, prefixLen);
+    return _strCmp.compareFoldedPrefix(lhs, rhs, prefix_len);
 }
 
-template class EnumStoreComparatorT<StringEntryType>;
-template class EnumStoreComparatorT<NumericEntryType<int8_t> >;
-template class EnumStoreComparatorT<NumericEntryType<int16_t> >;
-template class EnumStoreComparatorT<NumericEntryType<int32_t> >;
-template class EnumStoreComparatorT<NumericEntryType<int64_t> >;
-template class EnumStoreComparatorT<NumericEntryType<float> >;
-template class EnumStoreComparatorT<NumericEntryType<double> >;
-template class EnumStoreFoldedComparatorT<StringEntryType>;
-template class EnumStoreFoldedComparatorT<NumericEntryType<int8_t> >;
-template class EnumStoreFoldedComparatorT<NumericEntryType<int16_t> >;
-template class EnumStoreFoldedComparatorT<NumericEntryType<int32_t> >;
-template class EnumStoreFoldedComparatorT<NumericEntryType<int64_t> >;
-template class EnumStoreFoldedComparatorT<NumericEntryType<float> >;
-template class EnumStoreFoldedComparatorT<NumericEntryType<double> >;
+template class EnumStoreComparator<int8_t>;
+template class EnumStoreComparator<int16_t>;
+template class EnumStoreComparator<int32_t>;
+template class EnumStoreComparator<uint32_t>;
+template class EnumStoreComparator<int64_t>;
+template class EnumStoreComparator<float>;
+template class EnumStoreComparator<double>;
 
-} // namespace search
+}
 

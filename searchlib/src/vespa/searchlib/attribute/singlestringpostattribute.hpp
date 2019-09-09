@@ -79,7 +79,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
 {
     EnumStore & enumStore = this->getEnumStore();
     Dictionary & dict = enumStore.getPostingDictionary();
-    FoldedComparatorType cmpa(enumStore);
+    auto cmp = enumStore.make_folded_comparator();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -103,7 +103,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
     }
 
-    makePostingChange(&cmpa, dict, currEnumIndices, changePost);
+    makePostingChange(&cmp, dict, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 
