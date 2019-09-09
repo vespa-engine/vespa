@@ -58,19 +58,6 @@ public class MetricsProxyContainer extends Container implements
         addMetricsProxyComponent(VespaServices.class);
     }
 
-    int metricsRpcPortOffset() {
-        if (numHttpServerPorts != 2) {
-            throw new IllegalArgumentException("expecting 2 http server ports");
-        }
-        if (numMessageBusPorts() != 0) {
-            throw new IllegalArgumentException("expecting 0 message bus ports");
-        }
-        if (numRpcPorts() != 1) {
-            throw new IllegalArgumentException("expecting 1 rpc port");
-        }
-        return numHttpServerPorts + numMessageBusPorts() + numRpcPorts();
-    }
-
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
@@ -88,30 +75,42 @@ public class MetricsProxyContainer extends Container implements
         return true;
     }
 
+    private int metricsRpcPort;
+
     // Must have predictable ports for both http and rpc.
     @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = BASEPORT;
-        from.wantPort(start++, "http");
+        if (getHttp() != null) {
+            throw new IllegalArgumentException("unexpected HTTP setup");
+        }
+        allocatedSearchPort = from.wantPort(start++, "http");
+        portsMeta.on(0).tag("http").tag("query").tag("external").tag("state");
+
+        // XXX remove:
         from.wantPort(start++, "http/1");
-        from.wantPort(start++, "rpc/admin");
-        from.wantPort(start++, "rpc/metrics");
+        portsMeta.on(1).tag("unused");
+
+        if (numMessageBusPorts() != 0) {
+            throw new IllegalArgumentException("expecting 0 message bus ports");
+        }
+        if (numRpcPorts() != 1) {
+            throw new IllegalArgumentException("expecting 1 rpc port");
+        }
+        allocatedRpcPort = from.wantPort(start++, "rpc/admin");
+        portsMeta.on(2).tag("rpc").tag("admin");
+        metricsRpcPort = from.wantPort(start++, "rpc/metrics");
+        portsMeta.on(3).tag("rpc").tag("metrics");
     }
 
     @Override
     public int getPortCount() {
-        return metricsRpcPortOffset() + 1;
-    }
-
-    @Override
-    protected void tagServers() {
-        super.tagServers();
-        portsMeta.on(metricsRpcPortOffset()).tag("rpc").tag("metrics");
+        return 4;
     }
 
     @Override
     public void getConfig(RpcConnectorConfig.Builder builder) {
-        builder.port(getRelativePort(metricsRpcPortOffset()));
+        builder.port(metricsRpcPort);
     }
 
     @Override
