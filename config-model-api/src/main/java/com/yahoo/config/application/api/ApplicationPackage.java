@@ -85,7 +85,9 @@ public interface ApplicationPackage {
      * The name of the application package
      *
      * @return the name of the application (i.e the directory where the application package was deployed from)
+     * @deprecated do not use
      */
+    @Deprecated // TODO: Remove on Vespa 8
     String getApplicationName();
 
     /**

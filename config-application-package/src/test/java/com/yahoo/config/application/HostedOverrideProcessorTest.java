@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
@@ -33,6 +34,7 @@ public class HostedOverrideProcessorTest {
                     "    <nodes deploy:environment='prod' count='3' flavor='v-4-8-100'/>" +
                     "    <nodes deploy:environment='prod' deploy:region='us-west' count='4'/>" +
                     "    <nodes deploy:environment='prod' deploy:region='us-east-3' flavor='v-8-8-100' count='5'/>" +
+                    "    <nodes deploy:instance='myinstance' deploy:environment='prod' deploy:region='us-west' count='1'/>" +
                     "  </container>" +
                     "</services>";
 
@@ -59,6 +61,18 @@ public class HostedOverrideProcessorTest {
                 "  </container>" +
                 "</services>";
         assertOverride(Environment.from("prod"), RegionName.from("us-west"), expected);
+    }
+
+    @Test
+    public void testParsingInstance() throws TransformerException {
+        String expected =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
+                "  <container id=\"foo\" version=\"1.0\">" +
+                "    <nodes count='1' required='true'/>" +
+                "  </container>" +
+                "</services>";
+        assertOverride(InstanceName.from("myinstance"), Environment.from("prod"), RegionName.from("us-west"), expected);
     }
 
     @Test
@@ -146,8 +160,12 @@ public class HostedOverrideProcessorTest {
     }
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
+        assertOverride(InstanceName.from("default"), environment, region, expected);
+    }
+
+    private void assertOverride(InstanceName instance, Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(input));
-        Document newDoc = new OverrideProcessor(environment, region).process(inputDoc);
+        Document newDoc = new OverrideProcessor(instance, environment, region).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 

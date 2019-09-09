@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -48,7 +49,7 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </container>\n" +
                 "</services>";
-        TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, Environment.dev, RegionName.from("default")).run());
+        TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.dev, RegionName.from("default")).run());
 
         String expectedStaging =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -75,7 +76,7 @@ public class XmlPreprocessorTest {
                 "    </container>\n" +
                 "</services>";
         // System.out.println(Xml.documentAsString(new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run()));
-        TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run());
+        TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.staging, RegionName.from("default")).run());
 
         String expectedUsWest =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -109,7 +110,7 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </container>\n" +
                 "</services>";
-        TestBase.assertDocument(expectedUsWest, new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-west")).run());
+        TestBase.assertDocument(expectedUsWest, new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.prod, RegionName.from("us-west")).run());
 
         String expectedUsEastAndCentral =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
@@ -143,9 +144,9 @@ public class XmlPreprocessorTest {
                 "    </container>\n" +
                 "</services>";
         TestBase.assertDocument(expectedUsEastAndCentral,
-                                new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-east")).run());
+                                new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.prod, RegionName.from("us-east")).run());
         TestBase.assertDocument(expectedUsEastAndCentral,
-                                new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-central")).run());
+                                new XmlPreProcessor(appDir, services, InstanceName.defaultName(), Environment.prod, RegionName.from("us-central")).run());
     }
 
     @Test
@@ -189,7 +190,7 @@ public class XmlPreprocessorTest {
                 "    <adminserver hostalias=\"node0\"/>" +
                 "  </admin>" +
                 "</services>";
-        Document docDev = (new XmlPreProcessor(appDir, new StringReader(input), Environment.prod, RegionName.from("default")).run());
+        Document docDev = (new XmlPreProcessor(appDir, new StringReader(input), InstanceName.defaultName(), Environment.prod, RegionName.from("default")).run());
         TestBase.assertDocument(expectedProd, docDev);
     }
 

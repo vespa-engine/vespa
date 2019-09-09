@@ -107,7 +107,7 @@ public class TenantRequestHandlerTest {
         ZooKeeperDeployer deployer = zkc.createDeployer(new BaseDeployLogger());
         DeployData deployData = new DeployData("user",
                                                appDir.toString(),
-                                               appId.application().toString(),
+                                               appId,
                                                0L,
                                                internalRedeploy,
                                                0L,

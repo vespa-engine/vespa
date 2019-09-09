@@ -449,11 +449,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     @Override
     public void getConfig(ApplicationMetadataConfig.Builder builder) {
         if (applicationMetaData != null) {
-            builder.name(applicationMetaData.getApplicationName()).
+            builder.name(applicationMetaData.getApplicationId().application().value()).
                     user(applicationMetaData.getDeployedByUser()).
                     path(applicationMetaData.getDeployPath()).
                     timestamp(applicationMetaData.getDeployTimestamp()).
-                    checksum(applicationMetaData.getCheckSum()).
+                    checksum(applicationMetaData.getChecksum()).
                     generation(applicationMetaData.getGeneration());
         }
     }

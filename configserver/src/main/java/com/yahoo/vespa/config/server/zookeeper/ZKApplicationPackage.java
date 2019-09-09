@@ -117,7 +117,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
 
     @Override
     public String getApplicationName() {
-        return metaData.getApplicationName();
+        return metaData.getApplicationId().application().value();
     }
 
     @Override

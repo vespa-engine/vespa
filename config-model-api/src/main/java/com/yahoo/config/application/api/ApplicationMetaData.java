@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.*;
 
 import com.yahoo.text.Utf8;
@@ -18,26 +22,45 @@ public class ApplicationMetaData {
     private final String deployedFromDir;
     private final long deployTimestamp;
     private final boolean internalRedeploy;
+    private final ApplicationId applicationId;
+    private final String checksum;
     private final long generation;
     private final long previousActiveGeneration;
-    private final String checkSum;
-    private final String appName;
 
-    public ApplicationMetaData(File appDir, String deployedByUser, String deployedFromDir, Long deployTimestamp,
+    // TODO: Remove after September 2019
+    public ApplicationMetaData(File appDir,
+                               String deployedByUser,
+                               String deployedFromDir,
+                               Long deployTimestamp,
                                boolean internalRedeploy,
-                               String checkSum, Long generation, long previousActiveGeneration) {
+                               String checksum,
+                               Long generation,
+                               long previousActiveGeneration) {
         this(deployedByUser, deployedFromDir, deployTimestamp, internalRedeploy,
-             appDir.getName(), checkSum, generation, previousActiveGeneration);
+             appDir.getName(), checksum, generation, previousActiveGeneration);
+    }
+
+    // TODO: Remove after September 2019
+    public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+                               String applicationName, String checksum, Long generation, long previousActiveGeneration) {
+        this(deployedByUser,
+             deployedFromDir,
+             deployTimestamp,
+             internalRedeploy,
+             ApplicationId.from(TenantName.defaultName(), ApplicationName.from(applicationName), InstanceName.from("default")),
+             checksum,
+             generation,
+             previousActiveGeneration);
     }
 
     public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
-                               String applicationName, String checkSum, Long generation, long previousActiveGeneration) {
-        this.appName = applicationName;
+                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
         this.deployedByUser = deployedByUser;
         this.deployedFromDir = deployedFromDir;
         this.deployTimestamp = deployTimestamp;
         this.internalRedeploy = internalRedeploy;
-        this.checkSum = checkSum;
+        this.applicationId = applicationId;
+        this.checksum = checksum;
         this.generation = generation;
         this.previousActiveGeneration = previousActiveGeneration;
     }
@@ -48,9 +71,8 @@ public class ApplicationMetaData {
      *
      * @return application name
      */
-    public String getApplicationName() {
-        return appName;
-    }
+    // TODO: Remove after September 2019
+    public String getApplicationName() { return applicationId.application().toString(); }
 
     /**
      * Gets the user who deployed the application.
@@ -68,9 +90,9 @@ public class ApplicationMetaData {
      *
      * @return path to raw deploy directory (for the original application)
      */
-    public String getDeployPath() {
-        return deployedFromDir;
-    }
+    public String getDeployPath() { return deployedFromDir; }
+
+    public ApplicationId getApplicationId() { return applicationId; }
 
     /**
      * Gets the time the application was deployed
@@ -78,19 +100,15 @@ public class ApplicationMetaData {
      *
      * @return timestamp for when "deploy-application" was run. In ms.
      */
-    public Long getDeployTimestamp() {
-            return deployTimestamp;
-    }
+    public Long getDeployTimestamp() { return deployTimestamp; }
 
     /**
-     * Gets the time the application was deployed
+     * Gets the time the application was deployed.
      * Will return null if a problem occurred while getting metadata
      *
      * @return timestamp for when "deploy-application" was run. In ms.
      */
-    public Long getGeneration() {
-            return generation;
-    }
+    public Long getGeneration() { return generation; }
 
     /**
      * Returns whether this application generation was produced by a system internal redeployment,
@@ -98,25 +116,20 @@ public class ApplicationMetaData {
      */
     public boolean isInternalRedeploy() { return internalRedeploy; }
 
-    /**
-     * Returns an md5 hash of the contents of the application package
-     * @return an md5sum of the application package
-     */
-    public String getCheckSum() {
-        return checkSum;
-    }
+    /** Returns an md5 hash of the contents of the application package */
+    // TODO: Remove after September 2019
+    public String getCheckSum() { return checksum; }
 
-    /**
-     * Returns the previously active generation at the point when this application was created.
-     * @return a generation.
-     */
-    public long getPreviousActiveGeneration() {
-        return previousActiveGeneration;
-    }
+    /** Returns an md5 hash of the contents of the application package */
+    public String getChecksum() { return checksum; }
+
+    /** Returns the previously active generation at the point when this application was created. */
+    public long getPreviousActiveGeneration() { return previousActiveGeneration; }
 
     @Override
     public String toString() {
-        return deployedByUser + ", " + deployedFromDir + ", " + deployTimestamp + ", " + generation + ", " + checkSum + ", " + previousActiveGeneration;
+        return deployedByUser + ", " + deployedFromDir + ", " + deployTimestamp + ", " + generation + ", " +
+               checksum + ", " + previousActiveGeneration;
     }
 
     public static ApplicationMetaData fromJsonString(String jsonString) {
@@ -126,11 +139,19 @@ public class ApplicationMetaData {
             Inspector root = data.get();
             Inspector deploy = root.field("deploy");
             Inspector app = root.field("application");
+
+            // TODO: Simplify to just ApplicationId.fromSerializedForm(app.field("id").asString()) after September 2019
+            ApplicationId applicationId = app.field("id").valid() ?
+                                          ApplicationId.fromSerializedForm(app.field("id").asString()) :
+                                          ApplicationId.from(TenantName.defaultName(),
+                                                             ApplicationName.from(app.field("name").asString()),
+                                                             InstanceName.from("default"));
+
             return new ApplicationMetaData(deploy.field("user").asString(),
                                            deploy.field("from").asString(),
                                            deploy.field("timestamp").asLong(),
                                            booleanField("internalRedeploy", false, deploy),
-                                           app.field("name").asString(),
+                                           applicationId,
                                            app.field("checksum").asString(),
                                            app.field("generation").asLong(),
                                            app.field("previousActiveGeneration").asLong());
@@ -148,8 +169,9 @@ public class ApplicationMetaData {
         deploy.setLong("timestamp", deployTimestamp);
         deploy.setBool("internalRedeploy", internalRedeploy);
         Cursor app = meta.setObject("application");
-        app.setString("name", appName);
-        app.setString("checksum", checkSum);
+        app.setString("id", applicationId.serializedForm());
+        app.setString("name", applicationId.application().value()); // TODO: Remove after September 2019
+        app.setString("checksum", checksum);
         app.setLong("generation", generation);
         app.setLong("previousActiveGeneration", previousActiveGeneration);
         return slime;

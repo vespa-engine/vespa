@@ -13,6 +13,10 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
 import com.yahoo.io.HexDump;
@@ -117,7 +121,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
                                        deployData.getDeployedFromDir(),
                                        deployData.getDeployTimestamp(),
                                        deployData.isInternalRedeploy(),
-                                       deployData.getApplicationName(),
+                                       deployData.getApplicationId(),
                                        computeCheckSum(appDir),
                                        deployData.getGeneration(),
                                        deployData.getCurrentlyActiveGeneration());
@@ -144,8 +148,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
         this.metaData = metaData;
     }
 
+    @Override
+    @SuppressWarnings("deprecation")
     public String getApplicationName() {
-        return metaData.getApplicationName();
+        return metaData.getApplicationId().application().value();
     }
 
     @Override
@@ -571,9 +577,18 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private static ApplicationMetaData readMetaData(File appDir) {
-        ApplicationMetaData defaultMetaData = new ApplicationMetaData(appDir, "n/a", "n/a", 0l, false, "", 0l, 0l);
+        ApplicationMetaData defaultMetaData = new ApplicationMetaData("n/a",
+                                                                      "n/a",
+                                                                      0L,
+                                                                      false,
+                                                                      ApplicationId.from(TenantName.defaultName(),
+                                                                                         ApplicationName.from(appDir.getName()),
+                                                                                         InstanceName.defaultName()),
+                                                                      "",
+                                                                      0L,
+                                                                      0L);
         File metaFile = new File(appDir, META_FILE_NAME);
-        if (!metaFile.exists()) {
+        if ( ! metaFile.exists()) {
             return defaultMetaData;
         }
         try (FileReader reader = new FileReader(metaFile)) {
@@ -663,7 +678,11 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     private void preprocessXML(File destination, File inputXml, Zone zone) throws ParserConfigurationException, TransformerException, SAXException, IOException {
-        Document document = new XmlPreProcessor(appDir, inputXml, zone.environment(), zone.region()).run();
+        Document document = new XmlPreProcessor(appDir,
+                                                inputXml,
+                                                metaData.getApplicationId().instance(),
+                                                zone.environment(),
+                                                zone.region()).run();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         try (FileOutputStream outputStream = new FileOutputStream(destination)) {
             transformer.transform(new DOMSource(document), new StreamResult(outputStream));

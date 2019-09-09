@@ -6,6 +6,10 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
@@ -73,13 +77,23 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData(DEPLOYED_BY_USER, "dir", 0L, false, APPLICATION_NAME, "checksum", APPLICATION_GENERATION, 0L);
+        applicationMetaData = new ApplicationMetaData(DEPLOYED_BY_USER,
+                                                      "dir",
+                                                      0L,
+                                                      false,
+                                                      ApplicationId.from(TenantName.defaultName(),
+                                                                         ApplicationName.from(APPLICATION_NAME),
+                                                                         InstanceName.defaultName()),
+                                                      "checksum",
+                                                      APPLICATION_GENERATION,
+                                                      0L);
     }
 
     /** Returns the root of this application package relative to the current dir */
     protected File root() { return root; }
 
     @Override
+    @SuppressWarnings("deprecation")
     public String getApplicationName() {
         return "mock application";
     }

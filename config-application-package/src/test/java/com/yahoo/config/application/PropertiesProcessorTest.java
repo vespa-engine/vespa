@@ -26,7 +26,7 @@ public class PropertiesProcessorTest {
     }
 
     @Test
-    public void testPropertyValues() throws ParserConfigurationException, TransformerException, SAXException, IOException {
+    public void testPropertyValues() throws TransformerException {
         String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
                 "  <preprocess:properties>" +
@@ -50,7 +50,7 @@ public class PropertiesProcessorTest {
     }
 
     @Test
-    public void testPropertyApplying() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
+    public void testPropertyApplying() throws TransformerException {
         String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
                 "  <preprocess:properties>" +
@@ -104,7 +104,7 @@ public class PropertiesProcessorTest {
 
     // TODO: Check that warning is actually logged
     @Test
-    public void testWarnIfDuplicatePropertyForSameEnvironment() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
+    public void testWarnIfDuplicatePropertyForSameEnvironment() throws TransformerException {
         String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
                 "  <preprocess:properties>" +
