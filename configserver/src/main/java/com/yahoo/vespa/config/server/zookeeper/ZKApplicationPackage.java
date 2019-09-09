@@ -116,6 +116,7 @@ public class ZKApplicationPackage implements ApplicationPackage {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public String getApplicationName() {
         return metaData.getApplicationId().application().value();
     }
