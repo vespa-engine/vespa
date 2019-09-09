@@ -18,8 +18,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
-import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
@@ -89,7 +87,7 @@ public class DeploymentTester {
 
     public ApplicationController applications() { return tester.controller().applications(); }
 
-    public MockBuildService buildService() { return tester.buildService(); }
+    public MockBuildService buildService() { return tester.serviceRegistry().buildServiceMock(); }
 
     public DeploymentTrigger deploymentTrigger() { return tester.controller().applications().deploymentTrigger(); }
 
@@ -98,10 +96,6 @@ public class DeploymentTester {
     public ControllerTester controllerTester() { return tester; }
 
     public ConfigServerMock configServer() { return tester.serviceRegistry().configServerMock(); }
-
-    public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
-
-    public ApplicationStoreMock applicationStore() { return tester.applicationStore(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));
@@ -173,7 +167,7 @@ public class DeploymentTester {
 
     /** Notify the controller about a job completing */
     public BuildJob jobCompletion(JobType job) {
-        return new BuildJob(this::notifyJobCompletion, tester.artifactRepository()).type(job);
+        return new BuildJob(this::notifyJobCompletion, tester.serviceRegistry().artifactRepositoryMock()).type(job);
     }
 
     /** Simulate the full lifecycle of an application deployment as declared in given application package */

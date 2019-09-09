@@ -27,7 +27,6 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         return "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMarketplace'/>\n" +
 
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
                "    <binding>http://*/application/v4/*</binding>\n" +

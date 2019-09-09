@@ -20,19 +20,18 @@ import java.util.stream.Collectors;
  *
  * @author mgimle
  */
-public class AwsEventReporterMaintainer extends Maintainer {
+public class CloudEventReporter extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(AwsEventReporterMaintainer.class.getName());
+    private static final Logger log = Logger.getLogger(CloudEventReporter.class.getName());
 
     private final IssueHandler issueHandler;
     private final AwsEventFetcher eventFetcher;
     private final Set<String> awsRegions;
 
-    AwsEventReporterMaintainer(Controller controller, Duration interval, JobControl jobControl,
-                               IssueHandler issueHandler, AwsEventFetcher eventFetcher) {
+    CloudEventReporter(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl);
-        this.issueHandler = issueHandler;
-        this.eventFetcher = eventFetcher;
+        this.issueHandler = controller.serviceRegistry().issueHandler();
+        this.eventFetcher = controller.serviceRegistry().eventFetcherService();
         this.awsRegions = controller.zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
                 .reachable()

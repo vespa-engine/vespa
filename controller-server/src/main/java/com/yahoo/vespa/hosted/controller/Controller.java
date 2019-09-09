@@ -11,12 +11,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -88,14 +83,13 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry, MetricsService metricsService,
                       AccessControl accessControl,
-                      ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, FlagSource flagSource,
+                      FlagSource flagSource,
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
              metricsService,
-             Clock.systemUTC(), accessControl, artifactRepository, applicationStore, testerCloud,
-             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost, flagSource,
+             Clock.systemUTC(), accessControl,
+             com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
     }
 
@@ -104,8 +98,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService,
                       Clock clock,
                       AccessControl accessControl,
-                      ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
-                      BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier,
+                      Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
 
@@ -119,12 +112,9 @@ public class Controller extends AbstractComponent {
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
         nameServiceForwarder = new NameServiceForwarder(curator);
-        jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
+        jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
-                                                          Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
-                                                          Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
-                                                          Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock
         );
         tenantController = new TenantController(this, curator, accessControl);

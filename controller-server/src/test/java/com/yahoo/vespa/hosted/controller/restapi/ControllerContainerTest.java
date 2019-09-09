@@ -64,24 +64,13 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher' />\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'>\n" +
-               "    <config name=\"vespa.hosted.controller.authority.config.api-authority\">\n" +
-               "      <authorities><item>https://localhost:4443/</item></authorities>\n" +
-               "    </config>" +
-               "  </component>" +
+               "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +

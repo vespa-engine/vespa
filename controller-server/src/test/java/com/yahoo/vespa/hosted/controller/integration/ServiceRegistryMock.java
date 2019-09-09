@@ -2,18 +2,27 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
@@ -24,8 +33,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRou
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
 
 /**
@@ -49,6 +61,13 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final LoggingDeploymentIssues loggingDeploymentIssues = new LoggingDeploymentIssues();
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
+    private final MockBilling mockBilling = new MockBilling();
+    private final MockAwsEventFetcher mockAwsEventFetcher = new MockAwsEventFetcher();
+    private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
+    private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
+    private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
+    private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
+    private final MockBuildService mockBuildService = new MockBuildService();
 
     @Override
     public ConfigServer configServer() {
@@ -111,6 +130,41 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
+    public Billing billingService() {
+        return mockBilling;
+    }
+
+    @Override
+    public AwsEventFetcher eventFetcherService() {
+        return mockAwsEventFetcher;
+    }
+
+    @Override
+    public ArtifactRepository artifactRepository() {
+        return artifactRepositoryMock;
+    }
+
+    @Override
+    public TesterCloud testerCloud() {
+        return mockTesterCloud;
+    }
+
+    @Override
+    public ApplicationStore applicationStore() {
+        return applicationStoreMock;
+    }
+
+    @Override
+    public RunDataStore runDataStore() {
+        return mockRunDataStore;
+    }
+
+    @Override
+    public BuildService buildService() {
+        return mockBuildService;
+    }
+
+    @Override
     public NameService nameService() {
         return memoryNameService;
     }
@@ -137,6 +191,14 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public MockContactRetriever contactRetrieverMock() {
         return mockContactRetriever;
+    }
+
+    public ArtifactRepositoryMock artifactRepositoryMock() {
+        return artifactRepositoryMock;
+    }
+
+    public MockBuildService buildServiceMock() {
+        return mockBuildService;
     }
 
 }
