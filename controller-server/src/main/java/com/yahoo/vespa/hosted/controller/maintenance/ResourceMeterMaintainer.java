@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,34 +47,33 @@ public class ResourceMeterMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        List<Node> nodes = getNodes();
-        List<ResourceSnapshot> resourceSnapshots = getResourceSnapshots(nodes);
-
+        Collection<ResourceSnapshot> resourceSnapshots = getResourceSnapshots(allocatedNodes());
         meteringClient.consume(resourceSnapshots);
 
         metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
-        metric.set(METERING_TOTAL_REPORTED, resourceSnapshots.stream()
-                        .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()) // total metered resource usage, for alerting on drastic changes
-                        .sum()
-                , metric.createContext(Collections.emptyMap()));
+        // total metered resource usage, for alerting on drastic changes
+        metric.set(METERING_TOTAL_REPORTED,
+                   resourceSnapshots.stream().mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()).sum(),
+                   metric.createContext(Collections.emptyMap()));
     }
 
-    private List<Node> getNodes() {
+    private List<Node> allocatedNodes() {
         return controller().zoneRegistry().zones()
                 .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
                 .flatMap(zone -> nodeRepository.list(zone.getId()).stream())
-                .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().value().equals("hosted-vespa"))
-                .filter(node -> node.state() == Node.State.active)
+                .filter(node -> node.owner().isPresent())
+                .filter(node -> ! node.owner().get().tenant().value().equals("hosted-vespa"))
                 .collect(Collectors.toList());
     }
 
-    private List<ResourceSnapshot> getResourceSnapshots(List<Node> nodes) {
-        return new ArrayList<>(nodes.stream()
-                                    .filter(node -> node.owner().isPresent())
-                                    .collect(Collectors.groupingBy(node -> node.owner().get(),
-                                                                   Collectors.collectingAndThen(Collectors.toList(), nodeList -> ResourceSnapshot.from(nodeList, clock.instant()))
-                                    )).values());
+    private Collection<ResourceSnapshot> getResourceSnapshots(List<Node> nodes) {
+        return nodes.stream()
+                    .collect(Collectors.groupingBy(node -> node.owner().get(),
+                                                   Collectors.collectingAndThen(Collectors.toList(),
+                                                                                nodeList -> ResourceSnapshot.from(nodeList,
+                                                                                                                  clock.instant()))
+                                    )).values();
     }
 
 }

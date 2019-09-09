@@ -21,6 +21,7 @@ import java.util.*;
  * @author mgimle
  */
 public class CapacityReportMaintainer extends Maintainer {
+
     private final Metric metric;
     private final NodeRepository nodeRepository;
     private static final Logger log = Logger.getLogger(CapacityReportMaintainer.class.getName());
@@ -35,20 +36,21 @@ public class CapacityReportMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        if (!nodeRepository.zone().cloud().value().equals("aws")) {
-            CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
-            List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
-            if (overcommittedHosts.size() != 0) {
-                log.log(LogLevel.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
-                        overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
-            }
-            metric.set("overcommittedHosts", overcommittedHosts.size(), null);
+        if (nodeRepository.zone().cloud().value().equals("aws")) return; // Hosts and nodes are 1-1
 
-            Optional<CapacityChecker.HostFailurePath> failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
-            if (failurePath.isPresent()) {
-                int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
-                metric.set("spareHostCapacity", worstCaseHostLoss - 1, null);
-            }
+        CapacityChecker capacityChecker = new CapacityChecker(this.nodeRepository);
+        List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
+        if (overcommittedHosts.size() != 0) {
+            log.log(LogLevel.WARNING, String.format("%d nodes are overcommitted! [ %s ]", overcommittedHosts.size(),
+                                                    overcommittedHosts.stream().map(Node::hostname).collect(Collectors.joining(", "))));
+        }
+        metric.set("overcommittedHosts", overcommittedHosts.size(), null);
+
+        Optional<CapacityChecker.HostFailurePath> failurePath = capacityChecker.worstCaseHostLossLeadingToFailure();
+        if (failurePath.isPresent()) {
+            int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
+            metric.set("spareHostCapacity", worstCaseHostLoss - 1, null);
         }
     }
+
 }

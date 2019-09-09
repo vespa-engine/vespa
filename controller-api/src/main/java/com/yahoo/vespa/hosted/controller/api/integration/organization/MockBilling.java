@@ -10,4 +10,5 @@ public class MockBilling implements Billing {
 
     @Override
     public void handleBilling(ApplicationId applicationId, String customerId) {}
+
 }

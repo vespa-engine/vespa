@@ -77,7 +77,7 @@ public class ControllerMaintenance extends AbstractComponent {
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(controller, Duration.ofSeconds(10), jobControl);
         costReportMaintainer = new CostReportMaintainer(controller, Duration.ofHours(2), jobControl, controller.serviceRegistry().costReportConsumer());
-        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(30), jobControl, metric, controller.serviceRegistry().meteringService());
+        resourceMeterMaintainer = new ResourceMeterMaintainer(controller, Duration.ofMinutes(1), jobControl, metric, controller.serviceRegistry().meteringService());
         billingMaintainer = new BillingMaintainer(controller, Duration.ofDays(3), jobControl, billing);
         awsEventReporterMaintainer = new AwsEventReporterMaintainer(controller, Duration.ofDays(1), jobControl, controller.serviceRegistry().issueHandler(), awsEventFetcher);
         rotationStatusUpdater = new RotationStatusUpdater(controller, maintenanceInterval, jobControl);

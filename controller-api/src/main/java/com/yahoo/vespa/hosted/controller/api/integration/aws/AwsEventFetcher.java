@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Issue;
 import java.util.List;
 
 public interface AwsEventFetcher {
+
     List<CloudEvent> getEvents(String awsRegionName);
     Issue createIssue(CloudEvent event);
+
 }

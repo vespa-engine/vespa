@@ -38,4 +38,5 @@ public class MeteringInfo {
     public Map<ApplicationId, List<ResourceSnapshot>> getSnapshotHistory() {
         return snapshotHistory;
     }
+
 }

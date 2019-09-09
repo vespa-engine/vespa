@@ -29,11 +29,12 @@ public class BillingMaintainer extends Maintainer {
                 .map(tenant -> (CloudTenant) tenant)
                 .forEach(cloudTenant -> controller().applications().asList(cloudTenant.name())
                         .stream()
-                        .forEach( application -> {
+                        .forEach(application -> {
                             billing.handleBilling(application.id(), cloudTenant.billingInfo().customerId());
                         })
                 );
     }
+
 }
 
 

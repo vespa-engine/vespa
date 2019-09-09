@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapsh
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -16,11 +17,11 @@ import java.util.Optional;
  */
 public class MockMeteringClient implements MeteringClient {
 
-    private List<ResourceSnapshot> resources = new ArrayList<>();
+    private Collection<ResourceSnapshot> resources = new ArrayList<>();
     private Optional<MeteringInfo> meteringInfo;
 
     @Override
-    public void consume(List<ResourceSnapshot> resources){
+    public void consume(Collection<ResourceSnapshot> resources){
         this.resources = resources;
     }
 
@@ -32,7 +33,7 @@ public class MockMeteringClient implements MeteringClient {
         });
     }
 
-    public List<ResourceSnapshot> consumedResources() {
+    public Collection<ResourceSnapshot> consumedResources() {
         return this.resources;
     }
 

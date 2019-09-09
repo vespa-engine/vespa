@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -36,7 +37,7 @@ public class ResourceMeterMaintainerTest {
 
         ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
-        List<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
+        Collection<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 
         // The mocked repository contains two applications, so we should also consume two ResourceSnapshots
         assertEquals(2, consumedResources.size());

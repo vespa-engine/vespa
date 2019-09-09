@@ -11,6 +11,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class CapacityChecker {
+
     private List<Node> hosts;
     Map<String, Node> nodeMap;
     private Map<Node, List<Node>> nodeChildren;
@@ -523,4 +524,5 @@ public class CapacityChecker {
             return out.toString();
         }
     }
+
 }
