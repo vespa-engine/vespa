@@ -11,7 +11,6 @@ import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import org.eclipse.jetty.http.MimeTypes;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -52,7 +51,7 @@ public class ServletResponseController {
     //all calls to the servletOutputStreamWriter must hold the monitor first to ensure visibility of servletResponse changes.
     private final ServletOutputStreamWriter servletOutputStreamWriter;
 
-    @GuardedBy("monitor")
+    // GuardedBy("monitor")
     private boolean responseCommitted = false;
 
     public ServletResponseController(

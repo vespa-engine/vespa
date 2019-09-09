@@ -27,8 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.Collections.singletonMap;
 
-import javax.annotation.concurrent.GuardedBy;
-
 /**
  * A request handler which assigns a worker thread to handle each request.
  * This is mean to be subclasses by handlers who does work by executing each
@@ -48,9 +46,11 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     private final boolean allowAsyncResponse;
 
     private static final Object rejectedExecutionsLock = new Object();
-    @GuardedBy("rejectedExecutionsLock")
+
+    // GuardedBy("rejectedExecutionsLock")
     private static volatile int numRejectedRequests = 0;
-    @GuardedBy("rejectedExecutionsLock")
+
+    // GuardedBy("rejectedExecutionsLock")
     private static long currentFailureIntervalStartedMillis = 0L;
 
     protected ThreadedRequestHandler(Executor executor) {

@@ -5,7 +5,6 @@ import com.google.common.base.Preconditions;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import java.io.IOException;
@@ -59,7 +58,7 @@ class ServletRequestReader implements ReadListener {
      *    called from a user (request handler) owned thread
      *    (i.e. when being called from user code, don't call back into user code.)
      */
-    @GuardedBy("monitor")
+    // GuardedBy("monitor")
     private State state = State.READING;
 
     /**
@@ -73,7 +72,7 @@ class ServletRequestReader implements ReadListener {
      * - complete the finished future non-exceptionally,
      *   since then we would not be able to report writeCompletionHandler.failed(exception) calls
      */
-    @GuardedBy("monitor")
+    // GuardedBy("monitor")
     private int numberOfOutstandingUserCalls = 0;
 
     /**

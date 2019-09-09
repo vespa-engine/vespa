@@ -3,15 +3,15 @@ package com.yahoo.container.bundle;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import net.jcip.annotations.Immutable;
 
 
 /**
  * Specifies how a component should be instantiated from a bundle.
  *
+ * Immutable
+ *
  * @author Tony Vaagenes
  */
-@Immutable
 public final class BundleInstantiationSpecification {
 
     public final ComponentId id;
