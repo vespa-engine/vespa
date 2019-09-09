@@ -71,7 +71,7 @@ public final class Capacity {
 
     /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
     public static Capacity fromNodeCount(int capacity) {
-        return fromNodeCount(capacity, Optional.empty(), false, true);
+        return fromCount(capacity, Optional.empty(), false, true);
     }
 
     /** Create a non-required, failable capacity request */
@@ -87,6 +87,8 @@ public final class Capacity {
         return new Capacity(nodeCount, resources, required, canFail, NodeType.tenant);
     }
 
+    // TODO: Remove after September 2019
+    @Deprecated
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
         return new Capacity(nodeCount, flavor.map(NodeResources::fromLegacyName), required, canFail, NodeType.tenant);
     }

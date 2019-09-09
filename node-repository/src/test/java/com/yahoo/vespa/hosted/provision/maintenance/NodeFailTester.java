@@ -115,7 +115,7 @@ public class NodeFailTester {
         List<Node> hosts = tester.createHostNodes(numberOfHosts);
         for (int i = 0; i < hosts.size(); i++) {
             tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
-                                    nodeFlavors.getFlavorOrThrow("d-1-1-1"), NodeType.tenant);
+                                   new NodeResources(1, 1, 1, 0.3), NodeType.tenant);
         }
 
         // Create applications
@@ -232,8 +232,8 @@ public class NodeFailTester {
         return createReadyNodes(count, startIndex, Optional.empty(), new Flavor(resources), NodeType.tenant);
     }
 
-    public List<Node> createReadyNodes(int count, int startIndex, Flavor flavor) {
-        return createReadyNodes(count, startIndex, Optional.empty(), flavor, NodeType.tenant);
+    private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, NodeResources resources, NodeType nodeType) {
+        return createReadyNodes(count, startIndex, parentHostname, new Flavor(resources), nodeType);
     }
 
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {

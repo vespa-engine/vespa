@@ -358,6 +358,7 @@ public class DynamicDockerAllocationTest {
                      NodeResources.DiskSpeed.slow, hosts.get(0).flavor().get().resources().diskSpeed());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testSwitchingFromLegacyFlavorSyntaxToResourcesDoesNotCauseReallocation() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();

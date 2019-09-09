@@ -238,6 +238,9 @@ public class ProvisioningTester {
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         return makeReadyNodes(n, asFlavor(flavor, type), type, 0);
     }
+    public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
+        return makeReadyNodes(n, new Flavor(resources), type, 0);
+    }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type, int ipAddressPoolSize) {
         return makeReadyNodes(n, new Flavor(resources), type, ipAddressPoolSize);
     }
