@@ -202,6 +202,14 @@ IgnoreDefaultFeatures::check(const Properties &props)
 
 namespace matching {
 
+const vespalib::string SplitUnpackingIterators::NAME("vespa.matching.split_unpacking_iterators");
+const bool SplitUnpackingIterators::DEFAULT_VALUE(false);
+bool SplitUnpackingIterators::check(const Properties &props) { return lookupBool(props, NAME, DEFAULT_VALUE); }
+
+const vespalib::string DelayUnpackingIterators::NAME("vespa.matching.delay_unpacking_iterators");
+const bool DelayUnpackingIterators::DEFAULT_VALUE(false);
+bool DelayUnpackingIterators::check(const Properties &props) { return lookupBool(props, NAME, DEFAULT_VALUE); }
+
 const vespalib::string TermwiseLimit::NAME("vespa.matching.termwise_limit");
 const double TermwiseLimit::DEFAULT_VALUE(1.0);
 

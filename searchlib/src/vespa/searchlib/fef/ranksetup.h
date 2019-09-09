@@ -31,6 +31,8 @@ private:
     vespalib::string         _firstPhaseRankFeature;
     vespalib::string         _secondPhaseRankFeature;
     vespalib::string         _degradationAttribute;
+    bool                     _split_unpacking_iterators;
+    bool                     _delay_unpacking_iterators;
     double                   _termwise_limit;
     uint32_t                 _numThreads;
     uint32_t                 _minHitsPerThread;
@@ -114,6 +116,12 @@ public:
      * @return feature name for second phase rank
      **/
     const vespalib::string &getSecondPhaseRank() const { return _secondPhaseRankFeature; }
+
+    bool split_unpacking_iterators() const { return _split_unpacking_iterators; }
+    void split_unpacking_iterators(bool value) { _split_unpacking_iterators = value; }
+
+    bool delay_unpacking_iterators() const { return _delay_unpacking_iterators; }
+    void delay_unpacking_iterators(bool value) { _delay_unpacking_iterators = value; }
 
     /**
      * Set the termwise limit
