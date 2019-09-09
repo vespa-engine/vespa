@@ -500,10 +500,17 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             if (hit.isAuxiliary()) continue;
 
             currentIndex++;
-            if (currentIndex < offset || currentIndex >= highBound) {
-                i.remove();
+            if (currentIndex < offset || currentIndex >= highBound)
                 handleRemovedHit(hit);
-            }
+        }
+        if ((offset > 0) || (hits.size() > highBound)) {
+            ListenableArrayList<Hit> newHits = new ListenableArrayList<>(numHits);
+            for (int index = offset; index < Math.min(highBound, hits.size()); index++)
+                newHits.add(hits.get(index));
+            for (Runnable listener : hits.listeners())
+                newHits.addListener(listener);
+            hits = newHits;
+            unmodifiableHits = Collections.unmodifiableList(hits);
         }
     }
 
@@ -835,7 +842,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
             Hit hitClone = i.next().clone();
             hitGroupClone.hits.add(hitClone);
         }
-        if (this.errorHit!=null) { // Find the cloned error and assign it
+        if (this.errorHit != null) { // Find the cloned error and assign it
             for (Hit hit : hitGroupClone.asList()) {
                 if (hit instanceof DefaultErrorHit)
                     hitGroupClone.errorHit=(DefaultErrorHit)hit;
@@ -867,7 +874,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         /*
          This is an optimisation to avoid creating many temporary hash sets in the happy path.
          The simple naive implementation is
-         Set<String> filled = null;
+        Set<String> filled = null;
         for (Hit hit : hits) {
             if (hit.getFilled() == null) continue;
             if (filled == null)
@@ -876,7 +883,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 filled.retainAll(hit.getFilled());
         }
         return filled;
-         */
+        */
         Iterator<Hit> iterator = hits.iterator();
         Set<String> firstSummaryNames = getSummaryNamesNextFilledHit(iterator);
         if (firstSummaryNames == null || firstSummaryNames.isEmpty())
