@@ -48,7 +48,7 @@ public class FutureResult extends FutureTask<Result> {
             return new Result(getQuery(), createInterruptedError(e));
         }
         catch (ExecutionException e) {
-            return new Result(getQuery(), createExecutionError((ExecutionException)e));
+            return new Result(getQuery(), createExecutionError(e));
         }
     }
 
@@ -78,7 +78,7 @@ public class FutureResult extends FutureTask<Result> {
             // allow searchers to explicitly signal timeout rather than actually time out (useful for testing)
             if (e.getCause() instanceof com.yahoo.search.federation.TimeoutException)
                 return Optional.empty();
-            return Optional.of(new Result(getQuery(), createExecutionError((ExecutionException)e)));
+            return Optional.of(new Result(getQuery(), createExecutionError(e)));
         }
         catch (TimeoutException e) {
             return Optional.empty();
