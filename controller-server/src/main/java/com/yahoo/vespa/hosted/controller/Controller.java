@@ -13,13 +13,13 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
+import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -68,7 +68,7 @@ public class Controller extends AbstractComponent {
     private final Clock clock;
     private final ZoneRegistry zoneRegistry;
     private final ServiceRegistry serviceRegistry;
-    private final MetricsService metricsService;
+    private final ConfigServerMetrics metrics;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
@@ -81,13 +81,12 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      ZoneRegistry zoneRegistry, MetricsService metricsService,
+                      ZoneRegistry zoneRegistry,
                       AccessControl accessControl,
                       FlagSource flagSource,
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
-             metricsService,
              Clock.systemUTC(), accessControl,
              com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
@@ -95,7 +94,6 @@ public class Controller extends AbstractComponent {
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry,
-                      MetricsService metricsService,
                       Clock clock,
                       AccessControl accessControl,
                       Supplier<String> hostnameSupplier,
@@ -106,11 +104,12 @@ public class Controller extends AbstractComponent {
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
-        this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 
+
+        metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl,
@@ -256,8 +255,8 @@ public class Controller extends AbstractComponent {
         return HostName.from(hostnameSupplier.get());
     }
 
-    public MetricsService metricsService() {
-        return metricsService;
+    public ConfigServerMetrics metrics() {
+        return metrics;
     }
 
     public SystemName system() {

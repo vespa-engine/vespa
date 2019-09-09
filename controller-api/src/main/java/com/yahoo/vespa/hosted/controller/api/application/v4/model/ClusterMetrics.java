@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
 
 /**
  * @author olaa
@@ -12,11 +11,11 @@ import java.util.OptionalDouble;
 public class ClusterMetrics {
 
     // These field names originate from the MetricsResponse class
-    private static final String QUERIES_PER_SECOND = "queriesPerSecond";
-    private static final String FEED_PER_SECOND = "feedPerSecond";
-    private static final String DOCUMENT_COUNT = "documentCount";
-    private static final String FEED_LATENCY = "feedLatency";
-    private static final String QUERY_LATENCY  = "queryLatency";
+    public static final String QUERIES_PER_SECOND = "queriesPerSecond";
+    public static final String FEED_PER_SECOND = "feedPerSecond";
+    public static final String DOCUMENT_COUNT = "documentCount";
+    public static final String FEED_LATENCY = "feedLatency";
+    public static final String QUERY_LATENCY  = "queryLatency";
 
     private final String clusterId;
     private final ClusterType clusterType;
@@ -56,9 +55,14 @@ public class ClusterMetrics {
         return Optional.ofNullable(metrics.get(QUERY_LATENCY));
     }
 
-    public void addMetric(String name, double value) {
+    public ClusterMetrics addMetric(String name, double value) {
         metrics.put(name, value);
+        return this;
     }
 
-    public enum ClusterType {content, container};
+    public enum ClusterType {
+        content,
+        container
+    }
+
 }

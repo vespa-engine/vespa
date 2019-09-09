@@ -64,6 +64,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<ZoneId, List<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
     private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
+    private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -186,6 +187,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     public Map<DeploymentId, Set<String>> rotationNames() {
         return Collections.unmodifiableMap(rotationNames);
+    }
+
+    public void setMetrics(DeploymentId deployment, ClusterMetrics clusterMetrics) {
+        setMetrics(deployment, List.of(clusterMetrics));
+    }
+
+    public void setMetrics(DeploymentId deployment, List<ClusterMetrics> clusterMetrics) {
+        this.clusterMetrics.put(deployment, clusterMetrics);
     }
 
     @Override
@@ -336,7 +345,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public List<ClusterMetrics> getMetrics(DeploymentId deployment) {
-        return List.of();
+        return Collections.unmodifiableList(clusterMetrics.getOrDefault(deployment, List.of()));
     }
 
     // Returns a canned example response
