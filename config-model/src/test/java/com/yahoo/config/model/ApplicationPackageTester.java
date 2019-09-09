@@ -33,8 +33,7 @@ public class ApplicationPackageTester {
             this.applicationPackage = applicationPackage;
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not create an application package from '" +
-                                               applicationPackageDir + "'", e);
+            throw new IllegalArgumentException("Could not create an application package from '" + applicationPackageDir + "'", e);
         }
     }
 

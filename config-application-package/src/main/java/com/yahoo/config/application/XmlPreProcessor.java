@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -32,17 +33,29 @@ public class XmlPreProcessor {
 
     private final File applicationDir;
     private final Reader xmlInput;
+    private final InstanceName instance;
     private final Environment environment;
     private final RegionName region;
     private final List<PreProcessor> chain;
 
+    // TODO: Remove after September 2019
     public XmlPreProcessor(File applicationDir, File xmlInput, Environment environment, RegionName region) throws IOException {
-        this(applicationDir, new FileReader(xmlInput), environment, region);
+        this(applicationDir, new FileReader(xmlInput), InstanceName.from("default"), environment, region);
     }
 
+    public XmlPreProcessor(File applicationDir, File xmlInput, InstanceName instance, Environment environment, RegionName region) throws IOException {
+        this(applicationDir, new FileReader(xmlInput), instance, environment, region);
+    }
+
+    // TODO: Remove after September 2019
     public XmlPreProcessor(File applicationDir, Reader xmlInput, Environment environment, RegionName region) throws IOException {
+        this(applicationDir, xmlInput, InstanceName.from("default"), environment, region);
+    }
+
+    public XmlPreProcessor(File applicationDir, Reader xmlInput, InstanceName instance, Environment environment, RegionName region) {
         this.applicationDir = applicationDir;
         this.xmlInput = xmlInput;
+        this.instance = instance;
         this.environment = environment;
         this.region = region;
         this.chain = setupChain();
@@ -64,7 +77,7 @@ public class XmlPreProcessor {
     private List<PreProcessor> setupChain() {
         List<PreProcessor> chain = new ArrayList<>();
         chain.add(new IncludeProcessor(applicationDir));
-        chain.add(new OverrideProcessor(environment, region));
+        chain.add(new OverrideProcessor(instance, environment, region));
         chain.add(new PropertiesProcessor());
         return chain;
     }

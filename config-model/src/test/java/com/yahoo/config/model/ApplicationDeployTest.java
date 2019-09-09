@@ -10,6 +10,7 @@ import com.yahoo.config.model.application.provider.Bundle;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -33,19 +34,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -60,7 +59,6 @@ public class ApplicationDeployTest {
     @Test
     public void testVespaModel() throws SAXException, IOException {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
-        assertThat(tester.app().getApplicationName(), is("app1"));
         VespaModel model = new VespaModel(tester.app());
         List<SearchDefinition> searchDefinitions = tester.getSearchDefinitions();
         assertEquals(searchDefinitions.size(), 5);
@@ -92,8 +90,7 @@ public class ApplicationDeployTest {
 
         List<FilesApplicationPackage.Component> components = tester.app().getComponents();
         assertEquals(1, components.size());
-        Map<String, Bundle.DefEntry> defEntriesByName =
-                defEntries2map(components.get(0).getDefEntries());
+        Map<String, Bundle.DefEntry> defEntriesByName = defEntries2map(components.get(0).getDefEntries());
         assertEquals(5, defEntriesByName.size());
 
         Bundle.DefEntry def1 = defEntriesByName.get("test-namespace");
@@ -106,15 +103,14 @@ public class ApplicationDeployTest {
 
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
-        for (SearchDefinition sd : searchDefinitions) {
+        for (SearchDefinition sd : searchDefinitions)
             sdFileNames.add(sd.getFilename());
-        }
         Collections.sort(sdFileNames);
-        assertThat(sdFileNames.get(0), is("laptop.sd"));
-        assertThat(sdFileNames.get(1), is("music.sd"));
-        assertThat(sdFileNames.get(2), is("pc.sd"));
-        assertThat(sdFileNames.get(3), is("product.sd"));
-        assertThat(sdFileNames.get(4), is("sock.sd"));
+        assertEquals("laptop.sd", sdFileNames.get(0));
+        assertEquals("music.sd", sdFileNames.get(1));
+        assertEquals("pc.sd", sdFileNames.get(2));
+        assertEquals("product.sd", sdFileNames.get(3));
+        assertEquals("sock.sd", sdFileNames.get(4));
     }
 
     @Test
@@ -146,10 +142,8 @@ public class ApplicationDeployTest {
         String appDir = "src/test/cfg/application/app_sdbundles";
         ApplicationPackageTester tester = ApplicationPackageTester.create(appDir);
         VespaModel model = new VespaModel(tester.app());
-        // Check that the resulting documentmanager config contains those types
         DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
         model.getConfig(b, VespaModel.ROOT_CONFIGID);
-        //String docMan = model.getConfig("documentmanager", "").toString();
         DocumentmanagerConfig dc = b.build();
         String docMan=ConfigInstance.serialize(dc).toString();
         int pFlags = Pattern.MULTILINE + Pattern.DOTALL;
@@ -169,8 +163,8 @@ public class ApplicationDeployTest {
     public void include_dirs_are_included() {
         ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "include_dirs");
 
-        List<String> includeDirs = tester.app().getUserIncludeDirs();
-        assertThat(includeDirs, contains("jdisc_dir", "dir1", "dir2", "empty_dir"));
+        Set<String> includeDirs = new HashSet<>(tester.app().getUserIncludeDirs());
+        assertEquals(Set.of("jdisc_dir", "dir1", "dir2", "empty_dir"), includeDirs);
     }
 
     @Test
@@ -186,7 +180,8 @@ public class ApplicationDeployTest {
             FilesApplicationPackage.fromFile(appDir);
             fail("Expected exception due to non-existent include dir");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("Cannot include directory 'non-existent', as it does not exist"));
+            assertEquals("Cannot include directory 'non-existent', as it does not exist. Directory must reside in application package, and path must be given relative to application package.",
+                         e.getMessage());
         }
     }
 
@@ -231,7 +226,7 @@ public class ApplicationDeployTest {
             ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString("element \"delay\" not allowed here"));
+            assertEquals("XML error in deployment.xml: element \"delay\" not allowed here; expected the element end-tag or element \"region\" [8:25], input:\n", e.getMessage());
         }
     }
 
@@ -264,28 +259,36 @@ public class ApplicationDeployTest {
         File tmp = Files.createTempDir();
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
-        DeployData deployData = new DeployData("foo", "bar", "baz", 13l, false, 1337l, 3l);
+        ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");
+        DeployData deployData = new DeployData("foo",
+                                               "bar",
+                                               applicationId,
+                                               13L,
+                                               false,
+                                               1337L,
+                                               3L);
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         app.writeMetaData();
         FilesApplicationPackage newApp = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         ApplicationMetaData meta = newApp.getMetaData();
-        assertThat(meta.getDeployedByUser(), is("foo"));
-        assertThat(meta.getDeployPath(), is("bar"));
-        assertThat(meta.getDeployTimestamp(), is(13L));
-        assertThat(meta.getGeneration(), is(1337L));
-        assertThat(meta.getPreviousActiveGeneration(), is(3L));
-        String checkSum = meta.getCheckSum();
-        assertNotNull(checkSum);
+        assertEquals("foo", meta.getDeployedByUser());
+        assertEquals("bar", meta.getDeployPath());
+        assertEquals(applicationId, meta.getApplicationId());
+        assertEquals(13L, (long)meta.getDeployTimestamp());
+        assertEquals(1337L, (long)meta.getGeneration());
+        assertEquals(3L, meta.getPreviousActiveGeneration());
+        String checksum = meta.getChecksum();
+        assertNotNull(checksum);
 
         assertTrue((new File(tmp, "hosts.xml")).delete());
         FilesApplicationPackage app2 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
-        String app2CheckSum = app2.getMetaData().getCheckSum();
-        assertThat(app2CheckSum, is(not(checkSum)));
+        String app2Checksum = app2.getMetaData().getChecksum();
+        assertNotEquals(checksum, app2Checksum);
 
         assertTrue((new File(tmp, "files/foo.json")).delete());
         FilesApplicationPackage app3 = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
-        String app3CheckSum = app3.getMetaData().getCheckSum();
-        assertThat(app3CheckSum, is(not(app2CheckSum)));
+        String app3Checksum = app3.getMetaData().getChecksum();
+        assertNotEquals(app2Checksum, app3Checksum);
     }
 
     @Test
@@ -322,7 +325,8 @@ public class ApplicationDeployTest {
             FilesApplicationPackage.getComponents(new File("src/test/cfg/application/validation/invalidjar_app"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file"));
+            assertEquals("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file",
+                         e.getMessage());
         }
     }
 
@@ -340,15 +344,15 @@ public class ApplicationDeployTest {
         DeployState deployState = new DeployState.Builder().applicationPackage(app).build();
 
         ConfigDefinition def = deployState.getConfigDefinition(new ConfigDefinitionKey("baz", "xyzzy")).get();
-        assertThat(def.getNamespace(), is("xyzzy"));
+        assertEquals("xyzzy", def.getNamespace());
 
         def = deployState.getConfigDefinition(new ConfigDefinitionKey("foo", "qux")).get();
-        assertThat(def.getNamespace(), is("qux"));
+        assertEquals("qux", def.getNamespace());
 
         // A config def without version in filename and version in file header
         def = deployState.getConfigDefinition(new ConfigDefinitionKey("bar", "xyzzy")).get();
-        assertThat(def.getNamespace(), is("xyzzy"));
-        assertThat(def.getName(), is("bar"));
+        assertEquals("xyzzy", def.getNamespace());
+        assertEquals("bar", def.getName());
     }
 
     @Test(expected=IllegalArgumentException.class)

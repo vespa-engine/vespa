@@ -11,6 +11,7 @@ import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
@@ -56,7 +57,7 @@ public class ZooKeeperClientTest {
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
                                                                                 new DeployData("foo",
                                                                                                "/bar/baz",
-                                                                                               "appName",
+                                                                                               ApplicationId.from("default", "appName", "default"),
                                                                                                1345L,
                                                                                                true,
                                                                                                3L,
@@ -135,8 +136,7 @@ public class ZooKeeperClientTest {
     public void testFeedAppMetaDataToZooKeeper() {
         assertTrue(zk.exists(appPath, ConfigCurator.META_ZK_PATH));
         ApplicationMetaData metaData = ApplicationMetaData.fromJsonString(zk.getData(appPath, ConfigCurator.META_ZK_PATH));
-        assertThat(metaData.getApplicationName(), is("appName"));
-        assertTrue(metaData.getCheckSum().length() > 0);
+        assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
         assertThat(metaData.getDeployedByUser(), is("foo"));
         assertThat(metaData.getDeployPath(), is("/bar/baz"));

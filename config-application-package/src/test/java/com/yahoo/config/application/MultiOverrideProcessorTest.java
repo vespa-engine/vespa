@@ -2,6 +2,7 @@
 package com.yahoo.config.application;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.junit.Test;
@@ -123,13 +124,13 @@ public class MultiOverrideProcessorTest {
 
     private void assertOverride(Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(input));
-        Document newDoc = new OverrideProcessor(environment, region).process(inputDoc);
+        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 
     private void assertOverrideWithIds(Environment environment, RegionName region, String expected) throws TransformerException {
         Document inputDoc = Xml.getDocument(new StringReader(inputWithIds));
-        Document newDoc = new OverrideProcessor(environment, region).process(inputDoc);
+        Document newDoc = new OverrideProcessor(InstanceName.from("default"), environment, region).process(inputDoc);
         TestBase.assertDocument(expected, newDoc);
     }
 

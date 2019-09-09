@@ -87,7 +87,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     private ApplicationPackage createApplication(File userDir,
                                                  File configApplicationDir,
-                                                 String applicationName,
+                                                 ApplicationId applicationId,
                                                  long sessionId,
                                                  long currentlyActiveSessionId,
                                                  boolean internalRedeploy) {
@@ -96,7 +96,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
         if (user == null) {
             user = "unknown";
         }
-        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationName, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSessionId);
+        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy, sessionId, currentlyActiveSessionId);
         return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
     }
 
@@ -150,7 +150,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
             IOUtils.copyDirectory(applicationFile, userApplicationDir);
             ApplicationPackage applicationPackage = createApplication(applicationFile,
                                                                       userApplicationDir,
-                                                                      applicationId.application().value(),
+                                                                      applicationId,
                                                                       sessionId,
                                                                       currentlyActiveSessionId,
                                                                       internalRedeploy);

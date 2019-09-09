@@ -218,7 +218,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     }
 
     private void addLocalSession(long sessionId, DeployData deployData, SessionZooKeeperClient zkc) throws IOException {
-        writeApplicationId(zkc, deployData.getApplicationName());
+        writeApplicationId(zkc, deployData.getApplicationId());
         TenantFileSystemDirs tenantFileSystemDirs = new TenantFileSystemDirs(temporaryFolder.newFolder(), tenantName);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(testApp, deployData);
         localRepo.addSession(new LocalSession(tenantName, sessionId, new SessionTest.MockSessionPreparer(),
@@ -278,7 +278,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
             this.initialStatus = initialStatus;
             this.deployData = new DeployData("foo",
                                              "bar",
-                                             appName,
+                                             ApplicationId.from(tenantName.value(), appName, "default"),
                                              0L,
                                              false,
                                              sessionId,
@@ -312,9 +312,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
                                             Optional.of(AllocatedHosts.withHosts(Collections.singleton(new HostSpec("bar", Collections.emptyList())))));
             session = createRemoteSession(sessionId, initialStatus, zkClient);
             addLocalSession(sessionId, deployData, zkClient);
-            tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(ApplicationId.from(tenantName.value(),
-                                                                                                             deployData.getApplicationName(),
-                                                                                                             InstanceName.defaultName().value()));
+            tenantRepository.getTenant(tenantName).getApplicationRepo().createApplication(deployData.getApplicationId());
             metaData = localRepo.getSession(sessionId).getMetaData();
             actResponse = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             return this;
@@ -349,8 +347,7 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         assertFalse(hostProvisioner.activated);
     }
 
-    private void writeApplicationId(SessionZooKeeperClient zkc, String applicationName) {
-        ApplicationId id = ApplicationId.from(tenantName, ApplicationName.from(applicationName), InstanceName.defaultName());
+    private void writeApplicationId(SessionZooKeeperClient zkc, ApplicationId id) {
         zkc.writeApplicationId(id);
     }
 

@@ -132,10 +132,10 @@ public class ApplicationRepositoryTest {
         ApplicationMetaData applicationMetaData = getApplicationMetaData(applicationId(), sessionId);
 
         assertNotEquals(sessionId, originalSessionId);
-        assertEquals(applicationMetaData.getApplicationName(), originalApplicationMetaData.getApplicationName());
-        assertEquals(applicationMetaData.getPreviousActiveGeneration(), originalApplicationMetaData.getGeneration().longValue());
-        assertNotEquals(applicationMetaData.getGeneration(), originalApplicationMetaData.getGeneration());
-        assertEquals(applicationMetaData.getDeployedByUser(), originalApplicationMetaData.getDeployedByUser());
+        assertEquals(originalApplicationMetaData.getApplicationId(), applicationMetaData.getApplicationId());
+        assertEquals(originalApplicationMetaData.getGeneration().longValue(), applicationMetaData.getPreviousActiveGeneration());
+        assertNotEquals(originalApplicationMetaData.getGeneration(), applicationMetaData.getGeneration());
+        assertEquals(originalApplicationMetaData.getDeployedByUser(), applicationMetaData.getDeployedByUser());
     }
 
     @Test
