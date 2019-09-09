@@ -113,7 +113,10 @@ struct FunctionInfo {
         }
     }
 
-    void check_node(const Node &node) {
+    void analyze_inputs(const Node &node) {
+        for (size_t i = 0; i < node.num_children(); ++i) {
+            analyze_inputs(node.get_child(i));
+        }
         check_cmp(as<Equal>(node));
         check_cmp(as<NotEqual>(node));
         check_cmp(as<Approx>(node));
@@ -122,18 +125,6 @@ struct FunctionInfo {
         check_cmp(as<Greater>(node));
         check_cmp(as<GreaterEqual>(node));
         check_in(as<In>(node));
-    }
-
-    void check_inverted(const Not *node) {
-        check_node(node->child());
-    }
-
-    void analyze_inputs(const Node &node) {
-        for (size_t i = 0; i < node.num_children(); ++i) {
-            analyze_inputs(node.get_child(i));
-        }
-        check_node(node);
-        check_inverted(as<Not>(node));
     }
 
     FunctionInfo(const Function &function)
