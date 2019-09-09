@@ -1,16 +1,21 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -23,9 +28,10 @@ import static org.junit.Assert.assertFalse;
  */
 public class DeploymentMetricsMaintainerTest {
 
+    ControllerTester tester = new ControllerTester();
+
     @Test
     public void updates_metrics() {
-        ControllerTester tester = new ControllerTester();
         ApplicationId appId = tester.createAndDeploy("tenant1", "domain1", "app1",
                                                   Environment.dev, 123).id();
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
@@ -39,7 +45,17 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
+        // Only get application metrics for old version
+        deploy(app.get(), Version.fromString("6.3.3"));
+        maintainer.maintain();
+        assertEquals(0.5, app.get().metrics().queryServiceQuality(), 0);
+        assertEquals(0, deployment.get().metrics().documentCount(), 0);
+        assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
+        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
+        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
+
         // Metrics are gathered and saved to application
+        deploy(app.get(), Version.fromString("7.5.5"));
         maintainer.maintain();
         Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
         assertEquals(0.5, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
@@ -88,4 +104,11 @@ public class DeploymentMetricsMaintainerTest {
         return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
     }
 
+    private void deploy(Application application, Version version) {
+        tester.deploy(application,
+                ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
+                Optional.of(new ApplicationPackage(new byte[0])),
+                false,
+                Optional.of(version));
+    }
 }

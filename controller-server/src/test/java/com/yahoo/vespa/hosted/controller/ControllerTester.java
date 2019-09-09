@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -300,10 +301,14 @@ public final class ControllerTester {
     }
 
     public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
+        deploy(application, zone, applicationPackage, deployCurrentVersion, Optional.empty());
+    }
+
+    public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
         controller().applications().deploy(application.id(),
                                            zone,
                                            applicationPackage,
-                                           new DeployOptions(false, Optional.empty(), false, deployCurrentVersion));
+                                           new DeployOptions(false, version, false, deployCurrentVersion));
     }
 
     public Supplier<Application> application(ApplicationId application) {
