@@ -93,8 +93,6 @@ public class Run {
     public Run with(X509Certificate testerCertificate) {
         if (hasEnded())
             throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
-        if (this.testerCertificate.isPresent())
-            throw new IllegalStateException("Certificate for this run was already set");
 
         return new Run(id, new EnumMap<>(steps), versions, start, end, status, lastTestRecord, Optional.of(testerCertificate));
     }
