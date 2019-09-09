@@ -7,6 +7,7 @@
                 <artifactsPath>artifacts</artifactsPath>
                 <surefireMemoryMb>5120</surefireMemoryMb>
                 <useAthenzCredentials>true</useAthenzCredentials>
+                <useTesterCertificate>false</useTesterCertificate>
             </config>
         </component>
 

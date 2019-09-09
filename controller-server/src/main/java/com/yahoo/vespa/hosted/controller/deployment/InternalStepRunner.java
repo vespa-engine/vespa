@@ -19,6 +19,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -46,7 +47,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -86,6 +86,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -488,7 +489,7 @@ public class InternalStepRunner implements StepRunner {
                 List<LogEntry> entries = new ArrayList<>();
                 String logs = IOUtils.readAll(controller.serviceRegistry().configServer().getLogs(new DeploymentId(id.application(), zone),
                                                                                      Collections.emptyMap()), // Get all logs.
-                                              StandardCharsets.UTF_8);
+                                              UTF_8);
                 for (String line : logs.split("\n")) {
                     String[] parts = line.split("\t");
                     if (parts.length != 7) continue;
@@ -615,31 +616,41 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
+        boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          spec.athenzDomain().isPresent(),
+                                         useTesterCertificate,
                                          testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
 
         ZoneId zone = id.type().zone(controller.system());
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
-        if (controller.system().isPublic()) {
-            KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-            X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
-            X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair, subject,
-                                                                             Instant.now(), Instant.now().plus(certificateTimeout),
-                                                                             SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
-                                                                .build();
-            controller.jobController().storeTesterCertificate(id, certificate);
-        }
-
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);
             zipBuilder.add("services.xml", servicesXml);
             zipBuilder.add("deployment.xml", deploymentXml);
+            if (useTesterCertificate)
+                appendAndStoreCertificate(zipBuilder, id);
+
             zipBuilder.close();
             return new ApplicationPackage(zipBuilder.toByteArray());
         }
+    }
+
+    private void appendAndStoreCertificate(ZipBuilder zipBuilder, RunId id) {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
+        X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
+                                                                         subject,
+                                                                         controller.clock().instant(),
+                                                                         controller.clock().instant().plus(certificateTimeout),
+                                                                         SignatureAlgorithm.SHA512_WITH_ECDSA,
+                                                                         BigInteger.valueOf(1))
+                                                            .build();
+        controller.jobController().storeTesterCertificate(id, certificate);
+        zipBuilder.add("key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
+        zipBuilder.add("cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
@@ -659,7 +670,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, Optional<String> testerFlavor) {
+    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
+                              Optional<String> testerFlavor) {
         String flavor = testerFlavor.orElse("d-1-4-50");
         int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
@@ -675,6 +687,7 @@ public class InternalStepRunner implements StepRunner {
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
                 "                <useAthenzCredentials>" + useAthenzCredentials + "</useAthenzCredentials>\n" +
+                "                <useTesterCertificate>" + useTesterCertificate + "</useTesterCertificate>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
@@ -711,7 +724,7 @@ public class InternalStepRunner implements StepRunner {
                 "    </container>\n" +
                 "</services>\n";
 
-        return servicesXml.getBytes(StandardCharsets.UTF_8);
+        return servicesXml.getBytes(UTF_8);
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
@@ -722,7 +735,7 @@ public class InternalStepRunner implements StepRunner {
                 athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
                 athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
                 + "/>";
-        return deploymentSpec.getBytes(StandardCharsets.UTF_8);
+        return deploymentSpec.getBytes(UTF_8);
     }
 
     /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */

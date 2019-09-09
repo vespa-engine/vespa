@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
-import org.eclipse.jetty.util.security.CertificateUtils;
 
 import java.time.Instant;
 import java.util.EnumMap;

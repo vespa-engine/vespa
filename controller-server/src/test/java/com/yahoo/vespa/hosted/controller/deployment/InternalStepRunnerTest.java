@@ -429,6 +429,7 @@ public class InternalStepRunnerTest {
     public void generates_correct_services_xml_test() {
         assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
                                                                                             true,
+                                                                                            false,
                                                                                             Optional.of("d-2-12-75"))));
     }
 
