@@ -131,6 +131,10 @@ public abstract class Container extends AbstractService implements
         return (parent instanceof ContainerCluster) ? ((ContainerCluster) parent).getHttp() : null;
     }
 
+    public JettyHttpServer getDefaultHttpServer() {
+        return defaultHttpServer;
+    }
+
     public JettyHttpServer getHttpServer() {
         Http http = getHttp();
         if (http == null) {
