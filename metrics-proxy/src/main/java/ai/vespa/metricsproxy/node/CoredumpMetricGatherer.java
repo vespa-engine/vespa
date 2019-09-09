@@ -8,6 +8,7 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
@@ -38,6 +39,8 @@ public class CoredumpMetricGatherer {
             return (int) fileWrapper.walkTree(COREDUMP_PATH)
                     .filter(fileWrapper::isRegularFile)
                     .count();
+        } catch (NoSuchFileException e) {
+            return 0;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
