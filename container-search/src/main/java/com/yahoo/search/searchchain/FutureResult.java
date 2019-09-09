@@ -95,10 +95,10 @@ public class FutureResult extends FutureTask<Result> {
                                                    Exceptions.toMessageString(e));
     }
     
-    private ErrorMessage createExecutionError(Exception e) {
-        log.log(Level.WARNING,"Exception in " + execution + " for " + query,e);
-        return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " + Exceptions.toMessageString(e),
-                                                        e.getCause());
+    private ErrorMessage createExecutionError(ExecutionException e) {
+        log.log(Level.WARNING,"Exception in " + execution + " of " + query, e.getCause());
+        return ErrorMessage.createErrorInPluginSearcher("Error in '" + execution + "': " +
+                                                        Exceptions.toMessageString(e.getCause()), e.getCause());
     }
 
     public ErrorMessage createTimeoutError() {
