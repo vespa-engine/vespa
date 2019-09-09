@@ -2,6 +2,7 @@
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.messagebus.Trace;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
@@ -29,4 +30,7 @@ interface Visitor {
     int getTotalHitCount();
 
     List<Grouping> getGroupings();
+
+    Trace getTrace();
+
 }

@@ -19,6 +19,7 @@ import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.processing.request.CompoundName;
@@ -72,6 +73,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private final Map<Integer, Grouping> groupingMap = new ConcurrentHashMap<>();
     private Query query = null;
     private VisitorSessionFactory visitorSessionFactory;
+    private final int traceLevelOverride;
+    private Trace sessionTrace;
 
     public interface VisitorSessionFactory {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
@@ -123,20 +126,22 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
     }
 
-    public VdsVisitor(Query query, String searchCluster, Route route, String documentType) {
-        this(query, searchCluster, route, documentType, MessageBusVisitorSessionFactory.sharedInstance());
+    public VdsVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+        this(query, searchCluster, route, documentType, MessageBusVisitorSessionFactory.sharedInstance(), traceLevelOverride);
     }
 
     public VdsVisitor(Query query, String searchCluster, Route route,
-                      String documentType, VisitorSessionFactory visitorSessionFactory)
+                      String documentType, VisitorSessionFactory visitorSessionFactory,
+                      int traceLevelOverride)
     {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
+        this.traceLevelOverride = traceLevelOverride;
         setVisitorParameters(searchCluster, route, documentType);
     }
 
-    private static int inferSessionTraceLevel(Query query) {
-        int implicitLevel = 0;
+    private int inferSessionTraceLevel(Query query) {
+        int implicitLevel = traceLevelOverride;
         if (log.isLoggable(LogLevel.SPAM)) {
             implicitLevel = 9;
         } else if (log.isLoggable(LogLevel.DEBUG)) {
@@ -331,10 +336,10 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             }
         } finally {
             session.destroy();
-            log.log(LogLevel.DEBUG, () -> session.getTrace().toString());
+            sessionTrace = session.getTrace();
+            log.log(LogLevel.DEBUG, () -> sessionTrace.toString());
+            query.trace(sessionTrace.toString(), false, 9);
         }
-
-        query.trace(session.getTrace().toString(), false, 9);
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
             if (log.isLoggable(LogLevel.DEBUG)) {
@@ -366,6 +371,11 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             throw new UnsupportedOperationException("Received unsupported message " + m + ". VdsVisitor can only accept query result, search result, and documentsummary messages.");
         }
         ack(token);
+    }
+
+    @Override
+    public Trace getTrace() {
+        return sessionTrace;
     }
 
     public void onQueryResult(SearchResult sr, DocumentSummary summary) {

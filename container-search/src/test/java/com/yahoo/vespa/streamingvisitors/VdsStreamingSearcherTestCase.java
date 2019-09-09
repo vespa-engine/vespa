@@ -3,11 +3,11 @@ package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.select.parser.TokenMgrException;
+import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
@@ -18,21 +18,31 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
+import com.yahoo.vespa.streamingvisitors.tracing.MockUtils;
+import com.yahoo.vespa.streamingvisitors.tracing.MonotonicNanoClock;
+import com.yahoo.vespa.streamingvisitors.tracing.SamplingStrategy;
+import com.yahoo.vespa.streamingvisitors.tracing.TraceExporter;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 public class VdsStreamingSearcherTestCase {
     public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
@@ -47,12 +57,14 @@ public class VdsStreamingSearcherTestCase {
         private final List<SearchResult.Hit> hits = new ArrayList<>();
         private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();
         private final List<Grouping> groupings = new ArrayList<>();
+        int traceLevelOverride;
 
-        MockVisitor(Query query, String searchCluster, Route route, String documentType) {
+        MockVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
             this.query = query;
             this.searchCluster = searchCluster;
             this.route = route;
             this.documentType = documentType;
+            this.traceLevelOverride = traceLevelOverride;
         }
 
         @Override
@@ -126,12 +138,21 @@ public class VdsStreamingSearcherTestCase {
         public List<Grouping> getGroupings() {
             return groupings;
         }
+
+        @Override
+        public Trace getTrace() {
+            return new Trace();
+        }
     }
 
     private static class MockVisitorFactory implements VisitorFactory {
+
+        public MockVisitor lastCreatedVisitor;
+
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType) {
-            return new MockVisitor(query, searchCluster, route, documentType);
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+            lastCreatedVisitor = new MockVisitor(query, searchCluster, route, documentType, traceLevelOverride);
+            return lastCreatedVisitor;
         }
     }
 
@@ -261,6 +282,75 @@ public class VdsStreamingSearcherTestCase {
         assertTrue(VdsStreamingSearcher.verifyDocId(groupId1, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(groupId2, group1Query, false));
         assertFalse(VdsStreamingSearcher.verifyDocId(badId, group1Query, false));
+    }
+
+    private static class TraceFixture {
+        SamplingStrategy sampler = mock(SamplingStrategy.class);
+        TraceExporter exporter = mock(TraceExporter.class);
+        MonotonicNanoClock clock;
+        TracingOptions options;
+
+        MockVisitorFactory factory;
+        VdsStreamingSearcher searcher;
+
+        private TraceFixture(Long firstTimestamp, Long... additionalTimestamps) {
+            clock = MockUtils.mockedClockReturning(firstTimestamp, additionalTimestamps);
+            options = new TracingOptions(sampler, exporter, clock, 8, 2.0);
+            factory = new MockVisitorFactory();
+            searcher = new VdsStreamingSearcher(factory, options);
+        }
+
+        private TraceFixture() {
+            this(TimeUnit.SECONDS.toNanos(1), TimeUnit.SECONDS.toNanos(10));
+        }
+
+        static TraceFixture withSampledTrace(boolean shouldTrace) {
+            var f = new TraceFixture();
+            when(f.sampler.shouldSample()).thenReturn(shouldTrace);
+            return f;
+        }
+
+        static TraceFixture withTracingAndClockSampledAt(long t1ms, long t2ms) {
+            var f = new TraceFixture(TimeUnit.MILLISECONDS.toNanos(t1ms), TimeUnit.MILLISECONDS.toNanos(t2ms));
+            when(f.sampler.shouldSample()).thenReturn(true);
+            return f;
+        }
+    }
+
+    @Test
+    public void trace_level_set_if_sampling_strategy_returns_true() {
+        var f = TraceFixture.withSampledTrace(true);
+        executeQuery(f.searcher, new Query("/?streaming.userid=1&query=timeoutexception"));
+
+        assertNotNull(f.factory.lastCreatedVisitor);
+        assertEquals(f.factory.lastCreatedVisitor.traceLevelOverride, 8);
+    }
+
+    @Test
+    public void trace_level_not_set_if_sampling_strategy_returns_false() {
+        var f = TraceFixture.withSampledTrace(false);
+        executeQuery(f.searcher, new Query("/?streaming.userid=1&query=timeoutexception"));
+
+        assertNotNull(f.factory.lastCreatedVisitor);
+        assertEquals(f.factory.lastCreatedVisitor.traceLevelOverride, 0);
+    }
+
+    @Test
+    public void trace_is_exported_if_timed_out_beyond_threshold() {
+        // Default mock timeout threshold is 2x timeout
+        var f = TraceFixture.withTracingAndClockSampledAt(1000, 3001);
+        executeQuery(f.searcher, new Query("/?streaming.userid=1&query=timeoutexception&timeout=1.0"));
+
+        verify(f.exporter, times(1)).maybeExport(any());
+    }
+
+    @Test
+    public void trace_is_not_exported_if_timed_out_less_than_threshold() {
+        // Default mock timeout threshold is 2x timeout
+        var f = TraceFixture.withTracingAndClockSampledAt(1000, 2999);
+        executeQuery(f.searcher, new Query("/?streaming.userid=1&query=timeoutexception&timeout=1.0"));
+
+        verify(f.exporter, times(0)).maybeExport(any());
     }
 
 }

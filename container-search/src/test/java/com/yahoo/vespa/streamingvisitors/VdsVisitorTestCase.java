@@ -363,7 +363,7 @@ public class VdsVisitorTestCase {
     }
 
     private void verifyVisitorOk(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory);
+        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
         visitor.doSearch();
         verifyVisitorParameters(factory.getParams(), qa, searchCluster, "mytype", route);
         supplyResults(visitor);
@@ -371,7 +371,7 @@ public class VdsVisitorTestCase {
     }
 
     private void verifyVisitorFails(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory);
+        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
         try {
             visitor.doSearch();
             assertTrue("Visitor did not fail", false);
