@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
@@ -10,13 +11,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author jonmv
  */
 public class MockUserManagement implements UserManagement {
 
-    private final Map<Role, Set<UserId>> memberships = new HashMap<>();
+    private final Map<Role, Set<User>> memberships = new HashMap<>();
 
     @Override
     public void createRole(Role role) {
@@ -33,7 +35,10 @@ public class MockUserManagement implements UserManagement {
 
     @Override
     public void addUsers(Role role, Collection<UserId> users) {
-        memberships.get(role).addAll(users);
+        List<User> userObjs = users.stream()
+                                   .map(id -> new User(id.value(), id.value(), null, null))
+                                   .collect(Collectors.toList());
+        memberships.get(role).addAll(userObjs);
     }
 
     @Override
@@ -42,7 +47,7 @@ public class MockUserManagement implements UserManagement {
     }
 
     @Override
-    public List<UserId> listUsers(Role role) {
+    public List<User> listUsers(Role role) {
         return List.copyOf(memberships.get(role));
     }
 
