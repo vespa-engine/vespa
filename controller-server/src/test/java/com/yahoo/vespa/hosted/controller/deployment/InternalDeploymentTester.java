@@ -7,6 +7,10 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -27,10 +31,18 @@ import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
 
+import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -58,6 +70,7 @@ public class InternalDeploymentTester {
             .region("aws-us-east-1c")
             .emailRole("author")
             .emailAddress("b@a")
+            .trust(generateCertificate())
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
     public static final TesterId testerId = TesterId.of(appId);
@@ -283,6 +296,18 @@ public class InternalDeploymentTester {
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
+    }
+
+    static X509Certificate generateCertificate() {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        X500Principal subject = new X500Principal("CN=subject");
+        return X509CertificateBuilder.fromKeypair(keyPair,
+                                                  subject,
+                                                  Instant.now(),
+                                                  Instant.now().plusSeconds(1),
+                                                  SignatureAlgorithm.SHA512_WITH_ECDSA,
+                                                  BigInteger.valueOf(1))
+                                     .build();
     }
 
 }

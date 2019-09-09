@@ -599,7 +599,7 @@ public class ControllerTest {
         tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), options);
 
         assertTrue("Application deployed and activated",
-                   tester.controllerTester().configServer().application(app.id()).get().activated());
+                   tester.controllerTester().configServer().application(app.id(), zone).get().activated());
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
@@ -625,7 +625,7 @@ public class ControllerTest {
         // Deploy
         tester.controller().applications().deploy(app.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
-                   tester.controllerTester().configServer().application(app.id()).get().activated());
+                   tester.controllerTester().configServer().application(app.id(), zone).get().activated());
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
         assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, tester.applications().require(app.id()).deploymentSpec());
@@ -721,7 +721,7 @@ public class ControllerTest {
         // Deploy app2 in dev
         tester.controller().applications().deploy(app2.id(), zone, Optional.of(applicationPackage), DeployOptions.none());
         assertTrue("Application deployed and activated",
-                   tester.controllerTester().configServer().application(app2.id()).get().activated());
+                   tester.controllerTester().configServer().application(app2.id(), zone).get().activated());
         assertFalse("Does not provision certificate in " + Environment.dev, certificate.apply(app2).isPresent());
     }
 

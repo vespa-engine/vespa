@@ -7,7 +7,6 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
@@ -34,7 +33,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.in
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.publicCdApplicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -112,7 +114,9 @@ public class InternalStepRunnerTest {
     public void testerHasAthenzIdentity() {
         tester.newRun(JobType.stagingTest);
         tester.runner().run();
-        DeploymentSpec spec = tester.configServer().application(InternalDeploymentTester.testerId.id()).get().applicationPackage().deploymentSpec();
+        DeploymentSpec spec = tester.configServer()
+                                    .application(InternalDeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
+                                    .applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
         ZoneId zone = JobType.stagingTest.zone(system());
         assertEquals("service", spec.athenzService(zone.environment(), zone.region()).get().value());
@@ -349,8 +353,9 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(appId, zone);
         tester.setEndpoints(appId, zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
-        assertEquals(otherPackage.hash(), tester.configServer().application(appId).get().applicationPackage().hash());
-        
+        assertEquals(applicationPackage.hash(), tester.configServer().application(appId, zone).get().applicationPackage().hash());
+        assertEquals(otherPackage.hash(), tester.configServer().application(appId, JobType.perfUsEast3.zone(system())).get().applicationPackage().hash());
+
         tester.configServer().setVersion(appId, zone, version);
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
@@ -409,6 +414,10 @@ public class InternalStepRunnerTest {
         tester.tester().controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
         tester.tester().controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.aws-us-east-1c"));
         RunId id = tester.startSystemTestTests();
+
+        List<X509Certificate> trusted = new ArrayList<>(publicCdApplicationPackage.trustedCertificates());
+        trusted.add(tester.jobs().run(id).get().testerCertificate().get());
+        assertEquals(trusted, tester.configServer().application(appId, id.type().zone(system())).get().applicationPackage().trustedCertificates());
 
         tester.clock().advance(InternalStepRunner.certificateTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();

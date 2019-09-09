@@ -81,7 +81,7 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.proxy, version2, zone1);
         completeUpgrade(SystemApplication.proxy, version2, zone1);
         assertTrue("Deployed proxy application",
-                   tester.configServer().application(SystemApplication.proxy.id()).isPresent());
+                   tester.configServer().application(SystemApplication.proxy.id(), zone1.getId()).isPresent());
 
         // zone 2, 3 and 4: still targets old version
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
