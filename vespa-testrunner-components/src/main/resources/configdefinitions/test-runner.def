@@ -1,5 +1,6 @@
 package=com.yahoo.vespa.hosted.testrunner
 
 artifactsPath        path
-surefireMemoryMb     int
-useAthenzCredentials bool
+surefireMemoryMb     int  default=1024
+useAthenzCredentials bool default=false
+useTesterCertificate bool default=false

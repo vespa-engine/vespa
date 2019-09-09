@@ -14,10 +14,10 @@
       }
     },
     "steps": {
-      "deployReal": "unfinished",
-      "installReal": "unfinished",
       "deployTester": "unfinished",
+      "deployReal": "unfinished",
       "installTester": "unfinished",
+      "installReal": "unfinished",
       "startTests": "unfinished",
       "endTests": "unfinished",
       "copyVespaLogs": "unfinished",
@@ -25,9 +25,7 @@
       "deactivateTester": "unfinished",
       "report": "unfinished"
     },
-    "tasks": {
-      "deploy": "running"
-    },
+    "tasks": { },
     "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1"
   }
 }

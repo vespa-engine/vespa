@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
-    private final Map<ApplicationId, Application> applications = new LinkedHashMap<>();
+    private final Map<DeploymentId, Application> applications = new LinkedHashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
@@ -161,8 +161,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     /** Get deployed application by ID */
-    public Optional<Application> application(ApplicationId id) {
-        return Optional.ofNullable(applications.get(id));
+    public Optional<Application> application(ApplicationId id, ZoneId zone) {
+        return Optional.ofNullable(applications.get(new DeploymentId(id, zone)));
     }
 
     public void setSuspended(DeploymentId deployment, boolean suspend) {
@@ -234,7 +234,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             this.prepareException = null;
             throw prepareException;
         }
-        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion, new ApplicationPackage(content)));
+        applications.put(deployment, new Application(deployment.applicationId(), lastPrepareVersion, new ApplicationPackage(content)));
 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
@@ -252,7 +252,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         );
 
         return () -> {
-            Application application = applications.get(deployment.applicationId());
+            Application application = applications.get(deployment);
             application.activate();
             List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
             for (Node node : nodes) {
@@ -302,9 +302,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         ApplicationId applicationId = deployment.applicationId();
         nodeRepository().removeByHostname(deployment.zoneId(),
                                           nodeRepository().list(deployment.zoneId(), applicationId));
-        if ( ! applications.containsKey(applicationId))
+        if ( ! applications.containsKey(deployment))
             throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
-        applications.remove(applicationId);
+        applications.remove(deployment);
         serviceStatus.remove(deployment);
     }
 

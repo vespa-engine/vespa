@@ -6,19 +6,26 @@ import com.google.common.hash.Hashing;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A representation of the content of an application package.
@@ -31,12 +38,15 @@ import java.util.Set;
  */
 public class ApplicationPackage {
 
+    private static final String trustedCertificatesFile = "security/clients.pem";
+
     private final String contentHash;
     private final byte[] zippedContent;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
+    private final List<X509Certificate> trustedCertificates;
     
     /** 
      * Creates an application package from its zipped content.
@@ -47,14 +57,26 @@ public class ApplicationPackage {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
 
-        Files files = Files.extract(Set.of("deployment.xml", "validation-overrides.xml", "build-meta.json"), zippedContent);
+        Files files = Files.extract(Set.of("deployment.xml", "validation-overrides.xml", "build-meta.json", trustedCertificatesFile), zippedContent);
         this.deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
         this.validationOverrides = files.getAsReader("validation-overrides.xml").map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
         this.compileVersion = buildMetaObject.map(object -> Version.fromString(object.field("compileVersion").asString()));
         this.buildTime = buildMetaObject.map(object -> Instant.ofEpochMilli(object.field("buildTime").asLong()));
+        this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
     }
-    
+
+    /** Returns a copy of this with the given certificate appended. */
+    public ApplicationPackage withTrustedCertificate(X509Certificate certificate) {
+        List<X509Certificate> trustedCertificates = new ArrayList<>(this.trustedCertificates);
+        trustedCertificates.add(certificate);
+        byte[] certificatesBytes = X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8);
+
+        ByteArrayOutputStream modified = new ByteArrayOutputStream(zippedContent.length + certificatesBytes.length);
+        ZipStreamReader.transferAndWrite(modified, new ByteArrayInputStream(zippedContent), trustedCertificatesFile, certificatesBytes);
+        return new ApplicationPackage(modified.toByteArray());
+    }
+
     /** Returns a hash of the content of this package */
     public String hash() { return contentHash; }
     
@@ -79,6 +101,10 @@ public class ApplicationPackage {
     /** Returns the time this package was built, if known. */
     public Optional<Instant> buildTime() { return buildTime; }
 
+    /** Returns the list of certificates trusted by this application, or an empty list if no trust configured. */
+    public List<X509Certificate> trustedCertificates() {
+        return trustedCertificates;
+    }
 
     private static class Files {
 
@@ -108,6 +134,7 @@ public class ApplicationPackage {
             }
             return new Files(builder.build());
         }
+
 
         /** Get content of given file name */
         public Optional<byte[]> get(String name) {

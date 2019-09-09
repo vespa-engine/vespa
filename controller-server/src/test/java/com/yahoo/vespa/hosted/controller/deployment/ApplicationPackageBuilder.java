@@ -6,15 +6,18 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -24,6 +27,8 @@ import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A builder that builds application packages for testing purposes.
@@ -39,6 +44,7 @@ public class ApplicationPackageBuilder {
                                                                 "<notifications>\n  <email ",
                                                                 "/>\n</notifications>\n").setEmptyValue("");
     private final StringBuilder endpointsBody = new StringBuilder();
+    private final List<X509Certificate> trustedCertificates = new ArrayList<>();
 
     private OptionalInt majorVersion = OptionalInt.empty();
     private String upgradePolicy = null;
@@ -146,7 +152,12 @@ public class ApplicationPackageBuilder {
         this.searchDefinition = testSearchDefinition;
         return this;
     }
-    
+
+    public ApplicationPackageBuilder trust(X509Certificate certificate) {
+        this.trustedCertificates.add(certificate);
+        return this;
+    }
+
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
@@ -178,22 +189,22 @@ public class ApplicationPackageBuilder {
         xml.append(endpointsBody);
         xml.append("  </endpoints>\n");
         xml.append("</deployment>");
-        return xml.toString().getBytes(StandardCharsets.UTF_8);
+        return xml.toString().getBytes(UTF_8);
     }
     
     private byte[] validationOverrides() {
         String xml = "<validation-overrides version='1.0'>\n" +
                 validationOverridesBody +
                 "</validation-overrides>\n";
-        return xml.getBytes(StandardCharsets.UTF_8);
+        return xml.getBytes(UTF_8);
     }
 
     private byte[] searchDefinition() { 
-        return searchDefinition.getBytes(StandardCharsets.UTF_8);
+        return searchDefinition.getBytes(UTF_8);
     }
 
     private byte[] buildMeta() {
-        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(StandardCharsets.UTF_8);
+        return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(UTF_8);
     }
 
     public ApplicationPackage build() {
@@ -218,6 +229,9 @@ public class ApplicationPackageBuilder {
             out.closeEntry();
             out.putNextEntry(new ZipEntry(dir + "build-meta.json"));
             out.write(buildMeta());
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry(dir + "security/clients.pem"));
+            out.write(X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
             out.closeEntry();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

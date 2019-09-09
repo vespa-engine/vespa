@@ -99,6 +99,8 @@ public class TestRunner {
         command.add("-Dvespa.test.config=" + vespaHome.resolve("tmp/config.json"));
         if (config.useAthenzCredentials())
             command.add("-Dvespa.test.credentials.root=" + Defaults.getDefaults().vespaHome() + "/var/vespa/sia");
+        else if (config.useTesterCertificate())
+            command.add("-Dvespa.test.credentials.root=" + config.artifactsPath());
         command.add(String.format("-DargLine=-Xms%1$dm -Xmx%1$dm", config.surefireMemoryMb()));
 
         ProcessBuilder builder = new ProcessBuilder(command);

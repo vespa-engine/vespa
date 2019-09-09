@@ -59,6 +59,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -318,10 +319,11 @@ public class ApplicationController {
                                                              : triggered.application();
 
                     applicationPackage = getApplicationPackage(application.get(), applicationVersion);
+                    applicationPackage = withTesterCertificate(applicationPackage, applicationId, jobType);
                     validateRun(application.get(), zone, platformVersion, applicationVersion);
                 }
 
-                // TODO(jvenstad): Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
+                // TODO jonmv: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
                 verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
                 // Assign and register endpoints
@@ -354,6 +356,19 @@ public class ApplicationController {
                                                         warningsFrom(result))));
             return result;
         }
+    }
+
+    private ApplicationPackage withTesterCertificate(ApplicationPackage applicationPackage, ApplicationId id, JobType type) {
+        if (applicationPackage.trustedCertificates().isEmpty())
+            return applicationPackage;
+
+        // TODO jonmv: move this to the caller, when external build service is removed.
+        Run run = controller.jobController().last(id, type)
+                            .orElseThrow(() -> new IllegalStateException("Last run of " + type + " for " + id + " not found"));
+        if (run.testerCertificate().isEmpty())
+            return applicationPackage;
+
+        return applicationPackage.withTrustedCertificate(run.testerCertificate().get());
     }
 
     /** Fetches the requested application package from the artifact store(s). */

@@ -1,7 +1,7 @@
 {
   "active": false,
   "log": {
-    "deployReal": [
+    "deployTester": [
       {
         "at": 1000,
         "type": "debug",

@@ -124,17 +124,17 @@ public class JobRunnerTest {
         Map<Step, Status> steps = run.get().steps();
         runner.maintain();
         assertEquals(steps, run.get().steps());
-        assertEquals(List.of(deployReal, deployTester), run.get().readySteps());
-
-        outcomes.put(deployReal, running);
-        runner.maintain();
-        assertEquals(List.of(installReal, deployTester), run.get().readySteps());
-
-        outcomes.put(installReal, running);
-        runner.maintain();
         assertEquals(List.of(deployTester), run.get().readySteps());
 
         outcomes.put(deployTester, running);
+        runner.maintain();
+        assertEquals(List.of(deployReal), run.get().readySteps());
+
+        outcomes.put(deployReal, running);
+        runner.maintain();
+        assertEquals(List.of(installTester, installReal), run.get().readySteps());
+
+        outcomes.put(installReal, running);
         runner.maintain();
         assertEquals(List.of(installTester), run.get().readySteps());
 

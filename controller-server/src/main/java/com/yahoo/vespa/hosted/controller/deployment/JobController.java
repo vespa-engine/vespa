@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -152,6 +153,11 @@ public class JobController {
                 logs.append(id.application(), id.type(), endTests, entries);
                 return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
             });
+    }
+
+    /** Stores the given certificate as the tester certificate for this run, or throws if it's already set. */
+    public void storeTesterCertificate(RunId id, X509Certificate testerCertificate) {
+        locked(id, run -> run.with(testerCertificate));
     }
 
     /** Returns a list of all application which have registered. */

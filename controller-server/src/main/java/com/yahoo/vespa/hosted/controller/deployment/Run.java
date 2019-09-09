@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -33,10 +34,11 @@ public class Run {
     private final Optional<Instant> end;
     private final RunStatus status;
     private final long lastTestRecord;
+    private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, Step.Status> steps, Versions versions, Instant start,
-               Optional<Instant> end, RunStatus status, long lastTestRecord) {
+               Optional<Instant> end, RunStatus status, long lastTestRecord, Optional<X509Certificate> testerCertificate) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -44,47 +46,57 @@ public class Run {
         this.end = end;
         this.status = status;
         this.lastTestRecord = lastTestRecord;
+        this.testerCertificate = testerCertificate;
     }
 
     public static Run initial(RunId id, Versions versions, Instant now) {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
-        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running, -1);
+        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running, -1, Optional.empty());
     }
 
     /** Returns a new Run with the new status, and with the status of the given, completed step set accordingly. */
     public Run with(RunStatus status, LockedStep step) {
         if (hasEnded())
-            throw new AssertionError("This run ended at " + end.get() + " -- it can't be further modified!");
+            throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
 
         if (steps.get(step.get()) != unfinished)
-            throw new AssertionError("Step '" + step.get() + "' can't be set to '" + status + "'" +
+            throw new IllegalStateException("Step '" + step.get() + "' can't be set to '" + status + "'" +
                                      " -- it already completed with status '" + steps.get(step.get()) + "'!");
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), Step.Status.of(status));
-        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status, lastTestRecord);
+        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status, lastTestRecord, testerCertificate);
     }
 
     public Run finished(Instant now) {
         if (hasEnded())
-            throw new AssertionError("This run ended at " + end.get() + " -- it can't be ended again!");
+            throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be ended again!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status, lastTestRecord);
+        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status, lastTestRecord, testerCertificate);
     }
 
     public Run aborted() {
         if (hasEnded())
-            throw new AssertionError("This run ended at " + end.get() + " -- it can't be aborted now!");
+            throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be aborted now!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted, lastTestRecord);
+        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted, lastTestRecord, testerCertificate);
     }
 
     public Run with(long lastTestRecord) {
         if (hasEnded())
-            throw new AssertionError("This run ended at " + end.get() + " -- it can't be further modified!");
+            throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, end, status, lastTestRecord);
+        return new Run(id, new EnumMap<>(steps), versions, start, end, status, lastTestRecord, testerCertificate);
+    }
+
+    public Run with(X509Certificate testerCertificate) {
+        if (hasEnded())
+            throw new IllegalStateException("This run ended at " + end.get() + " -- it can't be further modified!");
+        if (this.testerCertificate.isPresent())
+            throw new IllegalStateException("Certificate for this run was already set");
+
+        return new Run(id, new EnumMap<>(steps), versions, start, end, status, lastTestRecord, Optional.of(testerCertificate));
     }
 
     /** Returns the id of this run. */
@@ -129,6 +141,11 @@ public class Run {
     /** Returns the sequence id of the last test record received from the tester, for the test logs of this run. */
     public long lastTestLogEntry() {
         return lastTestRecord;
+    }
+
+    /** Returns the tester certificate for this run, or empty. */
+    public Optional<X509Certificate> testerCertificate() {
+        return testerCertificate;
     }
 
     @Override

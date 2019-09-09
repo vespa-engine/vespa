@@ -15,6 +15,11 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -36,14 +41,20 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.yolean.Exceptions;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,6 +85,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installatio
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -93,6 +105,7 @@ public class InternalStepRunner implements StepRunner {
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
+    static final Duration certificateTimeout = Duration.ofMinutes(300);
 
     private final Controller controller;
     private final TestConfigSerializer testConfigSerializer;
@@ -109,12 +122,12 @@ public class InternalStepRunner implements StepRunner {
         DualLogger logger = new DualLogger(id, step.get());
         try {
             switch (step.get()) {
+                case deployTester: return deployTester(id, logger);
                 case deployInitialReal: return deployInitialReal(id, logger);
                 case installInitialReal: return installInitialReal(id, logger);
                 case deployReal: return deployReal(id, logger);
-                case deployTester: return deployTester(id, logger);
-                case installReal: return installReal(id, logger);
                 case installTester: return installTester(id, logger);
+                case installReal: return installReal(id, logger);
                 case startTests: return startTests(id, logger);
                 case endTests: return endTests(id, logger);
                 case copyVespaLogs: return copyVespaLogs(id, logger);
@@ -159,6 +172,7 @@ public class InternalStepRunner implements StepRunner {
                 ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
                                                                .getDev(id.application(), id.type().zone(controller.system()))))
                 : Optional.empty();
+
         Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
                 ? Optional.of(versions.targetPlatform())
                 : Optional.empty();
@@ -428,6 +442,17 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
+        if (testerCertificate.isPresent()) {
+            try {
+                testerCertificate.get().checkValidity(Date.from(controller.clock().instant()));
+            }
+            catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                logger.log(INFO, "Tester certificate expired before tests could complete.");
+                return Optional.of(aborted);
+            }
+        };
+
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if ( ! testerEndpoint.isPresent()) {
             logger.log("Endpoints for tester not found -- trying again later.");
@@ -464,7 +489,7 @@ public class InternalStepRunner implements StepRunner {
                 List<LogEntry> entries = new ArrayList<>();
                 String logs = IOUtils.readAll(controller.serviceRegistry().configServer().getLogs(new DeploymentId(id.application(), zone),
                                                                                      Collections.emptyMap()), // Get all logs.
-                                              StandardCharsets.UTF_8);
+                                              UTF_8);
                 for (String line : logs.split("\n")) {
                     String[] parts = line.split("\t");
                     if (parts.length != 7) continue;
@@ -591,8 +616,10 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
+        boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          spec.athenzDomain().isPresent(),
+                                         useTesterCertificate,
                                          testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
 
@@ -603,9 +630,27 @@ public class InternalStepRunner implements StepRunner {
             zipBuilder.add(testPackage);
             zipBuilder.add("services.xml", servicesXml);
             zipBuilder.add("deployment.xml", deploymentXml);
+            if (useTesterCertificate)
+                appendAndStoreCertificate(zipBuilder, id);
+
             zipBuilder.close();
             return new ApplicationPackage(zipBuilder.toByteArray());
         }
+    }
+
+    private void appendAndStoreCertificate(ZipBuilder zipBuilder, RunId id) {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
+        X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
+                                                                         subject,
+                                                                         controller.clock().instant(),
+                                                                         controller.clock().instant().plus(certificateTimeout),
+                                                                         SignatureAlgorithm.SHA512_WITH_ECDSA,
+                                                                         BigInteger.valueOf(1))
+                                                            .build();
+        controller.jobController().storeTesterCertificate(id, certificate);
+        zipBuilder.add("key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
+        zipBuilder.add("cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
@@ -625,7 +670,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, Optional<String> testerFlavor) {
+    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
+                              Optional<String> testerFlavor) {
         String flavor = testerFlavor.orElse("d-1-4-50");
         int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
@@ -641,6 +687,7 @@ public class InternalStepRunner implements StepRunner {
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
                 "                <useAthenzCredentials>" + useAthenzCredentials + "</useAthenzCredentials>\n" +
+                "                <useTesterCertificate>" + useTesterCertificate + "</useTesterCertificate>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
@@ -677,7 +724,7 @@ public class InternalStepRunner implements StepRunner {
                 "    </container>\n" +
                 "</services>\n";
 
-        return servicesXml.getBytes(StandardCharsets.UTF_8);
+        return servicesXml.getBytes(UTF_8);
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
@@ -688,7 +735,7 @@ public class InternalStepRunner implements StepRunner {
                 athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
                 athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
                 + "/>";
-        return deploymentSpec.getBytes(StandardCharsets.UTF_8);
+        return deploymentSpec.getBytes(UTF_8);
     }
 
     /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -91,6 +92,15 @@ public class RunSerializerTest {
                                                                 "badb17"),
                                              122),
                      run.versions().sourceApplication().get());
+        assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
+                                                  "MIIBEzCBu6ADAgECAgEBMAoGCCqGSM49BAMEMBQxEjAQBgNVBAMTCW15c2Vydmlj\n" +
+                                                  "ZTAeFw0xOTA5MDYwNzM3MDZaFw0xOTA5MDcwNzM3MDZaMBQxEjAQBgNVBAMTCW15\n" +
+                                                  "c2VydmljZTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABM0JhD8fV2DlAkjQOGX3\n" +
+                                                  "Y50ryMBr3g2+v/uFiRoxJ1muuSOWYrW7HCQIGuzc04fa0QwtaX/voAZKCV51t6jF\n" +
+                                                  "0fwwCgYIKoZIzj0EAwQDRwAwRAIgVbQ3Co1H4X0gmRrtXSyTU0HgBQu9PXHMmX20\n" +
+                                                  "5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n" +
+                                                  "-----END CERTIFICATE-----"),
+                     run.testerCertificate().get());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
                              .put(deployInitialReal, unfinished)
                              .put(installInitialReal, failed)
@@ -117,8 +127,12 @@ public class RunSerializerTest {
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
+
+        Run initial = Run.initial(id, run.versions(), run.start());
+        assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 
 }
