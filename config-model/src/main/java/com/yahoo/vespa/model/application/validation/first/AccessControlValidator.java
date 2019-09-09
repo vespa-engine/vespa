@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.first;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validator;
 import com.yahoo.vespa.model.container.Container;
@@ -43,7 +44,8 @@ public class AccessControlValidator extends Validator {
                 if (hasHandlerThatNeedsProtection(cluster) || ! cluster.getAllServlets().isEmpty())
                     offendingClusters.add(cluster.getName());
         }
-        if (! offendingClusters.isEmpty())
+        if (! offendingClusters.isEmpty()
+            && deployState.getApplicationPackage().getApplicationId().instance().equals(InstanceName.defaultName()))
             deployState.validationOverrides().invalid(ValidationId.accessControl,
                                                       "Access-control must be enabled for write operations to container clusters in production zones: " +
                                                               mkString(offendingClusters, "[", ", ", "]."), deployState.now());
