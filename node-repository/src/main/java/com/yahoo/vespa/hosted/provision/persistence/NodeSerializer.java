@@ -242,15 +242,10 @@ public class NodeSerializer {
             return flavor.with(FlavorOverrides.ofDisk(resources.field(diskKey).asDouble()));
         }
         else {
-            // TODO: Simplify Sept. 2019
-            double bandwidth = Optional.of(resources.field(bandwidthKey))
-                    .filter(Inspector::valid)
-                    .map(Inspector::asDouble)
-                    .orElse(0.3);
             return new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                 resources.field(memoryKey).asDouble(),
                                                 resources.field(diskKey).asDouble(),
-                                                bandwidth,
+                                                resources.field(bandwidthKey).asDouble(),
                                                 diskSpeedFromSlime(resources.field(diskSpeedKey))));
         }
     }

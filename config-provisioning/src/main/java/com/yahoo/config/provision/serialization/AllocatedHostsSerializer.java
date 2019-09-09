@@ -145,14 +145,10 @@ public class AllocatedHostsSerializer {
         }
         else if (object.field(resourcesKey).valid()) {
             Inspector resources = object.field(resourcesKey);
-            double bandwidth = Optional.of(resources.field(bandwidthKey))
-                    .filter(Inspector::valid)
-                    .map(Inspector::asDouble)
-                    .orElse(0.3);
             return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
                                                             resources.field(memoryKey).asDouble(),
                                                             resources.field(diskKey).asDouble(),
-                                                            bandwidth,
+                                                            resources.field(bandwidthKey).asDouble(),
                                                             diskSpeedFromSlime(resources.field(diskSpeedKey)))));
         }
         else {
