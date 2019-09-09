@@ -15,9 +15,9 @@ namespace search {
 
 using namespace btree;
 
-using NumericEnumStore = EnumStoreT<NumericEntryType<int32_t> >;
-using FloatEnumStore = EnumStoreT<NumericEntryType<float> >;
-using StringEnumStore = EnumStoreT<StringEntryType>;
+using NumericEnumStore = EnumStoreT<int32_t>;
+using FloatEnumStore = EnumStoreT<float>;
+using StringEnumStore = EnumStoreT<const char*>;
 
 using EnumIndex = IEnumStore::Index;
 

@@ -106,7 +106,6 @@ public:
 extern template class EnumStoreComparator<int8_t>;
 extern template class EnumStoreComparator<int16_t>;
 extern template class EnumStoreComparator<int32_t>;
-extern template class EnumStoreComparator<uint32_t>;
 extern template class EnumStoreComparator<int64_t>;
 extern template class EnumStoreComparator<float>;
 extern template class EnumStoreComparator<double>;

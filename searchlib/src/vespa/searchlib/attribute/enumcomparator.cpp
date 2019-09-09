@@ -83,7 +83,6 @@ EnumStoreFoldedStringComparator::compare_folded_prefix(const char* lhs,
 template class EnumStoreComparator<int8_t>;
 template class EnumStoreComparator<int16_t>;
 template class EnumStoreComparator<int32_t>;
-template class EnumStoreComparator<uint32_t>;
 template class EnumStoreComparator<int64_t>;
 template class EnumStoreComparator<float>;
 template class EnumStoreComparator<double>;

@@ -11,8 +11,8 @@ namespace search {
 
 template <>
 void
-EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
-                                         vespalib::ConstArrayRef<Index> idxs) const
+EnumStoreT<const char*>::writeValues(BufferWriter& writer,
+                                     vespalib::ConstArrayRef<Index> idxs) const
 {
     for (const auto& idx : idxs) {
         const char* src = _store.get(idx);
@@ -23,9 +23,9 @@ EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
 
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::load_unique_value(const void* src,
-                                               size_t available,
-                                               Index& idx)
+EnumStoreT<const char*>::load_unique_value(const void* src,
+                                           size_t available,
+                                           Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);
@@ -68,13 +68,13 @@ template
 class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
-template class EnumStoreT< StringEntryType >;
-template class EnumStoreT<NumericEntryType<int8_t> >;
-template class EnumStoreT<NumericEntryType<int16_t> >;
-template class EnumStoreT<NumericEntryType<int32_t> >;
-template class EnumStoreT<NumericEntryType<int64_t> >;
-template class EnumStoreT<NumericEntryType<float> >;
-template class EnumStoreT<NumericEntryType<double> >;
+template class EnumStoreT<const char*>;
+template class EnumStoreT<int8_t>;
+template class EnumStoreT<int16_t>;
+template class EnumStoreT<int32_t>;
+template class EnumStoreT<int64_t>;
+template class EnumStoreT<float>;
+template class EnumStoreT<double>;
 
 } // namespace search
 

@@ -23,49 +23,27 @@
 namespace search {
 
 /**
- * Class representing a numeric entry type in a enum store.
- * Used as template argument for EnumStoreT.
- **/
-
-template <typename T>
-class NumericEntryType {
-public:
-    typedef T Type;
-    static uint32_t size(Type)  { return fixedSize(); }
-    static uint32_t fixedSize() { return sizeof(T); }
-    static bool hasFold() { return false; }
-};
-
-/**
- * Class representing a string entry type in a enum store.
- * Used as template argument for EnumStoreT.
- **/
-class StringEntryType {
-public:
-    typedef const char * Type;
-    static uint32_t size(Type value) { return strlen(value) + fixedSize(); }
-    static uint32_t fixedSize()      { return 1; }
-    static bool hasFold() { return true; }
-};
-
-
-//-----------------------------------------------------------------------------
-// EnumStoreT
-//-----------------------------------------------------------------------------
+ * Class storing and providing access to all unique values stored in an enumerated attribute vector.
+ *
+ * It uses an instance of datastore::UniqueStore to store the actual values.
+ * It also exposes the dictionary used for fast lookups into the set of unique values.
+ *
+ * @tparam EntryType The type of the entries/values stored.
+ *                   It has special handling of type 'const char *' for strings.
+ */
 template <class EntryType>
 class EnumStoreT : public IEnumStore
 {
     friend class EnumStoreTest;
 public:
-    using DataType = typename EntryType::Type;
-    using ComparatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
+    using ComparatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
                                               EnumStoreStringComparator,
-                                              EnumStoreComparator<DataType>>;
-    using AllocatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
+                                              EnumStoreComparator<EntryType>>;
+    using AllocatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
                                              datastore::UniqueStoreStringAllocator<InternalIndex>,
-                                             datastore::UniqueStoreAllocator<DataType, InternalIndex>>;
-    using UniqueStoreType = datastore::UniqueStore<DataType, InternalIndex, ComparatorType, AllocatorType>;
-    using FoldedComparatorType = std::conditional_t<std::is_same_v<DataType, const char *>,
+                                             datastore::UniqueStoreAllocator<EntryType, InternalIndex>>;
+    using UniqueStoreType = datastore::UniqueStore<EntryType, InternalIndex, ComparatorType, AllocatorType>;
+    using FoldedComparatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
                                                     EnumStoreFoldedStringComparator,
                                                     ComparatorType>;
     using EnumStoreType = EnumStoreT<EntryType>;
@@ -88,7 +66,7 @@ private:
     }
 
     static bool has_string_type() {
-        return std::is_same_v<DataType, const char *>;
+        return std::is_same_v<EntryType, const char *>;
     }
 
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
@@ -136,9 +114,9 @@ public:
     const datastore::DataStoreBase &get_data_store_base() const override { return _store.get_allocator().get_data_store(); }
 
 
-    bool getValue(Index idx, DataType& value) const;
-    DataType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
-    DataType getValue(Index idx) const { return _store.get(idx); }
+    bool getValue(Index idx, EntryType& value) const;
+    EntryType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
+    EntryType getValue(Index idx) const { return _store.get(idx); }
 
     /**
      * Helper class used to load an enum store from non-enumerated save files.
@@ -159,7 +137,7 @@ public:
         {
         }
         ~NonEnumeratedLoader();
-        Index insert(const DataType& value, uint32_t posting_idx) {
+        Index insert(const EntryType& value, uint32_t posting_idx) {
             EntryRef new_ref = _allocator.allocate(value);
             _refs.emplace_back(new_ref);
             _payloads.emplace_back(posting_idx);
@@ -188,7 +166,7 @@ public:
             : _store(store),
               _possibly_unused()
         {}
-        void insert(DataType value) {
+        void insert(EntryType value) {
             Index idx;
             _store.addEnum(value, idx);
             _possibly_unused.insert(idx);
@@ -216,7 +194,7 @@ public:
         return ComparatorType(_store.get_data_store());
     }
 
-    ComparatorType make_comparator(const DataType& fallback_value) const {
+    ComparatorType make_comparator(const EntryType& fallback_value) const {
         return ComparatorType(_store.get_data_store(), fallback_value);
     }
 
@@ -224,17 +202,17 @@ public:
         return FoldedComparatorType(_store.get_data_store());
     }
 
-    FoldedComparatorType make_folded_comparator(const DataType& fallback_value, bool prefix = false) const {
+    FoldedComparatorType make_folded_comparator(const EntryType& fallback_value, bool prefix = false) const {
         return FoldedComparatorType(_store.get_data_store(), fallback_value, prefix);
     }
 
     // TODO: Change to sending enum indexes as const array ref.
     void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const override;
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
-    bool findEnum(DataType value, IEnumStore::EnumHandle &e) const;
-    std::vector<IEnumStore::EnumHandle> findFoldedEnums(DataType value) const;
-    void addEnum(DataType value, Index &newIdx);
-    bool findIndex(DataType value, Index &idx) const;
+    bool findEnum(EntryType value, IEnumStore::EnumHandle &e) const;
+    std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
+    void addEnum(EntryType value, Index &newIdx);
+    bool findIndex(EntryType value, Index &idx) const;
     void freeUnusedEnums() override;
     void freeUnusedEnums(const IndexSet& toRemove);
     vespalib::MemoryUsage update_stat() override;
@@ -252,14 +230,14 @@ class datastore::DataStoreT<IEnumStore::Index>;
 
 template <>
 void
-EnumStoreT<StringEntryType>::writeValues(BufferWriter& writer,
-                                         vespalib::ConstArrayRef<IEnumStore::Index> idxs) const;
+EnumStoreT<const char*>::writeValues(BufferWriter& writer,
+                                      vespalib::ConstArrayRef<IEnumStore::Index> idxs) const;
 
 template <>
 ssize_t
-EnumStoreT<StringEntryType>::load_unique_value(const void* src,
-                                               size_t available,
-                                               Index& idx);
+EnumStoreT<const char*>::load_unique_value(const void* src,
+                                           size_t available,
+                                           Index& idx);
 
 
 extern template
@@ -269,13 +247,13 @@ extern template
 class btree::BTreeBuilder<IEnumStore::Index, datastore::EntryRef, btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS, EnumTreeTraits::LEAF_SLOTS>;
 
-extern template class EnumStoreT< StringEntryType >;
-extern template class EnumStoreT<NumericEntryType<int8_t> >;
-extern template class EnumStoreT<NumericEntryType<int16_t> >;
-extern template class EnumStoreT<NumericEntryType<int32_t> >;
-extern template class EnumStoreT<NumericEntryType<int64_t> >;
-extern template class EnumStoreT<NumericEntryType<float> >;
-extern template class EnumStoreT<NumericEntryType<double> >;
+extern template class EnumStoreT<const char*>;
+extern template class EnumStoreT<int8_t>;
+extern template class EnumStoreT<int16_t>;
+extern template class EnumStoreT<int32_t>;
+extern template class EnumStoreT<int64_t>;
+extern template class EnumStoreT<float>;
+extern template class EnumStoreT<double>;
 
 } // namespace search
 

@@ -323,85 +323,85 @@ template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedInt8Vector,
                             int8_t,
-                            EnumStoreT<NumericEntryType<int8_t> > >;
+                            EnumStoreT<int8_t>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedInt16Vector,
                             int16_t,
-                            EnumStoreT<NumericEntryType<int16_t> > >;
+                            EnumStoreT<int16_t>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedInt32Vector,
                             int32_t,
-                            EnumStoreT<NumericEntryType<int32_t> > >;
+                            EnumStoreT<int32_t>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedInt64Vector,
                             int64_t,
-                            EnumStoreT<NumericEntryType<int64_t> > >;
+                            EnumStoreT<int64_t>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedFloatVector,
                             float,
-                            EnumStoreT<NumericEntryType<float> > >;
+                            EnumStoreT<float>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             LoadedDoubleVector,
                             double,
-                            EnumStoreT<NumericEntryType<double> > >;
+                            EnumStoreT<double>>;
 
 template class
 PostingListAttributeSubBase<AttributePosting,
                             NoLoadedVector,
-                            const char *,
-                            EnumStoreT<StringEntryType > >;
+                            const char*,
+                            EnumStoreT<const char*>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedInt8Vector,
                             int8_t,
-                            EnumStoreT<NumericEntryType<int8_t> > >;
+                            EnumStoreT<int8_t>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedInt16Vector,
                             int16_t,
-                            EnumStoreT<NumericEntryType<int16_t> > >;
+                            EnumStoreT<int16_t>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedInt32Vector,
                             int32_t,
-                            EnumStoreT<NumericEntryType<int32_t> > >;
+                            EnumStoreT<int32_t>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedInt64Vector,
                             int64_t,
-                            EnumStoreT<NumericEntryType<int64_t> > >;
+                            EnumStoreT<int64_t>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedFloatVector,
                             float,
-                            EnumStoreT<NumericEntryType<float> > >;
+                            EnumStoreT<float>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             LoadedDoubleVector,
                             double,
-                            EnumStoreT<NumericEntryType<double> > >;
+                            EnumStoreT<double>>;
 
 template class
 PostingListAttributeSubBase<AttributeWeightPosting,
                             NoLoadedVector,
-                            const char *,
-                            EnumStoreT<StringEntryType > >;
+                            const char*,
+                            EnumStoreT<const char*>>;
 
 
 }

@@ -15,18 +15,17 @@
 
 namespace search {
 
-class StringEntryType;
 class ReaderBase;
 
 class StringAttribute : public AttributeVector
 {
 public:
-    typedef vespalib::Array<uint32_t> OffsetVector;
-    typedef const char *                  LoadedValueType;
-    typedef IEnumStore::Index          EnumIndex;
-    typedef IEnumStore::IndexVector    EnumIndexVector;
-    typedef IEnumStore::EnumVector     EnumVector;
+    using EnumIndex = IEnumStore::Index;
+    using EnumIndexVector = IEnumStore::IndexVector;
+    using EnumVector = IEnumStore::EnumVector;
+    using LoadedValueType = const char*;
     using LoadedVector = NoLoadedVector;
+    using OffsetVector = vespalib::Array<uint32_t>;
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(StringAttribute);
     bool append(DocId doc, const vespalib::string & v, int32_t weight) {
@@ -61,9 +60,9 @@ protected:
     StringAttribute(const vespalib::string & name, const Config & c);
     ~StringAttribute();
     static const char * defaultValue() { return ""; }
-    typedef ChangeTemplate<StringChangeData> Change;
-    typedef ChangeVectorT< Change > ChangeVector;
-    typedef StringEntryType EnumEntryType;
+    using Change = ChangeTemplate<StringChangeData>;
+    using ChangeVector = ChangeVectorT<Change>;
+    using EnumEntryType = const char*;
     ChangeVector _changes;
     Change _defaultValue;
     bool onLoad() override;
