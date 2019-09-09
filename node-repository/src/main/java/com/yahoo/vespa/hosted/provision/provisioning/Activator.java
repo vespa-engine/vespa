@@ -17,10 +17,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -110,26 +108,14 @@ class Activator {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        Map<String, Node> parentsByHostname = nodes.asList().stream()
+        long numNonActive = nodes.asList().stream()
                 .filter(node -> parentHostnames.contains(node.hostname()))
-                .collect(Collectors.toMap(Node::hostname, Function.identity()));
+                .filter(node -> node.state() != Node.State.active)
+                .count();
 
-        List<Node> unavailableChildren = potentialChildren.stream()
-                .filter(child -> child.parentHostname()
-                        .map(parentsByHostname::get)
-                        .map(parent -> parent.state() != Node.State.active)
-                        .orElse(false))
-                .collect(Collectors.toList());
-
-        if (!unavailableChildren.isEmpty()) {
-            String detailedError = unavailableChildren.stream()
-                    .map(child -> child.parentHostname()
-                            .map(parentsByHostname::get)
-                            .map(parent -> String.format("Refusing to activate %s: Its parent (%s) is not active (is %s).",
-                                    child.hostname(), parent.hostname(), parent.state())))
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.joining(" "));
-            throw new ParentHostUnavailableException("Activation of " + application + " failed: " + detailedError);
+        if (numNonActive > 0) {
+            throw new ParentHostUnavailableException("Waiting for hosts to finish booting: " +
+                    numNonActive + "/" + parentHostnames.size() + " left.");
         }
     }
 
