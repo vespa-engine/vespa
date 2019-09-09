@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.NodeResources;
 import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 
@@ -119,10 +121,18 @@ public class Flags {
             "preprovisioned is taken, new will be provisioned within next iteration of maintainer.",
             "Takes effect on next iteration of HostProivisionMaintainer.");
 
-    public static final UnboundListFlag<String> DISABLED_DYNAMIC_PROVISIONING_FLAVORS = defineListFlag(
-            "disabled-dynamic-provisioning-flavors", List.of(), String.class,
-            "List of disabled Vespa flavor names that cannot be used for dynamic provisioning",
-            "Takes effect on next provisioning");
+    public static final UnboundBooleanFlag USE_ADVERTISED_RESOURCES = defineFeatureFlag(
+            "use-advertised-resources", false,
+            "When enabled, will use advertised host resources rather than actual host resources, ignore host resource " +
+                    "reservation, and fail with exception unless requested resource match advertised host resources exactly.",
+            "Takes effect on next iteration of HostProivisionMaintainer.",
+            APPLICATION_ID);
+
+    public static final UnboundJacksonFlag<NodeResources> DEFAULT_RESOURCES = defineJacksonFlag(
+            "default-resources", null, NodeResources.class,
+            "Node resources that will be used when not specified in services.xml",
+            "Takes effect on next deployment",
+            CLUSTER_TYPE);
 
     public static final UnboundBooleanFlag ENABLE_DISK_WRITE_TEST = defineFeatureFlag(
             "enable-disk-write-test", false,
