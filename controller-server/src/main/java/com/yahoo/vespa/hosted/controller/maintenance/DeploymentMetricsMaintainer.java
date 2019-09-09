@@ -54,6 +54,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                             applications.store(locked.with(controller().metricsService().getApplicationMetrics(application.id()))));
 
                     for (Deployment deployment : application.deployments().values()) {
+                        if (deployment.version().getMajor() < 7) continue;
                         MetricsService.DeploymentMetrics collectedMetrics = controller().metricsService()
                                                                                         .getDeploymentMetrics(application.id(), deployment.zone());
                         Instant now = controller().clock().instant();
