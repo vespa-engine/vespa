@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author bratseth
@@ -34,6 +36,27 @@ public class ZipStreamReader {
             entries = builder.build();
         } catch (IOException e) {
             throw new UncheckedIOException("IO error reading zip content", e);
+        }
+    }
+
+    /** Copies the zipped content from in to out, adding/overwriting an entry with the given name and content. */
+    public static void transferAndWrite(OutputStream out, InputStream in, String name, byte[] content) {
+        try (ZipOutputStream zipOut = new ZipOutputStream(out);
+             ZipInputStream zipIn = new ZipInputStream(in)) {
+            for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
+                if (entry.getName().equals(name))
+                    continue;
+
+                zipOut.putNextEntry(entry);
+                zipIn.transferTo(zipOut);
+                zipOut.closeEntry();
+            }
+            zipOut.putNextEntry(new ZipEntry(name));
+            zipOut.write(content);
+            zipOut.closeEntry();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 

@@ -52,7 +52,6 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -173,6 +172,7 @@ public class InternalStepRunner implements StepRunner {
                 ? Optional.of(new ApplicationPackage(controller.applications().applicationStore()
                                                                .getDev(id.application(), id.type().zone(controller.system()))))
                 : Optional.empty();
+
         Optional<Version> vespaVersion = id.type().environment().isManuallyDeployed()
                 ? Optional.of(versions.targetPlatform())
                 : Optional.empty();
