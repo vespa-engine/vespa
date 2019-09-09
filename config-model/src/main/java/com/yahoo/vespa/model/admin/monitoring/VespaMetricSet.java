@@ -307,6 +307,27 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.transport.query.latency.count"));
         metrics.add(new Metric("content.proton.transport.query.latency.average")); // TODO: Remove in Vespa 8
 
+        // Search protocol
+        metrics.add(new Metric("content.proton.search_protocol.query.latency.max"));
+        metrics.add(new Metric("content.proton.search_protocol.query.latency.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.query.latency.count"));
+        metrics.add(new Metric("content.proton.search_protocol.query.request_size.max"));
+        metrics.add(new Metric("content.proton.search_protocol.query.request_size.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.query.request_size.count"));
+        metrics.add(new Metric("content.proton.search_protocol.query.reply_size.max"));
+        metrics.add(new Metric("content.proton.search_protocol.query.reply_size.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.query.reply_size.count"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.max"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.latency.count"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.request_size.max"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.request_size.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.request_size.count"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.reply_size.max"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.reply_size.sum"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.reply_size.count"));
+        metrics.add(new Metric("content.proton.search_protocol.docsum.requested_documents.count"));        
+        
         // Executors shared between all document dbs
         metrics.add(new Metric("content.proton.executor.proton.maxpending.last"));
         metrics.add(new Metric("content.proton.executor.flush.maxpending.last"));
