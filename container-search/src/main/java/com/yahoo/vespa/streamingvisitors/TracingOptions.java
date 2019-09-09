@@ -35,7 +35,7 @@ public class TracingOptions {
      * @param traceExporter used for emitting a visitor session trace to someplace it may be debugged later.
      * @param clock monotonic clock used for relative time tracking.
      * @param traceLevelOverride if a query is trace-sampled, its traceLevel will be set to this value
-     * @param traceTimeoutMultiplierThreshold only export traces if the elapsed time is > query timeout * this value
+     * @param traceTimeoutMultiplierThreshold only export traces if the elapsed time is greater than the query timeout * this value
      */
     public TracingOptions(SamplingStrategy samplingStrategy, TraceExporter traceExporter,
                           MonotonicNanoClock clock, int traceLevelOverride, double traceTimeoutMultiplierThreshold)
