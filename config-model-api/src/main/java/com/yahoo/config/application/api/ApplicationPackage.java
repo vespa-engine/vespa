@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -89,6 +90,8 @@ public interface ApplicationPackage {
      */
     @Deprecated // TODO: Remove on Vespa 8
     String getApplicationName();
+
+    ApplicationId getApplicationId();
 
     /**
      * Contents of services.xml. Caller must close reader after use.

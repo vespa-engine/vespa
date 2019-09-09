@@ -99,6 +99,9 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
+    public ApplicationId getApplicationId() { return ApplicationId.from("default", getApplicationName(), "default"); }
+
+    @Override
     public Reader getServices() {
         return new StringReader(servicesS);
     }

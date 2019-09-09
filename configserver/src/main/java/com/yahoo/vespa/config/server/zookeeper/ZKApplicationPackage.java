@@ -12,6 +12,7 @@ import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.application.provider.PreGeneratedFileRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
 import com.yahoo.io.IOUtils;
@@ -120,6 +121,9 @@ public class ZKApplicationPackage implements ApplicationPackage {
     public String getApplicationName() {
         return metaData.getApplicationId().application().value();
     }
+
+    @Override
+    public ApplicationId getApplicationId() { return metaData.getApplicationId(); }
 
     @Override
     public Reader getServices() {

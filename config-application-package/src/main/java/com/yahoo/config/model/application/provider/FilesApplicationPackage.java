@@ -155,6 +155,9 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
+    public ApplicationId getApplicationId() { return metaData.getApplicationId(); }
+
+    @Override
     public List<NamedReader> getFiles(Path relativePath, String suffix, boolean recurse) {
         return getFiles(relativePath, "", suffix, recurse);
     }
