@@ -75,8 +75,6 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"));
 
-    protected final int numHttpServerPorts;
-
     protected Container(AbstractConfigProducer parent, String name, int index) {
         this(parent, name, false, index);
     }
@@ -89,13 +87,7 @@ public abstract class Container extends AbstractService implements
         this.index = index;
 
         if (getHttp() == null) {
-            // TODO Vespa 8: set to 1. The second (health) port has not been used since Vespa 6 or earlier.
-            numHttpServerPorts = 2;
             addChild(defaultHttpServer);
-        } else if (getHttp().getHttpServer() == null) {
-            numHttpServerPorts = 0;
-        } else {
-            numHttpServerPorts = getHttp().getHttpServer().getConnectorFactories().size();
         }
         addBuiltinHandlers();
 
@@ -142,7 +134,16 @@ public abstract class Container extends AbstractService implements
     public JettyHttpServer getDefaultHttpServer() {
         return defaultHttpServer;
     }
-    
+
+    public JettyHttpServer getHttpServer() {
+        Http http = getHttp();
+        if (http == null) {
+            return defaultHttpServer;
+        } else {
+            return http.getHttpServer();
+        }
+    }
+
     /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
     public final int index() { return index; }
 
@@ -158,25 +159,6 @@ public abstract class Container extends AbstractService implements
 
         if (getHttp() == null) {
             initDefaultJettyConnector();
-        }
-
-        tagServers();
-    }
-
-    protected void tagServers() {
-        int offset = 0;
-        if (numHttpServerPorts > 0) {
-            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
-        }
-
-        for (int i = 1; i < numHttpServerPorts; i++)
-            portsMeta.on(offset++).tag("http").tag("external");
-
-        if (messageBusEnabled()) {
-            portsMeta.on(offset++).tag("rpc").tag("messaging");
-        }
-        if (rpcServerEnabled()) {
-            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 
@@ -228,22 +210,24 @@ public abstract class Container extends AbstractService implements
      * @return the number of ports needed by the Container
      */
     public int getPortCount() {
-        // TODO Vespa 8: remove +2, only here for historical reasons
-        int httpPorts = (getHttp() != null) ? 0 : numHttpServerPorts + 2;
+        int httpPorts = (getHttp() != null) ? 0 : 2;
         return httpPorts + numMessageBusPorts() + numRpcPorts();
     }
 
     @Override
     public void allocatePorts(int start, PortAllocBridge from) {
         if (start == 0) start = BASEPORT;
-        int off = 2;
+        int offset = 0;
         if (getHttp() == null) {
             if (requireSpecificPorts) {
-                from.requirePort(start, "http");
+                allocatedSearchPort = from.requirePort(start, "http");
             } else {
-                from.allocatePort("http");
+                allocatedSearchPort = from.allocatePort("http");
             }
+            portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
+            // XXX unused - remove:
             from.allocatePort("http/1");
+            portsMeta.on(offset++).tag("http").tag("external");
         } else if (getHttp().getHttpServer() == null) {
             // no http server ports
         } else {
@@ -251,24 +235,24 @@ public abstract class Container extends AbstractService implements
                 int port = getPort(connectorFactory);
                 String name = "http/" + connectorFactory.getName();
                 from.requirePort(port, name);
+                if (offset == 0) {
+                    portsMeta.on(offset++).tag("http").tag("query").tag("external").tag("state");
+                } else {
+                    portsMeta.on(offset++).tag("http").tag("external");
+                }
             }
         }
         if (messageBusEnabled()) {
-            from.allocatePort("messaging");
-            ++off;
+            allocatedMessagingPort = from.allocatePort("messaging");
+            portsMeta.on(offset++).tag("rpc").tag("messaging");
         }
         if (rpcServerEnabled()) {
-            from.allocatePort("rpc/admin");
-            ++off;
-        }
-        // TODO: remove this
-        if (getHttp() == null) {
-            from.allocatePort("unused/" + off);
-            ++off;
-            from.allocatePort("unused/" + off);
+            allocatedRpcPort = from.allocatePort("rpc/admin");
+            portsMeta.on(offset++).tag("rpc").tag("admin");
         }
     }
 
+    protected int allocatedSearchPort = 0;
     /**
      * @return the actual search port
      * TODO: Remove. Use {@link #getPortsMeta()} and check tags in conjunction with {@link #getRelativePort(int)}.
@@ -276,21 +260,19 @@ public abstract class Container extends AbstractService implements
     public int getSearchPort() {
         if (getHttp() != null)
             throw new AssertionError("getSearchPort must not be used when http section is present.");
-
-        return getRelativePort(0);
+        return allocatedSearchPort;
     }
 
+    protected int allocatedRpcPort = 0;
     private int getRpcPort() {
-        return rpcServerEnabled() ? getRelativePort(numHttpServerPorts + numMessageBusPorts()) : 0;
+        return allocatedRpcPort;
     }
-
     protected int numRpcPorts() { return rpcServerEnabled() ? 1 : 0; }
 
-
+    protected int allocatedMessagingPort = 0;
     private int getMessagingPort() {
-        return messageBusEnabled() ? getRelativePort(numHttpServerPorts) : 0;
+        return allocatedMessagingPort;
     }
-
     protected int numMessageBusPorts() { return messageBusEnabled() ? 1 : 0; }
 
     @Override
