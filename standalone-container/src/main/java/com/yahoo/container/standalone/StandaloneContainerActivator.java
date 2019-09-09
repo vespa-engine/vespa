@@ -69,7 +69,11 @@ public class StandaloneContainerActivator implements BundleActivator {
     }
 
     static List<ConnectorConfig> getConnectorConfigs(Container container) {
-        return getConnectorConfigs(container.getHttpServer());
+        Http http = container.getHttp();
+
+        return (http == null) ?
+                getConnectorConfigs(container.getDefaultHttpServer()) :
+                getConnectorConfigs(http.getHttpServer());
     }
 
     private static List<ConnectorConfig> getConnectorConfigs(JettyHttpServer jettyHttpServer) {
