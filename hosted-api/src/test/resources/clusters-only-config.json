@@ -1,5 +1,5 @@
 {
-  "clusters": {
+  "localEndpoints": {
     "default": "https://localhost:8080/",
     "container": "https://localhost:8081/"
   }
