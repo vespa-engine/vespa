@@ -709,6 +709,19 @@ public class ControllerTest {
         tester.deployCompletely(app1, applicationPackage);
         var cert = certificate.apply(app1);
         assertTrue("Provisions certificate in " + Environment.prod, cert.isPresent());
+        assertEquals(List.of(
+                "vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
+                "app1.tenant1.global.vespa.oath.cloud",
+                "*.app1.tenant1.global.vespa.oath.cloud",
+                "app1.tenant1.us-east-3.vespa.oath.cloud",
+                "*.app1.tenant1.us-east-3.vespa.oath.cloud",
+                "app1.tenant1.us-west-1.vespa.oath.cloud",
+                "*.app1.tenant1.us-west-1.vespa.oath.cloud",
+                "app1.tenant1.us-central-1.vespa.oath.cloud",
+                "*.app1.tenant1.us-central-1.vespa.oath.cloud",
+                "app1.tenant1.eu-west-1.vespa.oath.cloud",
+                "*.app1.tenant1.eu-west-1.vespa.oath.cloud"
+        ), tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(app1.id()));
 
         // Next deployment reuses certificate
         tester.deployCompletely(app1, applicationPackage, BuildJob.defaultBuildNumber + 1);

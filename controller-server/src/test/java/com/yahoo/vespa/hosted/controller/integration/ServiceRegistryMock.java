@@ -201,4 +201,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return mockBuildService;
     }
 
+    public ApplicationCertificateMock applicationCertificateMock() {
+        return applicationCertificateMock;
+    }
+
 }

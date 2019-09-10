@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -52,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentSpecValidator;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -95,6 +95,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -521,10 +522,35 @@ public class ApplicationController {
         if(applicationCertificate.isPresent())
             return applicationCertificate;
 
-        ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider().requestCaSignedCertificate(application.id());
+        ApplicationCertificate newCertificate = controller.serviceRegistry().applicationCertificateProvider().requestCaSignedCertificate(application.id(), dnsNamesOf(application.id()));
         curator.writeApplicationCertificate(application.id(), newCertificate);
 
         return Optional.of(newCertificate);
+    }
+
+    /** Returns all valid DNS names of given application */
+    private List<String> dnsNamesOf(ApplicationId applicationId) {
+        List<String> endpointDnsNames = new ArrayList<>();
+
+        // We add first an endpoint name based on a hash of the applicationId,
+        // as the certificate provider requires the first CN to be < 64 characters long.
+        endpointDnsNames.add(Endpoint.createHashedCn(applicationId, controller.system()));
+
+        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.default_());
+        var rotationEndpoints = Endpoint.of(applicationId).wildcard();
+
+        var zoneLocalEndpoints = controller.zoneRegistry().zones().directlyRouted().zones().stream().flatMap(zone -> Stream.of(
+                Endpoint.of(applicationId).target(ClusterSpec.Id.from("default"), zone.getId()),
+                Endpoint.of(applicationId).wildcard(zone.getId())
+        ));
+
+        Stream.concat(Stream.of(globalDefaultEndpoint, rotationEndpoints), zoneLocalEndpoints)
+              .map(Endpoint.EndpointBuilder::directRouting)
+              .map(endpoint -> endpoint.on(Endpoint.Port.tls()))
+              .map(endpointBuilder -> endpointBuilder.in(controller.system()))
+              .map(Endpoint::dnsName).forEach(endpointDnsNames::add);
+
+        return Collections.unmodifiableList(endpointDnsNames);
     }
 
     private ActivateResult unexpectedDeployment(ApplicationId application, ZoneId zone) {
