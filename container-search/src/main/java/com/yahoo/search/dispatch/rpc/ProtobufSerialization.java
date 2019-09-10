@@ -222,14 +222,18 @@ public class ProtobufSerialization {
 
         var sorting = query.getRanking().getSorting();
         for (var replyHit : protobuf.getHitsList()) {
-            FastHit hit = new FastHit(new GlobalId(replyHit.getGlobalId().toByteArray()), new Relevance(replyHit.getRelevance()), partId, distKey);
+            FastHit hit = new FastHit();
             hit.setQuery(query);
 
+            hit.setRelevance(new Relevance(replyHit.getRelevance()));
+            hit.setGlobalId(new GlobalId(replyHit.getGlobalId().toByteArray()));
             if (!replyHit.getSortData().isEmpty()) {
                 hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
             }
             hit.setFillable();
             hit.setCached(false);
+            hit.setPartId(partId);
+            hit.setDistributionKey(distKey);
             hit.setSource(source);
 
             result.hits().add(hit);
