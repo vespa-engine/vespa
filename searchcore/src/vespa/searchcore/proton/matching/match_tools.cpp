@@ -164,12 +164,15 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
-      _valid(_query.buildTree(queryStack, location, viewResolver, indexEnv))
+      _valid(false)
 {
+    _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
+    _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
+                              rankSetup.split_unpacking_iterators(),
+                              rankSetup.delay_unpacking_iterators());
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
-        _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         _query.optimize();
         _query.fetchPostings();
