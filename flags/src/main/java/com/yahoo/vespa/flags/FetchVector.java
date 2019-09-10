@@ -33,12 +33,18 @@ public class FetchVector {
          * <p>Value from ZoneId::value is of the form environment.region.
          */
         ZONE_ID,
+
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
+
         /** Fully qualified hostname */
         HOSTNAME,
+
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
-        NODE_TYPE
+        NODE_TYPE,
+
+        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
+        CLUSTER_TYPE
     }
 
     private final Map<Dimension, String> map;
