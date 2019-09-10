@@ -160,10 +160,11 @@ public class FastHit extends Hit {
 
     @Override
     public int compareTo(Hit other) {
+        int cmpRes = 0;
         if ((sortData != null) && (other instanceof FastHit) && hasSortData(((FastHit) other).sortDataSorting)) {
-            return SortDataHitSorter.getComparator(sortDataSorting, null).compare(this, other);
+            cmpRes =  SortDataHitSorter.getComparator(sortDataSorting, null).compare(this, other);
         }
-        return super.compareTo(other);
+        return (cmpRes != 0) ? cmpRes : super.compareTo(other);
     }
 
     public boolean hasSortData(Sorting sorting) {
