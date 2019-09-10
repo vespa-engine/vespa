@@ -32,9 +32,9 @@ private:
     void testFloatEnumStore();
 
     void testFindFolded();
-    void testAddEnum();
+    void testInsert();
     template <typename EnumStoreType>
-    void testAddEnum(bool hasPostings);
+    void testInsert(bool hasPostings);
 
     template <typename EnumStoreType, typename Dictionary>
     void
@@ -91,7 +91,7 @@ EnumStoreTest::testFloatEnumStore(EnumStoreType & es)
     T b[5] = {-25.5f, -15.5f, -5.5f, 4.5f, 14.5f};
 
     for (uint32_t i = 0; i < 5; ++i) {
-        es.addEnum(a[i], idx);
+        es.insert(a[i]);
     }
 
     for (uint32_t i = 0; i < 5; ++i) {
@@ -99,7 +99,7 @@ EnumStoreTest::testFloatEnumStore(EnumStoreType & es)
         EXPECT_TRUE(!es.findIndex(b[i], idx));
     }
 
-    es.addEnum(std::numeric_limits<T>::quiet_NaN(), idx);
+    es.insert(std::numeric_limits<T>::quiet_NaN());
     EXPECT_TRUE(es.findIndex(std::numeric_limits<T>::quiet_NaN(), idx));
     EXPECT_TRUE(es.findIndex(std::numeric_limits<T>::quiet_NaN(), idx));
 
@@ -129,10 +129,8 @@ EnumStoreTest::testFindFolded()
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique({"", "one", "two", "TWO", "Two", "three"});
     for (std::string &str : unique) {
-        EnumIndex idx;
-        ses.addEnum(str.c_str(), idx);
+        EnumIndex idx = ses.insert(str.c_str());
         indices.push_back(idx);
-        ses.incRefCount(idx);
         EXPECT_EQUAL(1u, ses.getRefCount(idx));
     }
     ses.freezeTree();
@@ -154,21 +152,19 @@ EnumStoreTest::testFindFolded()
 }
 
 void
-EnumStoreTest::testAddEnum()
+EnumStoreTest::testInsert()
 {
-    testAddEnum<StringEnumStore>(false);
+    testInsert<StringEnumStore>(false);
 
-    testAddEnum<StringEnumStore>(true);
+    testInsert<StringEnumStore>(true);
 }
 
 template <typename EnumStoreType>
 void
-EnumStoreTest::testAddEnum(bool hasPostings)
+EnumStoreTest::testInsert(bool hasPostings)
 {
-    // TODO: Rewrite test to use BatchUpdater
     EnumStoreType ses(hasPostings);
 
-    EnumIndex idx;
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique;
     unique.push_back("");
@@ -177,8 +173,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
     unique.push_back("unique");
 
     for (uint32_t i = 0; i < unique.size(); ++i) {
-        ses.addEnum(unique[i].c_str(), idx);
-        ses.incRefCount(idx);
+        EnumIndex idx = ses.insert(unique[i].c_str());
         EXPECT_EQUAL(1u, ses.getRefCount(idx));
         indices.push_back(idx);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
@@ -190,6 +185,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
         EXPECT_EQUAL(1u, ses.findFoldedEnums(unique[i].c_str()).size());
         EXPECT_EQUAL(e, ses.findFoldedEnums(unique[i].c_str())[0]);
+        EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
         EXPECT_EQUAL(1u, ses.getRefCount(indices[i]));
@@ -228,7 +224,6 @@ EnumStoreTest::testHoldListAndGeneration()
 {
     // TODO: Rewrite test to use BatchUpdater
     StringEnumStore ses(false);
-    StringEnumStore::Index idx;
     StringVector uniques;
     generation_t sesGen = 0u;
     uniques.reserve(100);
@@ -249,8 +244,7 @@ EnumStoreTest::testHoldListAndGeneration()
 
     // insert first batch of unique strings
     for (uint32_t i = 0; i < 100; ++i) {
-        ses.addEnum(uniques[i].c_str(), idx);
-        ses.incRefCount(idx);
+        EnumIndex idx = ses.insert(uniques[i].c_str());
         EXPECT_TRUE(ses.getRefCount(idx));
 
         // associate readers
@@ -276,6 +270,7 @@ EnumStoreTest::testHoldListAndGeneration()
 
     // remove all uniques
     for (uint32_t i = 0; i < 100; ++i) {
+        EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(uniques[i].c_str(), idx));
         ses.decRefCount(idx);
         EXPECT_EQUAL(0u, ses.getRefCount(idx));
@@ -290,15 +285,6 @@ EnumStoreTest::testHoldListAndGeneration()
 }
 
 namespace {
-
-NumericEnumStore::Index
-addEnum(NumericEnumStore &store, uint32_t value)
-{
-    NumericEnumStore::Index result;
-    store.addEnum(value, result);
-    store.incRefCount(result);
-    return result;
-}
 
 void
 decRefCount(NumericEnumStore& store, NumericEnumStore::Index idx)
@@ -321,9 +307,9 @@ EnumStoreTest::requireThatAddressSpaceUsageIsReported()
 
     using vespalib::AddressSpace;
     EXPECT_EQUAL(AddressSpace(1, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
-    NumericEnumStore::Index idx1 = addEnum(store, 10);
+    EnumIndex idx1 = store.insert(10);
     EXPECT_EQUAL(AddressSpace(2, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
-    NumericEnumStore::Index idx2 = addEnum(store, 20);
+    EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
     EXPECT_EQUAL(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
     decRefCount(store, idx1);
@@ -357,7 +343,7 @@ EnumStoreTest::Main()
 
     testFloatEnumStore();
     testFindFolded();
-    testAddEnum();
+    testInsert();
     testHoldListAndGeneration();
     TEST_DO(requireThatAddressSpaceUsageIsReported());
 

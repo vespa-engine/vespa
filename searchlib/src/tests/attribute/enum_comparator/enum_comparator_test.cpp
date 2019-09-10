@@ -43,9 +43,8 @@ void
 Test::requireThatNumericComparatorIsWorking()
 {
     NumericEnumStore es(false);
-    EnumIndex e1, e2;
-    es.addEnum(10, e1);
-    es.addEnum(30, e2);
+    EnumIndex e1 = es.insert(10);
+    EnumIndex e2 = es.insert(30);
     auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2));
     EXPECT_TRUE(!cmp1(e2, e1));
@@ -59,10 +58,9 @@ void
 Test::requireThatFloatComparatorIsWorking()
 {
     FloatEnumStore es(false);
-    EnumIndex e1, e2, e3;
-    es.addEnum(10.5, e1);
-    es.addEnum(30.5, e2);
-    es.addEnum(std::numeric_limits<float>::quiet_NaN(), e3);
+    EnumIndex e1 = es.insert(10.5);
+    EnumIndex e2 = es.insert(30.5);
+    EnumIndex e3 = es.insert(std::numeric_limits<float>::quiet_NaN());
     auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2));
     EXPECT_TRUE(!cmp1(e2, e1));
@@ -79,10 +77,9 @@ void
 Test::requireThatStringComparatorIsWorking()
 {
     StringEnumStore es(false);
-    EnumIndex e1, e2, e3;
-    es.addEnum("Aa", e1);
-    es.addEnum("aa", e2);
-    es.addEnum("aB", e3);
+    EnumIndex e1 = es.insert("Aa");
+    EnumIndex e2 = es.insert("aa");
+    EnumIndex e3 = es.insert("aB");
     auto cmp1 = es.make_comparator();
     EXPECT_TRUE(cmp1(e1, e2)); // similar folded, fallback to regular
     EXPECT_TRUE(!cmp1(e2, e1));
@@ -101,12 +98,11 @@ Test::requireThatComparatorWithTreeIsWorking()
     vespalib::GenerationHandler g;
     TreeType t;
     NodeAllocator m;
-    EnumIndex ei;
     for (int32_t v = 100; v > 0; --v) {
         auto cmp = es.make_comparator(v);
         EXPECT_TRUE(!t.find(EnumIndex(), m, cmp).valid());
-        es.addEnum(v, ei);
-        t.insert(ei, BTreeNoLeafData(), m, cmp);
+        EnumIndex idx = es.insert(v);
+        t.insert(idx, BTreeNoLeafData(), m, cmp);
     }
     EXPECT_EQUAL(100u, t.size(m));
     int32_t exp = 1;
@@ -125,11 +121,10 @@ void
 Test::requireThatFoldedComparatorIsWorking()
 {
     StringEnumStore es(false);
-    EnumIndex e1, e2, e3, e4;
-    es.addEnum("Aa", e1);
-    es.addEnum("aa", e2);
-    es.addEnum("aB", e3);
-    es.addEnum("Folded", e4);
+    EnumIndex e1 = es.insert("Aa");
+    EnumIndex e2 = es.insert("aa");
+    EnumIndex e3 = es.insert("aB");
+    EnumIndex e4 = es.insert("Folded");
     auto cmp1 = es.make_folded_comparator();
     EXPECT_TRUE(!cmp1(e1, e2)); // similar folded
     EXPECT_TRUE(!cmp1(e2, e1)); // similar folded

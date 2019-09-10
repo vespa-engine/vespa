@@ -166,11 +166,7 @@ public:
             : _store(store),
               _possibly_unused()
         {}
-        void insert(EntryType value) {
-            Index idx;
-            _store.addEnum(value, idx);
-            _possibly_unused.insert(idx);
-        }
+        void insert(EntryType value);
         void inc_ref_count(Index idx) {
             _store.get_entry_base(idx).inc_ref_count();
         }
@@ -211,7 +207,7 @@ public:
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(EntryType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
-    void addEnum(EntryType value, Index &newIdx);
+    Index insert(EntryType value);
     bool findIndex(EntryType value, Index &idx) const;
     void freeUnusedEnums() override;
     void freeUnusedEnums(const IndexSet& toRemove);
