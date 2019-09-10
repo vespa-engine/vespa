@@ -107,6 +107,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     break;
                 } else {
                     merged = mergeResult(invoker.getSearchResult(execution), merged);
+                    log.info("Merged " + invokers.size() + ":" + merged.toString());
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
