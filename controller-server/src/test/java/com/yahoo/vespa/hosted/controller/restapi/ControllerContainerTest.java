@@ -9,7 +9,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import org.junit.After;
 import org.junit.Before;
 
@@ -63,7 +63,7 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.configserver.flags.db.FlagsDbImpl'/>\n" +
                "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.Controller'/>\n" +

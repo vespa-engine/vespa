@@ -18,7 +18,7 @@ import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;

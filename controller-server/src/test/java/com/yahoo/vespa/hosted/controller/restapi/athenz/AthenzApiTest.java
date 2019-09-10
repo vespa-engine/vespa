@@ -1,8 +1,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.athenz;
 
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;

@@ -4,7 +4,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import org.junit.Test;
 
 import java.time.Duration;

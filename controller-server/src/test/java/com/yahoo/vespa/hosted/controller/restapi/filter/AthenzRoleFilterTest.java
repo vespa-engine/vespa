@@ -10,10 +10,10 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
-import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import org.junit.Before;
 import org.junit.Test;
 

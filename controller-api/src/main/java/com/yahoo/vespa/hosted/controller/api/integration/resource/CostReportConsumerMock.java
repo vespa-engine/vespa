@@ -1,8 +1,6 @@
-package com.yahoo.vespa.hosted.controller.restapi.cost;
+package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 
 import java.util.Map;
 import java.util.function.Consumer;

@@ -38,7 +38,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.vespa.hosted.controller.restapi.cost.CostReportConsumerMock;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -199,6 +199,10 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public MockBuildService buildServiceMock() {
         return mockBuildService;
+    }
+
+    public ApplicationCertificateMock applicationCertificateMock() {
+        return applicationCertificateMock;
     }
 
 }
