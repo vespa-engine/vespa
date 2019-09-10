@@ -59,7 +59,7 @@ class UniqueStoreComparatorHelper<double> : public UniqueStoreFloatingPointCompa
  * Compare two entries based on entry refs.
  *
  * Valid entry ref is mapped to an entry in a data store.
- * Invalid entry ref is mapped to a temporary entry referenced by comparator instance.
+ * Invalid entry ref is mapped to a temporary entry owned by comparator instance.
  */
 template <typename EntryT, typename RefT>
 class UniqueStoreComparator : public EntryComparator {
