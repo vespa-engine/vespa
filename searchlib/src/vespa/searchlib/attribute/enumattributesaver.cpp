@@ -11,7 +11,7 @@ namespace search {
 EnumAttributeSaver::
 EnumAttributeSaver(const IEnumStore &enumStore)
     : _enumStore(enumStore),
-      _enumerator(_enumStore.getEnumStoreDict(), _enumStore.get_data_store_base())
+      _enumerator(enumStore.make_enumerator())
 {
 }
 
@@ -26,7 +26,7 @@ EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
         std::unique_ptr<BufferWriter>
             udatWriter(saveTarget.udatWriter().allocBufferWriter());
         const auto& enumDict = _enumStore.getEnumStoreDict();
-        enumDict.writeAllValues(*udatWriter, _enumerator.get_frozen_root());
+        enumDict.writeAllValues(*udatWriter, _enumerator->get_frozen_root());
         udatWriter->flush();
     }
 }

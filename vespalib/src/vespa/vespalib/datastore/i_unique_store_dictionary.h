@@ -5,6 +5,7 @@
 #include "entryref.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
 
 namespace search::datastore {

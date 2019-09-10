@@ -108,10 +108,6 @@ public:
         return _dict->getPostingDictionary();
     }
 
-    // TODO: Add API for getting compaction count instead.
-    const datastore::DataStoreBase &get_data_store_base() const override { return _store.get_allocator().get_data_store(); }
-
-
     bool getValue(Index idx, EntryType& value) const;
     EntryType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
     EntryType getValue(Index idx) const { return _store.get(idx); }
@@ -212,6 +208,13 @@ public:
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;
+    uint64_t get_compaction_count() const override {
+        return _store.get_data_store().get_compaction_count();
+    }
+    void inc_compaction_count() override {
+        _store.get_allocator().get_data_store().inc_compaction_count();
+    }
+    std::unique_ptr<Enumerator> make_enumerator() const override;
 };
 
 std::unique_ptr<datastore::IUniqueStoreDictionary>

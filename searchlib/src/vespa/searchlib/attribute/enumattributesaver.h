@@ -17,11 +17,11 @@ class IAttributeSaveTarget;
 class EnumAttributeSaver
 {
 public:
-    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
+    using Enumerator = IEnumStore::Enumerator;
 
 private:
     const IEnumStore  &_enumStore;
-    Enumerator _enumerator;
+    std::unique_ptr<Enumerator> _enumerator;
 
 public:
     EnumAttributeSaver(const IEnumStore &enumStore);
@@ -29,8 +29,8 @@ public:
 
     void writeUdat(IAttributeSaveTarget &saveTarget);
     const IEnumStore &getEnumStore() const { return _enumStore; }
-    Enumerator &get_enumerator() { return _enumerator; }
-    void clear() { _enumerator.clear(); }
+    Enumerator &get_enumerator() { return *_enumerator; }
+    void clear() { _enumerator->clear(); }
 };
 
 } // namespace search

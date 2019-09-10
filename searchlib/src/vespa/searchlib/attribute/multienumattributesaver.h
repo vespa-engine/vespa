@@ -24,9 +24,9 @@ class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
     const MultiValueMapping &_mvMapping;
-    EnumAttributeSaver      _enumSaver;
-    const datastore::DataStoreBase &_enum_store_data_store_base;
-    uint64_t                _compaction_count;
+    EnumAttributeSaver       _enumSaver;
+    const IEnumStore        &_enum_store;
+    uint64_t                 _compaction_count;
     bool compaction_interferred() const;
 public:
     bool onSave(IAttributeSaveTarget &saveTarget) override;

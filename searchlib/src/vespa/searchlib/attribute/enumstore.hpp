@@ -260,4 +260,11 @@ EnumStoreT<EntryType>::compact_worst(bool compact_memory, bool compact_address_s
     return _store.compact_worst(compact_memory, compact_address_space);
 }
 
+template <typename EntryType>
+std::unique_ptr<IEnumStore::Enumerator>
+EnumStoreT<EntryType>::make_enumerator() const
+{
+    return std::make_unique<Enumerator>(*_dict, _store.get_data_store());
+}
+
 }

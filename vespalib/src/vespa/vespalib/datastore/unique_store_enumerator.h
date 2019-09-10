@@ -6,6 +6,8 @@
 
 namespace search::datastore {
 
+class DataStoreBase;
+
 /**
  * Enumerator for related UniqueStore class.
  *
