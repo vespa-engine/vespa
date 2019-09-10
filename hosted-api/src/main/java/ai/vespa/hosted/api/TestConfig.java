@@ -46,8 +46,8 @@ public class TestConfig {
      */
     public static TestConfig fromJson(byte[] jsonBytes) {
         Inspector config = new JsonDecoder().decode(new Slime(), jsonBytes).get();
-        if (config.field("clusters").valid())
-            return TestConfig.fromEndpointsOnly(toClusterMap(config.field("clusters")));
+        if (config.field("localEndpoints").valid())
+            return TestConfig.fromEndpointsOnly(toClusterMap(config.field("localEndpoints")));
 
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
