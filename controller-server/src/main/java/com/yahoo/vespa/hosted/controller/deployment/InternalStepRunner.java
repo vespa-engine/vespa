@@ -618,7 +618,7 @@ public class InternalStepRunner implements StepRunner {
 
         boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
-                                         spec.athenzDomain().isPresent(),
+                                         ! controller.system().isPublic(),
                                          useTesterCertificate,
                                          testerFlavorFor(id, spec));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
