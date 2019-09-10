@@ -119,13 +119,13 @@ public class Flags {
             "preprovision-capacity", List.of(), PreprovisionCapacity.class,
             "List of node resources and their count that should be present in zone to receive new deployments. When a " +
             "preprovisioned is taken, new will be provisioned within next iteration of maintainer.",
-            "Takes effect on next iteration of HostProivisionMaintainer.");
+            "Takes effect on next iteration of HostProvisionMaintainer.");
 
     public static final UnboundBooleanFlag USE_ADVERTISED_RESOURCES = defineFeatureFlag(
             "use-advertised-resources", false,
             "When enabled, will use advertised host resources rather than actual host resources, ignore host resource " +
                     "reservation, and fail with exception unless requested resource match advertised host resources exactly.",
-            "Takes effect on next iteration of HostProivisionMaintainer.",
+            "Takes effect on next iteration of HostProvisionMaintainer.",
             APPLICATION_ID);
 
     public static final UnboundJacksonFlag<NodeResources> DEFAULT_RESOURCES = defineJacksonFlag(
