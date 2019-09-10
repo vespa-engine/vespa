@@ -83,8 +83,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
         ProtobufResponse protobufResponse = response.response().get();
         CompressionType compression = CompressionType.valueOf(protobufResponse.compression());
-        byte[] payload = resourcePool.compressor().decompress(protobufResponse.compressedPayload(), compression,
-                protobufResponse.uncompressedSize());
+        byte[] payload = resourcePool.compressor().decompress(protobufResponse.compressedPayload(), compression, protobufResponse.uncompressedSize());
         var result = ProtobufSerialization.deserializeToSearchResult(payload, query, searcher, node.pathIndex(), node.key());
 
         return result;
