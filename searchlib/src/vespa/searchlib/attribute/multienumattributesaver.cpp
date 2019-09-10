@@ -84,8 +84,8 @@ MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
     : Parent(std::move(guard), header, mvMapping),
       _mvMapping(mvMapping),
       _enumSaver(enumStore),
-      _enum_store_data_store_base(enumStore.get_data_store_base()),
-      _compaction_count(_enum_store_data_store_base.get_compaction_count())
+      _enum_store(enumStore),
+      _compaction_count(enumStore.get_compaction_count())
 {
 }
 
@@ -94,7 +94,7 @@ template <typename MultiValueT>
 bool
 MultiValueEnumAttributeSaver<MultiValueT>::compaction_interferred() const
 {
-    return _compaction_count != _enum_store_data_store_base.get_compaction_count();
+    return _compaction_count != _enum_store.get_compaction_count();
 }
 
 template <typename MultiValueT>

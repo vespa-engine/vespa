@@ -38,7 +38,6 @@ public:
     virtual ~IEnumStoreDictionary() = default;
 
     virtual uint32_t getNumUniques() const = 0;
-    virtual void writeAllValues(BufferWriter& writer, btree::BTreeNode::Ref rootRef) const = 0;
 
     virtual void fixupRefCounts(const EnumVector& hist) = 0;
     virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;
@@ -50,7 +49,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator& cmp) const = 0;
 
     virtual void onReset() = 0;
-    virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
 
     virtual EnumPostingTree& getPostingDictionary() = 0;
     virtual const EnumPostingTree& getPostingDictionary() const = 0;

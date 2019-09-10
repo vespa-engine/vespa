@@ -135,13 +135,22 @@ EnumStoreT<EntryType>::getValue(Index idx, EntryType& value) const
 template <typename EntryType>
 EnumStoreT<EntryType>::NonEnumeratedLoader::~NonEnumeratedLoader() = default;
 
+template <typename EntryType>
+void
+EnumStoreT<EntryType>::BatchUpdater::insert(EntryType value)
+{
+    auto cmp = _store.make_comparator(value);
+    auto result = _store._dict->add(cmp, [this, &value]() -> EntryRef { return _store._store.get_allocator().allocate(value); });
+    if (result.inserted()) {
+        _possibly_unused.insert(result.ref());
+    }
+}
+
 template <class EntryType>
 void
-EnumStoreT<EntryType>::writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const
+EnumStoreT<EntryType>::write_value(BufferWriter& writer, Index idx) const
 {
-    for (const auto& idx : idxs) {
-        writer.write(&_store.get(idx), sizeof(EntryType));
-    }
+    writer.write(&_store.get(idx), sizeof(EntryType));
 }
 
 template <class EntryType>
@@ -199,12 +208,10 @@ EnumStoreT<EntryType>::freeUnusedEnums(const IndexSet& toRemove)
 }
 
 template <typename EntryType>
-void
-EnumStoreT<EntryType>::addEnum(EntryType value, Index& newIdx)
+IEnumStore::Index
+EnumStoreT<EntryType>::insert(EntryType value)
 {
-    auto cmp = make_comparator(value);
-    auto add_result = _dict->add(cmp, [this, &value]() -> EntryRef { return _store.get_allocator().allocate(value); });
-    newIdx = add_result.ref();
+    return _store.add(value).ref();
 }
 
 template <typename EntryType>
@@ -249,6 +256,13 @@ std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryType>::compact_worst(bool compact_memory, bool compact_address_space)
 {
     return _store.compact_worst(compact_memory, compact_address_space);
+}
+
+template <typename EntryType>
+std::unique_ptr<IEnumStore::Enumerator>
+EnumStoreT<EntryType>::make_enumerator() const
+{
+    return std::make_unique<Enumerator>(*_dict, _store.get_data_store());
 }
 
 }

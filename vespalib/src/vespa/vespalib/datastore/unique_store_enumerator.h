@@ -6,6 +6,8 @@
 
 namespace search::datastore {
 
+class DataStoreBase;
+
 /**
  * Enumerator for related UniqueStore class.
  *
@@ -28,7 +30,6 @@ private:
 public:
     UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store);
     ~UniqueStoreEnumerator();
-    EntryRef get_frozen_root() const { return _dict_snapshot->get_frozen_root(); }
     void enumerateValue(EntryRef ref);
     void enumerateValues();
     void clear();

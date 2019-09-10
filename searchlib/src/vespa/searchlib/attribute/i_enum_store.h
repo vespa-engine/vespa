@@ -6,6 +6,7 @@
 #include "enum_store_types.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/unique_store_enumerator.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -37,6 +38,7 @@ public:
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
     using EnumIndexRemapper = datastore::UniqueStoreRemapper<InternalIndex>;
+    using Enumerator = datastore::UniqueStoreEnumerator<IEnumStore::InternalIndex>;
 
     struct CompareEnumIndex {
         using Index = IEnumStore::Index;
@@ -50,7 +52,7 @@ public:
 
     virtual ~IEnumStore() = default;
 
-    virtual void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const = 0;
+    virtual void write_value(BufferWriter& writer, Index idx) const = 0;
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
     virtual void fixupRefCounts(const EnumVector& histogram) = 0;
@@ -59,13 +61,15 @@ public:
     virtual bool foldedChange(const Index& idx1, const Index& idx2) const = 0;
     virtual IEnumStoreDictionary& getEnumStoreDict() = 0;
     virtual const IEnumStoreDictionary& getEnumStoreDict() const = 0;
-    virtual const datastore::DataStoreBase& get_data_store_base() const = 0;
     virtual uint32_t getNumUniques() const = 0;
     virtual vespalib::MemoryUsage getValuesMemoryUsage() const = 0;
     virtual vespalib::MemoryUsage getDictionaryMemoryUsage() const = 0;
     virtual vespalib::MemoryUsage update_stat() = 0;
     virtual std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) = 0;
     virtual std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) = 0;
+    virtual uint64_t get_compaction_count() const = 0;
+    // Should only be used by unit tests.
+    virtual void inc_compaction_count() = 0;
 
     enumstore::EnumeratedLoader make_enumerated_loader() {
         return enumstore::EnumeratedLoader(*this);
@@ -74,6 +78,8 @@ public:
     enumstore::EnumeratedPostingsLoader make_enumerated_postings_loader() {
         return enumstore::EnumeratedPostingsLoader(*this);
     }
+
+    virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
 
     template <typename TreeT>
     void fixupRefCounts(const EnumVector& hist, TreeT& tree) {

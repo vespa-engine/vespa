@@ -77,9 +77,7 @@ public:
     virtual ~EnumStoreT();
 
     uint32_t getRefCount(Index idx) const { return get_entry_base(idx).get_ref_count(); }
-    // TODO: Remove from public API
     void incRefCount(Index idx) { return get_entry_base(idx).inc_ref_count(); }
-    void decRefCount(Index idx) { return get_entry_base(idx).dec_ref_count(); }
 
     // Only use when reading from enumerated attribute save files
     // TODO: Instead create an API that is used for loading/initializing.
@@ -109,10 +107,6 @@ public:
     const EnumPostingTree &getPostingDictionary() const {
         return _dict->getPostingDictionary();
     }
-
-    // TODO: Add API for getting compaction count instead.
-    const datastore::DataStoreBase &get_data_store_base() const override { return _store.get_allocator().get_data_store(); }
-
 
     bool getValue(Index idx, EntryType& value) const;
     EntryType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
@@ -166,11 +160,7 @@ public:
             : _store(store),
               _possibly_unused()
         {}
-        void insert(EntryType value) {
-            Index idx;
-            _store.addEnum(value, idx);
-            _possibly_unused.insert(idx);
-        }
+        void insert(EntryType value);
         void inc_ref_count(Index idx) {
             _store.get_entry_base(idx).inc_ref_count();
         }
@@ -206,18 +196,24 @@ public:
         return FoldedComparatorType(_store.get_data_store(), fallback_value, prefix);
     }
 
-    // TODO: Change to sending enum indexes as const array ref.
-    void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const override;
+    void write_value(BufferWriter& writer, Index idx) const override;
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(EntryType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
-    void addEnum(EntryType value, Index &newIdx);
+    Index insert(EntryType value);
     bool findIndex(EntryType value, Index &idx) const;
     void freeUnusedEnums() override;
     void freeUnusedEnums(const IndexSet& toRemove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;
+    uint64_t get_compaction_count() const override {
+        return _store.get_data_store().get_compaction_count();
+    }
+    void inc_compaction_count() override {
+        _store.get_allocator().get_data_store().inc_compaction_count();
+    }
+    std::unique_ptr<Enumerator> make_enumerator() const override;
 };
 
 std::unique_ptr<datastore::IUniqueStoreDictionary>
@@ -230,8 +226,7 @@ class datastore::DataStoreT<IEnumStore::Index>;
 
 template <>
 void
-EnumStoreT<const char*>::writeValues(BufferWriter& writer,
-                                      vespalib::ConstArrayRef<IEnumStore::Index> idxs) const;
+EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const;
 
 template <>
 ssize_t

@@ -33,7 +33,6 @@ public:
     DictionaryT &getDictionary() { return this->_dict; }
 
     uint32_t getNumUniques() const override;
-    void writeAllValues(BufferWriter& writer, btree::BTreeNode::Ref rootRef) const override;
     void fixupRefCounts(const EnumVector& hist) override;
 
     void removeUnusedEnums(const IndexSet& unused,
@@ -50,7 +49,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator& cmp) const override;
 
     void onReset() override;
-    btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
 
     EnumPostingTree & getPostingDictionary() override;
     const EnumPostingTree & getPostingDictionary() const override;

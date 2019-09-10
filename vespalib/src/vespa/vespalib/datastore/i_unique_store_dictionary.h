@@ -5,6 +5,7 @@
 #include "entryref.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
 
 namespace search::datastore {
@@ -27,8 +28,6 @@ public:
     public:
         using UP = std::unique_ptr<ReadSnapshot>;
         virtual ~ReadSnapshot() = default;
-        // TODO: Remove when all relevant functions have been migrated to this API.
-        virtual EntryRef get_frozen_root() const = 0;
         virtual size_t count(const EntryComparator& comp) const = 0;
         virtual size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const = 0;
         virtual void foreach_key(std::function<void(EntryRef)> callback) const = 0;
@@ -49,7 +48,6 @@ public:
     virtual void build(vespalib::ConstArrayRef<EntryRef> refs) = 0;
     virtual void build_with_payload(const std::vector<EntryRef>& refs, const std::vector<uint32_t>& payloads) = 0;
     virtual std::unique_ptr<ReadSnapshot> get_read_snapshot() const = 0;
-    virtual EntryRef get_frozen_root() const = 0;
 };
 
 }
