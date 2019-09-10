@@ -52,7 +52,7 @@ public:
 
 private:
     UniqueStoreType _store;
-    IEnumStoreDictionary& _dict;
+    IEnumStoreDictionary* _dict;
     vespalib::MemoryUsage _cached_values_memory_usage;
     vespalib::AddressSpace _cached_values_address_space_usage;
 
@@ -87,10 +87,10 @@ public:
         get_entry_base(idx).set_ref_count(refCount);
     }
 
-    uint32_t getNumUniques() const override { return _dict.getNumUniques(); }
+    uint32_t getNumUniques() const override { return _dict->getNumUniques(); }
 
     vespalib::MemoryUsage getValuesMemoryUsage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
-    vespalib::MemoryUsage getDictionaryMemoryUsage() const override { return _dict.get_memory_usage(); }
+    vespalib::MemoryUsage getDictionaryMemoryUsage() const override { return _dict->get_memory_usage(); }
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 
@@ -99,15 +99,15 @@ public:
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 
-    void fixupRefCounts(const EnumVector &hist) override { _dict.fixupRefCounts(hist); }
+    void fixupRefCounts(const EnumVector &hist) override { _dict->fixupRefCounts(hist); }
     void freezeTree() { _store.freeze(); }
 
-    IEnumStoreDictionary &getEnumStoreDict() override { return _dict; }
-    const IEnumStoreDictionary &getEnumStoreDict() const override { return _dict; }
-    EnumPostingTree &getPostingDictionary() { return _dict.getPostingDictionary(); }
+    IEnumStoreDictionary &getEnumStoreDict() override { return *_dict; }
+    const IEnumStoreDictionary &getEnumStoreDict() const override { return *_dict; }
+    EnumPostingTree &getPostingDictionary() { return _dict->getPostingDictionary(); }
 
     const EnumPostingTree &getPostingDictionary() const {
-        return _dict.getPostingDictionary();
+        return _dict->getPostingDictionary();
     }
 
     // TODO: Add API for getting compaction count instead.
@@ -153,7 +153,7 @@ public:
     };
 
     NonEnumeratedLoader make_non_enumerated_loader() {
-        return NonEnumeratedLoader(_store.get_allocator(), _dict);
+        return NonEnumeratedLoader(_store.get_allocator(), *_dict);
     }
 
     class BatchUpdater {

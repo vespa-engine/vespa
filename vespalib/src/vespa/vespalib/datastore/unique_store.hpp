@@ -45,6 +45,13 @@ template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::~UniqueStore() = default;
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
+void
+UniqueStore<EntryT, RefT, Compare, Allocator>::set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict)
+{
+    _dict = std::move(dict);
+}
+
+template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStoreAddResult
 UniqueStore<EntryT, RefT, Compare, Allocator>::add(EntryConstRefType value)
 {

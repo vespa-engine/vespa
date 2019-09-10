@@ -49,6 +49,7 @@ public:
     UniqueStore();
     UniqueStore(std::unique_ptr<IUniqueStoreDictionary> dict);
     ~UniqueStore();
+    void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
     UniqueStoreAddResult add(EntryConstRefType value);
     EntryRef find(EntryConstRefType value);
     EntryConstRefType get(EntryRef ref) const { return _allocator.get(ref); }
