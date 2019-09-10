@@ -23,6 +23,8 @@ private:
     const DataStoreBase &_store;
     EnumValues _enumValues;
     uint32_t _next_enum_val;
+
+    void allocate_enum_values();
 public:
     UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store);
     ~UniqueStoreEnumerator();

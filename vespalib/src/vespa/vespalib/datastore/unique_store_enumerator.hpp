@@ -15,6 +15,7 @@ UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary 
       _enumValues(),
       _next_enum_val(1)
 {
+    allocate_enum_values();
 }
 
 template <typename RefT>
@@ -37,7 +38,7 @@ UniqueStoreEnumerator<RefT>::enumerateValue(EntryRef ref)
 
 template <typename RefT>
 void
-UniqueStoreEnumerator<RefT>::enumerateValues()
+UniqueStoreEnumerator<RefT>::allocate_enum_values()
 {
     _enumValues.resize(RefType::numBuffers());
     for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
@@ -46,6 +47,12 @@ UniqueStoreEnumerator<RefT>::enumerateValues()
             _enumValues[bufferId].resize(state.size() / state.getArraySize());
         }
     }
+}
+
+template <typename RefT>
+void
+UniqueStoreEnumerator<RefT>::enumerateValues()
+{
     _next_enum_val = 1;
     _dict_snapshot->foreach_key([this](EntryRef ref) { enumerateValue(ref); });
 }
