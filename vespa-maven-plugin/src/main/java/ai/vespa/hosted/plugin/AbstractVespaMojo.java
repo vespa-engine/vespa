@@ -21,7 +21,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
 
-    @Parameter(property = "endpoint", defaultValue = "https://api.vespa.corp.yahoo.com:4443") // TODO jvenstad: Change default
+    @Parameter(property = "endpoint", defaultValue = "https://api.vespa-external.aws.oath.cloud:4443")
     protected String endpoint;
 
     @Parameter(property = "tenant")
