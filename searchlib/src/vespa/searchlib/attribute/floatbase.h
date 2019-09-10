@@ -8,10 +8,6 @@
 
 namespace search {
 
-// forward declaration of class in enumstore.h
-template <typename T>
-class NumericEntryType;
-
 class FloatingPointAttribute : public NumericAttribute
 {
 public:
@@ -36,8 +32,8 @@ public:
 protected:
     const char * getString(DocId doc, char * s, size_t sz) const override;
     FloatingPointAttribute(const vespalib::string & name, const Config & c);
-    typedef ChangeTemplate<NumericChangeData<double> > Change;
-    typedef ChangeVectorT< Change > ChangeVector;
+    using Change = ChangeTemplate<NumericChangeData<double>>;
+    using ChangeVector = ChangeVectorT<Change>;
     ChangeVector _changes;
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
@@ -53,18 +49,17 @@ template<typename T>
 class  FloatingPointAttributeTemplate : public FloatingPointAttribute
 {
 public:
-    typedef WeightedType<T> Weighted;
+    using Weighted = WeightedType<T>;
     virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const = 0;
     virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const = 0;
 protected:
-    typedef NumericEntryType<T>          EnumEntryType;
-
-    typedef attribute::LoadedNumericValue<T> LoadedNumericValueT;
+    using EnumEntryType = T;
+    using LoadedNumericValueT = attribute::LoadedNumericValue<T>;
 
 public:    
-    typedef T BaseType;
-    typedef T LoadedValueType;
-    typedef SequentialReadModifyWriteInterface<LoadedNumericValueT> LoadedVector;
+    using BaseType = T;
+    using LoadedValueType = T;
+    using LoadedVector = SequentialReadModifyWriteInterface<LoadedNumericValueT>;
     virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const;
     virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
     virtual T get(DocId doc) const = 0;

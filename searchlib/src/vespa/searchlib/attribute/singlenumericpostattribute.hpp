@@ -79,7 +79,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
 {
     EnumStore & enumStore = this->getEnumStore();
     Dictionary & dict = enumStore.getPostingDictionary();
-    ComparatorType cmpa(enumStore);
+    auto cmp = enumStore.make_comparator();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -102,7 +102,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
                 T oldValue = enumStore.getValue(oldIdx);
                 T newValue = this->applyArithmetic(oldValue, change);
 
-                auto addItr = dict.find(EnumIndex(), ComparatorType(enumStore, newValue));
+                auto addItr = dict.find(EnumIndex(), enumStore.make_comparator(newValue));
                 EnumIndex newIdx = addItr.getKey();
                 currEnumIndices[change._doc] = newIdx;
             }
@@ -113,7 +113,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
     }
 
-    makePostingChange(&cmpa, currEnumIndices, changePost);
+    makePostingChange(&cmp, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
     SingleValueNumericEnumAttribute<B>::applyValueChanges(updater);

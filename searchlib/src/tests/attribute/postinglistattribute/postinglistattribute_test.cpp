@@ -453,7 +453,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         const uint32_t docEnd = range.getEnd(i);
 
         auto itr = dict.find(typename VectorType::EnumIndex(),
-                             typename VectorType::ComparatorType(enumStore, values[i]));
+                             enumStore.make_comparator(values[i]));
         ASSERT_TRUE(itr.valid());
 
         typename VectorType::PostingList::Iterator postings;
@@ -672,7 +672,7 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
     const typename AttributeType::Dictionary & dict = enumStore.getPostingDictionary();
     const typename AttributeType::PostingList & postingList = vec.getPostingList();
     auto itr = dict.find(typename AttributeType::EnumIndex(),
-                         typename AttributeType::ComparatorType(vec.getEnumStore(), value));
+                         vec.getEnumStore().make_comparator(value));
     ASSERT_TRUE(itr.valid());
 
     typename AttributeType::PostingList::Iterator postings;
@@ -692,7 +692,7 @@ PostingListAttributeTest::checkNonExistantPostingList(AttributeType & vec, Value
 {
     const typename AttributeType::Dictionary & dict = vec.getEnumStore().getPostingDictionary();
     auto itr = dict.find(typename AttributeType::EnumIndex(),
-                         typename AttributeType::ComparatorType(vec.getEnumStore(), value));
+                         vec.getEnumStore().make_comparator(value));
     EXPECT_TRUE(!itr.valid());
 }
 

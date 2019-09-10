@@ -57,26 +57,32 @@ template <class EntryType>
 ssize_t
 EnumStoreT<EntryType>::load_unique_value(const void* src, size_t available, Index& idx)
 {
-    if (available < sizeof(DataType)) {
+    if (available < sizeof(EntryType)) {
         return -1;
     }
-    const auto* value = static_cast<const DataType*>(src);
+    const auto* value = static_cast<const EntryType*>(src);
     Index prev_idx = idx;
     idx = _store.get_allocator().allocate(*value);
 
     if (prev_idx.valid()) {
-        assert(ComparatorType::compare(getValue(prev_idx), *value) < 0);
+        auto cmp = make_comparator(*value);
+        assert(cmp(prev_idx, Index()));
     }
-    return sizeof(DataType);
+    return sizeof(EntryType);
 }
 
 template <typename EntryType>
 EnumStoreT<EntryType>::EnumStoreT(bool has_postings)
-    : _store(make_enum_store_dictionary(*this, has_postings, EntryType::hasFold() ? std::make_unique<FoldedComparatorType>(*this) : std::unique_ptr<datastore::EntryComparator>())),
-      _dict(static_cast<IEnumStoreDictionary&>(_store.get_dictionary())),
+    : _store(),
+      _dict(),
       _cached_values_memory_usage(),
       _cached_values_address_space_usage(0, 0, (1ull << 32))
 {
+    _store.set_dictionary(make_enum_store_dictionary(*this, has_postings,
+                                                     (has_string_type() ?
+                                                      std::make_unique<FoldedComparatorType>(_store.get_data_store()) :
+                                                      std::unique_ptr<datastore::EntryComparator>())));
+    _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
 }
 
 template <typename EntryType>
@@ -110,14 +116,14 @@ EnumStoreT<EntryType>::load_unique_values(const void* src, size_t available, Ind
 {
     ssize_t sz = load_unique_values_internal(src, available, idx);
     if (sz >= 0) {
-        _dict.build(idx);
+        _dict->build(idx);
     }
     return sz;
 }
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::getValue(Index idx, DataType& value) const
+EnumStoreT<EntryType>::getValue(Index idx, EntryType& value) const
 {
     if (!idx.valid()) {
         return false;
@@ -134,7 +140,7 @@ void
 EnumStoreT<EntryType>::writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const
 {
     for (const auto& idx : idxs) {
-        writer.write(&_store.get(idx), sizeof(DataType));
+        writer.write(&_store.get(idx), sizeof(EntryType));
     }
 }
 
@@ -142,18 +148,18 @@ template <class EntryType>
 bool
 EnumStoreT<EntryType>::foldedChange(const Index &idx1, const Index &idx2) const
 {
-    int cmpres = FoldedComparatorType::compareFolded(getValue(idx1), getValue(idx2));
-    assert(cmpres <= 0);
-    return cmpres < 0;
+    auto cmp = make_folded_comparator();
+    assert(!cmp(idx2, idx1));
+    return cmp(idx1, idx2);
 }
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findEnum(DataType value, IEnumStore::EnumHandle &e) const
+EnumStoreT<EntryType>::findEnum(EntryType value, IEnumStore::EnumHandle &e) const
 {
-    ComparatorType cmp(*this, value);
+    auto cmp = make_comparator(value);
     Index idx;
-    if (_dict.findFrozenIndex(cmp, idx)) {
+    if (_dict->findFrozenIndex(cmp, idx)) {
         e = idx.ref();
         return true;
     }
@@ -162,42 +168,42 @@ EnumStoreT<EntryType>::findEnum(DataType value, IEnumStore::EnumHandle &e) const
 
 template <typename EntryType>
 std::vector<IEnumStore::EnumHandle>
-EnumStoreT<EntryType>::findFoldedEnums(DataType value) const
+EnumStoreT<EntryType>::findFoldedEnums(EntryType value) const
 {
-    FoldedComparatorType cmp(*this, value);
-    return _dict.findMatchingEnums(cmp);
+    auto cmp = make_folded_comparator(value);
+    return _dict->findMatchingEnums(cmp);
 }
 
 template <typename EntryType>
 bool
-EnumStoreT<EntryType>::findIndex(DataType value, Index &idx) const
+EnumStoreT<EntryType>::findIndex(EntryType value, Index &idx) const
 {
-    ComparatorType cmp(*this, value);
-    return _dict.findIndex(cmp, idx);
+    auto cmp = make_comparator(value);
+    return _dict->findIndex(cmp, idx);
 }
 
 template <typename EntryType>
 void
 EnumStoreT<EntryType>::freeUnusedEnums()
 {
-    ComparatorType cmp(*this);
-    _dict.freeUnusedEnums(cmp);
+    auto cmp = make_comparator();
+    _dict->freeUnusedEnums(cmp);
 }
 
 template <typename EntryType>
 void
 EnumStoreT<EntryType>::freeUnusedEnums(const IndexSet& toRemove)
 {
-    ComparatorType cmp(*this);
-    _dict.freeUnusedEnums(toRemove, cmp);
+    auto cmp = make_comparator();
+    _dict->freeUnusedEnums(toRemove, cmp);
 }
 
 template <typename EntryType>
 void
-EnumStoreT<EntryType>::addEnum(DataType value, Index& newIdx)
+EnumStoreT<EntryType>::addEnum(EntryType value, Index& newIdx)
 {
-    ComparatorType cmp(*this, value);
-    auto add_result = _dict.add(cmp, [this, &value]() -> EntryRef { return _store.get_allocator().allocate(value); });
+    auto cmp = make_comparator(value);
+    auto add_result = _dict->add(cmp, [this, &value]() -> EntryRef { return _store.get_allocator().allocate(value); });
     newIdx = add_result.ref();
 }
 
@@ -209,7 +215,7 @@ EnumStoreT<EntryType>::update_stat()
     _cached_values_memory_usage = store.getMemoryUsage();
     _cached_values_address_space_usage = store.getAddressSpaceUsage();
     auto retval = _cached_values_memory_usage;
-    retval.merge(_dict.get_memory_usage());
+    retval.merge(_dict->get_memory_usage());
     return retval;
 }
 

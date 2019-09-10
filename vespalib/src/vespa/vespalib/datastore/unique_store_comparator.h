@@ -9,7 +9,7 @@
 
 namespace search::datastore {
 
-/*
+/**
  * Helper class for comparing elements in unique store. 
  */
 template <typename EntryT>
@@ -20,7 +20,7 @@ public:
     }
 };
 
-/*
+/**
  * Helper class for comparing floating point elements in unique store with
  * special handling of NAN.
  */
@@ -39,7 +39,7 @@ public:
     }
 };
 
-/*
+/**
  * Specialized helper class for comparing float elements in unique store with
  * special handling of NAN.
  */
@@ -47,7 +47,7 @@ template <>
 class UniqueStoreComparatorHelper<float> : public UniqueStoreFloatingPointComparatorHelper<float> {
 };
 
-/*
+/**
  * Specialized helper class for comparing double elements in unique store with
  * special handling of NAN.
  */
@@ -55,35 +55,45 @@ template <>
 class UniqueStoreComparatorHelper<double> : public UniqueStoreFloatingPointComparatorHelper<double> {
 };
   
-/*
- * Compare two entries based on entry refs.  Valid entry ref is mapped
- * to an entry in a data store.  Invalid entry ref is mapped to a
- * temporary entry referenced by comparator instance.
+/**
+ * Compare two entries based on entry refs.
+ *
+ * Valid entry ref is mapped to an entry in a data store.
+ * Invalid entry ref is mapped to a temporary entry owned by comparator instance.
  */
 template <typename EntryT, typename RefT>
 class UniqueStoreComparator : public EntryComparator {
+protected:
     using EntryType = EntryT;
     using WrappedEntryType = UniqueStoreEntry<EntryType>;
     using RefType = RefT;
     using DataStoreType = DataStoreT<RefT>;
     const DataStoreType &_store;
-    const EntryType &_value;
-public:
-    UniqueStoreComparator(const DataStoreType &store, const EntryType &value)
-        : _store(store),
-          _value(value)
-    {
-    }
+    const EntryType _fallback_value;
+
     inline const EntryType &get(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
             return _store.template getEntry<WrappedEntryType>(iRef)->value();
         } else {
-            return _value;
+            return _fallback_value;
         }
     }
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override
+
+public:
+    UniqueStoreComparator(const DataStoreType &store, const EntryType &fallback_value)
+        : _store(store),
+          _fallback_value(fallback_value)
     {
+    }
+
+    UniqueStoreComparator(const DataStoreType &store)
+        : _store(store),
+          _fallback_value()
+    {
+    }
+
+    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
         const EntryType &lhsValue = get(lhs);
         const EntryType &rhsValue = get(rhs);
         return UniqueStoreComparatorHelper<EntryT>::less(lhsValue, rhsValue);

@@ -44,7 +44,7 @@ applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore &enumStore(this->getEnumStore());
     Dictionary &dict(enumStore.getPostingDictionary());
-    FoldedComparatorType compare(enumStore);
+    auto compare = enumStore.make_folded_comparator();
 
     StringEnumIndexMapper mapper(dict);
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
@@ -105,7 +105,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(
     const Dictionary &dictionary = self._enumStore.getPostingDictionary();
     const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
     DictionaryConstIterator dictItr(btree::BTreeNode::Ref(), dictionary.getAllocator());
-    FoldedComparatorType comp(self._enumStore, term.c_str());
+    auto comp = self._enumStore.make_folded_comparator(term.c_str());
 
     dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
     if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {

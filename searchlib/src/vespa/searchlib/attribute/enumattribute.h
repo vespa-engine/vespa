@@ -31,7 +31,6 @@ protected:
     using EnumEntryType = typename B::EnumEntryType;  // Template argument for enum store
     using EnumHandle = typename B::EnumHandle;
     using EnumModifier = typename B::EnumModifier;
-    using EnumType = typename B::EnumEntryType::Type; // Type stored in enum store (integer, float, string)
     using ValueModifier = typename B::ValueModifier;
 
 public:
@@ -62,13 +61,13 @@ protected:
 
     const IEnumStore* getEnumStoreBase() const override { return &_enumStore; }
     IEnumStore* getEnumStoreBase() override { return &_enumStore; }
-    EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
+    EnumEntryType getFromEnum(EnumHandle e) const override { return _enumStore.getValue(e); }
 
     void load_posting_lists(LoadedVector& loaded) override { (void) loaded; }
     void load_enum_store(LoadedVector& loaded) override;
     uint64_t getUniqueValueCount() const override;
 
-    static EnumType getDefaultEnumTypeValue() { return B::defaultValue(); }
+    static EnumEntryType getDefaultEnumTypeValue() { return B::defaultValue(); }
 
     /*
      * Iterate through the change vector and find new unique values.
@@ -81,7 +80,7 @@ protected:
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();
-    bool findEnum(EnumType v, EnumHandle & e) const override { return _enumStore.findEnum(v, e); }
+    bool findEnum(EnumEntryType v, EnumHandle & e) const override { return _enumStore.findEnum(v, e); }
 };
 
 } // namespace search

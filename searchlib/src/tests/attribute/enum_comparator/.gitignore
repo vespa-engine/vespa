@@ -1,0 +1,4 @@
+.depend
+Makefile
+enum_comparator_test
+searchlib_enum_comparator_test_app

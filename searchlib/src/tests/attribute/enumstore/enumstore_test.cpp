@@ -15,15 +15,15 @@ size_t enumStoreAlign(size_t size)
     return (size + 15) & -UINT64_C(16);
 }
 
-using NumericEnumStore = EnumStoreT<NumericEntryType<uint32_t> >;
+using NumericEnumStore = EnumStoreT<int32_t>;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
 class EnumStoreTest : public vespalib::TestApp
 {
 private:
-    typedef EnumStoreT<StringEntryType> StringEnumStore;
-    typedef EnumStoreT<NumericEntryType<float> > FloatEnumStore;
-    typedef EnumStoreT<NumericEntryType<double> > DoubleEnumStore;
+    typedef EnumStoreT<const char*> StringEnumStore;
+    typedef EnumStoreT<float> FloatEnumStore;
+    typedef EnumStoreT<double> DoubleEnumStore;
 
     typedef IEnumStore::Index EnumIndex;
 
@@ -193,7 +193,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
         EXPECT_EQUAL(1u, ses.getRefCount(indices[i]));
-        StringEntryType::Type value = 0;
+        const char* value = nullptr;
         EXPECT_TRUE(ses.getValue(indices[i], value));
         EXPECT_TRUE(strcmp(unique[i].c_str(), value) == 0);
     }
@@ -339,7 +339,7 @@ EnumStoreTest::checkReaders(const StringEnumStore & ses,
 {
     (void) sesGen;
     //uint32_t refCount = 1000;
-    StringEnumStore::DataType t = "";
+    const char* t = "";
     for (uint32_t i = 0; i < readers.size(); ++i) {
         const Reader & r = readers[i];
         for (uint32_t j = 0; j < r._indices.size(); ++j) {

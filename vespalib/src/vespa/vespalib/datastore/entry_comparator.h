@@ -6,17 +6,19 @@
 
 namespace search::datastore {
 
-/*
- * Compare two entries based on entry refs.  Valid entry ref is mapped
- * to an entry in a data store.  Invalid entry ref is mapped to a
- * temporary entry owned or referenced by comparator instance.
+/**
+ * Less-than comparator for two entries based on entry refs.
+ *
+ * Valid entry ref is mapped to an entry in a data store.
+ * Invalid entry ref is mapped to a temporary entry owned or referenced by comparator instance.
  */
 class EntryComparator {
 public:
     virtual ~EntryComparator() {}
+
     /**
-     * Compare the values represented by the given unique store entry refs.
-     **/
+     * Returns true if the value represented by lhs ref is less than the value represented by rhs ref.
+     */
     virtual bool operator()(const EntryRef lhs, const EntryRef rhs) const = 0;
 };
 
