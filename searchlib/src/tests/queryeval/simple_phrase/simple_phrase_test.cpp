@@ -173,7 +173,7 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
     : _requestContext(nullptr, expiredDoom ? 0 : std::numeric_limits<int64_t>::max()),
       _index(),
       _phrase_fs(field, fieldId, phrase_handle),
-      _phrase(_phrase_fs, _requestContext),
+      _phrase(_phrase_fs, _requestContext, false),
       _children(),
       _md(MatchData::makeTestInstance(100, 10)),
       _order(),
@@ -301,7 +301,7 @@ Test::requireThatBlueprintExposesFieldWithEstimate()
 {
     FakeRequestContext requestContext;
     FieldSpec f("foo", 1, 1);
-    SimplePhraseBlueprint phrase(f, requestContext);
+    SimplePhraseBlueprint phrase(f, requestContext, false);
     ASSERT_TRUE(phrase.getState().numFields() == 1);
     EXPECT_EQUAL(f.getFieldId(), phrase.getState().field(0).getFieldId());
     EXPECT_EQUAL(f.getHandle(), phrase.getState().field(0).getHandle());
@@ -327,7 +327,7 @@ Test::requireThatBlueprintForcesPositionDataOnChildren()
 {
     FakeRequestContext requestContext;
     FieldSpec f("foo", 1, 1, true);
-    SimplePhraseBlueprint phrase(f, requestContext);
+    SimplePhraseBlueprint phrase(f, requestContext, false);
     EXPECT_TRUE(f.isFilter());
     EXPECT_TRUE(!phrase.getNextChildField(f).isFilter());
 }

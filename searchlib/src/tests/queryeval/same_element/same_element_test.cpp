@@ -15,7 +15,7 @@ using namespace search::queryeval;
 using search::attribute::ElementIterator;
 
 std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
-    auto result = std::make_unique<SameElementBlueprint>();
+    auto result = std::make_unique<SameElementBlueprint>(false);
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         vespalib::string field_name = vespalib::make_string("f%u", field_id);

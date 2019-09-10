@@ -9,7 +9,7 @@
 
 namespace search::queryeval {
 
-SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext)
+SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext, bool expensive)
     : ComplexLeafBlueprint(field),
       _doom(requestContext.getSoftDoom()),
       _field(field),
@@ -17,6 +17,9 @@ SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequ
       _layout(),
       _terms()
 {
+    if (expensive) {
+        set_cost_tier(State::COST_TIER_EXPENSIVE);
+    }
 }
 
 SimplePhraseBlueprint::~SimplePhraseBlueprint()

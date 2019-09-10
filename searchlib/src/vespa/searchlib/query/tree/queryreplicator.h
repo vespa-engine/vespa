@@ -70,12 +70,12 @@ private:
 
     void visit(Phrase &node) override {
         replicate(node, _builder.addPhrase(node.getChildren().size(), node.getView(),
-                                           node.getId(), node.getWeight()));
+                                           node.getId(), node.getWeight()).set_expensive(node.is_expensive()));
         visitNodes(node.getChildren());
     }
 
     void visit(SameElement &node) override {
-        _builder.addSameElement(node.getChildren().size(), node.getView());
+        _builder.addSameElement(node.getChildren().size(), node.getView()).set_expensive(node.is_expensive());
         visitNodes(node.getChildren());
     }
 
@@ -107,8 +107,7 @@ private:
     }
 
     void replicate(const Term &original, Term &replica) {
-        replica.setTermIndex(original.getTermIndex());
-        replica.setRanked(original.isRanked());
+        replica.setStateFrom(original);
     }
 
     void visit(NumberTerm &node) override {

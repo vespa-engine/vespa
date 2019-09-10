@@ -71,10 +71,10 @@ public:
 
 } // namespace proton::matching::<unnamed>
 
-SameElementBuilder::SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context)
+SameElementBuilder::SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context, bool expensive)
     : _requestContext(requestContext),
       _context(context),
-      _result(std::make_unique<SameElementBlueprint>())
+      _result(std::make_unique<SameElementBlueprint>(expensive))
 {
 }
 
