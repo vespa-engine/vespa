@@ -6,13 +6,16 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -45,8 +48,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private long adaptiveTimeoutMax = 0;
     private long deadline = 0;
 
-    private Result result = null;
-
     private long answeredDocs = 0;
     private long answeredActiveDocs = 0;
     private long answeredSoonActiveDocs = 0;
@@ -55,8 +56,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private int answeredNodesParticipated = 0;
     private boolean timedOut = false;
     private boolean degradedByMatchPhase = false;
-
-    private boolean trimResult = false;
 
     public InterleavedSearchInvoker(Collection<SearchInvoker> invokers, SearchCluster searchCluster, Set<Integer> alreadyFailedNodes) {
         super(Optional.empty());
@@ -82,7 +81,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int originalOffset = query.getOffset();
         query.setHits(query.getHits() + query.getOffset());
         query.setOffset(0);
-        trimResult = originalHits != query.getHits() || originalOffset != query.getOffset();
 
         for (SearchInvoker invoker : invokers) {
             invoker.sendSearchRequest(query);
@@ -95,6 +93,8 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     @Override
     protected Result getSearchResult(Execution execution) throws IOException {
+        Result result = new Result(query);
+        List<Hit> merged = Collections.emptyList();
         long nextTimeout = query.getTimeLeft();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
@@ -103,7 +103,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    mergeResult(invoker.getSearchResult(execution));
+                    merged = mergeResult(result, invoker.getSearchResult(execution), merged);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -112,24 +112,16 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             throw new RuntimeException("Interrupted while waiting for search results", e);
         }
 
-        if (result == null) {
-            result = new Result(query);
-        }
-        insertNetworkErrors();
+        insertNetworkErrors(result);
         result.setCoverage(createCoverage());
-        trimResult(execution);
-        Result ret = result;
-        result = null;
-        return ret;
-    }
-
-    private void trimResult(Execution execution) {
-        if (trimResult || result.hits().size() > query.getHits()) {
-            result.hits().trim(query.getOffset(), query.getHits());
+        int needed = query.getOffset() + query.getHits();
+        for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
+            result.hits().add(merged.get(index));
         }
+        return result;
     }
 
-    private void insertNetworkErrors() {
+    private void insertNetworkErrors(Result result) {
         // Network errors will be reported as errors only when all nodes fail, otherwise they are just traced
         boolean asErrors = answeredNodes == 0;
 
@@ -195,15 +187,40 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private void mergeResult(Result partialResult) {
+    private List<Hit> mergeResult(Result result, Result partialResult, List<Hit> current) {
         collectCoverage(partialResult.getCoverage(true));
 
-        if (result == null) {
-            result = partialResult;
-            return;
-        }
         result.mergeWith(partialResult);
-        result.hits().addAll(partialResult.hits().asUnorderedHits());
+        List<Hit> partial = partialResult.hits().asUnorderedHits();
+        if (current.isEmpty() ) {
+            return partial;
+        }
+        if (partial.isEmpty()) {
+            return current;
+        }
+
+        int needed = query.getOffset() + query.getHits();
+        List<Hit> merged = new ArrayList<>(needed);
+        int indexCurrent = 0;
+        int indexPartial = 0;
+        while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
+            int cmpRes = current.get(indexCurrent).compareTo(partial.get(indexPartial));
+            if (cmpRes < 0) {
+                merged.add(current.get(indexCurrent++));
+            } else if (cmpRes > 0) {
+                merged.add(partial.get(indexPartial++));
+            } else { // Duplicates
+                merged.add(current.get(indexCurrent++));
+                indexPartial++;
+            }
+        }
+        while ((indexCurrent < current.size()) && (merged.size() < needed)) {
+            merged.add(current.get(indexCurrent++));
+        }
+        while ((indexPartial < partial.size()) && (merged.size() < needed)) {
+            merged.add(partial.get(indexPartial++));
+        }
+        return merged;
     }
 
     private void collectCoverage(Coverage source) {

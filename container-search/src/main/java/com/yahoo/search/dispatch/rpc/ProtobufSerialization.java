@@ -201,7 +201,7 @@ public class ProtobufSerialization {
 
         int hitItems = protobuf.getHitsCount();
         var haveGrouping = protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty();
-        if(haveGrouping) {
+        if (haveGrouping) {
             hitItems++;
         }
         result.hits().ensureCapacity(hitItems);
@@ -238,7 +238,7 @@ public class ProtobufSerialization {
 
             result.hits().add(hit);
         }
-        if(sorting != null) {
+        if (sorting != null) {
             result.hits().setSorted(true);
         }
         var slimeTrace = protobuf.getSlimeTrace();
