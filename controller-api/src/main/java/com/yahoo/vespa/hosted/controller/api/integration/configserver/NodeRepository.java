@@ -101,6 +101,7 @@ public interface NodeRepository {
     }
 
     private static Node.ClusterType clusterTypeOf(NodeMembership nodeMembership) {
+        if (nodeMembership == null) return Node.ClusterType.unknown;
         switch (nodeMembership.clustertype) {
             case "admin": return Node.ClusterType.admin;
             case "content": return Node.ClusterType.content;
