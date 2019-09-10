@@ -77,9 +77,7 @@ public:
     virtual ~EnumStoreT();
 
     uint32_t getRefCount(Index idx) const { return get_entry_base(idx).get_ref_count(); }
-    // TODO: Remove from public API
     void incRefCount(Index idx) { return get_entry_base(idx).inc_ref_count(); }
-    void decRefCount(Index idx) { return get_entry_base(idx).dec_ref_count(); }
 
     // Only use when reading from enumerated attribute save files
     // TODO: Instead create an API that is used for loading/initializing.

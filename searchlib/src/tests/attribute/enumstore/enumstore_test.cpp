@@ -222,7 +222,6 @@ EnumStoreTest::testUniques
 void
 EnumStoreTest::testHoldListAndGeneration()
 {
-    // TODO: Rewrite test to use BatchUpdater
     StringEnumStore ses(false);
     StringVector uniques;
     generation_t sesGen = 0u;
@@ -269,13 +268,14 @@ EnumStoreTest::testHoldListAndGeneration()
     }
 
     // remove all uniques
+    auto updater = ses.make_batch_updater();
     for (uint32_t i = 0; i < 100; ++i) {
         EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(uniques[i].c_str(), idx));
-        ses.decRefCount(idx);
+        updater.dec_ref_count(idx);
         EXPECT_EQUAL(0u, ses.getRefCount(idx));
     }
-    ses.freeUnusedEnums();
+    updater.commit();
 
     // check readers again
     checkReaders(ses, sesGen, readers);
@@ -287,10 +287,12 @@ EnumStoreTest::testHoldListAndGeneration()
 namespace {
 
 void
-decRefCount(NumericEnumStore& store, NumericEnumStore::Index idx)
+dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
 {
-    store.decRefCount(idx);
-    store.freeUnusedEnums();
+    auto updater = store.make_batch_updater();
+    updater.dec_ref_count(idx);
+    updater.commit();
+
     generation_t gen = 5;
     store.transferHoldLists(gen);
     store.trimHoldLists(gen + 1);
@@ -301,7 +303,6 @@ decRefCount(NumericEnumStore& store, NumericEnumStore::Index idx)
 void
 EnumStoreTest::requireThatAddressSpaceUsageIsReported()
 {
-    // TODO: Rewrite test to use BatchUpdater
     const size_t ADDRESS_LIMIT = 4290772994; // Max allocated elements in un-allocated buffers + allocated elements in allocated buffers.
     NumericEnumStore store(false);
 
@@ -312,9 +313,9 @@ EnumStoreTest::requireThatAddressSpaceUsageIsReported()
     EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
     EXPECT_EQUAL(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
-    decRefCount(store, idx1);
+    dec_ref_count(store, idx1);
     EXPECT_EQUAL(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
-    decRefCount(store, idx2);
+    dec_ref_count(store, idx2);
     EXPECT_EQUAL(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
 }
 
