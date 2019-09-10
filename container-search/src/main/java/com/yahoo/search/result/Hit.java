@@ -61,7 +61,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     private URI id;
 
     /** The types of this hit */
-    private Set<String> types = new ArraySet<>(1);
+    private Set<String> types = null;
 
     /** The relevance of this hit */
     private Relevance relevance;
@@ -107,6 +107,9 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     /** Creates an (invalid) empty hit. Id and relevance must be set before handoff */
     protected Hit() {}
+    protected Hit(Relevance relevance) {
+        this.relevance = relevance;
+    }
 
     /**
      * Creates a minimal valid hit having relevance 1000
@@ -510,7 +513,12 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
-    public Set<String> types() { return types; }
+    //TODO This shoudld not be exposed as a modifiable set
+    public Set<String> types() {
+        if (types == null)
+            types = new ArraySet<>(1);
+        return types;
+    }
 
     /**
      * Returns the add number, assigned when adding the hit to a Result.
@@ -655,7 +663,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
         hit.fields = fields != null ? new LinkedHashMap<>(fields) : null;
         hit.unmodifiableFieldMap = null;
-        hit.types = new LinkedHashSet<>(types);
+        if (types != null)
+            hit.types = new LinkedHashSet<>(types);
         if (filled != null) {
             hit.setFilledInternal(new HashSet<>(filled));
         }
