@@ -8,11 +8,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -23,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
@@ -245,7 +243,7 @@ public class LockedApplication {
                                      metrics, pemDeployKey, rotations, rotationStatus);
     }
 
-    public LockedApplication with(MetricsService.ApplicationMetrics metrics) {
+    public LockedApplication with(ApplicationMetrics metrics) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus);

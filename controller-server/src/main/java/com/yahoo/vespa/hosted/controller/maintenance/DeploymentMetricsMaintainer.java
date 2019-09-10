@@ -5,12 +5,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -51,13 +49,12 @@ public class DeploymentMetricsMaintainer extends Maintainer {
             applicationList.parallelStream().forEach(application -> {
                 try {
                     applications.lockIfPresent(application.id(), locked ->
-                            applications.store(locked.with(controller().metricsService().getApplicationMetrics(application.id()))));
+                            applications.store(locked.with(controller().metrics().getApplicationMetrics(application.id()))));
 
                     for (Deployment deployment : application.deployments().values()) {
                         if (deployment.version().getMajor() < 7) continue;
-                        MetricsService.DeploymentMetrics collectedMetrics = controller().metricsService()
-                                                                                        .getDeploymentMetrics(application.id(), deployment.zone());
-                        Instant now = controller().clock().instant();
+                        var collectedMetrics = controller().metrics().getDeploymentMetrics(application.id(), deployment.zone());
+                        var now = controller().clock().instant();
                         applications.lockIfPresent(application.id(), locked -> {
                             Deployment existingDeployment = locked.get().deployments().get(deployment.zone());
                             if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
@@ -92,10 +89,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static DeploymentMetricsMaintainer maintainer(Controller controller) {
-        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
     }
 
 }

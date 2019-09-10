@@ -1,19 +1,22 @@
-package com.yahoo.vespa.hosted.controller.api.integration.metrics;
+package com.yahoo.vespa.hosted.controller.metric;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class ConfigServerMetricsServiceTest {
+/**
+ * @author olaa
+ */
+public class ConfigServerMetricsTest {
 
     private final ApplicationId applicationId = new ApplicationId.Builder()
                 .tenant("foo")
@@ -23,13 +26,13 @@ public class ConfigServerMetricsServiceTest {
 
     private final ZoneId zoneId = ZoneId.from("prod", "us-west-1");
 
-    private ConfigServer configServer;
-    private ConfigServerMetricsService service;
+    private ConfigServerMock configServer;
+    private ConfigServerMetrics service;
 
     @Before
     public void before() {
-        configServer = Mockito.mock(ConfigServer.class);
-        service = new ConfigServerMetricsService(configServer);
+        configServer = new ConfigServerMock(new ZoneRegistryMock());
+        service = new ConfigServerMetrics(configServer);
     }
 
     @Test
@@ -51,7 +54,7 @@ public class ConfigServerMetricsServiceTest {
 
         var response = List.of(clusterMetrics1, clusterMetrics2);
 
-        Mockito.when(configServer.getMetrics(deploymentId)).thenReturn(response);
+        configServer.setMetrics(deploymentId, response);
 
         //
         // Now we can actually test stuff :(

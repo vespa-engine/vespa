@@ -1,11 +1,9 @@
-package com.yahoo.vespa.hosted.controller.api.integration.metrics;
+package com.yahoo.vespa.hosted.controller.metric;
 
-import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 
 import java.util.List;
@@ -17,30 +15,22 @@ import java.util.function.Function;
  *
  * @author ogronnesby
  */
-// TODO: This module should not contain components. Move this to controller-server.
-public class ConfigServerMetricsService implements MetricsService {
+public class ConfigServerMetrics {
 
-    private final ConfigServer configServerClient;
+    private final ConfigServer configServer;
 
-    @Inject
-    public ConfigServerMetricsService(ServiceRegistry serviceRegistry) {
-        this(serviceRegistry.configServer());
+    public ConfigServerMetrics(ConfigServer configServer) {
+        this.configServer = configServer;
     }
 
-    ConfigServerMetricsService(ConfigServer configServer) {
-        this.configServerClient = configServer;
-    }
-
-    @Override
     public ApplicationMetrics getApplicationMetrics(ApplicationId application) {
         // TODO(ogronnesby): How to produce these values in Public context?
         return new ApplicationMetrics(0.0, 0.0);
     }
 
-    @Override
     public DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone) {
         var deploymentId = new DeploymentId(application, zone);
-        var metrics = configServerClient.getMetrics(deploymentId);
+        var metrics = configServer.getMetrics(deploymentId);
 
         // The field names here come from the MetricsResponse class.
         return new DeploymentMetrics(
@@ -70,4 +60,5 @@ public class ConfigServerMetricsService implements MetricsService {
 
         return weightedLatency / rateSum;
     }
+
 }

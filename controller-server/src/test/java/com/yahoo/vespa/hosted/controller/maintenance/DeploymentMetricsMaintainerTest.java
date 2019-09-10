@@ -8,13 +8,17 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -28,14 +32,15 @@ import static org.junit.Assert.assertFalse;
  */
 public class DeploymentMetricsMaintainerTest {
 
-    ControllerTester tester = new ControllerTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void updates_metrics() {
-        ApplicationId appId = tester.createAndDeploy("tenant1", "domain1", "app1",
-                                                  Environment.dev, 123).id();
+        var application = tester.createApplication("app1", "tenant1", 123L, 1L);
+        deploy(application, Version.fromString("7.1"));
+
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Supplier<Application> app = tester.application(appId);
+        Supplier<Application> app = () -> tester.application(application.id());
         Supplier<Deployment> deployment = () -> app.get().deployments().values().stream().findFirst().get();
 
         // No metrics gathered yet
@@ -48,7 +53,7 @@ public class DeploymentMetricsMaintainerTest {
         // Only get application metrics for old version
         deploy(app.get(), Version.fromString("6.3.3"));
         maintainer.maintain();
-        assertEquals(0.5, app.get().metrics().queryServiceQuality(), 0);
+        assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
         assertFalse("No timestamp set", deployment.get().metrics().instant().isPresent());
         assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
@@ -56,10 +61,16 @@ public class DeploymentMetricsMaintainerTest {
 
         // Metrics are gathered and saved to application
         deploy(app.get(), Version.fromString("7.5.5"));
+        var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
+                              ClusterMetrics.FEED_PER_SECOND, 2D,
+                              ClusterMetrics.DOCUMENT_COUNT, 3D,
+                              ClusterMetrics.QUERY_LATENCY, 4D,
+                              ClusterMetrics.FEED_LATENCY, 5D);
+        setMetrics(application.id(), metrics0);
         maintainer.maintain();
         Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
-        assertEquals(0.5, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
-        assertEquals(0.7, app.get().metrics().writeServiceQuality(), Double.MIN_VALUE);
+        assertEquals(0.0, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
+        assertEquals(0.0, app.get().metrics().writeServiceQuality(), Double.MIN_VALUE);
         assertEquals(1, deployment.get().metrics().queriesPerSecond(), Double.MIN_VALUE);
         assertEquals(2, deployment.get().metrics().writesPerSecond(), Double.MIN_VALUE);
         assertEquals(3, deployment.get().metrics().documentCount(), Double.MIN_VALUE);
@@ -82,8 +93,10 @@ public class DeploymentMetricsMaintainerTest {
         // Query traffic disappears. Query activity stops updating
         tester.clock().advance(Duration.ofHours(1));
         Instant t3 = tester.clock().instant().truncatedTo(MILLIS);
-        tester.metricsService().setMetric("queriesPerSecond", 0D);
-        tester.metricsService().setMetric("writesPerSecond", 5D);
+        var metrics1 = new HashMap<>(metrics0);
+        metrics1.put(ClusterMetrics.QUERIES_PER_SECOND, 0D);
+        metrics1.put(ClusterMetrics.FEED_PER_SECOND, 5D);
+        setMetrics(application.id(), metrics1);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
@@ -92,7 +105,9 @@ public class DeploymentMetricsMaintainerTest {
 
         // Feed traffic disappears. Feed activity stops updating
         tester.clock().advance(Duration.ofHours(1));
-        tester.metricsService().setMetric("writesPerSecond", 0D);
+        var metrics2 = new HashMap<>(metrics1);
+        metrics2.put(ClusterMetrics.FEED_PER_SECOND, 0D);
+        setMetrics(application.id(), metrics2);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
@@ -100,15 +115,24 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
     }
 
+    private void setMetrics(ApplicationId application, Map<String, Double> metrics) {
+        var clusterMetrics = new ClusterMetrics("default", ClusterMetrics.ClusterType.container);
+        for (var kv : metrics.entrySet()) {
+            clusterMetrics = clusterMetrics.addMetric(kv.getKey(), kv.getValue());
+        }
+        tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, ZoneId.from("dev", "us-east-1")), clusterMetrics);
+    }
+
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
         return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
     }
 
     private void deploy(Application application, Version version) {
-        tester.deploy(application,
-                ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
-                Optional.of(new ApplicationPackage(new byte[0])),
-                false,
-                Optional.of(version));
+        tester.controllerTester().deploy(application,
+                                         ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
+                                         Optional.of(new ApplicationPackage(new byte[0])),
+                                         false,
+                                         Optional.of(version));
     }
+
 }

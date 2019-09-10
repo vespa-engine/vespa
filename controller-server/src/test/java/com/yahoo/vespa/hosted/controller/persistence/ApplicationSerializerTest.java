@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.api.integration.metrics.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
@@ -25,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -114,7 +114,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
-                                               new MetricsService.ApplicationMetrics(0.5, 0.9),
+                                               new ApplicationMetrics(0.5, 0.9),
                                                Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
                                                rotationStatus);
