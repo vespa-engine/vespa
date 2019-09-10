@@ -625,6 +625,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** Compares this hit to another hit */
+    @SuppressWarnings("deprecation")
     @Override
     public int compareTo(Hit other) {
         // higher relevance is before

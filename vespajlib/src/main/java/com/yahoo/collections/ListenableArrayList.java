@@ -3,13 +3,13 @@ package com.yahoo.collections;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * An array list which notifies listeners after one or more items are added
  *
  * @author bratseth
+ * @since 5.1.17
  */
 @SuppressWarnings("serial")
 public class ListenableArrayList<ITEM> extends ArrayList<ITEM> {
@@ -54,11 +54,6 @@ public class ListenableArrayList<ITEM> extends ArrayList<ITEM> {
         ITEM result = super.set(index, e);
         notifyListeners();
         return result;
-    }
-
-    public List<Runnable> listeners() {
-        if (listeners == null) return Collections.emptyList();
-        return Collections.unmodifiableList(listeners);
     }
 
     /**
