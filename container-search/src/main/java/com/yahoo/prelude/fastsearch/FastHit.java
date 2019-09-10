@@ -63,7 +63,7 @@ public class FastHit extends Hit {
      * that most fields passes through the container with no processing most
      * of the time.
      */
-    private List<SummaryData> summaries = new ArrayList<>(1);
+    private List<SummaryData> summaries = Collections.emptyList();
 
     /** Removed field values, which should therefore not be returned if present in summary data */
     private Set<String> removedFields = null;
@@ -73,13 +73,20 @@ public class FastHit extends Hit {
      */
     public FastHit() { }
 
+    public FastHit(GlobalId gid, Relevance relevance, int partId, int distributionKey) {
+        super(relevance);
+        this.globalId = gid;
+        this.partId = partId;
+        this.distributionKey = distributionKey;
+    }
+
     // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevancy) {
         this(uri, relevancy, null);
     }
 
     // Note: This constructor is only used for tests, production use is always of the empty constructor
-    public FastHit(String uri, double relevance, String source) {
+    private FastHit(String uri, double relevance, String source) {
         setId(uri);
         setRelevance(new Relevance(relevance));
         setSource(source);
@@ -167,11 +174,11 @@ public class FastHit extends Hit {
         return (cmpRes != 0) ? cmpRes : super.compareTo(other);
     }
 
-    public boolean hasSortData(Sorting sorting) {
+    boolean hasSortData(Sorting sorting) {
         return sortData != null && sortDataSorting != null && sortDataSorting.equals(sorting);
     }
 
-    public static int compareSortData(FastHit left, FastHit right, Sorting sorting) {
+    static int compareSortData(FastHit left, FastHit right, Sorting sorting) {
         if (!left.hasSortData(sorting) || !right.hasSortData(sorting)) {
             return 0; // cannot sort
         }
@@ -185,14 +192,14 @@ public class FastHit extends Hit {
         }
         int vl = (int) left.sortData[i] & 0xFF;
         int vr = (int) right.sortData[i] & 0xFF;
-        int diff = vl - vr;
-        return diff;
+        return vl - vr;
     }
 
     /** For internal use */
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {
         if (removedFields != null)
             removedFields.removeAll(docsumDef.fieldNames());
+        if ( ! (summaries instanceof ArrayList) ) summaries = new ArrayList<>(8);
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
     }
 
@@ -392,7 +399,7 @@ public class FastHit extends Hit {
         /** The computed set of fields. Lazily created as it is not always needed. */
         private Set<String> fieldSet = null;
 
-        public FieldSet(FastHit hit) {
+        FieldSet(FastHit hit) {
             this.hit = hit;
         }
 
@@ -629,7 +636,7 @@ public class FastHit extends Hit {
 
             protected abstract VALUE toValue(Map.Entry<String, Inspector> field);
 
-            protected void advanceNext() {
+            void advanceNext() {
                 while (fieldIterator.hasNext()) {
                     Map.Entry<String, Inspector> nextEntry = fieldIterator.next();
                     String fieldName = nextEntry.getKey();
@@ -667,7 +674,7 @@ public class FastHit extends Hit {
                 private final String key;
                 private final Object value;
 
-                public SummaryFieldEntry(String key, Object value) {
+                SummaryFieldEntry(String key, Object value) {
                     this.key = key;
                     this.value = value;
                 }
@@ -716,7 +723,7 @@ public class FastHit extends Hit {
         private Iterator<VALUE> currentIterator;
         private VALUE previousReturned = null;
 
-        public SummaryIterator(FastHit hit, Iterator<VALUE> mapFieldsIterator) {
+        SummaryIterator(FastHit hit, Iterator<VALUE> mapFieldsIterator) {
             this.hit = hit;
             this.currentIterator = mapFieldsIterator;
         }
@@ -763,7 +770,7 @@ public class FastHit extends Hit {
     /** Iterator over all the field content of a FastHit */
     private static class FieldIterator extends SummaryIterator<Map.Entry<String, Object>> {
 
-        public FieldIterator(FastHit hit, Iterator<Map.Entry<String, Object>> mapFieldsIterator) {
+        FieldIterator(FastHit hit, Iterator<Map.Entry<String, Object>> mapFieldsIterator) {
             super(hit, mapFieldsIterator);
         }
 
@@ -782,7 +789,7 @@ public class FastHit extends Hit {
     /** Iterator over all the field names stored in a FastHit */
     private static class FieldNameIterator extends SummaryIterator<String> {
 
-        public FieldNameIterator(FastHit hit, Iterator<String> mapFieldNamesIterator) {
+        FieldNameIterator(FastHit hit, Iterator<String> mapFieldNamesIterator) {
             super(hit, mapFieldNamesIterator);
         }
 

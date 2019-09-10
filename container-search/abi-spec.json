@@ -7240,6 +7240,7 @@
     ],
     "methods": [
       "protected void <init>()",
+      "protected void <init>(com.yahoo.search.result.Relevance)",
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.search.Query)",
       "public void <init>(java.lang.String, double)",
