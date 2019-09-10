@@ -232,11 +232,21 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 indexPartial++;
             }
         }
-        while ((indexCurrent < current.size()) && (merged.size() < needed)) {
-            merged.add(current.get(indexCurrent++));
+        while (indexCurrent < current.size()) {
+            Hit h = current.get(indexCurrent++);
+            if (h.isAuxiliary()) {
+                auxiliaryHits.add(h);
+            } else if (merged.size() < needed) {
+                merged.add(h);
+            }
         }
-        while ((indexPartial < partial.size()) && (merged.size() < needed)) {
-            merged.add(partial.get(indexPartial++));
+        while (indexPartial < partial.size()) {
+            Hit h = partial.get(indexPartial++);
+            if (h.isAuxiliary()) {
+                auxiliaryHits.add(h);
+            } else if (merged.size() < needed) {
+                merged.add(h);
+            }
         }
         return merged;
     }
