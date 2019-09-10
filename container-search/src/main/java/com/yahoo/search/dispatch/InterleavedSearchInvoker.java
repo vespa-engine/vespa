@@ -7,7 +7,6 @@ import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
@@ -48,8 +47,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private long adaptiveTimeoutMin = 0;
     private long adaptiveTimeoutMax = 0;
     private long deadline = 0;
-
-    private Result result = null;
 
     private long answeredDocs = 0;
     private long answeredActiveDocs = 0;
@@ -96,7 +93,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     @Override
     protected Result getSearchResult(Execution execution) throws IOException {
-
+        Result result = new Result(query);
         List<Hit> merged = Collections.emptyList();
         long nextTimeout = query.getTimeLeft();
         try {
@@ -106,8 +103,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    merged = mergeResult(invoker.getSearchResult(execution), merged);
-                    log.info("Merged " + invokers.size() + ":" + merged.toString());
+                    merged = mergeResult(result, invoker.getSearchResult(execution), merged);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -116,21 +112,16 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             throw new RuntimeException("Interrupted while waiting for search results", e);
         }
 
-        if (result == null) {
-            result = new Result(query);
-        }
-        insertNetworkErrors();
+        insertNetworkErrors(result);
         result.setCoverage(createCoverage());
         int needed = query.getOffset() + query.getHits();
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
             result.hits().add(merged.get(index));
         }
-        Result ret = result;
-        result = null;
-        return ret;
+        return result;
     }
 
-    private void insertNetworkErrors() {
+    private void insertNetworkErrors(Result result) {
         // Network errors will be reported as errors only when all nodes fail, otherwise they are just traced
         boolean asErrors = answeredNodes == 0;
 
@@ -196,25 +187,31 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private List<Hit> mergeResult(Result partialResult, List<Hit> current) {
+    private List<Hit> mergeResult(Result result, Result partialResult, List<Hit> current) {
         collectCoverage(partialResult.getCoverage(true));
 
-        if (result == null) {
-            result = partialResult;
-            return result.hits().asUnorderedHits();
-        }
         result.mergeWith(partialResult);
-        int needed = query.getOffset() + query.getHits();
         List<Hit> partial = partialResult.hits().asUnorderedHits();
+        if (current.isEmpty() ) {
+            return partial;
+        }
+        if (partial.isEmpty()) {
+            return current;
+        }
+
+        int needed = query.getOffset() + query.getHits();
         List<Hit> merged = new ArrayList<>(needed);
         int indexCurrent = 0;
         int indexPartial = 0;
         while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
             int cmpRes = current.get(indexCurrent).compareTo(partial.get(indexPartial));
-            if (cmpRes <= 0) {
+            if (cmpRes < 0) {
                 merged.add(current.get(indexCurrent++));
-            } else {
+            } else if (cmpRes > 0) {
                 merged.add(partial.get(indexPartial++));
+            } else { // Duplicates
+                merged.add(current.get(indexCurrent++));
+                indexPartial++;
             }
         }
         while ((indexCurrent < current.size()) && (merged.size() < needed)) {
