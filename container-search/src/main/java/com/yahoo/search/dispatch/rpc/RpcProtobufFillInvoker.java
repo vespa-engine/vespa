@@ -73,6 +73,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
         var builder = ProtobufSerialization.createDocsumRequestBuilder(result.getQuery(), serverId, summaryClass, summaryNeedsQuery);
         for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
+            result.getQuery().trace(false, 6, "Fill from node ", nodeHits.getKey(), " key = " + nodeHits.getValue());
             var payload = ProtobufSerialization.serializeDocsumRequest(builder, nodeHits.getValue());
             sendDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), payload, result);
         }

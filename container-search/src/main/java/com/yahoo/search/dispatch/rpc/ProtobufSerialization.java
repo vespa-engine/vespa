@@ -238,7 +238,7 @@ public class ProtobufSerialization {
 
             result.hits().add(hit);
         }
-        if(sorting != null) {
+        if (sorting != null) {
             result.hits().setSorted(true);
         }
         var slimeTrace = protobuf.getSlimeTrace();
