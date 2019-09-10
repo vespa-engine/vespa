@@ -10,7 +10,7 @@
     <content id="${application}" version="1.0">
         <redundancy>1</redundancy>
         <documents>
-            <document type="music" mode="index" />
+            <document type="${application}" mode="index" />
         </documents>
         <nodes count="1" />
     </content>
