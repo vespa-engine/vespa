@@ -158,6 +158,14 @@ public class FastHit extends Hit {
         this.sortDataSorting = sorting;
     }
 
+    @Override
+    public int compareTo(Hit other) {
+        if ((sortData != null) && (other instanceof FastHit) && hasSortData(((FastHit) other).sortDataSorting)) {
+            return SortDataHitSorter.getComparator(sortDataSorting, null).compare(this, other);
+        }
+        return super.compareTo(other);
+    }
+
     public boolean hasSortData(Sorting sorting) {
         return sortData != null && sortDataSorting != null && sortDataSorting.equals(sorting);
     }
