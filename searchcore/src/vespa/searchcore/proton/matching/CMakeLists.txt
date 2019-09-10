@@ -19,6 +19,7 @@ vespa_add_library(searchcore_matching STATIC
     match_tools.cpp
     matcher.cpp
     matching_stats.cpp
+    unpacking_iterators_optimizer.cpp
     partial_result.cpp
     query.cpp
     queryenvironment.cpp
@@ -27,8 +28,8 @@ vespa_add_library(searchcore_matching STATIC
     ranking_constants.cpp
     requestcontext.cpp
     result_processor.cpp
-    sameelementmodifier.cpp
     same_element_builder.cpp
+    sameelementmodifier.cpp
     search_session.cpp
     session_manager_explorer.cpp
     sessionmanager.cpp
