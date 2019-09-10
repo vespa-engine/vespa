@@ -1,0 +1,17 @@
+
+search ${application} {
+
+    document ${application} {
+
+        field title type string {
+            indexing: summary | index
+        }
+
+        field count type int {
+            indexing: summary | attribute
+        }
+
+    }
+
+}
+

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
+    <version>1.0.0</version>
+    <packaging>container-plugin</packaging>  <!-- Use Vespa packaging -->
+
+    <parent>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>tenant-base</artifactId>
+        <version>[7,999)</version>  <!-- Use the latest Vespa release on each build -->
+    </parent>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <tenant>${tenant}</tenant>                                              <!-- Name from the web console -->
+        <application>${application}</application>                               <!-- Name from the web console -->
+        <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>     <!-- Needs an override for now -->
+    </properties>
+</project>
+

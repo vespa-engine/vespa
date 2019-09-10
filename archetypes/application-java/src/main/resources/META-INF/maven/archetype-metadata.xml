@@ -1,0 +1,22 @@
+<archetype-descriptor
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0
+        http://maven.apache.org/xsd/archetype-descriptor-1.0.0.xsd"
+        xmlns="http://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        name="archetype-java">
+    <fileSets>
+        <fileSet filtered="true" packaged="true">
+            <directory>src/main/java</directory>
+        </fileSet>
+        <fileSet filtered="true">
+            <directory>src/main/application</directory>
+        </fileSet>
+        <fileSet>
+            <directory>src/test/java</directory>
+        </fileSet>
+    </fileSets>
+    <requiredProperties>
+        <requiredProperty key="tenant" />
+        <requiredProperty key="application" />
+    </requiredProperties>
+</archetype-descriptor>
