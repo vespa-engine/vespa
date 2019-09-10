@@ -1,11 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.document.GlobalId;
+import com.yahoo.document.idstring.IdString;
+import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.Relevance;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -13,6 +20,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -177,6 +186,99 @@ public class InterleavedSearchInvokerTest {
         assertThat(cov.getResultSets(), is(1));
         assertThat(cov.getFullResultSets(), is(0));
         assertThat(cov.isDegradedByTimeout(), is(true));
+    }
+
+    static class MetaHit extends Hit {
+        MetaHit(Double relevance) {
+            super(new Relevance(relevance));
+        }
+        @Override
+        public boolean isMeta() {
+            return true;
+        }
+    }
+
+    private static final double DELTA = 0.000000000001;
+    private static final List<Double> A5 = Arrays.asList(11.0,8.5,7.5,3.0,2.0);
+    private static final List<Double> B5 = Arrays.asList(9.0,8.0,7.0,6.0,1.0);
+    private static final List<Double> A5Aux = Arrays.asList(-1.0,11.0,8.5,7.5,-7.0,3.0,2.0);
+    private static final List<Double> B5Aux = Arrays.asList(9.0,8.0,-3.0,7.0,6.0,1.0, -1.0);
+
+    @Test
+    public void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        Result result = invoker.search(query, null);
+        assertEquals(10, result.hits().size());
+        assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(1.0, result.hits().get(9).getRelevance().getScore(), DELTA);
+
+        invoker = createInterLeavedTestInvoker(B5, A5);
+        result = invoker.search(query, null);
+        assertEquals(10, result.hits().size());
+        assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(1.0, result.hits().get(9).getRelevance().getScore(), DELTA);
+    }
+
+    @Test
+    public void requireThatMergeOfConcreteHitsObeyOffset() throws IOException {
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        query.setHits(3);
+        query.setOffset(5);
+        Result result = invoker.search(query, null);
+        assertEquals(3, result.hits().size());
+        assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+
+        invoker = createInterLeavedTestInvoker(B5, A5);
+        result = invoker.search(query, null);
+        assertEquals(3, result.hits().size());
+        assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+    }
+
+    @Test
+    public void requireThatMergeOfConcreteHitsObeyOffsetWithAuxilliaryStuff() throws IOException {
+        InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5Aux, B5Aux);
+        query.setHits(3);
+        query.setOffset(5);
+        Result result = invoker.search(query, null);
+        assertEquals(7, result.hits().size());
+        assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+        assertTrue(result.hits().get(3) instanceof MetaHit);
+
+        invoker = createInterLeavedTestInvoker(B5Aux, A5Aux);
+        result = invoker.search(query, null);
+        assertEquals(7, result.hits().size());
+        assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
+        assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+        assertTrue(result.hits().get(3) instanceof MetaHit);
+    }
+
+    private static InterleavedSearchInvoker createInterLeavedTestInvoker(List<Double> a, List<Double> b) {
+        SearchCluster cluster = new MockSearchCluster("!", 1, 2);
+        List<SearchInvoker> invokers = new ArrayList<>();
+        invokers.add(createInvoker(a, 0));
+        invokers.add(createInvoker(b, 1));
+        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(invokers, cluster, Collections.emptySet());
+        invoker.responseAvailable(invokers.get(0));
+        invoker.responseAvailable(invokers.get(1));
+        return invoker;
+    }
+    private static MockInvoker createInvoker(List<Double> scores, int distributionKey) {
+        return new MockInvoker(0).setHits(createHits(scores, distributionKey, distributionKey));
+    }
+
+    private static List<Hit> createHits(List<Double> scores, int partId, int distributionKey) {
+        List<Hit> hits= new ArrayList<>(scores.size());
+        for (Double value : scores) {
+            if (value < 0) {
+                hits.add(new MetaHit(value));
+            } else {
+                hits.add(new FastHit(new GlobalId(IdString.createIdString("id:test:test::" + value)), new Relevance(value), partId, distributionKey));
+            }
+        }
+        return hits;
     }
 
     @Test

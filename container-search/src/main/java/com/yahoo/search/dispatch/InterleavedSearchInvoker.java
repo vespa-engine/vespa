@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -95,6 +96,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     protected Result getSearchResult(Execution execution) throws IOException {
         Result result = new Result(query);
         List<Hit> merged = Collections.emptyList();
+        List<Hit> auxiliary = new ArrayList<>();
         long nextTimeout = query.getTimeLeft();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
@@ -103,7 +105,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    merged = mergeResult(result, invoker.getSearchResult(execution), merged);
+                    merged = mergeResult(result, invoker.getSearchResult(execution), merged, auxiliary);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -115,6 +117,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         insertNetworkErrors(result);
         result.setCoverage(createCoverage());
         int needed = query.getOffset() + query.getHits();
+        result.hits().addAll(auxiliary);
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
             result.hits().add(merged.get(index));
         }
@@ -187,13 +190,21 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private List<Hit> mergeResult(Result result, Result partialResult, List<Hit> current) {
+    private List<Hit> mergeResult(Result result, Result partialResult, List<Hit> current, List<Hit> auxiliaryHits) {
         collectCoverage(partialResult.getCoverage(true));
 
         result.mergeWith(partialResult);
         List<Hit> partial = partialResult.hits().asUnorderedHits();
         if (current.isEmpty() ) {
-            return partial;
+            boolean hasAuxillary = false;
+            for(Hit hit : partial) {
+                if (hit.isAuxiliary()) {
+                    hasAuxillary = true;
+                    break;
+                }
+            }
+            if ( ! hasAuxillary)
+                return partial;
         }
         if (partial.isEmpty()) {
             return current;
@@ -204,21 +215,47 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         int indexCurrent = 0;
         int indexPartial = 0;
         while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
-            int cmpRes = current.get(indexCurrent).compareTo(partial.get(indexPartial));
+            Hit incommingHit = partial.get(indexPartial);
+            if (incommingHit.isAuxiliary()) {
+                auxiliaryHits.add(incommingHit);
+                indexPartial++;
+                continue;
+            }
+            Hit currentHit = current.get(indexCurrent);
+            if (currentHit.isAuxiliary()) {
+                auxiliaryHits.add(currentHit);
+                indexCurrent++;
+                continue;
+            }
+
+            int cmpRes = currentHit.compareTo(incommingHit);
             if (cmpRes < 0) {
-                merged.add(current.get(indexCurrent++));
+                merged.add(currentHit);
+                indexCurrent++;
             } else if (cmpRes > 0) {
-                merged.add(partial.get(indexPartial++));
+                merged.add(incommingHit);
+                indexPartial++;
             } else { // Duplicates
-                merged.add(current.get(indexCurrent++));
+                merged.add(currentHit);
+                indexCurrent++;
                 indexPartial++;
             }
         }
-        while ((indexCurrent < current.size()) && (merged.size() < needed)) {
-            merged.add(current.get(indexCurrent++));
+        while (indexCurrent < current.size()) {
+            Hit h = current.get(indexCurrent++);
+            if (h.isAuxiliary()) {
+                auxiliaryHits.add(h);
+            } else if (merged.size() < needed) {
+                merged.add(h);
+            }
         }
-        while ((indexPartial < partial.size()) && (merged.size() < needed)) {
-            merged.add(partial.get(indexPartial++));
+        while (indexPartial < partial.size()) {
+            Hit h = partial.get(indexPartial++);
+            if (h.isAuxiliary()) {
+                auxiliaryHits.add(h);
+            } else if (merged.size() < needed) {
+                merged.add(h);
+            }
         }
         return merged;
     }

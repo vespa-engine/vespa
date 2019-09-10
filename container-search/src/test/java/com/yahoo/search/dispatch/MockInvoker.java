@@ -5,14 +5,17 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 class MockInvoker extends SearchInvoker {
     private final Coverage coverage;
     private Query query;
+    private List<Hit> hits;
 
     protected MockInvoker(int key, Coverage coverage) {
         super(Optional.of(new Node(key, "?", 0, 0)));
@@ -21,6 +24,11 @@ class MockInvoker extends SearchInvoker {
 
     protected MockInvoker(int key) {
         this(key, null);
+    }
+
+    MockInvoker setHits(List<Hit> hits) {
+        this.hits = hits;
+        return this;
     }
 
     @Override
@@ -33,6 +41,9 @@ class MockInvoker extends SearchInvoker {
         Result ret = new Result(query);
         if (coverage != null) {
             ret.setCoverage(coverage);
+        }
+        if (hits != null) {
+            ret.hits().addAll(hits);
         }
         return ret;
     }
