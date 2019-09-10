@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -195,7 +196,15 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         result.mergeWith(partialResult);
         List<Hit> partial = partialResult.hits().asUnorderedHits();
         if (current.isEmpty() ) {
-            return partial;
+            boolean hasAuxillary = false;
+            for(Hit hit : partial) {
+                if (hit.isAuxiliary()) {
+                    hasAuxillary = true;
+                    break;
+                }
+            }
+            if ( ! hasAuxillary)
+                return partial;
         }
         if (partial.isEmpty()) {
             return current;
