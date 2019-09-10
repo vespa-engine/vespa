@@ -49,7 +49,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator& cmp) const override;
 
     void onReset() override;
-    btree::BTreeNode::Ref getFrozenRootRef() const override { return this->get_frozen_root(); }
 
     EnumPostingTree & getPostingDictionary() override;
     const EnumPostingTree & getPostingDictionary() const override;

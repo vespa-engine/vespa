@@ -49,7 +49,6 @@ public:
     findMatchingEnums(const datastore::EntryComparator& cmp) const = 0;
 
     virtual void onReset() = 0;
-    virtual btree::BTreeNode::Ref getFrozenRootRef() const = 0;
 
     virtual EnumPostingTree& getPostingDictionary() = 0;
     virtual const EnumPostingTree& getPostingDictionary() const = 0;

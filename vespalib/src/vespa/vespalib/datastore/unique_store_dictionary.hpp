@@ -210,11 +210,4 @@ UniqueStoreDictionary<DictionaryT, ParentT>::get_read_snapshot() const
     return std::make_unique<ReadSnapshotImpl>(_dict.getFrozenView());
 }
 
-template <typename DictionaryT, typename ParentT>
-EntryRef
-UniqueStoreDictionary<DictionaryT, ParentT>::get_frozen_root() const
-{
-    return _dict.getFrozenView().getRoot();
-}
-
 }
