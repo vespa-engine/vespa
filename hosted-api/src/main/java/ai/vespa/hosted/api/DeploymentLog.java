@@ -16,11 +16,13 @@ public class DeploymentLog {
 
     private final List<Entry> entries;
     private final boolean active;
+    private final Status status;
     private final OptionalLong last;
 
-    public DeploymentLog(List<Entry> entries, boolean active, OptionalLong last) {
+    public DeploymentLog(List<Entry> entries, boolean active, Status status, OptionalLong last) {
         this.entries = entries.stream().sorted(comparing(Entry::at)).collect(toUnmodifiableList());
         this.active = active;
+        this.status = status;
         this.last = last;
     }
 
@@ -30,6 +32,10 @@ public class DeploymentLog {
 
     public boolean isActive() {
         return active;
+    }
+
+    public Status status() {
+        return status;
     }
 
     public OptionalLong last() {
@@ -61,6 +67,18 @@ public class DeploymentLog {
             return message;
         }
 
+    }
+
+
+    public enum Status {
+        running,
+        aborted,
+        error,
+        testFailure,
+        outOfCapacity,
+        installationFailed,
+        deploymentFailed,
+        success;
     }
 
 }

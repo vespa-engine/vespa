@@ -4,6 +4,7 @@ import ai.vespa.hosted.api.ControllerHttpClient;
 import com.yahoo.config.provision.ApplicationId;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
@@ -44,10 +45,13 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected ControllerHttpClient controller;
 
     @Override
-    public final void execute() throws MojoExecutionException {
+    public final void execute() throws MojoExecutionException, MojoFailureException {
         try {
             setup();
             doExecute();
+        }
+        catch (MojoFailureException | MojoExecutionException e) {
+            throw e;
         }
         catch (Exception e) {
             throw new MojoExecutionException("Execution failed for application '" + id + "':", e);

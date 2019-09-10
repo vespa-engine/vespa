@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -325,7 +326,7 @@ class JobControllerApiHandlerHelper {
 
     private static void runToSlime(Cursor runObject, Run run, URI baseUriForJobType) {
         runObject.setLong("id", run.id().number());
-        runObject.setString("status", run.status().name());
+        runObject.setString("status", nameOf(run.status()));
         runObject.setLong("start", run.start().toEpochMilli());
         run.end().ifPresent(instant -> runObject.setLong("end", instant.toEpochMilli()));
 
@@ -385,7 +386,10 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor detailsObject = slime.setObject();
 
-        detailsObject.setBool("active", jobController.active(runId).isPresent());
+        Run run = jobController.run(runId)
+                               .orElseThrow(() -> new IllegalStateException("Unknown run '" + runId + "'"));
+        detailsObject.setBool("active", ! run.hasEnded());
+        detailsObject.setString("status", nameOf(run.status()));
         jobController.updateTestLog(runId);
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
@@ -453,6 +457,20 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");
         return new SlimeJsonResponse(slime);
+    }
+
+    private static String nameOf(RunStatus status) {
+        switch (status) {
+            case running:               return "running";
+            case aborted:               return "aborted";
+            case error:                 return "error";
+            case testFailure:           return "testFailure";
+            case outOfCapacity:         return "outOfCapacity";
+            case installationFailed:    return "installationFailed";
+            case deploymentFailed:      return "deploymentFailed";
+            case success:               return "success";
+            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+        }
     }
 
 }

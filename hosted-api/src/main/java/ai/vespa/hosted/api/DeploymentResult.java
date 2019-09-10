@@ -1,8 +1,6 @@
 package ai.vespa.hosted.api;
 
 
-import java.net.URI;
-
 /**
  * Contains information about the result of a {@link Deployment} against a {@link ControllerHttpClient}.
  *
