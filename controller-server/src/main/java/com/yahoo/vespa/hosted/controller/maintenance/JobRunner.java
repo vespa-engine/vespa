@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -73,9 +74,18 @@ public class JobRunner extends Maintainer {
             advance(jobs.run(run.id()).get());
         }
         else if (run.readySteps().isEmpty())
-            executors.execute(() -> jobs.finish(run.id()));
+            executors.execute(() -> finish(run.id()));
         else
             run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
+    }
+
+    private void finish(RunId id) {
+        try {
+            jobs.finish(id);
+        }
+        catch (Exception e) {
+            log.log(LogLevel.WARNING, "Exception finishing " + id, e);
+        }
     }
 
     /** Attempts to advance the status of the given step, for the given run. */
