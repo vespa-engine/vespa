@@ -649,8 +649,8 @@ public class InternalStepRunner implements StepRunner {
                                                                          BigInteger.valueOf(1))
                                                             .build();
         controller.jobController().storeTesterCertificate(id, certificate);
-        zipBuilder.add("key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
-        zipBuilder.add("cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
+        zipBuilder.add("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
+        zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
