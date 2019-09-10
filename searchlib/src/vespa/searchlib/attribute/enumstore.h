@@ -196,8 +196,7 @@ public:
         return FoldedComparatorType(_store.get_data_store(), fallback_value, prefix);
     }
 
-    // TODO: Change to sending enum indexes as const array ref.
-    void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const override;
+    void write_value(BufferWriter& writer, Index idx) const override;
     bool foldedChange(const Index &idx1, const Index &idx2) const override;
     bool findEnum(EntryType value, IEnumStore::EnumHandle &e) const;
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
@@ -227,8 +226,7 @@ class datastore::DataStoreT<IEnumStore::Index>;
 
 template <>
 void
-EnumStoreT<const char*>::writeValues(BufferWriter& writer,
-                                      vespalib::ConstArrayRef<IEnumStore::Index> idxs) const;
+EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const;
 
 template <>
 ssize_t

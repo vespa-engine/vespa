@@ -52,7 +52,7 @@ public:
 
     virtual ~IEnumStore() = default;
 
-    virtual void writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const = 0;
+    virtual void write_value(BufferWriter& writer, Index idx) const = 0;
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
     virtual void fixupRefCounts(const EnumVector& histogram) = 0;

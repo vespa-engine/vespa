@@ -148,11 +148,9 @@ EnumStoreT<EntryType>::BatchUpdater::insert(EntryType value)
 
 template <class EntryType>
 void
-EnumStoreT<EntryType>::writeValues(BufferWriter& writer, vespalib::ConstArrayRef<Index> idxs) const
+EnumStoreT<EntryType>::write_value(BufferWriter& writer, Index idx) const
 {
-    for (const auto& idx : idxs) {
-        writer.write(&_store.get(idx), sizeof(EntryType));
-    }
+    writer.write(&_store.get(idx), sizeof(EntryType));
 }
 
 template <class EntryType>

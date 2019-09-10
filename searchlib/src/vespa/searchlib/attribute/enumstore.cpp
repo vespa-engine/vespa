@@ -11,14 +11,11 @@ namespace search {
 
 template <>
 void
-EnumStoreT<const char*>::writeValues(BufferWriter& writer,
-                                     vespalib::ConstArrayRef<Index> idxs) const
+EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const
 {
-    for (const auto& idx : idxs) {
-        const char* src = _store.get(idx);
-        size_t sz = strlen(src) + 1;
-        writer.write(src, sz);
-    }
+    const char* src = _store.get(idx);
+    size_t sz = strlen(src) + 1;
+    writer.write(src, sz);
 }
 
 template <>

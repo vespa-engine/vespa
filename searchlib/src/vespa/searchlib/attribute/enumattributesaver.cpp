@@ -23,10 +23,10 @@ void
 EnumAttributeSaver::writeUdat(IAttributeSaveTarget &saveTarget)
 {
     if (saveTarget.getEnumerated()) {
-        std::unique_ptr<BufferWriter>
-            udatWriter(saveTarget.udatWriter().allocBufferWriter());
-        const auto& enumDict = _enumStore.getEnumStoreDict();
-        enumDict.writeAllValues(*udatWriter, _enumerator->get_frozen_root());
+        auto udatWriter = saveTarget.udatWriter().allocBufferWriter();
+        _enumerator->foreach_key([&](datastore::EntryRef idx){
+            _enumStore.write_value(*udatWriter, idx);
+        });
         udatWriter->flush();
     }
 }
