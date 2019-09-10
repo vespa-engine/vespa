@@ -10,12 +10,15 @@
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint()
+SameElementBlueprint::SameElementBlueprint(bool expensive)
     : ComplexLeafBlueprint(FieldSpecBaseList()),
       _estimate(),
       _layout(),
       _terms()
 {
+    if (expensive) {
+        set_cost_tier(State::COST_TIER_EXPENSIVE);
+    }
 }
 
 SameElementBlueprint::~SameElementBlueprint() = default;
