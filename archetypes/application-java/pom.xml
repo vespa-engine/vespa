@@ -9,7 +9,7 @@
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
  
-  <groupId>ai.vespa.cloud</groupId>
+  <groupId>com.yahoo.vespa.cloud</groupId>
   <artifactId>application-java</artifactId>
   <version>7-SNAPSHOT</version>
   <packaging>maven-archetype</packaging>
