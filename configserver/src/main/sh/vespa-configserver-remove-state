@@ -115,7 +115,7 @@ done
 # Will first check if cloudconfig_server is running on this node
 P_CONFIGSERVER=var/run/configserver.pid
 if [ -f $P_CONFIGSERVER ] && $sudo kill -0 `cat $P_CONFIGSERVER` 2>/dev/null; then
-  echo "[ERROR] Will not remove indexes while cloudconfig_server is running" 1>&2
+  echo "[ERROR] Will not remove state while cloudconfig_server is running" 1>&2
   echo "[ERROR] 'stop cloudconfig_server' and 'ps xgauww' to check for cloudconfig_server process" 1>&2
   exit 1
 fi
