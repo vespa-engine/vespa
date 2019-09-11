@@ -229,8 +229,14 @@ public class NodeRepository extends AbstractComponent {
                 // Tenant nodes in other states than ready, trust:
                 // - config servers
                 // - proxy nodes
+                // - parents of the nodes in the same application: If some of the nodes are on a different IP versions
+                //   or only a subset of them are dual-stacked, the communication between the nodes may be NATed
+                //   with via parent's IP address.
                 trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
                 trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
+                node.allocation().ifPresent(allocation ->
+                        trustedNodes.addAll(candidates.parentsOf(candidates.owner(allocation.owner()).asList()).asList()));
+
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
                     // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
