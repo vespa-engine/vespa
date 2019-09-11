@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -217,7 +217,7 @@ public class JobRunnerTest {
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
-        tester.controllerTester().deleteApplication(id);
+        tester.controllerTester().controller().applications().deleteApplication(id.tenant(), id.application(), tester.controllerTester().credentialsFor(id));
         assertEquals(Collections.emptyList(), jobs.active());
         assertEquals(runId, jobs.last(id, systemTest).get().id());
 

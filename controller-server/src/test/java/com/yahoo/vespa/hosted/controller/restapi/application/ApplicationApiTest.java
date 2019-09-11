@@ -1175,7 +1175,28 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
                               403);
 
-        // (Deleting it with the right tenant id)
+        // Create another instance under the application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", POST)
+                                      .userIdentity(authorizedUser)
+                                      .oktaAccessToken(OKTA_AT),
+                              new File("application-reference-default.json"),
+                              200);
+
+        // Deleting the application when more than one instance is present is forbidden
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .userIdentity(authorizedUser)
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete applicattion; more than one instance present: [tenant1.application1, tenant1.application1.instance1]\"}",
+                              400);
+
+        // Deleting one instance is OK
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", DELETE)
+                                      .userIdentity(authorizedUser)
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"message\":\"Deleted instance tenant1.application1.default\"}",
+                              200);
+
+        // (Deleting the application with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT),
