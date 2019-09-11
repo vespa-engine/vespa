@@ -26,8 +26,8 @@
                     </tlsClientAuthEnforcer>
                 </config>
                 <ssl>
-                    <private-key-file>/var/lib/sia/keys/vespa.vespa.cd.tenant.key.pem</private-key-file>
-                    <certificate-file>/var/lib/sia/certs/vespa.vespa.cd.tenant.cert.pem</certificate-file>
+                    <private-key-file>/var/lib/sia/keys/vespa.vespa.tenant.key.pem</private-key-file>
+                    <certificate-file>/var/lib/sia/certs/vespa.vespa.tenant.cert.pem</certificate-file>
                     <client-authentication>want</client-authentication>
                 </ssl>
             </server>
