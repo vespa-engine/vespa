@@ -105,6 +105,7 @@ public class DocumentSourceSearcher extends Searcher {
 
         r.setQuery(query);
         r.hits().trim(query.getOffset(), query.getHits());
+        query.setOffset(0);
         return r;
     }
 

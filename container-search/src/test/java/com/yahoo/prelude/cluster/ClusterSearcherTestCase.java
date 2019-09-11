@@ -18,6 +18,7 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.prelude.fastsearch.test.MockMetric;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -354,7 +355,9 @@ public class ClusterSearcherTestCase {
     }
 
     private com.yahoo.search.Result getResult(int offset, int hits, Execution execution) {
-        return getResult(offset, hits, null, execution);
+        Result result = getResult(offset, hits, null, execution);
+        assertEquals(0, result.getQuery().getOffset());
+        return result;
     }
 
     private com.yahoo.search.Result getResult(int offset, int hits, String extra, Execution execution) {

@@ -414,7 +414,7 @@ public class ClusterSearcher extends Searcher {
         if (queries.size() == 1) {
             return searcher.search(queries.get(0), execution);
         } else {
-            Result mergedResult = new Result(query.clone());
+            Result mergedResult = new Result(query);
             for (Query q : queries) {
                 Result result = searcher.search(q, execution);
                 mergedResult.mergeWith(result);
@@ -427,6 +427,7 @@ public class ClusterSearcher extends Searcher {
                     searcher.fill(mergedResult, Execution.ATTRIBUTEPREFETCH, execution);
                 }
                 mergedResult.hits().trim(query.getOffset(), query.getHits());
+                query.setOffset(0); // Needed when doing a trim
             }
             return mergedResult;
         }
