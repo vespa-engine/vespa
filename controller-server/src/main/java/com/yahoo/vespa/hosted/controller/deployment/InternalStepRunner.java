@@ -703,6 +703,7 @@ public class InternalStepRunner implements StepRunner {
                 "                        <enable>true</enable>\n" +
                 "                        <pathWhitelist>\n" +
                 "                            <item>/status.html</item>\n" +
+                "                            <item>/state/v1/config</item>\n" +
                 "                        </pathWhitelist>\n" +
                 "                    </tlsClientAuthEnforcer>\n" +
                 "                </config>\n" +
