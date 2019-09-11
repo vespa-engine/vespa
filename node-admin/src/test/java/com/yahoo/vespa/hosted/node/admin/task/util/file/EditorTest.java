@@ -9,12 +9,14 @@ import org.mockito.ArgumentCaptor;
 
 import java.nio.file.FileSystem;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -107,6 +109,17 @@ public class EditorTest {
         assertEquals("line\n", path.readUtf8File());
     }
 
+    @Test
+    public void testMissingFile() {
+        LineEditor lineEditor = mock(LineEditor.class);
+        when(lineEditor.onComplete()).thenReturn(List.of("line"));
+
+        TaskContext context = mock(TaskContext.class);
+        var editor = new Editor(path.toPath(), lineEditor);
+        editor.converge(context);
+
+        assertEquals("line\n", path.readUtf8File());
+    }
 
     private static String joinLines(String... lines) {
         return String.join("\n", lines) + "\n";
