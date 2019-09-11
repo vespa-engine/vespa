@@ -491,27 +491,29 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         ensureSorted();
 
         int highBound = numHits + offset; // Largest offset +1
+        boolean needToTrim = (offset > 0) || (hits.size() > highBound);
+        if ( ! needToTrim ) return;
 
         int currentIndex = -1;
-
+        ListenableArrayList<Hit> newHits = new ListenableArrayList<>(numHits);
         for (Iterator<Hit> i = hits.iterator(); i.hasNext();) {
             Hit hit = i.next();
 
-            if (hit.isAuxiliary()) continue;
-
-            currentIndex++;
-            if (currentIndex < offset || currentIndex >= highBound)
-                handleRemovedHit(hit);
+            if (hit.isAuxiliary()) {
+                newHits.add(hit);
+            } else {
+                currentIndex++;
+                if (currentIndex < offset || currentIndex >= highBound) {
+                    handleRemovedHit(hit);
+                } else {
+                    newHits.add(hit);
+                }
+            }
         }
-        if ((offset > 0) || (hits.size() > highBound)) {
-            ListenableArrayList<Hit> newHits = new ListenableArrayList<>(numHits);
-            for (int index = offset; index < Math.min(highBound, hits.size()); index++)
-                newHits.add(hits.get(index));
-            for (Runnable listener : hits.listeners())
-                newHits.addListener(listener);
-            hits = newHits;
-            unmodifiableHits = Collections.unmodifiableList(hits);
-        }
+        for (Runnable listener : hits.listeners())
+            newHits.addListener(listener);
+        hits = newHits;
+        unmodifiableHits = Collections.unmodifiableList(hits);
     }
 
     /**
