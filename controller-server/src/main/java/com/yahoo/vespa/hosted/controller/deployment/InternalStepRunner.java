@@ -677,6 +677,7 @@ public class InternalStepRunner implements StepRunner {
         int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
         int testMemoryMb = 512 * (memoryGb - 2); // Memory allocated to Surefire running tests. ≥25% left for other stuff.
 
+        AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
@@ -706,8 +707,8 @@ public class InternalStepRunner implements StepRunner {
                 "                    </tlsClientAuthEnforcer>\n" +
                 "                </config>\n" +
                 "                <ssl>\n" +
-                "                    <private-key-file>/var/lib/sia/keys/" + domain.value() + ".tenant.key.pem</private-key-file>\n" +
-                "                    <certificate-file>/var/lib/sia/certs/" + domain.value() + ".tenant.cert.pem</certificate-file>\n" +
+                "                    <private-key-file>/var/lib/sia/keys/" + idDomain.value() + ".tenant.key.pem</private-key-file>\n" +
+                "                    <certificate-file>/var/lib/sia/certs/" + idDomain.value() + ".tenant.cert.pem</certificate-file>\n" +
                 "                    <client-authentication>want</client-authentication>\n" +
                 "                </ssl>\n" +
                 "            </server>\n" +
