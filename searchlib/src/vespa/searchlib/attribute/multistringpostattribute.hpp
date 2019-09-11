@@ -109,7 +109,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(
 
     dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
     if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
-        datastore::EntryRef pidx = dictItr.getData();
+        datastore::EntryRef pidx(dictItr.getData());
         if (pidx.valid()) {
             const PostingList &plist = self.getPostingList();
             auto minmax = plist.getAggregated(pidx);

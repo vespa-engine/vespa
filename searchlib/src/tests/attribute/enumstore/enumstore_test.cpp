@@ -378,6 +378,130 @@ TEST_F(BatchUpdaterTest, unused_new_value_is_removed)
     expect_value_not_in_store(7, i7);
 }
 
+template <typename EnumStoreT>
+class LoaderTest : public ::testing::Test {
+public:
+    using EntryType = typename EnumStoreT::EntryType;
+    EnumStoreT store;
+    static std::vector<EntryType> values;
+
+    LoaderTest()
+        : store(true)
+    {}
+
+    void load_values(enumstore::EnumeratedLoaderBase& loader) const {
+        loader.load_unique_values(values.data(), values.size() * sizeof(EntryType));
+    }
+
+    EnumIndex find_index(size_t values_idx) const {
+        EnumIndex result;
+        EXPECT_TRUE(store.findIndex(values[values_idx], result));
+        return result;
+    }
+
+    void set_ref_count(size_t values_idx, uint32_t ref_count, enumstore::EnumeratedPostingsLoader& loader) const {
+        EnumIndex idx = find_index(values_idx);
+        loader.set_ref_count(idx, ref_count);
+    }
+
+    void expect_value_in_store(size_t values_idx, uint32_t exp_ref_count) const {
+        EnumIndex idx = find_index(values_idx);
+        EXPECT_EQ(exp_ref_count, store.getRefCount(idx));
+    }
+
+    void expect_value_not_in_store(size_t values_idx) const {
+        EnumIndex idx;
+        EXPECT_FALSE(store.findIndex(values[values_idx], idx));
+    }
+
+    void expect_values_in_store() {
+        expect_value_in_store(0, 1);
+        expect_value_in_store(1, 2);
+        expect_value_not_in_store(2);
+        expect_value_in_store(3, 4);
+    }
+
+    void expect_posting_idx(size_t values_idx, uint32_t exp_posting_idx) const {
+        auto cmp = store.make_comparator();
+        auto itr = store.getPostingDictionary().find(find_index(values_idx), cmp);
+        ASSERT_TRUE(itr.valid());
+        EXPECT_EQ(exp_posting_idx, itr.getData());
+    }
+
+};
+
+template <> std::vector<int32_t> LoaderTest<NumericEnumStore>::values{3, 5, 7, 9};
+template <> std::vector<float> LoaderTest<FloatEnumStore>::values{3.1, 5.2, 7.3, 9.4};
+template <> std::vector<const char *> LoaderTest<StringEnumStore>::values{"aa", "bbb", "ccc", "dd"};
+
+template <>
+void
+LoaderTest<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& loader) const
+{
+    std::vector<char> raw_values;
+    for (auto value : values) {
+        for (auto c : std::string(value)) {
+            raw_values.push_back(c);
+        }
+        raw_values.push_back('\0');
+    }
+    loader.load_unique_values(raw_values.data(), raw_values.size());
+}
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+using LoaderTestTypes = ::testing::Types<NumericEnumStore, FloatEnumStore, StringEnumStore>;
+TYPED_TEST_CASE(LoaderTest, LoaderTestTypes);
+
+TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
+{
+    auto loader = this->store.make_enumerated_loader();
+    this->load_values(loader);
+    loader.allocate_enums_histogram();
+    loader.get_enums_histogram()[0] = 1;
+    loader.get_enums_histogram()[1] = 2;
+    loader.get_enums_histogram()[3] = 4;
+    loader.set_ref_counts();
+
+    this->expect_values_in_store();
+}
+
+TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
+{
+    auto loader = this->store.make_enumerated_postings_loader();
+    this->load_values(loader);
+    this->set_ref_count(0, 1, loader);
+    this->set_ref_count(1, 2, loader);
+    this->set_ref_count(3, 4, loader);
+    loader.free_unused_enums();
+
+    this->expect_values_in_store();
+}
+
+TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
+{
+    auto loader = this->store.make_non_enumerated_loader();
+    loader.insert(this->values[0], 100);
+    loader.set_ref_count_for_last_value(1);
+    loader.insert(this->values[1], 101);
+    loader.set_ref_count_for_last_value(2);
+    loader.insert(this->values[3], 103);
+    loader.set_ref_count_for_last_value(4);
+    loader.build_dictionary();
+
+    this->expect_values_in_store();
+
+    this->expect_posting_idx(0, 100);
+    this->expect_posting_idx(1, 101);
+    this->expect_posting_idx(3, 103);
+}
+
+#pragma GCC diagnostic pop
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

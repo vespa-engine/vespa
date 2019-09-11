@@ -4,6 +4,7 @@
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
+#include <vespa/vespalib/datastore/entryref.h>
 
 /**
  * This file contains low-level code used to implement diversified
@@ -99,7 +100,7 @@ void diversify_2(const DictRange &range_in, const PostingStore &posting, Diversi
     using KeyDataType = typename PostingStore::KeyDataType;
     while (range.has_next() && (result.size() < filter.getMaxTotal())) {
         typename DictRange::Next dict_entry(range);
-        posting.foreach_frozen(dict_entry.get().getData(),
+        posting.foreach_frozen(datastore::EntryRef(dict_entry.get().getData()),
                                [&](uint32_t key, const DataType &data)
                                { recorder.push_back(KeyDataType(key, data)); });
         if (fragments.back() < result.size()) {

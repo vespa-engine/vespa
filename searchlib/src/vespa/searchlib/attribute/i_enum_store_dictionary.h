@@ -18,7 +18,7 @@ using EnumTree = btree::BTree<IEnumStore::Index, btree::BTreeNoLeafData,
                               const datastore::EntryComparatorWrapper,
                               EnumTreeTraits>;
 
-using EnumPostingTree = btree::BTree<IEnumStore::Index, datastore::EntryRef,
+using EnumPostingTree = btree::BTree<IEnumStore::Index, uint32_t,
                                      btree::NoAggregated,
                                      const datastore::EntryComparatorWrapper,
                                      EnumTreeTraits>;
