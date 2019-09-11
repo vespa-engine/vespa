@@ -677,7 +677,7 @@ public class ApplicationController {
                                                           .filter(id -> id.application().equals(applicationName))
                                                           .collect(Collectors.toList());
         if (instances.size() > 1)
-            throw new IllegalArgumentException("Could not delete applicattion; more than one instance present: " + instances);
+            throw new IllegalArgumentException("Could not delete application; more than one instance present: " + instances);
 
         // TODO: Make this one transaction when database is moved to ZooKeeper
         instances.forEach(id -> deleteInstance(id, credentials));
