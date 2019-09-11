@@ -136,7 +136,7 @@ template <typename EntryT>
 EnumStoreT<EntryT>::NonEnumeratedLoader::~NonEnumeratedLoader() = default;
 
 template <typename EntryT>
-void
+IEnumStore::Index
 EnumStoreT<EntryT>::BatchUpdater::insert(EntryType value)
 {
     auto cmp = _store.make_comparator(value);
@@ -144,6 +144,7 @@ EnumStoreT<EntryT>::BatchUpdater::insert(EntryType value)
     if (result.inserted()) {
         _possibly_unused.insert(result.ref());
     }
+    return result.ref();
 }
 
 template <class EntryT>

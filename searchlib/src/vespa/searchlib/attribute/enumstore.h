@@ -159,7 +159,7 @@ public:
             : _store(store),
               _possibly_unused()
         {}
-        void insert(EntryType value);
+        Index insert(EntryType value);
         void inc_ref_count(Index idx) {
             _store.get_entry_base(idx).inc_ref_count();
         }

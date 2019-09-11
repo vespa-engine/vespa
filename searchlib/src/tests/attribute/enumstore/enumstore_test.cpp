@@ -301,6 +301,83 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
 }
 
+class BatchUpdaterTest : public ::testing::Test {
+public:
+    NumericEnumStore store;
+    EnumIndex i3;
+    EnumIndex i5;
+
+    BatchUpdaterTest()
+        : store(false),
+          i3(),
+          i5()
+    {
+        auto updater = store.make_batch_updater();
+        i3 = updater.insert(3);
+        i5 = updater.insert(5);
+        updater.inc_ref_count(i3);
+        updater.inc_ref_count(i5);
+        updater.inc_ref_count(i5);
+        updater.commit();
+        expect_value_in_store(3, 1, i3);
+        expect_value_in_store(5, 2, i5);
+    }
+
+    void expect_value_in_store(int32_t exp_value, uint32_t exp_ref_count, EnumIndex idx) {
+        EnumIndex tmp_idx;
+        EXPECT_TRUE(store.findIndex(exp_value, tmp_idx));
+        EXPECT_EQ(idx, tmp_idx);
+        EXPECT_EQ(exp_value, store.getValue(idx));
+        EXPECT_EQ(exp_ref_count, store.getRefCount(idx));
+    }
+
+    void expect_value_not_in_store(int32_t value, EnumIndex idx) {
+        EnumIndex temp_idx;
+        EXPECT_FALSE(store.findIndex(value, idx));
+        EXPECT_EQ(0, store.getRefCount(idx));
+    }
+};
+
+TEST_F(BatchUpdaterTest, ref_counts_can_be_changed)
+{
+    auto updater = store.make_batch_updater();
+    EXPECT_EQ(i3, updater.insert(3));
+    updater.inc_ref_count(i3);
+    updater.dec_ref_count(i5);
+    updater.commit();
+
+    expect_value_in_store(3, 2, i3);
+    expect_value_in_store(5, 1, i5);
+}
+
+TEST_F(BatchUpdaterTest, new_value_can_be_inserted)
+{
+    auto updater = store.make_batch_updater();
+    EnumIndex i7 = updater.insert(7);
+    updater.inc_ref_count(i7);
+    updater.commit();
+
+    expect_value_in_store(7, 1, i7);
+}
+
+TEST_F(BatchUpdaterTest, value_with_ref_count_zero_is_removed)
+{
+    auto updater = store.make_batch_updater();
+    updater.dec_ref_count(i3);
+    updater.commit();
+
+    expect_value_not_in_store(3, i3);
+}
+
+TEST_F(BatchUpdaterTest, unused_new_value_is_removed)
+{
+    auto updater = store.make_batch_updater();
+    EnumIndex i7 = updater.insert(7);
+    updater.commit();
+
+    expect_value_not_in_store(7, i7);
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
