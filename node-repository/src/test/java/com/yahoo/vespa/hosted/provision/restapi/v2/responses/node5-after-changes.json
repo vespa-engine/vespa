@@ -12,7 +12,6 @@
   "minMainMemoryAvailableGb": 1.0,
   "minCpuCores": 1.0,
   "fastDisk": true,
-  "bandwidth": 1000.0,
   "bandwidthGbps": 1.0,
   "environment": "DOCKER_CONTAINER",
   "rebootGeneration": 1,
