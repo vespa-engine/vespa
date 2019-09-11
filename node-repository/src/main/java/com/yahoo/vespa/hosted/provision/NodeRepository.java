@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.maintenance.JobControl;
+import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.maintenance.PeriodicApplicationMaintainer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -559,6 +560,13 @@ public class NodeRepository extends AbstractComponent {
         }
 
         if (node.state() == Node.State.ready) return node;
+
+        Node parentHost = node.parentHostname().flatMap(this::getNode).orElse(node);
+        List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
+        if (!failureReasons.isEmpty()) {
+            throw new IllegalArgumentException("Node " + hostname + " cannot be readied because it has hard failures: " + failureReasons);
+        }
+
         return setReady(Collections.singletonList(node), agent, reason).get(0);
     }
 
