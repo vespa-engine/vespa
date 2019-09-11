@@ -22,6 +22,7 @@
                         <enable>true</enable>
                         <pathWhitelist>
                             <item>/status.html</item>
+                            <item>/state/v1/config</item>
                         </pathWhitelist>
                     </tlsClientAuthEnforcer>
                 </config>
