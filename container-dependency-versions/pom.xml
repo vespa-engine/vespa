@@ -109,11 +109,8 @@
                 <version>${jackson2.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <version>${findbugs.version}</version>
-            </dependency>
-            <dependency>
+                <!-- Not provided runtime, but necessary to build with guava in many cases.
+                     Guava has an optional dep on this and uses the annotations in some classes. -->
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${findbugs.version}</version>
