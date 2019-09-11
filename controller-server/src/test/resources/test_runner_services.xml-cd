@@ -17,18 +17,18 @@
 
         <http>
             <server id='testertls4443' port='4443'>
+                <config name="jdisc.http.connector">
+                    <tlsClientAuthEnforcer>
+                        <enable>true</enable>
+                        <pathWhitelist>
+                            <item>/status.html</item>
+                        </pathWhitelist>
+                    </tlsClientAuthEnforcer>
+                </config>
                 <ssl>
                     <private-key-file>/var/lib/sia/keys/vespa.vespa.cd.tenant.key.pem</private-key-file>
                     <certificate-file>/var/lib/sia/certs/vespa.vespa.cd.tenant.cert.pem</certificate-file>
                     <client-authentication>want</client-authentication>
-                    <config name="jdisc.http.connector">
-                        <tlsClientAuthEnforcer>
-                            <enable>true</enable>
-                            <pathWhitelist>
-                                <item>/status.html</item>
-                            </pathWhitelist>
-                        </tlsClientAuthEnforcer>
-                    </config>
                 </ssl>
             </server>
             <server id='default' port='4080'/>

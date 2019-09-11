@@ -697,18 +697,18 @@ public class InternalStepRunner implements StepRunner {
                 "\n" +
                 "        <http>\n" +
                 "            <server id='testertls4443' port='4443'>\n" +
+                "                <config name=\"jdisc.http.connector\">\n" +
+                "                    <tlsClientAuthEnforcer>\n" +
+                "                        <enable>true</enable>\n" +
+                "                        <pathWhitelist>\n" +
+                "                            <item>/status.html</item>\n" +
+                "                        </pathWhitelist>\n" +
+                "                    </tlsClientAuthEnforcer>\n" +
+                "                </config>\n" +
                 "                <ssl>\n" +
                 "                    <private-key-file>/var/lib/sia/keys/" + domain.value() + ".tenant.key.pem</private-key-file>\n" +
                 "                    <certificate-file>/var/lib/sia/certs/" + domain.value() + ".tenant.cert.pem</certificate-file>\n" +
                 "                    <client-authentication>want</client-authentication>\n" +
-                "                    <config name=\"jdisc.http.connector\">\n" +
-                "                        <tlsClientAuthEnforcer>\n" +
-                "                            <enable>true</enable>\n" +
-                "                            <pathWhitelist>\n" +
-                "                                <item>/status.html</item>\n" +
-                "                            </pathWhitelist>\n" +
-                "                        </tlsClientAuthEnforcer>\n" +
-                "                    </config>\n" +
                 "                </ssl>\n" +
                 "            </server>\n" +
                 "            <server id='default' port='4080'/>\n" +
