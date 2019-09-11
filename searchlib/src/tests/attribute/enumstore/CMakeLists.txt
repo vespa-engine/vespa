@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_enumstore_test_app TEST
     enumstore_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_enumstore_test_app COMMAND searchlib_enumstore_test_app)

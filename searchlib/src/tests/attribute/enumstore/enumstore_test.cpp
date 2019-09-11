@@ -1,129 +1,112 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+
 #include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <iostream>
 #include <limits>
 #include <string>
-#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("enumstore_test");
 
 namespace search {
 
-size_t enumStoreAlign(size_t size)
-{
-    return (size + 15) & -UINT64_C(16);
-}
-
+using DoubleEnumStore = EnumStoreT<double>;
+using EnumIndex = IEnumStore::Index;
+using FloatEnumStore = EnumStoreT<float>;
 using NumericEnumStore = EnumStoreT<int32_t>;
+using StringEnumStore = EnumStoreT<const char*>;
+using StringVector = std::vector<std::string>;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
-class EnumStoreTest : public vespalib::TestApp
-{
-private:
-    typedef EnumStoreT<const char*> StringEnumStore;
-    typedef EnumStoreT<float> FloatEnumStore;
-    typedef EnumStoreT<double> DoubleEnumStore;
-
-    typedef IEnumStore::Index EnumIndex;
-
-    template <typename EnumStoreType, typename T>
-    void testFloatEnumStore(EnumStoreType & es);
-    void testFloatEnumStore();
-
-    void testFindFolded();
-    void testInsert();
-    template <typename EnumStoreType>
-    void testInsert(bool hasPostings);
-
-    template <typename EnumStoreType, typename Dictionary>
-    void
-    testUniques(const EnumStoreType &ses,
-                const std::vector<std::string> &unique);
-
-    void testHoldListAndGeneration();
-    void requireThatAddressSpaceUsageIsReported();
-
-    // helper methods
-    typedef std::vector<std::string> StringVector;
-
-    struct StringEntry {
-        StringEntry(uint32_t r, const std::string & s) :
-            _refCount(r), _string(s) {}
-        uint32_t _refCount;
-        std::string _string;
-    };
-
-    struct Reader {
-        typedef StringEnumStore::Index Index;
-        typedef std::vector<Index> IndexVector;
-        typedef std::vector<StringEntry> ExpectedVector;
-        uint32_t _generation;
-        IndexVector _indices;
-        ExpectedVector _expected;
-        Reader(uint32_t generation, const IndexVector & indices,
-               const ExpectedVector & expected);
-        ~Reader();
-    };
-
-    void
-    checkReaders(const StringEnumStore &ses,
-                 generation_t sesGen,
-                 const std::vector<Reader> &readers);
-
-public:
-    EnumStoreTest() {}
-    int Main() override;
+struct StringEntry {
+    uint32_t _refCount;
+    std::string _string;
+    StringEntry(uint32_t refCount, const std::string& str)
+        : _refCount(refCount), _string(str) {}
 };
 
-EnumStoreTest::Reader::Reader(uint32_t generation, const IndexVector & indices, const ExpectedVector & expected)
+struct Reader {
+    typedef StringEnumStore::Index Index;
+    typedef std::vector<Index> IndexVector;
+    typedef std::vector<StringEntry> ExpectedVector;
+    uint32_t _generation;
+    IndexVector _indices;
+    ExpectedVector _expected;
+    Reader(uint32_t generation, const IndexVector& indices,
+           const ExpectedVector& expected);
+    ~Reader();
+};
+
+Reader::Reader(uint32_t generation, const IndexVector& indices, const ExpectedVector& expected)
     : _generation(generation), _indices(indices), _expected(expected)
 {}
-EnumStoreTest::Reader::~Reader() { }
 
-template <typename EnumStoreType, typename T>
+Reader::~Reader() = default;
+
+
 void
-EnumStoreTest::testFloatEnumStore(EnumStoreType & es)
+checkReaders(const StringEnumStore& ses,
+             const std::vector<Reader>& readers)
 {
+    const char* t = "";
+    for (uint32_t i = 0; i < readers.size(); ++i) {
+        const Reader& r = readers[i];
+        for (uint32_t j = 0; j < r._indices.size(); ++j) {
+            EXPECT_TRUE(ses.getValue(r._indices[j], t));
+            EXPECT_TRUE(r._expected[j]._string == std::string(t));
+        }
+    }
+}
+
+template <typename EnumStoreT>
+class FloatEnumStoreTest : public ::testing::Test {
+public:
+    EnumStoreT es;
+    FloatEnumStoreTest()
+        : es(false)
+    {}
+};
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+using FloatEnumStoreTestTypes = ::testing::Types<FloatEnumStore, DoubleEnumStore>;
+TYPED_TEST_CASE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
+
+TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
+{
+    using EntryType = typename TypeParam::EntryType;
     EnumIndex idx;
 
-    T a[5] = {-20.5f, -10.5f, -0.5f, 9.5f, 19.5f};
-    T b[5] = {-25.5f, -15.5f, -5.5f, 4.5f, 14.5f};
+    EntryType a[5] = {-20.5f, -10.5f, -0.5f, 9.5f, 19.5f};
+    EntryType b[5] = {-25.5f, -15.5f, -5.5f, 4.5f, 14.5f};
 
     for (uint32_t i = 0; i < 5; ++i) {
-        es.insert(a[i]);
+        this->es.insert(a[i]);
     }
 
     for (uint32_t i = 0; i < 5; ++i) {
-        EXPECT_TRUE(es.findIndex(a[i], idx));
-        EXPECT_TRUE(!es.findIndex(b[i], idx));
+        EXPECT_TRUE(this->es.findIndex(a[i], idx));
+        EXPECT_TRUE(!this->es.findIndex(b[i], idx));
     }
 
-    es.insert(std::numeric_limits<T>::quiet_NaN());
-    EXPECT_TRUE(es.findIndex(std::numeric_limits<T>::quiet_NaN(), idx));
-    EXPECT_TRUE(es.findIndex(std::numeric_limits<T>::quiet_NaN(), idx));
+    this->es.insert(std::numeric_limits<EntryType>::quiet_NaN());
+    EXPECT_TRUE(this->es.findIndex(std::numeric_limits<EntryType>::quiet_NaN(), idx));
+    EXPECT_TRUE(this->es.findIndex(std::numeric_limits<EntryType>::quiet_NaN(), idx));
 
     for (uint32_t i = 0; i < 5; ++i) {
-        EXPECT_TRUE(es.findIndex(a[i], idx));
-        EXPECT_TRUE(!es.findIndex(b[i], idx));
+        EXPECT_TRUE(this->es.findIndex(a[i], idx));
+        EXPECT_TRUE(!this->es.findIndex(b[i], idx));
     }
 }
 
-void
-EnumStoreTest::testFloatEnumStore()
-{
-    {
-        FloatEnumStore fes(false);
-        testFloatEnumStore<FloatEnumStore, float>(fes);
-    }
-    {
-        DoubleEnumStore des(false);
-        testFloatEnumStore<DoubleEnumStore, double>(des);
-    }
-}
+#pragma GCC diagnostic pop
 
-void
-EnumStoreTest::testFindFolded()
+TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
 {
     StringEnumStore ses(false);
     std::vector<EnumIndex> indices;
@@ -131,39 +114,52 @@ EnumStoreTest::testFindFolded()
     for (std::string &str : unique) {
         EnumIndex idx = ses.insert(str.c_str());
         indices.push_back(idx);
-        EXPECT_EQUAL(1u, ses.getRefCount(idx));
+        EXPECT_EQ(1u, ses.getRefCount(idx));
     }
     ses.freezeTree();
     for (uint32_t i = 0; i < indices.size(); ++i) {
         EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
     }
-    EXPECT_EQUAL(1u, ses.findFoldedEnums("").size());
-    EXPECT_EQUAL(0u, ses.findFoldedEnums("foo").size());
-    EXPECT_EQUAL(1u, ses.findFoldedEnums("one").size());
-    EXPECT_EQUAL(3u, ses.findFoldedEnums("two").size());
-    EXPECT_EQUAL(3u, ses.findFoldedEnums("TWO").size());
-    EXPECT_EQUAL(3u, ses.findFoldedEnums("tWo").size());
+    EXPECT_EQ(1u, ses.findFoldedEnums("").size());
+    EXPECT_EQ(0u, ses.findFoldedEnums("foo").size());
+    EXPECT_EQ(1u, ses.findFoldedEnums("one").size());
+    EXPECT_EQ(3u, ses.findFoldedEnums("two").size());
+    EXPECT_EQ(3u, ses.findFoldedEnums("TWO").size());
+    EXPECT_EQ(3u, ses.findFoldedEnums("tWo").size());
     const auto v = ses.findFoldedEnums("Two");
-    EXPECT_EQUAL(std::string("TWO"), ses.getValue(v[0]));
-    EXPECT_EQUAL(std::string("Two"), ses.getValue(v[1]));
-    EXPECT_EQUAL(std::string("two"), ses.getValue(v[2]));
-    EXPECT_EQUAL(1u, ses.findFoldedEnums("three").size());
+    EXPECT_EQ(std::string("TWO"), ses.getValue(v[0]));
+    EXPECT_EQ(std::string("Two"), ses.getValue(v[1]));
+    EXPECT_EQ(std::string("two"), ses.getValue(v[2]));
+    EXPECT_EQ(1u, ses.findFoldedEnums("three").size());
 }
 
+template <typename DictionaryT>
 void
-EnumStoreTest::testInsert()
+testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 {
-    testInsert<StringEnumStore>(false);
-
-    testInsert<StringEnumStore>(true);
+    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<DictionaryT>*>(&ses.getEnumStoreDict());
+    assert(enumDict != nullptr);
+    const DictionaryT& dict = enumDict->getDictionary();
+    uint32_t i = 0;
+    EnumIndex idx;
+    for (typename DictionaryT::Iterator iter = dict.begin();
+         iter.valid(); ++iter, ++i) {
+        idx = iter.getKey();
+        EXPECT_TRUE(strcmp(unique[i].c_str(), ses.getValue(idx)) == 0);
+    }
+    EXPECT_EQ(static_cast<uint32_t>(unique.size()), i);
 }
 
-template <typename EnumStoreType>
+class StringEnumStoreTest : public ::testing::Test {
+public:
+    void testInsert(bool hasPostings);
+};
+
 void
-EnumStoreTest::testInsert(bool hasPostings)
+StringEnumStoreTest::testInsert(bool hasPostings)
 {
-    EnumStoreType ses(hasPostings);
+    StringEnumStore ses(hasPostings);
 
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique;
@@ -174,7 +170,7 @@ EnumStoreTest::testInsert(bool hasPostings)
 
     for (uint32_t i = 0; i < unique.size(); ++i) {
         EnumIndex idx = ses.insert(unique[i].c_str());
-        EXPECT_EQUAL(1u, ses.getRefCount(idx));
+        EXPECT_EQ(1u, ses.getRefCount(idx));
         indices.push_back(idx);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
     }
@@ -183,44 +179,35 @@ EnumStoreTest::testInsert(bool hasPostings)
     for (uint32_t i = 0; i < indices.size(); ++i) {
         uint32_t e = 0;
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
-        EXPECT_EQUAL(1u, ses.findFoldedEnums(unique[i].c_str()).size());
-        EXPECT_EQUAL(e, ses.findFoldedEnums(unique[i].c_str())[0]);
+        EXPECT_EQ(1u, ses.findFoldedEnums(unique[i].c_str()).size());
+        EXPECT_EQ(e, ses.findFoldedEnums(unique[i].c_str())[0]);
         EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
-        EXPECT_EQUAL(1u, ses.getRefCount(indices[i]));
+        EXPECT_EQ(1u, ses.getRefCount(indices[i]));
         const char* value = nullptr;
         EXPECT_TRUE(ses.getValue(indices[i], value));
         EXPECT_TRUE(strcmp(unique[i].c_str(), value) == 0);
     }
 
     if (hasPostings) {
-        testUniques<EnumStoreType, EnumPostingTree>(ses, unique);
+        testUniques<EnumPostingTree>(ses, unique);
     } else {
-        testUniques<EnumStoreType, EnumTree>(ses, unique);
+        testUniques<EnumTree>(ses, unique);
     }
-}
-    
-template <typename EnumStoreType, typename Dictionary>
-void
-EnumStoreTest::testUniques
-(const EnumStoreType &ses, const std::vector<std::string> &unique)
-{
-    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<Dictionary> *>(&ses.getEnumStoreDict());
-    assert(enumDict != nullptr);
-    const Dictionary &dict = enumDict->getDictionary();
-    uint32_t i = 0;
-    EnumIndex idx;
-    for (typename Dictionary::Iterator iter = dict.begin();
-         iter.valid(); ++iter, ++i) {
-        idx = iter.getKey();
-        EXPECT_TRUE(strcmp(unique[i].c_str(), ses.getValue(idx)) == 0);
-    }
-    EXPECT_EQUAL(static_cast<uint32_t>(unique.size()), i);
 }
 
-void
-EnumStoreTest::testHoldListAndGeneration()
+TEST_F(StringEnumStoreTest, test_insert_on_store_without_posting_lists)
+{
+    testInsert(false);
+}
+
+TEST_F(StringEnumStoreTest, test_insert_on_store_with_posting_lists)
+{
+    testInsert(true);
+}
+
+TEST(EnumStoreTest, test_hold_lists_and_generation)
 {
     StringEnumStore ses(false);
     StringVector uniques;
@@ -255,15 +242,15 @@ EnumStoreTest::testHoldListAndGeneration()
                 indices.push_back(idx);
                 uint32_t ref_count = ses.getRefCount(idx);
                 std::string value(ses.getValue(idx));
-                EXPECT_EQUAL(1u, ref_count);
-                EXPECT_EQUAL(uniques[j], value);
+                EXPECT_EQ(1u, ref_count);
+                EXPECT_EQ(uniques[j], value);
                 expected.emplace_back(ref_count, value);
             }
             EXPECT_TRUE(indices.size() == 10);
             EXPECT_TRUE(expected.size() == 10);
             sesGen = generation++;
             readers.push_back(Reader(sesGen, indices, expected));
-            checkReaders(ses, sesGen, readers);
+            checkReaders(ses, readers);
         }
     }
 
@@ -273,18 +260,16 @@ EnumStoreTest::testHoldListAndGeneration()
         EnumIndex idx;
         EXPECT_TRUE(ses.findIndex(uniques[i].c_str(), idx));
         updater.dec_ref_count(idx);
-        EXPECT_EQUAL(0u, ses.getRefCount(idx));
+        EXPECT_EQ(0u, ses.getRefCount(idx));
     }
     updater.commit();
 
     // check readers again
-    checkReaders(ses, sesGen, readers);
+    checkReaders(ses, readers);
 
     ses.transferHoldLists(sesGen);
     ses.trimHoldLists(sesGen + 1);
 }
-
-namespace {
 
 void
 dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
@@ -298,59 +283,24 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
     store.trimHoldLists(gen + 1);
 }
 
-}
-
-void
-EnumStoreTest::requireThatAddressSpaceUsageIsReported()
+TEST(EnumStoreTest, address_space_usage_is_reported)
 {
     const size_t ADDRESS_LIMIT = 4290772994; // Max allocated elements in un-allocated buffers + allocated elements in allocated buffers.
     NumericEnumStore store(false);
 
     using vespalib::AddressSpace;
-    EXPECT_EQUAL(AddressSpace(1, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     EnumIndex idx1 = store.insert(10);
-    EXPECT_EQUAL(AddressSpace(2, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
-    EXPECT_EQUAL(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
     dec_ref_count(store, idx1);
-    EXPECT_EQUAL(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
     dec_ref_count(store, idx2);
-    EXPECT_EQUAL(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
 }
 
-void
-EnumStoreTest::checkReaders(const StringEnumStore & ses,
-                            generation_t sesGen,
-                            const std::vector<Reader> & readers)
-{
-    (void) sesGen;
-    //uint32_t refCount = 1000;
-    const char* t = "";
-    for (uint32_t i = 0; i < readers.size(); ++i) {
-        const Reader & r = readers[i];
-        for (uint32_t j = 0; j < r._indices.size(); ++j) {
-            EXPECT_TRUE(ses.getValue(r._indices[j], t));
-            EXPECT_TRUE(r._expected[j]._string == std::string(t));
-        }
-    }
 }
 
-
-int
-EnumStoreTest::Main()
-{
-    TEST_INIT("enumstore_test");
-
-    testFloatEnumStore();
-    testFindFolded();
-    testInsert();
-    testHoldListAndGeneration();
-    TEST_DO(requireThatAddressSpaceUsageIsReported());
-
-    TEST_DONE();
-}
-}
-
-
-TEST_APPHOOK(search::EnumStoreTest);
+GTEST_MAIN_RUN_ALL_TESTS()

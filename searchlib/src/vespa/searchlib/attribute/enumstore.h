@@ -31,22 +31,21 @@ namespace search {
  * @tparam EntryType The type of the entries/values stored.
  *                   It has special handling of type 'const char *' for strings.
  */
-template <class EntryType>
-class EnumStoreT : public IEnumStore
-{
-    friend class EnumStoreTest;
+template <class EntryT>
+class EnumStoreT : public IEnumStore {
 public:
-    using ComparatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
+    using ComparatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
                                               EnumStoreStringComparator,
-                                              EnumStoreComparator<EntryType>>;
-    using AllocatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
+                                              EnumStoreComparator<EntryT>>;
+    using AllocatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
                                              datastore::UniqueStoreStringAllocator<InternalIndex>,
-                                             datastore::UniqueStoreAllocator<EntryType, InternalIndex>>;
-    using UniqueStoreType = datastore::UniqueStore<EntryType, InternalIndex, ComparatorType, AllocatorType>;
-    using FoldedComparatorType = std::conditional_t<std::is_same_v<EntryType, const char *>,
+                                             datastore::UniqueStoreAllocator<EntryT, InternalIndex>>;
+    using UniqueStoreType = datastore::UniqueStore<EntryT, InternalIndex, ComparatorType, AllocatorType>;
+    using FoldedComparatorType = std::conditional_t<std::is_same_v<EntryT, const char *>,
                                                     EnumStoreFoldedStringComparator,
                                                     ComparatorType>;
-    using EnumStoreType = EnumStoreT<EntryType>;
+    using EntryType = EntryT;
+    using EnumStoreType = EnumStoreT<EntryT>;
     using EntryRef = datastore::EntryRef;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
