@@ -681,11 +681,6 @@ public class ApplicationController {
 
         // TODO: Make this one transaction when database is moved to ZooKeeper
         instances.forEach(id -> deleteInstance(id, credentials));
-
-        // Only delete permits once.
-        if (tenant.type() != Tenant.Type.user)
-            // TODO jonmv: Implementations ignore the instance — refactor to provide tenant and application names only.
-            accessControl.deleteApplication(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()), credentials.get());
     }
 
     /**
@@ -724,6 +719,14 @@ public class ApplicationController {
 
             log.info("Deleted " + application);
         });
+
+
+        if (   tenant.type() != Tenant.Type.user
+            && controller.applications().asList(applicationId.tenant()).stream()
+                         .map(application -> application.id().application())
+                         .noneMatch(applicationId.application()::equals))
+            // TODO jonmv: Implementations ignore the instance — refactor to provide tenant and application names only.
+            accessControl.deleteApplication(applicationId, credentials.get());
     }
 
     /**

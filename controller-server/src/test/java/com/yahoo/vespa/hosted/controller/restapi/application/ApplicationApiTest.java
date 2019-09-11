@@ -672,7 +672,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              "{\"message\":\"Deleted application tenant1.application1.instance1\"}");
+                              "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
         // DELETE a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
@@ -1080,7 +1080,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              "{\"message\":\"Deleted application tenant1.application1.instance1\"}");
+                              "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
         // DELETE application again - should produce 404
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .oktaAccessToken(OKTA_AT)
@@ -1186,7 +1186,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete applicattion; more than one instance present: [tenant1.application1, tenant1.application1.instance1]\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete application; more than one instance present: [tenant1.application1, tenant1.application1.instance1]\"}",
                               400);
 
         // Deleting one instance is OK
