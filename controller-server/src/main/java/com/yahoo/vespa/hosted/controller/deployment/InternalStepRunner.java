@@ -385,7 +385,7 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Wanted config generation is " + convergence.get().wantedGeneration());
         List<String> statuses = convergence.get().services().stream()
                 .filter(serviceStatus -> serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
-                .map(serviceStatus -> String.format("%70s: %11s on port %4d has %s",
+                .map(serviceStatus -> String.format("%70s: %11s on port %4d has config generation %s",
                                                     serviceStatus.host().value(),
                                                     serviceStatus.type(),
                                                     serviceStatus.port(),
