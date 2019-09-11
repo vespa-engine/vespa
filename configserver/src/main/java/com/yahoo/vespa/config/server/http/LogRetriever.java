@@ -1,11 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,7 +17,7 @@ import java.util.Optional;
  */
 public class LogRetriever {
 
-    private final HttpClient httpClient = HttpClientBuilder.create().build();
+    private final HttpClient httpClient = VespaHttpClientBuilder.create().build();
 
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
