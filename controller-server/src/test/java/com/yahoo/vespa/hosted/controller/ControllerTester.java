@@ -249,10 +249,6 @@ public final class ControllerTester {
         return controller().applications().require(applicationId);
     }
 
-    public void deleteApplication(ApplicationId id) {
-        controller().applications().deleteApplication(id, credentialsFor(id));
-    }
-
     public void deploy(Application application, ZoneId zone) {
         deploy(application, zone, new ApplicationPackage(new byte[0]));
     }

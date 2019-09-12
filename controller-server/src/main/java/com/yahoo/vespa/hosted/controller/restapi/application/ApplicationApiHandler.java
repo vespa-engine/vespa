@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -253,11 +254,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default",  "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"), "default");
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"), path.get("instance"));
@@ -1179,13 +1180,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return tenant(tenant.get(), request);
     }
 
-    private HttpResponse deleteApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+    private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
+        TenantName tenant = TenantName.from(tenantName);
+        ApplicationName application = ApplicationName.from(applicationName);
+        Optional<Credentials> credentials = controller.tenants().require(tenant).type() == Tenant.Type.user
+                                            ? Optional.empty()
+                                            : Optional.of(accessControlRequests.credentials(tenant, toSlime(request.getData()).get(), request.getJDiscRequest()));
+        controller.applications().deleteApplication(tenant, application, credentials);
+        return new MessageResponse("Deleted application " + tenant + "." + application);
+    }
+
+    private HttpResponse deleteInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
-        controller.applications().deleteApplication(id, credentials);
-        return new MessageResponse("Deleted application " + id);
+        controller.applications().deleteInstance(id, credentials);
+        return new MessageResponse("Deleted instance " + id.toFullString());
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {

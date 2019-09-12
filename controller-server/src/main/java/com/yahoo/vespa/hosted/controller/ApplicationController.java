@@ -7,8 +7,10 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -660,36 +662,51 @@ public class ApplicationController {
     }
 
     /**
-     * Deletes the the given application. All known instances of the applications will be deleted,
-     * including PR instances.
+     * Deletes the the given application. All known instances of the applications will be deleted.
      *
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
-     * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<Credentials> credentials) {
+    public void deleteApplication(TenantName tenantName, ApplicationName applicationName, Optional<Credentials> credentials) {
+        Tenant tenant = controller.tenants().require(tenantName);
+        if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
+            throw new IllegalArgumentException("Could not delete application '" + tenantName + "." + applicationName + "': No credentials provided");
+
+        // Find all instances of the application
+        List<ApplicationId> instances = asList(tenantName).stream()
+                                                          .map(Application::id)
+                                                          .filter(id -> id.application().equals(applicationName))
+                                                          .collect(Collectors.toList());
+        if (instances.size() > 1)
+            throw new IllegalArgumentException("Could not delete application; more than one instance present: " + instances);
+
+        // TODO: Make this one transaction when database is moved to ZooKeeper
+        instances.forEach(id -> deleteInstance(id, credentials));
+    }
+
+    /**
+     * Deletes the the given application instance.
+     *
+     * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
+     * @throws NotExistsException if the instance does not exist
+     */
+    public void deleteInstance(ApplicationId applicationId, Optional<Credentials> credentials) {
         Tenant tenant = controller.tenants().require(applicationId.tenant());
         if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
                 throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");
 
-        // Find all instances of the application
-        List<ApplicationId> instances = asList(applicationId.tenant()).stream()
-                                                                      .map(Application::id)
-                                                                      .filter(id -> id.application().equals(applicationId.application()))
-                                                                      .collect(Collectors.toList());
-        if (instances.isEmpty()) {
+        if (controller.applications().get(applicationId).isEmpty()) {
             throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
         }
 
-        // TODO: Make this one transaction when database is moved to ZooKeeper
-        instances.forEach(id -> lockOrThrow(id, application -> {
+        lockOrThrow(applicationId, application -> {
             if ( ! application.get().deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
                                                    application.get().deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
 
-            curator.removeApplication(id);
-            applicationStore.removeAll(id);
-            applicationStore.removeAll(TesterId.of(id));
+            curator.removeApplication(applicationId);
+            applicationStore.removeAll(applicationId);
+            applicationStore.removeAll(TesterId.of(applicationId));
 
             application.get().rotations().forEach(assignedRotation -> {
                 var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
@@ -701,10 +718,14 @@ public class ApplicationController {
             });
 
             log.info("Deleted " + application);
-        }));
+        });
 
-        // Only delete permits once.
-        if (tenant.type() != Tenant.Type.user)
+
+        if (   tenant.type() != Tenant.Type.user
+            && controller.applications().asList(applicationId.tenant()).stream()
+                         .map(application -> application.id().application())
+                         .noneMatch(applicationId.application()::equals))
+            // TODO jonmv: Implementations ignore the instance — refactor to provide tenant and application names only.
             accessControl.deleteApplication(applicationId, credentials.get());
     }
 
