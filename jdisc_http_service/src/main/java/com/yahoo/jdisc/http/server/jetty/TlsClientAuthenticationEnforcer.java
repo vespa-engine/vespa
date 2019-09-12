@@ -34,7 +34,10 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
         if (isHttpsRequest(request)
                 && !isRequestToWhitelistedBinding(servletRequest)
                 && !isClientAuthenticated(servletRequest)) {
-            servletResponse.sendError(Response.Status.UNAUTHORIZED, "Client did not present a x509 certificate.");
+            servletResponse.sendError(
+                    Response.Status.UNAUTHORIZED,
+                    "Client did not present a x509 certificate, " +
+                            "or presented a certificate not issued by any of the CA certificates in trust store.");
         } else {
             _handler.handle(target, request, servletRequest, servletResponse);
         }
