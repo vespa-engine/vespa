@@ -29,6 +29,8 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,6 +77,19 @@ public class DeploymentTester {
         this.nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofHours(12),
                                                                new JobControl(tester.controller().curator()),
                                                                Integer.MAX_VALUE);
+        atHourOfDay(5); // Set hour of day which always allows confidence to change
+    }
+
+    public DeploymentTester atHourOfDay(int hour) {
+        var dateTime = tester.clock().instant().atZone(ZoneOffset.UTC);
+        return at(LocalDateTime.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDayOfMonth(), hour,
+                                   dateTime.getMinute(), dateTime.getSecond())
+                               .toInstant(ZoneOffset.UTC));
+    }
+
+    public DeploymentTester at(Instant instant) {
+        tester.clock().setInstant(instant);
+        return this;
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -164,6 +179,11 @@ public class DeploymentTester {
     }
 
     public void restartController() { tester.createNewController(); }
+
+    public int hourOfDayAfter(Duration duration) {
+        tester.clock().advance(duration);
+        return tester.controller().clock().instant().atOffset(ZoneOffset.UTC).getHour();
+    }
 
     /** Notify the controller about a job completing */
     public BuildJob jobCompletion(JobType job) {

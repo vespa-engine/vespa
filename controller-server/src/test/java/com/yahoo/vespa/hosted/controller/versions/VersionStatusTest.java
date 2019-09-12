@@ -18,13 +18,10 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,15 +41,6 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class VersionStatusTest {
-
-    private final DeploymentTester tester = new DeploymentTester();
-
-    @Before
-    public void before() {
-        // Set a time which always allows confidence to change
-        tester.controllerTester().clock().setInstant(LocalDateTime.of(1970, 1, 1, 5, 0)
-                                                                  .toInstant(ZoneOffset.UTC));
-    }
     
     @Test
     public void testEmptyVersionStatus() {
@@ -63,6 +51,7 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
+        DeploymentTester tester = new DeploymentTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
         tester.upgradeSystemApplications(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
@@ -71,6 +60,7 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionIsVersionOfOldestConfigServer() {
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = Version.fromString("6.1");
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
@@ -111,6 +101,7 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionNeverShrinks() {
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = Version.fromString("6.2");
         tester.upgradeSystem(version0);
         assertEquals(version0, tester.controller().systemVersion());
@@ -131,6 +122,7 @@ public class VersionStatusTest {
 
     @Test
     public void testVersionStatusAfterApplicationUpdates() {
+        DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
@@ -178,6 +170,7 @@ public class VersionStatusTest {
     
     @Test
     public void testVersionConfidence() {
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = new Version("6.2");
         tester.upgradeSystem(version0);
 
@@ -312,6 +305,7 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceOverride() {
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = new Version("6.2");
         tester.upgradeSystem(version0);
 
@@ -339,6 +333,7 @@ public class VersionStatusTest {
 
     @Test
     public void testCommitDetailsPreservation() {
+        DeploymentTester tester = new DeploymentTester();
         // Commit details are set for initial version
         var version0 = new Version("6.2");
         var commitSha0 = "badc0ffee";
@@ -368,8 +363,9 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceChangeRespectsTimeWindow() {
+        DeploymentTester tester = new DeploymentTester();
         // Canaries and normal application deploys on initial version
-        assertEquals(5, hourOfDayAfter(Duration.ZERO));
+        assertEquals(5, tester.hourOfDayAfter(Duration.ZERO));
         Version version0 = Version.fromString("7.1");
         tester.upgradeSystem(version0);
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
@@ -386,20 +382,20 @@ public class VersionStatusTest {
         assertSame(Confidence.low, tester.controller().versionStatus().version(version1).confidence());
 
         // canary1 breaks just outside allowed upgrade window
-        assertEquals(12, hourOfDayAfter(Duration.ofHours(7)));
+        assertEquals(12, tester.hourOfDayAfter(Duration.ofHours(7)));
         tester.completeUpgradeWithError(canary1, version1, "canary", systemTest);
         tester.computeVersionStatus();
         assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
 
         // Second canary is fixed later in the day. All canaries are now fixed, but confidence is not raised as we're
         // outside the allowed time window
-        assertEquals(20, hourOfDayAfter(Duration.ofHours(8)));
+        assertEquals(20, tester.hourOfDayAfter(Duration.ofHours(8)));
         tester.completeUpgrade(canary1, version1, "canary");
         tester.computeVersionStatus();
         assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
 
         // Early morning arrives, confidence is raised and normal application upgrades
-        assertEquals(5, hourOfDayAfter(Duration.ofHours(9)));
+        assertEquals(5, tester.hourOfDayAfter(Duration.ofHours(9)));
         tester.computeVersionStatus();
         assertSame(Confidence.normal, tester.controller().versionStatus().version(version1).confidence());
         tester.upgrader().maintain();
@@ -409,7 +405,7 @@ public class VersionStatusTest {
         // Another version is released. System and canaries upgrades late, confidence stays low
         Version version2 = Version.fromString("7.3");
         tester.upgradeSystem(version2);
-        assertEquals(14, hourOfDayAfter(Duration.ofHours(9)));
+        assertEquals(14, tester.hourOfDayAfter(Duration.ofHours(9)));
         tester.completeUpgrade(canary0, version2, "canary");
         tester.completeUpgrade(canary1, version2, "canary");
         tester.computeVersionStatus();
@@ -425,17 +421,12 @@ public class VersionStatusTest {
         tester.upgrader().removeConfidenceOverride(version2);
 
         // Next morning arrives, confidence is raised and normal application upgrades
-        assertEquals(7, hourOfDayAfter(Duration.ofHours(17)));
+        assertEquals(7, tester.hourOfDayAfter(Duration.ofHours(17)));
         tester.computeVersionStatus();
         assertSame(Confidence.normal, tester.controller().versionStatus().version(version2).confidence());
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         tester.completeUpgrade(default0, version2, "default");
-    }
-
-    private int hourOfDayAfter(Duration duration) {
-        tester.clock().advance(duration);
-        return tester.controller().clock().instant().atOffset(ZoneOffset.UTC).getHour();
     }
 
     private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {
