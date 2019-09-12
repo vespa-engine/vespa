@@ -1,18 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
@@ -38,6 +37,9 @@ public class ClusterMetricsRetriever {
     private static final String VESPA_QRSERVER = "vespa.qrserver";
     private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
     private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+
+
+    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
 
     /**
      * Call the metrics API on each host and aggregate the metrics
@@ -79,9 +81,7 @@ public class ClusterMetricsRetriever {
 
     private static Slime doMetricsRequest(URI hostURI) {
         HttpGet get = new HttpGet(hostURI);
-        try {
-            HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpResponse response = httpClient.execute(get);
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
             InputStream is = response.getEntity().getContent();
             Slime slime = SlimeUtils.jsonToSlime(is.readAllBytes());
             is.close();
