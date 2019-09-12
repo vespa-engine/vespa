@@ -55,7 +55,7 @@ public interface ZoneRegistry {
     SystemName system();
 
     /** Return the configserver's Athenz service identity */
-    AthenzIdentity getConfigServerAthenzIdentity(ZoneId zoneId);
+    AthenzIdentity getConfigServerHttpsIdentity(ZoneId zoneId);
 
     /** Return the Athenz service identity for a given node type */
     AthenzIdentity getNodeAthenzIdentity(ZoneId zoneId, NodeType nodeType);

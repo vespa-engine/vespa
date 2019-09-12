@@ -10,7 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -903,7 +902,7 @@ public class ApplicationController {
         deploymentSpec.athenzDomain().ifPresent(athenzDomain -> {
             controller.zoneRegistry().zones().reachable().ids()
                       .forEach(zone -> {
-                          AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerAthenzIdentity(zone);
+                          AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerHttpsIdentity(zone);
                           deploymentSpec.athenzService(zone.environment(), zone.region())
                                         .map(service -> new AthenzService(athenzDomain.value(), service.value()))
                                         .ifPresent(service -> {
