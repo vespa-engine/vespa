@@ -242,9 +242,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                     requiredField(inspector, "minCpuCores", Inspector::asDouble),
                     requiredField(inspector, "minMainMemoryAvailableGb", Inspector::asDouble),
                     requiredField(inspector, "minDiskAvailableGb", Inspector::asDouble),
-                    inspector.field("bandwidth").valid() ?
-                            requiredField(inspector, "bandwidth", Inspector::asDouble) / 1000 :
-                            requiredField(inspector, "bandwidthGbps", Inspector::asDouble),
+                    requiredField(inspector, "bandwidthGbps", Inspector::asDouble),
                     requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow));
         }
 
@@ -255,8 +253,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             flavor = flavor.with(flavor.resources().withMemoryGb(inspector.field("minMainMemoryAvailableGb").asDouble()));
         if (inspector.field("minDiskAvailableGb").valid())
             flavor = flavor.with(flavor.resources().withDiskGb(inspector.field("minDiskAvailableGb").asDouble()));
-        if (inspector.field("bandwidth").valid())
-            flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidth").asDouble() / 1000));
         if (inspector.field("bandwidthGbps").valid())
             flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidthGbps").asDouble()));
         if (inspector.field("fastDisk").valid())

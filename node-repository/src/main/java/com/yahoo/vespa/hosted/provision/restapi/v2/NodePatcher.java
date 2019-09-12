@@ -158,8 +158,6 @@ public class NodePatcher {
                 return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())));
             case "fastDisk":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskSpeed(value.asBool() ? fast : slow)));
-            case "bandwidth":
-                return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble() / 1000)));
             case "bandwidthGbps":
                 return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble())));
             case "modelName":
