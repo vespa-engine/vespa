@@ -231,7 +231,7 @@ public class NodeFailer extends Maintainer {
         return nodesByFailureReason;
     }
 
-    private static List<String> reasonsToFailParentHost(Node hostNode) {
+    public static List<String> reasonsToFailParentHost(Node hostNode) {
         return hostNode.reports().getReports().stream()
                 .filter(report -> report.getType().hostShouldBeFailed())
                 // The generated string is built from the report's ID, created time, and description only.

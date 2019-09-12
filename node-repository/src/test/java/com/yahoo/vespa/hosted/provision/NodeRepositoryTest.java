@@ -3,16 +3,22 @@ package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Report;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -74,6 +80,31 @@ public class NodeRepositoryTest {
 
         tester.nodeRepository().markNodeAvailableForNewAllocation("cfg1", Agent.system, getClass().getSimpleName());
         assertEquals(Node.State.ready, tester.nodeRepository().getNode("cfg1").get().state());
+    }
+
+    @Test
+    public void fail_readying_with_hard_fail() {
+        NodeRepositoryTester tester = new NodeRepositoryTester();
+        tester.addNode("host1", "host1", "default", NodeType.tenant);
+        tester.addNode("host2", "host2", "default", NodeType.tenant);
+        tester.setNodeState("host1", Node.State.dirty);
+        tester.setNodeState("host2", Node.State.dirty);
+
+        Node node2 = tester.nodeRepository().getNode("host2").orElseThrow();
+        var reportsBuilder = new Reports.Builder(node2.reports());
+        reportsBuilder.setReport(Report.basicReport("reportId", Report.Type.HARD_FAIL, Instant.EPOCH, "hardware failure"));
+        node2 = node2.with(reportsBuilder.build());
+        tester.nodeRepository().write(node2, () -> {});
+
+        tester.nodeRepository().markNodeAvailableForNewAllocation("host1", Agent.system, getClass().getSimpleName());
+        assertEquals(Node.State.ready, tester.nodeRepository().getNode("host1").get().state());
+
+        try {
+            tester.nodeRepository().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), containsString("hardware failure"));
+        }
     }
 
     @Test
