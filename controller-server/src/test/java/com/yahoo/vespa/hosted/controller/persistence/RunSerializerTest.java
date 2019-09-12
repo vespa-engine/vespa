@@ -20,13 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -117,7 +114,10 @@ public class RunSerializerTest {
                              .build(),
                      run.steps());
 
-        run = run.aborted().finished(Instant.now().truncatedTo(MILLIS));
+        run = run.with(1L << 50)
+                 .with(Instant.now().truncatedTo(MILLIS))
+                 .aborted()
+                 .finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 

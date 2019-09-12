@@ -34,11 +34,13 @@ public class Run {
     private final Optional<Instant> end;
     private final RunStatus status;
     private final long lastTestRecord;
+    private final Instant lastVespaLogTimestamp;
     private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, Step.Status> steps, Versions versions, Instant start,
-               Optional<Instant> end, RunStatus status, long lastTestRecord, Optional<X509Certificate> testerCertificate) {
+               Optional<Instant> end, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
+               Optional<X509Certificate> testerCertificate) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -83,6 +85,12 @@ public class Run {
     }
 
     public Run with(long lastTestRecord) {
+        requireActive();
+        return new Run(id, new EnumMap<>(steps), versions, start, end, status,
+                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+    }
+
+    public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, status,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
@@ -136,6 +144,11 @@ public class Run {
     /** Returns the sequence id of the last test record received from the tester, for the test logs of this run. */
     public long lastTestLogEntry() {
         return lastTestRecord;
+    }
+
+    /** Returns the timestamp of the last Vespa log record fetched and stored for this run. */
+    public Instant lastVespaLogTimestamp() {
+        return lastVespaLogTimestamp;
     }
 
     /** Returns the tester certificate for this run, or empty. */

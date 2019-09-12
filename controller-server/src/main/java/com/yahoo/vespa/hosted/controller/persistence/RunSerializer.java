@@ -82,6 +82,7 @@ class RunSerializer {
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
+    private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
     private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
@@ -114,6 +115,7 @@ class RunSerializer {
                                .map(end -> Instant.ofEpochMilli(end.asLong())),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
+                       Instant.ofEpochMilli(runObject.field(lastVespaLogTimestampField).asLong()),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -174,6 +176,7 @@ class RunSerializer {
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
+        runObject.setLong(lastVespaLogTimestampField, run.lastVespaLogTimestamp().toEpochMilli());
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);

@@ -20,6 +20,7 @@ import java.util.Optional;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static java.time.Instant.EPOCH;
 import static java.time.Instant.now;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -31,13 +32,13 @@ public class BadgesTest {
 
     private static final ApplicationId id = ApplicationId.from("tenant", "application", "default");
     private static final Run success = new Run(new RunId(id, systemTest, 3), ImmutableMap.of(report, Step.Status.succeeded),
-                                               null, null, Optional.of(now()), RunStatus.success, 0, Optional.empty());
+                                               null, null, Optional.of(now()), RunStatus.success, 0, EPOCH, Optional.empty());
 
     private static final Run running = new Run(new RunId(id, systemTest, 4), ImmutableMap.of(report, Step.Status.succeeded),
-                                               null, null, Optional.empty(), RunStatus.running, 0, Optional.empty());
+                                               null, null, Optional.empty(), RunStatus.running, 0, EPOCH, Optional.empty());
 
     private static final Run failure = new Run(new RunId(id, JobType.stagingTest, 2), ImmutableMap.of(report, Step.Status.succeeded),
-                                               null, null, Optional.of(now()), RunStatus.testFailure, 0, Optional.empty());
+                                               null, null, Optional.of(now()), RunStatus.testFailure, 0, EPOCH, Optional.empty());
 
     @Test
     public void test() {
