@@ -121,6 +121,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
             result.hits().add(merged.get(index));
         }
+        query.setOffset(0);  // Now we are all trimmed down
         return result;
     }
 

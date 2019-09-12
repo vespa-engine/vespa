@@ -207,16 +207,21 @@ public class InterleavedSearchInvokerTest {
     @Test
     public void requireThatMergeOfConcreteHitsObeySorting() throws IOException {
         InterleavedSearchInvoker invoker = createInterLeavedTestInvoker(A5, B5);
+        query.setHits(12);
         Result result = invoker.search(query, null);
         assertEquals(10, result.hits().size());
         assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(1.0, result.hits().get(9).getRelevance().getScore(), DELTA);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(12, result.getQuery().getHits());
 
         invoker = createInterLeavedTestInvoker(B5, A5);
         result = invoker.search(query, null);
         assertEquals(10, result.hits().size());
         assertEquals(11.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(1.0, result.hits().get(9).getRelevance().getScore(), DELTA);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(12, result.getQuery().getHits());
     }
 
     @Test
@@ -228,12 +233,17 @@ public class InterleavedSearchInvokerTest {
         assertEquals(3, result.hits().size());
         assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(3, result.getQuery().getHits());
 
         invoker = createInterLeavedTestInvoker(B5, A5);
+        query.setOffset(5);
         result = invoker.search(query, null);
         assertEquals(3, result.hits().size());
         assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(3, result.getQuery().getHits());
     }
 
     @Test
@@ -246,13 +256,18 @@ public class InterleavedSearchInvokerTest {
         assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
         assertTrue(result.hits().get(3) instanceof MetaHit);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(3, result.getQuery().getHits());
 
         invoker = createInterLeavedTestInvoker(B5Aux, A5Aux);
+        query.setOffset(5);
         result = invoker.search(query, null);
         assertEquals(7, result.hits().size());
         assertEquals(7.0, result.hits().get(0).getRelevance().getScore(), DELTA);
         assertEquals(3.0, result.hits().get(2).getRelevance().getScore(), DELTA);
         assertTrue(result.hits().get(3) instanceof MetaHit);
+        assertEquals(0, result.getQuery().getOffset());
+        assertEquals(3, result.getQuery().getHits());
     }
 
     private static InterleavedSearchInvoker createInterLeavedTestInvoker(List<Double> a, List<Double> b) {
