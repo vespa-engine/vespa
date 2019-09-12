@@ -40,14 +40,14 @@ public class FastHit extends Hit {
     private int partId;
 
     /** The global id of this document in the backend node which produced it */
+    //Todo should be bytearray directly and generate GlobvalId on access
     private GlobalId globalId = emptyGlobalId;
 
-    /** Full information pointing to the location of further data for this hit. Lazily set */
-    private URI indexUri = null;
-
+    //TODO Remove with fs4
     private transient QueryPacketData queryPacketData = null;
 
     private transient byte[] sortData = null;
+    // TODO I supect this one can be dropped.
     private transient Sorting sortDataSorting = null;
 
     /**
@@ -108,11 +108,11 @@ public class FastHit extends Hit {
         if (uri != null) return uri;
 
         // Fallback to index:[source]/[partid]/[id]
-        if (indexUri != null) return indexUri;
         StringBuilder sb = new StringBuilder(64);
         sb.append("index:").append(getSource()).append('/').append(getPartId()).append('/');
         appendAsHex(getGlobalId(), sb);
-        indexUri = new URI(sb.toString());
+        URI indexUri = new URI(sb.toString());
+        assignId(indexUri);
         return indexUri;
     }
 
