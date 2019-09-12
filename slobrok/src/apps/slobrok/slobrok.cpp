@@ -84,16 +84,19 @@ App::Main()
     } catch (const config::ConfigTimeoutException &e) {
         LOG(error, "config timeout during construction : %s", e.what());
         EV_STOPPING("slobrok", "config timeout during construction");
-        return 1;
+        res = 1;
     } catch (const vespalib::PortListenException &e) {
         LOG(error, "Failed listening to network port(%d) with protocol(%s): '%s'",
                    e.get_port(), e.get_protocol().c_str(), e.what());
         EV_STOPPING("slobrok", "could not listen to our network port");
-        return 1;
+        res = 1;
     } catch (const std::exception & e) {
         LOG(error, "unknown exception during construction : %s", e.what());
         EV_STOPPING("slobrok", "unknown exception during construction");
-        return 2;
+        res = 2;
+    }
+    if (mainobj && !mainobj->isShuttingDown()) {
+        mainobj->shutdown();
     }
     mainobj.reset();
     return res;
