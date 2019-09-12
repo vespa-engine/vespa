@@ -17,7 +17,7 @@ private:
     std::vector<Blueprint::UP> _terms;
 
 public:
-    SameElementBlueprint();
+    SameElementBlueprint(bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint();

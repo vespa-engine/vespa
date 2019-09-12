@@ -28,6 +28,18 @@ public:
     Query();
     ~Query();
     /**
+     * Use the given blueprint as white list node in the blueprint
+     * tree. The search iterator created by this blueprint should
+     * return all visible / active documents as hits. These hits will
+     * then be part of the result set for the query executed. Setting
+     * this before building the query will enable additional
+     * optimizations.
+     *
+     * @param whiteListBlueprint the blueprint used for white listing.
+     **/
+    void setWhiteListBlueprint(Blueprint::UP whiteListBlueprint);
+
+    /**
      * Build query tree from a stack dump.
      *
      * @return success(true)/failure(false)
@@ -35,7 +47,9 @@ public:
     bool buildTree(vespalib::stringref stack,
                    const vespalib::string &location,
                    const ViewResolver &resolver,
-                   const search::fef::IIndexEnvironment &idxEnv);
+                   const search::fef::IIndexEnvironment &idxEnv,
+                   bool split_unpacking_iterators = false,
+                   bool delay_unpacking_iterators = false);
 
     /**
      * Extract query terms from the query tree; to be used to build
@@ -52,16 +66,6 @@ public:
      * @param locs where to collect locations
      **/
     void extractLocations(std::vector<const search::fef::Location *> &locs);
-
-    /**
-     * Use the given blueprint as white list node in the blueprint tree.
-     * The search iterator created by this blueprint should return all
-     * visible / active documents as hits. These hits will then be
-     * part of the result set for the query executed.
-     *
-     * @param whiteListBlueprint the blueprint used for white listing.
-     **/
-    void setWhiteListBlueprint(Blueprint::UP whiteListBlueprint);
 
     /**
      * Reserve room for terms in the query in the given match data

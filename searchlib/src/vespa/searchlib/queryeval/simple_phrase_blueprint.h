@@ -23,7 +23,7 @@ private:
     SimplePhraseBlueprint &operator=(const SimplePhraseBlueprint &); // disabled
 
 public:
-    SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext);
+    SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext, bool expensive);
     ~SimplePhraseBlueprint();
 
     // used by create visitor

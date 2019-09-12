@@ -99,17 +99,30 @@ class ONear : public QueryNodeMixin<ONear, Intermediate>
 class Phrase : public QueryNodeMixin<Phrase, Intermediate>, public Term {
 public:
     Phrase(const vespalib::string &view, int32_t id, Weight weight)
-        : Term(view, id, weight) {}
+        : Term(view, id, weight), _expensive(false) {}
     virtual ~Phrase() = 0;
+    Phrase &set_expensive(bool value) {
+        _expensive = value;
+        return *this;
+    }
+    bool is_expensive() const { return _expensive; }
+private:
+    bool _expensive;
 };
 
 class SameElement : public QueryNodeMixin<SameElement, Intermediate> {
 public:
-    SameElement(const vespalib::string &view) : _view(view) {}
+    SameElement(const vespalib::string &view) : _view(view), _expensive(false) {}
     virtual ~SameElement() = 0;
     const vespalib::string & getView() const { return _view; }
+    SameElement &set_expensive(bool value) {
+        _expensive = value;
+        return *this;
+    }
+    bool is_expensive() const { return _expensive; }
 private:
     vespalib::string _view;
+    bool _expensive;
 };
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, Intermediate>, public Term {

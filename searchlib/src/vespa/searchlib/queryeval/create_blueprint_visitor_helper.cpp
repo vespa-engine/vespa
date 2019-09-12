@@ -31,7 +31,7 @@ CreateBlueprintVisitorHelper::getResult()
 
 void
 CreateBlueprintVisitorHelper::visitPhrase(query::Phrase &n) {
-    auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, _requestContext);
+    auto phrase = std::make_unique<SimplePhraseBlueprint>(_field, _requestContext, n.is_expensive());
     for (const query::Node * child : n.getChildren()) {
         FieldSpecList fields;
         fields.add(phrase->getNextChildField(_field));
