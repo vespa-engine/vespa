@@ -33,14 +33,14 @@ PostingListAttributeBase<P>::clearAllPostings()
     auto itr = _dict.begin();
     EntryRef prev;
     while (itr.valid()) {
-        EntryRef ref = itr.getData();
+        EntryRef ref(itr.getData());
         if (ref.ref() != prev.ref()) {
             if (ref.valid()) {
                 _postingList.clear(ref);
             }
             prev = ref;
         }
-        itr.writeData(EntryRef());
+        itr.writeData(EntryRef().ref());
         ++itr;
     }
     _attr.incGeneration(); // Force freeze
@@ -86,7 +86,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                                    &postings._removals[0],
                                    &postings._removals[0] +
                                    postings._removals.size());
-                posting_itr.writeData(newIndex);
+                posting_itr.writeData(newIndex.ref());
                 while (posting_itr != itr) {
                     ++posting_itr;
                 }
@@ -107,7 +107,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._additions[0] + postings._additions.size(),
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
-    posting_itr.writeData(newIndex);
+    posting_itr.writeData(newIndex.ref());
     loader.free_unused_enums();
 }
 
@@ -121,7 +121,7 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
         EnumIndex idx = elem.first.getEnumIdx();
         auto dictItr = _dict.lowerBound(idx, cmp);
         assert(dictItr.valid() && dictItr.getKey() == idx);
-        EntryRef newPosting = dictItr.getData();
+        EntryRef newPosting(dictItr.getData());
         
         change.removeDups();
         _postingList.apply(newPosting,
@@ -131,7 +131,7 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
                            &change._removals[0] + change._removals.size());
         
         _dict.thaw(dictItr);
-        dictItr.writeData(newPosting);
+        dictItr.writeData(newPosting.ref());
     }
 }
 
@@ -171,7 +171,7 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     auto itr = _dict.lowerBound(er, cmp);
     assert(itr.valid());
     
-    EntryRef newPosting = itr.getData();
+    EntryRef newPosting(itr.getData());
     assert(newPosting.valid());
     
     _postingList.apply(newPosting,
@@ -182,7 +182,7 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
                        &postings._removals[0] +
                        postings._removals.size());
     _dict.thaw(itr);
-    itr.writeData(newPosting);
+    itr.writeData(newPosting.ref());
 }
 
 template <typename P>

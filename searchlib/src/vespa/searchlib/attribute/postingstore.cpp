@@ -125,7 +125,7 @@ PostingStore<DataT>::removeSparseBitVectors()
     if (needscan) {
         typedef EnumPostingTree::Iterator EnumIterator;
         for (EnumIterator dictItr = _dict.begin(); dictItr.valid(); ++dictItr) {
-            if (!isBitVector(getTypeId(dictItr.getData())))
+            if (!isBitVector(getTypeId(EntryRef(dictItr.getData()))))
                 continue;
             EntryRef ref(dictItr.getData());
             RefType iRef(ref);
@@ -153,7 +153,7 @@ PostingStore<DataT>::removeSparseBitVectors()
                     }
                 }
                 _dict.thaw(dictItr);
-                dictItr.writeData(ref);
+                dictItr.writeData(ref.ref());
                 res = true;
             }
         }

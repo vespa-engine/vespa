@@ -72,7 +72,7 @@ void
 PostingListSearchContext::lookupSingle()
 {
     if (_lowerDictItr.valid()) {
-        _pidx = _lowerDictItr.getData();
+        _pidx = datastore::EntryRef(_lowerDictItr.getData());
     }
 }
 
