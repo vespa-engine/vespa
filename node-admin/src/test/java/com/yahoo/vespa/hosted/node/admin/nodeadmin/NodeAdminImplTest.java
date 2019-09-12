@@ -38,7 +38,7 @@ public class NodeAdminImplTest {
     private final ManualClock clock = new ManualClock();
 
     private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentWithSchedulerFactory,
-            new Metrics(), clock, Duration.ZERO, Duration.ZERO);
+            new Metrics(), clock, Duration.ZERO, Duration.ZERO, x -> {});
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() {

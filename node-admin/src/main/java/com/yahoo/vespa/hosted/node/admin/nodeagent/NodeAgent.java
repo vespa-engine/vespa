@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
+
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Responsible for management of a single node over its lifecycle.
  * May own its own resources, threads etc. Runs independently, but receives signals
@@ -30,7 +35,7 @@ public interface NodeAgent {
     /**
      * Updates metric receiver with the latest node-agent stats
      */
-    default void updateContainerNodeMetrics(NodeAgentContext context) {}
+    default List<DimensionMetrics> updateContainerNodeMetrics(NodeAgentContext context) {return Collections.emptyList();}
 
     /**
      * Returns and resets number of unhandled exceptions

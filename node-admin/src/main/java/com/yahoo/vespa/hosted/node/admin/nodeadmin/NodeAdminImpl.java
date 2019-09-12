@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.vespa.hosted.dockerapi.metrics.Counter;
+import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Gauge;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
@@ -10,10 +11,12 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextManager;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentFactory;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentScheduler;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.MetricPublisher;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,25 +43,26 @@ public class NodeAdminImpl implements NodeAdmin {
     private boolean isFrozen;
     private Instant startOfFreezeConvergence;
     private final Map<String, NodeAgentWithScheduler> nodeAgentWithSchedulerByHostname = new ConcurrentHashMap<>();
+    private final MetricPublisher metricPublisher;
 
     private final Gauge jvmHeapUsed;
     private final Gauge jvmHeapFree;
     private final Gauge jvmHeapTotal;
     private final Counter numberOfUnhandledExceptions;
 
-    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock) {
+    public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics, Clock clock, MetricPublisher metricPublisher) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD);
+                metrics, clock, NODE_AGENT_FREEZE_TIMEOUT, NODE_AGENT_SPREAD, metricPublisher);
     }
 
     public NodeAdminImpl(NodeAgentFactory nodeAgentFactory, Metrics metrics,
-                         Clock clock, Duration freezeTimeout, Duration spread) {
+                         Clock clock, Duration freezeTimeout, Duration spread, MetricPublisher metricPublisher) {
         this((NodeAgentWithSchedulerFactory) nodeAgentContext -> create(clock, nodeAgentFactory, nodeAgentContext),
-                metrics, clock, freezeTimeout, spread);
+                metrics, clock, freezeTimeout, spread, metricPublisher);
     }
 
     NodeAdminImpl(NodeAgentWithSchedulerFactory nodeAgentWithSchedulerFactory,
-                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread) {
+                  Metrics metrics, Clock clock, Duration freezeTimeout, Duration spread, MetricPublisher metricPublisher) {
         this.nodeAgentWithSchedulerFactory = nodeAgentWithSchedulerFactory;
 
         this.clock = clock;
@@ -74,6 +78,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.jvmHeapUsed = metrics.declareGauge("mem.heap.used");
         this.jvmHeapFree = metrics.declareGauge("mem.heap.free");
         this.jvmHeapTotal = metrics.declareGauge("mem.heap.total");
+        this.metricPublisher = metricPublisher;
     }
 
     @Override
@@ -103,10 +108,12 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void updateMetrics() {
+        List<DimensionMetrics> metrics = new ArrayList<>();
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
             numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
-            nodeAgentWithScheduler.updateContainerNodeMetrics();
+            metrics.addAll(nodeAgentWithScheduler.updateContainerNodeMetrics());
         }
+        metricPublisher.publishNodeSystemMetrics(metrics);
 
         Runtime runtime = Runtime.getRuntime();
         long freeMemory = runtime.freeMemory();
@@ -194,7 +201,7 @@ public class NodeAdminImpl implements NodeAdmin {
         void start() { nodeAgent.start(currentContext()); }
         void stopForHostSuspension() { nodeAgent.stopForHostSuspension(currentContext()); }
         void stopForRemoval() { nodeAgent.stopForRemoval(currentContext()); }
-        void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(currentContext()); }
+        List<DimensionMetrics> updateContainerNodeMetrics() { return nodeAgent.updateContainerNodeMetrics(currentContext()); }
         int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }
