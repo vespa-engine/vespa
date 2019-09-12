@@ -50,7 +50,7 @@ public class PreprovisionCapacity {
     }
 
     private static double requirePositive(String name, double value) {
-        if (value < 1)
+        if (value <= 0)
             throw new IllegalArgumentException("'" + name + "' must be positive, was " + value);
         return value;
     }
