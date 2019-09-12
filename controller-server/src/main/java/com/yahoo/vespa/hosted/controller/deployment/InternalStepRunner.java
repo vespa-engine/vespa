@@ -718,6 +718,8 @@ public class InternalStepRunner implements StepRunner {
                 "        </handler>\n" +
                 "\n" +
                 "        <http>\n" +
+                "            <!-- Make sure 4080 is the first port. This will be used by the config server. -->\n" +
+                "            <server id='default' port='4080'/>\n" +
                 "            <server id='testertls4443' port='4443'>\n" +
                 "                <config name=\"jdisc.http.connector\">\n" +
                 "                    <tlsClientAuthEnforcer>\n" +
@@ -734,7 +736,6 @@ public class InternalStepRunner implements StepRunner {
                 "                    <client-authentication>want</client-authentication>\n" +
                 "                </ssl>\n" +
                 "            </server>\n" +
-                "            <server id='default' port='4080'/>\n" +
                 "            <filtering>\n" +
                 "                <access-control domain='" + domain.value() + "'>\n" + // Set up dummy access control to pass validation :/
                 "                    <exclude>\n" +

@@ -16,6 +16,8 @@
         </handler>
 
         <http>
+            <!-- Make sure 4080 is the first port. This will be used by the config server. -->
+            <server id='default' port='4080'/>
             <server id='testertls4443' port='4443'>
                 <config name="jdisc.http.connector">
                     <tlsClientAuthEnforcer>
@@ -32,7 +34,6 @@
                     <client-authentication>want</client-authentication>
                 </ssl>
             </server>
-            <server id='default' port='4080'/>
             <filtering>
                 <access-control domain='vespa.vespa.cd'>
                     <exclude>
