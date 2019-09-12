@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
@@ -55,6 +56,9 @@ public interface ZoneRegistry {
 
     /** Return the configserver's Athenz service identity */
     AthenzIdentity getConfigServerAthenzIdentity(ZoneId zoneId);
+
+    /** Return the Athenz service identity for a given node type */
+    AthenzIdentity getNodeAthenzIdentity(ZoneId zoneId, NodeType nodeType);
 
     /**  Return the system Athenz domain */
     AthenzDomain accessControlDomain();
