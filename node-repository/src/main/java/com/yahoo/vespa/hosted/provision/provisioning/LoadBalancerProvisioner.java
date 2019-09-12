@@ -164,9 +164,10 @@ public class LoadBalancerProvisioner {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
+        int applicationPort = application.instance().isTester() ? 4080 : 4443; // TODO: remove once tester works on 4443
         Set<Real> reals = new LinkedHashSet<>();
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
-            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
+            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress, applicationPort)));
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                ", targeting: " + reals);
