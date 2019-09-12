@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -39,13 +40,7 @@ public class Editor {
      */
     public Editor(Path path, LineEditor editor) {
         this(path.toString(),
-                () -> {
-                    try {
-                        return Files.readAllLines(path, ENCODING);
-                    } catch (IOException e) {
-                        return List.of();
-                    }
-                },
+                () -> ifExists(() -> Files.readAllLines(path, ENCODING)).orElseGet(List::of),
                 (newLines) -> uncheck(() -> Files.write(path, newLines, ENCODING)),
                 editor);
     }
