@@ -5,6 +5,8 @@ import ai.vespa.hosted.api.DeploymentLog;
 import ai.vespa.hosted.api.DeploymentResult;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
@@ -30,7 +32,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     private boolean follow;
 
     @Override
-    protected void doExecute() {
+    protected void doExecute() throws MojoFailureException, MojoExecutionException {
         Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
                                                                              projectPathOf("target", "application.zip"))));
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
@@ -42,10 +44,11 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         if (follow) tailLogs(id, zone, result.run());
     }
 
-    private void tailLogs(ApplicationId id, ZoneId zone, long run) {
+    private void tailLogs(ApplicationId id, ZoneId zone, long run) throws MojoFailureException, MojoExecutionException {
         long last = -1;
+        DeploymentLog log;
         while (true) {
-            DeploymentLog log = controller.deploymentLog(id, zone, run, last);
+            log = controller.deploymentLog(id, zone, run, last);
             for (DeploymentLog.Entry entry : log.entries())
                 print(entry);
             last = log.last().orElse(last);
@@ -60,6 +63,17 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
                 Thread.currentThread().interrupt();
                 break;
             }
+        }
+        switch (log.status()) {
+            case success:            return;
+            case error:              throw new MojoExecutionException("Unexpected error during deployment; see log for details");
+            case aborted:            throw new MojoFailureException("Deployment was aborted, probably by a newer deployment");
+            case outOfCapacity:      throw new MojoFailureException("No capacity left in zone; please contact the Vespa team");
+            case deploymentFailed:   throw new MojoFailureException("Deployment failed; see log for details");
+            case installationFailed: throw new MojoFailureException("Installation failed; see Vespa log for details");
+            case running:            throw new MojoFailureException("Deployment not completed");
+            case testFailure:        throw new IllegalStateException("Unexpected status; tests are not run for manual deployments");
+            default:                 throw new IllegalArgumentException("Unexpected status '" + log.status() + "'");
         }
     }
 

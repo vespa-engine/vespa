@@ -304,6 +304,7 @@ public abstract class ControllerHttpClient {
                 }));
         return new DeploymentLog(entries,
                                  rootObject.field("active").asBool(),
+                                 valueOf(rootObject.field("status").asString()),
                                  rootObject.field("lastId").valid() ? OptionalLong.of(rootObject.field("lastId").asLong())
                                                                     : OptionalLong.empty());
     }
@@ -365,6 +366,20 @@ public abstract class ControllerHttpClient {
                                                                .build()));
         }
 
+    }
+
+    private static DeploymentLog.Status valueOf(String status) {
+        switch (status) {
+            case "running":             return DeploymentLog.Status.running;
+            case "aborted":             return DeploymentLog.Status.aborted;
+            case "error":               return DeploymentLog.Status.error;
+            case "testFailure":         return DeploymentLog.Status.testFailure;
+            case "outOfCapacity":       return DeploymentLog.Status.outOfCapacity;
+            case "installationFailed":  return DeploymentLog.Status.installationFailed;
+            case "deploymentFailed":    return DeploymentLog.Status.deploymentFailed;
+            case "success":             return DeploymentLog.Status.success;
+            default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+        }
     }
 
 }

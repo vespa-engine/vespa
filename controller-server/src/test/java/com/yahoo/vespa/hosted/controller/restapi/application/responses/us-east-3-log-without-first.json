@@ -1,5 +1,6 @@
 {
   "active": false,
+  "status": "deploymentFailed",
   "log": {
     "deployTester": [
       {
