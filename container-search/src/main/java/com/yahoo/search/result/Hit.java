@@ -352,7 +352,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @param summaryClass summary class used for filling
      **/
     public void setFilled(String summaryClass) {
-        if (filled == null || filled.size() == 0) {
+        if (filled == null || filled.isEmpty()) {
             filled = Collections.singleton(summaryClass);
             unmodifiableFilled = filled;
         } else if (filled.size() == 1) {

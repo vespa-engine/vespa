@@ -2,7 +2,6 @@
 package com.yahoo.search.handler;
 
 import com.yahoo.container.handler.Timing;
-import com.yahoo.container.logging.Coverage;
 import com.yahoo.container.logging.HitCounts;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -49,7 +48,6 @@ public class SearchResponse {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     public static Timing createTiming(Query query, Result result) {
         return new Timing(result.getElapsedTime().firstFill(),
                           0,
