@@ -9,12 +9,14 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -107,8 +109,14 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return ZoneFilterMock.from(List.copyOf(zones));
     }
 
-    public AthenzService getConfigServerAthenzIdentity(ZoneId zone) {
+    @Override
+    public AthenzService getConfigServerHttpsIdentity(ZoneId zone) {
         return new AthenzService("vespadomain", "provider-" + zone.environment().value() + "-" + zone.region().value());
+    }
+
+    @Override
+    public AthenzIdentity getNodeAthenzIdentity(ZoneId zoneId, NodeType nodeType) {
+        return new AthenzService("vespadomain", "servicename");
     }
 
     @Override
