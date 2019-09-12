@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableSet;
@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Set;
 
@@ -146,6 +147,16 @@ public class VespaVersion implements Comparable<VespaVersion> {
         /** Returns true if this confidence is at least as high as the given confidence */
         public boolean equalOrHigherThan(Confidence other) {
             return this.compareTo(other) >= 0;
+        }
+
+        /** Returns true if this can be changed to target at given instant */
+        public boolean canChangeTo(Confidence target, Instant instant) {
+            if (this.equalOrHigherThan(normal)) return true; // Confidence can always change from >= normal
+            if (!target.equalOrHigherThan(normal)) return true; // Confidence can always change to < normal
+
+            var hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
+            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC
+            return hourOfDay >= 5 && hourOfDay <= 11;
         }
 
     }

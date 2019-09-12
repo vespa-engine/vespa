@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -16,10 +16,13 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -44,6 +47,13 @@ import static org.junit.Assert.assertTrue;
 public class UpgraderTest {
 
     private final DeploymentTester tester = new DeploymentTester();
+
+    @Before
+    public void before() {
+        // Set a time which always allows confidence to change
+        tester.controllerTester().clock().setInstant(LocalDateTime.of(1970, 1, 1, 5, 0)
+                                                                  .toInstant(ZoneOffset.UTC));
+    }
 
     @Test
     public void testUpgrading() {
