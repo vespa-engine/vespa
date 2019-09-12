@@ -10,41 +10,21 @@ import java.util.Collection;
  * Produces the same recall as Or, but differs in that the relevance of a match
  * does not increase if more than one children is matched: With Equiv, matching one child perfectly is a perfect match.
  * <p>
- * This can only have Word, Int or Phrase children.
+ * This can only have Word, WordAlternatives, Exact, Int or Phrase children.
  *
  * @author havardpe
  */
 public class EquivItem extends CompositeTaggableItem {
 
-    public ItemType getItemType() {
-        return ItemType.EQUIV;
-    }
-
-    public String getName() {
-        return "EQUIV";
-    }
-
-    @Override
-    protected void adding(Item item) {
-        super.adding(item);
-        Validator.ensure("Could not add an item of type " + item.getItemType() + 
-                         ": Equiv can only have word/int/phrase as children",
-                         item.getItemType() == ItemType.WORD ||
-                         item.getItemType() == ItemType.EXACT ||
-                         item.getItemType() == ItemType.INT ||
-                         item.getItemType() == ItemType.PHRASE);
-    }
-
-    /** make an EQUIV item with no children */
+    /** Makes an EQUIV item with no children */
     public EquivItem() {}
 
     /**
-     * create an EQUIV with the given item as child.
-     * The new EQUIV will take connectivity,
+     * Creates an EQUIV with the given item as child.  The new EQUIV will take connectivity,
      * significance and weight from the given item.
      *
-     * @param item Will be modified and added as a child.
-     **/
+     * @param item will be modified and added as a child
+     */
     public EquivItem(Item item) {
         addItem(item);
 
@@ -73,14 +53,12 @@ public class EquivItem extends CompositeTaggableItem {
     }
 
     /**
-     * create an EQUIV with the given item and a set
-     * of alternate words as children.
-     * The new EQUIV will take connectivity,
-     * significance and weight from the given item.
+     * Creates an EQUIV with the given item and a set of alternate words as children.
+     * The new EQUIV will take connectivity, significance and weight from the given item.
      *
-     * @param item Will be modified and added as a child.
-     * @param words Set of words to create WordItems from.
-     **/
+     * @param item will be modified and added as a child
+     * @param words set of words to create WordItems from
+     */
     public EquivItem(Item item, Collection<String> words) {
         this(item);
         String idx = ((IndexedItem)item).getIndexName();
@@ -89,4 +67,27 @@ public class EquivItem extends CompositeTaggableItem {
             addItem(witem);
         }
     }
+
+    @Override
+    public ItemType getItemType() {
+        return ItemType.EQUIV;
+    }
+
+    @Override
+    public String getName() {
+        return "EQUIV";
+    }
+
+    @Override
+    protected void adding(Item item) {
+        super.adding(item);
+        Validator.ensure("Could not add an item of type " + item.getItemType() +
+                         ": Equiv can only have word, wordAlternatives, int, exact, or phrase as children",
+                         item.getItemType() == ItemType.WORD ||
+                         item.getItemType() == ItemType.WORD_ALTERNATIVES ||
+                         item.getItemType() == ItemType.INT ||
+                         item.getItemType() == ItemType.EXACT ||
+                         item.getItemType() == ItemType.PHRASE);
+    }
+
 }
