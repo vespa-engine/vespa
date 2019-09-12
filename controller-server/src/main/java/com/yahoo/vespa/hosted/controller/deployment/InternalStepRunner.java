@@ -43,10 +43,14 @@ import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -287,8 +291,10 @@ public class InternalStepRunner implements StepRunner {
         if (   nodesConverged(id.application(), id.type(), platform, logger)
             && servicesConverged(id.application(), id.type(), platform, logger)) {
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
-                logger.log("Installation succeeded!");
-                return Optional.of(running);
+                if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
+                    logger.log("Installation succeeded!");
+                    return Optional.of(running);
+                }
             }
             else if (timedOut(deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
@@ -333,6 +339,21 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Installation of tester not yet complete.");
         return Optional.empty();
+    }
+
+    /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
+    private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zoneId));
+        if ( ! endpoints.containsKey(zoneId))
+            return false;
+
+        for (URI endpoint : endpoints.get(zoneId).values())
+            if ( ! controller.jobController().cloud().ready(endpoint)) {
+                logger.log("Failed to get 100 consecutive OKs from " + endpoint);
+                return false;
+            }
+
+        return true;
     }
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
