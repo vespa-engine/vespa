@@ -3,12 +3,24 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.log.LogLevel;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
-/** Immutable, simple log entries. */
+/**
+ * Immutable, simple log entries.
+ *
+ * @author jonmv
+ */
 public class LogEntry {
 
     private final long id;
@@ -42,6 +54,25 @@ public class LogEntry {
         return message;
     }
 
+    public static List<LogEntry> parseVespaLog(InputStream log) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(log, UTF_8))) {
+            return reader.lines()
+                         .map(line -> line.split("\t"))
+                         .filter(parts -> parts.length == 7)
+                         .map(parts -> new LogEntry(0,
+                                                    (long) (Double.parseDouble(parts[0]) * 1000),
+                                                    typeOf(LogLevel.parse(parts[5])),
+                                                    parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
+                                                    parts[6].replaceAll("\\\\n", "\n")
+                                                            .replaceAll("\\\\t", "\t")))
+                         .collect(Collectors.toUnmodifiableList());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+
     @Override
     public String toString() {
         return "LogEntry{" +
@@ -74,6 +105,7 @@ public class LogEntry {
                 : level.intValue() < LogLevel.ERROR.intValue() ? Type.warning
                 : Type.error;
     }
+
 
     /** The type of entry, used for rendering. */
     public enum Type {

@@ -42,6 +42,13 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
+    /**
+     * Gets the Vespa logs of the given deployment.
+     *
+     * If the "from" and/or "to" query parameters are present, they are read as millis since EPOCH, and used
+     * to limit the time window for which log entries are gathered.
+     * If the "hostname" query parameter is present, it limits the entries to be from that host.
+     */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);
 
     List<ClusterMetrics> getMetrics(DeploymentId deployment);

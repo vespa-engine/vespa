@@ -14,7 +14,6 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
-import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
@@ -503,25 +502,10 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
-        ZoneId zone = id.type().zone(controller.system());
         if (deployment(id.application(), id.type()).isPresent())
             try {
-                logger.log("Copying Vespa log from nodes of " + id.application() + " in " + zone + " ...");
-                List<LogEntry> entries = new ArrayList<>();
-                String logs = IOUtils.readAll(controller.serviceRegistry().configServer().getLogs(new DeploymentId(id.application(), zone),
-                                                                                     Collections.emptyMap()), // Get all logs.
-                                              UTF_8);
-                for (String line : logs.split("\n")) {
-                    String[] parts = line.split("\t");
-                    if (parts.length != 7) continue;
-                    entries.add(new LogEntry(0,
-                                             (long) (Double.parseDouble(parts[0]) * 1000),
-                                             LogEntry.typeOf(LogLevel.parse(parts[5])),
-                                             parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
-                                             parts[6].replaceAll("\\\\n", "\n")
-                                                     .replaceAll("\\\\t", "\t")));
-                }
-                controller.jobController().log(id, Step.copyVespaLogs, entries);
+                logger.log("Copying Vespa log from nodes of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+                controller.jobController().updateVespaLog(id);
             }
             catch (Exception e) {
                 logger.log(INFO, "Failure getting vespa logs for " + id, e);
