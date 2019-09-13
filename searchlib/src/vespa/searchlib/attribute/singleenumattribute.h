@@ -80,7 +80,7 @@ protected:
     void updateEnumRefCounts(const Change& c, EnumIndex newIdx, EnumIndex oldIdx, EnumStoreBatchUpdater& updater);
 
     virtual void freezeEnumDictionary() {
-        this->getEnumStore().freezeTree();
+        this->getEnumStore().freeze_dictionary();
     }
 
     virtual void mergeMemoryStats(vespalib::MemoryUsage & total) { (void) total; }

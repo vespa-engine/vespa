@@ -23,33 +23,9 @@ namespace search {
 using btree::BTreeNode;
 
 template <typename DictionaryT>
-EnumStoreDictionary<DictionaryT>::EnumStoreDictionary(IEnumStore& enumStore)
-    : ParentUniqueStoreDictionary(),
-      _enumStore(enumStore)
-{
-}
-
-template <typename DictionaryT>
-EnumStoreDictionary<DictionaryT>::~EnumStoreDictionary() = default;
-
-template <typename DictionaryT>
-uint32_t
-EnumStoreDictionary<DictionaryT>::getNumUniques() const
-{
-    return this->_dict.size();
-}
-
-template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::fixupRefCounts(const EnumVector& hist)
-{
-    _enumStore.fixupRefCounts(hist, this->_dict);
-}
-
-template <typename DictionaryT>
-void
-EnumStoreDictionary<DictionaryT>::removeUnusedEnums(const IndexSet& unused,
-                                                    const datastore::EntryComparator& cmp)
+EnumStoreDictionary<DictionaryT>::remove_unused_values(const IndexSet& unused,
+                                                       const datastore::EntryComparator& cmp)
 {
     if (unused.empty()) {
         return;
@@ -60,34 +36,51 @@ EnumStoreDictionary<DictionaryT>::removeUnusedEnums(const IndexSet& unused,
 }
 
 template <typename DictionaryT>
+EnumStoreDictionary<DictionaryT>::EnumStoreDictionary(IEnumStore& enumStore)
+    : ParentUniqueStoreDictionary(),
+      _enumStore(enumStore)
+{
+}
+
+template <typename DictionaryT>
+EnumStoreDictionary<DictionaryT>::~EnumStoreDictionary() = default;
+
+template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const datastore::EntryComparator& cmp)
+EnumStoreDictionary<DictionaryT>::set_ref_counts(const EnumVector& hist)
+{
+    _enumStore.set_ref_counts(hist, this->_dict);
+}
+
+template <typename DictionaryT>
+void
+EnumStoreDictionary<DictionaryT>::free_unused_values(const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
 
     // find unused enums
     for (auto iter = this->_dict.begin(); iter.valid(); ++iter) {
-        _enumStore.freeUnusedEnum(iter.getKey(), unused);
+        _enumStore.free_value_if_unused(iter.getKey(), unused);
     }
-    removeUnusedEnums(unused, cmp);
+    remove_unused_values(unused, cmp);
 }
 
 template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const IndexSet& toRemove,
-                                                  const datastore::EntryComparator& cmp)
+EnumStoreDictionary<DictionaryT>::free_unused_values(const IndexSet& to_remove,
+                                                     const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
-    for (const auto& index : toRemove) {
-        _enumStore.freeUnusedEnum(index, unused);
+    for (const auto& index : to_remove) {
+        _enumStore.free_value_if_unused(index, unused);
     }
-    removeUnusedEnums(unused, cmp);
+    remove_unused_values(unused, cmp);
 }
 
 template <typename DictionaryT>
 bool
-EnumStoreDictionary<DictionaryT>::findIndex(const datastore::EntryComparator& cmp,
-                                            Index& idx) const
+EnumStoreDictionary<DictionaryT>::find_index(const datastore::EntryComparator& cmp,
+                                             Index& idx) const
 {
     auto itr = this->_dict.find(Index(), cmp);
     if (!itr.valid()) {
@@ -99,8 +92,8 @@ EnumStoreDictionary<DictionaryT>::findIndex(const datastore::EntryComparator& cm
 
 template <typename DictionaryT>
 bool
-EnumStoreDictionary<DictionaryT>::findFrozenIndex(const datastore::EntryComparator& cmp,
-                                                  Index& idx) const
+EnumStoreDictionary<DictionaryT>::find_frozen_index(const datastore::EntryComparator& cmp,
+                                                    Index& idx) const
 {
     auto itr = this->_dict.getFrozenView().find(Index(), cmp);
     if (!itr.valid()) {
@@ -112,7 +105,7 @@ EnumStoreDictionary<DictionaryT>::findFrozenIndex(const datastore::EntryComparat
 
 template <typename DictionaryT>
 std::vector<IEnumStore::EnumHandle>
-EnumStoreDictionary<DictionaryT>::findMatchingEnums(const datastore::EntryComparator& cmp) const
+EnumStoreDictionary<DictionaryT>::find_matching_enums(const datastore::EntryComparator& cmp) const
 {
     std::vector<IEnumStore::EnumHandle> result;
     auto itr = this->_dict.getFrozenView().find(Index(), cmp);
@@ -123,46 +116,32 @@ EnumStoreDictionary<DictionaryT>::findMatchingEnums(const datastore::EntryCompar
     return result;
 }
 
-template <typename DictionaryT>
-void
-EnumStoreDictionary<DictionaryT>::onReset()
-{
-    this->_dict.clear();
-}
-
 template <>
 EnumPostingTree &
-EnumStoreDictionary<EnumTree>::getPostingDictionary()
+EnumStoreDictionary<EnumTree>::get_posting_dictionary()
 {
     LOG_ABORT("should not be reached");
 }
 
 template <>
 EnumPostingTree &
-EnumStoreDictionary<EnumPostingTree>::getPostingDictionary()
+EnumStoreDictionary<EnumPostingTree>::get_posting_dictionary()
 {
     return _dict;
 }
 
 template <>
 const EnumPostingTree &
-EnumStoreDictionary<EnumTree>::getPostingDictionary() const
+EnumStoreDictionary<EnumTree>::get_posting_dictionary() const
 {
     LOG_ABORT("should not be reached");
 }
 
 template <>
 const EnumPostingTree &
-EnumStoreDictionary<EnumPostingTree>::getPostingDictionary() const
+EnumStoreDictionary<EnumPostingTree>::get_posting_dictionary() const
 {
     return _dict;
-}
-
-template <typename DictionaryT>
-bool
-EnumStoreDictionary<DictionaryT>::hasData() const
-{
-    return DictionaryT::LeafNodeType::hasData();
 }
 
 EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> folded_compare)
@@ -174,7 +153,7 @@ EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std:
 EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
 
 UniqueStoreAddResult
-EnumStoreFoldedDictionary::add(const EntryComparator &comp, std::function<EntryRef(void)> insertEntry)
+EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry)
 {
     auto it = _dict.lowerBound(EntryRef(), comp);
     if (it.valid() && !comp(EntryRef(), it.getKey())) {
@@ -197,7 +176,7 @@ EnumStoreFoldedDictionary::add(const EntryComparator &comp, std::function<EntryR
 }
 
 void
-EnumStoreFoldedDictionary::remove(const EntryComparator &comp, EntryRef ref)
+EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
 {
     assert(ref.valid());
     auto it = _dict.lowerBound(ref, comp);

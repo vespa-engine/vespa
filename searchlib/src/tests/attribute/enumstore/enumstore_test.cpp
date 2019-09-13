@@ -53,7 +53,7 @@ checkReaders(const StringEnumStore& ses,
     for (uint32_t i = 0; i < readers.size(); ++i) {
         const Reader& r = readers[i];
         for (uint32_t j = 0; j < r._indices.size(); ++j) {
-            EXPECT_TRUE(ses.getValue(r._indices[j], t));
+            EXPECT_TRUE(ses.get_value(r._indices[j], t));
             EXPECT_TRUE(r._expected[j]._string == std::string(t));
         }
     }
@@ -90,17 +90,17 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
     }
 
     for (uint32_t i = 0; i < 5; ++i) {
-        EXPECT_TRUE(this->es.findIndex(a[i], idx));
-        EXPECT_TRUE(!this->es.findIndex(b[i], idx));
+        EXPECT_TRUE(this->es.find_index(a[i], idx));
+        EXPECT_TRUE(!this->es.find_index(b[i], idx));
     }
 
     this->es.insert(std::numeric_limits<EntryType>::quiet_NaN());
-    EXPECT_TRUE(this->es.findIndex(std::numeric_limits<EntryType>::quiet_NaN(), idx));
-    EXPECT_TRUE(this->es.findIndex(std::numeric_limits<EntryType>::quiet_NaN(), idx));
+    EXPECT_TRUE(this->es.find_index(std::numeric_limits<EntryType>::quiet_NaN(), idx));
+    EXPECT_TRUE(this->es.find_index(std::numeric_limits<EntryType>::quiet_NaN(), idx));
 
     for (uint32_t i = 0; i < 5; ++i) {
-        EXPECT_TRUE(this->es.findIndex(a[i], idx));
-        EXPECT_TRUE(!this->es.findIndex(b[i], idx));
+        EXPECT_TRUE(this->es.find_index(a[i], idx));
+        EXPECT_TRUE(!this->es.find_index(b[i], idx));
     }
 }
 
@@ -114,39 +114,39 @@ TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
     for (std::string &str : unique) {
         EnumIndex idx = ses.insert(str.c_str());
         indices.push_back(idx);
-        EXPECT_EQ(1u, ses.getRefCount(idx));
+        EXPECT_EQ(1u, ses.get_ref_count(idx));
     }
-    ses.freezeTree();
+    ses.freeze_dictionary();
     for (uint32_t i = 0; i < indices.size(); ++i) {
         EnumIndex idx;
-        EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
+        EXPECT_TRUE(ses.find_index(unique[i].c_str(), idx));
     }
-    EXPECT_EQ(1u, ses.findFoldedEnums("").size());
-    EXPECT_EQ(0u, ses.findFoldedEnums("foo").size());
-    EXPECT_EQ(1u, ses.findFoldedEnums("one").size());
-    EXPECT_EQ(3u, ses.findFoldedEnums("two").size());
-    EXPECT_EQ(3u, ses.findFoldedEnums("TWO").size());
-    EXPECT_EQ(3u, ses.findFoldedEnums("tWo").size());
-    const auto v = ses.findFoldedEnums("Two");
-    EXPECT_EQ(std::string("TWO"), ses.getValue(v[0]));
-    EXPECT_EQ(std::string("Two"), ses.getValue(v[1]));
-    EXPECT_EQ(std::string("two"), ses.getValue(v[2]));
-    EXPECT_EQ(1u, ses.findFoldedEnums("three").size());
+    EXPECT_EQ(1u, ses.find_folded_enums("").size());
+    EXPECT_EQ(0u, ses.find_folded_enums("foo").size());
+    EXPECT_EQ(1u, ses.find_folded_enums("one").size());
+    EXPECT_EQ(3u, ses.find_folded_enums("two").size());
+    EXPECT_EQ(3u, ses.find_folded_enums("TWO").size());
+    EXPECT_EQ(3u, ses.find_folded_enums("tWo").size());
+    const auto v = ses.find_folded_enums("Two");
+    EXPECT_EQ(std::string("TWO"), ses.get_value(v[0]));
+    EXPECT_EQ(std::string("Two"), ses.get_value(v[1]));
+    EXPECT_EQ(std::string("two"), ses.get_value(v[2]));
+    EXPECT_EQ(1u, ses.find_folded_enums("three").size());
 }
 
 template <typename DictionaryT>
 void
 testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 {
-    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<DictionaryT>*>(&ses.getEnumStoreDict());
+    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<DictionaryT>*>(&ses.get_dictionary());
     assert(enumDict != nullptr);
-    const DictionaryT& dict = enumDict->getDictionary();
+    const DictionaryT& dict = enumDict->get_raw_dictionary();
     uint32_t i = 0;
     EnumIndex idx;
     for (typename DictionaryT::Iterator iter = dict.begin();
          iter.valid(); ++iter, ++i) {
         idx = iter.getKey();
-        EXPECT_TRUE(strcmp(unique[i].c_str(), ses.getValue(idx)) == 0);
+        EXPECT_TRUE(strcmp(unique[i].c_str(), ses.get_value(idx)) == 0);
     }
     EXPECT_EQ(static_cast<uint32_t>(unique.size()), i);
 }
@@ -170,23 +170,23 @@ StringEnumStoreTest::testInsert(bool hasPostings)
 
     for (uint32_t i = 0; i < unique.size(); ++i) {
         EnumIndex idx = ses.insert(unique[i].c_str());
-        EXPECT_EQ(1u, ses.getRefCount(idx));
+        EXPECT_EQ(1u, ses.get_ref_count(idx));
         indices.push_back(idx);
-        EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
+        EXPECT_TRUE(ses.find_index(unique[i].c_str(), idx));
     }
-    ses.freezeTree();
+    ses.freeze_dictionary();
 
     for (uint32_t i = 0; i < indices.size(); ++i) {
         uint32_t e = 0;
-        EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
-        EXPECT_EQ(1u, ses.findFoldedEnums(unique[i].c_str()).size());
-        EXPECT_EQ(e, ses.findFoldedEnums(unique[i].c_str())[0]);
+        EXPECT_TRUE(ses.find_enum(unique[i].c_str(), e));
+        EXPECT_EQ(1u, ses.find_folded_enums(unique[i].c_str()).size());
+        EXPECT_EQ(e, ses.find_folded_enums(unique[i].c_str())[0]);
         EnumIndex idx;
-        EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
+        EXPECT_TRUE(ses.find_index(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
-        EXPECT_EQ(1u, ses.getRefCount(indices[i]));
+        EXPECT_EQ(1u, ses.get_ref_count(indices[i]));
         const char* value = nullptr;
-        EXPECT_TRUE(ses.getValue(indices[i], value));
+        EXPECT_TRUE(ses.get_value(indices[i], value));
         EXPECT_TRUE(strcmp(unique[i].c_str(), value) == 0);
     }
 
@@ -231,17 +231,17 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     // insert first batch of unique strings
     for (uint32_t i = 0; i < 100; ++i) {
         EnumIndex idx = ses.insert(uniques[i].c_str());
-        EXPECT_TRUE(ses.getRefCount(idx));
+        EXPECT_TRUE(ses.get_ref_count(idx));
 
         // associate readers
         if (i % 10 == 9) {
             Reader::IndexVector indices;
             Reader::ExpectedVector expected;
             for (uint32_t j = i - 9; j <= i; ++j) {
-                EXPECT_TRUE(ses.findIndex(uniques[j].c_str(), idx));
+                EXPECT_TRUE(ses.find_index(uniques[j].c_str(), idx));
                 indices.push_back(idx);
-                uint32_t ref_count = ses.getRefCount(idx);
-                std::string value(ses.getValue(idx));
+                uint32_t ref_count = ses.get_ref_count(idx);
+                std::string value(ses.get_value(idx));
                 EXPECT_EQ(1u, ref_count);
                 EXPECT_EQ(uniques[j], value);
                 expected.emplace_back(ref_count, value);
@@ -258,17 +258,17 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
     auto updater = ses.make_batch_updater();
     for (uint32_t i = 0; i < 100; ++i) {
         EnumIndex idx;
-        EXPECT_TRUE(ses.findIndex(uniques[i].c_str(), idx));
+        EXPECT_TRUE(ses.find_index(uniques[i].c_str(), idx));
         updater.dec_ref_count(idx);
-        EXPECT_EQ(0u, ses.getRefCount(idx));
+        EXPECT_EQ(0u, ses.get_ref_count(idx));
     }
     updater.commit();
 
     // check readers again
     checkReaders(ses, readers);
 
-    ses.transferHoldLists(sesGen);
-    ses.trimHoldLists(sesGen + 1);
+    ses.transfer_hold_lists(sesGen);
+    ses.trim_hold_lists(sesGen + 1);
 }
 
 void
@@ -279,8 +279,8 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
     updater.commit();
 
     generation_t gen = 5;
-    store.transferHoldLists(gen);
-    store.trimHoldLists(gen + 1);
+    store.transfer_hold_lists(gen);
+    store.trim_hold_lists(gen + 1);
 }
 
 TEST(EnumStoreTest, address_space_usage_is_reported)
@@ -289,16 +289,16 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     NumericEnumStore store(false);
 
     using vespalib::AddressSpace;
-    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_address_space_usage());
     EnumIndex idx1 = store.insert(10);
-    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_address_space_usage());
     EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
-    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_address_space_usage());
     dec_ref_count(store, idx1);
-    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_address_space_usage());
     dec_ref_count(store, idx2);
-    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.getAddressSpaceUsage());
+    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_address_space_usage());
 }
 
 class BatchUpdaterTest : public ::testing::Test {
@@ -325,16 +325,16 @@ public:
 
     void expect_value_in_store(int32_t exp_value, uint32_t exp_ref_count, EnumIndex idx) {
         EnumIndex tmp_idx;
-        EXPECT_TRUE(store.findIndex(exp_value, tmp_idx));
+        EXPECT_TRUE(store.find_index(exp_value, tmp_idx));
         EXPECT_EQ(idx, tmp_idx);
-        EXPECT_EQ(exp_value, store.getValue(idx));
-        EXPECT_EQ(exp_ref_count, store.getRefCount(idx));
+        EXPECT_EQ(exp_value, store.get_value(idx));
+        EXPECT_EQ(exp_ref_count, store.get_ref_count(idx));
     }
 
     void expect_value_not_in_store(int32_t value, EnumIndex idx) {
         EnumIndex temp_idx;
-        EXPECT_FALSE(store.findIndex(value, idx));
-        EXPECT_EQ(0, store.getRefCount(idx));
+        EXPECT_FALSE(store.find_index(value, idx));
+        EXPECT_EQ(0, store.get_ref_count(idx));
     }
 };
 
@@ -395,7 +395,7 @@ public:
 
     EnumIndex find_index(size_t values_idx) const {
         EnumIndex result;
-        EXPECT_TRUE(store.findIndex(values[values_idx], result));
+        EXPECT_TRUE(store.find_index(values[values_idx], result));
         return result;
     }
 
@@ -406,12 +406,12 @@ public:
 
     void expect_value_in_store(size_t values_idx, uint32_t exp_ref_count) const {
         EnumIndex idx = find_index(values_idx);
-        EXPECT_EQ(exp_ref_count, store.getRefCount(idx));
+        EXPECT_EQ(exp_ref_count, store.get_ref_count(idx));
     }
 
     void expect_value_not_in_store(size_t values_idx) const {
         EnumIndex idx;
-        EXPECT_FALSE(store.findIndex(values[values_idx], idx));
+        EXPECT_FALSE(store.find_index(values[values_idx], idx));
     }
 
     void expect_values_in_store() {
@@ -423,7 +423,7 @@ public:
 
     void expect_posting_idx(size_t values_idx, uint32_t exp_posting_idx) const {
         auto cmp = store.make_comparator();
-        auto itr = store.getPostingDictionary().find(find_index(values_idx), cmp);
+        auto itr = store.get_posting_dictionary().find(find_index(values_idx), cmp);
         ASSERT_TRUE(itr.valid());
         EXPECT_EQ(exp_posting_idx, itr.getData());
     }
@@ -477,7 +477,7 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
     this->set_ref_count(0, 1, loader);
     this->set_ref_count(1, 2, loader);
     this->set_ref_count(3, 4, loader);
-    loader.free_unused_enums();
+    loader.free_unused_values();
 
     this->expect_values_in_store();
 }

@@ -24,36 +24,30 @@ private:
 
     IEnumStore& _enumStore;
 
+    void remove_unused_values(const IndexSet& unused,
+                              const datastore::EntryComparator& cmp);
+
 public:
     EnumStoreDictionary(IEnumStore& enumStore);
 
     ~EnumStoreDictionary() override;
 
-    const DictionaryT &getDictionary() const { return this->_dict; }
-    DictionaryT &getDictionary() { return this->_dict; }
+    const DictionaryT& get_raw_dictionary() const { return this->_dict; }
 
-    uint32_t getNumUniques() const override;
-    void fixupRefCounts(const EnumVector& hist) override;
+    void set_ref_counts(const EnumVector& hist) override;
 
-    void removeUnusedEnums(const IndexSet& unused,
-                           const datastore::EntryComparator& cmp);
+    void free_unused_values(const datastore::EntryComparator& cmp) override;
 
-    void freeUnusedEnums(const datastore::EntryComparator& cmp) override;
+    void free_unused_values(const IndexSet& to_remove,
+                            const datastore::EntryComparator& cmp) override;
 
-    void freeUnusedEnums(const IndexSet& toRemove,
-                         const datastore::EntryComparator& cmp) override;
-
-    bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const override;
-    bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const override;
+    bool find_index(const datastore::EntryComparator& cmp, Index& idx) const override;
+    bool find_frozen_index(const datastore::EntryComparator& cmp, Index& idx) const override;
     std::vector<attribute::IAttributeVector::EnumHandle>
-    findMatchingEnums(const datastore::EntryComparator& cmp) const override;
+    find_matching_enums(const datastore::EntryComparator& cmp) const override;
 
-    void onReset() override;
-
-    EnumPostingTree & getPostingDictionary() override;
-    const EnumPostingTree & getPostingDictionary() const override;
-
-    bool hasData() const override;
+    EnumPostingTree& get_posting_dictionary() override;
+    const EnumPostingTree& get_posting_dictionary() const override;
 };
 
 /**

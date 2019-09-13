@@ -31,7 +31,7 @@ template <typename B>
 void
 SingleValueStringAttributeT<B>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 
@@ -46,7 +46,7 @@ SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
 template <typename B>
 SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchContext(QueryTermSimple::UP qTerm, const AttrType & toBeSearched) :
     StringSingleImplSearchContext(std::move(qTerm), toBeSearched),
-    EnumHintSearchContext(toBeSearched.getEnumStore().getEnumStoreDict(),
+    EnumHintSearchContext(toBeSearched.getEnumStore().get_dictionary(),
                           toBeSearched.getCommittedDocIdLimit(),
                           toBeSearched.getStatus().getNumValues())
 {

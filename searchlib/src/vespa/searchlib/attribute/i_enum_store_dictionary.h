@@ -37,22 +37,17 @@ public:
 public:
     virtual ~IEnumStoreDictionary() = default;
 
-    virtual uint32_t getNumUniques() const = 0;
-
-    virtual void fixupRefCounts(const EnumVector& hist) = 0;
-    virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;
-    virtual void freeUnusedEnums(const IndexSet& toRemove,
-                                 const datastore::EntryComparator& cmp) = 0;
-    virtual bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
-    virtual bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
+    virtual void set_ref_counts(const EnumVector& hist) = 0;
+    virtual void free_unused_values(const datastore::EntryComparator& cmp) = 0;
+    virtual void free_unused_values(const IndexSet& to_remove,
+                                    const datastore::EntryComparator& cmp) = 0;
+    virtual bool find_index(const datastore::EntryComparator& cmp, Index& idx) const = 0;
+    virtual bool find_frozen_index(const datastore::EntryComparator& cmp, Index& idx) const = 0;
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
-    findMatchingEnums(const datastore::EntryComparator& cmp) const = 0;
+    find_matching_enums(const datastore::EntryComparator& cmp) const = 0;
 
-    virtual void onReset() = 0;
-
-    virtual EnumPostingTree& getPostingDictionary() = 0;
-    virtual const EnumPostingTree& getPostingDictionary() const = 0;
-    virtual bool hasData() const = 0;
+    virtual EnumPostingTree& get_posting_dictionary() = 0;
+    virtual const EnumPostingTree& get_posting_dictionary() const = 0;
 };
 
 }

@@ -71,7 +71,7 @@ protected:
     virtual void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater);
 
     virtual void freezeEnumDictionary() {
-        this->getEnumStore().freezeTree();
+        this->getEnumStore().freeze_dictionary();
     }
 
     void fillValues(LoadedVector & loaded) override;

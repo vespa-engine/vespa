@@ -58,7 +58,7 @@ private:
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
 
-    void freeUnusedEnum(Index idx, IndexSet& unused) override;
+    void free_value_if_unused(Index idx, IndexSet &unused) override;
 
     const datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
@@ -75,41 +75,37 @@ public:
     EnumStoreT(bool has_postings);
     virtual ~EnumStoreT();
 
-    uint32_t getRefCount(Index idx) const { return get_entry_base(idx).get_ref_count(); }
-    void incRefCount(Index idx) { return get_entry_base(idx).inc_ref_count(); }
+    uint32_t get_ref_count(Index idx) const { return get_entry_base(idx).get_ref_count(); }
+    void inc_ref_count(Index idx) { return get_entry_base(idx).inc_ref_count(); }
 
     // Only use when reading from enumerated attribute save files
-    // TODO: Instead create an API that is used for loading/initializing.
-    void fixupRefCount(Index idx, uint32_t refCount) override {
-        get_entry_base(idx).set_ref_count(refCount);
+    void set_ref_count(Index idx, uint32_t ref_count) override {
+        get_entry_base(idx).set_ref_count(ref_count);
     }
 
-    uint32_t getNumUniques() const override { return _dict->getNumUniques(); }
+    uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
 
-    vespalib::MemoryUsage getValuesMemoryUsage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
-    vespalib::MemoryUsage getDictionaryMemoryUsage() const override { return _dict->get_memory_usage(); }
+    vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
+    vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
-    vespalib::AddressSpace getAddressSpaceUsage() const;
+    vespalib::AddressSpace get_address_space_usage() const;
 
-    void transferHoldLists(generation_t generation);
-    void trimHoldLists(generation_t firstUsed);
+    void transfer_hold_lists(generation_t generation);
+    void trim_hold_lists(generation_t first_used);
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 
-    void fixupRefCounts(const EnumVector &hist) override { _dict->fixupRefCounts(hist); }
-    void freezeTree() { _store.freeze(); }
+    void set_ref_counts(const EnumVector& hist) override { _dict->set_ref_counts(hist); }
+    void freeze_dictionary() { _store.freeze(); }
 
-    IEnumStoreDictionary &getEnumStoreDict() override { return *_dict; }
-    const IEnumStoreDictionary &getEnumStoreDict() const override { return *_dict; }
-    EnumPostingTree &getPostingDictionary() { return _dict->getPostingDictionary(); }
+    IEnumStoreDictionary& get_dictionary() override { return *_dict; }
+    const IEnumStoreDictionary& get_dictionary() const override { return *_dict; }
+    EnumPostingTree& get_posting_dictionary() { return _dict->get_posting_dictionary(); }
+    const EnumPostingTree& get_posting_dictionary() const { return _dict->get_posting_dictionary(); }
 
-    const EnumPostingTree &getPostingDictionary() const {
-        return _dict->getPostingDictionary();
-    }
-
-    bool getValue(Index idx, EntryType& value) const;
-    EntryType getValue(uint32_t idx) const { return getValue(Index(EntryRef(idx))); }
-    EntryType getValue(Index idx) const { return _store.get(idx); }
+    bool get_value(Index idx, EntryType& value) const;
+    EntryType get_value(uint32_t idx) const { return get_value(Index(EntryRef(idx))); }
+    EntryType get_value(Index idx) const { return _store.get(idx); }
 
     /**
      * Helper class used to load an enum store from non-enumerated save files.
@@ -171,7 +167,7 @@ public:
             }
         }
         void commit() {
-            _store.freeUnusedEnums(_possibly_unused);
+            _store.free_unused_values(_possibly_unused);
         }
     };
 
@@ -196,13 +192,13 @@ public:
     }
 
     void write_value(BufferWriter& writer, Index idx) const override;
-    bool foldedChange(const Index &idx1, const Index &idx2) const override;
-    bool findEnum(EntryType value, IEnumStore::EnumHandle &e) const;
-    std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
+    bool is_folded_change(Index idx1, Index idx2) const override;
+    bool find_enum(EntryType value, IEnumStore::EnumHandle& e) const;
+    std::vector<IEnumStore::EnumHandle> find_folded_enums(EntryType value) const;
     Index insert(EntryType value);
-    bool findIndex(EntryType value, Index &idx) const;
-    void freeUnusedEnums() override;
-    void freeUnusedEnums(const IndexSet& toRemove);
+    bool find_index(EntryType value, Index& idx) const;
+    void free_unused_values() override;
+    void free_unused_values(const IndexSet& to_remove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;

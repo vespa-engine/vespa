@@ -48,13 +48,13 @@ public:
     //-------------------------------------------------------------------------
     bool isUndefined(DocId doc) const override { return get(doc)[0] == '\0'; }
     const char * get(DocId doc) const override {
-        return this->_enumStore.getValue(this->_enumIndices[doc]);
+        return this->_enumStore.get_value(this->_enumIndices[doc]);
     }
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
-        return this->_enumStore.findFoldedEnums(value);
+        return this->_enumStore.find_folded_enums(value);
     }
     const char * getStringFromEnum(EnumHandle e) const override {
-        return this->_enumStore.getValue(e);
+        return this->_enumStore.get_value(e);
     }
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override {
         if (sz > 0) {
@@ -98,7 +98,7 @@ public:
         int32_t onFind(DocId doc, int32_t elemId) const override {
             if ( elemId != 0) return -1;
             const SingleValueStringAttributeT<B> & attr(static_cast<const SingleValueStringAttributeT<B> &>(attribute()));
-            return isMatch(attr._enumStore.getValue(attr._enumIndices[doc])) ? 0 : -1;
+            return isMatch(attr._enumStore.get_value(attr._enumIndices[doc])) ? 0 : -1;
         }
 
     };

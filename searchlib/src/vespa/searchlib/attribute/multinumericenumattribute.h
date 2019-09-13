@@ -67,7 +67,7 @@ protected:
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
             for (uint32_t i(elemId); i < indices.size(); i++) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+                T v = _toBeSearched._enumStore.get_value(indices[i].value());
                 if (this->match(v)) {
                     weight = indices[i].weight();
                     return i;
@@ -81,7 +81,7 @@ protected:
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
             for (uint32_t i(elemId); i < indices.size(); i++) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+                T v = _toBeSearched._enumStore.get_value(indices[i].value());
                 if (this->match(v)) {
                     return i;
                 }
@@ -121,7 +121,7 @@ protected:
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
             for (uint32_t i(elemId); i < indices.size(); i++) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+                T v = _toBeSearched._enumStore.get_value(indices[i].value());
                 if (this->match(v)) {
                     weight = 1;
                     return i;
@@ -137,7 +137,7 @@ protected:
         {
             WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
             for (uint32_t i(elemId); i < indices.size(); i++) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+                T v = _toBeSearched._enumStore.get_value(indices[i].value());
                 if (this->match(v)) {
                     return i;
                 }
@@ -169,7 +169,7 @@ public:
         if (indices.size() == 0) {
             return T();
         } else {
-            return this->_enumStore.getValue(indices[0].value());
+            return this->_enumStore.get_value(indices[0].value());
         }
     }
     largeint_t getInt(DocId doc) const override {
@@ -184,7 +184,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(this->_enumStore.getValue(indices[i].value()));
+            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(indices[i].value()));
         }
         return valueCount;
     }
@@ -203,7 +203,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.getValue(indices[i].value())), indices[i].weight());
+            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(indices[i].value())), indices[i].weight());
         }
         return valueCount;
     }

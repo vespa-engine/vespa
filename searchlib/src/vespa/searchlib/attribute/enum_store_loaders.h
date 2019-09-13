@@ -58,9 +58,9 @@ public:
     void sort_loaded_enums() {
         attribute::sortLoadedByEnum(_loaded_enums);
     }
-    bool is_folded_change(const Index& lhs, const Index& rhs) const;
+    bool is_folded_change(Index lhs, Index rhs) const;
     void set_ref_count(Index idx, uint32_t ref_count);
-    void free_unused_enums();
+    void free_unused_values();
 };
 
 }

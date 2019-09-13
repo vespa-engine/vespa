@@ -28,7 +28,7 @@ EnumeratedLoader::EnumeratedLoader(IEnumStore& store)
 void
 EnumeratedLoader::set_ref_counts()
 {
-    _store.fixupRefCounts(_enums_histogram);
+    _store.set_ref_counts(_enums_histogram);
 }
 
 EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
@@ -38,21 +38,21 @@ EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
 }
 
 bool
-EnumeratedPostingsLoader::is_folded_change(const Index& lhs, const Index& rhs) const
+EnumeratedPostingsLoader::is_folded_change(Index lhs, Index rhs) const
 {
-    return _store.foldedChange(lhs, rhs);
+    return _store.is_folded_change(lhs, rhs);
 }
 
 void
 EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
 {
-    _store.fixupRefCount(idx, ref_count);
+    _store.set_ref_count(idx, ref_count);
 }
 
 void
-EnumeratedPostingsLoader::free_unused_enums()
+EnumeratedPostingsLoader::free_unused_values()
 {
-    _store.freeUnusedEnums();
+    _store.free_unused_values();
 }
 
 }

@@ -14,10 +14,10 @@ PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
                          IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.getEnumStoreDict().getPostingDictionary(), attr.getStatus(),
+      _postingList(enumStore.get_dictionary().get_posting_dictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.getEnumStoreDict().getPostingDictionary()),
+      _dict(enumStore.get_dictionary().get_posting_dictionary()),
       _esb(enumStore)
 { }
 
@@ -108,7 +108,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
     posting_itr.writeData(newIndex.ref());
-    loader.free_unused_enums();
+    loader.free_unused_values();
 }
 
 template <typename P>
