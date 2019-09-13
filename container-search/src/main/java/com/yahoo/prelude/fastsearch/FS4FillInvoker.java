@@ -41,7 +41,7 @@ public class FS4FillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
 
-        if (countFastHits(result, summaryClass) > 0) {
+        if (countUnfilledFastHits(result, summaryClass) > 0) {
             try {
                 expectedFillResults = requestSummaries(result, summaryClass);
             } catch (InvalidChannelException e) {
@@ -125,7 +125,7 @@ public class FS4FillInvoker extends FillInvoker {
         }
     }
 
-    private int countFastHits(Result result, String summaryClass) {
+    private int countUnfilledFastHits(Result result, String summaryClass) {
         int count = 0;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
             Hit hit = i.next();

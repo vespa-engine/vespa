@@ -38,7 +38,6 @@ public class FastHit extends Hit {
     private int partId;
 
     /** The global id of this document in the backend node which produced it */
-    //Todo should be bytearray directly and generate GlobvalId on access
     private byte [] globalId;
 
     //TODO Remove with fs4
