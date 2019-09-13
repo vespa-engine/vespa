@@ -501,7 +501,6 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
         if (deployment(id.application(), id.type()).isPresent())
             try {
-                logger.log("Copying Vespa log from nodes of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
                 controller.jobController().updateVespaLog(id);
             }
             catch (Exception e) {

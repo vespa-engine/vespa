@@ -46,15 +46,8 @@
         "type": "debug",
         "message": "Installation succeeded!"
       }
-    ],
-    "copyVespaLogs": [
-      {
-        "at": 0,
-        "type": "debug",
-        "message": "Copying Vespa log from nodes of tenant.application in dev.us-east-1 ..."
-      }
     ]
   },
   "active": false,
-  "lastId": 19
+  "lastId": 18
 }
