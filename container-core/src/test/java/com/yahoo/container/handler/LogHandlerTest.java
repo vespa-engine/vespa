@@ -47,9 +47,9 @@ public class LogHandlerTest {
         }
 
         @Override
-        protected void writeLogs(OutputStream outputStream, Instant earliestLogThreshold, Instant latestLogThreshold)  {
+        protected void writeLogs(OutputStream outputStream, Instant from, Instant to)  {
             try {
-                if (latestLogThreshold.isAfter(Instant.ofEpochMilli(1000))) {
+                if (to.isAfter(Instant.ofEpochMilli(1000))) {
                     outputStream.write("newer log".getBytes());
                 } else {
                     outputStream.write("older log".getBytes());

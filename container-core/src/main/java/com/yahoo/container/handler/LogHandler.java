@@ -29,10 +29,10 @@ public class LogHandler extends ThreadedHttpRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
 
-        Instant earliestLogThreshold = Optional.ofNullable(request.getProperty("from"))
-                .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MIN);
-        Instant latestLogThreshold = Optional.ofNullable(request.getProperty("to"))
-                .map(Long::valueOf).map(Instant::ofEpochMilli).orElseGet(Instant::now);
+        Instant from = Optional.ofNullable(request.getProperty("from"))
+                               .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MIN);
+        Instant to = Optional.ofNullable(request.getProperty("to"))
+                             .map(Long::valueOf).map(Instant::ofEpochMilli).orElse(Instant.MAX);
 
         return new HttpResponse(200) {
             {
@@ -40,7 +40,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             }
             @Override
             public void render(OutputStream outputStream) {
-                logReader.writeLogs(outputStream, earliestLogThreshold, latestLogThreshold);
+                logReader.writeLogs(outputStream, from, to);
             }
         };
     }
