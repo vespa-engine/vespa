@@ -159,7 +159,7 @@ public class JobController {
                 return run;
 
             logs.append(id.application(), id.type(), Step.copyVespaLogs, log);
-            return run.with(Instant.ofEpochMilli(log.get(log.size() - 1).at().toEpochMilli()));
+            return run.with(log.get(log.size() - 1).at());
         });
     }
 
