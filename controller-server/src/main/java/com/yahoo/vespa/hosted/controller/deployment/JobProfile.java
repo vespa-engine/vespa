@@ -51,7 +51,7 @@ public enum JobProfile {
 
     development(EnumSet.of(deployReal,
                            installReal),
-                EnumSet.noneOf(Step.class));
+                EnumSet.of(copyVespaLogs));
 
 
     private final Set<Step> steps;

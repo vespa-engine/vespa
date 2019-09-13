@@ -153,7 +153,7 @@ public class JobController {
             ZoneId zone = id.type().zone(controller.system());
             Optional<Deployment> deployment = Optional.ofNullable(controller.applications().require(id.application())
                                                                             .deployments().get(zone));
-            if (deployment.isEmpty())
+            if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
                 return run;
 
             long from = Math.max(run.lastVespaLogTimestamp().toEpochMilli(),
