@@ -169,7 +169,7 @@ EnumStoreT<EntryT>::find_enum(EntryType value, IEnumStore::EnumHandle& e) const
 {
     auto cmp = make_comparator(value);
     Index idx;
-    if (_dict->findFrozenIndex(cmp, idx)) {
+    if (_dict->find_frozen_index(cmp, idx)) {
         e = idx.ref();
         return true;
     }
@@ -181,7 +181,7 @@ std::vector<IEnumStore::EnumHandle>
 EnumStoreT<EntryT>::find_folded_enums(EntryType value) const
 {
     auto cmp = make_folded_comparator(value);
-    return _dict->findMatchingEnums(cmp);
+    return _dict->find_matching_enums(cmp);
 }
 
 template <typename EntryT>
@@ -189,7 +189,7 @@ bool
 EnumStoreT<EntryT>::find_index(EntryType value, Index& idx) const
 {
     auto cmp = make_comparator(value);
-    return _dict->findIndex(cmp, idx);
+    return _dict->find_index(cmp, idx);
 }
 
 template <typename EntryT>

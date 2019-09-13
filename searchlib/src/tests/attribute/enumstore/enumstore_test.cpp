@@ -140,7 +140,7 @@ testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 {
     const auto* enumDict = dynamic_cast<const EnumStoreDictionary<DictionaryT>*>(&ses.get_dictionary());
     assert(enumDict != nullptr);
-    const DictionaryT& dict = enumDict->getDictionary();
+    const DictionaryT& dict = enumDict->get_raw_dictionary();
     uint32_t i = 0;
     EnumIndex idx;
     for (typename DictionaryT::Iterator iter = dict.begin();

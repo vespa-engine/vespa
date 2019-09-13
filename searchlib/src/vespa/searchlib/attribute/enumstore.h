@@ -83,7 +83,7 @@ public:
         get_entry_base(idx).set_ref_count(ref_count);
     }
 
-    uint32_t get_num_uniques() const override { return _dict->getNumUniques(); }
+    uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
 
     vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
@@ -100,8 +100,8 @@ public:
 
     IEnumStoreDictionary& get_dictionary() override { return *_dict; }
     const IEnumStoreDictionary& get_dictionary() const override { return *_dict; }
-    EnumPostingTree& get_posting_dictionary() { return _dict->getPostingDictionary(); }
-    const EnumPostingTree& get_posting_dictionary() const { return _dict->getPostingDictionary(); }
+    EnumPostingTree& get_posting_dictionary() { return _dict->get_posting_dictionary(); }
+    const EnumPostingTree& get_posting_dictionary() const { return _dict->get_posting_dictionary(); }
 
     bool get_value(Index idx, EntryType& value) const;
     EntryType get_value(uint32_t idx) const { return get_value(Index(EntryRef(idx))); }
