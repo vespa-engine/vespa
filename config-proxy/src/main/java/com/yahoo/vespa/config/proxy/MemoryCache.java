@@ -13,6 +13,7 @@ import com.yahoo.vespa.defaults.Defaults;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -77,18 +78,30 @@ public class MemoryCache {
     String dumpCacheToDisk(String path, MemoryCache cache) {
         if (path == null || path.isEmpty()) {
             path = DEFAULT_DUMP_DIR;
-            log.log(LogLevel.DEBUG, "dumpCache. No path or empty path. Using dir '" + path + "'");
+            log.log(LogLevel.INFO, "dumpCache. No path or empty path. Using '" + path + "'");
         }
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
-        log.log(LogLevel.DEBUG, "Dumping cache to path '" + path + "'");
-        IOUtils.createDirectory(path);
-        File dir = new File(path);
 
-        if (!dir.isDirectory() || !dir.canWrite()) {
-            return "Not a dir or not able to write to '" + dir + "'";
+        File dir = new File(path);
+        if ( ! dir.exists()) {
+            log.log(LogLevel.INFO, dir.getAbsolutePath() + " does not exist, creating it");
+            try {
+                Files.createDirectory(dir.toPath());
+            } catch (IOException e) {
+                return "Failed creating '" + dir.getAbsolutePath() + "', " + e.getClass().getSimpleName();
+            }
         }
+
+        if ( ! dir.isDirectory()) {
+            return "Not a directory: '" + dir.getAbsolutePath() + "'";
+        }
+        if ( ! dir.canWrite()) {
+            return "Not able to write to '" + dir.getAbsolutePath() + "'";
+        }
+
+        log.log(LogLevel.INFO, "Dumping cache to '" + dir.getAbsolutePath() + "'");
         for (RawConfig config : cache.values()) {
             writeConfigToFile(config, path);
         }
