@@ -1,12 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol.test.storagepolicy;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
 public class StoragePolicyTest extends Simulator {
     /**
      * Verify that a resent message with failures doesn't ruin overall performance. (By dumping the cached state too often
      * so other requests are sent to wrong target)
      * Lets one node always fail message with transient error.
      */
+    @Test
+    @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
     public void testPersistentFailureTransientError() {
         runSimulation("First correctnode 99, wrongnode 1, downnode 0, worked 90, failed 10 "
                     + "Last correctnode 99, wrongnode 1, downnode 0, worked 92, failed 8",
@@ -17,6 +22,8 @@ public class StoragePolicyTest extends Simulator {
      * so other requests are sent to wrong target)
      * Lets one node always fail message with fatal error.
      */
+    @Test
+    @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
     public void testPersistentFailureFatalError() {
         runSimulation("First correctnode 99, wrongnode 1, downnode 0, worked 90, failed 10 "
                     + "Last correctnode 99, wrongnode 1, downnode 0, worked 92, failed 8",
@@ -28,6 +35,7 @@ public class StoragePolicyTest extends Simulator {
      * Let one node reporting an old cluster state (but node is still set up in fleetcontroller state).
      * We expect some requests to go to wrong node due to this issue, but the majority of requests should be unaffected.
      */
+    @Test
     public void testPersistentFailureOldClusterState() {
         runSimulation("First correctnode .*, wrongnode .*, downnode .*, worked .*, failed .* "
                     + "Last correctnode 100, wrongnode 0, downnode 0, worked 100, failed 0",
@@ -37,6 +45,7 @@ public class StoragePolicyTest extends Simulator {
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
      */
+    @Test
     public void testPersistentFailureResetClusterState() {
         // If reset detection works (within the few messages sent in test), we should not fail any requests or send to wrong nodes in second half
         runSimulation("First correctnode .*, wrongnode .*, downnode .*, worked .*, failed .* "
@@ -47,6 +56,7 @@ public class StoragePolicyTest extends Simulator {
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
      */
+    @Test
     public void testPersistentFailureResetClusterStateNoGoodNodes() {
         // If reset detection works (within the few messages sent in test), we should not fail any requests in second half.
 
@@ -64,6 +74,8 @@ public class StoragePolicyTest extends Simulator {
      * Verify that a reset cluster state version doesn't keep sending requests to the wrong node.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
      */
+    @Test
+    @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
     public void testPersistentFailureResetClusterStateNoGoodNodesNotMarkedDown() {
         // If reset detection works (within the few messages sent in test), we should not fail any requests in second half.
 
@@ -79,6 +91,7 @@ public class StoragePolicyTest extends Simulator {
      * Another scenario where we have a node coming up in correct state.
      * We expect a few failures in first half. We should have detected the issue before second half, so there all should be fine.
      */
+    @Test
     public void testPersistentFailureResetClusterStateNewNodeUp() {
         // If we handled this well, we should have no failing requests, and no requests to down node in second half
         runSimulation("First correctnode .*, wrongnode .*, downnode .*, worked .*, failed .* "
@@ -86,6 +99,8 @@ public class StoragePolicyTest extends Simulator {
                       new PersistentFailureTestParameters().newNodeAdded().addBadNode(new BadNode(3, FailureType.RESET_CLUSTER_STATE).setDownInCurrentState()));
     }
     /** Test node that is not in slobrok. Until fleetcontroller detects this, we expect 10% of the requests to go to wrong node. */
+    @Test
+    @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
     public void testPersistentFailureNodeNotInSlobrok() {
         runSimulation("First correctnode .*, wrongnode 11, downnode 0, worked .*, failed .* "
                     + "Last correctnode .*, wrongnode 9, downnode 0, worked 100, failed 0",
@@ -93,6 +108,8 @@ public class StoragePolicyTest extends Simulator {
     }
 
     /** With two failures, one marked down, hopefully the one not marked down doesn't lead us to use the one marked down. */
+    @Test
+    @Ignore // FIXME test has been implicitly disabled for ages, figure out and fix
     public void testPersistentFailureTwoNodesFailingOneMarkedDown() {
             // We see that we don't send to down nodes in second half. We still fail requests towards the one not marked down,
             // and occasionally send to random due to this
