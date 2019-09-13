@@ -5,6 +5,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
+import com.yahoo.searchlib.rankingexpression.rule.ComparisonNode;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
@@ -40,6 +41,7 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
     private boolean hasSingleUndividableChild(EmbracedNode node) {
         if (node.children().size() > 1) return false;
         if (node.children().get(0) instanceof ArithmeticNode) return false;
+        if (node.children().get(0) instanceof ComparisonNode) return false;
         return true;
     }
 
