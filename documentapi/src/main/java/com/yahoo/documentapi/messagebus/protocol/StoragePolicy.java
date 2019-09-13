@@ -104,7 +104,9 @@ public class StoragePolicy extends SlobrokPolicy {
         String getRandomTargetSpec(RoutingContext context) {
             Targets targets = validTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
-            while (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes) {
+            while ((targets.total != 0) &&
+                   (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes))
+            {
                 int randIndex = randomizer.nextInt(targets.list.size());
                 String targetSpec = getTargetSpec(targets.list.get(randIndex), context);
                 if (targetSpec != null) {
@@ -408,15 +410,20 @@ public class StoragePolicy extends SlobrokPolicy {
                     log.log(LogLevel.DEBUG, "No distributors available; clearing cluster state");
                     safeCachedClusterState.set(null);
                     sendRandomReason = "No distributors available. Sending to random distributor.";
+                    context.setContext(createRandomDistributorTargetContext());
                 }
             } else {
-                context.setContext(new MessageContext(null));
+                context.setContext(createRandomDistributorTargetContext());
                 sendRandomReason = "No cluster state cached. Sending to random distributor.";
             }
             if (context.shouldTrace(1)) {
                 context.trace(1, sendRandomReason != null ? sendRandomReason : "Sending to random distributor for unknown reason");
             }
             return hostFetcher.getRandomTargetSpec(context);
+        }
+
+        private static MessageContext createRandomDistributorTargetContext() {
+            return new MessageContext(null);
         }
 
         private static Optional<ClusterState> clusterStateFromReply(final WrongDistributionReply reply) {

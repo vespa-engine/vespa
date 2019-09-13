@@ -3,6 +3,8 @@ package com.yahoo.documentapi.messagebus.protocol.test.storagepolicy;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
+import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.routing.RoutingNode;
 import org.junit.Test;
@@ -19,11 +21,11 @@ public class BasicTests extends StoragePolicyTestEnvironment {
     @Test
     public void testNormalUsage() {
         setClusterNodes(new int[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-            // First we want a wrong distribution reply, so make sure we don't try correct node on random
+        // First we want a wrong distribution reply, so make sure we don't try correct node on random
         policyFactory.avoidPickingAtRandom(bucketOneNodePreference[0]);
         RoutingNode target = select();
         replyWrongDistribution(target, "foo", 5, "version:1 bits:16 distributor:10 storage:10");
-            // Then send to correct node and verify that
+        // Then send to correct node and verify that
         sendToCorrectNode("foo", bucketOneNodePreference[0]);
     }
 
@@ -74,6 +76,31 @@ public class BasicTests extends StoragePolicyTestEnvironment {
             clusterState += " ." + result[i] + ".s:d";
         }
         assertEquals(Arrays.toString(bucketOneNodePreference), Arrays.toString(result));
+    }
+
+    private void letPolicyCacheStateWithNoAvailableDistributors() {
+        setClusterNodes(new int[]{ 0 });
+        String clusterState = " bits:16 storage:1"; // No distributors online
+        var target = select();
+        // Update to cluster state with no distributors online
+        replyWrongDistribution(target, "foo", null, clusterState);
+    }
+
+    @Test
+    public void random_node_target_used_if_no_distributors_available_in_cached_state() {
+        letPolicyCacheStateWithNoAvailableDistributors();
+        select(); // Will trigger failure if no target is set, i.e. if an exception is thrown
+    }
+
+    @Test
+    public void policy_context_set_on_no_distributors_exception_during_select() {
+        letPolicyCacheStateWithNoAvailableDistributors();
+        // Re-select with no distributors. Should still get a target selection context.
+        var target = select();
+        // Trigger a reply merge with error, which will try to inspect the context.
+        // If an exception is thrown internally from a missing context, the reply will not be
+        // set correctly and this will fail.
+        replyError(target, new Error(ErrorCode.FATAL_ERROR, "oh no!"));
     }
 
 }
