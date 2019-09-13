@@ -13,8 +13,11 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.RawConfig;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.time.Duration;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,6 +34,9 @@ public class ConfigProxyRpcServerTest {
     private static final String configSourceAddress = "tcp/" + hostname + ":" + port;
     private TestServer server;
     private TestClient client;
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setup() throws ListenFailedException {
@@ -247,9 +253,9 @@ public class ConfigProxyRpcServerTest {
      * Tests dumpCache RPC command
      */
     @Test
-    public void testRpcMethodDumpCache() {
+    public void testRpcMethodDumpCache() throws IOException {
         Request req = new Request("dumpCache");
-        String path = "/tmp";
+        String path = temporaryFolder.newFolder().getAbsolutePath();
         req.parameters().add(new StringValue(path));
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
