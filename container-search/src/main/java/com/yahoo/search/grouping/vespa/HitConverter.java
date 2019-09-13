@@ -7,6 +7,7 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
 
@@ -43,11 +44,8 @@ class HitConverter implements ResultBuilder.HitConverter {
     }
 
     private Hit convertFs4Hit(String summaryClass, FS4Hit groupHit) {
-        FastHit hit = new FastHit();
-        hit.setRelevance(groupHit.getRank());
-        hit.setGlobalId(groupHit.getGlobalId());
-        hit.setPartId(groupHit.getPath());
-        hit.setDistributionKey(groupHit.getDistributionKey());
+        FastHit hit = new FastHit(groupHit.getGlobalId().getRawId(), new Relevance(groupHit.getRank()),
+                                  groupHit.getPath(), groupHit.getDistributionKey());
         hit.setFillable();
         hit.setSearcherSpecificMetaData(searcher, summaryClass);
 

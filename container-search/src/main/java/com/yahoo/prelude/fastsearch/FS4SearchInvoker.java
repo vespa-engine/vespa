@@ -228,7 +228,7 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         hit.setRelevance(new Relevance(rank.doubleValue()));
 
         hit.setDistributionKey(document.getDistributionKey());
-        hit.setGlobalId(document.getGlobalId());
+        hit.setGlobalId(document.getRawGlobalId());
         hit.setPartId(document.getPartId());
         hit.setSortData(document.getSortData(), sorting);
     }

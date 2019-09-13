@@ -197,7 +197,7 @@ public class FillTestCase {
         FastHit hit = new FastHit("hit:" + hitId, 1.0);
         hit.setPartId(sourceNodeId);
         hit.setDistributionKey(sourceNodeId);
-        hit.setGlobalId(client.globalIdFrom(hitId));
+        hit.setGlobalId(client.globalIdFrom(hitId).getRawId());
         return hit;
     }
 

@@ -24,7 +24,7 @@ public class ProtobufSerializationTest {
         var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", true);
         builder.setTimeout(0);
         var hit = new FastHit();
-        hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")));
+        hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
 
         assertThat(bytes.length, equalTo(41));
