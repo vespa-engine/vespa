@@ -140,12 +140,6 @@ public class Flags {
             "Takes effect on next node agent tick (but does not clear existing failure reports)",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_METRICS_PROXY_CONTAINER = defineFeatureFlag(
-            "enable-metrics-proxy-container", false,
-            "Start a container for metrics-proxy on every vespa node",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
             "use-https-load-balancer-upstream", false,
             "Use https between load balancer and upstream containers",
