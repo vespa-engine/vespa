@@ -5,6 +5,7 @@ import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.logging.Logger;
@@ -304,7 +306,8 @@ public class DockerOperationsImpl implements DockerOperations {
         if (isInfrastructureHost(context.nodeType()))
             command.withSharedVolume(varLibSia, varLibSia);
 
-        if (context.nodeType() == NodeType.tenant)
+        boolean isMain = context.zone().getSystemName() == SystemName.cd || context.zone().getSystemName() == SystemName.main;
+        if (isMain && context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
     }
 
