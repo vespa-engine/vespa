@@ -151,13 +151,16 @@ public class JobController {
     public void updateVespaLog(RunId id) {
         locked(id, run -> {
             ZoneId zone = id.type().zone(controller.system());
-            if ( ! controller.applications().require(id.application())
-                             .deployments().containsKey(zone))
+            Optional<Deployment> deployment = Optional.ofNullable(controller.applications().require(id.application())
+                                                                            .deployments().get(zone));
+            if (deployment.isEmpty())
                 return run;
 
+            long from = Math.max(run.lastVespaLogTimestamp().toEpochMilli(),
+                                 deployment.get().at().toEpochMilli());
             List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                   .getLogs(new DeploymentId(id.application(), zone),
-                                                                           Map.of("from", Long.toString(run.lastVespaLogTimestamp().toEpochMilli()))));
+                                                                           Map.of("from", Long.toString(from))));
             if (log.isEmpty())
                 return run;
 
