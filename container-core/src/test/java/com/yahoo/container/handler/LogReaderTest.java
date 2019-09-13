@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 public class LogReaderTest {
@@ -25,15 +26,18 @@ public class LogReaderTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Path logDirectory = fileSystem.getPath("/opt/vespa/logs");
 
+    private static final String log1 = "0.1\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n";
+    private static final String log2 = "0.2\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)\n";
+
     @Before
     public void setup() throws IOException {
         Files.createDirectories(logDirectory.resolve("subfolder"));
 
         Files.setLastModifiedTime(
-                Files.write(logDirectory.resolve("log1.log.gz"), compress("This is one log file\n")),
+                Files.write(logDirectory.resolve("log1.log.gz"), compress(log1)),
                 FileTime.from(Instant.ofEpochMilli(123)));
         Files.setLastModifiedTime(
-                Files.write(logDirectory.resolve("subfolder/log2.log"), "This is another log file\n".getBytes()),
+                Files.write(logDirectory.resolve("subfolder/log2.log"), log2.getBytes(UTF_8)),
                 FileTime.from(Instant.ofEpochMilli(234)));
 
     }
@@ -42,31 +46,27 @@ public class LogReaderTest {
     public void testThatLogsOutsideRangeAreExcluded() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(baos, Instant.ofEpochMilli(235), Instant.ofEpochMilli(300));
-        String expected = "";
-        String actual = decompress(baos.toByteArray());
-        assertEquals(expected, actual);
+        logReader.writeLogs(baos, Instant.ofEpochMilli(150), Instant.ofEpochMilli(160));
+
+        assertEquals("", decompress(baos.toByteArray()));
     }
 
     @Test
     public void testThatLogsNotMatchingRegexAreExcluded() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*2\\.log"));
-        logReader.writeLogs(baos, Instant.ofEpochMilli(21), Instant.now());
-        String expected = "This is another log file\n";
-        String actual = decompress(baos.toByteArray());
-        assertEquals(expected, actual);
+        logReader.writeLogs(baos, Instant.ofEpochMilli(0), Instant.ofEpochMilli(300));
+
+        assertEquals(log2, decompress(baos.toByteArray()));
     }
 
     @Test
     public void testZippedStreaming() throws IOException {
         ByteArrayOutputStream zippedBaos = new ByteArrayOutputStream();
         LogReader logReader = new LogReader(logDirectory, Pattern.compile(".*"));
-        logReader.writeLogs(zippedBaos, Instant.ofEpochMilli(21), Instant.now());
+        logReader.writeLogs(zippedBaos, Instant.ofEpochMilli(0), Instant.ofEpochMilli(300));
 
-        String expected = "This is one log file\nThis is another log file\n";
-        String actual = decompress(zippedBaos.toByteArray());
-        assertEquals(expected, actual);
+        assertEquals(log1 + log2, decompress(zippedBaos.toByteArray()));
     }
 
     private byte[] compress(String input) throws IOException {
