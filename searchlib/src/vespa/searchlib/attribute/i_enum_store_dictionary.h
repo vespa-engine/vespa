@@ -48,11 +48,8 @@ public:
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
     findMatchingEnums(const datastore::EntryComparator& cmp) const = 0;
 
-    virtual void onReset() = 0;
-
     virtual EnumPostingTree& getPostingDictionary() = 0;
     virtual const EnumPostingTree& getPostingDictionary() const = 0;
-    virtual bool hasData() const = 0;
 };
 
 }

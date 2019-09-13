@@ -48,12 +48,8 @@ public:
     std::vector<attribute::IAttributeVector::EnumHandle>
     findMatchingEnums(const datastore::EntryComparator& cmp) const override;
 
-    void onReset() override;
-
     EnumPostingTree & getPostingDictionary() override;
     const EnumPostingTree & getPostingDictionary() const override;
-
-    bool hasData() const override;
 };
 
 /**

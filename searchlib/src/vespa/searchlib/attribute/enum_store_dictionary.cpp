@@ -123,13 +123,6 @@ EnumStoreDictionary<DictionaryT>::findMatchingEnums(const datastore::EntryCompar
     return result;
 }
 
-template <typename DictionaryT>
-void
-EnumStoreDictionary<DictionaryT>::onReset()
-{
-    this->_dict.clear();
-}
-
 template <>
 EnumPostingTree &
 EnumStoreDictionary<EnumTree>::getPostingDictionary()
@@ -156,13 +149,6 @@ const EnumPostingTree &
 EnumStoreDictionary<EnumPostingTree>::getPostingDictionary() const
 {
     return _dict;
-}
-
-template <typename DictionaryT>
-bool
-EnumStoreDictionary<DictionaryT>::hasData() const
-{
-    return DictionaryT::LeafNodeType::hasData();
 }
 
 EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> folded_compare)
