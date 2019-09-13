@@ -5,7 +5,7 @@
         <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
-                <surefireMemoryMb>5120</surefireMemoryMb>
+                <surefireMemoryMb>2150</surefireMemoryMb>
                 <useAthenzCredentials>true</useAthenzCredentials>
                 <useTesterCertificate>false</useTesterCertificate>
             </config>
@@ -57,8 +57,8 @@
             </filtering>
         </http>
 
-        <nodes count="1" allocated-memory="17%">
-            <resources vcpu="2.30" memory="12.00" disk="75.00"/>
+        <nodes count="1" allocated-memory="25%">
+            <resources vcpu="0.50" memory="8.00" disk="50.00"/>
         </nodes>
     </container>
 </services>

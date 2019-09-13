@@ -439,7 +439,17 @@ public class InternalStepRunnerTest {
         assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
                                                                                             true,
                                                                                             false,
+                                                                                            false,
                                                                                             Optional.of("d-2-12-75"))));
+    }
+
+    @Test
+    public void generates_correct_services_xml_in_aws() {
+        assertFile("test_runner_services.xml-aws", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
+                                                                                             true,
+                                                                                             true,
+                                                                                             false,
+                                                                                             Optional.empty())));
     }
 
     private void assertFile(String resourceName, String actualContent) {
