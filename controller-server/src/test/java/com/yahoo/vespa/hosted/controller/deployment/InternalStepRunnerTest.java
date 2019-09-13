@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
@@ -439,17 +440,7 @@ public class InternalStepRunnerTest {
         assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
                                                                                             true,
                                                                                             false,
-                                                                                            false,
-                                                                                            Optional.of("d-2-12-75"))));
-    }
-
-    @Test
-    public void generates_correct_services_xml_in_aws() {
-        assertFile("test_runner_services.xml-aws", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
-                                                                                             true,
-                                                                                             true,
-                                                                                             false,
-                                                                                             Optional.empty())));
+                                                                                            new NodeResources(2, 12, 75, 1))));
     }
 
     private void assertFile(String resourceName, String actualContent) {

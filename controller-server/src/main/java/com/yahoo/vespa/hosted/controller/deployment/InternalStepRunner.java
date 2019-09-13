@@ -104,6 +104,10 @@ import static java.util.logging.Level.WARNING;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
+    private static final NodeResources DEFAULT_TESTER_RESOURCES = new NodeResources(0.5, 4, 50, 0.3);
+    // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
+    // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
+    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
@@ -636,14 +640,15 @@ public class InternalStepRunner implements StepRunner {
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
-        boolean useAdvertisedResources = zone.region().value().contains("aws-");
         boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
 
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
-                                         useAdvertisedResources,
                                          useTesterCertificate,
-                                         testerFlavorFor(id, spec));
+                                         testerFlavorFor(id, spec)
+                                                 .map(NodeResources::fromLegacyName)
+                                                 .orElse(zone.region().value().contains("aws-") ?
+                                                         DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
@@ -691,18 +696,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useAdvertisedResources,
-                              boolean useTesterCertificate, Optional<String> testerFlavor) {
-        NodeResources resources = testerFlavor.map(NodeResources::fromLegacyName)
-                .orElseGet(() -> new NodeResources(0.5, useAdvertisedResources ? 8 : 4, 50, 0.3));
+    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
+                              NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
-        // Nodes in AWS have less memory than they claim, see VESPA-16259 (~1.1 Gb to host level processes and ~700 Mb
-        // is the difference between advertised vs. actual instance memory in AWS).
-        double availableMemoryGb = resources.memoryGb() - (useAdvertisedResources ? 1.8 : 0);
-        int testMemoryMb = (int) (1024 * (availableMemoryGb - jdiscMemoryGb) / 2);
+        int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
         String resourceString = String.format(Locale.ENGLISH,
                 "<resources vcpu=\"%.2f\" memory=\"%.2f\" disk=\"%.2f\"/>", resources.vcpu(), resources.memoryGb(), resources.diskGb());
