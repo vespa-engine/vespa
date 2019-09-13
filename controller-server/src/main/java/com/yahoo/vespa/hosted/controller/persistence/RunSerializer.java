@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.Optional;
 import java.util.SortedMap;
@@ -82,6 +83,7 @@ class RunSerializer {
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
+    private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
     private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
@@ -114,6 +116,7 @@ class RunSerializer {
                                .map(end -> Instant.ofEpochMilli(end.asLong())),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
+                       Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -174,6 +177,7 @@ class RunSerializer {
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
+        runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);

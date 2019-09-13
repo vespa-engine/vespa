@@ -17,7 +17,8 @@
           },
           "steps": {
             "deployReal": "succeeded",
-            "installReal": "succeeded"
+            "installReal": "succeeded",
+            "copyVespaLogs": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",

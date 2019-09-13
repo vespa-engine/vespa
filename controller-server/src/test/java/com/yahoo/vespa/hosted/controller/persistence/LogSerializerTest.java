@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,10 +34,10 @@ public class LogSerializerTest {
 
         byte[] logJson = Files.readAllBytes(logsFile);
 
-        LogEntry  first = new LogEntry(0, 0, LogEntry.Type.info, "First");
-        LogEntry second = new LogEntry(1, 0, LogEntry.Type.info, "Second");
-        LogEntry  third = new LogEntry(2, 1000, LogEntry.Type.debug, "Third");
-        LogEntry fourth = new LogEntry(3, 2000, LogEntry.Type.warning, "Fourth");
+        LogEntry  first = new LogEntry(0, Instant.ofEpochMilli(0), LogEntry.Type.info, "First");
+        LogEntry second = new LogEntry(1, Instant.ofEpochMilli(0), LogEntry.Type.info, "Second");
+        LogEntry  third = new LogEntry(2, Instant.ofEpochMilli(1000), LogEntry.Type.debug, "Third");
+        LogEntry fourth = new LogEntry(3, Instant.ofEpochMilli(2000), LogEntry.Type.warning, "Fourth");
 
         Map<Step, List<LogEntry>> expected = new HashMap<>();
         expected.put(deployReal, new ArrayList<>());

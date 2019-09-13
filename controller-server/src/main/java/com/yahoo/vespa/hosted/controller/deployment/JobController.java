@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
@@ -127,13 +129,38 @@ public class JobController {
     /** Stores the given log messages for the given run and step. */
     public void log(RunId id, Step step, Level level, List<String> messages) {
         log(id, step, messages.stream()
-                              .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
+                              .map(message -> new LogEntry(0, controller.clock().instant(), LogEntry.typeOf(level), message))
                               .collect(toList()));
     }
 
     /** Stores the given log message for the given run and step. */
     public void log(RunId id, Step step, Level level, String message) {
         log(id, step, level, Collections.singletonList(message));
+    }
+
+    /** Fetches any new Vespa log entries, and records the timestamp of the last of these, for continuation. */
+    public void updateVespaLog(RunId id) {
+        locked(id, run -> {
+            if ( ! run.steps().containsKey(copyVespaLogs))
+                return run;
+
+            ZoneId zone = id.type().zone(controller.system());
+            Optional<Deployment> deployment = Optional.ofNullable(controller.applications().require(id.application())
+                                                                            .deployments().get(zone));
+            if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
+                return run;
+
+            Instant from = run.lastVespaLogTimestamp().isAfter(deployment.get().at()) ? run.lastVespaLogTimestamp() : deployment.get().at();
+            List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
+                                                                  .getLogs(new DeploymentId(id.application(), zone),
+                                                                           Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                        from);
+            if (log.isEmpty())
+                return run;
+
+            logs.append(id.application(), id.type(), Step.copyVespaLogs, log);
+            return run.with(log.get(log.size() - 1).at());
+        });
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
