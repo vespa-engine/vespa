@@ -58,7 +58,7 @@
         </http>
 
         <nodes count="1" allocated-memory="17%">
-            <resources vcpu="2.00" memory="12.00" disk="75.00"/>
+            <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb"/>
         </nodes>
     </container>
 </services>
