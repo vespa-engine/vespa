@@ -1,14 +1,13 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.test.ManualClock;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -43,11 +42,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class UpgraderTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
-
     @Test
     public void testUpgrading() {
         // --- Setup
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = Version.fromString("6.2");
         tester.upgradeSystem(version0);
 
@@ -260,6 +258,7 @@ public class UpgraderTest {
     @Test
     public void testUpgradingToVersionWhichBreaksSomeNonCanaries() {
         // --- Setup
+        DeploymentTester tester = new DeploymentTester();
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         assertEquals("No system version: Nothing to do", 0, tester.buildService().jobs().size());
@@ -330,6 +329,7 @@ public class UpgraderTest {
 
     @Test
     public void testDeploymentAlreadyInProgressForUpgrade() {
+        DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
                 .environment(Environment.prod)
@@ -384,6 +384,7 @@ public class UpgraderTest {
 
     @Test
     public void testUpgradeCancelledWithDeploymentInProgress() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -449,6 +450,7 @@ public class UpgraderTest {
      */
     @Test
     public void testVersionIsBrokenAfterAZoneIsLive() {
+        DeploymentTester tester = new DeploymentTester();
         Version v0 = Version.fromString("6.2");
         tester.upgradeSystem(v0);
 
@@ -532,6 +534,7 @@ public class UpgraderTest {
 
     @Test
     public void testConfidenceIgnoresFailingApplicationChanges() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -585,8 +588,8 @@ public class UpgraderTest {
 
     @Test
     public void testBlockVersionChange() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T18:00:00.00Z")); // Tuesday, 18:00
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 18:00
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T18:00:00.00Z"));
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -625,8 +628,8 @@ public class UpgraderTest {
 
     @Test
     public void testBlockVersionChangeHalfwayThough() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 17:00
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T17:00:00.00Z"));
 
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
@@ -651,7 +654,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
+        tester.clock().advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertEquals(1, tester.buildService().jobs().size()); // Next job triggered because upgrade is already rolling out.
 
@@ -662,8 +665,8 @@ public class UpgraderTest {
 
     @Test
     public void testBlockVersionChangeHalfwayThoughThenNewRevision() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-29T16:00:00.00Z")); // Friday, 16:00
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Friday, 16:00
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-29T16:00:00.00Z"));
 
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
@@ -688,7 +691,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
+        tester.clock().advance(Duration.ofHours(1)); // Entering block window after prod job is triggered
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertEquals(1, tester.buildService().jobs().size()); // Next job triggered, as upgrade is already in progress.
         tester.deployAndNotify(app, applicationPackage, false, productionUsCentral1); // us-central-1 fails, permitting a new revision.
@@ -739,6 +742,7 @@ public class UpgraderTest {
 
     @Test
     public void testReschedulesUpgradeAfterTimeout() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -842,6 +846,7 @@ public class UpgraderTest {
 
     @Test
     public void testThrottlesUpgrades() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -893,6 +898,7 @@ public class UpgraderTest {
 
     @Test
     public void testPinningMajorVersionInDeploymentXml() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -927,6 +933,7 @@ public class UpgraderTest {
 
     @Test
     public void testPinningMajorVersionInApplication() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -962,6 +969,7 @@ public class UpgraderTest {
 
     @Test
     public void testPinningMajorVersionInUpgrader() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -1017,6 +1025,7 @@ public class UpgraderTest {
 
     @Test
     public void testAllowApplicationChangeDuringFailingUpgrade() {
+        DeploymentTester tester = new DeploymentTester();
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -1063,8 +1072,8 @@ public class UpgraderTest {
 
     @Test
     public void testBlockRevisionChangeHalfwayThoughThenUpgrade() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00.
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 17:00.
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T17:00:00.00Z"));
 
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
@@ -1087,7 +1096,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
+        tester.clock().advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertEquals(1, tester.buildService().jobs().size()); // Next job triggered in spite of block, because it is already rolling out.
 
@@ -1115,8 +1124,8 @@ public class UpgraderTest {
 
     @Test
     public void testBlockRevisionChangeHalfwayThoughThenNewRevision() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00.
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 17:00.
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T17:00:00.00Z"));
 
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
@@ -1139,7 +1148,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
-        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
+        tester.clock().advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         assertEquals(1, tester.buildService().jobs().size());
 
@@ -1156,7 +1165,7 @@ public class UpgraderTest {
 
         tester.outstandingChangeDeployer().run();
         assertFalse(tester.application(app.id()).change().hasTargets());
-        clock.advance(Duration.ofHours(2));
+        tester.clock().advance(Duration.ofHours(2));
 
         tester.outstandingChangeDeployer().run();
         assertTrue(tester.application(app.id()).change().hasTargets());
@@ -1169,6 +1178,7 @@ public class UpgraderTest {
 
     @Test
     public void testPinning() {
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = Version.fromString("6.2");
         tester.upgradeSystem(version0);
 
@@ -1272,6 +1282,7 @@ public class UpgraderTest {
 
     @Test
     public void testsEachUpgradeCombinationWithFailingDeployments() {
+        DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         Supplier<Application> app = () -> tester.application(application.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

@@ -3,10 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Slime;
-import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -17,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -442,8 +440,8 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testBlockRevisionChange() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 17:30
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T17:30:00.00Z"));
         ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
                                                                  Duration.ofHours(1),
                                                                  new JobControl(tester.controllerTester().curator()));
@@ -501,8 +499,8 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testCompletionOfPartOfChangeDuringBlockWindow() {
-        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:30:00.00Z")); // Tuesday, 17:30
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+        // Tuesday, 17:30
+        DeploymentTester tester = new DeploymentTester().at(Instant.parse("2017-09-26T17:30:00.00Z"));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .blockChange(true, true, "tue", "18", "UTC")
                 .region("us-west-1")
@@ -522,7 +520,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
 
         // Entering block window will keep the outstanding change in place.
-        clock.advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
         assertEquals(BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
@@ -542,7 +540,7 @@ public class DeploymentTriggerTest {
 
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        clock.advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
         assertTrue(tester.application(application.id()).change().hasTargets());
         assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
