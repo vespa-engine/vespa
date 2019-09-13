@@ -79,8 +79,7 @@ public class NodeAdminStateUpdater {
         EnumSet<State> suspendedStates = EnumSet.of(SUSPENDED_NODE_ADMIN, SUSPENDED);
         metricsScheduler.scheduleAtFixedRate(() -> {
             try {
-                if (suspendedStates.contains(currentState)) return;
-                nodeAdmin.updateMetrics();
+                nodeAdmin.updateMetrics(suspendedStates.contains(currentState));
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Metric fetcher scheduler failed", e);
             }

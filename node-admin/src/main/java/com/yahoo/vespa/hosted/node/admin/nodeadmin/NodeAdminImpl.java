@@ -102,19 +102,21 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void updateMetrics() {
+    public void updateMetrics(boolean isSuspended) {
         for (NodeAgentWithScheduler nodeAgentWithScheduler : nodeAgentWithSchedulerByHostname.values()) {
-            numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
-            nodeAgentWithScheduler.updateContainerNodeMetrics();
+            if (!isSuspended) numberOfUnhandledExceptions.add(nodeAgentWithScheduler.getAndResetNumberOfUnhandledExceptions());
+            nodeAgentWithScheduler.updateContainerNodeMetrics(isSuspended);
         }
 
-        Runtime runtime = Runtime.getRuntime();
-        long freeMemory = runtime.freeMemory();
-        long totalMemory = runtime.totalMemory();
-        long usedMemory = totalMemory - freeMemory;
-        jvmHeapFree.sample(freeMemory);
-        jvmHeapUsed.sample(usedMemory);
-        jvmHeapTotal.sample(totalMemory);
+        if (!isSuspended) {
+            Runtime runtime = Runtime.getRuntime();
+            long freeMemory = runtime.freeMemory();
+            long totalMemory = runtime.totalMemory();
+            long usedMemory = totalMemory - freeMemory;
+            jvmHeapFree.sample(freeMemory);
+            jvmHeapUsed.sample(usedMemory);
+            jvmHeapTotal.sample(totalMemory);
+        }
     }
 
     @Override
@@ -194,7 +196,7 @@ public class NodeAdminImpl implements NodeAdmin {
         void start() { nodeAgent.start(currentContext()); }
         void stopForHostSuspension() { nodeAgent.stopForHostSuspension(currentContext()); }
         void stopForRemoval() { nodeAgent.stopForRemoval(currentContext()); }
-        void updateContainerNodeMetrics() { nodeAgent.updateContainerNodeMetrics(currentContext()); }
+        void updateContainerNodeMetrics(boolean isSuspended) { nodeAgent.updateContainerNodeMetrics(currentContext(), isSuspended); }
         int getAndResetNumberOfUnhandledExceptions() { return nodeAgent.getAndResetNumberOfUnhandledExceptions(); }
 
         @Override public void scheduleTickWith(NodeAgentContext context, Instant at) { nodeAgentScheduler.scheduleTickWith(context, at); }

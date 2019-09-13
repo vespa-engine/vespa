@@ -17,7 +17,7 @@ public interface NodeAdmin {
     void refreshContainersToRun(Set<NodeAgentContext> nodeAgentContexts);
 
     /** Update node admin metrics */
-    void updateMetrics();
+    void updateMetrics(boolean isSuspended);
 
     /**
      * Attempts to freeze/unfreeze all NodeAgents and itself. To freeze a NodeAgent means that

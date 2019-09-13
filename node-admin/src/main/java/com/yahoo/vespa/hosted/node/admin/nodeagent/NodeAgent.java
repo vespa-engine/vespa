@@ -30,7 +30,7 @@ public interface NodeAgent {
     /**
      * Updates metric receiver with the latest node-agent stats
      */
-    default void updateContainerNodeMetrics(NodeAgentContext context) {}
+    default void updateContainerNodeMetrics(NodeAgentContext context, boolean isSuspended) {}
 
     /**
      * Returns and resets number of unhandled exceptions
