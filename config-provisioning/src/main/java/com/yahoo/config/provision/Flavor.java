@@ -4,8 +4,6 @@ package com.yahoo.config.provision;
 import com.yahoo.config.provision.host.FlavorOverrides;
 import com.yahoo.config.provisioning.FlavorsConfig;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -117,6 +115,9 @@ public class Flavor {
     
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
+
+    // TODO: Remove after Vespa 6 is gone
+    public String canonicalName() { return name; }
 
     @Override
     public int hashCode() { return Objects.hash(name, flavorOverrides); }
