@@ -290,7 +290,7 @@ public class InterleavedSearchInvokerTest {
             if (value < 0) {
                 hits.add(new MetaHit(value));
             } else {
-                hits.add(new FastHit(new GlobalId(IdString.createIdString("id:test:test::" + value)), new Relevance(value), partId, distributionKey));
+                hits.add(new FastHit(new GlobalId(IdString.createIdString("id:test:test::" + value)).getRawId(), new Relevance(value), partId, distributionKey));
             }
         }
         return hits;

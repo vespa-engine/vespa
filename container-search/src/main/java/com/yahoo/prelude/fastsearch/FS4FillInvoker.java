@@ -41,22 +41,15 @@ public class FS4FillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
 
-        if (countFastHits(result) > 0) {
-            DocsumPacketKey[] summaryPacketKeys = getPacketKeys(result, summaryClass);
-            if (summaryPacketKeys.length == 0) {
-                expectedFillResults = 0;
-            } else {
-                try {
-                    expectedFillResults = requestSummaries(result, summaryClass);
-                } catch (InvalidChannelException e) {
-                    result.hits()
-                            .addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + getName() + " (summary fetch)"));
-                    return;
-                } catch (IOException e) {
-                    result.hits().addError(ErrorMessage.createBackendCommunicationError(
-                            "IO error while talking on channel " + getName() + " (summary fetch): " + e.getMessage()));
-                    return;
-                }
+        if (countFastHits(result, summaryClass) > 0) {
+            try {
+                expectedFillResults = requestSummaries(result, summaryClass);
+            } catch (InvalidChannelException e) {
+                result.hits()
+                        .addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + getName() + " (summary fetch)"));
+            } catch (IOException e) {
+                result.hits().addError(ErrorMessage.createBackendCommunicationError(
+                        "IO error while talking on channel " + getName() + " (summary fetch): " + e.getMessage()));
             }
         } else {
             expectedFillResults = 0;
@@ -132,10 +125,11 @@ public class FS4FillInvoker extends FillInvoker {
         }
     }
 
-    private int countFastHits(Result result) {
+    private int countFastHits(Result result, String summaryClass) {
         int count = 0;
         for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
-            if (i.next() instanceof FastHit)
+            Hit hit = i.next();
+            if (hit instanceof FastHit && !hit.isFilled(summaryClass))
                 count++;
         }
         return count;
@@ -168,35 +162,6 @@ public class FS4FillInvoker extends FillInvoker {
         BasicPacket[] receivedPackets = channel.receivePackets(result.getQuery().getTimeLeft(), expectedFillResults);
 
         return convertBasicPackets(receivedPackets);
-    }
-
-    /**
-     * Returns an array of the hits contained in a result
-     *
-     * @return array of docids, empty array if no hits
-     */
-    private DocsumPacketKey[] getPacketKeys(Result result, String summaryClass) {
-        DocsumPacketKey[] packetKeys = new DocsumPacketKey[result.getHitCount()];
-        int x = 0;
-
-        for (Iterator<com.yahoo.search.result.Hit> i = hitIterator(result); i.hasNext();) {
-            com.yahoo.search.result.Hit hit = i.next();
-            if (hit instanceof FastHit) {
-                FastHit fastHit = (FastHit) hit;
-                if (!fastHit.isFilled(summaryClass)) {
-                    packetKeys[x] = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
-                    x++;
-                }
-            }
-        }
-        if (x < packetKeys.length) {
-            DocsumPacketKey[] tmp = new DocsumPacketKey[x];
-
-            System.arraycopy(packetKeys, 0, tmp, 0, x);
-            return tmp;
-        } else {
-            return packetKeys;
-        }
     }
 
     private static Packet[] convertBasicPackets(BasicPacket[] basicPackets) throws ClassCastException {

@@ -51,7 +51,7 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
             DocumentmanagerConfig documentManagerConfig,
             SessionCache sessionCache,
             ThreadpoolConfig threadpoolConfig,
-            DocumentApiMetrics metricsHelper) throws Exception {
+            DocumentApiMetrics metricsHelper) {
         super(parentCtx);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;

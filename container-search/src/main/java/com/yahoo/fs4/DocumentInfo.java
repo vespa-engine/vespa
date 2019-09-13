@@ -13,20 +13,15 @@ import java.nio.ByteBuffer;
  */
 public class DocumentInfo implements Cloneable {
 
-    private final GlobalId globalId;
+    private final byte [] globalId;
     private final double metric;
     private final int partId;
     private final int distributionKey;
     private final byte[] sortData;
 
-    DocumentInfo(ByteBuffer buffer, QueryResultPacket owner) {
-        this(buffer, owner, null);
-    }
-
     DocumentInfo(ByteBuffer buffer, QueryResultPacket owner, byte[] sortData) {
-        byte[] rawGid = new byte[GlobalId.LENGTH];
-        buffer.get(rawGid);
-        globalId = new GlobalId(rawGid);
+        globalId = new byte[GlobalId.LENGTH];
+        buffer.get(globalId);
         metric = decodeMetric(buffer);
         partId = owner.getMldFeature() ? buffer.getInt() : 0;
         distributionKey = owner.getMldFeature() ? buffer.getInt() : 0;
@@ -34,7 +29,7 @@ public class DocumentInfo implements Cloneable {
     }
 
     public DocumentInfo(GlobalId globalId, int metric, int partId, int distributionKey) {
-        this.globalId = globalId;
+        this.globalId = globalId.getRawId();
         this.metric = metric;
         this.partId = partId;
         this.distributionKey = distributionKey;
@@ -45,7 +40,8 @@ public class DocumentInfo implements Cloneable {
         return buffer.getDouble();
     }
 
-    public GlobalId getGlobalId() { return globalId; }
+    public GlobalId getGlobalId() { return new GlobalId(globalId); }
+    public byte [] getRawGlobalId() { return globalId; }
 
     /** Raw rank score */
     public double getMetric() { return metric; }
@@ -61,7 +57,7 @@ public class DocumentInfo implements Cloneable {
     }
 
     public String toString() {
-        return "document info [globalId=" + globalId + ", metric=" + metric + "]";
+        return "document info [globalId=" + new GlobalId(globalId).toString() + ", metric=" + metric + "]";
     }
 
    /**
@@ -69,8 +65,7 @@ public class DocumentInfo implements Cloneable {
      */
     public Object clone() {
         try {
-            DocumentInfo docInfo=(DocumentInfo) super.clone();
-            return docInfo;
+            return super.clone();
         }
         catch (CloneNotSupportedException e) {
             throw new RuntimeException("Someone inserted a nonclonable superclass");

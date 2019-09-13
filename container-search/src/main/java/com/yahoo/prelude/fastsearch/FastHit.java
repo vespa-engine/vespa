@@ -30,9 +30,7 @@ import java.util.function.BiConsumer;
  * @author Steinar Knutsen
  */
 public class FastHit extends Hit {
-
-    private static final GlobalId emptyGlobalId = new GlobalId(new byte[GlobalId.LENGTH]);
-
+    private static final byte [] emptyGID = new byte[GlobalId.LENGTH];
     /** The index of the content node this hit originated at */
     private int distributionKey = 0;
 
@@ -41,7 +39,7 @@ public class FastHit extends Hit {
 
     /** The global id of this document in the backend node which produced it */
     //Todo should be bytearray directly and generate GlobvalId on access
-    private GlobalId globalId = emptyGlobalId;
+    private byte [] globalId;
 
     //TODO Remove with fs4
     private transient QueryPacketData queryPacketData = null;
@@ -71,9 +69,14 @@ public class FastHit extends Hit {
     /**
      * Creates an empty and temporarily invalid summary hit
      */
-    public FastHit() { }
+    public FastHit() {
+        super(new Relevance(0.0));
+        globalId = emptyGID;
+        partId = 0;
+        distributionKey = 0;
+    }
 
-    public FastHit(GlobalId gid, Relevance relevance, int partId, int distributionKey) {
+    public FastHit(byte [] gid, Relevance relevance, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
         this.partId = partId;
@@ -87,11 +90,13 @@ public class FastHit extends Hit {
 
     // Note: This constructor is only used for tests, production use is always of the empty constructor
     private FastHit(String uri, double relevance, String source) {
+        super(new Relevance(relevance));
+        partId = 0;
+        distributionKey = 0;
+        globalId = emptyGID;
         setId(uri);
-        setRelevance(new Relevance(relevance));
         setSource(source);
         types().add("summary");
-        setPartId(0);
     }
 
     /** Returns false - this is a concrete hit containing requested content */
@@ -110,16 +115,17 @@ public class FastHit extends Hit {
         // Fallback to index:[source]/[partid]/[id]
         StringBuilder sb = new StringBuilder(64);
         sb.append("index:").append(getSource()).append('/').append(getPartId()).append('/');
-        appendAsHex(getGlobalId(), sb);
+        appendAsHex(globalId, sb);
         URI indexUri = new URI(sb.toString());
         assignId(indexUri);
         return indexUri;
     }
 
     /** Returns the global id of this document in the backend node which produced it */
-    public GlobalId getGlobalId() { return globalId; }
+    public GlobalId getGlobalId() { return new GlobalId(globalId); }
+    public byte [] getRawGlobalId() { return globalId; }
 
-    public void setGlobalId(GlobalId globalId) { this.globalId = globalId; }
+    public void setGlobalId(byte [] globalId) { this.globalId = globalId; }
 
     public int getPartId() { return partId; }
 
@@ -363,7 +369,7 @@ public class FastHit extends Hit {
 
     @Override
     public String toString() {
-        return super.toString() + " [fasthit, globalid: " + globalId + ", partId: "
+        return super.toString() + " [fasthit, globalid: " + new GlobalId(globalId).toString() + ", partId: "
                + partId + ", distributionkey: " + distributionKey + "]";
     }
 
@@ -377,9 +383,8 @@ public class FastHit extends Hit {
         }
     }
 
-    private void appendAsHex(GlobalId gid, StringBuilder sb) {
-        byte[] rawGid = gid.getRawId();
-        for (byte b : rawGid) {
+    private static void appendAsHex(byte [] gid, StringBuilder sb) {
+        for (byte b : gid) {
             String hex = Integer.toHexString(0xFF & b);
             if (hex.length() == 1) {
                 sb.append('0');

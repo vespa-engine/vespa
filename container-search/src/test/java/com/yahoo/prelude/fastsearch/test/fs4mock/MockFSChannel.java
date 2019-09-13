@@ -28,11 +28,11 @@ public class MockFSChannel extends FS4Channel {
     /** The number of active documents this should report in ping reponses */
     private final long activeDocuments;
 
-    public MockFSChannel(Backend backend) {
+    MockFSChannel(Backend backend) {
         this(0, backend);
     }
 
-    public MockFSChannel(long activeDocuments, Backend backend) {
+    MockFSChannel(long activeDocuments, Backend backend) {
         super(backend, 0);
         this.activeDocuments = activeDocuments;
     }

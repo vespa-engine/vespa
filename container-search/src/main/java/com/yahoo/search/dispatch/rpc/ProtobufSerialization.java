@@ -7,7 +7,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
-import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
@@ -37,7 +36,7 @@ public class ProtobufSerialization {
 
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
-    public static byte[] serializeSearchRequest(Query query, String serverId) {
+    static byte[] serializeSearchRequest(Query query, String serverId) {
         return convertFromQuery(query, serverId).toByteArray();
     }
 
@@ -118,10 +117,10 @@ public class ProtobufSerialization {
         }
     }
 
-    public static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
-                                                                                  String serverId,
-                                                                                  String summaryClass,
-                                                                                  boolean includeQueryData) {
+    static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
+                                                                           String serverId,
+                                                                           String summaryClass,
+                                                                           boolean includeQueryData) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
                 .setTimeout((int) query.getTimeLeft())
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
@@ -155,10 +154,10 @@ public class ProtobufSerialization {
         return builder;
     }
 
-    public static byte[] serializeDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
+    static byte[] serializeDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
         builder.clearGlobalIds();
         for (var hit : documents) {
-            builder.addGlobalIds(ByteString.copyFrom(hit.getGlobalId().getRawId()));
+            builder.addGlobalIds(ByteString.copyFrom(hit.getRawGlobalId()));
         }
         return builder.build().toByteArray();
     }
@@ -177,15 +176,14 @@ public class ProtobufSerialization {
         mergeRankProperties(ranking, builder::addRankProperties, builder::addTensorRankProperties);
     }
 
-    public static byte[] serializeResult(Result searchResult) {
+    static byte[] serializeResult(Result searchResult) {
         return convertFromResult(searchResult).toByteArray();
     }
 
-    public static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher, int partId, int distKey)
+    static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher, int partId, int distKey)
             throws InvalidProtocolBufferException {
         var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
-        var result = convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey, searcher.getName());
-        return result;
+        return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey, searcher.getName());
     }
 
     private static Result convertToResult(Query query,
@@ -222,7 +220,7 @@ public class ProtobufSerialization {
 
         var sorting = query.getRanking().getSorting();
         for (var replyHit : protobuf.getHitsList()) {
-            FastHit hit = new FastHit(new GlobalId(replyHit.getGlobalId().toByteArray()), new Relevance(replyHit.getRelevance()), partId, distKey);
+            FastHit hit = new FastHit(replyHit.getGlobalId().toByteArray(), new Relevance(replyHit.getRelevance()), partId, distKey);
             hit.setQuery(query);
 
             if (!replyHit.getSortData().isEmpty()) {
@@ -276,7 +274,7 @@ public class ProtobufSerialization {
             }
             if (hit instanceof FastHit) {
                 FastHit fhit = (FastHit) hit;
-                hitBuilder.setGlobalId(ByteString.copyFrom(fhit.getGlobalId().getRawId()));
+                hitBuilder.setGlobalId(ByteString.copyFrom(fhit.getRawGlobalId()));
             }
             builder.addHits(hitBuilder);
         });

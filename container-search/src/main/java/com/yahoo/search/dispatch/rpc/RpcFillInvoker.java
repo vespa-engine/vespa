@@ -141,7 +141,7 @@ public class RpcFillInvoker extends FillInvoker {
         }
         Cursor gids = root.setArray("gids");
         for (FastHit hit : hits) {
-            gids.addData(hit.getGlobalId().getRawId());
+            gids.addData(hit.getRawGlobalId());
         }
         return slime;
     }

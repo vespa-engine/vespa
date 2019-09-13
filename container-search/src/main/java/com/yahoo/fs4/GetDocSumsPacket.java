@@ -178,7 +178,7 @@ public class GetDocSumsPacket extends Packet {
             Hit hit = i.next();
             if (hit instanceof FastHit && !hit.isFilled(summaryClass)) {
                 FastHit fastHit = (FastHit)hit;
-                buffer.put(fastHit.getGlobalId() != null ? fastHit.getGlobalId().getRawId() : emptyGid);
+                buffer.put(fastHit.getGlobalId() != null ? fastHit.getRawGlobalId() : emptyGid);
                 buffer.putInt(fastHit.getPartId());
                 buffer.putInt(0);  //Unused, was docstamp
             }

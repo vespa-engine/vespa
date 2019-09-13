@@ -73,7 +73,7 @@ public class SlimeSummaryTestCase {
     public void testTimeout() {
         DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
         FastHit hit = new FastHit();
-        assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance null) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
+        assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance 0.0) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
                      docsum.lazyDecode("default", timeoutSummary(), hit));
     }
 
