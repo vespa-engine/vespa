@@ -60,7 +60,7 @@ public:
     }
     bool is_folded_change(const Index& lhs, const Index& rhs) const;
     void set_ref_count(Index idx, uint32_t ref_count);
-    void free_unused_enums();
+    void free_unused_values();
 };
 
 }

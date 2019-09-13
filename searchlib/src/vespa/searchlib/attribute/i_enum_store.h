@@ -56,8 +56,8 @@ public:
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void set_ref_count(Index idx, uint32_t ref_count) = 0;
     virtual void set_ref_counts(const EnumVector &histogram) = 0;
-    virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;
-    virtual void freeUnusedEnums() = 0;
+    virtual void free_value_if_unused(Index idx, IndexSet &unused) = 0;
+    virtual void free_unused_values() = 0;
     virtual bool foldedChange(const Index& idx1, const Index& idx2) const = 0;
     virtual IEnumStoreDictionary& getEnumStoreDict() = 0;
     virtual const IEnumStoreDictionary& getEnumStoreDict() const = 0;
@@ -94,7 +94,7 @@ public:
             set_ref_count(ti.getKey(), *hi);
         }
         assert(!ti.valid());
-        freeUnusedEnums();
+        free_unused_values();
     }
 };
 

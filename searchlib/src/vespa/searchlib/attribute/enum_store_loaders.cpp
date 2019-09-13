@@ -50,9 +50,9 @@ EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
 }
 
 void
-EnumeratedPostingsLoader::free_unused_enums()
+EnumeratedPostingsLoader::free_unused_values()
 {
-    _store.freeUnusedEnums();
+    _store.free_unused_values();
 }
 
 }

@@ -23,6 +23,19 @@ namespace search {
 using btree::BTreeNode;
 
 template <typename DictionaryT>
+void
+EnumStoreDictionary<DictionaryT>::remove_unused_values(const IndexSet& unused,
+                                                       const datastore::EntryComparator& cmp)
+{
+    if (unused.empty()) {
+        return;
+    }
+    for (const auto& ref : unused) {
+        this->remove(cmp, ref);
+    }
+}
+
+template <typename DictionaryT>
 EnumStoreDictionary<DictionaryT>::EnumStoreDictionary(IEnumStore& enumStore)
     : ParentUniqueStoreDictionary(),
       _enumStore(enumStore)
@@ -48,40 +61,27 @@ EnumStoreDictionary<DictionaryT>::set_ref_counts(const EnumVector &hist)
 
 template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::removeUnusedEnums(const IndexSet& unused,
-                                                    const datastore::EntryComparator& cmp)
-{
-    if (unused.empty()) {
-        return;
-    }
-    for (const auto& ref : unused) {
-        this->remove(cmp, ref);
-    }
-}
-
-template <typename DictionaryT>
-void
-EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const datastore::EntryComparator& cmp)
+EnumStoreDictionary<DictionaryT>::free_unused_values(const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
 
     // find unused enums
     for (auto iter = this->_dict.begin(); iter.valid(); ++iter) {
-        _enumStore.freeUnusedEnum(iter.getKey(), unused);
+        _enumStore.free_value_if_unused(iter.getKey(), unused);
     }
-    removeUnusedEnums(unused, cmp);
+    remove_unused_values(unused, cmp);
 }
 
 template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::freeUnusedEnums(const IndexSet& toRemove,
-                                                  const datastore::EntryComparator& cmp)
+EnumStoreDictionary<DictionaryT>::free_unused_values(const IndexSet& to_remove,
+                                                     const datastore::EntryComparator& cmp)
 {
     IndexSet unused;
-    for (const auto& index : toRemove) {
-        _enumStore.freeUnusedEnum(index, unused);
+    for (const auto& index : to_remove) {
+        _enumStore.free_value_if_unused(index, unused);
     }
-    removeUnusedEnums(unused, cmp);
+    remove_unused_values(unused, cmp);
 }
 
 template <typename DictionaryT>

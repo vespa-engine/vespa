@@ -58,7 +58,7 @@ private:
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
 
-    void freeUnusedEnum(Index idx, IndexSet& unused) override;
+    void free_value_if_unused(Index idx, IndexSet &unused) override;
 
     const datastore::UniqueStoreEntryBase& get_entry_base(Index idx) const {
         return _store.get_allocator().get_wrapped(idx);
@@ -170,7 +170,7 @@ public:
             }
         }
         void commit() {
-            _store.freeUnusedEnums(_possibly_unused);
+            _store.free_unused_values(_possibly_unused);
         }
     };
 
@@ -200,8 +200,8 @@ public:
     std::vector<IEnumStore::EnumHandle> findFoldedEnums(EntryType value) const;
     Index insert(EntryType value);
     bool findIndex(EntryType value, Index &idx) const;
-    void freeUnusedEnums() override;
-    void freeUnusedEnums(const IndexSet& toRemove);
+    void free_unused_values() override;
+    void free_unused_values(const IndexSet& to_remove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;

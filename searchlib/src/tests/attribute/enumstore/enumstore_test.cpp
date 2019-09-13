@@ -477,7 +477,7 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
     this->set_ref_count(0, 1, loader);
     this->set_ref_count(1, 2, loader);
     this->set_ref_count(3, 4, loader);
-    loader.free_unused_enums();
+    loader.free_unused_values();
 
     this->expect_values_in_store();
 }

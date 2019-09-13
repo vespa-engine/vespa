@@ -40,9 +40,9 @@ public:
     virtual uint32_t getNumUniques() const = 0;
 
     virtual void set_ref_counts(const EnumVector& hist) = 0;
-    virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;
-    virtual void freeUnusedEnums(const IndexSet& toRemove,
-                                 const datastore::EntryComparator& cmp) = 0;
+    virtual void free_unused_values(const datastore::EntryComparator& cmp) = 0;
+    virtual void free_unused_values(const IndexSet& to_remove,
+                                    const datastore::EntryComparator& cmp) = 0;
     virtual bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
     virtual bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const = 0;
     virtual std::vector<attribute::IAttributeVector::EnumHandle>

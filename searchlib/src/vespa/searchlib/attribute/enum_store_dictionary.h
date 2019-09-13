@@ -24,6 +24,9 @@ private:
 
     IEnumStore& _enumStore;
 
+    void remove_unused_values(const IndexSet& unused,
+                              const datastore::EntryComparator& cmp);
+
 public:
     EnumStoreDictionary(IEnumStore& enumStore);
 
@@ -35,13 +38,10 @@ public:
     uint32_t getNumUniques() const override;
     void set_ref_counts(const EnumVector &hist) override;
 
-    void removeUnusedEnums(const IndexSet& unused,
-                           const datastore::EntryComparator& cmp);
+    void free_unused_values(const datastore::EntryComparator& cmp) override;
 
-    void freeUnusedEnums(const datastore::EntryComparator& cmp) override;
-
-    void freeUnusedEnums(const IndexSet& toRemove,
-                         const datastore::EntryComparator& cmp) override;
+    void free_unused_values(const IndexSet& to_remove,
+                            const datastore::EntryComparator& cmp) override;
 
     bool findIndex(const datastore::EntryComparator& cmp, Index& idx) const override;
     bool findFrozenIndex(const datastore::EntryComparator& cmp, Index& idx) const override;

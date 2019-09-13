@@ -23,7 +23,7 @@
 namespace search {
 
 template <typename EntryT>
-void EnumStoreT<EntryT>::freeUnusedEnum(Index idx, IndexSet& unused)
+void EnumStoreT<EntryT>::free_value_if_unused(Index idx, IndexSet& unused)
 {
     const auto& entry = get_entry_base(idx);
     if (entry.get_ref_count() == 0) {
@@ -194,18 +194,18 @@ EnumStoreT<EntryT>::findIndex(EntryType value, Index &idx) const
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::freeUnusedEnums()
+EnumStoreT<EntryT>::free_unused_values()
 {
     auto cmp = make_comparator();
-    _dict->freeUnusedEnums(cmp);
+    _dict->free_unused_values(cmp);
 }
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::freeUnusedEnums(const IndexSet& toRemove)
+EnumStoreT<EntryT>::free_unused_values(const IndexSet& to_remove)
 {
     auto cmp = make_comparator();
-    _dict->freeUnusedEnums(toRemove, cmp);
+    _dict->free_unused_values(to_remove, cmp);
 }
 
 template <typename EntryT>
