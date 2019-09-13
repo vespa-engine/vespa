@@ -43,7 +43,7 @@ applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
 {
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore &enumStore(this->getEnumStore());
-    Dictionary &dict(enumStore.getPostingDictionary());
+    Dictionary &dict(enumStore.get_posting_dictionary());
     auto compare = enumStore.make_folded_comparator();
 
     StringEnumIndexMapper mapper(dict);
@@ -56,7 +56,7 @@ template <typename B, typename T>
 void
 MultiValueStringPostingAttributeT<B, T>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 template <typename B, typename T>
@@ -102,7 +102,7 @@ template <typename B, typename T>
 IDocumentWeightAttribute::LookupResult
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term) const
 {
-    const Dictionary &dictionary = self._enumStore.getPostingDictionary();
+    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
     const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
     DictionaryConstIterator dictItr(btree::BTreeNode::Ref(), dictionary.getAllocator());
     auto comp = self._enumStore.make_folded_comparator(term.c_str());

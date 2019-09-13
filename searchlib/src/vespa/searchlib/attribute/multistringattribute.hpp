@@ -32,7 +32,7 @@ template <typename B, typename M>
 void
 MultiValueStringAttributeT<B, M>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 
@@ -54,7 +54,7 @@ template <typename E>
 class EnumAccessor {
 public:
     EnumAccessor(const E & enumStore) : _enumStore(enumStore) { }
-    const char * get(typename E::Index index) const { return _enumStore.getValue(index); }
+    const char * get(typename E::Index index) const { return _enumStore.get_value(index); }
 private:
     const E & _enumStore;
 };
@@ -97,7 +97,7 @@ MultiValueStringAttributeT<B, M>::StringImplSearchContext::onFind(DocId doc, int
     const auto& attr = static_cast<const MultiValueStringAttributeT<B, M>&>(attribute());
     WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
     for (uint32_t i(elemId); i < indices.size(); i++) {
-        if (isMatch(attr._enumStore.getValue(indices[i].value()))) {
+        if (isMatch(attr._enumStore.get_value(indices[i].value()))) {
             return i;
         }
     }
@@ -110,7 +110,7 @@ template <typename BT>
 MultiValueStringAttributeT<B, M>::StringTemplSearchContext<BT>::
 StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched) :
     BT(std::move(qTerm), toBeSearched),
-    EnumHintSearchContext(toBeSearched.getEnumStore().getEnumStoreDict(),
+    EnumHintSearchContext(toBeSearched.getEnumStore().get_dictionary(),
                           toBeSearched.getCommittedDocIdLimit(),
                           toBeSearched.getStatus().getNumValues())
 {

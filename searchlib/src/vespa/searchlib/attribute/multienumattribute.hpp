@@ -25,7 +25,7 @@ bool
 MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & idx)
 {
     if (c._enumScratchPad == Change::UNSET_ENUM) {
-        return this->_enumStore.findIndex(c._data.raw(), idx);
+        return this->_enumStore.find_index(c._data.raw(), idx);
     }
     idx = EnumIndex(datastore::EntryRef(c._enumScratchPad));
     return true;
@@ -40,7 +40,7 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
          (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::DIVWEIGHT)))
     {
         EnumIndex idx;
-        if (!this->_enumStore.findIndex(c._data.raw(), idx)) {
+        if (!this->_enumStore.find_index(c._data.raw(), idx)) {
             newUniques.insert(c._data);
         } else {
             c._enumScratchPad = idx.ref();
@@ -191,7 +191,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
     total.merge(this->_mvMapping.updateStat());
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
-    this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
+    this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
 }
 
@@ -199,7 +199,7 @@ template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::removeOldGenerations(generation_t firstUsed)
 {
-    this->_enumStore.trimHoldLists(firstUsed);
+    this->_enumStore.trim_hold_lists(firstUsed);
     this->_mvMapping.trimHoldLists(firstUsed);
 }
 
@@ -215,7 +215,7 @@ MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
      */
     freezeEnumDictionary();
     this->_mvMapping.transferHoldLists(generation - 1);
-    this->_enumStore.transferHoldLists(generation - 1);
+    this->_enumStore.transfer_hold_lists(generation - 1);
 }
 
 template <typename B, typename M>

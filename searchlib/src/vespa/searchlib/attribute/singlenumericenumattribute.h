@@ -73,14 +73,14 @@ protected:
 
         int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
             if ( elemId != 0) return -1;
-            T v = _toBeSearched._enumStore.getValue(_toBeSearched.getEnumIndex(docId));
+            T v = _toBeSearched._enumStore.get_value(_toBeSearched.getEnumIndex(docId));
             weight = 1;
             return this->match(v) ? 0 : -1;
         }
 
         int32_t find(DocId docId, int32_t elemId) const {
             if ( elemId != 0) return -1;
-            T v = _toBeSearched._enumStore.getValue(_toBeSearched.getEnumIndex(docId));
+            T v = _toBeSearched._enumStore.get_value(_toBeSearched.getEnumIndex(docId));
             return this->match(v) ? 0 : -1;
         }
 
@@ -107,7 +107,7 @@ public:
     // Attribute read API
     //-------------------------------------------------------------------------
     T get(DocId doc) const override {
-        return this->_enumStore.getValue(this->_enumIndices[doc]);
+        return this->_enumStore.get_value(this->_enumIndices[doc]);
     }
     largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(get(doc));

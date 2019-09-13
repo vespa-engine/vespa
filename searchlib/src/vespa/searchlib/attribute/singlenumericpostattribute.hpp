@@ -29,7 +29,7 @@ template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 template <typename B>
@@ -46,7 +46,7 @@ SingleValueNumericPostingAttribute<B>::applyUpdateValueChange(const Change & c,
                                                               std::map<DocId, EnumIndex> & currEnumIndices)
 {
     EnumIndex newIdx;
-    enumStore.findIndex(c._data.raw(), newIdx);
+    enumStore.find_index(c._data.raw(), newIdx);
     currEnumIndices[c._doc] = newIdx;
 }
 
@@ -78,7 +78,7 @@ void
 SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.getPostingDictionary();
+    Dictionary & dict = enumStore.get_posting_dictionary();
     auto cmp = enumStore.make_comparator();
     PostingMap changePost;
 
@@ -99,7 +99,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
                                    currEnumIndices);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             if (oldIdx.valid()) {
-                T oldValue = enumStore.getValue(oldIdx);
+                T oldValue = enumStore.get_value(oldIdx);
                 T newValue = this->applyArithmetic(oldValue, change);
 
                 auto addItr = dict.find(EnumIndex(), enumStore.make_comparator(newValue));

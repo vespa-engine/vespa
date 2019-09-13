@@ -177,9 +177,9 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
     // check for correct refcounts
     for (uint32_t i = 0; i < uniqueStrings.size(); ++i) {
         typename Attribute::EnumStore::Index idx;
-        EXPECT_TRUE(attr.getEnumStore().findIndex(uniqueStrings[i].c_str(), idx));
+        EXPECT_TRUE(attr.getEnumStore().find_index(uniqueStrings[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
-        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().getRefCount(idx));
+        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
     }
 
     // clear and insert new unique strings
@@ -225,9 +225,9 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
     // check for correct refcounts
     for (uint32_t i = 0; i < newUniques.size(); ++i) {
         typename Attribute::EnumStore::Index idx;
-        EXPECT_TRUE(attr.getEnumStore().findIndex(newUniques[i].c_str(), idx));
+        EXPECT_TRUE(attr.getEnumStore().find_index(newUniques[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
-        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().getRefCount(idx));
+        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
     }
 }
 

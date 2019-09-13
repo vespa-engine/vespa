@@ -445,7 +445,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
                                            const RangeGenerator & range)
 {
     const typename VectorType::EnumStore & enumStore = vec.getEnumStore();
-    const typename VectorType::Dictionary & dict = enumStore.getPostingDictionary();
+    const typename VectorType::Dictionary & dict = enumStore.get_posting_dictionary();
     const typename VectorType::PostingList & postingList = vec.getPostingList();
 
     for (size_t i = 0; i < values.size(); ++i) {
@@ -669,7 +669,7 @@ void
 PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value, DocSet expected)
 {
     const typename AttributeType::EnumStore & enumStore = vec.getEnumStore();
-    const typename AttributeType::Dictionary & dict = enumStore.getPostingDictionary();
+    const typename AttributeType::Dictionary & dict = enumStore.get_posting_dictionary();
     const typename AttributeType::PostingList & postingList = vec.getPostingList();
     auto itr = dict.find(typename AttributeType::EnumIndex(),
                          vec.getEnumStore().make_comparator(value));
@@ -690,7 +690,7 @@ template <typename AttributeType, typename ValueType>
 void
 PostingListAttributeTest::checkNonExistantPostingList(AttributeType & vec, ValueType value)
 {
-    const typename AttributeType::Dictionary & dict = vec.getEnumStore().getPostingDictionary();
+    const typename AttributeType::Dictionary & dict = vec.getEnumStore().get_posting_dictionary();
     auto itr = dict.find(typename AttributeType::EnumIndex(),
                          vec.getEnumStore().make_comparator(value));
     EXPECT_TRUE(!itr.valid());

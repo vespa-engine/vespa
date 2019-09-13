@@ -56,7 +56,7 @@ template <typename B>
 uint64_t
 EnumAttribute<B>::getUniqueValueCount() const
 {
-    return _enumStore.getNumUniques();
+    return _enumStore.get_num_uniques();
 }
 
 template <typename B>
@@ -80,14 +80,14 @@ template <typename B>
 vespalib::MemoryUsage
 EnumAttribute<B>::getEnumStoreValuesMemoryUsage() const
 {
-    return _enumStore.getValuesMemoryUsage();
+    return _enumStore.get_values_memory_usage();
 }
 
 template <typename B>
 vespalib::AddressSpace
 EnumAttribute<B>::getEnumStoreAddressSpaceUsage() const
 {
-    return _enumStore.getAddressSpaceUsage();
+    return _enumStore.get_address_space_usage();
 }
 
 } // namespace search

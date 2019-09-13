@@ -14,10 +14,10 @@ PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
                          IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.getEnumStoreDict().getPostingDictionary(), attr.getStatus(),
+      _postingList(enumStore.get_dictionary().getPostingDictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.getEnumStoreDict().getPostingDictionary()),
+      _dict(enumStore.get_dictionary().getPostingDictionary()),
       _esb(enumStore)
 { }
 

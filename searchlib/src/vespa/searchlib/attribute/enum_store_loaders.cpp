@@ -38,9 +38,9 @@ EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
 }
 
 bool
-EnumeratedPostingsLoader::is_folded_change(const Index& lhs, const Index& rhs) const
+EnumeratedPostingsLoader::is_folded_change(Index lhs, Index rhs) const
 {
-    return _store.foldedChange(lhs, rhs);
+    return _store.is_folded_change(lhs, rhs);
 }
 
 void

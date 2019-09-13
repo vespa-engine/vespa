@@ -188,7 +188,7 @@ private:
     using Parent::_enumStore;
     using Parent::getRegex;
     bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return getRegex() ? getRegex()->match(_enumStore.getValue(it.getKey())) : true;
+        return getRegex() ? getRegex()->match(_enumStore.get_value(it.getKey())) : true;
     }
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
@@ -249,7 +249,7 @@ template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
 PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
     : BaseSC(std::move(qTerm), toBeSearched),
-      BaseSC2(toBeSearched.getEnumStore().getPostingDictionary(),
+      BaseSC2(toBeSearched.getEnumStore().get_posting_dictionary(),
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),
@@ -347,10 +347,10 @@ getIterators(bool shouldApplyRangeLimit)
     }
 
     if (this->_lowerDictItr != this->_upperDictItr) {
-        _low = _enumStore.getValue(this->_lowerDictItr.getKey());
+        _low = _enumStore.get_value(this->_lowerDictItr.getKey());
         auto last = this->_upperDictItr;
         --last;
-        _high = _enumStore.getValue(last.getKey());
+        _high = _enumStore.get_value(last.getKey());
     }
 }
 

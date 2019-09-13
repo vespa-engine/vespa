@@ -67,23 +67,23 @@ public:
         if (indices.size() == 0) {
             return NULL;
         } else {
-            return this->_enumStore.getValue(indices[0].value());
+            return this->_enumStore.get_value(indices[0].value());
         }
     }
 
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
-        return this->_enumStore.findFoldedEnums(value);
+        return this->_enumStore.find_folded_enums(value);
     }
 
     const char * getStringFromEnum(EnumHandle e) const override {
-        return this->_enumStore.getValue(e);
+        return this->_enumStore.get_value(e);
     }
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = this->_enumStore.getValue(indices[i].value());
+            buffer[i] = this->_enumStore.get_value(indices[i].value());
         }
         return valueCount;
     }
@@ -100,7 +100,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(this->_enumStore.getValue(indices[i].value()), indices[i].weight());
+            buffer[i] = WeightedType(this->_enumStore.get_value(indices[i].value()), indices[i].weight());
         }
         return valueCount;
     }

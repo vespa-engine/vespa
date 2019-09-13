@@ -107,7 +107,7 @@ Test::requireThatComparatorWithTreeIsWorking()
     EXPECT_EQUAL(100u, t.size(m));
     int32_t exp = 1;
     for (TreeType::Iterator itr = t.begin(m); itr.valid(); ++itr) {
-        EXPECT_EQUAL(exp++, es.getValue(itr.getKey()));
+        EXPECT_EQUAL(exp++, es.get_value(itr.getKey()));
     }
     EXPECT_EQUAL(101, exp);
     t.clear(m);

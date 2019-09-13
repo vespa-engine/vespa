@@ -55,7 +55,7 @@ SingleValueEnumAttribute<B>::addDoc(DocId & doc)
         // even between addDoc and commit().
         if (_enumIndices[0].valid()) {
             _enumIndices[doc] = _enumIndices[0];
-            this->_enumStore.incRefCount(_enumIndices[0]);
+            this->_enumStore.inc_ref_count(_enumIndices[0]);
         }
     }
     this->incNumDocs();
@@ -114,7 +114,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     total.merge(this->_enumStore.update_stat());
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
-    this->updateStatistics(_enumIndices.size(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
+    this->updateStatistics(_enumIndices.size(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
 }
 
@@ -123,7 +123,7 @@ void
 SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques)
 {
     EnumIndex idx;
-    if (!this->_enumStore.findIndex(c._data.raw(), idx)) {
+    if (!this->_enumStore.find_index(c._data.raw(), idx)) {
         newUniques.insert(c._data);
     }
     considerUpdateAttributeChange(c); // for numeric
@@ -149,7 +149,7 @@ SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBa
 {
     EnumIndex oldIdx = _enumIndices[c._doc];
     EnumIndex newIdx;
-    this->_enumStore.findIndex(c._data.raw(), newIdx);
+    this->_enumStore.find_index(c._data.raw(), newIdx);
     updateEnumRefCounts(c, newIdx, oldIdx, updater);
 }
 
@@ -232,7 +232,7 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::removeOldGenerations(generation_t firstUsed)
 {
-    this->_enumStore.trimHoldLists(firstUsed);
+    this->_enumStore.trim_hold_lists(firstUsed);
     getGenerationHolder().trimHoldLists(firstUsed);
 }
 
@@ -248,7 +248,7 @@ SingleValueEnumAttribute<B>::onGenerationChange(generation_t generation)
      */
     freezeEnumDictionary();
     getGenerationHolder().transferHoldLists(generation - 1);
-    this->_enumStore.transferHoldLists(generation - 1);
+    this->_enumStore.transfer_hold_lists(generation - 1);
 }
 
 

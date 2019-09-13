@@ -10,7 +10,7 @@ template <typename B, typename M>
 void
 MultiValueNumericPostingAttribute<B, M>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 template <typename B, typename M>
@@ -86,7 +86,7 @@ template <typename B, typename M>
 IDocumentWeightAttribute::LookupResult
 MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term) const
 {
-    const Dictionary &dictionary = self._enumStore.getPostingDictionary();
+    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
     const FrozenDictionary frozenDictionary(dictionary.getFrozenView());
     DictionaryConstIterator dictItr(btree::BTreeNode::Ref(), dictionary.getAllocator());
 

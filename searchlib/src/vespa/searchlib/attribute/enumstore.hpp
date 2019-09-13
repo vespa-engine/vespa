@@ -90,21 +90,21 @@ EnumStoreT<EntryT>::~EnumStoreT() = default;
 
 template <typename EntryT>
 vespalib::AddressSpace
-EnumStoreT<EntryT>::getAddressSpaceUsage() const
+EnumStoreT<EntryT>::get_address_space_usage() const
 {
     return _store.get_address_space_usage();
 }
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::transferHoldLists(generation_t generation)
+EnumStoreT<EntryT>::transfer_hold_lists(generation_t generation)
 {
     _store.transferHoldLists(generation);
 }
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::trimHoldLists(generation_t firstUsed)
+EnumStoreT<EntryT>::trim_hold_lists(generation_t firstUsed)
 {
     // remove generations in the range [0, firstUsed>
     _store.trimHoldLists(firstUsed);
@@ -123,7 +123,7 @@ EnumStoreT<EntryT>::load_unique_values(const void* src, size_t available, IndexV
 
 template <typename EntryT>
 bool
-EnumStoreT<EntryT>::getValue(Index idx, EntryT& value) const
+EnumStoreT<EntryT>::get_value(Index idx, EntryT& value) const
 {
     if (!idx.valid()) {
         return false;
@@ -156,7 +156,7 @@ EnumStoreT<EntryT>::write_value(BufferWriter& writer, Index idx) const
 
 template <class EntryT>
 bool
-EnumStoreT<EntryT>::foldedChange(const Index &idx1, const Index &idx2) const
+EnumStoreT<EntryT>::is_folded_change(Index idx1, Index idx2) const
 {
     auto cmp = make_folded_comparator();
     assert(!cmp(idx2, idx1));
@@ -165,7 +165,7 @@ EnumStoreT<EntryT>::foldedChange(const Index &idx1, const Index &idx2) const
 
 template <typename EntryT>
 bool
-EnumStoreT<EntryT>::findEnum(EntryType value, IEnumStore::EnumHandle &e) const
+EnumStoreT<EntryT>::find_enum(EntryType value, IEnumStore::EnumHandle& e) const
 {
     auto cmp = make_comparator(value);
     Index idx;
@@ -178,7 +178,7 @@ EnumStoreT<EntryT>::findEnum(EntryType value, IEnumStore::EnumHandle &e) const
 
 template <typename EntryT>
 std::vector<IEnumStore::EnumHandle>
-EnumStoreT<EntryT>::findFoldedEnums(EntryType value) const
+EnumStoreT<EntryT>::find_folded_enums(EntryType value) const
 {
     auto cmp = make_folded_comparator(value);
     return _dict->findMatchingEnums(cmp);
@@ -186,7 +186,7 @@ EnumStoreT<EntryT>::findFoldedEnums(EntryType value) const
 
 template <typename EntryT>
 bool
-EnumStoreT<EntryT>::findIndex(EntryType value, Index &idx) const
+EnumStoreT<EntryT>::find_index(EntryType value, Index& idx) const
 {
     auto cmp = make_comparator(value);
     return _dict->findIndex(cmp, idx);

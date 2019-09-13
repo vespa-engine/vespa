@@ -26,7 +26,7 @@ template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::freezeEnumDictionary()
 {
-    this->getEnumStore().freezeTree();
+    this->getEnumStore().freeze_dictionary();
 }
 
 template <typename B>
@@ -43,7 +43,7 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
                                                               std::map<DocId, EnumIndex> &currEnumIndices)
 {
     EnumIndex newIdx;
-    enumStore.findIndex(c._data.raw(), newIdx);
+    enumStore.find_index(c._data.raw(), newIdx);
 
     currEnumIndices[c._doc] = newIdx;
 }
@@ -78,7 +78,7 @@ void
 SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.getPostingDictionary();
+    Dictionary & dict = enumStore.get_posting_dictionary();
     auto cmp = enumStore.make_folded_comparator();
     PostingMap changePost;
 

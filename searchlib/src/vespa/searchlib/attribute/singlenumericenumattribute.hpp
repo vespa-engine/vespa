@@ -36,7 +36,7 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
     T newValue = this->applyArithmetic(oldValue, c);
 
     EnumIndex idx;
-    if (!this->_enumStore.findIndex(newValue, idx)) {
+    if (!this->_enumStore.find_index(newValue, idx)) {
         newUniques.insert(newValue);
     }
 
@@ -50,7 +50,7 @@ SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, 
     EnumIndex oldIdx = this->_enumIndices[c._doc];
     EnumIndex newIdx;
     T newValue = this->applyArithmetic(get(c._doc), c);
-    this->_enumStore.findIndex(newValue, newIdx);
+    this->_enumStore.find_index(newValue, newIdx);
 
     this->updateEnumRefCounts(c, newIdx, oldIdx, updater);
 }
