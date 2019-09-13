@@ -391,6 +391,8 @@ class JobControllerApiHandlerHelper {
         detailsObject.setBool("active", ! run.hasEnded());
         detailsObject.setString("status", nameOf(run.status()));
         jobController.updateTestLog(runId);
+        try { jobController.updateVespaLog(runId); }
+        catch (RuntimeException ignored) { } // May be perfectly fine, e.g., when logserver isn't up yet.
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
                 .orElseThrow(() -> new NotExistsException(String.format(

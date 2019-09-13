@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devAwsUsEast2a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
@@ -129,11 +130,16 @@ public class JobControllerApiHandlerHelperTest {
 
         ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
         tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.configServer().setLogStream("1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
+
+        tester.configServer().setLogStream("Nope, this won't be logged");
         tester.configServer().convergeServices(appId, zone);
         tester.setEndpoints(appId, zone);
         tester.runner().run();
 
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root")), "dev-overview.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, devUsEast1).get().id(), "9"), "dev-us-east-1-log-second-part.json");
     }
 
     @Test

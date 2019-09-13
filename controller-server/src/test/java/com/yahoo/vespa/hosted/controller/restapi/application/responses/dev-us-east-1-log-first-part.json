@@ -1,0 +1,62 @@
+{
+  "log": {
+    "deployReal": [
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Deploying platform version 6.1 and application version unknown ..."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "No services requiring restart."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Deployment successful."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "foo"
+      }
+    ],
+    "installReal": [
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Checking installation of 6.1 and unknown ..."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "                         host-tenant:application:default-dev.us-east-1:   container on port   43 has 1"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Installation not yet complete."
+      }
+    ],
+    "copyVespaLogs": [
+      {
+        "at": 1554970337935,
+        "type": "info",
+        "message": "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\nERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"
+      }
+    ]
+  },
+  "active": true,
+  "lastId": 9
+}

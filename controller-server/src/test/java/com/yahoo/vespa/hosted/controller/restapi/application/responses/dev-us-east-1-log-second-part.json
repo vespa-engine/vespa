@@ -1,0 +1,60 @@
+{
+  "log": {
+    "installReal": [
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Checking installation of 6.1 and unknown ..."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Wanted config generation is 2"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "All services on wanted config generation."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Attempting to find deployment endpoints ..."
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Found endpoints:"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "- dev.us-east-1"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": " |-- https://default--application--tenant.us-east-1.dev.vespa:43 (cluster 'default')"
+      },
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Installation succeeded!"
+      }
+    ],
+    "copyVespaLogs": [
+      {
+        "at": 0,
+        "type": "debug",
+        "message": "Copying Vespa log from nodes of tenant.application in dev.us-east-1 ..."
+      }
+    ]
+  },
+  "active": false,
+  "lastId": 19
+}

@@ -150,6 +150,9 @@ public class JobController {
     /** Fetches any new Vespa log entries, and records the timestamp of the last of these, for continuation. */
     public void updateVespaLog(RunId id) {
         locked(id, run -> {
+            if ( ! run.steps().containsKey(copyVespaLogs))
+                return run;
+
             ZoneId zone = id.type().zone(controller.system());
             Optional<Deployment> deployment = Optional.ofNullable(controller.applications().require(id.application())
                                                                             .deployments().get(zone));
