@@ -71,7 +71,7 @@ class LogReader {
                                     continue;
 
                                 Instant at = Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS);
-                                if (at.isAfter(from) && at.isBefore(to)) {
+                                if (at.isAfter(from) && ! at.isAfter(to)) {
                                     writer.write(line);
                                     writer.newLine();
                                 }
