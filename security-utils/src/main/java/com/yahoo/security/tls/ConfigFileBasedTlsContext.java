@@ -46,12 +46,20 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(new ReloaderThreadFactory());
 
     public ConfigFileBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode) {
+        this(tlsOptionsConfigFile, mode, PeerAuthentication.NEED);
+    }
+
+    /**
+     * Allows the caller to override the default peer authentication mode. This is only intended to be used in situations where
+     * the TLS peer authentication is enforced at a higher protocol or application layer (e.g with {@link PeerAuthentication#WANT}).
+     */
+    public ConfigFileBasedTlsContext(Path tlsOptionsConfigFile, AuthorizationMode mode, PeerAuthentication peerAuthentication) {
         TransportSecurityOptions options = TransportSecurityOptions.fromJsonFile(tlsOptionsConfigFile);
         MutableX509TrustManager trustManager = new MutableX509TrustManager();
         MutableX509KeyManager keyManager = new MutableX509KeyManager();
         reloadTrustManager(options, trustManager);
         reloadKeyManager(options, keyManager);
-        this.tlsContext = createDefaultTlsContext(options, mode, trustManager, keyManager);
+        this.tlsContext = createDefaultTlsContext(options, mode, trustManager, keyManager, peerAuthentication);
         this.scheduler.scheduleAtFixedRate(new CryptoMaterialReloader(tlsOptionsConfigFile, scheduler, trustManager, keyManager),
                                            UPDATE_PERIOD.getSeconds()/*initial delay*/,
                                            UPDATE_PERIOD.getSeconds(),
@@ -100,7 +108,8 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static DefaultTlsContext createDefaultTlsContext(TransportSecurityOptions options,
                                                              AuthorizationMode mode,
                                                              MutableX509TrustManager mutableTrustManager,
-                                                             MutableX509KeyManager mutableKeyManager) {
+                                                             MutableX509KeyManager mutableKeyManager,
+                                                             PeerAuthentication peerAuthentication) {
         SSLContext sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
                 .withTrustManagerFactory(
@@ -110,7 +119,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
-        return new DefaultTlsContext(sslContext, ciphers, PeerAuthentication.NEED);
+        return new DefaultTlsContext(sslContext, ciphers, peerAuthentication);
     }
 
     // Wrapped methods from TlsContext
