@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -24,11 +26,11 @@ import static java.util.Objects.requireNonNull;
 public class LogEntry {
 
     private final long id;
-    private final long at;
+    private final Instant at;
     private final Type type;
     private final String message;
 
-    public LogEntry(long id, long at, Type type, String message) {
+    public LogEntry(long id, Instant at, Type type, String message) {
         if (id < 0)
             throw new IllegalArgumentException("Id must be non-negative, but was " + id + ".");
 
@@ -42,7 +44,7 @@ public class LogEntry {
         return id;
     }
 
-    public long at() {
+    public Instant at() {
         return at;
     }
 
@@ -54,17 +56,18 @@ public class LogEntry {
         return message;
     }
 
-    public static List<LogEntry> parseVespaLog(InputStream log) {
+    public static List<LogEntry> parseVespaLog(InputStream log, Instant from) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(log, UTF_8))) {
             return reader.lines()
                          .map(line -> line.split("\t"))
                          .filter(parts -> parts.length == 7)
                          .map(parts -> new LogEntry(0,
-                                                    (long) (Double.parseDouble(parts[0]) * 1000),
+                                                    Instant.EPOCH.plus((long) (Double.parseDouble(parts[0]) * 1_000_000), ChronoUnit.MICROS),
                                                     typeOf(LogLevel.parse(parts[5])),
                                                     parts[1] + '\t' + parts[3] + '\t' + parts[4] + '\n' +
                                                     parts[6].replaceAll("\\\\n", "\n")
                                                             .replaceAll("\\\\t", "\t")))
+                         .filter(entry -> entry.at().isAfter(from))
                          .collect(Collectors.toUnmodifiableList());
         }
         catch (IOException e) {
@@ -77,7 +80,7 @@ public class LogEntry {
     public String toString() {
         return "LogEntry{" +
                "id=" + id +
-               ", at=" + at +
+               ", at=" + at.toEpochMilli() +
                ", type=" + type +
                ", message='" + message + '\'' +
                '}';
@@ -89,7 +92,7 @@ public class LogEntry {
         if (!(o instanceof LogEntry)) return false;
         LogEntry entry = (LogEntry) o;
         return id == entry.id &&
-               at == entry.at &&
+               at.toEpochMilli() == entry.at.toEpochMilli() &&
                type == entry.type &&
                Objects.equals(message, entry.message);
     }

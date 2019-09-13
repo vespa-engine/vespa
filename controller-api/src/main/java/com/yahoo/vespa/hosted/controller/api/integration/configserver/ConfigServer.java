@@ -46,7 +46,7 @@ public interface ConfigServer {
      * Gets the Vespa logs of the given deployment.
      *
      * If the "from" and/or "to" query parameters are present, they are read as millis since EPOCH, and used
-     * to limit the time window for which log entries are gathered.
+     * to limit the time window for which log entries are gathered. <em>This is not exact, and will return too much.</em>
      * If the "hostname" query parameter is present, it limits the entries to be from that host.
      */
     InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters);

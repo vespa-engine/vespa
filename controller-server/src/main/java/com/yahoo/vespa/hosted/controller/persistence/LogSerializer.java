@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,7 +61,7 @@ class LogSerializer {
 
     private void toSlime(LogEntry entry, Cursor entryObject) {
         entryObject.setLong(idField, entry.id());
-        entryObject.setLong(timestampField, entry.at());
+        entryObject.setLong(timestampField, entry.at().toEpochMilli());
         entryObject.setString(typeField, valueOf(entry.type()));
         entryObject.setString(messageField, entry.message());
     }
@@ -92,7 +93,7 @@ class LogSerializer {
 
     private LogEntry fromSlime(Inspector entryObject) {
         return new LogEntry(entryObject.field(idField).asLong(),
-                            entryObject.field(timestampField).asLong(),
+                            Instant.ofEpochMilli(entryObject.field(timestampField).asLong()),
                             typeOf(entryObject.field(typeField).asString()),
                             entryObject.field(messageField).asString());
     }

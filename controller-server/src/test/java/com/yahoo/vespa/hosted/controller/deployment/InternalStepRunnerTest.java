@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.AthenzDomain;
@@ -35,6 +36,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -267,29 +270,29 @@ public class InternalStepRunnerTest {
     @Test
     public void testsFailIfTestsFailRemotely() {
         RunId id = tester.startSystemTestTests();
-        tester.cloud().add(new LogEntry(123, 321, error, "Failure!"));
+        tester.cloud().add(new LogEntry(123, Instant.ofEpochMilli(321), error, "Failure!"));
         tester.cloud().set(TesterCloud.Status.FAILURE);
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 321, error, "Failure!"),
-                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Tests failed."));
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(321), error, "Failure!"),
+                             new LogEntry(lastId + 2, tester.clock().instant(), debug, "Tests failed."));
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
     }
 
     @Test
     public void testsFailIfTestsErr() {
         RunId id = tester.startSystemTestTests();
-        tester.cloud().add(new LogEntry(0, 123, error, "Error!"));
+        tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), error, "Error!"));
         tester.cloud().set(TesterCloud.Status.ERROR);
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, error, "Error!"),
-                             new LogEntry(lastId + 2, tester.clock().millis(), info, "Tester failed running its tests!"));
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(123), error, "Error!"),
+                             new LogEntry(lastId + 2, tester.clock().instant(), info, "Tester failed running its tests!"));
     }
 
     @Test
@@ -308,25 +311,25 @@ public class InternalStepRunnerTest {
         configObject.field("endpoints").field(JobType.systemTest.zone(system()).value()).traverse((ArrayTraverser) (__, endpoint) -> assertEquals(tester.routing().endpoints(new DeploymentId(appId, JobType.systemTest.zone(system()))).get(0).endpoint(), endpoint.asString()));
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
-        tester.cloud().add(new LogEntry(0, 123, info, "Ready!"));
+        tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), info, "Ready!"));
         tester.runner().run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, info, "Ready!"));
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(123), info, "Ready!"));
 
-        tester.cloud().add(new LogEntry(1, 1234, info, "Steady!"));
+        tester.cloud().add(new LogEntry(1, Instant.ofEpochMilli(1234), info, "Steady!"));
         tester.runner().run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, info, "Ready!"),
-                             new LogEntry(lastId + 2, 1234, info, "Steady!"));
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(123), info, "Ready!"),
+                             new LogEntry(lastId + 2, Instant.ofEpochMilli(1234), info, "Steady!"));
 
-        tester.cloud().add(new LogEntry(12, 12345, info, "Success!"));
+        tester.cloud().add(new LogEntry(12, Instant.ofEpochMilli(12345), info, "Success!"));
         tester.cloud().set(TesterCloud.Status.SUCCESS);
         tester.runner().run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, info, "Ready!"),
-                             new LogEntry(lastId + 2, 1234, info, "Steady!"),
-                             new LogEntry(lastId + 3, 12345, info, "Success!"),
-                             new LogEntry(lastId + 4, tester.clock().millis(), debug, "Tests completed successfully."));
+                             new LogEntry(lastId + 1, Instant.ofEpochMilli(123), info, "Ready!"),
+                             new LogEntry(lastId + 2, Instant.ofEpochMilli(1234), info, "Steady!"),
+                             new LogEntry(lastId + 3, Instant.ofEpochMilli(12345), info, "Success!"),
+                             new LogEntry(lastId + 4, tester.clock().instant(), debug, "Tests completed successfully."));
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.endTests));
     }
 
@@ -391,19 +394,16 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.copyVespaLogs,
-                             new LogEntry(lastId + 2, 1554970337084L, info,
-                                          "17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\n" +
-                                          "Switching to the latest deployed set of configurations and components. Application switch number: 2"),
-                             new LogEntry(lastId + 3, 1554970337935L, info,
+                             new LogEntry(lastId + 2, Instant.EPOCH.plus(3554970337935104L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 4, 1554970337947L, info,
+                             new LogEntry(lastId + 3, Instant.EPOCH.plus(3554970337947777L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 5, 1554970337947L, info,
+                             new LogEntry(lastId + 4, Instant.EPOCH.plus(3554970337947820L, ChronoUnit.MICROS), info,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstdout\n" +
                                           "ERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)"),
-                             new LogEntry(lastId + 6, 1554970337947L, warning,
+                             new LogEntry(lastId + 5, Instant.EPOCH.plus(3554970337947845L, ChronoUnit.MICROS), warning,
                                           "17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\tcontainer\tstderr\n" +
                                           "java.lang.NullPointerException\n\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\n\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)"));
     }
@@ -424,14 +424,14 @@ public class InternalStepRunnerTest {
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
-        assertEquals(List.of(entries), tester.jobs().details(id).get().get(step));
+        assertEquals(ImmutableList.copyOf(entries), tester.jobs().details(id).get().get(step));
     }
 
-    private static final String vespaLog = "1554970337.084804\t17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\t5549/832\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\tinfo\tSwitching to the latest deployed set of configurations and components. Application switch number: 2\n" +
-                                           "1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
-                                           "1554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
-                                           "1554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
-                                           "1554970337.947844\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
+    private static final String vespaLog = "-1554970337.084804\t17480180-v6-3.ostk.bm2.prod.ne1.yahoo.com\t5549/832\tcontainer\tContainer.com.yahoo.container.jdisc.ConfiguredApplication\tinfo\tSwitching to the latest deployed set of configurations and components. Application switch number: 2\n" +
+                                           "3554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "3554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "3554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
+                                           "3554970337.947845\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
 
     @Test
     public void generates_correct_services_xml_test() {

@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ public class BufferedLogStoreTest {
 
         byte[] manyBytes = new byte[BufferedLogStore.chunkSize / 2 + 1]; // One fits, and two (over-)fills.
         Arrays.fill(manyBytes, (byte) 'O');
-        LogEntry entry = new LogEntry(0, 123, LogEntry.Type.warning, new String(manyBytes));
+        LogEntry entry = new LogEntry(0, Instant.ofEpochMilli(123), LogEntry.Type.warning, new String(manyBytes));
 
         // Log entries are re-sequenced by the log store, by enumeration.
         LogEntry entry0 = new LogEntry(0, entry.at(), entry.type(), entry.message());

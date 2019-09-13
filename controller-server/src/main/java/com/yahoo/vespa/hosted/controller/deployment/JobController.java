@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -26,11 +25,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -53,12 +47,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.logging.Level.INFO;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -138,7 +129,7 @@ public class JobController {
     /** Stores the given log messages for the given run and step. */
     public void log(RunId id, Step step, Level level, List<String> messages) {
         log(id, step, messages.stream()
-                              .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
+                              .map(message -> new LogEntry(0, controller.clock().instant(), LogEntry.typeOf(level), message))
                               .collect(toList()));
     }
 
@@ -159,16 +150,16 @@ public class JobController {
             if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
                 return run;
 
-            long from = Math.max(run.lastVespaLogTimestamp().toEpochMilli(),
-                                 deployment.get().at().toEpochMilli());
+            Instant from = run.lastVespaLogTimestamp().isAfter(deployment.get().at()) ? run.lastVespaLogTimestamp() : deployment.get().at();
             List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                   .getLogs(new DeploymentId(id.application(), zone),
-                                                                           Map.of("from", Long.toString(from))));
+                                                                           Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                        from);
             if (log.isEmpty())
                 return run;
 
             logs.append(id.application(), id.type(), Step.copyVespaLogs, log);
-            return run.with(Instant.ofEpochMilli(log.get(log.size() - 1).at()));
+            return run.with(Instant.ofEpochMilli(log.get(log.size() - 1).at().toEpochMilli()));
         });
     }
 

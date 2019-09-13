@@ -414,7 +414,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void toSlime(Cursor entryObject, LogEntry entry) {
-        entryObject.setLong("at", entry.at());
+        entryObject.setLong("at", entry.at().toEpochMilli());
         entryObject.setString("type", entry.type().name());
         entryObject.setString("message", entry.message());
     }

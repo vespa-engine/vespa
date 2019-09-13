@@ -41,7 +41,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "                         host-tenant:application:default-dev.us-east-1:   container on port   43 has 1"
+        "message": "                         host-tenant:application:default-dev.us-east-1:   container on port   43 has config generation 1"
       },
       {
         "at": 0,
@@ -58,5 +58,6 @@
     ]
   },
   "active": true,
-  "lastId": 9
+  "lastId": 9,
+  "status": "running"
 }
