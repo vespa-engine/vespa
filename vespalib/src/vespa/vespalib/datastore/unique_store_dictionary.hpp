@@ -146,7 +146,7 @@ template <typename DictionaryT, typename ParentT>
 uint32_t
 UniqueStoreDictionary<DictionaryT, ParentT>::get_num_uniques() const
 {
-    return _dict.getFrozenView().size();
+    return _dict.size();
 }
 
 template <typename DictionaryT, typename ParentT>
