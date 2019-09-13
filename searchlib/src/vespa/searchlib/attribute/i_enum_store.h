@@ -54,8 +54,8 @@ public:
 
     virtual void write_value(BufferWriter& writer, Index idx) const = 0;
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
-    virtual void fixupRefCount(Index idx, uint32_t refCount) = 0;
-    virtual void fixupRefCounts(const EnumVector& histogram) = 0;
+    virtual void set_ref_count(Index idx, uint32_t ref_count) = 0;
+    virtual void set_ref_counts(const EnumVector &histogram) = 0;
     virtual void freeUnusedEnum(Index idx, IndexSet& unused) = 0;
     virtual void freeUnusedEnums() = 0;
     virtual bool foldedChange(const Index& idx1, const Index& idx2) const = 0;
@@ -82,7 +82,7 @@ public:
     virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
 
     template <typename TreeT>
-    void fixupRefCounts(const EnumVector& hist, TreeT& tree) {
+    void set_ref_counts(const EnumVector& hist, TreeT& tree) {
         if (hist.empty()) {
             return;
         }
@@ -91,7 +91,7 @@ public:
 
         for (HistIT hi(hist.begin()), hie(hist.end()); hi != hie; ++hi, ++ti) {
             assert(ti.valid());
-            fixupRefCount(ti.getKey(), *hi);
+            set_ref_count(ti.getKey(), *hi);
         }
         assert(!ti.valid());
         freeUnusedEnums();

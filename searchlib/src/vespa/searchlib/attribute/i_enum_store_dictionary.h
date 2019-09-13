@@ -39,7 +39,7 @@ public:
 
     virtual uint32_t getNumUniques() const = 0;
 
-    virtual void fixupRefCounts(const EnumVector& hist) = 0;
+    virtual void set_ref_counts(const EnumVector& hist) = 0;
     virtual void freeUnusedEnums(const datastore::EntryComparator& cmp) = 0;
     virtual void freeUnusedEnums(const IndexSet& toRemove,
                                  const datastore::EntryComparator& cmp) = 0;

@@ -33,7 +33,7 @@ public:
     DictionaryT &getDictionary() { return this->_dict; }
 
     uint32_t getNumUniques() const override;
-    void fixupRefCounts(const EnumVector& hist) override;
+    void set_ref_counts(const EnumVector &hist) override;
 
     void removeUnusedEnums(const IndexSet& unused,
                            const datastore::EntryComparator& cmp);

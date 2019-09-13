@@ -41,9 +41,9 @@ EnumStoreDictionary<DictionaryT>::getNumUniques() const
 
 template <typename DictionaryT>
 void
-EnumStoreDictionary<DictionaryT>::fixupRefCounts(const EnumVector& hist)
+EnumStoreDictionary<DictionaryT>::set_ref_counts(const EnumVector &hist)
 {
-    _enumStore.fixupRefCounts(hist, this->_dict);
+    _enumStore.set_ref_counts(hist, this->_dict);
 }
 
 template <typename DictionaryT>

@@ -28,7 +28,7 @@ EnumeratedLoader::EnumeratedLoader(IEnumStore& store)
 void
 EnumeratedLoader::set_ref_counts()
 {
-    _store.fixupRefCounts(_enums_histogram);
+    _store.set_ref_counts(_enums_histogram);
 }
 
 EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
@@ -46,7 +46,7 @@ EnumeratedPostingsLoader::is_folded_change(const Index& lhs, const Index& rhs) c
 void
 EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
 {
-    _store.fixupRefCount(idx, ref_count);
+    _store.set_ref_count(idx, ref_count);
 }
 
 void

@@ -79,9 +79,8 @@ public:
     void incRefCount(Index idx) { return get_entry_base(idx).inc_ref_count(); }
 
     // Only use when reading from enumerated attribute save files
-    // TODO: Instead create an API that is used for loading/initializing.
-    void fixupRefCount(Index idx, uint32_t refCount) override {
-        get_entry_base(idx).set_ref_count(refCount);
+    void set_ref_count(Index idx, uint32_t ref_count) override {
+        get_entry_base(idx).set_ref_count(ref_count);
     }
 
     uint32_t getNumUniques() const override { return _dict->getNumUniques(); }
@@ -96,7 +95,7 @@ public:
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 
-    void fixupRefCounts(const EnumVector &hist) override { _dict->fixupRefCounts(hist); }
+    void set_ref_counts(const EnumVector& hist) override { _dict->set_ref_counts(hist); }
     void freezeTree() { _store.freeze(); }
 
     IEnumStoreDictionary &getEnumStoreDict() override { return *_dict; }
