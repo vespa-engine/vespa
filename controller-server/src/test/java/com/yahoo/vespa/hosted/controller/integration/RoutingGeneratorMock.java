@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,20 +20,28 @@ import java.util.stream.Collectors;
  */
 public class RoutingGeneratorMock implements RoutingGenerator {
 
-    private final Map<DeploymentId, List<RoutingEndpoint>> routingTable = new ConcurrentHashMap<>();
-
-    private static final List<RoutingEndpoint> defaultEndpoints =
+    public static final List<RoutingEndpoint> TEST_ENDPOINTS =
             List.of(new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream3"),
                     new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
                     new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream2"),
                     new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"),
                     new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"));
 
+    private final Map<DeploymentId, List<RoutingEndpoint>> routingTable = new ConcurrentHashMap<>();
+    private final List<RoutingEndpoint> defaultEndpoints;
+
+    public RoutingGeneratorMock() {
+        this(List.of());
+    }
+
+    public RoutingGeneratorMock(List<RoutingEndpoint> endpoints) {
+        this.defaultEndpoints = List.copyOf(endpoints);
+    }
+
     @Override
     public List<RoutingEndpoint> endpoints(DeploymentId deployment) {
-        return routingTable.isEmpty()
-                ? defaultEndpoints
-                : routingTable.getOrDefault(deployment, Collections.emptyList());
+        if (routingTable.isEmpty()) return defaultEndpoints;
+        return routingTable.getOrDefault(deployment, List.of());
     }
 
     @Override
