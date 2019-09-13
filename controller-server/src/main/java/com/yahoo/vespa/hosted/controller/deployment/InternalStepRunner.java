@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -43,14 +44,10 @@ import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -60,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -106,6 +104,10 @@ import static java.util.logging.Level.WARNING;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
+    private static final NodeResources DEFAULT_TESTER_RESOURCES = new NodeResources(1, 4, 50, 0.3);
+    // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
+    // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
+    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
@@ -637,14 +639,17 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
+        ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
+
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         testerFlavorFor(id, spec));
+                                         testerFlavorFor(id, spec)
+                                                 .map(NodeResources::fromLegacyName)
+                                                 .orElse(zone.region().value().contains("aws-") ?
+                                                         DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
         byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
-
-        ZoneId zone = id.type().zone(controller.system());
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
@@ -692,11 +697,15 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the generated services.xml content for the tester application. */
     static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
-                              Optional<String> testerFlavor) {
-        String flavor = testerFlavor.orElse("d-1-4-50");
-        int memoryGb = Integer.parseInt(flavor.split("-")[2]); // Memory available in tester container.
-        int jdiscMemoryPercentage = (int) Math.ceil(200.0 / memoryGb); // 2Gb memory for tester application (excessive?).
-        int testMemoryMb = 512 * (memoryGb - 2); // Memory allocated to Surefire running tests. ≥25% left for other stuff.
+                              NodeResources resources) {
+        int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
+        int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
+
+        // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
+        int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
+
+        String resourceString = String.format(Locale.ENGLISH,
+                "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>", resources.vcpu(), resources.memoryGb(), resources.diskGb());
 
         AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
@@ -759,7 +768,9 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"" + flavor + "\" allocated-memory=\"" + jdiscMemoryPercentage + "%\" />\n" +
+                "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
+                "            " + resourceString + "\n" +
+                "        </nodes>\n" +
                 "    </container>\n" +
                 "</services>\n";
 

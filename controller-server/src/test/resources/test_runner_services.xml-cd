@@ -57,6 +57,8 @@
             </filtering>
         </http>
 
-        <nodes count="1" flavor="d-2-12-75" allocated-memory="17%" />
+        <nodes count="1" allocated-memory="17%">
+            <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb"/>
+        </nodes>
     </container>
 </services>
