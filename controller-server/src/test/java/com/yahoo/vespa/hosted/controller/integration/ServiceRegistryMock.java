@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
@@ -51,7 +52,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ConfigServerMock configServerMock = new ConfigServerMock(zoneRegistryMock);
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
-    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock();
+    private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS);
     private final MockMailer mockMailer = new MockMailer();
     private final ApplicationCertificateMock applicationCertificateMock = new ApplicationCertificateMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
