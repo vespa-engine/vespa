@@ -33,8 +33,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class MultigroupProvisioningTest {
 
-    private static final NodeResources small = new NodeResources(1, 1, 1, 1);
-    private static final NodeResources large = new NodeResources(3, 3, 3, 3);
+    private static final NodeResources small = new NodeResources(1, 4, 10, 1);
+    private static final NodeResources large = new NodeResources(12, 12, 12, 12);
 
     @Test
     public void test_provisioning_of_multiple_groups() {

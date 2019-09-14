@@ -82,7 +82,7 @@ public class VirtualNodeProvisioningTest {
 
         // Allowed to use same parent host for several nodes in same cluster in dev
         {
-            NodeResources flavor = new NodeResources(1, 1, 1, 1);
+            NodeResources flavor = new NodeResources(1, 4, 10, 1);
             tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
             tester.makeReadyNodes(4, flavor, NodeType.host, 1);
             tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);

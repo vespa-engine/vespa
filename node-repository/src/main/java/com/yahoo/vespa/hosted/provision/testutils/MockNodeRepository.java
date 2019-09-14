@@ -71,14 +71,14 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(createNode("node3", "host3.yahoo.com", ipConfig(3), Optional.empty(),
                              new Flavor(new NodeResources(0.5, 48, 500, 1)), NodeType.tenant));
         Node node4 = createNode("node4", "host4.yahoo.com", ipConfig(4), Optional.of("dockerhost1.yahoo.com"),
-                                new Flavor(new NodeResources(1, 1, 100, 1)), NodeType.tenant);
+                                new Flavor(new NodeResources(1, 4, 100, 1)), NodeType.tenant);
         node4 = node4.with(node4.status()
                                 .withVespaVersion(new Version("6.41.0"))
                                 .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.41.0")));
         nodes.add(node4);
 
         Node node5 = createNode("node5", "host5.yahoo.com", ipConfig(5), Optional.of("dockerhost2.yahoo.com"),
-                                new Flavor(new NodeResources(1, 1, 100, 1)), NodeType.tenant);
+                                new Flavor(new NodeResources(1, 8, 100, 1)), NodeType.tenant);
         nodes.add(node5.with(node5.status()
                                   .withVespaVersion(new Version("1.2.3"))
                                   .withDockerImage(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:1.2.3"))));
@@ -158,7 +158,7 @@ public class MockNodeRepository extends NodeRepository {
                                                    ClusterSpec.Id.from("id3"),
                                                    Version.fromString("6.42"),
                                                    false);
-        activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 1, 100, 1), false, true), 1, null), app3, provisioner);
+        activate(provisioner.prepare(app3, cluster3, Capacity.fromCount(2, new NodeResources(1, 4, 100, 1), false, true), 1, null), app3, provisioner);
 
         List<Node> largeNodes = new ArrayList<>();
         largeNodes.add(createNode("node13", "host13.yahoo.com", ipConfig(13), Optional.empty(),

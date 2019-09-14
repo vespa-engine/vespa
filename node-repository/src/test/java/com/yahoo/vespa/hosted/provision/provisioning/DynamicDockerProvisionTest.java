@@ -45,7 +45,7 @@ public class DynamicDockerProvisionTest {
         assertEquals(0, tester.nodeRepository().list().size());
 
         ApplicationId application1 = tester.makeApplicationId();
-        NodeResources flavor = new NodeResources(1, 1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         List<HostSpec> hostSpec = tester.prepare(application1, clusterSpec("myContent.t1.a1"), 4, 1, flavor);
@@ -65,7 +65,7 @@ public class DynamicDockerProvisionTest {
         deployZoneApp(tester);
 
         ApplicationId application = tester.makeApplicationId();
-        NodeResources flavor = new NodeResources(1, 1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("small"));
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor);
@@ -75,7 +75,7 @@ public class DynamicDockerProvisionTest {
     @Test
     public void allocates_to_hosts_already_hosting_nodes_by_this_tenant() {
         ApplicationId application = tester.makeApplicationId();
-        NodeResources flavor = new NodeResources(1, 1, 1, 1);
+        NodeResources flavor = new NodeResources(1, 4, 10, 1);
 
         List<Integer> expectedProvisionIndexes = List.of(100, 101);
         mockHostProvisioner(hostProvisioner, tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("large"));

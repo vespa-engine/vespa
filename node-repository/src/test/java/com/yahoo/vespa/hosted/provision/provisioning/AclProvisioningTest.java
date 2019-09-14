@@ -34,20 +34,20 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_allocated_node() {
-        List<Node> configServers = tester.makeConfigServers(3, "d-1-1-1", Version.fromString("6.123.456"));
+        List<Node> configServers = tester.makeConfigServers(3, "d-1-4-10", Version.fromString("6.123.456"));
 
         // Populate repo
-        tester.makeReadyNodes(10, new NodeResources(1, 1, 1, 1));
-        List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 1, 1, 1), NodeType.host);
+        tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));
+        List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
         ApplicationId zoneApplication = tester.makeApplicationId();
         deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.makeReadyVirtualDockerNodes(1,new NodeResources(1, 1, 1, 1),
+        tester.makeReadyVirtualDockerNodes(1,new NodeResources(1, 4, 10, 1),
                                            dockerHost.get(0).hostname());
-        List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 1, 1, 1), NodeType.proxy);
+        List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 4, 10, 1), NodeType.proxy);
 
         // Allocate 2 nodes
         ApplicationId application = tester.makeApplicationId();
-        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, new NodeResources(1, 1, 1, 1), false, true));
+        List<Node> activeNodes = deploy(application, Capacity.fromCount(2, new NodeResources(1, 4, 10, 1), false, true));
         assertEquals(2, activeNodes.size());
 
         // Get trusted nodes for the first active node
@@ -130,7 +130,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 1, 1, 1),
+        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 4, 10, 1),
                                                                     dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodeUnderTest, true);

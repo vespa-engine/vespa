@@ -13,6 +13,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.JacksonFlag;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -46,6 +47,8 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+        if (requestedResources.isPresent()) assertMinimumResources(requestedResources.get(), cluster);
+
         NodeResources resources = requestedResources
                 .or(() -> flagNodeResources(cluster.type()))
                 .orElse(defaultNodeResources(cluster.type()));
@@ -59,6 +62,15 @@ public class CapacityPolicies {
             resources = resources.withVcpu(0.1);
 
         return resources;
+    }
+
+    private void assertMinimumResources(NodeResources resources, ClusterSpec cluster) {
+        double minMemoryGb = cluster.type() == ClusterSpec.Type.admin ? 2 : 4;
+        if (resources.memoryGb() >= minMemoryGb) return;
+
+        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
+                "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
+                minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
     }
 
     private Optional<NodeResources> flagNodeResources(ClusterSpec.Type clusterType) {
