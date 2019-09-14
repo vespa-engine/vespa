@@ -48,7 +48,7 @@ import static org.junit.Assert.fail;
  */
 public class ProvisioningTest {
 
-    private static final NodeResources defaultResources = new NodeResources(1, 2, 3, 4);
+    private static final NodeResources defaultResources = new NodeResources(1, 4, 10, 4);
 
     @Test
     public void application_deployment_constant_application_size() {
@@ -225,8 +225,8 @@ public class ProvisioningTest {
 
     @Test
     public void application_deployment_multiple_flavors() {
-        NodeResources small = new NodeResources(1, 1, 1, 0.3);
-        NodeResources large = new NodeResources(2, 2, 2, 0.3);
+        NodeResources small = new NodeResources(1, 4, 10, 0.3);
+        NodeResources large = new NodeResources(8, 8, 40, 0.3);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
@@ -357,12 +357,12 @@ public class ProvisioningTest {
     public void dev_deployment_flavor() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 
-        tester.makeReadyNodes(4, new NodeResources(2, 2, 2, 2), NodeType.host, 1);
+        tester.makeReadyNodes(4, new NodeResources(2, 4, 10, 2), NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
 
         ApplicationId application = tester.makeApplicationId();
         SystemState state = prepare(application, 2, 2, 3, 3,
-                                    new NodeResources(2, 2, 2, 2), tester);
+                                    new NodeResources(2, 4, 10, 2), tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
     }
@@ -370,7 +370,7 @@ public class ProvisioningTest {
     /** Test always uses the zone default resources */
     @Test
     public void test_deployment_resources() {
-        NodeResources large = new NodeResources(2, 2, 2, 0.3);
+        NodeResources large = new NodeResources(2, 4, 10, 0.3);
 
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.test, RegionName.from("us-east"))).build();
 

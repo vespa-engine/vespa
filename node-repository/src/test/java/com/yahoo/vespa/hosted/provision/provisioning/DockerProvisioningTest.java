@@ -36,7 +36,7 @@ import static org.junit.Assert.fail;
  */
 public class DockerProvisioningTest {
 
-    private static final NodeResources dockerFlavor = new NodeResources(1, 1, 1, 1);
+    private static final NodeResources dockerFlavor = new NodeResources(1, 4, 10, 1);
 
     @Test
     public void docker_application_deployment() {
@@ -204,7 +204,7 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb, bandwidth: 1.0 Gbps] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
@@ -225,7 +225,7 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals("[vcpu: 1.0, memory: 1.0 Gb, disk 1.0 Gb, bandwidth: 1.0 Gbps]", nodes.asList().get(0).flavor().name());
+        assertEquals("[vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps]", nodes.asList().get(0).flavor().name());
     }
 
     private Set<String> hostsOf(NodeList nodes) {

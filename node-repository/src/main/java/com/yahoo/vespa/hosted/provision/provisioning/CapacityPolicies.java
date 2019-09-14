@@ -6,12 +6,14 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.JacksonFlag;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -22,10 +24,12 @@ import java.util.Optional;
 public class CapacityPolicies {
 
     private final Zone zone;
+    private final BooleanFlag useAdvertisedResourcesFlag;
     private final JacksonFlag<com.yahoo.vespa.flags.custom.NodeResources> defaultResourcesFlag;
 
     public CapacityPolicies(Zone zone, FlagSource flagSource) {
         this.zone = zone;
+        this.useAdvertisedResourcesFlag = Flags.USE_ADVERTISED_RESOURCES.bindTo(flagSource);
         this.defaultResourcesFlag = Flags.DEFAULT_RESOURCES.bindTo(flagSource);
     }
 
@@ -43,6 +47,8 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
+        if (requestedResources.isPresent()) assertMinimumResources(requestedResources.get(), cluster);
+
         NodeResources resources = requestedResources
                 .or(() -> flagNodeResources(cluster.type()))
                 .orElse(defaultNodeResources(cluster.type()));
@@ -52,10 +58,19 @@ public class CapacityPolicies {
             resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev)
+        if (zone.environment() == Environment.dev && !useAdvertisedResourcesFlag.value())
             resources = resources.withVcpu(0.1);
 
         return resources;
+    }
+
+    private void assertMinimumResources(NodeResources resources, ClusterSpec cluster) {
+        double minMemoryGb = cluster.type() == ClusterSpec.Type.admin ? 2 : 4;
+        if (resources.memoryGb() >= minMemoryGb) return;
+
+        throw new IllegalArgumentException(String.format(Locale.ENGLISH,
+                "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
+                minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
     }
 
     private Optional<NodeResources> flagNodeResources(ClusterSpec.Type clusterType) {

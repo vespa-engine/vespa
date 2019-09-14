@@ -115,7 +115,7 @@ public class NodeFailTester {
         List<Node> hosts = tester.createHostNodes(numberOfHosts);
         for (int i = 0; i < hosts.size(); i++) {
             tester.createReadyNodes(nodesPerHost, i * nodesPerHost, Optional.of("parent" + i),
-                                   new NodeResources(1, 1, 1, 0.3), NodeType.tenant);
+                                   new NodeResources(1, 4, 10, 0.3), NodeType.tenant);
         }
 
         // Create applications
@@ -123,8 +123,8 @@ public class NodeFailTester {
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Version.fromString("6.75.0"), false);
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
-        Capacity capacity1 = Capacity.fromCount(3, new NodeResources(1, 1, 1, 0.3), false, true);
-        Capacity capacity2 = Capacity.fromCount(5, new NodeResources(1, 1, 1, 0.3), false, true);
+        Capacity capacity1 = Capacity.fromCount(3, new NodeResources(1, 4, 10, 0.3), false, true);
+        Capacity capacity2 = Capacity.fromCount(5, new NodeResources(1, 4, 10, 0.3), false, true);
         tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);

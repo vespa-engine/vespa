@@ -261,8 +261,8 @@ public class FailedExpirerTest {
     private static class FailureScenario {
 
         private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "docker");
-        public static final NodeResources defaultFlavor = new NodeResources(2, 2, 2, 2);
-        public static final NodeResources dockerFlavor = new NodeResources(1, 1, 1, 1);
+        public static final NodeResources defaultFlavor = new NodeResources(2, 8, 100, 2);
+        public static final NodeResources dockerFlavor = new NodeResources(1, 4, 50, 1);
         
         private final MockCurator curator = new MockCurator();
         private final ManualClock clock = new ManualClock();
