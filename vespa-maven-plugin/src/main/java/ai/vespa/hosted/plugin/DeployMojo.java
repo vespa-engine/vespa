@@ -78,13 +78,16 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     }
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneOffset.UTC);
+    private static final String padding = "\n" + " ".repeat(23);
 
     private void print(DeploymentLog.Entry entry) {
         String timestamp = formatter.format(entry.at());
+        String message = String.join(padding, entry.message().split("\n"))
+                               .replaceAll("\\s*\n", "\n").trim();
         switch (entry.level()) {
-            case "warning" : getLog().warn(" [" + timestamp + "]  " + entry.message()); break;
-            case "error" : getLog().error("[" + timestamp + "]  " + entry.message()); break;
-            default: getLog().info(" [" + timestamp + "]  " + entry.message()); break;
+            case "warning" : getLog().warn(" [" + timestamp + "]  " + message); break;
+            case "error" : getLog().error("   [" + timestamp + "]  " + message); break;
+            default: getLog().info("    [" + timestamp + "]  " + message); break;
         }
     }
 
