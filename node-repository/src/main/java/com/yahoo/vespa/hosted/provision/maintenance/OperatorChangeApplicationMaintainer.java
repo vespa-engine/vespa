@@ -37,7 +37,9 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Map<ApplicationId, List<Node>> nodesByApplication = nodeRepository().getNodes(NodeType.tenant).stream()
+        List<Node> nodes = nodeRepository().getNodes(NodeType.tenant);
+        nodes.addAll(nodeRepository().getNodes(NodeType.proxy));
+        Map<ApplicationId, List<Node>> nodesByApplication = nodes.stream()
                 .filter(node -> node.allocation().isPresent())
                 .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.toList()));
 
