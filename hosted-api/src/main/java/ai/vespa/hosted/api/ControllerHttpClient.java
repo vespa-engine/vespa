@@ -127,7 +127,7 @@ public abstract class ControllerHttpClient {
 
     /** Returns the test config for functional and verification tests of the indicated Vespa deployment. */
     public TestConfig testConfig(ApplicationId id, ZoneId zone) {
-        return TestConfig.fromJson(asBytes(send(request(HttpRequest.newBuilder(testConfigPath(id, zone)), GET))));
+        return TestConfig.fromJson(send(request(HttpRequest.newBuilder(testConfigPath(id, zone)), GET)).body());
     }
 
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
@@ -218,8 +218,37 @@ public abstract class ControllerHttpClient {
         return zone.environment().value() + "-" + zone.region().value();
     }
 
+    /** Returns a response with a 2XX status code, with up to 3 attempts, or throws. */
     private HttpResponse<byte[]> send(HttpRequest request) {
-        return unchecked(() -> client.send(request, ofByteArray()));
+        UncheckedIOException thrown = null;
+        for (int retry = 0; retry < 3; retry++) {
+            try {
+                HttpResponse<byte[]> response = client.send(request, ofByteArray());
+                if (response.statusCode() / 100 == 2)
+                    return response;
+
+                Inspector rootObject = toSlime(response.body()).get();
+                String message = response.request() + " returned code " + response.statusCode() +
+                                 " (" + rootObject.field("error-code").asString() + "): " +
+                                 rootObject.field("message").asString();
+
+                if (response.statusCode() / 100 == 4)
+                    throw new IllegalArgumentException(message);
+
+                throw new IOException(message);
+
+            }
+            catch (IOException e) { // Catches the above, and timeout exceptions from the client.
+                if (thrown == null)
+                    thrown = new UncheckedIOException(e);
+                else
+                    thrown.addSuppressed(e);
+            }
+            catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        throw thrown;
     }
 
     private static <T> T unchecked(Callable<T> callable) {
@@ -262,24 +291,12 @@ public abstract class ControllerHttpClient {
 
     /** Returns the response body as a String, or throws if the status code is non-2XX. */
     private static String asString(HttpResponse<byte[]> response) {
-        return new String(asBytes(response), UTF_8);
-    }
-
-    /** Returns the response body as a byte array, or throws if the status code is non-2XX. */
-    private static byte[] asBytes(HttpResponse<byte[]> response) {
-        toInspector(response);
-        return response.body();
+        return new String(response.body(), UTF_8);
     }
 
     /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
     private static Inspector toInspector(HttpResponse<byte[]> response) {
-        Inspector rootObject = toSlime(response.body()).get();
-        if (response.statusCode() / 100 != 2)
-            throw new RuntimeException(response.request() + " returned code " + response.statusCode() +
-                                       " (" + rootObject.field("error-code").asString() + "): " +
-                                       rootObject.field("message").asString());
-
-        return rootObject;
+        return toSlime(response.body()).get();
     }
 
     /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
