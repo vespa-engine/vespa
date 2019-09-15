@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.List;
@@ -14,7 +16,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -80,11 +81,12 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
             if (lastException.get() != null) {
-                log.log(Level.INFO, String.format("Failed to query metrics service for %d/%d applications. Retrying in %s. Last error: ",
-                                                     failures.get(),
-                                                     applicationList.size(),
-                                                     maintenanceInterval()),
-                        lastException.get());
+                log.log(LogLevel.WARNING,
+                        String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
+                                      failures.get(),
+                                      applicationList.size(),
+                                      maintenanceInterval(),
+                                      Exceptions.toMessageString(lastException.get())));
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
