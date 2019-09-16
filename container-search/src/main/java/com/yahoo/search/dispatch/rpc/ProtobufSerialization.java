@@ -187,7 +187,7 @@ public class ProtobufSerialization {
         return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey);
     }
 
-    private static InvokerResult convertToResult(Query query, SearchProtocol.SearchReply protobuf,
+    static InvokerResult convertToResult(Query query, SearchProtocol.SearchReply protobuf,
                                                  DocumentDatabase documentDatabase, int partId, int distKey)
     {
         InvokerResult result = new InvokerResult(query, protobuf.getHitsCount());
@@ -211,7 +211,7 @@ public class ProtobufSerialization {
         }
 
         for (var replyHit : protobuf.getHitsList()) {
-            LeanHit hit = (!replyHit.getSortData().isEmpty())
+            LeanHit hit = (replyHit.getSortData().isEmpty())
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
                     : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getSortData().toByteArray());
             result.getLeanHits().add(hit);

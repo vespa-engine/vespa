@@ -26,12 +26,12 @@ public class LeanHit implements Comparable<LeanHit> {
         this.partId = partId;
         this.distributionKey = distributionKey;
     }
-    double getRelevance() { return relevance; }
-    byte [] getGid() { return gid; }
-    byte [] getSortData() { return sortData; }
-    boolean hasSortData() { return sortData != null; }
-    int getPartId() { return partId; }
-    int getDistributionKey() { return distributionKey; }
+    public double getRelevance() { return relevance; }
+    public byte [] getGid() { return gid; }
+    public byte [] getSortData() { return sortData; }
+    public boolean hasSortData() { return sortData != null; }
+    public int getPartId() { return partId; }
+    public int getDistributionKey() { return distributionKey; }
 
     QueryPacketData getQueryPacketData() { return queryPacketData; }
 
