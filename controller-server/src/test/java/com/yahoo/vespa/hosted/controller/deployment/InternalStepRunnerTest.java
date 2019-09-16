@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
@@ -439,8 +438,19 @@ public class InternalStepRunnerTest {
         assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
                                                                                             true,
                                                                                             false,
+                                                                                            false,
                                                                                             new NodeResources(2, 12, 75, 1))));
     }
+
+    @Test
+    public void generates_correct_services_xml_vespa_6() {
+        assertFile("test_runner_services.xml-vespa-6", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
+                true,
+                false,
+                true,
+                new NodeResources(2, 12, 75, 1))));
+    }
+
 
     private void assertFile(String resourceName, String actualContent) {
         try {

@@ -44,9 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -67,7 +65,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
-import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
@@ -627,7 +624,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
+        Versions versions = controller.jobController().run(id).get().versions();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
@@ -636,11 +633,12 @@ public class InternalStepRunner implements StepRunner {
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
                                          useTesterCertificate,
+                                         versions.targetPlatform().getMajor() == 6,
                                          testerFlavorFor(id, spec)
                                                  .map(NodeResources::fromLegacyName)
                                                  .orElse(zone.region().value().contains("aws-") ?
                                                          DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
-        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
+        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), versions.targetApplication());
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
@@ -688,15 +686,22 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the generated services.xml content for the tester application. */
     static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
-                              NodeResources resources) {
+                              boolean isVespa6, NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String resourceString = String.format(Locale.ENGLISH,
-                "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>", resources.vcpu(), resources.memoryGb(), resources.diskGb());
+        String nodes = isVespa6 ?
+                String.format(Locale.ENGLISH,
+                        "        <nodes count=\"1\" flavor=\"d-%.0f-%.0f-%.0f\" allocated-memory=\"%d%%\" />\n",
+                        Math.ceil(resources.vcpu()), Math.ceil(resources.memoryGb()), Math.ceil(resources.diskGb()), jdiscMemoryPct):
+                String.format(Locale.ENGLISH,
+                        "        <nodes count=\"1\" allocated-memory=\"%d%%\">\n" +
+                        "            <resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>\n" +
+                        "        </nodes>\n",
+                        jdiscMemoryPct, resources.vcpu(), resources.memoryGb(), resources.diskGb());
 
         AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
@@ -759,9 +764,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
-                "            " + resourceString + "\n" +
-                "        </nodes>\n" +
+                nodes +
                 "    </container>\n" +
                 "</services>\n";
 
