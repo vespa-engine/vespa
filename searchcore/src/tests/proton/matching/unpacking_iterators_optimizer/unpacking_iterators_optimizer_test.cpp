@@ -78,9 +78,11 @@ std::string dump_query(Node &root) {
     return std::string(mem.data, mem.size);
 }
 
+namespace {
 std::string view("view");
 uint32_t id(5);
 Weight weight(7);
+}
 
 void add_phrase(QueryBuilder<ProtonNodeTypes> &builder) {
     builder.addPhrase(3, view, id, weight);
