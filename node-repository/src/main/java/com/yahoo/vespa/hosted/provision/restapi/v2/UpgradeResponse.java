@@ -7,7 +7,7 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
-import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
+import com.yahoo.vespa.hosted.provision.os.OsVersions;
 
 import java.io.IOException;
 import java.io.OutputStream;
