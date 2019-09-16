@@ -45,8 +45,8 @@ class MockDispatcher extends Dispatcher {
             dispatchConfigNodeBuilder.group(node.group());
             dispatchConfigNodeBuilder.key(key++); // not used
             dispatchConfigBuilder.node(dispatchConfigNodeBuilder);
-            dispatchConfigBuilder.useFdispatchByDefault(true);
         }
+        dispatchConfigBuilder.useFdispatchByDefault(true);
         return new DispatchConfig(dispatchConfigBuilder);
     }
 }
