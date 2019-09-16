@@ -6,6 +6,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
@@ -75,15 +79,17 @@ public class JobController {
     private final BufferedLogStore logs;
     private final TesterCloud cloud;
     private final Badges badges;
+    private final BooleanFlag directRoutingUseHttps;
 
     private AtomicReference<Consumer<Run>> runner = new AtomicReference<>(__ -> { });
 
-    public JobController(Controller controller) {
+    public JobController(Controller controller, FlagSource flagSource) {
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, controller.serviceRegistry().runDataStore());
         this.cloud = controller.serviceRegistry().testerCloud();
         this.badges = new Badges(controller.zoneRegistry().badgeUrl());
+        this.directRoutingUseHttps = Flags.DIRECT_ROUTING_USE_HTTPS_4443.bindTo(flagSource);
     }
 
     public TesterCloud cloud() { return cloud; }
@@ -441,13 +447,15 @@ public class JobController {
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
+        boolean useHttp = controller.system().isPublic()
+                && !directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, testerId.applicationId().serializedForm()).value();
         return controller.applications().getDeploymentEndpoints(testerId)
                          .stream().findAny()
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()))
                          // TODO jvenstad: Remove ugly thing when public deployments have a valid web certificate.
-                         .map(uri -> controller.system().isPublic() ? URI.create("http://" + uri.getHost() + ":443/") : uri);
+                         .map(uri -> useHttp ? URI.create("http://" + uri.getHost() + ":443/") : uri);
     }
 
     /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */

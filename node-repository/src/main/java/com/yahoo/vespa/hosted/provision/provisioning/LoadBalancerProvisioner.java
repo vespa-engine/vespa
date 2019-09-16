@@ -9,6 +9,10 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -46,11 +50,13 @@ public class LoadBalancerProvisioner {
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
+    private final BooleanFlag usePort4443Flag;
 
-    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
+    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
+        this.usePort4443Flag = Flags.DIRECT_ROUTING_USE_HTTPS_4443.bindTo(flagSource);
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         try (var lock = db.lockLoadBalancers()) {
             for (var id : db.readLoadBalancerIds()) {
@@ -164,9 +170,10 @@ public class LoadBalancerProvisioner {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
+        boolean usePort4443 = usePort4443Flag.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
         Set<Real> reals = new LinkedHashSet<>();
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
-            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
+            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress, usePort4443 ? 4443 : 4080)));
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                ", targeting: " + reals);
