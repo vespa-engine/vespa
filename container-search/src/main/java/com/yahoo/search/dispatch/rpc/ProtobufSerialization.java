@@ -15,6 +15,8 @@ import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.InvokerResult;
+import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.QueryTree;
@@ -22,7 +24,6 @@ import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
@@ -180,30 +181,21 @@ public class ProtobufSerialization {
         return convertFromResult(searchResult).toByteArray();
     }
 
-    static Result deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher, int partId, int distKey)
+    static InvokerResult deserializeToSearchResult(byte[] payload, Query query, VespaBackEndSearcher searcher, int partId, int distKey)
             throws InvalidProtocolBufferException {
         var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
-        return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey, searcher.getName());
+        return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey);
     }
 
-    private static Result convertToResult(Query query,
-                                          SearchProtocol.SearchReply protobuf,
-                                          DocumentDatabase documentDatabase,
-                                          int partId,
-                                          int distKey,
-                                          String source) {
-        var result = new Result(query);
+    private static InvokerResult convertToResult(Query query, SearchProtocol.SearchReply protobuf,
+                                                 DocumentDatabase documentDatabase, int partId, int distKey)
+    {
+        InvokerResult result = new InvokerResult(query, protobuf.getHitsCount());
 
-        result.setTotalHitCount(protobuf.getTotalHitCount());
-        result.setCoverage(convertToCoverage(protobuf));
+        result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
+        result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        int hitItems = protobuf.getHitsCount();
         var haveGrouping = protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty();
-        if (haveGrouping) {
-            hitItems++;
-        }
-        result.hits().ensureCapacity(hitItems);
-
         if (haveGrouping) {
             BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
             int cnt = buf.getInt(null);
@@ -215,26 +207,16 @@ public class ProtobufSerialization {
             }
             GroupingListHit hit = new GroupingListHit(list, documentDatabase.getDocsumDefinitionSet());
             hit.setQuery(query);
-            result.hits().add(hit);
+            result.getResult().hits().add(hit);
         }
 
-        var sorting = query.getRanking().getSorting();
         for (var replyHit : protobuf.getHitsList()) {
-            FastHit hit = new FastHit(replyHit.getGlobalId().toByteArray(), new Relevance(replyHit.getRelevance()), partId, distKey);
-            hit.setQuery(query);
-
-            if (!replyHit.getSortData().isEmpty()) {
-                hit.setSortData(replyHit.getSortData().toByteArray(), sorting);
-            }
-            hit.setFillable();
-            hit.setCached(false);
-            hit.setSource(source);
-
-            result.hits().add(hit);
+            LeanHit hit = (!replyHit.getSortData().isEmpty())
+                    ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
+                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getSortData().toByteArray());
+            result.getLeanHits().add(hit);
         }
-        if (sorting != null) {
-            result.hits().setSorted(true);
-        }
+
         var slimeTrace = protobuf.getSlimeTrace();
         if (slimeTrace != null && !slimeTrace.isEmpty()) {
             var traces = new Value.ArrayValue();

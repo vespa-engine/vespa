@@ -1,6 +1,7 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -37,13 +38,20 @@ class MockInvoker extends SearchInvoker {
     }
 
     @Override
-    protected Result getSearchResult(Execution execution) throws IOException {
-        Result ret = new Result(query);
+    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+        InvokerResult ret = new InvokerResult(query, 10);
         if (coverage != null) {
-            ret.setCoverage(coverage);
+            ret.getResult().setCoverage(coverage);
         }
         if (hits != null) {
-            ret.hits().addAll(hits);
+            for (Hit h : hits) {
+                if (h instanceof FastHit) {
+                    FastHit fh = (FastHit) h;
+                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
+                } else {
+                    ret.getResult().hits().add(h);
+                }
+            }
         }
         return ret;
     }
