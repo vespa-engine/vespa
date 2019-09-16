@@ -31,6 +31,7 @@
                 <ssl>
                     <private-key-file>/var/lib/sia/keys/vespa.vespa.tenant.key.pem</private-key-file>
                     <certificate-file>/var/lib/sia/certs/vespa.vespa.tenant.cert.pem</certificate-file>
+                    <ca-certificates-file>/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem</ca-certificates-file>
                     <client-authentication>want</client-authentication>
                 </ssl>
             </server>
