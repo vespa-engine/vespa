@@ -5,14 +5,14 @@
     "deployTester": [
       {
         "at": 1000,
-        "type": "debug",
+        "type": "info",
         "message": "Deployment failed: ERROR!"
       }
     ],
     "deactivateTester": [
       {
         "at": 1000,
-        "type": "debug",
+        "type": "info",
         "message": "Deactivating tester of tenant.application in prod.us-east-3 ..."
       }
     ]

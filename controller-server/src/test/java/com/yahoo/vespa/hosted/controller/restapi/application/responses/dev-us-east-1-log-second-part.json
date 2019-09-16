@@ -3,47 +3,47 @@
     "installReal": [
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Checking installation of 6.1 and unknown ..."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Wanted config generation is 2"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "All services on wanted config generation."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Attempting to find deployment endpoints ..."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Found endpoints:"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "- dev.us-east-1"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": " |-- https://default--application--tenant.us-east-1.dev.vespa:43 (cluster 'default')"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Installation succeeded!"
       }
     ]
