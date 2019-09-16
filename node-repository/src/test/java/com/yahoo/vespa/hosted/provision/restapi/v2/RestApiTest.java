@@ -5,6 +5,7 @@ import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -273,7 +274,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void post_node_with_invalid_ip_address() throws Exception {
+    public void post_node_with_duplicate_ip_address() throws Exception {
         Request req = new Request("http://localhost:8080/nodes/v2/node",
                 ("[" + asNodeJson("host-with-ip.yahoo.com", "default", "foo") + "]").
                         getBytes(StandardCharsets.UTF_8),
@@ -303,6 +304,32 @@ public class RestApiTest {
                                    "{\"ipAddresses\": [\"::104:3\"]}",
                                    Request.Method.PATCH), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [::100:4, ::100:3, ::100:2, ::104:3] to dockerhost1.yahoo.com: [::104:3] already assigned to dockerhost5.yahoo.com\"}");
+
+        // Node types running a single container can share their IP address with child node
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asNodeJson("cfghost42.yahoo.com", NodeType.confighost, "default", "127.0.42.1") + "]",
+                                   Request.Method.POST), 200,
+                       "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asDockerNodeJson("cfg42.yahoo.com", NodeType.config, "cfghost42.yahoo.com", "127.0.42.1") + "]",
+                                   Request.Method.POST), 200,
+                       "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+
+        // ... but cannot share with child node of wrong type
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asDockerNodeJson("proxy42.yahoo.com", NodeType.proxy, "cfghost42.yahoo.com", "127.0.42.1") + "]",
+                                   Request.Method.POST), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.42.1] to proxy42.yahoo.com: [127.0.42.1] already assigned to cfg42.yahoo.com\"}");
+
+        // ... nor with child node on different host
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                                   "[" + asNodeJson("cfghost43.yahoo.com", NodeType.confighost, "default", "127.0.43.1") + "]",
+                                   Request.Method.POST), 200,
+                       "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/cfg42.yahoo.com",
+                                   "{\"ipAddresses\": [\"127.0.43.1\"]}",
+                                   Request.Method.PATCH), 400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [127.0.43.1] to cfg42.yahoo.com: [127.0.43.1] already assigned to cfghost43.yahoo.com\"}");
     }
 
     @Test
@@ -919,26 +946,36 @@ public class RestApiTest {
                 "\"minDiskAvailableGb\":12.0,\"minMainMemoryAvailableGb\":34.0,\"minCpuCores\":56.0,\"fastDisk\":true,\"bandwidthGbps\":78.0");
     }
 
-    private String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
-        return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
-                createIpAddresses(ipAddress) +
-                "\"openStackId\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"}";
+    private static String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {
+        return asDockerNodeJson(hostname, NodeType.tenant, parentHostname, ipAddress);
     }
 
-    private String asNodeJson(String hostname, String flavor, String... ipAddress) {
+    private static String asDockerNodeJson(String hostname, NodeType nodeType, String parentHostname, String... ipAddress) {
+        return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
+               createIpAddresses(ipAddress) +
+               "\"openStackId\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"" +
+               (nodeType != NodeType.tenant ? ",\"type\":\"" + nodeType +  "\"" : "") +
+               "}";
+    }
+
+    private static String asNodeJson(String hostname, String flavor, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
                 createIpAddresses(ipAddress) +
                 "\"flavor\":\"" + flavor + "\"}";
     }
 
-    private String asHostJson(String hostname, String flavor, String... ipAddress) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
-                createIpAddresses(ipAddress) +
-                "\"flavor\":\"" + flavor + "\"" +
-                ", \"type\":\"host\"}";
+    private static String asHostJson(String hostname, String flavor, String... ipAddress) {
+        return asNodeJson(hostname,  NodeType.host, flavor, ipAddress);
     }
 
-    private String createIpAddresses(String... ipAddress) {
+    private static String asNodeJson(String hostname, NodeType nodeType, String flavor, String... ipAddress) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+               createIpAddresses(ipAddress) +
+               "\"flavor\":\"" + flavor + "\"" +
+               ", \"type\":\"" + nodeType + "\"}";
+    }
+
+    private static String createIpAddresses(String... ipAddress) {
         return "\"ipAddresses\":[" +
                 Arrays.stream(ipAddress)
                       .map(ip -> "\"" + ip + "\"")
@@ -946,7 +983,7 @@ public class RestApiTest {
                 "],";
     }
 
-    private boolean getHardwareFailure(String json) {
+    private static boolean getHardwareFailure(String json) {
         Slime slime = SlimeUtils.jsonToSlime(json.getBytes());
         Cursor hardwareFailure = slime.get().field("hardwareFailure");
         if (!hardwareFailure.valid())
