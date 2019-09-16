@@ -738,7 +738,6 @@ public class InternalStepRunner implements StepRunner {
                 "                <ssl>\n" +
                 "                    <private-key-file>/var/lib/sia/keys/" + idDomain.value() + ".tenant.key.pem</private-key-file>\n" +
                 "                    <certificate-file>/var/lib/sia/certs/" + idDomain.value() + ".tenant.cert.pem</certificate-file>\n" +
-                "                    <ca-certificates-file>/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem</ca-certificates-file>\n" +
                 "                    <client-authentication>want</client-authentication>\n" +
                 "                </ssl>\n" +
                 "            </server>\n" +
