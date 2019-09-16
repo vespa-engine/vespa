@@ -89,7 +89,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         String timestamp = formatter.format(entry.at());
         String message = String.join(padding, entry.message().split("\n"))
                                .replaceAll("\\s*\n", "\n").trim();
-        if ( ! entry.isVespaLogEntry() || loggable.compareTo(entry.level()) <= 0)
+        if ( ! entry.isVespaLogEntry() || loggable.compareTo(entry.level()) >= 0)
             switch (entry.level()) {
                 case error   : getLog().error("   [" + timestamp + "]  " + message); break;
                 case warning : getLog().warn   (" [" + timestamp + "]  " + message); break;
