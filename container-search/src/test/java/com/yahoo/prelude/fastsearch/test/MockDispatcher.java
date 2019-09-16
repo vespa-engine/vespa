@@ -30,7 +30,7 @@ class MockDispatcher extends Dispatcher {
 
     private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
             RpcResourcePool rpcResourcePool) {
-        super(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, !dispatchConfig.useFdispatchByDefault()),
+        super(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig.dispatchWithProtobuf()),
                 new FS4PingFactory(fs4ResourcePool), new MockMetric());
     }
 
@@ -45,6 +45,7 @@ class MockDispatcher extends Dispatcher {
             dispatchConfigNodeBuilder.group(node.group());
             dispatchConfigNodeBuilder.key(key++); // not used
             dispatchConfigBuilder.node(dispatchConfigNodeBuilder);
+            dispatchConfigBuilder.useFdispatchByDefault(true);
         }
         return new DispatchConfig(dispatchConfigBuilder);
     }
