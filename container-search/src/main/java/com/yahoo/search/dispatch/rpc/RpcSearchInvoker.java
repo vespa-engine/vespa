@@ -6,7 +6,6 @@ import com.yahoo.compress.Compressor;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.rpc.Client.ProtobufResponse;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -61,7 +60,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     }
 
     @Override
-    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+    protected Result getSearchResult(Execution execution) throws IOException {
         long timeLeftMs = query.getTimeLeft();
         if (timeLeftMs <= 0) {
             return errorResult(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
