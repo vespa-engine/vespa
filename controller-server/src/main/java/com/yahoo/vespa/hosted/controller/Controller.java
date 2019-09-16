@@ -111,7 +111,7 @@ public class Controller extends AbstractComponent {
 
         metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
-        jobController = new JobController(this);
+        jobController = new JobController(this, flagSource);
         applicationController = new ApplicationController(this, curator, accessControl,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           clock
