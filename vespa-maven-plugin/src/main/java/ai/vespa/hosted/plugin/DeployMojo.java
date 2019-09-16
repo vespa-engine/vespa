@@ -85,9 +85,10 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         String message = String.join(padding, entry.message().split("\n"))
                                .replaceAll("\\s*\n", "\n").trim();
         switch (entry.level()) {
-            case "warning" : getLog().warn(" [" + timestamp + "]  " + message); break;
-            case "error" : getLog().error("   [" + timestamp + "]  " + message); break;
-            default: getLog().info("    [" + timestamp + "]  " + message); break;
+            case "error"   : getLog().error("   [" + timestamp + "]  " + message); break;
+            case "warning" : getLog().warn   (" [" + timestamp + "]  " + message); break;
+            case "info"    : getLog().info("    [" + timestamp + "]  " + message); break;
+            default        : getLog().debug("   [" + timestamp + "]  " + message); break;
         }
     }
 
