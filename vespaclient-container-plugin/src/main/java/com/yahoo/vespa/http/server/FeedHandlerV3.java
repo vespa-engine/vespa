@@ -46,12 +46,11 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     private final AtomicInteger threadsAvailableForFeeding;
     private static final Logger log = Logger.getLogger(FeedHandlerV3.class.getName());
 
-    public FeedHandlerV3(
-            LoggingRequestHandler.Context parentCtx,
-            DocumentmanagerConfig documentManagerConfig,
-            SessionCache sessionCache,
-            ThreadpoolConfig threadpoolConfig,
-            DocumentApiMetrics metricsHelper) {
+    public FeedHandlerV3(LoggingRequestHandler.Context parentCtx,
+                         DocumentmanagerConfig documentManagerConfig,
+                         SessionCache sessionCache,
+                         ThreadpoolConfig threadpoolConfig,
+                         DocumentApiMetrics metricsHelper) {
         super(parentCtx);
         docTypeManager = new DocumentTypeManager(documentManagerConfig);
         this.sessionCache = sessionCache;
@@ -76,21 +75,19 @@ public class FeedHandlerV3 extends LoggingRequestHandler {
     // verify the version header first. This is done in the old code.
     @Override
     public HttpResponse handle(HttpRequest request) {
-        final String clientId = clientId(request);
-        final ClientFeederV3 clientFeederV3;
+        String clientId = clientId(request);
+        ClientFeederV3 clientFeederV3;
         synchronized (monitor) {
             if (! clientFeederByClientId.containsKey(clientId)) {
                 SourceSessionParams sourceSessionParams = sourceSessionParams(request);
-                clientFeederByClientId.put(
-                        clientId,
-                        new ClientFeederV3(
-                                retainSource(sessionCache, sourceSessionParams),
-                                new FeedReaderFactory(),
-                                docTypeManager,
-                                clientId,
-                                metric,
-                                feedReplyHandler,
-                                threadsAvailableForFeeding));
+                clientFeederByClientId.put(clientId,
+                                           new ClientFeederV3(retainSource(sessionCache, sourceSessionParams),
+                                                              new FeedReaderFactory(),
+                                                              docTypeManager,
+                                                              clientId,
+                                                              metric,
+                                                              feedReplyHandler,
+                                                              threadsAvailableForFeeding));
             }
             clientFeederV3 = clientFeederByClientId.get(clientId);
         }

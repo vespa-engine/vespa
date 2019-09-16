@@ -9,13 +9,13 @@ import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.vespaclient.config.FeederConfig;
 
-
 /**
- * Just a wrapper for feeder options, from config or HTTP parameters.
+ * A wrapper for feeder options, from config or HTTP parameters.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class FeederOptions {
+
     // These default values are here basically just for convenience in test cases,
     // they are overridden by real config values in all other cases.
     private boolean abortOnDocumentError = true;
