@@ -278,7 +278,7 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId + 1, Instant.ofEpochMilli(321), error, "Failure!"),
-                             new LogEntry(lastId + 2, tester.clock().instant(), debug, "Tests failed."));
+                             new LogEntry(lastId + 2, tester.clock().instant(), info, "Tests failed."));
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
     }
 
@@ -330,7 +330,7 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 1, Instant.ofEpochMilli(123), info, "Ready!"),
                              new LogEntry(lastId + 2, Instant.ofEpochMilli(1234), info, "Steady!"),
                              new LogEntry(lastId + 3, Instant.ofEpochMilli(12345), info, "Success!"),
-                             new LogEntry(lastId + 4, tester.clock().instant(), debug, "Tests completed successfully."));
+                             new LogEntry(lastId + 4, tester.clock().instant(), info, "Tests completed successfully."));
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.endTests));
     }
 

@@ -3,49 +3,49 @@
     "deployReal": [
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Deploying platform version 6.1 and application version unknown ..."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "No services requiring restart."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Deployment successful."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "foo"
       }
     ],
     "installReal": [
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Checking installation of 6.1 and unknown ..."
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "                         host-tenant:application:default-dev.us-east-1: unorchestrated  6.1                                                      "
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Wanted config generation is 2"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "                         host-tenant:application:default-dev.us-east-1:   container on port   43 has config generation 1"
       },
       {
         "at": 0,
-        "type": "debug",
+        "type": "info",
         "message": "Installation not yet complete."
       }
     ],

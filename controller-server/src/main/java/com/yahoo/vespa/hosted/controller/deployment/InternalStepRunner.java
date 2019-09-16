@@ -795,7 +795,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(List<String> messages) {
-            controller.jobController().log(id, step, DEBUG, messages);
+            controller.jobController().log(id, step, INFO, messages);
         }
 
         private void log(Level level, String message) {
