@@ -184,8 +184,7 @@ public class ClusterSearcher extends Searcher {
                 : !host.equals(HostName.getLocalhost());
     }
 
-    private static ClusterParams makeClusterParams(int searchclusterIndex,
-                                                   int dispatchIndex) {
+    private static ClusterParams makeClusterParams(int searchclusterIndex, int dispatchIndex) {
         return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex);
     }
 
@@ -195,11 +194,10 @@ public class ClusterSearcher extends Searcher {
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
-                                               int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
-                                                        dispatcherIndex);
-        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams,
-                                documentdbInfoConfig);
+                                               int dispatcherIndex)
+    {
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, dispatcherIndex);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(String serverId,

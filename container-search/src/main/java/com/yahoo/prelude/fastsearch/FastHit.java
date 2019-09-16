@@ -75,6 +75,9 @@ public class FastHit extends Hit {
         distributionKey = 0;
     }
 
+    public FastHit(byte [] gid, double relevance, int partId, int distributionKey) {
+        this(gid, new Relevance(relevance), partId, distributionKey);
+    }
     public FastHit(byte [] gid, Relevance relevance, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
