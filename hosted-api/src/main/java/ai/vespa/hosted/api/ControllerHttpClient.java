@@ -313,11 +313,12 @@ public abstract class ControllerHttpClient {
     private static DeploymentLog toDeploymentLog(HttpResponse<byte[]> response) {
         Inspector rootObject = toInspector(response);
         List<DeploymentLog.Entry> entries = new ArrayList<>();
-        rootObject.field("log").traverse((ObjectTraverser) (__, entryArray) ->
+        rootObject.field("log").traverse((ObjectTraverser) (step, entryArray) ->
                 entryArray.traverse((ArrayTraverser) (___, entryObject) -> {
                     entries.add(new DeploymentLog.Entry(Instant.ofEpochMilli(entryObject.field("at").asLong()),
-                                                        entryObject.field("type").asString(),
-                                                        entryObject.field("message").asString()));
+                                                        DeploymentLog.Level.of(entryObject.field("type").asString()),
+                                                        entryObject.field("message").asString(),
+                                                        "copyVespaLogs".equals(step)));
                 }));
         return new DeploymentLog(entries,
                                  rootObject.field("active").asBool(),

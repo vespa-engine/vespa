@@ -46,20 +46,22 @@ public class DeploymentLog {
     public static class Entry {
 
         private final Instant at;
-        private final String level;
+        private final Level level;
         private final String message;
+        private final boolean isVespaLogEntry;
 
-        public Entry(Instant at, String level, String message) {
+        public Entry(Instant at, Level level, String message, boolean isVespaLogEntry) {
             this.at = at;
             this.level = level;
             this.message = message;
+            this.isVespaLogEntry = isVespaLogEntry;
         }
 
         public Instant at() {
             return at;
         }
 
-        public String level() {
+        public Level level() {
             return level;
         }
 
@@ -67,6 +69,28 @@ public class DeploymentLog {
             return message;
         }
 
+        public boolean isVespaLogEntry() {
+            return isVespaLogEntry;
+        }
+
+    }
+
+
+    public enum Level {
+        error,
+        warning,
+        info,
+        debug;
+
+        public static Level of(String level) {
+            switch (level) {
+                case "error"   : return error;
+                case "warning" : return warning;
+                case "info"    : return info;
+                case "debug"   : return debug;
+                default        : return debug;
+            }
+        }
     }
 
 
