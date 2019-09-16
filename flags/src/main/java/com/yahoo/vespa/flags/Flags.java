@@ -178,7 +178,7 @@ public class Flags {
     public static final UnboundBooleanFlag HOST_HARDENING = defineFeatureFlag(
             "host-hardening", false,
             "Whether to enable host hardening Linux baseline.",
-            "Typically used in host-admin and takes effect on next tick or on host-admin restart (may vary where used).",
+            "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
