@@ -38,7 +38,7 @@ public class NodeResources {
         this.vcpu = requirePositive("vcpu", vcpu);
         this.memoryGb = requirePositive("memoryGb", memoryGb);
         this.diskGb = requirePositive("diskGb", diskGb);
-        this.bandwidthGbps = (int) requirePositive("bandwidthGbps", Optional.ofNullable(bandwidthGbps).orElse(0.3));
+        this.bandwidthGbps = requirePositive("bandwidthGbps", Optional.ofNullable(bandwidthGbps).orElse(0.3));
         this.diskSpeed = Optional.ofNullable(diskSpeed).orElse("fast");
 
         if (!validDiskSpeeds.contains(this.diskSpeed))
