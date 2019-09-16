@@ -18,6 +18,8 @@ import com.yahoo.prelude.ConfigurationException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.InvokerResult;
+import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.dispatch.ResponseMonitor;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -89,7 +91,7 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     }
 
     @Override
-    protected Result getSearchResult(Execution execution) throws IOException {
+    protected InvokerResult getSearchResult(Execution execution) throws IOException {
         if (pendingSearchError != null) {
             return errorResult(query, pendingSearchError);
         }
@@ -117,11 +119,10 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         if (query.getPresentation().getSummary() == null)
             query.getPresentation().setSummary(searcher.getDefaultDocsumClass());
 
-        Result result = new Result(query);
+        InvokerResult result = new InvokerResult(query, resultPacket.getDocumentCount());
 
-        ensureResultHitCapacity(result, resultPacket);
-        addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
-        addUnfilledHits(result, resultPacket.getDocuments(), queryPacket.getQueryPacketData());
+        addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result.getResult());
+        addUnfilledHits(result.getLeanHits(), resultPacket.getDocuments(), queryPacket.getQueryPacketData());
 
         return result;
     }
@@ -136,14 +137,6 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
         log.fine(() -> "made QueryPacket: " + queryPacket);
 
         return queryPacket;
-    }
-
-    private void ensureResultHitCapacity(Result result, QueryResultPacket resultPacket) {
-        int hitCount = resultPacket.getDocumentCount();
-        if (resultPacket.getGroupData() != null) {
-            hitCount++;
-        }
-        result.hits().ensureCapacity(hitCount);
     }
 
     private void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result) {
@@ -192,45 +185,19 @@ public class FS4SearchInvoker extends SearchInvoker implements ResponseMonitor<F
     /**
      * Creates unfilled hits from a List of DocumentInfo instances.
      */
-    private void addUnfilledHits(Result result, List<DocumentInfo> documents, QueryPacketData queryPacketData) {
-        Query myQuery = result.getQuery();
-        Sorting sorting = myQuery.getRanking().getSorting();
+    private void addUnfilledHits(List<LeanHit> result, List<DocumentInfo> documents, QueryPacketData queryPacketData) {
         Optional<Integer> channelDistributionKey = distributionKey();
 
         for (DocumentInfo document : documents) {
-
-            try {
-                FastHit hit = new FastHit();
-                hit.setQuery(myQuery);
-                if (queryPacketData != null)
-                    hit.setQueryPacketData(queryPacketData);
-
-                hit.setFillable();
-                hit.setCached(false);
-
-                extractDocumentInfo(hit, document, sorting);
-                channelDistributionKey.ifPresent(hit::setDistributionKey);
-
-                result.hits().add(hit);
-            } catch (ConfigurationException e) {
-                log.log(LogLevel.WARNING, "Skipping hit", e);
-            } catch (Exception e) {
-                log.log(LogLevel.ERROR, "Skipping malformed hit", e);
-            }
+             byte [] sortData = document.getSortData();
+             LeanHit hit = (sortData == null)
+                     ? new LeanHit(document.getRawGlobalId(), document.getPartId(), channelDistributionKey.orElse(document.getDistributionKey()), document.getMetric())
+                     : new LeanHit(document.getRawGlobalId(), document.getPartId(), channelDistributionKey.orElse(document.getDistributionKey()), document.getSortData());
+             if (queryPacketData != null) {
+                 hit.setQueryPacketData(queryPacketData);
+             }
+             result.add(hit);
         }
-    }
-
-    private void extractDocumentInfo(FastHit hit, DocumentInfo document, Sorting sorting) {
-        hit.setSource(getName());
-
-        Number rank = document.getMetric();
-
-        hit.setRelevance(new Relevance(rank.doubleValue()));
-
-        hit.setDistributionKey(document.getDistributionKey());
-        hit.setGlobalId(document.getRawGlobalId());
-        hit.setPartId(document.getPartId());
-        hit.setSortData(document.getSortData(), sorting);
     }
 
     @Override

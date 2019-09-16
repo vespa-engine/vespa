@@ -32,14 +32,15 @@ public abstract class SearchInvoker extends CloseableInvoker {
      */
     public Result search(Query query, Execution execution) throws IOException {
         sendSearchRequest(query);
-        Result result = getSearchResult(execution);
-        setFinalStatus(result.hits().getError() == null);
-        return result;
+        InvokerResult result = getSearchResult(execution);
+        setFinalStatus(result.getResult().hits().getError() == null);
+        result.complete();
+        return result.getResult();
     }
 
     protected abstract void sendSearchRequest(Query query) throws IOException;
 
-    protected abstract Result getSearchResult(Execution execution) throws IOException;
+    protected abstract InvokerResult getSearchResult(Execution execution) throws IOException;
 
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;
@@ -55,12 +56,12 @@ public abstract class SearchInvoker extends CloseableInvoker {
         return node.map(Node::key);
     }
 
-    protected Result errorResult(Query query, ErrorMessage errorMessage) {
+    protected InvokerResult errorResult(Query query, ErrorMessage errorMessage) {
         Result error = new Result(query, errorMessage);
         Coverage errorCoverage = new Coverage(0, 0, 0);
         errorCoverage.setNodesTried(1);
         error.setCoverage(errorCoverage);
-        return error;
+        return new InvokerResult(error);
     }
 
 }
