@@ -108,6 +108,7 @@ public class InternalStepRunner implements StepRunner {
     private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
+    static final Duration testerTimeout = Duration.ofMinutes(30);
     static final Duration installationTimeout = Duration.ofMinutes(150);
     static final Duration certificateTimeout = Duration.ofMinutes(300);
 
@@ -323,8 +324,10 @@ public class InternalStepRunner implements StepRunner {
         if (   nodesConverged(id.tester().id(), id.type(), platform, logger)
             && servicesConverged(id.tester().id(), id.type(), platform, logger)) {
             if (endpointsAvailable(id.tester().id(), id.type().zone(controller.system()), logger)) {
-                logger.log("Tester container successfully installed!");
-                return Optional.of(running);
+                if (containersAreUp(id.tester().id(), id.type().zone(controller.system()), logger)) {
+                    logger.log("Tester container successfully installed!");
+                    return Optional.of(running);
+                }
             }
             else if (timedOut(deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
@@ -332,8 +335,8 @@ public class InternalStepRunner implements StepRunner {
             }
         }
 
-        if (timedOut(deployment.get(), installationTimeout)) {
-            logger.log(WARNING, "Installation of tester failed to complete within " + installationTimeout.toMinutes() + " minutes of real deployment!");
+        if (timedOut(deployment.get(), testerTimeout)) {
+            logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes of real deployment!");
             return Optional.of(error);
         }
 
@@ -448,19 +451,19 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
 
-        if (controller.jobController().cloud().ready(testerEndpoint.get())) {
-            logger.log("Starting tests ...");
-            controller.jobController().cloud().startTests(testerEndpoint.get(),
-                                                          TesterCloud.Suite.of(id.type()),
-                                                          testConfigSerializer.configJson(id.application(),
-                                                                                          id.type(),
-                                                                                          endpoints,
-                                                                                          listClusters(id.application(), zones)));
-            return Optional.of(running);
+        if ( ! controller.jobController().cloud().ready(testerEndpoint.get())) {
+            logger.log(WARNING, "Tester container went bad!");
+            return Optional.of(error);
         }
 
-        logger.log("Tester container not yet ready.");
-        return Optional.empty();
+        logger.log("Starting tests ...");
+        controller.jobController().cloud().startTests(testerEndpoint.get(),
+                                                      TesterCloud.Suite.of(id.type()),
+                                                      testConfigSerializer.configJson(id.application(),
+                                                                                      id.type(),
+                                                                                      endpoints,
+                                                                                      listClusters(id.application(), zones)));
+        return Optional.of(running);
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
