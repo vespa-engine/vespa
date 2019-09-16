@@ -34,15 +34,15 @@ public class OsVersionsTest {
         // Upgrade OS
         Version version1 = Version.fromString("7.1");
         versions.setTarget(NodeType.host, version1, false);
-        Map<NodeType, Version> targetVersions = versions.targets();
+        Map<NodeType, OsVersion> targetVersions = versions.targets();
         assertSame("Caches target versions", targetVersions, versions.targets());
-        assertEquals(version1, versions.targetFor(NodeType.host).get());
+        assertEquals(version1, versions.targetFor(NodeType.host).get().version());
 
         // Upgrade OS again
         Version version2 = Version.fromString("7.2");
         versions.setTarget(NodeType.host, version2, false);
         assertNotSame("Cache invalidated", targetVersions, versions.targets());
-        assertEquals(version2, versions.targetFor(NodeType.host).get());
+        assertEquals(version2, versions.targetFor(NodeType.host).get().version());
 
         // Downgrading fails
         try {
@@ -52,7 +52,7 @@ public class OsVersionsTest {
 
         // Forcing downgrade succeeds
         versions.setTarget(NodeType.host, version1, true);
-        assertEquals(version1, versions.targetFor(NodeType.host).get());
+        assertEquals(version1, versions.targetFor(NodeType.host).get().version());
 
         // Target can be removed
         versions.removeTarget(NodeType.host);
