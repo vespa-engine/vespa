@@ -122,7 +122,7 @@ UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root,
             root = std::move(and_node);
         }
     }
-    return std::move(root);
+    return root;
 }
 
 } // namespace proton::matching
