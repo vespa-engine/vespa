@@ -22,6 +22,8 @@ import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
@@ -141,12 +143,21 @@ public class FastSearcher extends VespaBackEndSearcher {
         QueryRewrite.rewriteSddocname(query);
     }
 
+    private void injectSource(HitGroup hits) {
+        for (Hit hit : hits.asUnorderedHits()) {
+            if (hit instanceof FastHit) {
+                hit.setSource(getName());
+            }
+        }
+    }
+
     @Override
     public Result doSearch2(Query query, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
         try(SearchInvoker invoker = getSearchInvoker(query)) {
             Result result = invoker.search(query, execution);
+            injectSource(result.hits());
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
                 // There is currently no correct choice for which
