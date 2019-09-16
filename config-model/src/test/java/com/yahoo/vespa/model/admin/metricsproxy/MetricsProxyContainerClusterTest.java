@@ -117,7 +117,7 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(2, config.consumer().size());
         assertEquals(config.consumer(1).name(), DEFAULT_PUBLIC_CONSUMER_ID);
 
-        int numMetricsForPublicDefaultConsumer = defaultPublicMetricSet.getMetrics().size() + numSystemMetrics;
+        int numMetricsForPublicDefaultConsumer = defaultPublicMetricSet.getMetrics().size() + numDefaultVespaMetrics + numSystemMetrics;
         assertEquals(numMetricsForPublicDefaultConsumer, config.consumer(1).metric().size());
     }
 

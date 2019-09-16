@@ -22,6 +22,7 @@ public class DefaultPublicConsumer {
     private static final MetricSet publicConsumerMetrics = new MetricSet("public-consumer-metrics",
                                                                          emptyList(),
                                                                          ImmutableList.of(defaultPublicMetricSet,
+                                                                                          defaultVespaMetricSet,
                                                                                           systemMetricSet));
 
     public static MetricsConsumer getDefaultPublicConsumer() {

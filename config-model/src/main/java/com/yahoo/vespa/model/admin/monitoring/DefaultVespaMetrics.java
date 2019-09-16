@@ -8,9 +8,6 @@ import java.util.Set;
 /**
  * Encapsulates a minimal set of Vespa metrics to be used as default for all metrics consumers.
  *
- * Note: most predefined metric sets use this as a child, so changing this will require updating
- *       e.g. the list of Vespa metrics in the Datadog integration.
- *
  * @author leandroalves
  */
 public class DefaultVespaMetrics {
