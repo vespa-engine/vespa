@@ -14,14 +14,14 @@ public class LeanHit implements Comparable<LeanHit> {
     private QueryPacketData queryPacketData;
     public LeanHit(byte [] gid, int partId, int distributionKey, double relevance) {
         this.gid = gid;
-        this.relevance = relevance;
+        this.relevance = Double.isNaN(relevance) ? Double.NEGATIVE_INFINITY : relevance;
         this.sortData = null;
         this.partId = partId;
         this.distributionKey = distributionKey;
     }
     public LeanHit(byte [] gid, int partId, int distributionKey, byte [] sortData) {
         this.gid = gid;
-        this.relevance = Double.NEGATIVE_INFINITY;
+        this.relevance = 0.0;
         this.sortData = sortData;
         this.partId = partId;
         this.distributionKey = distributionKey;

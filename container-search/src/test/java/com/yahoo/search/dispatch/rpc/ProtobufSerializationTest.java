@@ -88,7 +88,7 @@ public class ProtobufSerializationTest {
         for (LeanHit hit : hits) {
             assertEquals('a', hit.getGid()[0]);
             assertEquals(hitNum, hit.getGid()[11]);
-            assertEquals(Double.NEGATIVE_INFINITY, hit.getRelevance(), DELTA);
+            assertEquals(0.0, hit.getRelevance(), DELTA);
             assertEquals(1, hit.getPartId());
             assertEquals(2, hit.getDistributionKey());
             assertTrue(hit.hasSortData());
