@@ -447,7 +447,6 @@ public class JobController {
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        boolean useHttp = controller.system().isPublic()
          boolean useHttp =      controller.system().isPublic()
                            && ! directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, id.tester().id().serializedForm()).value();
         return controller.applications().getDeploymentEndpoints(testerId)
