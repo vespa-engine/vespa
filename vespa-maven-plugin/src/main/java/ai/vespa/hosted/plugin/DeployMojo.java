@@ -31,8 +31,13 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
     @Parameter(property = "follow", defaultValue = "true")
     private boolean follow;
 
+    @Parameter(property = "vespaLogLevel", defaultValue = "error")
+    private String vespaLogLevel;
+    private DeploymentLog.Level loggable;
+
     @Override
     protected void doExecute() throws MojoFailureException, MojoExecutionException {
+        loggable = DeploymentLog.Level.valueOf(vespaLogLevel);
         Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
                                                                              projectPathOf("target", "application.zip"))));
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
@@ -84,11 +89,13 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
         String timestamp = formatter.format(entry.at());
         String message = String.join(padding, entry.message().split("\n"))
                                .replaceAll("\\s*\n", "\n").trim();
-        switch (entry.level()) {
-            case "warning" : getLog().warn(" [" + timestamp + "]  " + message); break;
-            case "error" : getLog().error("   [" + timestamp + "]  " + message); break;
-            default: getLog().info("    [" + timestamp + "]  " + message); break;
-        }
+        if ( ! entry.isVespaLogEntry() || loggable.compareTo(entry.level()) >= 0)
+            switch (entry.level()) {
+                case error   : getLog().error("   [" + timestamp + "]  " + message); break;
+                case warning : getLog().warn   (" [" + timestamp + "]  " + message); break;
+                case info    : getLog().info("    [" + timestamp + "]  " + message); break;
+                default      : getLog().debug("   [" + timestamp + "]  " + message); break;
+            }
     }
 
 }
