@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<services xmlns:deploy='vespa' version='1.0'>
+    <container version='1.0' id='tester'>
+
+        <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
+            <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
+                <artifactsPath>artifacts</artifactsPath>
+                <surefireMemoryMb>5120</surefireMemoryMb>
+                <useAthenzCredentials>true</useAthenzCredentials>
+                <useTesterCertificate>false</useTesterCertificate>
+            </config>
+        </component>
+
+        <handler id="com.yahoo.vespa.hosted.testrunner.TestRunnerHandler" bundle="vespa-testrunner-components">
+            <binding>http://*/tester/v1/*</binding>
+        </handler>
+
+        <http>
+            <!-- Make sure 4080 is the first port. This will be used by the config server. -->
+            <server id='default' port='4080'/>
+            <server id='testertls4443' port='4443'>
+                <config name="jdisc.http.connector">
+                    <tlsClientAuthEnforcer>
+                        <enable>true</enable>
+                        <pathWhitelist>
+                            <item>/status.html</item>
+                            <item>/state/v1/config</item>
+                        </pathWhitelist>
+                    </tlsClientAuthEnforcer>
+                </config>
+                <ssl>
+                    <private-key-file>/var/lib/sia/keys/vespa.vespa.tenant.key.pem</private-key-file>
+                    <certificate-file>/var/lib/sia/certs/vespa.vespa.tenant.cert.pem</certificate-file>
+                    <client-authentication>want</client-authentication>
+                </ssl>
+            </server>
+            <filtering>
+                <access-control domain='vespa.vespa.cd'>
+                    <exclude>
+                        <binding>http://*/tester/v1/*</binding>
+                    </exclude>
+                </access-control>
+                <request-chain id="testrunner-api">
+                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle="jdisc-security-filters">
+                        <config name="jdisc.http.filter.security.athenz.athenz-authorization-filter">
+                            <credentialsToVerify>TOKEN_ONLY</credentialsToVerify>
+                            <roleTokenHeaderName>Yahoo-Role-Auth</roleTokenHeaderName>
+                        </config>
+                        <component id="com.yahoo.jdisc.http.filter.security.athenz.StaticRequestResourceMapper" bundle="jdisc-security-filters">
+                            <config name="jdisc.http.filter.security.athenz.static-request-resource-mapper">
+                                <resourceName>vespa.vespa.cd:tester-application</resourceName>
+                                <action>deploy</action>
+                            </config>
+                        </component>
+                    </filter>
+                </request-chain>
+            </filtering>
+        </http>
+
+        <nodes count="1" flavor="d-2-12-75" allocated-memory="17%" />
+    </container>
+</services>
