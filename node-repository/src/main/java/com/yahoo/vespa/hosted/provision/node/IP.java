@@ -20,6 +20,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.NodeType.confighost;
+import static com.yahoo.config.provision.NodeType.controllerhost;
+import static com.yahoo.config.provision.NodeType.proxyhost;
+
 /**
  * This handles IP address configuration and allocation.
  *
@@ -121,11 +125,13 @@ public class IP {
          * @throws IllegalArgumentException if there are IP conflicts with existing nodes
          */
         public static List<Node> verify(List<Node> nodes, LockedNodeList allNodes) {
-            for (Node node : nodes) {
-                for (Node other : allNodes) {
+            for (var node : nodes) {
+                for (var other : allNodes) {
                     if (node.equals(other)) continue;
-                    Set<String> addresses = new HashSet<>(node.ipConfig().primary());
-                    Set<String> otherAddresses = new HashSet<>(other.ipConfig().primary());
+                    if (canAssignIpOf(other, node)) continue;
+
+                    var addresses = new HashSet<>(node.ipConfig().primary());
+                    var otherAddresses = new HashSet<>(other.ipConfig().primary());
                     if (node.type().isDockerHost()) { // Addresses of a host can never overlap with any other nodes
                         addresses.addAll(node.ipConfig().pool().asSet());
                         otherAddresses.addAll(other.ipConfig().pool().asSet());
@@ -138,6 +144,18 @@ public class IP {
                 }
             }
             return nodes;
+        }
+
+        /** Returns whether IP address of existing node can be assigned to node */
+        private static boolean canAssignIpOf(Node existingNode, Node node) {
+            if (node.parentHostname().isEmpty()) return false; // Not a child node
+            if (!node.parentHostname().get().equals(existingNode.hostname())) return false; // Wrong host
+            switch (node.type()) {
+                case proxy: return existingNode.type() == proxyhost;
+                case config: return existingNode.type() == confighost;
+                case controller: return existingNode.type() == controllerhost;
+            }
+            return false;
         }
 
         public static Node verify(Node node, LockedNodeList allNodes) {
