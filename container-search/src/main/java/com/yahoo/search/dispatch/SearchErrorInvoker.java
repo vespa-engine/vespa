@@ -42,12 +42,12 @@ public class SearchErrorInvoker extends SearchInvoker {
     }
 
     @Override
-    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+    protected Result getSearchResult(Execution execution) throws IOException {
         Result res = new Result(query, message);
         if (coverage != null) {
             res.setCoverage(coverage);
         }
-        return new InvokerResult(res);
+        return res;
     }
 
     @Override
