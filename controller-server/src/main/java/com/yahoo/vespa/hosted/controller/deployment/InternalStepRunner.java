@@ -44,7 +44,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.security.KeyPair;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
@@ -354,13 +356,19 @@ public class InternalStepRunner implements StepRunner {
         return true;
     }
 
-    private boolean endpointsAvailable(ApplicationId id, ZoneId zoneId, DualLogger logger) {
+    private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         logger.log("Attempting to find deployment endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zoneId));
-        if ( ! endpoints.containsKey(zoneId)) {
+        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zone));
+        if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
         }
+        for (var endpoint : endpoints.get(zone).values())
+            if ( ! controller.jobController().cloud().exists(endpoint)) {
+                logger.log(INFO, "DNS lookup yielded no IP address for '" + endpoint + "'.");
+                return false;
+            }
+
         logEndpoints(endpoints, logger);
         return true;
     }

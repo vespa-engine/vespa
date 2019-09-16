@@ -43,6 +43,11 @@ public class MockTesterCloud implements TesterCloud {
         return true;
     }
 
+    @Override
+    public boolean exists(URI endpointUrl) {
+        return true;
+    }
+
     public void add(LogEntry entry) {
         log.add(entry);
     }
