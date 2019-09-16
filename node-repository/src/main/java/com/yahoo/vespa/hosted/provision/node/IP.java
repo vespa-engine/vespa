@@ -148,7 +148,8 @@ public class IP {
 
         /** Returns whether IP address of existing node can be assigned to node */
         private static boolean canAssignIpOf(Node existingNode, Node node) {
-            if (node.parentHostname().isEmpty()) return false; // Not a child node
+            if (node.parentHostname().isPresent() == existingNode.parentHostname().isPresent()) return false; // Not a parent-child node
+            if (node.parentHostname().isEmpty()) return canAssignIpOf(node, existingNode);
             if (!node.parentHostname().get().equals(existingNode.hostname())) return false; // Wrong host
             switch (node.type()) {
                 case proxy: return existingNode.type() == proxyhost;
