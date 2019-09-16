@@ -448,7 +448,7 @@ public class JobController {
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
         boolean useHttp = controller.system().isPublic()
-                && !directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, testerId.applicationId().serializedForm()).value();
+                && ! directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, id.tester().id().serializedForm()).value();
         return controller.applications().getDeploymentEndpoints(testerId)
                          .stream().findAny()
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
