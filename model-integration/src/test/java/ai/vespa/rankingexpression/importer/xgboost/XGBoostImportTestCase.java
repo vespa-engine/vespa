@@ -20,22 +20,9 @@ public class XGBoostImportTestCase {
         assertEquals(1, model.expressions().size());
         RankingExpression expression = model.expressions().get("test");
         assertNotNull(expression);
-        assertEquals("if (f29 < -0.1234567, if (f56 < -0.242398, 1.71218, -1.70044), if (f109 < 0.8723473, -1.94071, 1.85965)) + if (f60 < -0.482947, if (f29 < -4.2387498, 0.784718, -0.96853), -6.23624)",
-                     expression.getRoot().toString());
-        assertEquals(1, model.outputExpressions().size());
-    }
-
-    @Test
-    public void testXGBoostWithIfInversion() {
-        ImportedModel model = new XGBoostImporter().importModel("test", "src/test/models/xgboost/xgboost.2.2.if_inversion.json");
-        assertTrue("All inputs are scalar", model.inputs().isEmpty());
-        assertEquals(1, model.expressions().size());
-        RankingExpression expression = model.expressions().get("test");
-        assertNotNull(expression);
-        assertEquals("if (f29 < -0.1234567, if (!(f56 >= -0.242398), 1.71218, -1.70044), if (f109 < 0.8723473, -1.94071, 1.85965)) + if (f60 < -0.482947, if (!(f29 >= -4.2387498), 0.784718, -0.96853), -6.23624)",
+        assertEquals("if (f29 < -0.1234567, if (!(f56 >= -0.242398), 1.71218, -1.70044), if (f109 < 0.8723473, -1.94071, 1.85965)) + if (!(f60 >= -0.482947), if (f29 < -4.2387498, 0.784718, -0.96853), -6.23624)",
                 expression.getRoot().toString());
         assertEquals(1, model.outputExpressions().size());
     }
-
 
 }
