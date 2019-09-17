@@ -32,7 +32,7 @@ import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
-import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
+import com.yahoo.vespa.hosted.provision.os.OsVersions;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;

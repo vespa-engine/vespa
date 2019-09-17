@@ -7,7 +7,7 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
-import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
+import com.yahoo.vespa.hosted.provision.os.OsVersions;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,7 +39,7 @@ public class UpgradeResponse extends HttpResponse {
         infrastructureVersions.getTargetVersions().forEach((nodeType, version) -> versionsObject.setString(nodeType.name(), version.toFullString()));
 
         Cursor osVersionsObject = root.setObject("osVersions");
-        osVersions.targets().forEach((nodeType, version) -> osVersionsObject.setString(nodeType.name(), version.toFullString()));
+        osVersions.targets().forEach((nodeType, osVersion) -> osVersionsObject.setString(nodeType.name(), osVersion.version().toFullString()));
 
 
         Cursor dockerImagesObject = root.setObject("dockerImages");

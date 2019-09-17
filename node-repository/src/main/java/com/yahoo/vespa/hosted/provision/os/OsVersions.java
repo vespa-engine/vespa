@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.provision.provisioning;
+package com.yahoo.vespa.hosted.provision.os;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -35,7 +35,7 @@ public class OsVersions {
      * unnecessary ZK reads. When targets change, some nodes may need to wait for TTL until they see the new target,
      * this is fine.
      */
-    private volatile Supplier<Map<NodeType, Version>> currentTargets;
+    private volatile Supplier<Map<NodeType, OsVersion>> currentTargets;
 
     public OsVersions(CuratorDatabaseClient db) {
         this(db, defaultCacheTtl);
@@ -53,12 +53,12 @@ public class OsVersions {
     }
 
     /** Returns the current target versions for each node type */
-    public Map<NodeType, Version> targets() {
+    public Map<NodeType, OsVersion> targets() {
         return currentTargets.get();
     }
 
     /** Returns the current target version for given node type, if any */
-    public Optional<Version> targetFor(NodeType type) {
+    public Optional<OsVersion> targetFor(NodeType type) {
         return Optional.ofNullable(targets().get(type));
     }
 
@@ -66,7 +66,7 @@ public class OsVersions {
      * node object */
     public void removeTarget(NodeType nodeType) {
         try (Lock lock = db.lockOsVersions()) {
-            Map<NodeType, Version> osVersions = db.readOsVersions();
+            Map<NodeType, OsVersion> osVersions = db.readOsVersions();
             osVersions.remove(nodeType);
             db.writeOsVersions(osVersions);
             createCache(); // Throw away current cache
@@ -83,20 +83,20 @@ public class OsVersions {
             throw  new IllegalArgumentException("Invalid target version: " + newTarget.toFullString());
         }
         try (Lock lock = db.lockOsVersions()) {
-            Map<NodeType, Version> osVersions = db.readOsVersions();
-            Optional<Version> oldTarget = Optional.ofNullable(osVersions.get(nodeType));
+            Map<NodeType, OsVersion> osVersions = db.readOsVersions();
+            Optional<OsVersion> oldTarget = Optional.ofNullable(osVersions.get(nodeType));
 
-            if (oldTarget.filter(v -> v.equals(newTarget)).isPresent()) {
+            if (oldTarget.filter(v -> v.version().equals(newTarget)).isPresent()) {
                 return; // Old target matches new target, nothing to do
             }
 
-            if (!force && oldTarget.filter(v -> v.isAfter(newTarget)).isPresent()) {
+            if (!force && oldTarget.filter(v -> v.version().isAfter(newTarget)).isPresent()) {
                 throw new IllegalArgumentException("Cannot set target OS version to " + newTarget +
                                                    " without setting 'force', as it's lower than the current version: "
-                                                   + oldTarget.get());
+                                                   + oldTarget.get().version());
             }
 
-            osVersions.put(nodeType, newTarget);
+            osVersions.put(nodeType, new OsVersion(newTarget, true));
             db.writeOsVersions(osVersions);
             createCache(); // Throw away current cache
             log.info("Set OS target version for " + nodeType + " nodes to " + newTarget.toFullString());
