@@ -66,10 +66,12 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         sb.append("clientPort=").append(config.clientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
-        // See http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html#sc_zkCommands
-        // Includes all available commands in 3.4, except 'wchc' and 'wchp'
-        // Mandatory when using ZooKeeper 3.5
-        sb.append("4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
+        // See http://zookeeper.apache.org/doc/r3.5.5/zookeeperAdmin.html#sc_zkCommands
+        // Includes all available commands in 3.5, except 'wchc' and 'wchp'
+        sb.append("4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
+        sb.append("admin.enableServer=false").append("\n");
+        // Need NettyServerCnxnFactory to be able to use TLS for communication
+        sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
         return sb.toString();
@@ -113,7 +115,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
-        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
+        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config file " + args[0]);
         log.log(LogLevel.INFO, "Trying to establish ZooKeeper quorum (from " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
