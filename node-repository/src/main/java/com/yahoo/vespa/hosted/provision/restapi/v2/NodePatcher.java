@@ -137,8 +137,6 @@ public class NodePatcher {
                 return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
             case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
-            case "hardwareDivergence" :
-                return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
@@ -183,7 +181,6 @@ public class NodePatcher {
         });
 
         return node.with(reportsBuilder.build());
-
     }
 
     private Set<String> asStringSet(Inspector field) {

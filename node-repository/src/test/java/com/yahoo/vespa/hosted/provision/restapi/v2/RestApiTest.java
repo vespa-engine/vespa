@@ -522,37 +522,6 @@ public class RestApiTest {
     }
 
     @Test
-    public void test_hardware_divergence_patching() throws Exception {
-        // Add report
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
-                                   Utf8.toBytes("{\"hardwareDivergence\": \"{\\\"actualCpuCores\\\":2}\"}"),
-                                   Request.Method.PATCH),
-                       "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6-after-changes.json");
-
-        // Empty report is rejected
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
-                                   Utf8.toBytes("{\"hardwareDivergence\": \"\"}"),
-                                   Request.Method.PATCH),
-                       400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'hardwareDivergence': Hardware divergence must be non-empty, but was ''\"}");
-
-        // Clear report
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
-                                   Utf8.toBytes("{\"hardwareDivergence\": null}"),
-                                   Request.Method.PATCH),
-                       "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
-
-        // Clear on quoted "null" report
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
-                        Utf8.toBytes("{\"hardwareDivergence\": \"null\"}"),
-                        Request.Method.PATCH),
-                "{\"message\":\"Updated host6.yahoo.com\"}");
-        assertFile(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com"), "node6.json");
-    }
-
-    @Test
     public void test_reports_patching() throws IOException {
         // Add report
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host6.yahoo.com",
