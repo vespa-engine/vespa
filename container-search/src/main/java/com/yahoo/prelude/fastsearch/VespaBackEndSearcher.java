@@ -19,7 +19,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,7 +49,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     private String defaultDocsumClass = null;
 
     /** Returns an iterator which returns all hits below this result **/
-    static Iterator<Hit> hitIterator(Result result) {
+    private static Iterator<Hit> hitIterator(Result result) {
         return result.hits().unorderedDeepIterator();
     }
 
@@ -229,7 +228,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if ((query.getTraceLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
 
         StringBuilder s = new StringBuilder();
-        s.append(sourceName).append(" " + type + " to dispatch: ")
+        s.append(sourceName).append(" ").append(type).append(" to dispatch: ")
                 .append("query=[")
                 .append(query.getModel().getQueryTree().getRoot().toString())
                 .append("]");
@@ -319,7 +318,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
+    private FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
         if (packet != null) {
             byte[] docsumdata = packet.getData();
             if (docsumdata.length > 0) {
@@ -343,7 +342,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * @return the number of hits that we did not return data for, and an optional error message.
      *         when things are working normally we return 0.
      */
-     public FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) throws IOException {
+     protected FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) {
         int skippedHits = 0;
         String lastError = null;
         int packetIndex = 0;
@@ -382,7 +381,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
     }
 
-    private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
+    private static String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
         String error = docsumSet.lazyDecode(summaryClass, docsumdata, hit);
         if (error == null) {
             hit.setFilled(summaryClass);

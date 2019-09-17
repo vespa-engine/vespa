@@ -243,19 +243,11 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             result.hits().add(groupHit);
         }
 
-        int skippedHits;
-        try {
-            FillHitsResult fillHitsResult = fillHits(result, summaryPackets, query.getPresentation().getSummary());
-            skippedHits = fillHitsResult.skippedHits;
-            if (fillHitsResult.error != null) {
-                result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
-                return result;
-            }
-        } catch (TimeoutException e) {
-            result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
+        FillHitsResult fillHitsResult = fillHits(result, summaryPackets, query.getPresentation().getSummary());
+        int skippedHits = fillHitsResult.skippedHits;
+        if (fillHitsResult.error != null) {
+            result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
             return result;
-        } catch (IOException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields"));
         }
 
         if (skippedHits == 0) {

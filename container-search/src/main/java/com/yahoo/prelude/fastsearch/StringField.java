@@ -5,10 +5,6 @@
  */
 package com.yahoo.prelude.fastsearch;
 
-
-import java.nio.ByteBuffer;
-
-import com.yahoo.text.Utf8;
 import com.yahoo.data.access.Inspector;
 
 
