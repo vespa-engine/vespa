@@ -122,7 +122,7 @@ public class Flags {
             "Takes effect on next iteration of HostProvisionMaintainer.");
 
     public static final UnboundBooleanFlag USE_ADVERTISED_RESOURCES = defineFeatureFlag(
-            "use-advertised-resources", false,
+            "use-advertised-resources", true,
             "When enabled, will use advertised host resources rather than actual host resources, ignore host resource " +
                     "reservation, and fail with exception unless requested resource match advertised host resources exactly.",
             "Takes effect on next iteration of HostProvisionMaintainer.",

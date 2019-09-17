@@ -41,12 +41,6 @@ public class InMemoryFlagSource implements FlagSource {
         return withRawFlag(flagId, new UnboundJacksonFlag<>(flagId, value, jacksonClass).serializer().serialize(value));
     }
 
-    /** use {@link #withListFlag(FlagId, List, Class)} instead */
-    @Deprecated
-    public InMemoryFlagSource withListFlag(FlagId flagId, List<String> value) {
-        return withListFlag(flagId, value, String.class);
-    }
-
     public <T> InMemoryFlagSource withListFlag(FlagId flagId, List<T> value, Class<T> elementClass) {
         return withRawFlag(flagId, new UnboundListFlag<T>(flagId, value, elementClass).serializer().serialize(value));
     }
