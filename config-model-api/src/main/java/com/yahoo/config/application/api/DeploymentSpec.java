@@ -46,63 +46,30 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Notifications.none(),
                                                                   List.of());
-    
-    private final Optional<String> globalServiceId;
-    private final UpgradePolicy upgradePolicy;
-    private final Optional<Integer> majorVersion;
-    private final List<ChangeBlocker> changeBlockers;
-    private final List<Step> steps;
-    private final String xmlForm;
-    private final Optional<AthenzDomain> athenzDomain;
-    private final Optional<AthenzService> athenzService;
-    private final Notifications notifications;
-    private final List<Endpoint> endpoints;
 
+    private final List<DeploymentInstancesSpec> instances;
+    private final Notifications notifications;
+    private final String xmlForm;
+
+    public DeploymentSpec(List<DeploymentInstancesSpec> instances, Notifications notifications, String xmlForm) {
+        this.instances = instances;
+        this.notifications = notifications;
+        this.xmlForm = xmlForm;
+        validateTotalDelay(steps);
+    }
+
+    // TODO: Remove after October 2019
+    @Deprecated
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService, Notifications notifications,
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
+                          Notifications notifications,
                           List<Endpoint> endpoints) {
-        validateTotalDelay(steps);
-        this.globalServiceId = globalServiceId;
-        this.upgradePolicy = upgradePolicy;
-        this.majorVersion = majorVersion;
-        this.changeBlockers = changeBlockers;
-        this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
-        this.xmlForm = xmlForm;
-        this.athenzDomain = athenzDomain;
-        this.athenzService = athenzService;
-        this.notifications = notifications;
-        this.endpoints = List.copyOf(validateEndpoints(endpoints, this.steps));
-        validateZones(this.steps);
-        validateAthenz();
-        validateEndpoints(this.steps, globalServiceId, this.endpoints);
+        this(List.of(new DeploymentInstancesSpec("default", globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, athenzDomain, athenzService, endpoints, xmlForm)),
+             notifications,
+             xmlForm);
     }
 
-    /** Validates the endpoints and makes sure default values are respected */
-    private List<Endpoint> validateEndpoints(List<Endpoint> endpoints, List<Step> steps) {
-        Objects.requireNonNull(endpoints, "Missing endpoints parameter");
-
-        var productionRegions = steps.stream()
-                .filter(step -> step.deploysTo(Environment.prod))
-                .flatMap(step -> step.zones().stream())
-                .flatMap(zone -> zone.region().stream())
-                .map(RegionName::value)
-                .collect(Collectors.toSet());
-
-        var rebuiltEndpointsList = new ArrayList<Endpoint>();
-
-        for (var endpoint : endpoints) {
-            if (endpoint.regions().isEmpty()) {
-                var rebuiltEndpoint = endpoint.withRegions(productionRegions);
-                rebuiltEndpointsList.add(rebuiltEndpoint);
-            } else {
-                rebuiltEndpointsList.add(endpoint);
-            }
-        }
-
-        return List.copyOf(rebuiltEndpointsList);
-    }
-    
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
@@ -111,101 +78,6 @@ public class DeploymentSpec {
         if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
                                                " but max 24 hours is allowed");
-    }
-
-    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
-    private void validateZones(List<Step> steps) {
-        Set<DeclaredZone> zones = new HashSet<>();
-
-        for (Step step : steps)
-            for (DeclaredZone zone : step.zones())
-                ensureUnique(zone, zones);
-    }
-
-    /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */
-    private void validateEndpoints(List<Step> steps, Optional<String> globalServiceId, List<Endpoint> endpoints) {
-        if (globalServiceId.isPresent() && ! endpoints.isEmpty()) {
-            throw new IllegalArgumentException("Providing both 'endpoints' and 'global-service-id'. Use only 'endpoints'.");
-        }
-
-        var stepZones = steps.stream()
-                .flatMap(s -> s.zones().stream())
-                .flatMap(z -> z.region.stream())
-                .collect(Collectors.toSet());
-
-        for (var endpoint : endpoints){
-            for (var endpointRegion : endpoint.regions()) {
-                if (! stepZones.contains(endpointRegion)) {
-                    throw new IllegalArgumentException("Region used in endpoint that is not declared in 'prod': " + endpointRegion);
-                }
-            }
-        }
-    }
-
-    /*
-     * Throw an IllegalArgumentException if Athenz configuration violates:
-     * domain not configured -> no zone can configure service
-     * domain configured -> all zones must configure service
-     */
-    private void validateAthenz() {
-        // If athenz domain is not set, athenz service cannot be set on any level
-        if (athenzDomain.isEmpty()) {
-            for (DeclaredZone zone : zones()) {
-                if(zone.athenzService().isPresent()) {
-                    throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
-                }
-            }
-        // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
-        } else if (athenzService.isEmpty()) {
-            for (DeclaredZone zone : zones()) {
-                if (zone.athenzService().isEmpty()) {
-                    throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
-                }
-            }
-        }
-    }
-
-    private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
-        if ( ! zones.add(zone))
-            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
-    }
-
-    /** Adds missing required steps and reorders steps to a permissible order */
-    private static List<Step> completeSteps(List<Step> steps) {
-        // Add staging if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
-            steps.add(new DeclaredZone(Environment.staging));
-        }
-        
-        // Add test if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
-            steps.add(new DeclaredZone(Environment.test));
-        }
-        
-        // Enforce order test, staging, prod
-        DeclaredZone testStep = remove(Environment.test, steps);
-        if (testStep != null)
-            steps.add(0, testStep);
-        DeclaredZone stagingStep = remove(Environment.staging, steps);
-        if (stagingStep != null)
-            steps.add(1, stagingStep);
-        
-        return steps;
-    }
-
-    /** 
-     * Removes the first occurrence of a deployment step to the given environment and returns it.
-     * 
-     * @return the removed step, or null if it is not present
-     */
-    private static DeclaredZone remove(Environment environment, List<Step> steps) {
-        for (int i = 0; i < steps.size(); i++) {
-            if (steps.get(i).deploysTo(environment))
-                return (DeclaredZone)steps.remove(i);
-        }
-        return null;
     }
 
     /** Returns the ID of the service to expose through global routing, if present */
