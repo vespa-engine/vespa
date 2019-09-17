@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -24,12 +23,10 @@ import java.util.Optional;
 public class CapacityPolicies {
 
     private final Zone zone;
-    private final BooleanFlag useAdvertisedResourcesFlag;
     private final JacksonFlag<com.yahoo.vespa.flags.custom.NodeResources> defaultResourcesFlag;
 
     public CapacityPolicies(Zone zone, FlagSource flagSource) {
         this.zone = zone;
-        this.useAdvertisedResourcesFlag = Flags.USE_ADVERTISED_RESOURCES.bindTo(flagSource);
         this.defaultResourcesFlag = Flags.DEFAULT_RESOURCES.bindTo(flagSource);
     }
 
@@ -58,7 +55,8 @@ public class CapacityPolicies {
             resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
-        if (zone.environment() == Environment.dev && !useAdvertisedResourcesFlag.value())
+        // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host
+        if (zone.environment() == Environment.dev && !zone.region().value().contains("aws-"))
             resources = resources.withVcpu(0.1);
 
         return resources;

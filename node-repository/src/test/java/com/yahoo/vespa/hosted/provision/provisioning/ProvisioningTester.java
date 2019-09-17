@@ -75,7 +75,6 @@ public class ProvisioningTester {
     private final CapacityPolicies capacityPolicies;
     private final ProvisionLogger provisionLogger;
     private final LoadBalancerServiceMock loadBalancerService;
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private int nextHost = 0;
     private int nextIP = 0;
