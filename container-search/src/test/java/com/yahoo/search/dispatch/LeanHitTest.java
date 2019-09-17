@@ -3,12 +3,14 @@ package com.yahoo.search.dispatch;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class LeanHitTest {
-    byte [] gidA = {'a'};
-    byte [] gidB = {'b'};
-    byte [] gidC = {'c'};
+    private static final byte [] gidA = {'a'};
+    private static final byte [] gidB = {'b'};
+    private static final byte [] gidC = {'c'};
+    private final double DELTA = 0.00000000000000;
     private void verifyTransitiveOrdering(LeanHit a, LeanHit b, LeanHit c) {
         assertTrue(a.compareTo(b) < 0);
         assertTrue(b.compareTo(c) < 0);
@@ -38,5 +40,12 @@ public class LeanHitTest {
         verifyTransitiveOrdering(new LeanHit(gidA, 0, 0, gidA),
                 new LeanHit(gidA, 0, 0, gidB),
                 new LeanHit(gidA, 0, 0, gidC));
+    }
+    @Test
+    public void testNaN2negativeInfinity() {
+        LeanHit nan = new LeanHit(gidA, 0, 0, Double.NaN);
+        assertFalse(Double.isNaN(nan.getRelevance()));
+        assertTrue(Double.isInfinite(nan.getRelevance()));
+        assertEquals(Double.NEGATIVE_INFINITY, nan.getRelevance(), DELTA);
     }
 }
