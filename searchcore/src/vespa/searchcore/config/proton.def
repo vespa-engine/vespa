@@ -341,8 +341,8 @@ packetcompresstype enum {NONE, LZ4} default=LZ4
 
 ## Interval between considering if lid space compaction should be done (in seconds).
 ##
-## Default value is 10 minutes (600 seconds).
-lidspacecompaction.interval double default=600.0
+## Default value is 10 seconds.
+lidspacecompaction.interval double default=10.0
 
 ## The allowed lid bloat (in docs) before considering lid space compaction.
 ##
@@ -364,7 +364,7 @@ lidspacecompaction.allowedlidbloatfactor double default=0.01
 ## Remove batch operations are used when deleting buckets on a content node.
 ## This functionality ensures that during massive deleting of buckets (e.g. as part of redistribution of data to a new node),
 ## lid space compaction do not interfere, but instead is applied after deleting of buckets is complete.
-lidspacecompaction.removebatchblockdelay double default=5.0
+lidspacecompaction.removebatchblockdelay double default=2.0
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
