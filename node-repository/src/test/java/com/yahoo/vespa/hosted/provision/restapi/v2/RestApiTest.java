@@ -7,10 +7,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Slime;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -19,7 +16,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -205,9 +201,6 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"currentVespaVersion\": \"5.104.142\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                                   Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"), Request.Method.PATCH),
-                       "{\"message\":\"Updated host4.yahoo.com\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{\"parentHostname\": \"parent.yahoo.com\"}"), Request.Method.PATCH),
                        "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -346,22 +339,21 @@ public class RestApiTest {
     }
 
     @Test
-    public void fails_to_deallocate_node_with_hardware_failure() throws Exception {
+    public void fails_to_ready_node_with_hard_fail() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        String msg = "Actual disk space (2TB) differs from spec (3TB)";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host12.yahoo.com",
-                        Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"),
+                        Utf8.toBytes("{\"reports\":{\"diskSpace\":{\"createdMillis\":2,\"description\":\"" + msg + "\",\"type\": \"HARD_FAIL\"}}}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated host12.yahoo.com\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host12.yahoo.com",
-                        new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved host12.yahoo.com to failed\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/host12.yahoo.com",
-                new byte[0], Request.Method.PUT), 400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not deallocate host12.yahoo.com: It has a hardware failure\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host12.yahoo.com", new byte[0], Request.Method.PUT),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Node host12.yahoo.com cannot be readied because it has " +
+                        "hard failures: [diskSpace reported 1970-01-01T00:00:00.002Z: " + msg + "]\"}");
     }
 
     @Test
@@ -497,7 +489,6 @@ public class RestApiTest {
                                            "\"currentRebootGeneration\": 3," +
                                            "\"flavor\": \"medium-disk\"," +
                                            "\"currentVespaVersion\": \"5.104.142\"," +
-                                           "\"hardwareFailureDescription\": \"memory_mcelog\"," +
                                            "\"failCount\": 0," +
                                            "\"parentHostname\": \"parent.yahoo.com\"" +
                                        "}"
@@ -514,28 +505,6 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
                                    Request.Method.PATCH),
                        400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'currentRestartGeneration': Node is not allocated\"}");
-    }
-
-    @Test
-    public void test_hardware_patching_of_docker_host() throws Exception {
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
-
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
-                        Utf8.toBytes("{\"hardwareFailureDescription\": \"memory_mcelog\"}"),
-                        Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
-
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), true);
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), true);
-
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
-                        Utf8.toBytes("{\"hardwareFailureDescription\": \"null\"}"),
-                        Request.Method.PATCH),
-                "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
-
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"), false);
-        assertHardwareFailure(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com"), false);
     }
 
     @Test
@@ -981,23 +950,6 @@ public class RestApiTest {
                       .map(ip -> "\"" + ip + "\"")
                       .collect(Collectors.joining(",")) +
                 "],";
-    }
-
-    private static boolean getHardwareFailure(String json) {
-        Slime slime = SlimeUtils.jsonToSlime(json.getBytes());
-        Cursor hardwareFailure = slime.get().field("hardwareFailure");
-        if (!hardwareFailure.valid())
-            throw new IllegalStateException("hardwareFailure is invalid");
-
-        return hardwareFailure.asBool();
-    }
-
-    private void assertHardwareFailure(Request request, boolean expectedHardwareFailure) throws CharacterCodingException {
-        Response response = container.handleRequest(request);
-        String json = response.getBodyAsString();
-        boolean actualHardwareFailure = getHardwareFailure(json);
-        assertEquals(expectedHardwareFailure, actualHardwareFailure);
-        assertEquals(200, response.getStatus());
     }
 
     /** Asserts a particular response and 200 as response status */

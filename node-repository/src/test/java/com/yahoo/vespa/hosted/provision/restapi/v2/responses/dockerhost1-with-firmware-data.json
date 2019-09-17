@@ -35,7 +35,6 @@
   "currentFirmwareCheck": 100,
   "wantedFirmwareCheck": 123,
   "failCount": 0,
-  "hardwareFailure": false,
   "wantToRetire": false,
   "wantToDeprovision": false,
   "history": [

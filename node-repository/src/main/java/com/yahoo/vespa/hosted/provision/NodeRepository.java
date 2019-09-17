@@ -433,9 +433,6 @@ public class NodeRepository extends AbstractComponent {
      * @throws IllegalArgumentException if the node has hardware failure
      */
     public Node setDirty(Node node, Agent agent, String reason) {
-        if (node.status().hardwareFailureDescription().isPresent())
-            throw new IllegalArgumentException("Could not deallocate " + node.hostname() + ": It has a hardware failure");
-
         return db.writeTo(Node.State.dirty, node, agent, Optional.of(reason));
     }
 
