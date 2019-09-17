@@ -82,6 +82,10 @@ public interface ProvisionResource {
     String upgrade(@PathParam("nodeType") NodeType nodeType, NodeUpgrade nodeUpgrade,
                    @HeaderParam("X-HTTP-Method-Override") String patchOverride);
 
+    @GET
+    @Path("/upgrade/")
+    NodeTargetVersions upgrade();
+
     @POST
     @Path("/upgrade/firmware")
     String requestFirmwareChecks();
