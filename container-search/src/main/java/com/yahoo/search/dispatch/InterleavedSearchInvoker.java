@@ -93,10 +93,9 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     }
 
     @Override
-    protected Result getSearchResult(Execution execution) throws IOException {
-        Result result = new Result(query);
-        List<Hit> merged = Collections.emptyList();
-        List<Hit> auxiliary = new ArrayList<>();
+    protected InvokerResult getSearchResult(Execution execution) throws IOException {
+        InvokerResult result = new InvokerResult(query, query.getHits());
+        List<LeanHit> merged = Collections.emptyList();
         long nextTimeout = query.getTimeLeft();
         try {
             while (!invokers.isEmpty() && nextTimeout >= 0) {
@@ -105,7 +104,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     log.fine(() -> "Search timed out with " + askedNodes + " requests made, " + answeredNodes + " responses received");
                     break;
                 } else {
-                    merged = mergeResult(result, invoker.getSearchResult(execution), merged, auxiliary);
+                    merged = mergeResult(result.getResult(), invoker.getSearchResult(execution), merged);
                     ejectInvoker(invoker);
                 }
                 nextTimeout = nextTimeout();
@@ -114,12 +113,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             throw new RuntimeException("Interrupted while waiting for search results", e);
         }
 
-        insertNetworkErrors(result);
-        result.setCoverage(createCoverage());
+        insertNetworkErrors(result.getResult());
+        result.getResult().setCoverage(createCoverage());
         int needed = query.getOffset() + query.getHits();
-        result.hits().addAll(auxiliary);
         for (int index = query.getOffset(); (index < merged.size()) && (index < needed); index++) {
-            result.hits().add(merged.get(index));
+            result.getLeanHits().add(merged.get(index));
         }
         query.setOffset(0);  // Now we are all trimmed down
         return result;
@@ -191,43 +189,31 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private List<Hit> mergeResult(Result result, Result partialResult, List<Hit> current, List<Hit> auxiliaryHits) {
-        collectCoverage(partialResult.getCoverage(true));
+    private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current) {
+        collectCoverage(partialResult.getResult().getCoverage(true));
 
-        result.mergeWith(partialResult);
-        List<Hit> partial = partialResult.hits().asUnorderedHits();
-        if (current.isEmpty() ) {
-            boolean hasAuxillary = false;
-            for(Hit hit : partial) {
-                if (hit.isAuxiliary()) {
-                    hasAuxillary = true;
-                    break;
-                }
+        result.mergeWith(partialResult.getResult());
+        List<Hit> partialNonLean = partialResult.getResult().hits().asUnorderedHits();
+        for(Hit hit : partialNonLean) {
+            if (hit.isAuxiliary()) {
+                result.hits().add(hit);
             }
-            if ( ! hasAuxillary)
-                return partial;
         }
+        if (current.isEmpty() ) {
+            return partialResult.getLeanHits();
+        }
+        List<LeanHit> partial = partialResult.getLeanHits();
         if (partial.isEmpty()) {
             return current;
         }
 
         int needed = query.getOffset() + query.getHits();
-        List<Hit> merged = new ArrayList<>(needed);
+        List<LeanHit> merged = new ArrayList<>(needed);
         int indexCurrent = 0;
         int indexPartial = 0;
         while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
-            Hit incommingHit = partial.get(indexPartial);
-            if (incommingHit.isAuxiliary()) {
-                auxiliaryHits.add(incommingHit);
-                indexPartial++;
-                continue;
-            }
-            Hit currentHit = current.get(indexCurrent);
-            if (currentHit.isAuxiliary()) {
-                auxiliaryHits.add(currentHit);
-                indexCurrent++;
-                continue;
-            }
+            LeanHit incommingHit = partial.get(indexPartial);
+            LeanHit currentHit = current.get(indexCurrent);
 
             int cmpRes = currentHit.compareTo(incommingHit);
             if (cmpRes < 0) {
@@ -242,21 +228,11 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                 indexPartial++;
             }
         }
-        while (indexCurrent < current.size()) {
-            Hit h = current.get(indexCurrent++);
-            if (h.isAuxiliary()) {
-                auxiliaryHits.add(h);
-            } else if (merged.size() < needed) {
-                merged.add(h);
-            }
+        while ((indexCurrent < current.size()) && (merged.size() < needed)) {
+            merged.add(current.get(indexCurrent++));
         }
-        while (indexPartial < partial.size()) {
-            Hit h = partial.get(indexPartial++);
-            if (h.isAuxiliary()) {
-                auxiliaryHits.add(h);
-            } else if (merged.size() < needed) {
-                merged.add(h);
-            }
+        while ((indexPartial < partial.size()) && (merged.size() < needed)) {
+            merged.add(partial.get(indexPartial++));
         }
         return merged;
     }
