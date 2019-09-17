@@ -179,6 +179,9 @@ private:
     void enqueueRecheckUntilPendingStateEnabled(uint16_t node, const document::Bucket&);
     void sendAllQueuedBucketRechecks();
 
+    void maybe_inject_simulated_db_pruning_delay();
+    void maybe_inject_simulated_db_merging_delay();
+
     friend class BucketDBUpdater_Test;
     friend class MergeOperation_Test;
 

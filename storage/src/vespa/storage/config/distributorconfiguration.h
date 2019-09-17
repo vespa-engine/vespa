@@ -229,6 +229,13 @@ public:
         return _inhibitMergeSendingOnBusyNodeDuration;
     }
 
+    std::chrono::milliseconds simulated_db_pruning_latency() const noexcept {
+        return _simulated_db_pruning_latency;
+    }
+    std::chrono::milliseconds simulated_db_merging_latency() const noexcept {
+        return _simulated_db_merging_latency;
+    }
+
     bool getSequenceMutatingOperations() const noexcept {
         return _sequenceMutatingOperations;
     }
@@ -276,6 +283,8 @@ private:
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;
     std::chrono::seconds _inhibitMergeSendingOnBusyNodeDuration;
+    std::chrono::milliseconds _simulated_db_pruning_latency;
+    std::chrono::milliseconds _simulated_db_merging_latency;
 
     bool _doInlineSplit;
     bool _enableJoinForSiblingLessBuckets;

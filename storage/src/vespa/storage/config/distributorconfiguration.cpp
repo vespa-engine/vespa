@@ -31,6 +31,8 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _minBucketsPerVisitor(5),
       _maxClusterClockSkew(0),
       _inhibitMergeSendingOnBusyNodeDuration(std::chrono::seconds(60)),
+      _simulated_db_pruning_latency(0),
+      _simulated_db_merging_latency(0),
       _doInlineSplit(true),
       _enableJoinForSiblingLessBuckets(false),
       _enableInconsistentJoin(false),
@@ -159,6 +161,8 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     if (config.inhibitMergeSendingOnBusyNodeDurationSec >= 0) {
         _inhibitMergeSendingOnBusyNodeDuration = std::chrono::seconds(config.inhibitMergeSendingOnBusyNodeDurationSec);
     }
+    _simulated_db_pruning_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbPruningLatencyMsec));
+    _simulated_db_merging_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbMergingLatencyMsec));
     
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "
