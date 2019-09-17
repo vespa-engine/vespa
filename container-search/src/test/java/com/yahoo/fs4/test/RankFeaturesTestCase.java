@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.query.test;
+package com.yahoo.fs4.test;
 
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.search.query.ranking.RankFeatures;
@@ -11,11 +11,7 @@ import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 

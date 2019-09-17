@@ -89,6 +89,11 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
+    public ImmutableMultimap<String, Node> nodesByHost() {
+        return nodesByHost;
+    }
+
+    @Override
     public Optional<Node> directDispatchTarget() {
         return Optional.empty();
     }
