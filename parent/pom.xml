@@ -505,17 +505,14 @@
                 <artifactId>commons-pool</artifactId>
                 <version>1.5.6</version>
             </dependency>
-
-            <!-- BEGIN zookeeper -->
-
-            <!-- Explicitly force Zookeeper version,
+            <!-- Explicitly included to get Zookeeper version 3.4.14,
                  can be excluded if you want the Zookeeper version
                  used by curator by default
             -->
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>${zookeeper.version}</version>
+                <version>3.4.14</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -527,17 +524,6 @@
                 <artifactId>curator-test</artifactId>
                 <version>${curator.version}</version>
             </dependency>
-            <dependency>
-                <!-- Needed by zookeeper, which has an optional dependency.
-                     Version must be the same as the one zk uses - check the zk pom file.  -->
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-annotations</artifactId>
-                <!-- No version property, as we don't want maven-dependency-plugin to alert about newer versions. -->
-                <version>3.1.9</version>
-            </dependency>
-
-            <!-- END zookeeper -->
-
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
@@ -803,7 +789,6 @@
         <junit.version>5.4.2</junit.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.7.0</protobuf.version>
-        <zookeeper.version>3.5.5</zookeeper.version>
     </properties>
 
 </project>
