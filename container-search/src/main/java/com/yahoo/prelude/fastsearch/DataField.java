@@ -10,8 +10,6 @@
 
 package com.yahoo.prelude.fastsearch;
 
-import java.nio.ByteBuffer;
-
 import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.Inspector;
