@@ -330,11 +330,17 @@ public class VespaMetricSet {
         
         // Executors shared between all document dbs
         metrics.add(new Metric("content.proton.executor.proton.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.proton.accepted.rate"));
         metrics.add(new Metric("content.proton.executor.flush.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.flush.accepted.rate"));
         metrics.add(new Metric("content.proton.executor.match.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.match.accepted.rate"));
         metrics.add(new Metric("content.proton.executor.docsum.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.docsum.accepted.rate"));
         metrics.add(new Metric("content.proton.executor.shared.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.shared.accepted.rate"));
         metrics.add(new Metric("content.proton.executor.warmup.maxpending.last"));
+        metrics.add(new Metric("content.proton.executor.warmup.accepted.rate"));
 
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
@@ -349,11 +355,17 @@ public class VespaMetricSet {
 
         // Threading service (per document db)
         metrics.add(new Metric("content.proton.documentdb.threading_service.master.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.master.accepted.rate"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.index.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.index.accepted.rate"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.summary.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.summary.accepted.rate"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.index_field_inverter.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.index_field_inverter.accepted.rate"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.index_field_writer.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.index_field_writer.accepted.rate"));
         metrics.add(new Metric("content.proton.documentdb.threading_service.attribute_field_writer.maxpending.last"));
+        metrics.add(new Metric("content.proton.documentdb.threading_service.attribute_field_writer.accepted.rate"));
 
         // lid space
         metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_bloat_factor.average"));
