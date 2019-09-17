@@ -142,15 +142,22 @@ public class SpecialTokens {
             return replace;
         }
 
+        @Override
         public int compareTo(SpecialToken other) {
-            if (this.token().length() < other.token().length()) {
-                return 1;
-            } else if (this.token().length() == other.token().length()) {
-                return 0;
-            } else {
-                return -1;
-            }
+            if (this.token().length() < other.token().length()) return 1;
+            if (this.token().length() == other.token().length()) return 0;
+            return -1;
         }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other == this) return true;
+            if ( ! (other instanceof SpecialToken)) return false;
+            return Objects.equals(this.token, ((SpecialToken)other).token);
+        }
+
+        @Override
+        public int hashCode() { return token.hashCode(); }
 
         public Token toToken(int start,String rawSource) {
             return new Token(Token.Kind.WORD, replace(), true, new Substring(start, start + token.length(), rawSource)); // XXX: Unsafe?

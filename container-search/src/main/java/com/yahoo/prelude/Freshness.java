@@ -13,7 +13,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * <p>
  * This is a value object
  *
- * @author <a href="mailto:pauran@yahoo-inc.com">Per G. Auran</a>
+ * @author Per G. Auran
  */
 public class Freshness {
 

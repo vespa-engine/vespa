@@ -13,7 +13,7 @@ import java.util.Comparator;
  * <b>Note:</b> this comparator imposes orderings that are inconsistent with equals.
  * <p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 // Is tested in HitSortSpecOrdererTestCase
 public class FieldComparator extends ChainableComparator {
@@ -124,8 +124,7 @@ public class FieldComparator extends ChainableComparator {
         } else if (second == null) {
             return 1;
         }
-        if (first.getClass().isInstance(second)
-                && first instanceof Comparable) {
+        if (first.getClass().isInstance(second) && first instanceof Comparable) {
             // We now know:
             // second is of a type which is a subclass of first's type
             // They both implement Comparable
@@ -135,6 +134,7 @@ public class FieldComparator extends ChainableComparator {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
         b.append("FieldComparator:");

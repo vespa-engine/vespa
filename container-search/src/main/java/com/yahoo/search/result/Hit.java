@@ -615,15 +615,15 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         unmodifiableFieldMap = null;
     }
 
-    /** Returns true if the argument is a hit having the same uri as this */
+    /** Returns true if the argument is a hit having the same id as this */
     @Override
-    public boolean equals(Object object) {
-        if ( ! (object instanceof Hit))
-            return false;
-        return getId().equals(((Hit) object).getId());
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Hit)) return false;
+        return getId().equals(((Hit) other).getId());
     }
 
-    /** Returns the hashCode of this hit, which is the hashcode of its uri. */
+    /** Returns the hashCode of this hit: The hashcode of its id */
     @Override
     public int hashCode() {
         if (getId() == null)
@@ -645,7 +645,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         if (result != 0)
             return result;
 
-        // if all else fails, compare URIs (alphabetically)
+        // if all else fails, compare ids
         if (this.getId() == null && other.getId() == null)
             return 0;
         else if (other.getId() == null)

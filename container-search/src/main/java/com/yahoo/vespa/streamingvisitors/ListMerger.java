@@ -8,9 +8,10 @@ import java.util.ArrayList;
 /**
  * A list merger that merges two sorted lists.
  *
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 public class ListMerger {
+
     public static <T extends Comparable<? super T>> void mergeLinkedLists(List<T> to, List<T> from, int maxEntryCount) {
         int entryCount = 0;
         ListIterator<T> i = to.listIterator();
@@ -44,6 +45,7 @@ public class ListMerger {
     }
 
     public static <T extends Comparable<? super T>> List<T> mergeIntoArrayList(List<T> l1, List<T> l2, int maxEntryCount) {
+
         List<T> mergedList = new ArrayList<>();
         ListIterator<T> i1 = l1.listIterator();
         ListIterator<T> i2 = l2.listIterator();
@@ -101,4 +103,5 @@ public class ListMerger {
     public static <T extends Comparable<? super T>> List<T> mergeIntoArrayList(List<T> l1, List<T> l2) {
         return mergeIntoArrayList(l1, l2, Integer.MAX_VALUE);
     }
+
 }

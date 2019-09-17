@@ -19,10 +19,10 @@ public class HitIterator implements Iterator<Hit> {
     private int index = -1;
 
     /** The list of hits to iterate over */
-    private List<Hit> hits = null;
+    private List<Hit> hits;
 
     /** The result the hits belong to */
-    private HitGroup hitGroup = null;
+    private HitGroup hitGroup;
 
     /** Whether the iterator is in a state where remove is OK */
     private boolean canRemove = false;

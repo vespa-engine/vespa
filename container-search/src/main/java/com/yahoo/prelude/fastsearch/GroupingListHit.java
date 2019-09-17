@@ -9,8 +9,6 @@ import com.yahoo.searchlib.aggregation.Grouping;
 
 public class GroupingListHit extends Hit {
 
-    private static final long serialVersionUID = -6645125887873082234L;
-
     /** for unit tests only, may give problems if grouping contains docsums */
     public GroupingListHit(List<Grouping> groupingList) {
         this(groupingList, null);

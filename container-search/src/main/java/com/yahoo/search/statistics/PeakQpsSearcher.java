@@ -19,9 +19,10 @@ import java.util.*;
 /**
  * Aggregate peak qps and expose through meta hits and/or log events.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class PeakQpsSearcher extends Searcher {
+
     private final ThreadLocalDirectory<Deque<QueryRatePerSecond>, Long> directory;
     private final Value qpsStatistics;
     private final CompoundName propertyName;
@@ -34,19 +35,11 @@ public class PeakQpsSearcher extends Searcher {
      * in the QpsHit class.
      */
     public static class QpsHit extends Hit {
-        /**
-         * Machine generated version ID for serialization.
-         */
-        private static final long serialVersionUID = 1042868845398233889L;
 
-        /**
-         * The name of the field containing mean QPS since the last measurement.
-         */
+        /** The name of the field containing mean QPS since the last measurement. */
         public static final String MEAN_QPS = "mean_qps";
 
-        /**
-         * The name of the field containing peak QPS since the last measurement.
-         */
+        /** The name of the field containing peak QPS since the last measurement. */
         public static final String PEAK_QPS = "peak_qps";
         public static final String SCHEME = "meta";
 
@@ -64,6 +57,7 @@ public class PeakQpsSearcher extends Searcher {
         public String toString() {
             return "QPS hit: Peak QPS " + getField(PEAK_QPS) + ", mean QPS " + getField(MEAN_QPS) + ".";
         }
+
     }
 
     static class QueryRatePerSecond {
@@ -92,8 +86,7 @@ public class PeakQpsSearcher extends Searcher {
     static class QueryRate implements
             ThreadLocalDirectory.Updater<Deque<QueryRatePerSecond>, Long> {
         @Override
-        public Deque<QueryRatePerSecond> update(
-                Deque<QueryRatePerSecond> current, Long when) {
+        public Deque<QueryRatePerSecond> update(Deque<QueryRatePerSecond> current, Long when) {
             QueryRatePerSecond last = current.peekLast();
             if (last == null || last.when != when) {
                 last = new QueryRatePerSecond(when);
@@ -104,8 +97,7 @@ public class PeakQpsSearcher extends Searcher {
         }
 
         @Override
-        public Deque<QueryRatePerSecond> createGenerationInstance(
-                Deque<QueryRatePerSecond> previous) {
+        public Deque<QueryRatePerSecond> createGenerationInstance(Deque<QueryRatePerSecond> previous) {
             if (previous == null) {
                 return new ArrayDeque<>();
             } else {
@@ -120,7 +112,7 @@ public class PeakQpsSearcher extends Searcher {
             List<Deque<QueryRatePerSecond>> data = directory.fetch();
             List<QueryRatePerSecond> chewed = merge(data);
             for (QueryRatePerSecond qps : chewed) {
-                qpsStatistics.put((double) qps.howMany);
+                qpsStatistics.put(qps.howMany);
             }
         }
     }
@@ -145,9 +137,8 @@ public class PeakQpsSearcher extends Searcher {
             useMetaHit = false;
             propertyName = null;
         } else {
-            throw new IllegalArgumentException(
-                    "Config definition out of sync with implementation."
-                    + " No way to create output for method " + method + ".");
+            throw new IllegalArgumentException("Config definition out of sync with implementation." +
+                                               " No way to create output for method " + method + ".");
         }
     }
 
@@ -158,8 +149,7 @@ public class PeakQpsSearcher extends Searcher {
     static List<QueryRatePerSecond> merge(List<Deque<QueryRatePerSecond>> measurements) {
         List<QueryRatePerSecond> rates = new ArrayList<>();
         while (measurements.size() > 0) {
-            Deque<Deque<QueryRatePerSecond>> consumeFrom
-                    = new ArrayDeque<>(measurements.size());
+            Deque<Deque<QueryRatePerSecond>> consumeFrom = new ArrayDeque<>(measurements.size());
             long current = Long.MAX_VALUE;
             for (ListIterator<Deque<QueryRatePerSecond>> i = measurements.listIterator(); i.hasNext();) {
                 Deque<QueryRatePerSecond> deck = i.next();
@@ -221,17 +211,15 @@ public class PeakQpsSearcher extends Searcher {
         int max = Integer.MIN_VALUE;
         double sum = 0.0d;
         if (l.size() == 0) {
-            return new Tuple2<>(Integer.valueOf(0),
-                    Double.valueOf(0.0));
+            return new Tuple2<>(0, 0.0);
         }
         for (QueryRatePerSecond qps : l) {
-            sum += (double) qps.howMany;
+            sum += qps.howMany;
             if (qps.howMany > max) {
                 max = qps.howMany;
             }
         }
-        return new Tuple2<>(Integer.valueOf(max),
-                Double.valueOf(sum / (double) l.size()));
+        return new Tuple2<>(max, sum / (double) l.size());
     }
 
 }
