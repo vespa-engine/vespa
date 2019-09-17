@@ -39,12 +39,11 @@ public class FeedHandler extends LoggingRequestHandler {
     private final DocumentApiMetrics metricsHelper;
 
     @Inject
-    public FeedHandler(
-            LoggingRequestHandler.Context parentCtx,
-            DocumentmanagerConfig documentManagerConfig,
-            SessionCache sessionCache,
-            ThreadpoolConfig threadpoolConfig,
-            MetricReceiver metricReceiver) throws Exception {
+    public FeedHandler(LoggingRequestHandler.Context parentCtx,
+                       DocumentmanagerConfig documentManagerConfig,
+                       SessionCache sessionCache,
+                       ThreadpoolConfig threadpoolConfig,
+                       MetricReceiver metricReceiver) throws Exception {
         super(parentCtx);
         metricsHelper = new DocumentApiMetrics(metricReceiver, "vespa.http.server");
         feedHandlerV3 = new FeedHandlerV3(parentCtx, documentManagerConfig, sessionCache, threadpoolConfig, metricsHelper);
