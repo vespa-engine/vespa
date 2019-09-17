@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -24,7 +23,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     private static final Logger log = Logger.getLogger(OsUpgrader.class.getName());
 
-    private static final Set<Node.State> upgradableNodeStates = ImmutableSet.of(
+    private static final Set<Node.State> upgradableNodeStates = Set.of(
             Node.State.ready,
             Node.State.active,
             Node.State.reserved
@@ -39,9 +38,10 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        if (!application.isEligibleForOsUpgrades() || wantedVersion(zone, application, target).equals(target)) {
-            return;
-        }
+        if (!application.isEligibleForOsUpgrades()) return;
+        var existingTarget = targetVersion(zone, application);
+        if (existingTarget.isPresent() && existingTarget.get().equals(target)) return;
+
         log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s", application.id(), target, zone.getId(), zone.getCloudName()));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getId(), application.nodeType(), target);
     }
@@ -69,8 +69,10 @@ public class OsUpgrader extends InfrastructureUpgrader {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
     }
 
-    private Version wantedVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
-        return minVersion(zone, application, Node::wantedOsVersion).orElse(defaultVersion);
+    private Optional<Version> targetVersion(ZoneApi zone, SystemApplication application) {
+        return controller().serviceRegistry().configServer().nodeRepository()
+                           .targetVersionsOf(zone.getId())
+                           .osVersion(application.nodeType());
     }
 
     /** Returns whether node in application should be upgraded by this */

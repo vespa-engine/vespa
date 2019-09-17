@@ -91,7 +91,7 @@ public class OsUpgraderTest {
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.proxy, zone2.getId(), zone3.getId());
+        assertWanted(version1, SystemApplication.tenantHost, zone2.getId(), zone3.getId());
 
         // zone 4: still on previous version
         assertWanted(Version.emptyVersion, SystemApplication.tenantHost, zone4.getId());
@@ -126,7 +126,10 @@ public class OsUpgraderTest {
     }
 
     private void assertWanted(Version version, SystemApplication application, ZoneId... zones) {
-        assertVersion(application, version, Node::wantedOsVersion, zones);
+        for (var zone : zones) {
+            assertEquals("Target version set for " + application + " in " + zone, version,
+                         nodeRepository().targetVersionsOf(zone).osVersion(application.nodeType()).orElse(Version.emptyVersion));
+        }
     }
 
     private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
@@ -162,7 +165,7 @@ public class OsUpgraderTest {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
                 nodeRepository().putByHostname(zone, new Node(
                         node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
-                        node.wantedVersion(), node.wantedOsVersion(), node.wantedOsVersion(), node.serviceState(),
+                        node.wantedVersion(), version, version, node.serviceState(),
                         node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
                         node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
                         node.bandwidthGbps(), node.fastDisk(), node.cost(), node.canonicalFlavor(),
