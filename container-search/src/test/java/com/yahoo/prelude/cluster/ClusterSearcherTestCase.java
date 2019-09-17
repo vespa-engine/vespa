@@ -8,7 +8,6 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.container.search.Fs4Config;
-import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -547,7 +546,7 @@ public class ClusterSearcherTestCase {
                                    createClusterInfoConfig(),
                                    Statistics.nullImplementation,
                                    new MockMetric(),
-                                   new FS4ResourcePool(new Fs4Config.Builder().build(), new QrConfig.Builder().build()),
+                                   new FS4ResourcePool(new QrConfig.Builder().build()),
                                    new VipStatus());
     }
 

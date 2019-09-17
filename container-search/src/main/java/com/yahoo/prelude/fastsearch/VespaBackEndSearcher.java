@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.collections.TinyIdentitySet;
 import com.yahoo.fs4.DocsumPacket;
-import com.yahoo.fs4.Packet;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
@@ -344,7 +343,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * @return the number of hits that we did not return data for, and an optional error message.
      *         when things are working normally we return 0.
      */
-     public FillHitsResult fillHits(Result result, Packet[] packets, String summaryClass) throws IOException {
+     public FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) throws IOException {
         int skippedHits = 0;
         String lastError = null;
         int packetIndex = 0;
@@ -354,8 +353,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             if (hit instanceof FastHit && ! hit.isFilled(summaryClass)) {
                 FastHit fastHit = (FastHit) hit;
 
-                packets[packetIndex].ensureInstanceOf(DocsumPacket.class, getName());
-                DocsumPacket docsum = (DocsumPacket) packets[packetIndex];
+                DocsumPacket docsum = packets[packetIndex];
 
                 packetIndex++;
                 FillHitResult fr = fillHit(fastHit, docsum, summaryClass);

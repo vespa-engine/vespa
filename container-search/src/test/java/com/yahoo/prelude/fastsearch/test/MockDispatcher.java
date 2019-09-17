@@ -2,8 +2,6 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.prelude.fastsearch.FS4PingFactory;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
@@ -15,23 +13,24 @@ import java.util.List;
 
 class MockDispatcher extends Dispatcher {
     public static MockDispatcher create(List<Node> nodes) {
-        var fs4ResourcePool = new FS4ResourcePool("container.0", 1);
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
-        return create(nodes, fs4ResourcePool, rpcResourcePool, 1, new VipStatus());
+        return create(nodes, rpcResourcePool, 1, new VipStatus());
     }
 
-    public static MockDispatcher create(List<Node> nodes, FS4ResourcePool fs4ResourcePool, RpcResourcePool rpcResourcePool,
+    public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool,
             int containerClusterSize, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig(nodes);
         var searchCluster = new SearchCluster("a", dispatchConfig, containerClusterSize, vipStatus);
-        return new MockDispatcher(searchCluster, dispatchConfig, fs4ResourcePool, rpcResourcePool);
+        return new MockDispatcher(searchCluster, dispatchConfig, rpcResourcePool);
     }
 
-    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
-            RpcResourcePool rpcResourcePool) {
-        super(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig.dispatchWithProtobuf()),
-                new FS4PingFactory(fs4ResourcePool), new MockMetric());
+    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcResourcePool rpcResourcePool) {
+        this(searchCluster, dispatchConfig, new RpcInvokerFactory(rpcResourcePool, searchCluster, dispatchConfig.dispatchWithProtobuf()));
+    }
+
+    private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
+        super(searchCluster, dispatchConfig, invokerFactory, invokerFactory, new MockMetric());
     }
 
     private static DispatchConfig toDispatchConfig(List<Node> nodes) {

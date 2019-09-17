@@ -10,7 +10,6 @@ import com.yahoo.concurrent.Receiver;
 import com.yahoo.concurrent.Receiver.MessageState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.IndexFacts;
@@ -106,7 +105,7 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.fs4ResourcePool = fs4ResourcePool;
 
-        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus, metric);
+        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
 
         monitor = (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
                 ? new ClusterMonitor(this, monitorConfig, Optional.empty())
@@ -148,9 +147,8 @@ public class ClusterSearcher extends Searcher {
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
-                        Backend dispatchBackend = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
-                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, docSumParams,
-                                                               documentDbConfig, dispatchBackend, dispatcher, dispatcherIndex);
+                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool.getServerId(), docSumParams,
+                                                               documentDbConfig, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
@@ -189,15 +187,14 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
-                                               FS4ResourcePool fs4ResourcePool,
+                                               String serverId,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
-                                               Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex)
     {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex, dispatcherIndex);
-        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
+        return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(String serverId,
@@ -229,10 +226,6 @@ public class ClusterSearcher extends Searcher {
         fs4ResourcePool = null;
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
-    }
-
-    private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
-        return fs4ResourcePool.getBackend(disp.host(), disp.port());
     }
 
     ClusterMonitor getMonitor() {
@@ -517,7 +510,7 @@ public class ClusterSearcher extends Searcher {
         monitor.shutdown();
     }
 
-    ExecutorService getExecutor() {
+    private ExecutorService getExecutor() {
         return fs4ResourcePool.getExecutor();
     }
 
