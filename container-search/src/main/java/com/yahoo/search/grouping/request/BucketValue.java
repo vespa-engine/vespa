@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import java.util.Objects;
+
 /**
  * This class represents a bucket in a {@link PredefinedFunction}. The generic T is the data type of the range values
  * 'from' and 'to'. The range is inclusive-from and exclusive-to. All supported data types are represented as subclasses
@@ -48,12 +50,25 @@ public class BucketValue extends GroupingExpression implements Comparable<Bucket
 
     @Override
     public int compareTo(BucketValue rhs) {
-        if (comparator.compare(to, rhs.from) <= 0) {
-            return -1;
-        }
-        if (comparator.compare(from, rhs.to) >= 0) {
-            return 1;
-        }
+        if (comparator.compare(to, rhs.from) <= 0) return -1;
+        if (comparator.compare(from, rhs.to) >= 0) return 1;
         return 0;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof BucketValue)) return false;
+
+        BucketValue other = (BucketValue)o;
+        if ( ! Objects.equals(this.from, other.from)) return false;
+        if ( ! Objects.equals(this.to, other.to)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to);
+    }
+
 }

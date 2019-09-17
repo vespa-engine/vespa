@@ -26,9 +26,10 @@ public abstract class ChainableComparator implements Comparator<Hit> {
      * When overriding this in the subclass, always <code>return super.compare(first,second)</code>
      * at the end of the subclass' implementation.
      */
-    public int compare(Hit first,Hit second) {
-        if (secondaryComparator==null) return 0;
-        return secondaryComparator.compare(first,second);
+    @Override
+    public int compare(Hit first, Hit second) {
+        if (secondaryComparator == null) return 0;
+        return secondaryComparator.compare(first, second);
     }
 
 }

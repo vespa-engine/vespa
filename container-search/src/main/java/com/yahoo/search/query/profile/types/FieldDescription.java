@@ -126,6 +126,7 @@ public class FieldDescription implements Comparable<FieldDescription> {
     /** Returns false if overrides to values for this field from the outside should be ignored. Default: true */
     public boolean isOverridable() { return overridable; }
 
+    @Override
     public int compareTo(FieldDescription other) {
         return name.toString().compareTo(other.name.toString());
     }

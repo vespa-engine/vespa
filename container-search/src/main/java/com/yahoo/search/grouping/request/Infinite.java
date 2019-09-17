@@ -14,6 +14,7 @@ public class Infinite implements Comparable {
 
     /**
      * Create an Infinite object with positive or negative sign.
+     *
      * @param negative the signedness.
      */
     public Infinite(boolean negative) {
@@ -35,4 +36,15 @@ public class Infinite implements Comparable {
     public int compareTo(Object rhs) {
         return (negative ? -1 : 1);
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Infinite)) return false;
+        return this.negative == ((Infinite)other).negative;
+    }
+
+    @Override
+    public int hashCode() { return negative ? -1 : 1; }
+
 }

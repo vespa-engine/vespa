@@ -106,7 +106,7 @@ public class RawBuffer implements Comparable<RawBuffer>, Cloneable {
                 return 1;
             }
         }
-        return (my.length < their.length ? -1 : (my.length > their.length ? 1 : 0));
+        return Integer.compare(my.length, their.length);
     }
 
     @Override
@@ -115,10 +115,10 @@ public class RawBuffer implements Comparable<RawBuffer>, Cloneable {
     }
 
     @Override
-    public boolean equals(Object rhs) {
-        if (rhs instanceof RawBuffer) {
-            return (compareTo((RawBuffer)rhs) == 0);
-        }
-        return false;
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof RawBuffer)) return false;
+        return (compareTo((RawBuffer)other) == 0);
     }
+
 }

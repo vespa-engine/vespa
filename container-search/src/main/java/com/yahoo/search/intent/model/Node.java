@@ -32,10 +32,23 @@ public abstract class Node implements Comparable<Node> {
         return getScore();
     }
 
+    @Override
     public int compareTo(Node other) {
         if (this.getScore() < other.getScore()) return 1;
         if (this.getScore() > other.getScore()) return -1;
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Node)) return false;
+        return this.getScore() == ((Node)other).getScore();
+    }
+
+    @Override
+    public int hashCode() {
+        return Double.hashCode(getScore());
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.Comparator;
  * <b>Note:</b> this comparator imposes orderings that are inconsistent with equals.
  * <p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 // Is tested in HitSortSpecOrdererTestCase
 public class FieldComparator extends ChainableComparator {
@@ -49,8 +49,7 @@ public class FieldComparator extends ChainableComparator {
      * There is no locale based sorting here, as the backend does
      * not do that either.
      *
-     * @return -1, 0, 1 if first should be sorted before, equal to
-     * or after second
+     * @return -1, 0, 1 if first should be sorted before, equal to or after second
      */
     @Override
     public int compare(Hit first, Hit second) {
@@ -66,7 +65,7 @@ public class FieldComparator extends ChainableComparator {
                 return x;
             }
         }
-        return super.compare(first,second);
+        return super.compare(first, second);
     }
 
     private Object getSubField(Object field, String key) {
@@ -100,7 +99,7 @@ public class FieldComparator extends ChainableComparator {
         return field;
     }
 
-    public Object getField(Hit hit,String key) {
+    public Object getField(Hit hit, String key) {
         if ("[relevance]".equals(key)) return hit.getRelevance();
         if ("[rank]".equals(key)) return hit.getRelevance();
         if ("[source]".equals(key)) return hit.getSource();
@@ -124,8 +123,7 @@ public class FieldComparator extends ChainableComparator {
         } else if (second == null) {
             return 1;
         }
-        if (first.getClass().isInstance(second)
-                && first instanceof Comparable) {
+        if (first.getClass().isInstance(second) && first instanceof Comparable) {
             // We now know:
             // second is of a type which is a subclass of first's type
             // They both implement Comparable
@@ -135,6 +133,7 @@ public class FieldComparator extends ChainableComparator {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
         b.append("FieldComparator:");

@@ -11,8 +11,6 @@ package com.yahoo.search.result;
  */
 public class Relevance implements Comparable<Relevance> {
 
-    private static final long serialVersionUID = 4536685722731661704L;
-
     /** The relevancy score. */
     private double score;
 
@@ -49,15 +47,12 @@ public class Relevance implements Comparable<Relevance> {
     }
 
     /** Compares relevancy values with */
+    @Override
     public int compareTo(Relevance other) {
         double thisScore = getScore();
         double otherScore = other.getScore();
         if (Double.isNaN(thisScore)) {
-            if (Double.isNaN(otherScore)) {
-                return 0;
-            } else {
-                return -1;
-            }
+            return Double.isNaN(otherScore) ? 0 : -1;
         } else if (Double.isNaN(otherScore)) {
             return 1;
         } else {
@@ -67,21 +62,16 @@ public class Relevance implements Comparable<Relevance> {
 
     /** Compares relevancy values */
     @Override
-    public boolean equals(Object object) {
-        if (object==this) return true;
-
-        if (!(object instanceof Relevance)) { return false; }
-
-        Relevance other = (Relevance) object;
-        return getScore() == other.getScore();
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof Relevance)) { return false; }
+        return this.compareTo((Relevance)other) == 0;
     }
 
     /** Returns a hash from the relevancy value */
     @Override
     public int hashCode() {
-        double hash=getScore()*335451367; // A largish prime
-        if (hash>-1 && hash<1) hash=1/hash;
-        return (int) hash;
+        return Double.hashCode(score);
     }
 
 }
