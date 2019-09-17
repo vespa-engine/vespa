@@ -11,6 +11,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <thread>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.bucketdb.updater");
@@ -168,7 +169,28 @@ BucketDBUpdater::removeSuperfluousBuckets(
         for (const auto& db_entry : proc.getNonOwnedEntries()) {
             readOnlyDb.update(db_entry); // TODO Entry move support
         }
+        maybe_inject_simulated_db_pruning_delay();
     }
+}
+
+namespace {
+
+void maybe_sleep_for(std::chrono::milliseconds ms) {
+    if (ms.count() > 0) {
+        std::this_thread::sleep_for(ms);
+    }
+}
+
+}
+
+void
+BucketDBUpdater::maybe_inject_simulated_db_pruning_delay() {
+    maybe_sleep_for(_distributorComponent.getDistributor().getConfig().simulated_db_pruning_latency());
+}
+
+void
+BucketDBUpdater::maybe_inject_simulated_db_merging_delay() {
+    maybe_sleep_for(_distributorComponent.getDistributor().getConfig().simulated_db_merging_latency());
 }
 
 void
@@ -603,6 +625,7 @@ BucketDBUpdater::activatePendingClusterState()
     framework::MilliSecTimer process_timer(_distributorComponent.getClock());
 
     _pendingClusterState->mergeIntoBucketDatabases();
+    maybe_inject_simulated_db_merging_delay();
 
     if (_pendingClusterState->isVersionedTransition()) {
         LOG(debug, "Activating pending cluster state version %u", _pendingClusterState->clusterStateVersion());

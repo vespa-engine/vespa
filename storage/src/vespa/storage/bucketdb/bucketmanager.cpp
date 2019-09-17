@@ -64,7 +64,7 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
 
 BucketManager::~BucketManager()
 {
-    if (_thread.get() != 0) {
+    if (_thread) {
         LOG(error, "BucketManager deleted without calling close() first");
         onClose();
     }
@@ -75,9 +75,9 @@ BucketManager::~BucketManager()
 void BucketManager::onClose()
 {
     // Stop internal thread such that we don't send any more messages down.
-    if (_thread.get() != 0) {
+    if (_thread) {
         _thread->interruptAndJoin(_workerLock, _workerCond);
-        _thread.reset(0);
+        _thread.reset();
     }
     StorageLinkQueued::onClose();
 }

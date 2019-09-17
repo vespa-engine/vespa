@@ -191,3 +191,11 @@ inhibit_merge_sending_on_busy_node_duration_sec int default=10
 ## For this option to take effect, the cluster controller must also have two-phase
 ## states enabled.
 allow_stale_reads_during_cluster_state_transitions bool default=false
+
+## If greater than zero, injects a thread sleep into certain parts of the bucket
+## processing logic. This allows for easier testing of racing edge cases where the
+## main distributor thread is CPU-blocked processing large amounts of buckets, but
+## without actually needing to use a lot of buckets in the test itself.
+## Setting any of these values only makes sense for testing!
+simulated_db_pruning_latency_msec int default=0
+simulated_db_merging_latency_msec int default=0
