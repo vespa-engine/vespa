@@ -26,7 +26,6 @@ import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.streamingvisitors.tracing.TraceDescription;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
