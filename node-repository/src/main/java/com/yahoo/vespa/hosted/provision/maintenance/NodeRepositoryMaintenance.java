@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.google.inject.Inject;
@@ -46,6 +46,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<LoadBalancerExpirer> loadBalancerExpirer;
     private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
     private final CapacityReportMaintainer capacityReportMaintainer;
+    private final OsUpgradeActivator osUpgradeActivator;
 
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
@@ -80,6 +81,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         dynamicProvisioningMaintainer = provisionServiceProvider.getHostProvisioner().map(hostProvisioner ->
                 new DynamicProvisioningMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.dynamicProvisionerInterval), hostProvisioner, flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("capacity_report_interval").orElse(defaults.capacityReportInterval));
+        osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -102,6 +104,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         infrastructureProvisioner.deconstruct();
         loadBalancerExpirer.ifPresent(Maintainer::deconstruct);
         dynamicProvisioningMaintainer.ifPresent(Maintainer::deconstruct);
+        osUpgradeActivator.deconstruct();
     }
 
     private static Optional<Duration> durationFromEnv(String envVariable) {
@@ -145,6 +148,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration infrastructureProvisionInterval;
         private final Duration loadBalancerExpirerInterval;
         private final Duration dynamicProvisionerInterval;
+        private final Duration osUpgradeActivatorInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -164,6 +168,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             loadBalancerExpirerInterval = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             dynamicProvisionerInterval = Duration.ofMinutes(5);
+            osUpgradeActivatorInterval = Duration.ofMinutes(5);
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
