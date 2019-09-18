@@ -71,6 +71,16 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
     }
 
+    private static class VdsVisitorFactory implements VisitorFactory {
+        @Override
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+            return new VdsVisitor(query, searchCluster, route, documentType, traceLevelOverride);
+        }
+    }
+
+    public VdsStreamingSearcher() {
+        this(new VdsVisitorFactory());
+    }
     VdsStreamingSearcher(VisitorFactory visitorFactory) {
         this.visitorFactory = visitorFactory;
         tracingOptions = TracingOptions.DEFAULT;

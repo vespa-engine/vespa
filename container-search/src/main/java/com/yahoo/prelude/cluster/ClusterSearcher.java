@@ -182,8 +182,7 @@ public class ClusterSearcher extends Searcher {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
         }
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex, 0);
-        VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
-                .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
+        VdsStreamingSearcher searcher = new VdsStreamingSearcher();
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());

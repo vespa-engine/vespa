@@ -19,7 +19,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -387,28 +386,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             hit.setFilled(summaryClass);
         }
         return error;
-    }
-
-    @SuppressWarnings("rawtypes")
-    public static VespaBackEndSearcher getSearcher(String s) {
-        try {
-            Class c = Class.forName(s);
-            if (VespaBackEndSearcher.class.isAssignableFrom(c)) {
-                Constructor[] constructors = c.getConstructors();
-                for (Constructor constructor : constructors) {
-                    Class[] parameters = constructor.getParameterTypes();
-                    if (parameters.length == 0) {
-                        return (VespaBackEndSearcher) constructor.newInstance();
-                    }
-                }
-                throw new RuntimeException("Failed initializing " + s);
-
-            } else {
-                 throw new RuntimeException(s + " is not com.yahoo.prelude.fastsearch.VespaBackEndSearcher");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failure loading class " + s + ", exception :" + e);
-        }
     }
 
     protected boolean isLoggingFine() {
