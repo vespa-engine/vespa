@@ -228,8 +228,11 @@ public class SearchCluster implements NodeManager<Node> {
         boolean isDirectDispatchGroupAndChange = usesDirectDispatchTo(group) && hasChanged;
         group.setHasSufficientCoverage(sufficientCoverage);
         if ((!isInRotation || isDirectDispatchGroupAndChange) && sufficientCoverage) {
+            // We will set this cluster in rotation if
+            // - not already in rotation and one group has sufficient coverage.
             vipStatus.addToRotation(clusterId);
         } else if (isDirectDispatchGroupAndChange) {
+            // We will take it out of rotation if the group is mandatory (direct dispatch to this group)
             vipStatus.removeFromRotation(clusterId);
         }
     }
@@ -304,6 +307,8 @@ public class SearchCluster implements NodeManager<Node> {
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
         }
         if ( ! anyGroupsSufficientCoverage && (sumOfActiveDocuments == 0)) {
+            // If no groups have sufficient coverage (0 might be sufficient)
+            // and there are no documents in any groups, then we are down.
             vipStatus.removeFromRotation(clusterId);
         }
     }
