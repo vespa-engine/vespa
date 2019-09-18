@@ -69,19 +69,31 @@ TEST("info") {
 
 TEST("size of important objects")
 {
+#ifdef __APPLE__
+    EXPECT_EQUAL(192u, sizeof(FNET_IOComponent));
+#else
     EXPECT_EQUAL(168u, sizeof(FNET_IOComponent));
+#endif
     EXPECT_EQUAL(32u, sizeof(FNET_Channel));
     EXPECT_EQUAL(40u, sizeof(FNET_PacketQueue_NoLock));
+#ifdef __APPLE__
+    EXPECT_EQUAL(496u, sizeof(FNET_Connection));
+#else
     EXPECT_EQUAL(472u, sizeof(FNET_Connection));
+#endif
     EXPECT_EQUAL(48u, sizeof(std::condition_variable));
     EXPECT_EQUAL(56u, sizeof(FNET_DataBuffer));
     EXPECT_EQUAL(24u, sizeof(FastOS_Time));
     EXPECT_EQUAL(8u, sizeof(FNET_Context));
     EXPECT_EQUAL(8u, sizeof(fastos::TimeStamp));
+#ifdef __APPLE__
+    EXPECT_EQUAL(64u, sizeof(std::mutex));
+    EXPECT_EQUAL(64u, sizeof(pthread_mutex_t));
+#else
     EXPECT_EQUAL(40u, sizeof(std::mutex));
     EXPECT_EQUAL(40u, sizeof(pthread_mutex_t));
+#endif
     EXPECT_EQUAL(48u, sizeof(pthread_cond_t));
-    EXPECT_EQUAL(40u, sizeof(std::mutex));
     EXPECT_EQUAL(48u, sizeof(std::condition_variable));
 }
 
