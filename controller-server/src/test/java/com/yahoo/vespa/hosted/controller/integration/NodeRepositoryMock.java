@@ -9,6 +9,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 public class NodeRepositoryMock implements NodeRepository {
 
     private final Map<ZoneId, Map<HostName, Node>> nodeRepository = new HashMap<>();
+    private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
 
     public void putByHostname(ZoneId zone, List<Node> nodes) {
         nodeRepository.putIfAbsent(zone, new HashMap<>());
@@ -165,32 +167,17 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void upgradeOs(ZoneId zone, NodeType type, Version version) {
-        nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
-                      .stream()
-                      .filter(node -> node.type() == type)
-                      .map(node -> new Node(node.hostname(),
-                                            node.state(),
-                                            node.type(),
-                                            node.owner(),
-                                            node.currentVersion(),
-                                            node.wantedVersion(),
-                                            node.currentOsVersion(),
-                                            version,
-                                            node.serviceState(),
-                                            node.restartGeneration(),
-                                            node.wantedRestartGeneration(),
-                                            node.rebootGeneration(),
-                                            node.wantedRebootGeneration(),
-                                            node.vcpu(),
-                                            node.memoryGb(),
-                                            node.diskGb(),
-                                            node.bandwidthGbps(),
-                                            node.fastDisk(),
-                                            node.cost(),
-                                            node.canonicalFlavor(),
-                                            node.clusterId(),
-                                            node.clusterType()))
-                      .forEach(node -> putByHostname(zone, node));
+        this.targetVersions.compute(zone, (ignored, targetVersions) -> {
+            if (targetVersions == null) {
+                targetVersions = TargetVersions.EMPTY;
+            }
+            return targetVersions.withOsVersion(type, version);
+        });
+    }
+
+    @Override
+    public TargetVersions targetVersionsOf(ZoneId zone) {
+        return targetVersions.getOrDefault(zone, TargetVersions.EMPTY);
     }
 
     @Override

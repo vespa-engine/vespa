@@ -62,6 +62,9 @@ public interface NodeRepository {
     /** Upgrade OS for all nodes of given type to a new version */
     void upgradeOs(ZoneId zone, NodeType type, Version version);
 
+    /** Get target versions for upgrades in given zone */
+    TargetVersions targetVersionsOf(ZoneId zone);
+
     /** Requests firmware checks on all hosts in the given zone. */
     void requestFirmwareCheck(ZoneId zone);
 

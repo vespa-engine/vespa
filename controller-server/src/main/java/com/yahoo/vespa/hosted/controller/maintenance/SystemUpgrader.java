@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
-import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -23,7 +22,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     private static final Logger log = Logger.getLogger(SystemUpgrader.class.getName());
 
-    private static final Set<Node.State> upgradableNodeStates = EnumSet.of(Node.State.active, Node.State.reserved);
+    private static final Set<Node.State> upgradableNodeStates = Set.of(Node.State.active, Node.State.reserved);
 
     public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
         super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy(), null);
@@ -31,6 +30,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
+        // TODO(mpolden): Simplify this by comparing with version from NodeRepository#targetVersionsOf instead
         if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
                                                               .orElse(true)) {
             log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
