@@ -46,13 +46,13 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);
-        pool.submit(() -> {
+        pool.submit(() ->
             applicationList.parallelStream().forEach(application -> {
-                try {
-                    applications.lockIfPresent(application.id(), locked ->
-                            applications.store(locked.with(controller().metrics().getApplicationMetrics(application.id()))));
+                applications.lockIfPresent(application.id(), locked ->
+                        applications.store(locked.with(controller().metrics().getApplicationMetrics(application.id()))));
 
-                    for (Deployment deployment : application.deployments().values()) {
+                for (Deployment deployment : application.deployments().values()) {
+                    try {
                         if (deployment.version().getMajor() < 7) continue;
                         var collectedMetrics = controller().metrics().getDeploymentMetrics(application.id(), deployment.zone());
                         var now = controller().clock().instant();
@@ -70,13 +70,13 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                      .recordActivityAt(now, existingDeployment.zone()));
 
                         });
+                    } catch (Exception e) {
+                        failures.incrementAndGet();
+                        lastException.set(e);
                     }
-                } catch (Exception e) {
-                    failures.incrementAndGet();
-                    lastException.set(e);
                 }
-            });
-        });
+            })
+        );
         pool.shutdown();
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);

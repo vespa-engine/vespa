@@ -6,6 +6,8 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.yolean.Exceptions;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -39,7 +41,12 @@ public class ClusterMetricsRetriever {
     private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
 
 
-    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder.create()
+            .setDefaultRequestConfig(RequestConfig.custom()
+                    .setConnectTimeout(10 * 1000)
+                    .setSocketTimeout(10 * 1000)
+                    .build())
+            .build();
 
     /**
      * Call the metrics API on each host and aggregate the metrics
@@ -88,7 +95,7 @@ public class ClusterMetricsRetriever {
             return slime;
         } catch (IOException e) {
             // Usually caused by applications being deleted during metric retrieval
-            log.warning("Was unable to fetch metrics from " + hostURI);
+            log.warning("Was unable to fetch metrics from " + hostURI + " : " + Exceptions.toMessageString(e));
             return new Slime();
         }
     }
