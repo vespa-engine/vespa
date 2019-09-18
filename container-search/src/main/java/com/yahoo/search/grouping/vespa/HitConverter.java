@@ -54,6 +54,8 @@ class HitConverter implements ResultBuilder.HitConverter {
             throw new NullPointerException("Hit has no context.");
         hit.setSource(hitContext.getSource());
         hit.setQuery(hitContext.getQuery());
+        if (hitContext.getQueryPacketData() != null)
+            hit.setQueryPacketData(hitContext.getQueryPacketData());
         return hit;
     }
 

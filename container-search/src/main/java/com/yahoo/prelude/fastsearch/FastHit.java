@@ -3,6 +3,7 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.document.GlobalId;
+import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.net.URI;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.result.Hit;
@@ -38,6 +39,9 @@ public class FastHit extends Hit {
 
     /** The global id of this document in the backend node which produced it */
     private byte [] globalId;
+
+    //TODO Remove with fs4
+    private transient QueryPacketData queryPacketData = null;
 
     private transient byte[] sortData = null;
     // TODO I supect this one can be dropped.
@@ -142,6 +146,27 @@ public class FastHit extends Hit {
 
     /** Sets the index of the node this hit originated at */
     public void setDistributionKey(int distributionKey) { this.distributionKey = distributionKey; }
+
+    /**
+     * Add the binary data common for the query packet to a Vespa backend and a
+     * summary fetch packet to a Vespa backend. This method can only be called
+     * once for a single hit.
+     *
+     * @param queryPacketData binary data from a query packet resulting in this hit
+     * @throws IllegalStateException if the method is called more than once
+     * @throws NullPointerException if trying to set query packet data to null
+     */
+    public void setQueryPacketData(QueryPacketData queryPacketData) {
+        if (this.queryPacketData != null)
+            throw new IllegalStateException("Query packet data already set to "
+                                            + this.queryPacketData + ", tried to set it to " + queryPacketData);
+        if (queryPacketData == null)
+            throw new NullPointerException("Query packet data reference can not be set to null.");
+        this.queryPacketData = queryPacketData;
+    }
+
+    /** Returns a serial encoding of the query which produced this hit, ot null if not available. */
+    public QueryPacketData getQueryPacketData() { return queryPacketData; }
 
     public void setSortData(byte[] data, Sorting sorting) {
         this.sortData = data;

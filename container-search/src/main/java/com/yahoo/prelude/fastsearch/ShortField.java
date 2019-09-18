@@ -5,6 +5,9 @@
  */
 package com.yahoo.prelude.fastsearch;
 
+
+import java.nio.ByteBuffer;
+
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.data.access.Inspector;
 
