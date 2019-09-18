@@ -229,7 +229,7 @@ public class SearchCluster implements NodeManager<Node> {
         group.setHasSufficientCoverage(sufficientCoverage);
         if ((!isInRotation || isDirectDispatchGroupAndChange) && sufficientCoverage) {
             vipStatus.addToRotation(clusterId);
-        } else if (isDirectDispatchGroupAndChange && ! sufficientCoverage) {
+        } else if (isDirectDispatchGroupAndChange) {
             vipStatus.removeFromRotation(clusterId);
         }
     }
@@ -303,7 +303,7 @@ public class SearchCluster implements NodeManager<Node> {
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
         }
-        if ( ! anyGroupsSufficientCoverage ) {
+        if ( ! anyGroupsSufficientCoverage && (sumOfActiveDocuments == 0)) {
             vipStatus.removeFromRotation(clusterId);
         }
     }
