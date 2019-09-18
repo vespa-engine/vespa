@@ -367,6 +367,7 @@ public class CuratorDb {
     }
 
     public void removeInstance(ApplicationId id) {
+        // WARNING: This is part of a multi-step data move operation, so don't touch!!!
         curator.delete(applicationPath(id));
         curator.delete(instancePath(id));
     }
