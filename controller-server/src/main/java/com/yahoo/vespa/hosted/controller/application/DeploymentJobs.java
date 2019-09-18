@@ -26,10 +26,10 @@ import java.util.OptionalLong;
  */
 public class DeploymentJobs {
 
-    private final OptionalLong projectId;
+    private final OptionalLong projectId;                   // Move to Application
     private final ImmutableMap<JobType, JobStatus> status;
-    private final Optional<IssueId> issueId;
-    private final boolean builtInternally;
+    private final Optional<IssueId> issueId;                // Move to Application
+    private final boolean builtInternally;                  // Move to Application (Removing will be such a pain!)
 
     public DeploymentJobs(OptionalLong projectId, Collection<JobStatus> jobStatusEntries,
                           Optional<IssueId> issueId, boolean builtInternally) {

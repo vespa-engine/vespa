@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -35,7 +36,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * An instance of an application.
+ * An application, which has one or more {@link Instance}s. Belongs to a {@link Tenant}.
  *
  * This is immutable.
  *
@@ -43,12 +44,12 @@ import java.util.stream.Collectors;
  */
 public class Application {
 
-    private final ApplicationId id;
+    private final ApplicationId id;                         // TenantName and ApplicationName
     private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Map<ZoneId, Deployment> deployments;
-    private final DeploymentJobs deploymentJobs;
+    private final Map<ZoneId, Deployment> deployments;      // Move to Instance
+    private final DeploymentJobs deploymentJobs;            // Move to Instance
     private final Change change;
     private final Change outstandingChange;
     private final Optional<IssueId> ownershipIssueId;
@@ -56,8 +57,8 @@ public class Application {
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
-    private final List<AssignedRotation> rotations;
-    private final RotationStatus rotationStatus;
+    private final List<AssignedRotation> rotations;         // Move to Instance
+    private final RotationStatus rotationStatus;            // Move to Instance
 
     /** Creates an empty application */
     public Application(ApplicationId id, Instant now) {
