@@ -74,6 +74,7 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
+    private static final Path instanceRoot = root.append("instances");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
@@ -334,6 +335,7 @@ public class CuratorDb {
 
     public void writeInstance(Instance instance) {
         curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
+        curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
 
     public Optional<Instance> readInstance(ApplicationId application) {
@@ -362,6 +364,7 @@ public class CuratorDb {
 
     public void removeInstance(ApplicationId id) {
         curator.delete(applicationPath(id));
+        curator.delete(instancePath(id));
     }
 
     // -------------- Job Runs ------------------------------------------------
@@ -581,6 +584,10 @@ public class CuratorDb {
 
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
+    }
+
+    private static Path instancePath(ApplicationId id) {
+        return instanceRoot.append(id.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {
