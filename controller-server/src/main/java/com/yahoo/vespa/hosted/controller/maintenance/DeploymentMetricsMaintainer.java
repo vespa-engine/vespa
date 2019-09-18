@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -42,12 +42,12 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     protected void maintain() {
         AtomicInteger failures = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
-        List<Application> applicationList = applications.asList();
+        List<Instance> instanceList = applications.asList();
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);
         pool.submit(() -> {
-            applicationList.parallelStream().forEach(application -> {
+            instanceList.parallelStream().forEach(application -> {
                 try {
                     applications.lockIfPresent(application.id(), locked ->
                             applications.store(locked.with(controller().metrics().getApplicationMetrics(application.id()))));
@@ -84,7 +84,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 log.log(LogLevel.WARNING,
                         String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
                                       failures.get(),
-                                      applicationList.size(),
+                                      instanceList.size(),
                                       maintenanceInterval(),
                                       Exceptions.toMessageString(lastException.get())));
             }

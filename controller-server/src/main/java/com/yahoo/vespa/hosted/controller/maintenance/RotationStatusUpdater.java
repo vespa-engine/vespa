@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
@@ -73,9 +73,9 @@ public class RotationStatusUpdater extends Maintainer {
         }
     }
 
-    private RotationStatus getStatus(Application application) {
+    private RotationStatus getStatus(Instance instance) {
         var statusMap = new LinkedHashMap<RotationId, Map<ZoneId, RotationState>>();
-        for (var assignedRotation : application.rotations()) {
+        for (var assignedRotation : instance.rotations()) {
             var rotation = applications.rotationRepository().getRotation(assignedRotation.rotationId());
             if (rotation.isEmpty()) continue;
             var rotationStatus = service.getHealthStatus(rotation.get().name()).entrySet().stream()

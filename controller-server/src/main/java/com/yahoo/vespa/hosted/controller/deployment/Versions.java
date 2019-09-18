@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -112,37 +112,37 @@ public class Versions {
     }
 
     /** Create versions using change contained in application */
-    public static Versions from(Application application, Version defaultPlatformVersion) {
-        return from(application.change(), application, Optional.empty(), defaultPlatformVersion);
+    public static Versions from(Instance instance, Version defaultPlatformVersion) {
+        return from(instance.change(), instance, Optional.empty(), defaultPlatformVersion);
     }
 
     /** Create versions using given change and application */
-    public static Versions from(Change change, Application application, Optional<Deployment> deployment,
+    public static Versions from(Change change, Instance instance, Optional<Deployment> deployment,
                                 Version defaultPlatformVersion) {
-        return new Versions(targetPlatform(application, change, deployment, defaultPlatformVersion),
-                            targetApplication(application, change, deployment),
+        return new Versions(targetPlatform(instance, change, deployment, defaultPlatformVersion),
+                            targetApplication(instance, change, deployment),
                             deployment.map(Deployment::version),
                             deployment.map(Deployment::applicationVersion));
     }
 
-    private static Version targetPlatform(Application application, Change change, Optional<Deployment> deployment,
+    private static Version targetPlatform(Instance instance, Change change, Optional<Deployment> deployment,
                                           Version defaultVersion) {
         if (change.isPinned() && change.platform().isPresent())
             return change.platform().get();
 
         return max(change.platform(), deployment.map(Deployment::version))
-                .orElseGet(() -> application.oldestDeployedPlatform().orElse(defaultVersion));
+                .orElseGet(() -> instance.oldestDeployedPlatform().orElse(defaultVersion));
     }
 
-    private static ApplicationVersion targetApplication(Application application, Change change,
+    private static ApplicationVersion targetApplication(Instance instance, Change change,
                                                         Optional<Deployment> deployment) {
         return max(change.application(), deployment.map(Deployment::applicationVersion))
-                .orElseGet(() -> defaultApplicationVersion(application));
+                .orElseGet(() -> defaultApplicationVersion(instance));
     }
 
-    private static ApplicationVersion defaultApplicationVersion(Application application) {
-        return application.oldestDeployedApplication()
-                          .orElseGet(() -> Optional.ofNullable(application.deploymentJobs().jobStatus().get(JobType.component))
+    private static ApplicationVersion defaultApplicationVersion(Instance instance) {
+        return instance.oldestDeployedApplication()
+                       .orElseGet(() -> Optional.ofNullable(instance.deploymentJobs().jobStatus().get(JobType.component))
                                                    .flatMap(JobStatus::lastSuccess)
                                                    .map(JobStatus.JobRun::application)
                                                    .orElse(ApplicationVersion.unknown));

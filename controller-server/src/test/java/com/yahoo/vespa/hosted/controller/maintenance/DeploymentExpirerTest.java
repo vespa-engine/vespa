@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -33,8 +33,8 @@ public class DeploymentExpirerTest {
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
                                                           new JobControl(new MockCuratorDb()));
-        Application devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
-        Application prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
+        Instance devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
+        Instance prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
 
         // Deploy dev
         tester.controllerTester().deploy(devApp, tester.controllerTester().toZone(Environment.dev));
@@ -60,11 +60,11 @@ public class DeploymentExpirerTest {
         assertEquals(1, permanentDeployments(prodApp).size());
     }
 
-    private List<Deployment> permanentDeployments(Application application) {
-        return tester.controller().applications().get(application.id()).get().deployments().values().stream()
-                .filter(deployment -> deployment.zone().environment() != Environment.test &&
+    private List<Deployment> permanentDeployments(Instance instance) {
+        return tester.controller().applications().get(instance.id()).get().deployments().values().stream()
+                     .filter(deployment -> deployment.zone().environment() != Environment.test &&
                                       deployment.zone().environment() != Environment.staging)
-                .collect(Collectors.toList());
+                     .collect(Collectors.toList());
     }
 
 }

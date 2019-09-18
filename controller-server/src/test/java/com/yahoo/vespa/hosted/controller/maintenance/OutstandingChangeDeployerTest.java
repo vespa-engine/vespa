@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -53,7 +53,7 @@ public class OutstandingChangeDeployerTest {
               .uploadArtifact(applicationPackage)
               .submit();
 
-        Application app = tester.application("app1");
+        Instance app = tester.application("app1");
         assertTrue(app.outstandingChange().hasTargets());
         assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
         assertEquals(2, tester.buildService().jobs().size());

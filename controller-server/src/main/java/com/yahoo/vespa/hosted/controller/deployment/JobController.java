@@ -10,7 +10,7 @@ import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -197,7 +197,7 @@ public class JobController {
     public List<ApplicationId> applications() {
         return copyOf(controller.applications().asList().stream()
                                 .filter(application -> application.deploymentJobs().deployedInternally())
-                                .map(Application::id)
+                                .map(Instance::id)
                                 .iterator());
     }
 

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -103,15 +103,15 @@ public class Upgrader extends Maintainer {
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
-        for (Application application : applications.asList())
-            controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
+        for (Instance instance : applications.asList())
+            controller().applications().deploymentTrigger().triggerChange(instance.id(), Change.of(version));
     }
 
     private void cancelUpgradesOf(ApplicationList applications, String reason) {
         if (applications.isEmpty()) return;
         log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
-        for (Application application : applications.asList())
-            controller().applications().deploymentTrigger().cancelChange(application.id(), PLATFORM);
+        for (Instance instance : applications.asList())
+            controller().applications().deploymentTrigger().cancelChange(instance.id(), PLATFORM);
     }
 
     /** Returns the number of applications to upgrade in this run */

@@ -11,7 +11,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -86,7 +86,7 @@ public class InternalDeploymentTester {
     public ConfigServerMock configServer() { return tester.configServer(); }
     public ApplicationController applications() { return tester.applications(); }
     public ManualClock clock() { return tester.clock(); }
-    public Application app() { return tester.application(appId); }
+    public Instance app() { return tester.application(appId); }
 
     public InternalDeploymentTester() {
         tester = new DeploymentTester();

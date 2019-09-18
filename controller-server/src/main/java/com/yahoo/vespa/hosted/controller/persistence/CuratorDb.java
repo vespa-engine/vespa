@@ -13,7 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -331,23 +331,23 @@ public class CuratorDb {
 
     // -------------- Application ---------------------------------------------
 
-    public void writeApplication(Application application) {
-        curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
+    public void writeApplication(Instance instance) {
+        curator.set(applicationPath(instance.id()), asJson(applicationSerializer.toSlime(instance)));
     }
 
-    public Optional<Application> readApplication(ApplicationId application) {
+    public Optional<Instance> readApplication(ApplicationId application) {
         return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
     }
 
-    public List<Application> readApplications() {
+    public List<Instance> readApplications() {
         return readApplications(ignored -> true);
     }
 
-    public List<Application> readApplications(TenantName name) {
+    public List<Instance> readApplications(TenantName name) {
         return readApplications(application -> application.tenant().equals(name));
     }
 
-    private List<Application> readApplications(Predicate<ApplicationId> applicationFilter) {
+    private List<Instance> readApplications(Predicate<ApplicationId> applicationFilter) {
         return curator.getChildren(applicationRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(applicationFilter)

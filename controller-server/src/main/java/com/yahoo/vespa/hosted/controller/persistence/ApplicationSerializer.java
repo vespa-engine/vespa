@@ -12,7 +12,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -48,7 +48,7 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 /**
- * Serializes {@link Application} to/from slime.
+ * Serializes {@link Instance} to/from slime.
  * This class is multithread safe.
  *
  * @author bratseth
@@ -162,25 +162,25 @@ public class ApplicationSerializer {
 
     // ------------------ Serialization
 
-    public Slime toSlime(Application application) {
+    public Slime toSlime(Instance instance) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        root.setString(idField, application.id().serializedForm());
-        root.setLong(createdAtField, application.createdAt().toEpochMilli());
-        root.setString(deploymentSpecField, application.deploymentSpec().xmlForm());
-        root.setString(validationOverridesField, application.validationOverrides().xmlForm());
-        deploymentsToSlime(application.deployments().values(), root.setArray(deploymentsField));
-        toSlime(application.deploymentJobs(), root.setObject(deploymentJobsField));
-        toSlime(application.change(), root, deployingField);
-        toSlime(application.outstandingChange(), root, outstandingChangeField);
-        application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
-        application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
-        root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
-        root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
-        assignedRotationsToSlime(application.rotations(), root, assignedRotationsField);
-        toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
+        root.setString(idField, instance.id().serializedForm());
+        root.setLong(createdAtField, instance.createdAt().toEpochMilli());
+        root.setString(deploymentSpecField, instance.deploymentSpec().xmlForm());
+        root.setString(validationOverridesField, instance.validationOverrides().xmlForm());
+        deploymentsToSlime(instance.deployments().values(), root.setArray(deploymentsField));
+        toSlime(instance.deploymentJobs(), root.setObject(deploymentJobsField));
+        toSlime(instance.change(), root, deployingField);
+        toSlime(instance.outstandingChange(), root, outstandingChangeField);
+        instance.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        instance.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
+        instance.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
+        root.setDouble(queryQualityField, instance.metrics().queryServiceQuality());
+        root.setDouble(writeQualityField, instance.metrics().writeServiceQuality());
+        instance.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
+        assignedRotationsToSlime(instance.rotations(), root, assignedRotationsField);
+        toSlime(instance.rotationStatus(), root.setArray(rotationStatusField));
         return slime;
     }
 
@@ -344,7 +344,7 @@ public class ApplicationSerializer {
 
     // ------------------ Deserialization
 
-    public Application fromSlime(Slime slime) {
+    public Instance fromSlime(Slime slime) {
         Inspector root = slime.get();
 
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
@@ -364,9 +364,9 @@ public class ApplicationSerializer {
         List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
         RotationStatus rotationStatus = rotationStatusFromSlime(root);
 
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
-                               deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, assignedRotations, rotationStatus);
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
+                            deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
+                            pemDeployKey, assignedRotations, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {

@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -39,8 +39,8 @@ public class JobList {
         return new JobList(jobs);
     }
 
-    public static JobList from(Application application) {
-        return from(application.deploymentJobs().jobStatus().values());
+    public static JobList from(Instance instance) {
+        return from(instance.deploymentJobs().jobStatus().values());
     }
 
     // ----------------------------------- Accessors

@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
@@ -78,9 +78,9 @@ public class DeploymentIssueReporterTest {
         tester.controllerTester().createTenant("tenant3", "domain3", 1L, contact);
 
         // Create and deploy one application for each of three tenants.
-        Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
-        Application app2 = tester.createApplication("application2", "tenant2", projectId2, propertyId2);
-        Application app3 = tester.createApplication("application3", "tenant3", projectId3, propertyId3);
+        Instance app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
+        Instance app2 = tester.createApplication("application2", "tenant2", projectId2, propertyId2);
+        Instance app3 = tester.createApplication("application3", "tenant3", projectId3, propertyId3);
 
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 

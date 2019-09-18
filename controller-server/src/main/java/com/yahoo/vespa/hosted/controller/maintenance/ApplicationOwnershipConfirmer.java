@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
@@ -86,10 +86,10 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
     private void ensureConfirmationResponses() {
-        for (Application application : controller().applications().asList())
-            application.ownershipIssueId().ifPresent(issueId -> {
+        for (Instance instance : controller().applications().asList())
+            instance.ownershipIssueId().ifPresent(issueId -> {
                 try {
-                    Tenant tenant = tenantOf(application.id());
+                    Tenant tenant = tenantOf(instance.id());
                     ownershipIssues.ensureResponse(issueId, tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
                 }
                 catch (RuntimeException e) {
@@ -114,8 +114,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                 });
     }
 
-    private User determineAssignee(Tenant tenant, Application application) {
-        return application.owner().orElse(
+    private User determineAssignee(Tenant tenant, Instance instance) {
+        return instance.owner().orElse(
                 tenant instanceof UserTenant ? userFor(tenant) : null
         );
     }

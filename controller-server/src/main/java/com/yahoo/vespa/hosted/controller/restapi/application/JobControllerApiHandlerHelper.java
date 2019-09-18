@@ -10,7 +10,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -69,18 +69,18 @@ class JobControllerApiHandlerHelper {
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
      */
     static HttpResponse jobTypeResponse(Controller controller, ApplicationId id, URI baseUriForJobs) {
-        Application application = controller.applications().require(id);
-        Change change = application.change();
-        DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec(), controller::system);
+        Instance instance = controller.applications().require(id);
+        Change change = instance.change();
+        DeploymentSteps steps = new DeploymentSteps(instance.deploymentSpec(), controller::system);
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =
                 steps.productionJobs().stream()
-                     .filter(type -> ! controller.applications().deploymentTrigger().isComplete(change, application, type))
+                     .filter(type -> ! controller.applications().deploymentTrigger().isComplete(change, instance, type))
                      .collect(Collectors.toMap(type -> type,
                                                type -> Versions.from(change,
-                                                                     application,
-                                                                     Optional.ofNullable(application.deployments().get(type.zone(controller.system()))),
+                                                                     instance,
+                                                                     Optional.ofNullable(instance.deployments().get(type.zone(controller.system()))),
                                                                      controller.systemVersion()),
                                                (v1, v2) -> { throw new IllegalStateException("Entries '" + v1 + "' and '" + v2 + "' have the same key!"); },
                                                LinkedHashMap::new));
@@ -96,9 +96,9 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
 
         Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        if (application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
-            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
-            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
+        if (instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
+            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, instance, change, steps);
+            lastApplicationToSlime(lastVersionsObject.setObject("application"), instance, change, steps, controller);
         }
 
         Cursor deployingObject = responseObject.setObject("deploying");
@@ -112,10 +112,10 @@ class JobControllerApiHandlerHelper {
             Cursor deploymentsObject = deploymentsArray.addObject();
             steps.toJobs(step).forEach(type -> {
                 ZoneId zone = type.zone(controller.system());
-                Deployment deployment = application.deployments().get(zone);
+                Deployment deployment = instance.deployments().get(zone);
                 if (deployment != null)
                     deploymentToSlime(deploymentsObject.setObject(zone.region().value()),
-                                      application,
+                                      instance,
                                       change,
                                       pendingProduction,
                                       running,
@@ -128,7 +128,7 @@ class JobControllerApiHandlerHelper {
         steps.jobs().forEach(type -> {
             jobTypeToSlime(jobsObject.setObject(shortNameOf(type, controller.system())),
                            controller,
-                           application,
+                           instance,
                            type,
                            steps,
                            pendingProduction,
@@ -140,7 +140,7 @@ class JobControllerApiHandlerHelper {
         for (JobType type : JobType.allIn(controller.system()))
             if (   type.environment() != null
                 && type.environment().isManuallyDeployed())
-                controller.jobController().last(application.id(), type)
+                controller.jobController().last(instance.id(), type)
                           .ifPresent(last -> {
                               Cursor devJobObject = devJobsObject.setObject(type.jobName());
                               runToSlime(devJobObject.setArray("runs").addObject(),
@@ -152,11 +152,11 @@ class JobControllerApiHandlerHelper {
         return new SlimeJsonResponse(slime);
     }
 
-    private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Application application, Change change, DeploymentSteps steps) {
+    private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Instance instance, Change change, DeploymentSteps steps) {
         VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
-        VespaVersion.Confidence targetConfidence = application.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
-                                                 : application.deploymentSpec().upgradePolicy() == conservative ? high
-                                                 : broken;
+        VespaVersion.Confidence targetConfidence = instance.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
+                                                                                                              : instance.deploymentSpec().upgradePolicy() == conservative ? high
+                                                                                                                                                                          : broken;
         for (VespaVersion version : controller.versionStatus().versions())
             if (   ! version.versionNumber().isAfter(controller.systemVersion())
                 &&   version.confidence().equalOrHigherThan(targetConfidence))
@@ -165,86 +165,86 @@ class JobControllerApiHandlerHelper {
         Version lastPlatform = lastVespa.versionNumber();
         lastPlatformObject.setString("platform", lastPlatform.toString());
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
-        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), application, type)).count();
+        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), instance, type)).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
             lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
             lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
-        else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
-            lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
-                                                               .filter(blocker -> blocker.blocksVersions())
-                                                               .filter(blocker -> blocker.window().includes(controller.clock().instant()))
-                                                               .findAny().map(blocker -> blocker.window().toString()).get());
+        else if ( ! instance.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
+            lastPlatformObject.setString("blocked", instance.deploymentSpec().changeBlocker().stream()
+                                                            .filter(blocker -> blocker.blocksVersions())
+                                                            .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                            .findAny().map(blocker -> blocker.window().toString()).get());
         }
         else
             lastPlatformObject.setString("pending",
-                                                 application.change().isEmpty()
+                                         instance.change().isEmpty()
                                                  ? "Waiting for upgrade slot"
                                                  : "Waiting for current deployment to complete");
     }
 
-    private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
+    private static void lastApplicationToSlime(Cursor lastApplicationObject, Instance instance, Change change, DeploymentSteps steps, Controller controller) {
         long completed;
-        ApplicationVersion lastApplication = application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
+        ApplicationVersion lastApplication = instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
         applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
-        lastApplicationObject.setLong("at", application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
-        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), application, type)).count();
+        lastApplicationObject.setLong("at", instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
+        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), instance, type)).count();
         if (Optional.of(lastApplication).equals(change.application()))
             lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
             lastApplicationObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
-        else if ( ! application.deploymentSpec().canChangeRevisionAt(controller.clock().instant())) {
-            lastApplicationObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
-                                                                  .filter(blocker -> blocker.blocksRevisions())
-                                                                  .filter(blocker -> blocker.window().includes(controller.clock().instant()))
-                                                                  .findAny().map(blocker -> blocker.window().toString()).get());
+        else if ( ! instance.deploymentSpec().canChangeRevisionAt(controller.clock().instant())) {
+            lastApplicationObject.setString("blocked", instance.deploymentSpec().changeBlocker().stream()
+                                                               .filter(blocker -> blocker.blocksRevisions())
+                                                               .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                               .findAny().map(blocker -> blocker.window().toString()).get());
         }
         else
             lastApplicationObject.setString("pending", "Waiting for current deployment to complete");
     }
 
-    private static void deploymentToSlime(Cursor deploymentObject, Application application, Change change,
+    private static void deploymentToSlime(Cursor deploymentObject, Instance instance, Change change,
                                           Map<JobType, Versions> pendingProduction, Map<JobType, Run> running,
                                           JobType type, Deployment deployment) {
         deploymentObject.setLong("at", deployment.at().toEpochMilli());
         deploymentObject.setString("platform", deployment.version().toString());
         applicationVersionToSlime(deploymentObject.setObject("application"), deployment.applicationVersion());
-        deploymentObject.setBool("verified", application.deploymentJobs().statusOf(type)
-                                                        .flatMap(JobStatus::lastSuccess)
-                                                        .filter(run ->    run.platform().equals(deployment.version())
+        deploymentObject.setBool("verified", instance.deploymentJobs().statusOf(type)
+                                                     .flatMap(JobStatus::lastSuccess)
+                                                     .filter(run ->    run.platform().equals(deployment.version())
                                                                        && run.application().equals(deployment.applicationVersion()))
-                                                        .isPresent());
+                                                     .isPresent());
         if (running.containsKey(type))
             deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
         else if (change.hasTargets())
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
 
-    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, JobType type, DeploymentSteps steps,
+    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Instance instance, JobType type, DeploymentSteps steps,
                                        Map<JobType, Versions> pendingProduction, Map<JobType, Run> running, URI baseUriForJob) {
-        application.deploymentJobs().statusOf(type).ifPresent(status -> status.pausedUntil().ifPresent(until ->
+        instance.deploymentJobs().statusOf(type).ifPresent(status -> status.pausedUntil().ifPresent(until ->
                 jobObject.setLong("pausedUntil", until)));
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         if (type.isTest()) {
             Deque<List<JobType>> pending = new ArrayDeque<>();
             pendingProduction.entrySet().stream()
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().testedIn(application, type, typeVersions.getValue()))
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().alreadyTriggered(application, typeVersions.getValue()))
+                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().testedIn(instance, type, typeVersions.getValue()))
+                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().alreadyTriggered(instance, typeVersions.getValue()))
                              .collect(groupingBy(Map.Entry::getValue,
                                                  LinkedHashMap::new,
                                                  Collectors.mapping(Map.Entry::getKey, toList())))
                              .forEach((versions, types) -> pending.addFirst(types));
             for (List<JobType> productionTypes : pending) {
                 Versions versions = pendingProduction.get(productionTypes.get(0));
-                if (statusOf(controller, application.id(), type, versions).equals("running"))
+                if (statusOf(controller, instance.id(), type, versions).equals("running"))
                     continue;
 
                 runs++;
                 Cursor runObject = runArray.addObject();
                 runObject.setString("status", "pending");
                 versionsToSlime(runObject, versions);
-                if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
+                if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, instance))
                     runObject.setObject("tasks").setString("cooldown", "failed");
                 else
                     runObject.setObject("tasks").setString("capacity", "running");
@@ -260,20 +260,20 @@ class JobControllerApiHandlerHelper {
             runObject.setString("status", "pending");
             versionsToSlime(runObject, pendingProduction.get(type));
             Cursor pendingObject = runObject.setObject("tasks");
-            if (application.deploymentJobs().statusOf(type).map(status -> status.pausedUntil().isPresent()).orElse(false))
+            if (instance.deploymentJobs().statusOf(type).map(status -> status.pausedUntil().isPresent()).orElse(false))
                 pendingObject.setString("paused", "pending");
-            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
+            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, instance))
                 pendingObject.setString("cooldown", "failed");
             else {
                 int pending = 0;
-                if ( ! controller.applications().deploymentTrigger().alreadyTriggered(application, versions)) {
-                    if ( ! controller.applications().deploymentTrigger().testedIn(application, systemTest, versions)) {
+                if ( ! controller.applications().deploymentTrigger().alreadyTriggered(instance, versions)) {
+                    if ( ! controller.applications().deploymentTrigger().testedIn(instance, systemTest, versions)) {
                         pending++;
-                        pendingObject.setString(shortNameOf(systemTest, controller.system()), statusOf(controller, application.id(), systemTest, versions));
+                        pendingObject.setString(shortNameOf(systemTest, controller.system()), statusOf(controller, instance.id(), systemTest, versions));
                     }
-                    if ( ! controller.applications().deploymentTrigger().testedIn(application, stagingTest, versions)) {
+                    if ( ! controller.applications().deploymentTrigger().testedIn(instance, stagingTest, versions)) {
                         pending++;
-                        pendingObject.setString(shortNameOf(stagingTest, controller.system()), statusOf(controller, application.id(), stagingTest, versions));
+                        pendingObject.setString(shortNameOf(stagingTest, controller.system()), statusOf(controller, instance.id(), stagingTest, versions));
                     }
                 }
                 steps: for (DeploymentSpec.Step step : steps.production()) {
@@ -281,11 +281,11 @@ class JobControllerApiHandlerHelper {
                         break;
                     for (JobType stepType : steps.toJobs(step)) {
                         if (pendingProduction.containsKey(stepType)) {
-                            Versions jobVersions = Versions.from(application.change(),
-                                                                 application,
-                                                                 Optional.ofNullable(application.deployments().get(stepType.zone(controller.system()))),
+                            Versions jobVersions = Versions.from(instance.change(),
+                                                                 instance,
+                                                                 Optional.ofNullable(instance.deployments().get(stepType.zone(controller.system()))),
                                                                  controller.systemVersion());
-                            pendingObject.setString(shortNameOf(stepType, controller.system()), statusOf(controller, application.id(), stepType, jobVersions));
+                            pendingObject.setString(shortNameOf(stepType, controller.system()), statusOf(controller, instance.id(), stepType, jobVersions));
                             if (++pending == 3)
                                 break steps;
                         }
@@ -296,7 +296,7 @@ class JobControllerApiHandlerHelper {
             }
         }
 
-        controller.jobController().runs(application.id(), type).values().stream()
+        controller.jobController().runs(instance.id(), type).values().stream()
                   .sorted(Comparator.comparing(run -> -run.id().number()))
                   .limit(Math.max(0, 10 - runs))
                   .forEach(run -> runToSlime(runArray.addObject(), run, baseUriForJob));

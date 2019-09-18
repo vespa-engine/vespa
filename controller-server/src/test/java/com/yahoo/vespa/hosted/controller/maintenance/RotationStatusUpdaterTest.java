@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -42,7 +42,7 @@ public class RotationStatusUpdaterTest {
                 .build();
         tester.deployCompletely(application, applicationPackage);
 
-        Supplier<Application> app = () -> tester.application(application.id());
+        Supplier<Instance> app = () -> tester.application(application.id());
         Supplier<Deployment> deployment1 = () -> app.get().deployments().get(zone1);
         Supplier<Deployment> deployment2 = () -> app.get().deployments().get(zone2);
         Supplier<Deployment> deployment3 = () -> app.get().deployments().get(zone3);

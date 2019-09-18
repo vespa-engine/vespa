@@ -21,7 +21,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -1238,12 +1238,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(new AthenzDomain("another.domain"), "service"), true);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
 
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(instance.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1270,12 +1270,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(instance.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1367,12 +1367,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), false);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(instance.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1404,12 +1404,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
-        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
+        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                .application(application.id())
+                .application(instance.id())
                 .projectId(screwdriverProjectId)
                 .uploadArtifact(applicationPackage)
                 .submit();
@@ -1430,7 +1430,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         tester.computeVersionStatus();
         long projectId = 1;
-        Application app = controllerTester.createApplication();
+        Instance app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -1482,7 +1482,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.containerTester().computeVersionStatus();
 
         long projectId = 1;
-        Application app = controllerTester.createApplication();
+        Instance app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -1511,7 +1511,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void applicationWithRoutingPolicy() {
-        Application app = controllerTester.createApplication();
+        Instance app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -1715,11 +1715,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * This sets these values as if the maintainers has been ran.
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
-        for (Application application : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockOrThrow(application.id(), lockedApplication -> {
+        for (Instance instance : controllerTester.controller().applications().asList()) {
+            controllerTester.controller().applications().lockOrThrow(instance.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
-                for (Deployment deployment : application.deployments().values()) {
+                for (Deployment deployment : instance.deployments().values()) {
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
                     List<String> hostnames = new ArrayList<>();
                     hostnames.add("host1");
@@ -1752,8 +1752,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
     }
 
-    private RotationStatus rotationStatus(Application application) {
-        return controllerTester.controller().applications().rotationRepository().getRotation(application)
+    private RotationStatus rotationStatus(Instance instance) {
+        return controllerTester.controller().applications().rotationRepository().getRotation(instance)
                 .map(rotation -> {
                     var rotationStatus = controllerTester.controller().serviceRegistry().globalRoutingService().getHealthStatus(rotation.name());
                     var statusMap = new LinkedHashMap<ZoneId, RotationState>();
