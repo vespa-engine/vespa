@@ -27,7 +27,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.logging.Logger;
@@ -286,8 +285,6 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/container-data"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
-                context.pathInNodeUnderVespaHome("var/run"), // TODO: Remove - contains .pid files
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
                 context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller
