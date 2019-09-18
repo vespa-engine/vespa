@@ -42,7 +42,12 @@ public class OsVersionsTest {
 
         // Target can be (de)activated
         versions.setActive(NodeType.host, true);
-        assertTrue("Target version deactivated", versions.targetFor(NodeType.host).get().active());
+        assertTrue("Target version activated", versions.targetFor(NodeType.host).get().active());
+
+        // Re-setting the same version does not affect active status
+        versions.setTarget(NodeType.host, version2.version(), false);
+        assertTrue("Target version remains active", versions.targetFor(NodeType.host).get().active());
+
         versions.setActive(NodeType.host, false);
         assertFalse("Target version deactivated", versions.targetFor(NodeType.host).get().active());
 
