@@ -186,11 +186,17 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     /**
+     * Returns the nodes of this cluster as an immutable map indexed by host.
+     * One host may contain multiple nodes (on different ports), so this is a multi-map.
+     */
+    public ImmutableMultimap<String, Node> nodesByHost() { return nodesByHost; }
+
+    /**
      * Returns the recipient we should dispatch queries directly to (bypassing fdispatch),
      * or empty if we should not dispatch directly.
      */
     public Optional<Node> directDispatchTarget() {
-        if ( directDispatchTarget.isEmpty()) return Optional.empty();
+        if ( ! directDispatchTarget.isPresent()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
         Group localSearchGroup = groups.get(directDispatchTarget.get().group());
@@ -234,11 +240,13 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private boolean usesDirectDispatchTo(Node node) {
-        return directDispatchTarget.isPresent() && directDispatchTarget.get().equals(node);
+        if ( ! directDispatchTarget.isPresent()) return false;
+        return directDispatchTarget.get().equals(node);
     }
 
     private boolean usesDirectDispatchTo(Group group) {
-        return directDispatchTarget.isPresent() && directDispatchTarget.get().group() == group.id();
+        if ( ! directDispatchTarget.isPresent()) return false;
+        return directDispatchTarget.get().group() == group.id();
     }
 
     /** Used by the cluster monitor to manage node status */

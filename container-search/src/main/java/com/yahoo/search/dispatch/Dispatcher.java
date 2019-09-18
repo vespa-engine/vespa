@@ -4,6 +4,8 @@ package com.yahoo.search.dispatch;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.prelude.fastsearch.FS4PingFactory;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -51,6 +53,9 @@ public class Dispatcher extends AbstractComponent {
 
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
+    /** If enabled, this internal dispatcher will be preferred over fdispatch whenever possible */
+    public static final CompoundName dispatchInternal = CompoundName.fromComponents(DISPATCH, INTERNAL);
+
     /** If enabled, search queries will use protobuf rpc */
     public static final CompoundName dispatchProtobuf = CompoundName.fromComponents(DISPATCH, PROTOBUF);
 
@@ -59,6 +64,7 @@ public class Dispatcher extends AbstractComponent {
 
     private final LoadBalancer loadBalancer;
     private final boolean multilevelDispatch;
+    private final boolean internalDispatchByDefault;
 
     private final InvokerFactory invokerFactory;
 
@@ -80,13 +86,15 @@ public class Dispatcher extends AbstractComponent {
 
     public static Dispatcher create(String clusterId,
                                     DispatchConfig dispatchConfig,
+                                    FS4ResourcePool fs4ResourcePool,
                                     int containerClusterSize,
                                     VipStatus vipStatus,
                                     Metric metric) {
         var searchCluster = new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus);
         var rpcFactory = new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster, !dispatchConfig.useFdispatchByDefault());
+        var pingFactory = dispatchConfig.useFdispatchByDefault()? new FS4PingFactory(fs4ResourcePool) : rpcFactory;
 
-        return new Dispatcher(searchCluster, dispatchConfig, rpcFactory, rpcFactory, metric);
+        return new Dispatcher(searchCluster, dispatchConfig, rpcFactory, pingFactory, metric);
     }
 
     public Dispatcher(SearchCluster searchCluster,
@@ -97,8 +105,9 @@ public class Dispatcher extends AbstractComponent {
         this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                                   dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
-        this.invokerFactory = invokerFactory;
         this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
+        this.internalDispatchByDefault = !dispatchConfig.useFdispatchByDefault();
+        this.invokerFactory = invokerFactory;
         this.metric = metric;
         this.metricContext = metric.createContext(null);
 
@@ -124,7 +133,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
-        if (multilevelDispatch) {
+        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, internalDispatchByDefault)) {
             emitDispatchMetric(Optional.empty());
             return Optional.empty();
         }
@@ -139,6 +148,7 @@ public class Dispatcher extends AbstractComponent {
             query.setOffset(0);
         }
         emitDispatchMetric(invoker);
+        query.properties().set(dispatchInternal, true);
 
         return invoker;
     }

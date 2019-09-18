@@ -5,6 +5,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
+import com.yahoo.fs4.Packet;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
@@ -26,6 +27,7 @@ import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.streamingvisitors.tracing.TraceDescription;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
@@ -40,13 +42,14 @@ import java.util.logging.Logger;
  * @author  baldersheim
  * @author  Ulf Carlin
  */
+@SuppressWarnings("deprecation")
 public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     private static final CompoundName streamingUserid=new CompoundName("streaming.userid");
     private static final CompoundName streamingGroupname=new CompoundName("streaming.groupname");
     private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
 
-    static final String STREAMING_STATISTICS = "streaming.statistics";
+    public static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
     private final TracingOptions tracingOptions;
     private static final Logger log = Logger.getLogger(VdsStreamingSearcher.class.getName());
@@ -71,12 +74,23 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         this.storageClusterRouteSpec = storageClusterRouteSpec;
     }
 
-    VdsStreamingSearcher(VisitorFactory visitorFactory) {
+    private static class VdsVisitorFactory implements VisitorFactory {
+        @Override
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
+            return new VdsVisitor(query, searchCluster, route, documentType, traceLevelOverride);
+        }
+    }
+
+    public VdsStreamingSearcher() {
+        this(new VdsVisitorFactory());
+    }
+
+    public VdsStreamingSearcher(VisitorFactory visitorFactory) {
         this.visitorFactory = visitorFactory;
         tracingOptions = TracingOptions.DEFAULT;
     }
 
-    VdsStreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
+    public VdsStreamingSearcher(VisitorFactory visitorFactory, TracingOptions tracingOptions) {
         this.visitorFactory = visitorFactory;
         this.tracingOptions = tracingOptions;
     }
@@ -206,7 +220,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         query.trace(visitor.getStatistics().toString(), false, 2);
         query.getContext(true).setProperty(STREAMING_STATISTICS, visitor.getStatistics());
 
-        DocsumPacket[] summaryPackets = new DocsumPacket [hits.size()];
+        Packet[] summaryPackets = new Packet [hits.size()];
 
         int index = 0;
         boolean skippedEarlierResult = false;
@@ -242,11 +256,19 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
             result.hits().add(groupHit);
         }
 
-        FillHitsResult fillHitsResult = fillHits(result, summaryPackets, query.getPresentation().getSummary());
-        int skippedHits = fillHitsResult.skippedHits;
-        if (fillHitsResult.error != null) {
-            result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
+        int skippedHits;
+        try {
+            FillHitsResult fillHitsResult = fillHits(result, summaryPackets, query.getPresentation().getSummary());
+            skippedHits = fillHitsResult.skippedHits;
+            if (fillHitsResult.error != null) {
+                result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
+                return result;
+            }
+        } catch (TimeoutException e) {
+            result.hits().addError(ErrorMessage.createTimeout(e.getMessage()));
             return result;
+        } catch (IOException e) {
+            return new Result(query, ErrorMessage.createBackendCommunicationError("Error filling hits with summary fields"));
         }
 
         if (skippedHits == 0) {
