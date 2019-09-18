@@ -50,6 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -331,33 +332,36 @@ public class CuratorDb {
 
     // -------------- Application ---------------------------------------------
 
-    public void writeApplication(Instance instance) {
+    public void writeInstance(Instance instance) {
         curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
 
-    public Optional<Instance> readApplication(ApplicationId application) {
+    public Optional<Instance> readInstance(ApplicationId application) {
         return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
     }
 
-    public List<Instance> readApplications() {
-        return readApplications(ignored -> true);
+    public List<Instance> readInstances() {
+        return readInstances(ignored -> true);
     }
 
-    public List<Instance> readApplications(TenantName name) {
-        return readApplications(application -> application.tenant().equals(name));
+    public List<Instance> readInstances(TenantName name) {
+        return readInstances(application -> application.tenant().equals(name));
     }
 
-    private List<Instance> readApplications(Predicate<ApplicationId> applicationFilter) {
+    private Stream<ApplicationId> readInstanceIds() {
         return curator.getChildren(applicationRoot).stream()
-                      .map(ApplicationId::fromSerializedForm)
-                      .filter(applicationFilter)
-                      .map(this::readApplication)
-                      .flatMap(Optional::stream)
-                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .map(ApplicationId::fromSerializedForm);
     }
 
-    public void removeApplication(ApplicationId application) {
-        curator.delete(applicationPath(application));
+    private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
+        return readInstanceIds().filter(instanceFilter)
+                                .map(this::readInstance)
+                                .flatMap(Optional::stream)
+                                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void removeInstance(ApplicationId id) {
+        curator.delete(applicationPath(id));
     }
 
     // -------------- Job Runs ------------------------------------------------

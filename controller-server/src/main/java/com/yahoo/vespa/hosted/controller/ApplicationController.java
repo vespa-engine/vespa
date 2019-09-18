@@ -151,7 +151,7 @@ public class ApplicationController {
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
             int count = 0;
-            for (Instance instance : curator.readApplications()) {
+            for (Instance instance : curator.readInstances()) {
                 lockIfPresent(instance.id(), this::store);
                 count++;
             }
@@ -162,7 +162,7 @@ public class ApplicationController {
 
     /** Returns the application with the given id, or null if it is not present */
     public Optional<Instance> get(ApplicationId id) {
-        return curator.readApplication(id);
+        return curator.readInstance(id);
     }
 
     /**
@@ -176,12 +176,12 @@ public class ApplicationController {
 
     /** Returns a snapshot of all applications */
     public List<Instance> asList() {
-        return sort(curator.readApplications());
+        return sort(curator.readInstances());
     }
 
     /** Returns all applications of a tenant */
     public List<Instance> asList(TenantName tenant) {
-        return sort(curator.readApplications(tenant));
+        return sort(curator.readInstances(tenant));
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
@@ -703,7 +703,7 @@ public class ApplicationController {
                                                    application.get().deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
 
-            curator.removeApplication(applicationId);
+            curator.removeInstance(applicationId);
             applicationStore.removeAll(applicationId);
             applicationStore.removeAll(TesterId.of(applicationId));
 
@@ -734,7 +734,7 @@ public class ApplicationController {
      * @param application a locked application to store
      */
     public void store(LockedInstance application) {
-        curator.writeApplication(application.get());
+        curator.writeInstance(application.get());
     }
 
     /**
