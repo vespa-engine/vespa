@@ -2,13 +2,20 @@
 package com.yahoo.prelude.cluster;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
+import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.concurrent.Receiver;
+import com.yahoo.concurrent.Receiver.MessageState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.Ping;
+import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -39,7 +46,11 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.logging.Logger;
 
 import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.STREAMING;
 
@@ -53,6 +64,10 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
 @After("*")
 public class ClusterSearcher extends Searcher {
 
+    private final static Logger log = Logger.getLogger(ClusterSearcher.class.getName());
+
+    private final ClusterMonitor monitor;
+
     private final Value cacheHitRatio;
 
     private final String clusterModelName;
@@ -63,6 +78,8 @@ public class ClusterSearcher extends Searcher {
     // Mapping from rank profile names to document types containing them
     private final Map<String, Set<String>> rankProfiles = new HashMap<>();
 
+    private final FS4ResourcePool fs4ResourcePool;
+
     private final long maxQueryTimeout; // in milliseconds
     private final static long DEFAULT_MAX_QUERY_TIMEOUT = 600000L;
 
@@ -71,6 +88,7 @@ public class ClusterSearcher extends Searcher {
 
     private VespaBackEndSearcher server = null;
 
+
     /**
      * Creates a new ClusterSearcher.
      */
@@ -78,6 +96,7 @@ public class ClusterSearcher extends Searcher {
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
+                           QrMonitorConfig monitorConfig,
                            DispatchConfig dispatchConfig,
                            ClusterInfoConfig clusterInfoConfig,
                            Statistics manager,
@@ -85,8 +104,13 @@ public class ClusterSearcher extends Searcher {
                            FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
         super(id);
+        this.fs4ResourcePool = fs4ResourcePool;
 
-        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
+        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus, metric);
+
+        monitor = (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
+                ? new ClusterMonitor(this, monitorConfig, Optional.empty())
+                : new ClusterMonitor(this, monitorConfig, Optional.of(vipStatus));
 
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
@@ -124,8 +148,9 @@ public class ClusterSearcher extends Searcher {
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
-                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool.getServerId(), docSumParams,
-                                                               documentDbConfig, dispatcher, dispatcherIndex);
+                        Backend dispatchBackend = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
+                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, docSumParams,
+                                                               documentDbConfig, dispatchBackend, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
@@ -137,6 +162,8 @@ public class ClusterSearcher extends Searcher {
         if ( server == null ) {
             throw new IllegalStateException("ClusterSearcher should have a top level dispatch.");
         }
+        monitor.freeze();
+        monitor.startPingThread();
     }
 
     private static QrSearchersConfig.Searchcluster getSearchClusterConfigFromClusterName(QrSearchersConfig config, String name) {
@@ -162,14 +189,15 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
-                                               String serverId,
+                                               FS4ResourcePool fs4ResourcePool,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
+                                               Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex)
     {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex, dispatcherIndex);
-        return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(String serverId,
@@ -194,14 +222,25 @@ public class ClusterSearcher extends Searcher {
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> documentTypes) {
         this.documentTypes = documentTypes;
+        monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), Optional.of(new VipStatus()));
         cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
                                   Statistics.nullImplementation, new Value.Parameters());
         clusterModelName = "testScenario";
+        fs4ResourcePool = null;
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
     }
 
+    private Backend createBackend(QrSearchersConfig.Searchcluster.Dispatcher disp) {
+        return fs4ResourcePool.getBackend(disp.host(), disp.port());
+    }
+
+    ClusterMonitor getMonitor() {
+        return monitor;
+    }
+
     void addBackendSearcher(VespaBackEndSearcher searcher) {
+        monitor.add(searcher);
         server = searcher;
     }
 
@@ -440,6 +479,77 @@ public class ClusterSearcher extends Searcher {
         cacheHitRatio.put(0.0);
     }
 
+    /** NodeManager method, called from ClusterMonitor. */
+    void working(VespaBackEndSearcher node) {
+        server = node;
+    }
+
+    /** Called from ClusterMonitor. */
+    void failed(VespaBackEndSearcher node) {
+        server = null;
+    }
+
+    /**
+     * Pinging a node, called from ClusterMonitor.
+     */
+    void ping(VespaBackEndSearcher node) throws InterruptedException {
+        log.fine("Sending ping to: " + node);
+        Pinger pinger = new Pinger(node);
+
+        getExecutor().execute(pinger);
+        Pong pong = pinger.getPong(); // handles timeout
+        if (pong == null) {
+            monitor.failed(node, ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out."));
+        } else if (pong.badResponse()) {
+            monitor.failed(node, pong.getError(0));
+        } else {
+            monitor.responded(node, backendCanServeDocuments(pong));
+        }
+    }
+
+    private boolean backendCanServeDocuments(Pong pong) {
+        if ( ! pong.activeNodes().isPresent()) return true; // no information; assume true
+        return pong.activeNodes().get() > 0;
+    }
+
     @Override
-    public void deconstruct() { }
+    public void deconstruct() {
+        monitor.shutdown();
+    }
+
+    ExecutorService getExecutor() {
+        return fs4ResourcePool.getExecutor();
+    }
+
+    ScheduledExecutorService getScheduledExecutor() {
+        return fs4ResourcePool.getScheduledExecutor();
+    }
+
+    private class Pinger implements Runnable {
+
+        private final Searcher searcher;
+        private final Ping pingChallenge = new Ping(monitor.getConfiguration().getRequestTimeout());
+        private final Receiver<Pong> pong = new Receiver<>();
+
+        Pinger(final Searcher searcher) {
+            this.searcher = searcher;
+        }
+
+        @Override
+        public void run() {
+            pong.put(createExecution().ping(pingChallenge));
+        }
+
+        private Execution createExecution() {
+            return new Execution(new Chain<>(searcher),
+                                 new Execution.Context(null, null, null, null, null));
+        }
+
+        public Pong getPong() throws InterruptedException {
+            Tuple2<MessageState, Pong> reply = pong.get(pingChallenge.getTimeout() + 150);
+            return (reply.first != MessageState.VALID) ? null : reply.second;
+        }
+
+    }
+
 }

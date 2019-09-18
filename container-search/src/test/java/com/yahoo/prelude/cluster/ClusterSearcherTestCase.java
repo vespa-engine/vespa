@@ -7,6 +7,8 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
+import com.yahoo.container.search.Fs4Config;
+import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -46,12 +48,12 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class ClusterSearcherTestCase {
-    private static final double DELTA = 0.0000000000000001;
 
     @Test
     public void testNoBackends() {
         ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
         try {
+            cluster.getMonitor().getConfiguration().setRequestTimeout(100);
             Execution execution = new Execution(cluster, Execution.Context.createContextStub());
             Query query = new Query("query=hello");
             query.setHits(10);
@@ -144,7 +146,7 @@ public class ClusterSearcherTestCase {
         private final String type3 = "type3";
         private final Map<String, List<Hit>> results = new LinkedHashMap<>();
         private final boolean expectAttributePrefetch;
-        static final String ATTRIBUTE_PREFETCH = "attributeprefetch";
+        public static final String ATTRIBUTE_PREFETCH = "attributeprefetch";
 
         private String getId(String type, int i) {
             return "id:ns:" + type + "::" + i;
@@ -194,7 +196,7 @@ public class ClusterSearcherTestCase {
                                              createHit(getId(type3, 2), 5)));
         }
 
-        MyMockSearcher(boolean expectAttributePrefetch) {
+        public MyMockSearcher(boolean expectAttributePrefetch) {
             this.expectAttributePrefetch = expectAttributePrefetch;
             init();
         }
@@ -261,7 +263,8 @@ public class ClusterSearcherTestCase {
     }
 
     private Execution createExecution(List<String> docTypesList, boolean expectAttributePrefetch) {
-        Set<String> documentTypes = new LinkedHashSet<>(docTypesList);
+        Set<String> documentTypes = new LinkedHashSet<>();
+        documentTypes.addAll(docTypesList);
         ClusterSearcher cluster = new ClusterSearcher(documentTypes);
         try {
             cluster.addBackendSearcher(new MyMockSearcher(
@@ -274,7 +277,6 @@ public class ClusterSearcherTestCase {
         }
     }
 
-    @Test
     public void testThatSingleDocumentTypeCanBeSearched() {
         { // Explicit 1 type in restrict set
             Execution execution = createExecution();
@@ -283,9 +285,9 @@ public class ClusterSearcherTestCase {
             assertEquals(3, result.getTotalHitCount());
             List<Hit> hits = result.hits().asList();
             assertEquals(3, hits.size());
-            assertEquals(9.0, hits.get(0).getRelevance().getScore(), DELTA);
-            assertEquals(6.0, hits.get(1).getRelevance().getScore(), DELTA);
-            assertEquals(3.0, hits.get(2).getRelevance().getScore(), DELTA);
+            assertEquals(9.0, hits.get(0).getRelevance().getScore());
+            assertEquals(6.0, hits.get(1).getRelevance().getScore());
+            assertEquals(3.0, hits.get(2).getRelevance().getScore());
         }
         { // Only 1 registered type in cluster searcher, empty restrict set
             // NB ! Empty restrict sets does not exist below the cluster searcher.
@@ -297,11 +299,10 @@ public class ClusterSearcherTestCase {
             assertEquals(3, result.getTotalHitCount());
             List<Hit> hits = result.hits().asList();
             assertEquals(3, hits.size());
-            assertEquals(9.0, hits.get(0).getRelevance().getScore(), DELTA);
+            assertEquals(9.0, hits.get(0).getRelevance().getScore());
         }
     }
 
-    @Test
     public void testThatSubsetOfDocumentTypesCanBeSearched() {
         Execution execution = createExecution();
         Query query = new Query("?query=hello&restrict=type1,type3");
@@ -310,15 +311,14 @@ public class ClusterSearcherTestCase {
         assertEquals(6, result.getTotalHitCount());
         List<Hit> hits = result.hits().asList();
         assertEquals(6, hits.size());
-        assertEquals(11.0, hits.get(0).getRelevance().getScore(), DELTA);
-        assertEquals(9.0,  hits.get(1).getRelevance().getScore(), DELTA);
-        assertEquals(8.0,  hits.get(2).getRelevance().getScore(), DELTA);
-        assertEquals(6.0,  hits.get(3).getRelevance().getScore(), DELTA);
-        assertEquals(5.0,  hits.get(4).getRelevance().getScore(), DELTA);
-        assertEquals(3.0,  hits.get(5).getRelevance().getScore(), DELTA);
+        assertEquals(11.0, hits.get(0).getRelevance().getScore());
+        assertEquals(9.0,  hits.get(1).getRelevance().getScore());
+        assertEquals(8.0,  hits.get(2).getRelevance().getScore());
+        assertEquals(6.0,  hits.get(3).getRelevance().getScore());
+        assertEquals(5.0,  hits.get(4).getRelevance().getScore());
+        assertEquals(3.0,  hits.get(5).getRelevance().getScore());
     }
 
-    @Test
     public void testThatMultipleDocumentTypesCanBeSearchedAndFilled() {
         Execution execution = createExecution();
         Query query = new Query("?query=hello");
@@ -327,15 +327,15 @@ public class ClusterSearcherTestCase {
         assertEquals(9, result.getTotalHitCount());
         List<Hit> hits = result.hits().asList();
         assertEquals(9, hits.size());
-        assertEquals(11.0, hits.get(0).getRelevance().getScore(), DELTA);
-        assertEquals(10.0, hits.get(1).getRelevance().getScore(), DELTA);
-        assertEquals(9.0,  hits.get(2).getRelevance().getScore(), DELTA);
-        assertEquals(8.0,  hits.get(3).getRelevance().getScore(), DELTA);
-        assertEquals(7.0,  hits.get(4).getRelevance().getScore(), DELTA);
-        assertEquals(6.0,  hits.get(5).getRelevance().getScore(), DELTA);
-        assertEquals(5.0,  hits.get(6).getRelevance().getScore(), DELTA);
-        assertEquals(4.0,  hits.get(7).getRelevance().getScore(), DELTA);
-        assertEquals(3.0,  hits.get(8).getRelevance().getScore(), DELTA);
+        assertEquals(11.0, hits.get(0).getRelevance().getScore());
+        assertEquals(10.0, hits.get(1).getRelevance().getScore());
+        assertEquals(9.0,  hits.get(2).getRelevance().getScore());
+        assertEquals(8.0,  hits.get(3).getRelevance().getScore());
+        assertEquals(7.0,  hits.get(4).getRelevance().getScore());
+        assertEquals(6.0,  hits.get(5).getRelevance().getScore());
+        assertEquals(5.0,  hits.get(6).getRelevance().getScore());
+        assertEquals(4.0,  hits.get(7).getRelevance().getScore());
+        assertEquals(3.0,  hits.get(8).getRelevance().getScore());
         for (int i = 0; i < 9; ++i) {
             assertNull(hits.get(i).getField("score"));
         }
@@ -390,7 +390,7 @@ public class ClusterSearcherTestCase {
         assertResult(9, Arrays.asList(5.0, 4.0),   getResult(6, 2, ex));
         assertResult(9, Arrays.asList(4.0, 3.0),   getResult(7, 2, ex));
         assertResult(9, Arrays.asList(3.0),        getResult(8, 2, ex));
-        assertResult(9, new ArrayList<>(), getResult(9, 2, ex));
+        assertResult(9, new ArrayList<Double>(), getResult(9, 2, ex));
         assertResult(9, Arrays.asList(11.0, 10.0, 9.0, 8.0, 7.0), getResult(0, 5, ex));
         assertResult(9, Arrays.asList(6.0, 5.0, 4.0, 3.0),        getResult(5, 5, ex));
 
@@ -425,7 +425,11 @@ public class ClusterSearcherTestCase {
         final String yahoo = "www.yahoo.com";
 
         try {
-            canFindYahoo = (null != InetAddress.getByName(yahoo));
+            if (null != InetAddress.getByName(yahoo)) {
+                canFindYahoo = true;
+            } else {
+                canFindYahoo = false;
+            }
         } catch (Exception e) {
             canFindYahoo = false;
         }
@@ -538,11 +542,12 @@ public class ClusterSearcherTestCase {
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
+                                   new QrMonitorConfig.Builder().build(),
                                    new DispatchConfig.Builder().build(),
                                    createClusterInfoConfig(),
                                    Statistics.nullImplementation,
                                    new MockMetric(),
-                                   new FS4ResourcePool(new QrConfig.Builder().build()),
+                                   new FS4ResourcePool(new Fs4Config.Builder().build(), new QrConfig.Builder().build()),
                                    new VipStatus());
     }
 
@@ -585,7 +590,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     public void testThatQueryTimeoutIsCappedWithSpecifiedMax() {
-        QueryTimeoutFixture f = new QueryTimeoutFixture(70.0, null);
+        QueryTimeoutFixture f = new QueryTimeoutFixture(Double.valueOf(70), null);
         f.query.setTimeout(70001);
         f.search();
         assertEquals(70000, f.query.getTimeout());
@@ -611,7 +616,7 @@ public class ClusterSearcherTestCase {
 
     @Test
     public void testThatQueryCacheIsDisabledIfTimeoutIsLargerThanConfiguredMax() {
-        QueryTimeoutFixture f = new QueryTimeoutFixture(null, 5.0);
+        QueryTimeoutFixture f = new QueryTimeoutFixture(null, Double.valueOf(5));
         f.query.setTimeout(5001);
         f.query.getRanking().setQueryCache(true);
         f.search();
