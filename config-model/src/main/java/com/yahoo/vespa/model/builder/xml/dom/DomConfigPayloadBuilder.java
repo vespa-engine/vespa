@@ -130,11 +130,7 @@ public class DomConfigPayloadBuilder {
             throw new ConfigurationRuntimeException("Element '" + name + "' must have either children or a value");
         }
 
-
-        if (element.hasAttribute("index")) {
-            // Check for legacy (pre Vespa 6) usage
-            throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
-        } else if (element.hasAttribute("operation")) {
+        if (element.hasAttribute("operation")) {
             // leaf array, currently the only supported operation is 'append'
             verifyLegalOperation(element);
             ConfigPayloadBuilder.Array a = payloadBuilder.getArray(name);
@@ -156,10 +152,7 @@ public class DomConfigPayloadBuilder {
     private void parseComplex(Element element, List<Element> children, ConfigPayloadBuilder payloadBuilder, String parentName) {
         String name = extractName(element);
          // Inner value
-        if (element.hasAttribute("index")) {
-            // Check for legacy (pre Vespa 6) usage
-            throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
-        } else if (element.hasAttribute("operation")) {
+        if (element.hasAttribute("operation")) {
             // inner array, currently the only supported operation is 'append'
             verifyLegalOperation(element);
             ConfigPayloadBuilder childPayloadBuilder = payloadBuilder.getArray(name).append();
