@@ -140,6 +140,7 @@
         <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
+        <module>zookeeper-command-line-client</module>
         <module>hosted-api</module>
     </modules>
 </project>
