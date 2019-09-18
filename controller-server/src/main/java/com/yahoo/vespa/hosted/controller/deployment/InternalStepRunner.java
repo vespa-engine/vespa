@@ -347,11 +347,13 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        for (URI endpoint : endpoints.get(zoneId).values())
-            if ( ! controller.jobController().cloud().ready(endpoint)) {
-                logger.log("Failed to get 100 consecutive OKs from " + endpoint);
+        for (URI endpoint : endpoints.get(zoneId).values()) {
+            URI workingEndpoint = controller.jobController().withWorkingSchemeAndPort(endpoint, id);
+            if ( ! controller.jobController().cloud().ready(workingEndpoint)) {
+                logger.log("Failed to get 100 consecutive OKs from " + workingEndpoint);
                 return false;
             }
+        }
 
         return true;
     }
