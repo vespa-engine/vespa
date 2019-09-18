@@ -116,9 +116,6 @@ public class Flavor {
     /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
     public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
 
-    // TODO: Remove after Vespa 6 is gone
-    public String canonicalName() { return name; }
-
     @Override
     public int hashCode() { return Objects.hash(name, flavorOverrides); }
 

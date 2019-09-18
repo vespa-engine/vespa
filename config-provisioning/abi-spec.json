@@ -403,7 +403,6 @@
       "public double getMinCpuCores()",
       "public com.yahoo.config.provision.Flavor$Type getType()",
       "public boolean isDocker()",
-      "public java.lang.String canonicalName()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
