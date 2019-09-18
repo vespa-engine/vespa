@@ -108,14 +108,15 @@ class Activator {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        long numNonActive = nodes.asList().stream()
+        Set<String> nonActive = nodes.asList().stream()
                 .filter(node -> parentHostnames.contains(node.hostname()))
                 .filter(node -> node.state() != Node.State.active)
-                .count();
+                .map(Node::hostname)
+                .collect(Collectors.toSet());
 
-        if (numNonActive > 0) {
+        if (nonActive.size() > 0) {
             throw new ParentHostUnavailableException("Waiting for hosts to finish booting: " +
-                    numNonActive + "/" + parentHostnames.size() + " left.");
+                    nonActive.size() + "/" + parentHostnames.size() + " left. (" + nonActive + ")");
         }
     }
 
