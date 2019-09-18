@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.google.common.base.Supplier;
@@ -45,6 +45,11 @@ public class OsVersions {
         this.db = db;
         this.cacheTtl = cacheTtl;
         createCache();
+
+        // Read and write all versions to make sure they are stored in the latest version of the serialized format
+        try (var lock = db.lockOsVersions()) {
+            db.writeOsVersions(db.readOsVersions());
+        }
     }
 
     private void createCache() {
