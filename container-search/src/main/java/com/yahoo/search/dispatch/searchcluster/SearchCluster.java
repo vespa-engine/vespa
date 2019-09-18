@@ -223,14 +223,15 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
-        if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
-            if (sufficientCoverage) {
-                vipStatus.addToRotation(clusterId);
-            } else {
-                vipStatus.removeFromRotation(clusterId);
-            }
-        }
+        boolean isInRotation = vipStatus.isInRotation();
+        boolean hasChanged = sufficientCoverage != group.hasSufficientCoverage();
+        boolean isDirectDispatchGroupAndChange = usesDirectDispatchTo(group) && hasChanged;
         group.setHasSufficientCoverage(sufficientCoverage);
+        if ((!isInRotation || isDirectDispatchGroupAndChange) && sufficientCoverage) {
+            vipStatus.addToRotation(clusterId);
+        } else if (isDirectDispatchGroupAndChange && ! sufficientCoverage) {
+            vipStatus.removeFromRotation(clusterId);
+        }
     }
 
     private boolean usesDirectDispatchTo(Node node) {
@@ -373,7 +374,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
-        if(changed) {
+        if (changed) {
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
                 log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index,
