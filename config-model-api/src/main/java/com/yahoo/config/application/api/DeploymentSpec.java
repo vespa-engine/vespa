@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
 import java.io.BufferedReader;
@@ -47,90 +48,118 @@ public class DeploymentSpec {
                                                                   Notifications.none(),
                                                                   List.of());
 
-    private final List<DeploymentInstancesSpec> instances;
+    private final List<Step> steps;
     private final Notifications notifications;
+    private final Optional<Integer> majorVersion;
     private final String xmlForm;
 
-    public DeploymentSpec(List<DeploymentInstancesSpec> instances, Notifications notifications, String xmlForm) {
-        this.instances = instances;
+    public DeploymentSpec(List<Step> steps,
+                          Notifications notifications,
+                          Optional<Integer> majorVersion,
+                          String xmlForm) {
+        this.steps = steps;
         this.notifications = notifications;
+        this.majorVersion = majorVersion;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
     }
 
     // TODO: Remove after October 2019
-    @Deprecated
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
                           Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
                           Notifications notifications,
                           List<Endpoint> endpoints) {
-        this(List.of(new DeploymentInstancesSpec("default", globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, athenzDomain, athenzService, endpoints, xmlForm)),
+        this(List.of(new DeploymentInstancesSpec(List.of(InstanceName.from("default")),
+                                                 steps,
+                                                 upgradePolicy,
+                                                 changeBlockers,
+                                                 globalServiceId,
+                                                 athenzDomain,
+                                                 athenzService,
+                                                 endpoints)),
              notifications,
+             majorVersion,
              xmlForm);
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
-        long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
-                                               .mapToLong(delay -> ((Delay)delay).duration().getSeconds())
-                                               .sum();
+        long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
         if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
                                                " but max 24 hours is allowed");
     }
 
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() {
-        return globalServiceId;
+    // TODO: Remove after October 2019
+    private DeploymentInstancesSpec defaultInstance() {
+        if (hasDefaultInstanceStepOnly()) return (DeploymentInstancesSpec)steps.get(0);
+        throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
+                                           "as it does not consist only of a default instance");
     }
 
-    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
-    public UpgradePolicy upgradePolicy() { return upgradePolicy; }
+    // TODO: Remove after October 2019
+    private boolean hasDefaultInstanceStepOnly() {
+        return steps.size() == 1
+               && (steps.get(0) instanceof DeploymentInstancesSpec)
+               && ((DeploymentInstancesSpec)steps.get(0)).names().equals(List.of(InstanceName.from("default")));
+    }
+
+    // TODO: Remove after October 2019
+    public Optional<String> globalServiceId() { return defaultInstance().globalServiceId(); }
+
+    // TODO: Remove after October 2019
+    public UpgradePolicy upgradePolicy() { return defaultInstance().upgradePolicy(); }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
-    /** Returns whether upgrade can occur at the given instant */
-    public boolean canUpgradeAt(Instant instant) {
-        return changeBlockers.stream().filter(block -> block.blocksVersions())
-                                      .noneMatch(block -> block.window().includes(instant));
-    }
+    // TODO: Remove after October 2019
+    public boolean canUpgradeAt(Instant instant) { return defaultInstance().canUpgradeAt(instant); }
 
-    /** Returns whether an application revision change can occur at the given instant */
-    public boolean canChangeRevisionAt(Instant instant) {
-        return changeBlockers.stream().filter(block -> block.blocksRevisions())
-                                      .noneMatch(block -> block.window().includes(instant));
-    }
+    // TODO: Remove after October 2019
+    public boolean canChangeRevisionAt(Instant instant) { return defaultInstance().canChangeRevisionAt(instant); }
 
-    /** Returns time windows where upgrades are disallowed */
-    public List<ChangeBlocker> changeBlocker() { return changeBlockers; }
+    // TODO: Remove after October 2019
+    public List<ChangeBlocker> changeBlocker() { return defaultInstance().changeBlocker(); }
 
     /** Returns the deployment steps of this in the order they will be performed */
-    public List<Step> steps() { return steps; }
+    public List<Step> steps() {
+        if (hasDefaultInstanceStepOnly()) return defaultInstance().steps(); // TODO: Remove line after October 2019
+        return steps;
+    }
 
-    /** Returns all the DeclaredZone deployment steps in the order they are declared */
+    // TODO: Remove after October 2019
     public List<DeclaredZone> zones() {
-        return steps.stream()
-                .flatMap(step -> step.zones().stream())
-                .collect(Collectors.toList());
+        return defaultInstance().steps().stream()
+                                       .flatMap(step -> step.zones().stream())
+                                       .collect(Collectors.toList());
     }
 
     /** Returns the notification configuration */
     public Notifications notifications() { return notifications; }
 
     /** Returns the rotations configuration */
-    public List<Endpoint> endpoints() { return endpoints; }
+    // TODO: Remove after October 2019
+    public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
+
+    /** Returns the athenz domain if configured */
+    // TODO: Remove after October 2019
+    public Optional<AthenzDomain> athenzDomain() { return defaultInstance().athenzDomain(); }
+
+    /** Returns the athenz service for environment/region if configured */
+    // TODO: Remove after October 2019
+    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
+        return defaultInstance().athenzService(environment, region);
+    }
+
+    // TODO: Remove after October 2019
+    public boolean includes(Environment environment, Optional<RegionName> region) {
+        return defaultInstance().deploysTo(environment, region);
+    }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
-
-    /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
-    public boolean includes(Environment environment, Optional<RegionName> region) {
-        for (Step step : steps)
-            if (step.deploysTo(environment, region)) return true;
-        return false;
-    }
 
     /**
      * Creates a deployment spec from XML.
@@ -176,40 +205,20 @@ public class DeploymentSpec {
         return b.toString();
     }
 
-    /** Returns the athenz domain if configured */
-    public Optional<AthenzDomain> athenzDomain() {
-        return athenzDomain;
-    }
-
-    /** Returns the athenz service for environment/region if configured */
-    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        AthenzService athenzService = zones().stream()
-                .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
-                .findFirst()
-                .flatMap(DeclaredZone::athenzService)
-                .orElse(this.athenzService.orElse(null));
-        return Optional.ofNullable(athenzService);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeploymentSpec that = (DeploymentSpec) o;
-        return globalServiceId.equals(that.globalServiceId) &&
-               upgradePolicy == that.upgradePolicy &&
-               majorVersion.equals(that.majorVersion) &&
-               changeBlockers.equals(that.changeBlockers) &&
-               steps.equals(that.steps) &&
-               xmlForm.equals(that.xmlForm) &&
-               athenzDomain.equals(that.athenzDomain) &&
-               athenzService.equals(that.athenzService) &&
-               notifications.equals(that.notifications);
+        DeploymentSpec other = (DeploymentSpec) o;
+        return majorVersion.equals(other.majorVersion) &&
+               steps.equals(other.steps) &&
+               xmlForm.equals(other.xmlForm) &&
+               notifications.equals(other.notifications);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, xmlForm, athenzDomain, athenzService, notifications);
+        return Objects.hash(majorVersion, steps, xmlForm, notifications);
     }
 
     /** This may be invoked by a continuous build */
@@ -237,7 +246,7 @@ public class DeploymentSpec {
 
     /** A deployment step */
     public abstract static class Step {
-        
+
         /** Returns whether this step deploys to the given region */
         public final boolean deploysTo(Environment environment) {
             return deploysTo(environment, Optional.empty());
@@ -249,6 +258,9 @@ public class DeploymentSpec {
         /** Returns the zones deployed to in this step */
         public List<DeclaredZone> zones() { return Collections.emptyList(); }
 
+        /** The delay introduced by this step (beyond the time it takes to execute the step). Default is zero. */
+        public Duration delay() { return Duration.ZERO; }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -259,8 +271,12 @@ public class DeploymentSpec {
         public Delay(Duration duration) {
             this.duration = duration;
         }
-        
+
+        // TODO: Remove after October 2019
         public Duration duration() { return duration; }
+
+        @Override
+        public Duration delay() { return duration; }
 
         @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) { return false; }
