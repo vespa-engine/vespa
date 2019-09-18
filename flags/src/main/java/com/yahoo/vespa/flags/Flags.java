@@ -60,6 +60,14 @@ public class Flags {
             "Takes effect on next host admin tick",
             HOSTNAME, NODE_TYPE);
 
+    public static final UnboundStringFlag DOCKER_VERSION = defineStringFlag(
+            "docker-version", "1.13.1-91.git07f3374",
+            "The version of the docker to use of the format VERSION-REL: The YUM package to be installed will be " +
+            "2:docker-VERSION-REL.el7.centos.x86_64 in AWS (and without '.centos' otherwise). " +
+            "If docker-version is not of this format, it must be parseable by YumPackageName::fromString.",
+            "Takes effect on next tick.",
+            HOSTNAME);
+
     public static final UnboundLongFlag THIN_POOL_GB = defineLongFlag(
             "thin-pool-gb", -1,
             "The size of the disk reserved for the thin pool with dynamic provisioning in AWS, in base-2 GB. " +
