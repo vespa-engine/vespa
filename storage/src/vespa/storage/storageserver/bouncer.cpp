@@ -263,6 +263,13 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     {
         return false;
     }
+    // Special case for point lookup Gets while node is in maintenance mode
+    // to allow reads to complete during two-phase cluster state transitions
+    if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp()) {
+        MBUS_TRACE(msg->getTrace(), 7, "Bouncer: node is in Maintenance mode, but letting Get through");
+        return false;
+    }
+
     const bool externalLoad = isExternalLoad(type);
     if (!isInAvailableState && !(isDistributor() && externalLoad)) {
         abortCommandForUnavailableNode(*msg, *state);

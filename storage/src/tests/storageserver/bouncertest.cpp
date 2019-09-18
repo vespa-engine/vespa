@@ -118,6 +118,13 @@ BouncerTest::createDummyFeedMessage(api::Timestamp timestamp,
     return cmd;
 }
 
+std::shared_ptr<api::StorageCommand> create_dummy_get_message() {
+    return std::make_shared<api::GetCommand>(
+            document::Bucket(document::FixedBucketSpaces::default_space(), document::BucketId(0)),
+            document::DocumentId("id:ns:foo::bar"),
+            "[all]");
+}
+
 TEST_F(BouncerTest, future_timestamp) {
     EXPECT_EQ(0, _manager->metrics().clock_skew_aborts.getValue());
 
@@ -221,25 +228,25 @@ TEST_F(BouncerTest, do_not_reject_higher_prioritized_feed_messages_than_configur
     expectMessageNotBounced();
 }
 
-TEST_F(BouncerTest, rejection_threshold_is_exclusive) {
+TEST_F(BouncerTest, priority_rejection_threshold_is_exclusive) {
     configureRejectionThreshold(Priority(120));
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(120)));
     expectMessageNotBounced();
 }
 
-TEST_F(BouncerTest, only_reject_feed_messages_when_configured) {
+TEST_F(BouncerTest, only_priority_reject_feed_messages_when_configured) {
     configureRejectionThreshold(RejectionDisabledConfigValue);
     // A message with even the lowest priority should not be rejected.
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
     expectMessageNotBounced();
 }
 
-TEST_F(BouncerTest, rejection_is_disabled_by_default_in_config) {
+TEST_F(BouncerTest, priority_rejection_is_disabled_by_default_in_config) {
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, Priority(255)));
     expectMessageNotBounced();
 }
 
-TEST_F(BouncerTest, read_only_operations_are_not_rejected) {
+TEST_F(BouncerTest, read_only_operations_are_not_priority_rejected) {
     configureRejectionThreshold(Priority(1));
     // StatBucket is an external operation, but it's not a mutating operation
     // and should therefore not be blocked.
@@ -318,6 +325,14 @@ TEST_F(BouncerTest, cluster_state_activation_commands_are_not_bounced) {
     auto activate_cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(11);
     _upper->sendDown(activate_cmd);
     expectMessageNotBounced();
+}
+
+TEST_F(BouncerTest, allow_get_operations_when_node_is_in_maintenance_mode) {
+    auto state = makeClusterStateBundle("version:10 distributor:3 storage:3 .2.s:m", {}); // Our index is 2
+    _node->getNodeStateUpdater().setClusterStateBundle(state);
+    _upper->sendDown(create_dummy_get_message());
+    expectMessageNotBounced();
+    EXPECT_EQ(0, _manager->metrics().unavailable_node_aborts.getValue());
 }
 
 } // storage
