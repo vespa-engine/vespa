@@ -12,7 +12,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
+import com.yahoo.vespa.hosted.controller.LockedInstance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
@@ -309,7 +309,7 @@ public class JobController {
     }
 
     /** Registers the given application, copying necessary application packages, and returns the modified version. */
-    private LockedApplication registered(LockedApplication application) {
+    private LockedInstance registered(LockedInstance application) {
                 // TODO jvenstad: Remove when there are no more SDv3 pipelines.
                 // Copy all current packages to the new application store
                 application.get().productionDeployments().values().stream()

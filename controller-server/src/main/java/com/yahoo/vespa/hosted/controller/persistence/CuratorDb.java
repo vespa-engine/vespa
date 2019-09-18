@@ -83,7 +83,7 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
@@ -332,11 +332,11 @@ public class CuratorDb {
     // -------------- Application ---------------------------------------------
 
     public void writeApplication(Instance instance) {
-        curator.set(applicationPath(instance.id()), asJson(applicationSerializer.toSlime(instance)));
+        curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
 
     public Optional<Instance> readApplication(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
+        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
     }
 
     public List<Instance> readApplications() {

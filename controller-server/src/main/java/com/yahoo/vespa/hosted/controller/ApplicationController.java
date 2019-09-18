@@ -256,7 +256,7 @@ public class ApplicationController {
                 if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
-            LockedApplication application = new LockedApplication(new Instance(id, clock.instant()), lock);
+            LockedInstance application = new LockedInstance(new Instance(id, clock.instant()), lock);
             store(application);
             log.info("Created " + application);
             return application.get();
@@ -292,7 +292,7 @@ public class ApplicationController {
             Optional<ApplicationCertificate> applicationCertificate;
 
             try (Lock lock = lock(applicationId)) {
-                LockedApplication application = new LockedApplication(require(applicationId), lock);
+                LockedInstance application = new LockedInstance(require(applicationId), lock);
 
                 boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
                 boolean preferOldestVersion = options.deployCurrentVersion;
@@ -396,7 +396,7 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+    public LockedInstance storeWithUpdatedConfig(LockedInstance application, ApplicationPackage applicationPackage) {
         deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
 
         application = application.with(applicationPackage.deploymentSpec());
@@ -459,7 +459,7 @@ public class ApplicationController {
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
-    private LockedApplication withRotation(LockedApplication application, ZoneId zone) {
+    private LockedInstance withRotation(LockedInstance application, ZoneId zone) {
         if (zone.environment() == Environment.prod) {
             try (RotationLock rotationLock = rotationRepository.lock()) {
                 var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
@@ -566,7 +566,7 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
-    private LockedApplication withoutDeletedDeployments(LockedApplication application) {
+    private LockedInstance withoutDeletedDeployments(LockedInstance application) {
         List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
                 .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
                                                                                     Optional.of(deployment.zone().region())))
@@ -585,13 +585,13 @@ public class ApplicationController {
                                                " in deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
 
-        LockedApplication applicationWithRemoval = application;
+        LockedInstance applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
             applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone());
         return applicationWithRemoval;
     }
 
-    private LockedApplication withoutUnreferencedDeploymentJobs(LockedApplication application) {
+    private LockedInstance withoutUnreferencedDeploymentJobs(LockedInstance application) {
         for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
             if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
@@ -733,7 +733,7 @@ public class ApplicationController {
      *
      * @param application a locked application to store
      */
-    public void store(LockedApplication application) {
+    public void store(LockedInstance application) {
         curator.writeApplication(application.get());
     }
 
@@ -743,9 +743,9 @@ public class ApplicationController {
      * @param applicationId ID of the application to lock and get.
      * @param action Function which acts on the locked application.
      */
-    public void lockIfPresent(ApplicationId applicationId, Consumer<LockedApplication> action) {
+    public void lockIfPresent(ApplicationId applicationId, Consumer<LockedInstance> action) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
+            get(applicationId).map(application -> new LockedInstance(application, lock)).ifPresent(action);
         }
     }
 
@@ -756,9 +756,9 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      * @throws IllegalArgumentException when application does not exist.
      */
-    public void lockOrThrow(ApplicationId applicationId, Consumer<LockedApplication> action) {
+    public void lockOrThrow(ApplicationId applicationId, Consumer<LockedInstance> action) {
         try (Lock lock = lock(applicationId)) {
-            action.accept(new LockedApplication(require(applicationId), lock));
+            action.accept(new LockedInstance(require(applicationId), lock));
         }
     }
 
@@ -788,7 +788,7 @@ public class ApplicationController {
 
     /** Deactivate application in the given zone */
     public void deactivate(ApplicationId application, ZoneId zone) {
-        lockOrThrow(application, lockedApplication -> store(deactivate(lockedApplication, zone)));
+        lockOrThrow(application, lockedInstance -> store(deactivate(lockedInstance, zone)));
     }
 
     /**
@@ -796,7 +796,7 @@ public class ApplicationController {
      *
      * @return the application with the deployment in the given zone removed
      */
-    private LockedApplication deactivate(LockedApplication application, ZoneId zone) {
+    private LockedInstance deactivate(LockedInstance application, ZoneId zone) {
         try {
             configServer.deactivate(new DeploymentId(application.get().id(), zone));
         } catch (NotFoundException ignored) {

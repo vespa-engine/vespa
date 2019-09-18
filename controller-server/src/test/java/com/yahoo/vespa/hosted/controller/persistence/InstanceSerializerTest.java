@@ -53,9 +53,9 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class ApplicationSerializerTest {
+public class InstanceSerializerTest {
 
-    private static final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private static final InstanceSerializer INSTANCE_SERIALIZER = new InstanceSerializer();
     private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
@@ -119,7 +119,7 @@ public class ApplicationSerializerTest {
                                          List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
                                          rotationStatus);
 
-        Instance serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
+        Instance serialized = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original));
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
@@ -184,26 +184,26 @@ public class ApplicationSerializerTest {
         assertEquals(original.deployments().get(zone2).metrics().warnings(), serialized.deployments().get(zone2).metrics().warnings());
         { // test more deployment serialization cases
             Instance original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
-            Instance serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
+            Instance serialized2 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original2));
             assertEquals(original2.change(), serialized2.change());
             assertEquals(serialized2.change().application().get().source(),
                          original2.change().application().get().source());
 
             Instance original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
+            Instance serialized3 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original3));
             assertEquals(original3.change(), serialized3.change());
             assertEquals(serialized3.change().application().get().source(),
                          original3.change().application().get().source());
             Instance original4 = writable(original).withChange(Change.empty()).get();
-            Instance serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
+            Instance serialized4 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original4));
             assertEquals(original4.change(), serialized4.change());
 
             Instance original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
+            Instance serialized5 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original5));
             assertEquals(original5.change(), serialized5.change());
 
             Instance original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
+            Instance serialized6 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original6));
             assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
         }
     }
@@ -241,7 +241,7 @@ public class ApplicationSerializerTest {
     @Test
     public void testCompleteApplicationDeserialization() throws Exception {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
-        applicationSerializer.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
+        INSTANCE_SERIALIZER.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
     }
 
