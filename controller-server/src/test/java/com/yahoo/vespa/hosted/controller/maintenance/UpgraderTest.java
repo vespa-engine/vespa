@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -54,12 +54,12 @@ public class UpgraderTest {
         assertEquals("No applications: Nothing to do", 0, tester.buildService().jobs().size());
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application conservative0 = tester.createAndDeploy("conservative0", 6, "conservative");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 3, "default");
+        Instance default1 = tester.createAndDeploy("default1", 4, "default");
+        Instance default2 = tester.createAndDeploy("default2", 5, "default");
+        Instance conservative0 = tester.createAndDeploy("conservative0", 6, "conservative");
 
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
@@ -183,8 +183,8 @@ public class UpgraderTest {
 
         // --- Starting upgrading to a new version which breaks, causing upgrades to commence on the previous version
         Version version4 = Version.fromString("6.6");
-        Application default3 = tester.createAndDeploy("default3", 7, "default"); // need 4 to break a version
-        Application default4 = tester.createAndDeploy("default4", 8, "default");
+        Instance default3 = tester.createAndDeploy("default3", 7, "default"); // need 4 to break a version
+        Instance default4 = tester.createAndDeploy("default4", 8, "default");
         tester.upgradeSystem(version4);
         tester.upgrader().maintain(); // cause canary upgrades to new version
         tester.triggerUntilQuiescence();
@@ -271,18 +271,18 @@ public class UpgraderTest {
         assertEquals("No applications: Nothing to do", 0, tester.buildService().jobs().size());
 
         // Setup applications
-        Application canary0  = tester.createAndDeploy("canary0",  1, "canary");
-        Application canary1  = tester.createAndDeploy("canary1",  2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
-        Application default4 = tester.createAndDeploy("default4", 7, "default");
-        Application default5 = tester.createAndDeploy("default5", 8, "default");
-        Application default6 = tester.createAndDeploy("default6", 9, "default");
-        Application default7 = tester.createAndDeploy("default7", 10, "default");
-        Application default8 = tester.createAndDeploy("default8", 11, "default");
-        Application default9 = tester.createAndDeploy("default9", 12, "default");
+        Instance canary0  = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1  = tester.createAndDeploy("canary1", 2, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 3, "default");
+        Instance default1 = tester.createAndDeploy("default1", 4, "default");
+        Instance default2 = tester.createAndDeploy("default2", 5, "default");
+        Instance default3 = tester.createAndDeploy("default3", 6, "default");
+        Instance default4 = tester.createAndDeploy("default4", 7, "default");
+        Instance default5 = tester.createAndDeploy("default5", 8, "default");
+        Instance default6 = tester.createAndDeploy("default6", 9, "default");
+        Instance default7 = tester.createAndDeploy("default7", 10, "default");
+        Instance default8 = tester.createAndDeploy("default8", 11, "default");
+        Instance default9 = tester.createAndDeploy("default9", 12, "default");
 
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
@@ -338,7 +338,7 @@ public class UpgraderTest {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
@@ -389,13 +389,13 @@ public class UpgraderTest {
         tester.upgradeSystem(version);
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
-        Application default4 = tester.createAndDeploy("default4", 7, "default");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 3, "default");
+        Instance default1 = tester.createAndDeploy("default1", 4, "default");
+        Instance default2 = tester.createAndDeploy("default2", 5, "default");
+        Instance default3 = tester.createAndDeploy("default3", 6, "default");
+        Instance default4 = tester.createAndDeploy("default4", 7, "default");
 
         // New version is released
         version = Version.fromString("6.3");
@@ -455,13 +455,13 @@ public class UpgraderTest {
         tester.upgradeSystem(v0);
 
         // Setup applications on V0
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
-        Application default4 = tester.createAndDeploy("default4", 7, "default");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 3, "default");
+        Instance default1 = tester.createAndDeploy("default1", 4, "default");
+        Instance default2 = tester.createAndDeploy("default2", 5, "default");
+        Instance default3 = tester.createAndDeploy("default3", 6, "default");
+        Instance default4 = tester.createAndDeploy("default4", 7, "default");
 
         // V1 is released
         Version v1 = Version.fromString("6.3");
@@ -542,13 +542,13 @@ public class UpgraderTest {
         ApplicationPackage defaultPolicy = DeploymentTester.applicationPackage("default");
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, canaryPolicy);
-        Application canary1 = tester.createAndDeploy("canary1", 2, canaryPolicy);
-        Application default0 = tester.createAndDeploy("default0", 3, defaultPolicy);
-        Application default1 = tester.createAndDeploy("default1", 4, defaultPolicy);
-        Application default2 = tester.createAndDeploy("default2", 5, defaultPolicy);
-        Application default3 = tester.createAndDeploy("default3", 6, defaultPolicy);
-        Application default4 = tester.createAndDeploy("default4", 7, defaultPolicy);
+        Instance canary0 = tester.createAndDeploy("canary0", 1, canaryPolicy);
+        Instance canary1 = tester.createAndDeploy("canary1", 2, canaryPolicy);
+        Instance default0 = tester.createAndDeploy("default0", 3, defaultPolicy);
+        Instance default1 = tester.createAndDeploy("default1", 4, defaultPolicy);
+        Instance default2 = tester.createAndDeploy("default2", 5, defaultPolicy);
+        Instance default3 = tester.createAndDeploy("default3", 6, defaultPolicy);
+        Instance default4 = tester.createAndDeploy("default4", 7, defaultPolicy);
 
         // New version is released
         version = Version.fromString("6.3");
@@ -600,7 +600,7 @@ public class UpgraderTest {
                 .region("us-west-1")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         // New version is released
         version = Version.fromString("6.3");
@@ -643,7 +643,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         // New version is released
         version = Version.fromString("6.3");
@@ -680,7 +680,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         // New version is released
         version = Version.fromString("6.3");
@@ -758,13 +758,13 @@ public class UpgraderTest {
                 .build();
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, canaryApplicationPackage);
-        Application canary1 = tester.createAndDeploy("canary1", 2, canaryApplicationPackage);
-        Application default0 = tester.createAndDeploy("default0", 3, defaultApplicationPackage);
-        Application default1 = tester.createAndDeploy("default1", 4, defaultApplicationPackage);
-        Application default2 = tester.createAndDeploy("default2", 5, defaultApplicationPackage);
-        Application default3 = tester.createAndDeploy("default3", 6, defaultApplicationPackage);
-        Application default4 = tester.createAndDeploy("default4", 7, defaultApplicationPackage);
+        Instance canary0 = tester.createAndDeploy("canary0", 1, canaryApplicationPackage);
+        Instance canary1 = tester.createAndDeploy("canary1", 2, canaryApplicationPackage);
+        Instance default0 = tester.createAndDeploy("default0", 3, defaultApplicationPackage);
+        Instance default1 = tester.createAndDeploy("default1", 4, defaultApplicationPackage);
+        Instance default2 = tester.createAndDeploy("default2", 5, defaultApplicationPackage);
+        Instance default3 = tester.createAndDeploy("default3", 6, defaultApplicationPackage);
+        Instance default4 = tester.createAndDeploy("default4", 7, defaultApplicationPackage);
 
         assertEquals(version, default0.oldestDeployedPlatform().get());
 
@@ -810,7 +810,7 @@ public class UpgraderTest {
         tester.jobCompletion(stagingTest).application(default4).unsuccessful().submit();
 
         // 5th app never reports back and has a dead job, but no ongoing change
-        Application deadLocked = tester.applications().require(default4.id());
+        Instance deadLocked = tester.applications().require(default4.id());
         tester.assertRunning(systemTest, deadLocked.id());
         assertFalse("No change present", deadLocked.change().hasTargets());
 
@@ -857,15 +857,15 @@ public class UpgraderTest {
         upgrader.setUpgradesPerMinute(0.2);
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application default0 = tester.createAndDeploy("default0", 3, "default");
-        Application default1 = tester.createAndDeploy("default1", 4, "default");
-        Application default2 = tester.createAndDeploy("default2", 5, "default");
-        Application default3 = tester.createAndDeploy("default3", 6, "default");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 3, "default");
+        Instance default1 = tester.createAndDeploy("default1", 4, "default");
+        Instance default2 = tester.createAndDeploy("default2", 5, "default");
+        Instance default3 = tester.createAndDeploy("default3", 6, "default");
 
         // Dev deployment which should be ignored
-        Application dev0 = tester.createApplication("dev0", "tenant1", 7, 1L);
+        Instance dev0 = tester.createApplication("dev0", "tenant1", 7, 1L);
         tester.controllerTester().deploy(dev0, ZoneId.from(Environment.dev, RegionName.from("dev-region")));
 
         // New version is released and canaries upgrade
@@ -910,8 +910,8 @@ public class UpgraderTest {
                                                                 .build();
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, version6ApplicationPackage);
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 2, version6ApplicationPackage);
 
         // New major version is released
         version = Version.fromString("7.0");
@@ -944,8 +944,8 @@ public class UpgraderTest {
                                                                 .build();
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
         tester.applications().lockOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
         assertEquals(OptionalInt.of(6), tester.applications().get(default0.id()).get().majorVersion());
 
@@ -987,9 +987,9 @@ public class UpgraderTest {
                                                                 .build();
 
         // Setup applications
-        Application canary0 = tester.createAndDeploy("canary", 1, version7CanaryApplicationPackage);
-        Application default0 = tester.createAndDeploy("default0", 2, version7DefaultApplicationPackage);
-        Application default1 = tester.createAndDeploy("default1", 3, "default");
+        Instance canary0 = tester.createAndDeploy("canary", 1, version7CanaryApplicationPackage);
+        Instance default0 = tester.createAndDeploy("default0", 2, version7DefaultApplicationPackage);
+        Instance default1 = tester.createAndDeploy("default1", 3, "default");
 
         // New major version is released, but we don't want to upgrade to it yet
         tester.upgrader().setTargetMajorVersion(Optional.of(6));
@@ -1034,7 +1034,7 @@ public class UpgraderTest {
                 .region("us-west-1")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         // New version is released
         version = Version.fromString("6.3");
@@ -1087,7 +1087,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
@@ -1139,7 +1139,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackage);
 
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
@@ -1183,61 +1183,61 @@ public class UpgraderTest {
         tester.upgradeSystem(version0);
 
         // Create an application with pinned platform version.
-        Application application = tester.createApplication("application", "tenant", 2, 3);
+        Instance instance = tester.createApplication("application", "tenant", 2, 3);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
                                                                                .region("us-east-3")
                                                                                .region("us-west-1")
                                                                                .build();
-        tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
+        tester.deploymentTrigger().forceChange(instance.id(), Change.empty().withPin());
 
-        tester.deployCompletely(application, applicationPackage);
-        assertFalse(tester.application(application.id()).change().hasTargets());
-        assertTrue(tester.application(application.id()).change().isPinned());
-        assertEquals(2, tester.application(application.id()).deployments().size());
+        tester.deployCompletely(instance, applicationPackage);
+        assertFalse(tester.application(instance.id()).change().hasTargets());
+        assertTrue(tester.application(instance.id()).change().isPinned());
+        assertEquals(2, tester.application(instance.id()).deployments().size());
 
         // Application does not upgrade.
         Version version1 = Version.fromString("6.3");
         tester.upgradeSystem(version1);
         tester.upgrader().maintain();
-        assertFalse(tester.application(application.id()).change().hasTargets());
-        assertTrue(tester.application(application.id()).change().isPinned());
+        assertFalse(tester.application(instance.id()).change().hasTargets());
+        assertTrue(tester.application(instance.id()).change().isPinned());
 
         // New application package is deployed.
-        tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
-        assertFalse(tester.application(application.id()).change().hasTargets());
-        assertTrue(tester.application(application.id()).change().isPinned());
+        tester.deployCompletely(instance, applicationPackage, BuildJob.defaultBuildNumber + 1);
+        assertFalse(tester.application(instance.id()).change().hasTargets());
+        assertTrue(tester.application(instance.id()).change().isPinned());
 
         // Application upgrades to new version when pin is removed.
-        tester.deploymentTrigger().cancelChange(application.id(), PIN);
+        tester.deploymentTrigger().cancelChange(instance.id(), PIN);
         tester.upgrader().maintain();
-        assertTrue(tester.application(application.id()).change().hasTargets());
-        assertFalse(tester.application(application.id()).change().isPinned());
+        assertTrue(tester.application(instance.id()).change().hasTargets());
+        assertFalse(tester.application(instance.id()).change().isPinned());
 
         // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
-        tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
+        tester.deploymentTrigger().forceChange(instance.id(), Change.empty().withPin());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        assertEquals(version1, tester.application(application.id()).change().platform().get());
+        assertEquals(version1, tester.application(instance.id()).change().platform().get());
 
         // Application fails upgrade after one zone is complete, and is pinned again to the old version.
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionUsEast3);
-        tester.deploy(productionUsWest1, application, Optional.empty(), false);
-        tester.deployAndNotify(application, false, productionUsWest1);
-        tester.deploymentTrigger().cancelChange(application.id(), ALL);
-        tester.deploymentTrigger().forceChange(application.id(), Change.of(version0).withPin());
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionUsEast3);
+        tester.deploy(productionUsWest1, instance, Optional.empty(), false);
+        tester.deployAndNotify(instance, false, productionUsWest1);
+        tester.deploymentTrigger().cancelChange(instance.id(), ALL);
+        tester.deploymentTrigger().forceChange(instance.id(), Change.of(version0).withPin());
         tester.buildService().clear();
-        assertEquals(version0, tester.application(application.id()).change().platform().get());
+        assertEquals(version0, tester.application(instance.id()).change().platform().get());
 
         // Application downgrades to pinned version.
         tester.readyJobTrigger().maintain();
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionUsEast3);
-        assertTrue(tester.application(application.id()).change().hasTargets());
-        tester.deployAndNotify(application, true, productionUsWest1);
-        assertFalse(tester.application(application.id()).change().hasTargets());
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionUsEast3);
+        assertTrue(tester.application(instance.id()).change().hasTargets());
+        tester.deployAndNotify(instance, true, productionUsWest1);
+        assertFalse(tester.application(instance.id()).change().hasTargets());
     }
 
     @Test
@@ -1250,8 +1250,8 @@ public class UpgraderTest {
         tester.upgrader().setTargetMajorVersion(Optional.of(6));
 
         // All applications deploy on current version
-        Application app1 = tester.createAndDeploy("app1", 1, "default");
-        Application app2 = tester.createAndDeploy("app2", 1, "default");
+        Instance app1 = tester.createAndDeploy("app1", 1, "default");
+        Instance app2 = tester.createAndDeploy("app2", 1, "default");
 
         // Keep app 1 on current version
         tester.controller().applications().lockIfPresent(app1.id(), app -> tester.controller().applications().store(app.withChange(app.get().change().withPin())));
@@ -1283,8 +1283,8 @@ public class UpgraderTest {
     @Test
     public void testsEachUpgradeCombinationWithFailingDeployments() {
         DeploymentTester tester = new DeploymentTester();
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Supplier<Application> app = () -> tester.application(application.id());
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Instance> app = () -> tester.application(instance.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -1294,22 +1294,22 @@ public class UpgraderTest {
 
         // Application deploys on system version
         Version v1 = Version.fromString("6.1");
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         // Next version is released and 2/3 deployments upgrade
         Version v2 = Version.fromString("6.2");
         tester.upgradeSystem(v2);
         tester.upgrader().maintain();
         assertEquals(Change.of(v2), app.get().change());
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionUsCentral1);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionUsCentral1);
 
         // While second deployment completes upgrade, version confidence becomes broken and upgrade is cancelled
         tester.upgrader().overrideConfidence(v2, VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         tester.upgrader().maintain();
-        tester.deployAndNotify(application, true, productionUsWest1);
+        tester.deployAndNotify(instance, true, productionUsWest1);
         assertTrue(app.get().change().isEmpty());
 
         // Next version is released
@@ -1317,21 +1317,21 @@ public class UpgraderTest {
         tester.upgradeSystem(v3);
         tester.upgrader().maintain();
         assertEquals(Change.of(v3), app.get().change());
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // First deployment starts upgrading
-        tester.deploy(productionUsCentral1, application, applicationPackage);
+        tester.deploy(productionUsCentral1, instance, applicationPackage);
 
         // Before deployment completes, v1->v3 combination is tested as us-east-3 is still on v1
         tester.readyJobTrigger().maintain();
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, stagingTest);
         assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().sourcePlatform().get());
         assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().platform());
 
         // First deployment fails and then successfully upgrades to v3
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
-        tester.jobCompletion(productionUsCentral1).application(application).submit();
+        tester.jobCompletion(productionUsCentral1).application(instance).unsuccessful().submit();
+        tester.jobCompletion(productionUsCentral1).application(instance).submit();
 
         // Deployments are now on 3 versions
         assertEquals(v3, app.get().deployments().get(productionUsCentral1.zone(main)).version());
@@ -1342,19 +1342,19 @@ public class UpgraderTest {
         tester.readyJobTrigger().maintain();
         assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
         assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Second deployment upgrades
-        tester.deployAndNotify(application, true, productionUsWest1);
+        tester.deployAndNotify(instance, true, productionUsWest1);
 
         // ... now we have to test v1->v3 again :(
         tester.readyJobTrigger().maintain();
         assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
         assertEquals(v3, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Upgrade completes
-        tester.deployAndNotify(application, true, productionUsEast3);
+        tester.deployAndNotify(instance, true, productionUsEast3);
         assertTrue("Upgrade complete", app.get().change().isEmpty());
     }
 

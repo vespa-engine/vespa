@@ -60,16 +60,16 @@ public class LockedApplication {
     /**
      * Used to create a locked application
      *
-     * @param application The application to lock.
+     * @param instance The application to lock.
      * @param lock The lock for the application.
      */
-    LockedApplication(Application application, Lock lock) {
-        this(Objects.requireNonNull(lock, "lock cannot be null"), application.id(), application.createdAt(),
-             application.deploymentSpec(), application.validationOverrides(),
-             application.deployments(),
-             application.deploymentJobs(), application.change(), application.outstandingChange(),
-             application.ownershipIssueId(), application.owner(), application.majorVersion(), application.metrics(),
-             application.pemDeployKey(), application.rotations(), application.rotationStatus());
+    LockedApplication(Instance instance, Lock lock) {
+        this(Objects.requireNonNull(lock, "lock cannot be null"), instance.id(), instance.createdAt(),
+             instance.deploymentSpec(), instance.validationOverrides(),
+             instance.deployments(),
+             instance.deploymentJobs(), instance.change(), instance.outstandingChange(),
+             instance.ownershipIssueId(), instance.owner(), instance.majorVersion(), instance.metrics(),
+             instance.pemDeployKey(), instance.rotations(), instance.rotationStatus());
     }
 
     private LockedApplication(Lock lock, ApplicationId id, Instant createdAt,
@@ -97,10 +97,10 @@ public class LockedApplication {
     }
 
     /** Returns a read-only copy of this */
-    public Application get() {
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
-                               outstandingChange, ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                               rotations, rotationStatus);
+    public Instance get() {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
+                            outstandingChange, ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
+                            rotations, rotationStatus);
     }
 
     public LockedApplication withBuiltInternally(boolean builtInternally) {

@@ -8,7 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -104,22 +104,22 @@ public class ApplicationSerializerTest {
                                                         Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
                                                                ZoneId.from("prod", "us-east-3"), RotationState.out)));
 
-        Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
-                                               Instant.now().truncatedTo(ChronoUnit.MILLIS),
-                                               deploymentSpec,
-                                               validationOverrides,
-                                               deployments, deploymentJobs,
-                                               Change.of(Version.fromString("6.7")).withPin(),
-                                               Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
-                                               Optional.of(IssueId.from("1234")),
-                                               Optional.of(User.from("by-username")),
-                                               OptionalInt.of(7),
-                                               new ApplicationMetrics(0.5, 0.9),
-                                               Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
-                                               List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
-                                               rotationStatus);
+        Instance original = new Instance(ApplicationId.from("t1", "a1", "i1"),
+                                         Instant.now().truncatedTo(ChronoUnit.MILLIS),
+                                         deploymentSpec,
+                                         validationOverrides,
+                                         deployments, deploymentJobs,
+                                         Change.of(Version.fromString("6.7")).withPin(),
+                                         Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
+                                         Optional.of(IssueId.from("1234")),
+                                         Optional.of(User.from("by-username")),
+                                         OptionalInt.of(7),
+                                         new ApplicationMetrics(0.5, 0.9),
+                                         Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
+                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
+                                         rotationStatus);
 
-        Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
+        Instance serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
@@ -183,27 +183,27 @@ public class ApplicationSerializerTest {
         assertEquals(original.deployments().get(zone2).metrics().instant(), serialized.deployments().get(zone2).metrics().instant());
         assertEquals(original.deployments().get(zone2).metrics().warnings(), serialized.deployments().get(zone2).metrics().warnings());
         { // test more deployment serialization cases
-            Application original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
-            Application serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
+            Instance original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
+            Instance serialized2 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original2));
             assertEquals(original2.change(), serialized2.change());
             assertEquals(serialized2.change().application().get().source(),
                          original2.change().application().get().source());
 
-            Application original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Application serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
+            Instance original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
+            Instance serialized3 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original3));
             assertEquals(original3.change(), serialized3.change());
             assertEquals(serialized3.change().application().get().source(),
                          original3.change().application().get().source());
-            Application original4 = writable(original).withChange(Change.empty()).get();
-            Application serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
+            Instance original4 = writable(original).withChange(Change.empty()).get();
+            Instance serialized4 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original4));
             assertEquals(original4.change(), serialized4.change());
 
-            Application original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Application serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
+            Instance original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
+            Instance serialized5 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original5));
             assertEquals(original5.change(), serialized5.change());
 
-            Application original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Application serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
+            Instance original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
+            Instance serialized6 = applicationSerializer.fromSlime(applicationSerializer.toSlime(original6));
             assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
         }
     }

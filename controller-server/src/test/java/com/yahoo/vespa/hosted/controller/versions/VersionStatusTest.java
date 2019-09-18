@@ -7,7 +7,7 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -135,9 +135,9 @@ public class VersionStatusTest {
         tester.upgradeSystem(version1);
 
         // Setup applications
-        Application app1 = tester.createAndDeploy("app1", 11, applicationPackage);
-        Application app2 = tester.createAndDeploy("app2", 22, applicationPackage);
-        Application app3 = tester.createAndDeploy("app3", 33, applicationPackage);
+        Instance app1 = tester.createAndDeploy("app1", 11, applicationPackage);
+        Instance app2 = tester.createAndDeploy("app2", 22, applicationPackage);
+        Instance app3 = tester.createAndDeploy("app3", 33, applicationPackage);
 
         // version2 is released
         tester.upgradeSystem(version2);
@@ -175,25 +175,25 @@ public class VersionStatusTest {
         tester.upgradeSystem(version0);
 
         // Setup applications - all running on version0
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application canary2 = tester.createAndDeploy("canary2", 3, "canary");
-        Application default0 = tester.createAndDeploy("default0", 4, "default");
-        Application default1 = tester.createAndDeploy("default1", 5, "default");
-        Application default2 = tester.createAndDeploy("default2", 6, "default");
-        Application default3 = tester.createAndDeploy("default3", 7, "default");
-        Application default4 = tester.createAndDeploy("default4", 8, "default");
-        Application default5 = tester.createAndDeploy("default5", 9, "default");
-        Application default6 = tester.createAndDeploy("default6", 10, "default");
-        Application default7 = tester.createAndDeploy("default7", 11, "default");
-        Application default8 = tester.createAndDeploy("default8", 12, "default");
-        Application default9 = tester.createAndDeploy("default9", 13, "default");
-        Application conservative0 = tester.createAndDeploy("conservative1", 14, "conservative");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 2, "canary");
+        Instance canary2 = tester.createAndDeploy("canary2", 3, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 4, "default");
+        Instance default1 = tester.createAndDeploy("default1", 5, "default");
+        Instance default2 = tester.createAndDeploy("default2", 6, "default");
+        Instance default3 = tester.createAndDeploy("default3", 7, "default");
+        Instance default4 = tester.createAndDeploy("default4", 8, "default");
+        Instance default5 = tester.createAndDeploy("default5", 9, "default");
+        Instance default6 = tester.createAndDeploy("default6", 10, "default");
+        Instance default7 = tester.createAndDeploy("default7", 11, "default");
+        Instance default8 = tester.createAndDeploy("default8", 12, "default");
+        Instance default9 = tester.createAndDeploy("default9", 13, "default");
+        Instance conservative0 = tester.createAndDeploy("conservative1", 14, "conservative");
 
         // Applications that do not affect confidence calculation:
 
         // Application without deployment
-        Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
+        Instance ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
 
         assertEquals("All applications running on this version: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -310,7 +310,7 @@ public class VersionStatusTest {
         tester.upgradeSystem(version0);
 
         // Create and deploy application on current version
-        Application app = tester.createAndDeploy("app", 1, "canary");
+        Instance app = tester.createAndDeploy("app", 1, "canary");
         tester.computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version0));
 
@@ -368,9 +368,9 @@ public class VersionStatusTest {
         assertEquals(5, tester.hourOfDayAfter(Duration.ZERO));
         Version version0 = Version.fromString("7.1");
         tester.upgradeSystem(version0);
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 1, "default");
+        Instance canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Instance canary1 = tester.createAndDeploy("canary1", 1, "canary");
+        Instance default0 = tester.createAndDeploy("default0", 1, "default");
         tester.computeVersionStatus();
         assertSame(Confidence.high, tester.controller().versionStatus().version(version0).confidence());
 

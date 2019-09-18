@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -78,13 +78,13 @@ public class MetricsReporter extends Maintainer {
             metric.set(DEPLOYMENT_WARNINGS, warnings, metric.createContext(dimensions(application)));
         });
 
-        for (Application application : applications.asList())
-            application.deploymentJobs().statusOf(JobType.component)
-                       .flatMap(JobStatus::lastSuccess)
-                       .flatMap(run -> run.application().buildTime())
-                       .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
+        for (Instance instance : applications.asList())
+            instance.deploymentJobs().statusOf(JobType.component)
+                    .flatMap(JobStatus::lastSuccess)
+                    .flatMap(run -> run.application().buildTime())
+                    .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
-                                                          metric.createContext(dimensions(application.id()))));
+                                                          metric.createContext(dimensions(instance.id()))));
     }
 
     private void reportQueuedNameServiceRequests() {
@@ -93,33 +93,33 @@ public class MetricsReporter extends Maintainer {
     }
     
     private static double deploymentFailRatio(ApplicationList applicationList) {
-        List<Application> applications = applicationList.asList();
-        if (applications.isEmpty()) return 0;
+        List<Instance> instances = applicationList.asList();
+        if (instances.isEmpty()) return 0;
 
-        return (double) applications.stream().filter(a -> a.deploymentJobs().hasFailures()).count() /
-               (double) applications.size();
+        return (double) instances.stream().filter(a -> a.deploymentJobs().hasFailures()).count() /
+               (double) instances.size();
     }
 
     private static Map<ApplicationId, Duration> averageDeploymentDurations(ApplicationList applications, Instant now) {
         return applications.asList().stream()
-                           .collect(Collectors.toMap(Application::id,
+                           .collect(Collectors.toMap(Instance::id,
                                                      application -> averageDeploymentDuration(application, now)));
     }
 
     private static Map<ApplicationId, Integer> deploymentsFailingUpgrade(ApplicationList applications) {
         return applications.asList()
                            .stream()
-                           .collect(Collectors.toMap(Application::id, MetricsReporter::deploymentsFailingUpgrade));
+                           .collect(Collectors.toMap(Instance::id, MetricsReporter::deploymentsFailingUpgrade));
     }
 
-    private static int deploymentsFailingUpgrade(Application application) {
-        return JobList.from(application).upgrading().failing().size();
+    private static int deploymentsFailingUpgrade(Instance instance) {
+        return JobList.from(instance).upgrading().failing().size();
     }
 
-    private static Duration averageDeploymentDuration(Application application, Instant now) {
-        List<Duration> jobDurations = application.deploymentJobs().jobStatus().values().stream()
-                                                 .filter(status -> status.lastTriggered().isPresent())
-                                                 .map(status -> {
+    private static Duration averageDeploymentDuration(Instance instance, Instant now) {
+        List<Duration> jobDurations = instance.deploymentJobs().jobStatus().values().stream()
+                                              .filter(status -> status.lastTriggered().isPresent())
+                                              .map(status -> {
                                                      Instant triggeredAt = status.lastTriggered().get().at();
                                                      Instant runningUntil = status.lastCompleted()
                                                                                   .map(JobStatus.JobRun::at)
@@ -127,7 +127,7 @@ public class MetricsReporter extends Maintainer {
                                                                                   .orElse(now);
                                                      return Duration.between(triggeredAt, runningUntil);
                                                  })
-                                                 .collect(Collectors.toList());
+                                              .collect(Collectors.toList());
         return jobDurations.stream()
                            .reduce(Duration::plus)
                            .map(totalDuration -> totalDuration.dividedBy(jobDurations.size()))
@@ -136,7 +136,7 @@ public class MetricsReporter extends Maintainer {
 
     private static Map<ApplicationId, Integer> deploymentWarnings(ApplicationList applications) {
         return applications.asList().stream()
-                           .collect(Collectors.toMap(Application::id, a -> maxWarningCountOf(a.deployments().values())));
+                           .collect(Collectors.toMap(Instance::id, a -> maxWarningCountOf(a.deployments().values())));
     }
 
     private static int maxWarningCountOf(Collection<Deployment> deployments) {

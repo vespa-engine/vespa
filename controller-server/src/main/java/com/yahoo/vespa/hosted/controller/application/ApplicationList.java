@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 
 import java.time.Instant;
@@ -24,15 +24,15 @@ import java.util.stream.Stream;
 // TODO jvenstad: Make an AbstractFilteringList based on JobList and let this extend it for free not()s?
 public class ApplicationList {
 
-    private final ImmutableList<Application> list;
+    private final ImmutableList<Instance> list;
 
-    private ApplicationList(Iterable<Application> applications) {
+    private ApplicationList(Iterable<Instance> applications) {
         this.list = ImmutableList.copyOf(applications);
     }
 
     // ----------------------------------- Factories
 
-    public static ApplicationList from(Iterable<Application> applications) {
+    public static ApplicationList from(Iterable<Instance> applications) {
         return new ApplicationList(applications);
     }
 
@@ -43,10 +43,10 @@ public class ApplicationList {
     // ----------------------------------- Accessors
 
     /** Returns the applications in this as an immutable list */
-    public List<Application> asList() { return list; }
+    public List<Instance> asList() { return list; }
 
     /** Returns the ids of the applications in this as an immutable list */
-    public List<ApplicationId> idList() { return ImmutableList.copyOf(list.stream().map(Application::id)::iterator); }
+    public List<ApplicationId> idList() { return ImmutableList.copyOf(list.stream().map(Instance::id)::iterator); }
 
     public boolean isEmpty() { return list.isEmpty(); }
 
@@ -200,34 +200,34 @@ public class ApplicationList {
 
     // ----------------------------------- Internal helpers
 
-    private static boolean isUpgradingTo(Version version, Application application) {
-        return application.change().platform().equals(Optional.of(version));
+    private static boolean isUpgradingTo(Version version, Instance instance) {
+        return instance.change().platform().equals(Optional.of(version));
     }
 
-    private static boolean failingOn(Version version, Application application) {
-        return ! JobList.from(application)
+    private static boolean failingOn(Version version, Instance instance) {
+        return ! JobList.from(instance)
                 .failing()
                 .lastCompleted().on(version)
                 .isEmpty();
     }
 
-    private static boolean failingUpgradeToVersionSince(Application application, Version version, Instant threshold) {
-        return ! JobList.from(application)
+    private static boolean failingUpgradeToVersionSince(Instance instance, Version version, Instant threshold) {
+        return ! JobList.from(instance)
                 .not().failingApplicationChange()
                 .firstFailing().before(threshold)
                 .lastCompleted().on(version)
                 .isEmpty();
     }
 
-    private static boolean failingApplicationChangeSince(Application application, Instant threshold) {
-        return ! JobList.from(application)
+    private static boolean failingApplicationChangeSince(Instance instance, Instant threshold) {
+        return ! JobList.from(instance)
                 .failingApplicationChange()
                 .firstFailing().before(threshold)
                 .isEmpty();
     }
 
     /** Convenience converter from a stream to an ApplicationList */
-    private static ApplicationList listOf(Stream<Application> applications) {
+    private static ApplicationList listOf(Stream<Instance> applications) {
         return from(applications::iterator);
     }
 

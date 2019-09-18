@@ -11,7 +11,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -132,15 +132,15 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Cursor object, Application application, HttpRequest request) {
-        object.setString("tenant", application.id().tenant().value());
-        object.setString("application", application.id().application().value());
-        object.setString("instance", application.id().instance().value());
+    private void toSlime(Cursor object, Instance instance, HttpRequest request) {
+        object.setString("tenant", instance.id().tenant().value());
+        object.setString("application", instance.id().application().value());
+        object.setString("instance", instance.id().instance().value());
         object.setString("url", new Uri(request.getUri()).withPath("/application/v4/tenant/" +
-                                                                   application.id().tenant().value() +
+                                                                   instance.id().tenant().value() +
                                                                    "/application/" +
-                                                                   application.id().application().value()).toString());
-        object.setString("upgradePolicy", toString(application.deploymentSpec().upgradePolicy()));
+                                                                   instance.id().application().value()).toString());
+        object.setString("upgradePolicy", toString(instance.deploymentSpec().upgradePolicy()));
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {
@@ -153,8 +153,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     // ----------------------------- Utilities to pick out the relevant JobStatus -- filter chains should mirror the ones in VersionStatus
 
     /** The first upgrade job to fail on this version, for this application */
-    private Optional<JobStatus> firstFailingOn(Version version, Application application) {
-        return JobList.from(application)
+    private Optional<JobStatus> firstFailingOn(Version version, Instance instance) {
+        return JobList.from(instance)
                       .failing()
                       .not().failingApplicationChange()
                       .not().failingBecause(outOfCapacity)
@@ -164,23 +164,23 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     }
 
     /** The number of production jobs for this application */
-    private int productionJobsFor(Application application) {
-        return JobList.from(application)
+    private int productionJobsFor(Instance instance) {
+        return JobList.from(instance)
                       .production()
                       .size();
     }
 
     /** The number of production jobs with last success on the given version, for this application */
-    private int productionSuccessesFor(Version version, Application application) {
-        return JobList.from(application)
+    private int productionSuccessesFor(Version version, Instance instance) {
+        return JobList.from(instance)
                       .production()
                       .lastSuccess().on(version)
                       .size();
     }
 
     /** The last triggered upgrade to this version, for this application */
-    private Optional<JobStatus> lastDeployingTo(Version version, Application application) {
-        return JobList.from(application)
+    private Optional<JobStatus> lastDeployingTo(Version version, Instance instance) {
+        return JobList.from(instance)
                       .upgrading()
                       .lastTriggered().on(version)
                       .asList().stream()

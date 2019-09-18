@@ -16,7 +16,7 @@ import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -91,7 +91,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications) {
+    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Instance> instances) {
         AthenzTenantSpec spec = (AthenzTenantSpec) tenantSpec;
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         AthenzDomain newDomain = spec.domain();
@@ -121,12 +121,12 @@ public class AthenzFacade implements AccessControl {
         else { // Delete and recreate tenant, and optionally application, resources in Athenz otherwise.
             log("createTenancy(tenantDomain=%s, service=%s)", newDomain, service);
             zmsClient.createTenancy(newDomain, service, athenzCredentials.token());
-            for (Application application : applications)
-                createApplication(newDomain, application.id().application(), athenzCredentials.token());
+            for (Instance instance : instances)
+                createApplication(newDomain, instance.id().application(), athenzCredentials.token());
 
             log("deleteTenancy(tenantDomain=%s, service=%s)", oldDomain, service);
-            for (Application application : applications)
-                deleteApplication(oldDomain, application.id().application(), athenzCredentials.token());
+            for (Instance instance : instances)
+                deleteApplication(oldDomain, instance.id().application(), athenzCredentials.token());
             zmsClient.deleteTenancy(oldDomain, service, athenzCredentials.token());
         }
 

@@ -82,7 +82,7 @@ public class ControllerTest {
 
         // staging job - succeeding
         Version version1 = tester.defaultPlatformVersion();
-        Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
         assertEquals("Application version is known from completion of initial job",
                      ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber),
@@ -211,7 +211,7 @@ public class ControllerTest {
 
     @Test
     public void testDeploymentApplicationVersion() {
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -279,7 +279,7 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistration() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -288,14 +288,14 @@ public class ControllerTest {
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
-        Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
+        tester.deployCompletely(instance, applicationPackage);
+        Collection<Deployment> deployments = tester.application(instance.id()).deployments().values();
         assertFalse(deployments.isEmpty());
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
                          Set.of("rotation-id-01",
                                 "app1--tenant1.global.vespa.oath.cloud"),
-                         tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
+                         tester.configServer().rotationNames().get(new DeploymentId(instance.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
 
@@ -309,7 +309,7 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistrationLegacy() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -318,8 +318,8 @@ public class ControllerTest {
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
-        Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
+        tester.deployCompletely(instance, applicationPackage);
+        Collection<Deployment> deployments = tester.application(instance.id()).deployments().values();
         assertFalse(deployments.isEmpty());
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
@@ -327,7 +327,7 @@ public class ControllerTest {
                             "app1--tenant1.global.vespa.oath.cloud",
                             "app1.tenant1.global.vespa.yahooapis.com",
                             "app1--tenant1.global.vespa.yahooapis.com"),
-                    tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
+                    tester.configServer().rotationNames().get(new DeploymentId(instance.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
         assertEquals(3, tester.controllerTester().nameService().records().size());
@@ -350,7 +350,7 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistrationWithEndpoints() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -362,8 +362,8 @@ public class ControllerTest {
                 .region("us-central-1")
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
-        Collection<Deployment> deployments = tester.application(application.id()).deployments().values();
+        tester.deployCompletely(instance, applicationPackage);
+        Collection<Deployment> deployments = tester.application(instance.id()).deployments().values();
         assertFalse(deployments.isEmpty());
 
         var notWest = Set.of(
@@ -376,7 +376,7 @@ public class ControllerTest {
         for (Deployment deployment : deployments) {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
                     ZoneId.from("prod.us-west-1").equals(deployment.zone()) ? west : notWest,
-                    tester.configServer().rotationNames().get(new DeploymentId(application.id(), deployment.zone())));
+                    tester.configServer().rotationNames().get(new DeploymentId(instance.id(), deployment.zone())));
         }
         tester.flushDnsRequests();
 
@@ -405,7 +405,7 @@ public class ControllerTest {
 
     @Test
     public void testDnsAliasRegistrationWithChangingZones() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -414,16 +414,16 @@ public class ControllerTest {
                 .region("us-central-1")
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         assertEquals(
                 Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+                tester.configServer().rotationNames().get(new DeploymentId(instance.id(), ZoneId.from("prod", "us-west-1")))
         );
 
         assertEquals(
                 Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-central-1")))
+                tester.configServer().rotationNames().get(new DeploymentId(instance.id(), ZoneId.from("prod", "us-central-1")))
         );
 
 
@@ -434,24 +434,24 @@ public class ControllerTest {
                 .region("us-central-1")
                 .build();
 
-        tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
+        tester.deployCompletely(instance, applicationPackage2, BuildJob.defaultBuildNumber + 1);
 
         assertEquals(
                 Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+                tester.configServer().rotationNames().get(new DeploymentId(instance.id(), ZoneId.from("prod", "us-west-1")))
         );
 
         assertEquals(
                 Set.of(),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-central-1")))
+                tester.configServer().rotationNames().get(new DeploymentId(instance.id(), ZoneId.from("prod", "us-central-1")))
         );
 
-        assertEquals(Set.of(RegionName.from("us-west-1")), tester.application(application.id()).rotations().get(0).regions());
+        assertEquals(Set.of(RegionName.from("us-west-1")), tester.application(instance.id()).rotations().get(0).regions());
     }
 
     @Test
     public void testUnassignRotations() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -460,7 +460,7 @@ public class ControllerTest {
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -468,17 +468,17 @@ public class ControllerTest {
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
 
-        tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
+        tester.deployCompletely(instance, applicationPackage2, BuildJob.defaultBuildNumber + 1);
 
 
         assertEquals(
                 List.of(AssignedRotation.fromStrings("qrs", "default", "rotation-id-01", Set.of())),
-                tester.application(application.id()).rotations()
+                tester.application(instance.id()).rotations()
         );
 
         assertEquals(
                 Set.of(),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")))
+                tester.configServer().rotationNames().get(new DeploymentId(instance.id(), ZoneId.from("prod", "us-west-1")))
         );
     }
 
@@ -486,7 +486,7 @@ public class ControllerTest {
     public void testUpdatesExistingDnsAlias() {
         // Application 1 is deployed and deleted
         {
-            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            Instance app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .endpoint("default", "foo")
@@ -532,7 +532,7 @@ public class ControllerTest {
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
         {
-            Application app2 = tester.createApplication("app2", "tenant2", 2, 1L);
+            Instance app2 = tester.createApplication("app2", "tenant2", 2, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .endpoint("default", "foo")
@@ -551,7 +551,7 @@ public class ControllerTest {
         // Application 1 is recreated, deployed and assigned a new rotation
         {
             tester.buildService().clear();
-            Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+            Instance app1 = tester.createApplication("app1", "tenant1", 1, 1L);
             ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .endpoint("default", "foo")
@@ -589,7 +589,7 @@ public class ControllerTest {
                 .build();
 
         // Create application
-        Application app = tester.createApplication("app1", "tenant1", 1, 2L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 2L);
 
         // Direct deploy is allowed when deployDirectly is true
         ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
@@ -619,7 +619,7 @@ public class ControllerTest {
                 .build();
 
         // Create application
-        Application app = tester.createApplication("app1", "tenant1", 1, 2L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 2L);
         ZoneId zone = ZoneId.from("dev", "us-east-1");
 
         // Deploy
@@ -633,7 +633,7 @@ public class ControllerTest {
 
     @Test
     public void testSuspension() {
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                                                         .environment(Environment.prod)
                                                         .region("us-west-1")
@@ -657,7 +657,7 @@ public class ControllerTest {
     // second time will not fail
     @Test
     public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
-        Application app = tester.createApplication("app2", "tenant1", 1, 12L);
+        Instance app = tester.createApplication("app2", "tenant1", 1, 12L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-east-3")
@@ -672,33 +672,33 @@ public class ControllerTest {
 
     @Test
     public void testDeployApplicationPackageWithApplicationDir() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build(true);
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
     }
 
     @Test
     public void testDeployApplicationWithWarnings() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
         ZoneId zone = ZoneId.from("prod", "us-west-1");
         int warnings = 3;
-        tester.configServer().generateWarnings(new DeploymentId(application.id(), zone), warnings);
-        tester.deployCompletely(application, applicationPackage);
-        assertEquals(warnings, tester.applications().require(application.id()).deployments().get(zone)
+        tester.configServer().generateWarnings(new DeploymentId(instance.id(), zone), warnings);
+        tester.deployCompletely(instance, applicationPackage);
+        assertEquals(warnings, tester.applications().require(instance.id()).deployments().get(zone)
                                      .metrics().warnings().get(DeploymentMetrics.Warning.all).intValue());
     }
 
     @Test
     public void testDeploySelectivelyProvisionsCertificate() {
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
-        Function<Application, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
+        Function<Instance, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
 
         // Create app1
         var app1 = tester.createApplication("app1", "tenant1", 1, 2L);
@@ -780,7 +780,7 @@ public class ControllerTest {
 
     private void runDeployment(DeploymentTester tester, ApplicationId application, ApplicationVersion version,
                                ApplicationPackage applicationPackage, SourceRevision sourceRevision, long buildNumber) {
-        Application app = tester.applications().require(application);
+        Instance app = tester.applications().require(application);
         tester.jobCompletion(component)
               .application(app)
               .buildNumber(buildNumber)
@@ -796,13 +796,13 @@ public class ControllerTest {
     }
 
     private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
-        Application app = controller.applications().get(id).get();
+        Instance app = controller.applications().get(id).get();
         JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
         assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
         assertEquals(expectedStatus, existingStatus);
     }
 
-    private void runDeployment(DeploymentTester tester, Application app, ApplicationVersion version,
+    private void runDeployment(DeploymentTester tester, Instance app, ApplicationVersion version,
                                Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
         Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
 

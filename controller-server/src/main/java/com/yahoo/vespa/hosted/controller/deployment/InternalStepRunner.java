@@ -19,7 +19,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -568,11 +568,11 @@ public class InternalStepRunner implements StepRunner {
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendNotification(Run run, DualLogger logger) {
-        Application application = controller.applications().require(run.id().application());
-        Notifications notifications = application.deploymentSpec().notifications();
-        boolean newCommit = application.change().application()
-                                       .map(run.versions().targetApplication()::equals)
-                                       .orElse(false);
+        Instance instance = controller.applications().require(run.id().application());
+        Notifications notifications = instance.deploymentSpec().notifications();
+        boolean newCommit = instance.change().application()
+                                    .map(run.versions().targetApplication()::equals)
+                                    .orElse(false);
         When when = newCommit ? failingCommit : failing;
 
         List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
@@ -605,7 +605,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the real application with the given id. */
-    private Application application(ApplicationId id) {
+    private Instance application(ApplicationId id) {
         controller.applications().lockOrThrow(id, __ -> { }); // Memory fence.
         return controller.applications().require(id);
     }
