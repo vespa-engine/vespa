@@ -46,8 +46,9 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
         boolean useProtoBuf = query.properties().getBoolean(Dispatcher.dispatchProtobuf, dispatchWithProtobuf);
+        boolean useDispatchDotSummaries = query.properties().getBoolean(dispatchSummaries, false);
 
-        return  ((query.properties().getBoolean(dispatchSummaries, true) || !useProtoBuf) && ! summaryNeedsQuery)
+        return  ((useDispatchDotSummaries || !useProtoBuf) && ! summaryNeedsQuery)
                 ? Optional.of(new RpcFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query)))
                 : Optional.of(new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery));
     }
