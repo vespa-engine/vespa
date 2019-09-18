@@ -1,6 +1,5 @@
 package com.yahoo.search.dispatch;
 
-import com.yahoo.fs4.QueryPacketData;
 
 import java.util.Arrays;
 
@@ -10,8 +9,7 @@ public class LeanHit implements Comparable<LeanHit> {
     private final byte [] sortData;
     private final int partId;
     private final int distributionKey;
-    //TODO Remove when FS4 is gone
-    private QueryPacketData queryPacketData;
+
     public LeanHit(byte [] gid, int partId, int distributionKey, double relevance) {
         this.gid = gid;
         this.relevance = Double.isNaN(relevance) ? Double.NEGATIVE_INFINITY : relevance;
@@ -32,12 +30,6 @@ public class LeanHit implements Comparable<LeanHit> {
     public boolean hasSortData() { return sortData != null; }
     public int getPartId() { return partId; }
     public int getDistributionKey() { return distributionKey; }
-
-    QueryPacketData getQueryPacketData() { return queryPacketData; }
-
-    public void setQueryPacketData(QueryPacketData queryPacketData) {
-        this.queryPacketData = queryPacketData;
-    }
 
     @Override
     public int compareTo(LeanHit o) {
