@@ -293,14 +293,18 @@ public class SearchCluster implements NodeManager<Node> {
             sumOfActiveDocuments += activeDocumentsInGroup[i];
         }
 
+        boolean anyGroupsSufficientCoverage = false;
         for (int i = 0; i < numGroups; i++) {
             Group group = orderedGroups.get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments,
-                    averageDocumentsInOtherGroups);
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
+            anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
+        }
+        if ( ! anyGroupsSufficientCoverage ) {
+            vipStatus.removeFromRotation(clusterId);
         }
     }
 
