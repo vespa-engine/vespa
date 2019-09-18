@@ -447,15 +447,21 @@ public class JobController {
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
         DeploymentId testerId = new DeploymentId(id.tester().id(), id.type().zone(controller.system()));
-        boolean useHttp =      controller.system().isPublic()
-                          && ! directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, id.tester().id().serializedForm()).value();
         return controller.applications().getDeploymentEndpoints(testerId)
                          .stream().findAny()
                          .or(() -> controller.applications().routingPolicies().get(testerId).stream()
                                              .findAny()
                                              .map(policy -> policy.endpointIn(controller.system()).url()))
-                         // TODO jvenstad: Remove ugly thing when public deployments have a valid web certificate.
-                         .map(uri -> useHttp ? URI.create("http://" + uri.getHost() + ":443/") : uri);
+                .map(url -> withWorkingSchemeAndPort(url, id.tester().id()));
+    }
+
+    // TODO jvenstad: Remove ugly thing when public deployments have a valid web certificate.
+    URI withWorkingSchemeAndPort(URI url, ApplicationId id) {
+        if (   ! controller.system().isPublic()
+            ||   directRoutingUseHttps.with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm()).value())
+            return url;
+
+        return URI.create("http://" + url.getHost() + ":443/");
     }
 
     /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */
