@@ -116,11 +116,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher) {
-        Optional<FillInvoker> invoker = invokerFactory.createFillInvoker(searcher, result);
-        if (invoker.isPresent()) {
-            return invoker;
-        }
-        return Optional.empty();
+        return invokerFactory.createFillInvoker(searcher, result);
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
