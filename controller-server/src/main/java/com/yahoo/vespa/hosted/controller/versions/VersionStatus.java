@@ -11,7 +11,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -196,9 +196,9 @@ public class VersionStatus {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        ApplicationList applicationList = ApplicationList.from(instances)
-                                                         .hasProductionDeployment();
-        for (Instance instance : applicationList.asList()) {
+        InstanceList instanceList = InstanceList.from(instances)
+                                                .hasProductionDeployment();
+        for (Instance instance : instanceList.asList()) {
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
             for (Deployment deployment : instance.productionDeployments().values()) {

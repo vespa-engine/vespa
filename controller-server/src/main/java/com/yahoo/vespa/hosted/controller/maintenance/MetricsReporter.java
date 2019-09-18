@@ -7,7 +7,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -61,8 +61,8 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportDeploymentMetrics() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList())
-                                                      .hasProductionDeployment();
+        InstanceList applications = InstanceList.from(controller().applications().asList())
+                                                .hasProductionDeployment();
 
         metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(applications) * 100, metric.createContext(Collections.emptyMap()));
 
@@ -92,21 +92,21 @@ public class MetricsReporter extends Maintainer {
                    metric.createContext(Map.of()));
     }
     
-    private static double deploymentFailRatio(ApplicationList applicationList) {
-        List<Instance> instances = applicationList.asList();
+    private static double deploymentFailRatio(InstanceList instanceList) {
+        List<Instance> instances = instanceList.asList();
         if (instances.isEmpty()) return 0;
 
         return (double) instances.stream().filter(a -> a.deploymentJobs().hasFailures()).count() /
                (double) instances.size();
     }
 
-    private static Map<ApplicationId, Duration> averageDeploymentDurations(ApplicationList applications, Instant now) {
+    private static Map<ApplicationId, Duration> averageDeploymentDurations(InstanceList applications, Instant now) {
         return applications.asList().stream()
                            .collect(Collectors.toMap(Instance::id,
                                                      application -> averageDeploymentDuration(application, now)));
     }
 
-    private static Map<ApplicationId, Integer> deploymentsFailingUpgrade(ApplicationList applications) {
+    private static Map<ApplicationId, Integer> deploymentsFailingUpgrade(InstanceList applications) {
         return applications.asList()
                            .stream()
                            .collect(Collectors.toMap(Instance::id, MetricsReporter::deploymentsFailingUpgrade));
@@ -134,7 +134,7 @@ public class MetricsReporter extends Maintainer {
                            .orElse(Duration.ZERO);
     }
 
-    private static Map<ApplicationId, Integer> deploymentWarnings(ApplicationList applications) {
+    private static Map<ApplicationId, Integer> deploymentWarnings(InstanceList applications) {
         return applications.asList().stream()
                            .collect(Collectors.toMap(Instance::id, a -> maxWarningCountOf(a.deployments().values())));
     }

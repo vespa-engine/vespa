@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
@@ -47,13 +47,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
-        ApplicationList.from(controller().applications().asList())
-                       .withProjectId()
-                       .hasProductionDeployment()
-                       .asList()
-                       .stream()
-                       .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
-                       .forEach(application -> {
+        InstanceList.from(controller().applications().asList())
+                    .withProjectId()
+                    .hasProductionDeployment()
+                    .asList()
+                    .stream()
+                    .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
+                    .forEach(application -> {
                            try {
                                Tenant tenant = tenantOf(application.id());
                                tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
@@ -99,13 +99,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     private void updateConfirmedApplicationOwners() {
-        ApplicationList.from(controller().applications().asList())
-                .withProjectId()
-                .hasProductionDeployment()
-                .asList()
-                .stream()
-                .filter(application -> application.ownershipIssueId().isPresent())
-                .forEach(application -> {
+        InstanceList.from(controller().applications().asList())
+                    .withProjectId()
+                    .hasProductionDeployment()
+                    .asList()
+                    .stream()
+                    .filter(application -> application.ownershipIssueId().isPresent())
+                    .forEach(application -> {
                     IssueId ownershipIssueId = application.ownershipIssueId().get();
                     ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
                         controller().applications().lockIfPresent(application.id(), lockedApplication ->

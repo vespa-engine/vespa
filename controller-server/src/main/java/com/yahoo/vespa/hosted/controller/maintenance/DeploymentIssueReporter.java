@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -51,9 +51,9 @@ public class DeploymentIssueReporter extends Maintainer {
 
     /** Returns the applications to maintain issue status for. */
     private List<Instance> applications() {
-        return ApplicationList.from(controller().applications().asList())
-                              .withProjectId()
-                              .asList();
+        return InstanceList.from(controller().applications().asList())
+                           .withProjectId()
+                           .asList();
     }
 
     /**
@@ -62,11 +62,11 @@ public class DeploymentIssueReporter extends Maintainer {
      * where deployment has not failed for this amount of time.
      */
     private void maintainDeploymentIssues(List<Instance> instances) {
-        Set<ApplicationId> failingApplications = ApplicationList.from(instances)
-                .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
-                .asList().stream()
-                .map(Instance::id)
-                .collect(Collectors.toSet());
+        Set<ApplicationId> failingApplications = InstanceList.from(instances)
+                                                             .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
+                                                             .asList().stream()
+                                                             .map(Instance::id)
+                                                             .collect(Collectors.toSet());
 
         for (Instance instance : instances)
             if (failingApplications.contains(instance.id()))
@@ -89,14 +89,14 @@ public class DeploymentIssueReporter extends Maintainer {
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
             return;
 
-        if (ApplicationList.from(instances)
-                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
-                .isEmpty())
+        if (InstanceList.from(instances)
+                        .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
+                        .isEmpty())
             return;
 
-        List<ApplicationId> failingApplications = ApplicationList.from(instances)
-                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
-                .idList();
+        List<ApplicationId> failingApplications = InstanceList.from(instances)
+                                                              .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
+                                                              .idList();
 
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
     }

@@ -33,7 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
+import com.yahoo.vespa.hosted.controller.persistence.InstanceSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
@@ -182,10 +182,10 @@ public final class ControllerTester {
 
     /** Create application from slime */
     public Instance createApplication(Slime slime) {
-        ApplicationSerializer serializer = new ApplicationSerializer();
+        InstanceSerializer serializer = new InstanceSerializer();
         Instance instance = serializer.fromSlime(slime);
         try (Lock lock = controller().applications().lock(instance.id())) {
-            controller().applications().store(new LockedApplication(instance, lock));
+            controller().applications().store(new LockedInstance(instance, lock));
         }
         return instance;
     }
@@ -244,8 +244,8 @@ public final class ControllerTester {
     public Instance createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockOrThrow(applicationId, lockedApplication ->
-                controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
+        controller().applications().lockOrThrow(applicationId, lockedInstance ->
+                controller().applications().store(lockedInstance.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);
     }
 
@@ -277,8 +277,8 @@ public final class ControllerTester {
     }
 
     /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
-    public static LockedApplication writable(Instance instance) {
-        return new LockedApplication(instance, new Lock("/test", new MockCurator()));
+    public static LockedInstance writable(Instance instance) {
+        return new LockedInstance(instance, new Lock("/test", new MockCurator()));
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,

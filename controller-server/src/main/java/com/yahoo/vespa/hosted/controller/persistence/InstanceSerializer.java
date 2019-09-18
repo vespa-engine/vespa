@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class ApplicationSerializer {
+public class InstanceSerializer {
 
     // WARNING: Since there are multiple servers in a ZooKeeper cluster and they upgrade one by one
     //          (and rewrite all nodes on startup), changes to the serialized format must be made

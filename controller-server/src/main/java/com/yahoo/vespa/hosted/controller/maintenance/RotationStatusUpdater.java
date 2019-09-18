@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -43,7 +43,7 @@ public class RotationStatusUpdater extends Maintainer {
     protected void maintain() {
         var failures = new AtomicInteger(0);
         var lastException = new AtomicReference<Exception>(null);
-        var applicationList = ApplicationList.from(applications.asList()).hasRotation();
+        var applicationList = InstanceList.from(applications.asList()).hasRotation();
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         var pool = new ForkJoinPool(applicationsToUpdateInParallel);
