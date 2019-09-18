@@ -39,9 +39,6 @@ public class InvokerResult {
             if (hit.hasSortData()) {
                 fh.setSortData(hit.getSortData(), sorting);
             }
-            if (hit.getQueryPacketData() != null) {
-                fh.setQueryPacketData(hit.getQueryPacketData());
-            }
             fh.setQuery(query);
             fh.setFillable();
             fh.setCached(false);
