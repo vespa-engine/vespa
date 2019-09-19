@@ -154,9 +154,9 @@ class JobControllerApiHandlerHelper {
 
     private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Instance instance, Change change, DeploymentSteps steps) {
         VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
-        VespaVersion.Confidence targetConfidence = instance.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
-                                                                                                              : instance.deploymentSpec().upgradePolicy() == conservative ? high
-                                                                                                                                                                          : broken;
+        VespaVersion.Confidence targetConfidence = Map.of(defaultPolicy, normal,
+                                                          conservative, high)
+                                                      .getOrDefault(instance.deploymentSpec().upgradePolicy(), broken);
         for (VespaVersion version : controller.versionStatus().versions())
             if (   ! version.versionNumber().isAfter(controller.systemVersion())
                 &&   version.confidence().equalOrHigherThan(targetConfidence))
