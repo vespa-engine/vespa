@@ -31,15 +31,11 @@ import com.yahoo.vespa.defaults.Defaults;
  */
 public final class VipStatusHandler extends ThreadedHttpRequestHandler {
 
-    private static final Logger log = Logger.getLogger(VipStatusHandler.class.getName());
-
     private static final String NUM_REQUESTS_METRIC = "jdisc.http.requests.status";
 
     private final boolean accessDisk;
     private final File statusFile;
     private final VipStatus vipStatus;
-
-    private volatile boolean previouslyInRotation = true;
 
     // belongs in the response, but that's not a static class
     static final String OK_MESSAGE = "<title>OK</title>\n";
@@ -162,6 +158,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
      * out of capacity. This is the default behavior.
      */
     @Inject
+    @SuppressWarnings("unused") // injected
     public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
         // One thread should be enough for status handling - otherwise something else is completely wrong,
         // in which case this will eventually start returning a 503 (due to work rejection) as the bounded
