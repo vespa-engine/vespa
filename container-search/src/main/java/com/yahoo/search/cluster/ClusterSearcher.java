@@ -82,7 +82,6 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             pong = new Pong(ErrorMessage.createUnspecifiedError("Ping was interrupted: " + p));
             logThrowable = e;
         } catch (ExecutionException e) {
-            e.printStackTrace();
             pong = new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + p));
             logThrowable = e;
         } catch (LinkageError e) { // Typically Osgi woes
