@@ -44,4 +44,9 @@ public class OsVersion {
         return Objects.hash(version, active);
     }
 
+    @Override
+    public String toString() {
+        return "OS version " + version + " [active: " + active + "]";
+    }
+
 }
