@@ -26,6 +26,8 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Report;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -33,6 +35,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -155,30 +158,7 @@ public class FailedExpirerTest {
     }
 
     @Test
-    public void ensure_failed_docker_nodes_are_deallocated() {
-        FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
-                .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
-                .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
-                .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent3")
-                .setReady("parent1", "parent2", "parent3")
-                .allocate(tenantHostApplicationId, tenantHostApplicationClusterSpec, tenantHostApplicationCapacity)
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node1", "parent1")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node2", "parent2")
-                .withNode(NodeType.tenant, FailureScenario.dockerFlavor, "node3", "parent3")
-                .setReady("node1", "node2", "node3")
-                .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node3")
-                .failNode(4, "node1")
-                .failWithHardwareFailure("node2", "node3");
-
-        scenario.clock().advance(Duration.ofDays(5));
-        scenario.expirer().run();
-
-        scenario.assertNodesIn(Node.State.parked, "node2", "node3");
-        scenario.assertNodesIn(Node.State.dirty, "node1");
-    }
-
-    @Test
-    public void ensure_parked_docker_host() {
+    public void ensure_failed_docker_host_is_not_parked_unless_all_children_are() {
         FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
@@ -191,17 +171,16 @@ public class FailedExpirerTest {
                 .setReady("node1", "node2", "node3")
                 .allocate(ClusterSpec.Type.content, FailureScenario.dockerFlavor, "node1", "node2", "node3")
                 .failNode(8, "node3")
-                .failWithHardwareFailure("node2", "node3")
                 .failWithHardwareFailure("parent2");
 
         scenario.clock.advance(Duration.ofDays(5));
-        scenario.expirer().run(); // Run twice because parent can only be parked after the child
         scenario.expirer().run();
-        scenario.assertNodesIn(Node.State.parked, "parent2", "node2", "node3");
+        scenario.assertNodesIn(Node.State.parked);
+        scenario.assertNodesIn(Node.State.failed, "parent2"); // Not parked because child (node2) isn't
     }
 
     @Test
-    public void ensure_failed_docker_host_is_not_parked_unless_all_children_are() {
+    public void ensure_parked_docker_host() {
         FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent1")
                 .withNode(NodeType.host, FailureScenario.defaultFlavor, "parent2")
@@ -224,8 +203,6 @@ public class FailedExpirerTest {
                 .failWithHardwareFailure("parent3");
 
         scenario.clock().advance(Duration.ofDays(3));
-
-        scenario.expirer().run(); // Run twice because parent can only be parked after the child
         scenario.expirer().run();
 
         scenario.assertNodesIn(Node.State.failed, "parent3", "node3", "node4");
@@ -325,8 +302,8 @@ public class FailedExpirerTest {
         public FailureScenario failWithHardwareFailure(String... hostname) {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
-                nodeRepository.write(node.with(node.status().withHardwareFailureDescription(
-                        Optional.of("memory_mcelog"))), () -> {});
+                Report report = Report.basicReport("reportId", Report.Type.HARD_FAIL, Instant.EPOCH, "hardware failure");
+                nodeRepository.write(node.with(new Reports().withReport(report)), () -> {});
                 nodeRepository.fail(h, Agent.system, "Failed by unit test");
             });
             return this;
