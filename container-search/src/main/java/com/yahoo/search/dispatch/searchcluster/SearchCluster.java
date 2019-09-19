@@ -55,7 +55,7 @@ public class SearchCluster implements NodeManager<Node> {
      * if it only queries this cluster when the local node cannot be used, to avoid unnecessary
      * cross-node network traffic.
      */
-    private final Optional<Node> directDispatchTarget;
+    private final Optional<Node> localCorpusDispatchTarget;
 
     public SearchCluster(String clusterId, DispatchConfig dispatchConfig, int containerClusterSize, VipStatus vipStatus) {
         this.clusterId = clusterId;
@@ -82,8 +82,11 @@ public class SearchCluster implements NodeManager<Node> {
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
 
-        this.directDispatchTarget = findDirectDispatchTarget(HostName.getLocalhost(), size, containerClusterSize,
-                                                             nodesByHost, groups);
+        this.localCorpusDispatchTarget = findLocalCorpusDispatchTarget(HostName.getLocalhost(),
+                                                                       size,
+                                                                       containerClusterSize,
+                                                                       nodesByHost,
+                                                                       groups);
 
         this.clusterMonitor = new ClusterMonitor<>(this);
     }
@@ -102,11 +105,11 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private static Optional<Node> findDirectDispatchTarget(String selfHostname,
-                                                           int searchClusterSize,
-                                                           int containerClusterSize,
-                                                           ImmutableMultimap<String, Node> nodesByHost,
-                                                           ImmutableMap<Integer, Group> groups) {
+    private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
+                                                                int searchClusterSize,
+                                                                int containerClusterSize,
+                                                                ImmutableMultimap<String, Node> nodesByHost,
+                                                                ImmutableMap<Integer, Group> groups) {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
@@ -186,20 +189,20 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     /**
-     * Returns the recipient we should dispatch queries directly to (bypassing fdispatch),
+     * Returns the single, local node we should dispatch queries directly to,
      * or empty if we should not dispatch directly.
      */
-    public Optional<Node> directDispatchTarget() {
-        if ( directDispatchTarget.isEmpty()) return Optional.empty();
+    public Optional<Node> localCorpusDispatchTarget() {
+        if ( localCorpusDispatchTarget.isEmpty()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        Group localSearchGroup = groups.get(directDispatchTarget.get().group());
+        Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is up
-        if ( ! directDispatchTarget.get().isWorking()) return Optional.empty();
+        if ( ! localCorpusDispatchTarget.get().isWorking()) return Optional.empty();
 
-        return directDispatchTarget;
+        return localCorpusDispatchTarget;
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -207,7 +210,7 @@ public class SearchCluster implements NodeManager<Node> {
     public void working(Node node) {
         node.setWorking(true);
 
-        if (usesDirectDispatchTo(node))
+        if (usesLocalCorpusIn(node))
             vipStatus.addToRotation(clusterId);
     }
 
@@ -216,33 +219,34 @@ public class SearchCluster implements NodeManager<Node> {
     public void failed(Node node) {
         node.setWorking(false);
 
-        // Take ourselves out if we usually dispatch only to our own host
-        if (usesDirectDispatchTo(node))
+        if (usesLocalCorpusIn(node))
             vipStatus.removeFromRotation(clusterId);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
-        // update VIP status if we direct dispatch to this group and coverage status changed
+        group.setHasSufficientCoverage(sufficientCoverage);
+
         boolean isInRotation = vipStatus.isInRotation();
         boolean hasChanged = sufficientCoverage != group.hasSufficientCoverage();
-        boolean isDirectDispatchGroupAndChange = usesDirectDispatchTo(group) && hasChanged;
-        group.setHasSufficientCoverage(sufficientCoverage);
-        if ((!isInRotation || isDirectDispatchGroupAndChange) && sufficientCoverage) {
-            // We will set this cluster in rotation if
-            // - not already in rotation and one group has sufficient coverage.
-            vipStatus.addToRotation(clusterId);
-        } else if (isDirectDispatchGroupAndChange) {
-            // We will take it out of rotation if the group is mandatory (direct dispatch to this group)
-            vipStatus.removeFromRotation(clusterId);
+
+        if (usesLocalCorpusIn(group)) { // follow the status of the local corpus
+            if (sufficientCoverage)
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
+        }
+        else {
+            if ( ! isInRotation && sufficientCoverage)
+                vipStatus.addToRotation(clusterId);
         }
     }
 
-    private boolean usesDirectDispatchTo(Node node) {
-        return directDispatchTarget.isPresent() && directDispatchTarget.get().equals(node);
+    private boolean usesLocalCorpusIn(Node node) {
+        return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().equals(node);
     }
 
-    private boolean usesDirectDispatchTo(Group group) {
-        return directDispatchTarget.isPresent() && directDispatchTarget.get().group() == group.id();
+    private boolean usesLocalCorpusIn(Group group) {
+        return localCorpusDispatchTarget.isPresent() && localCorpusDispatchTarget.get().group() == group.id();
     }
 
     /** Used by the cluster monitor to manage node status */
