@@ -21,10 +21,8 @@ public class Status {
     private final Optional<Version> vespaVersion;
     private final Optional<DockerImage> dockerImage;
     private final int failCount;
-    private final Optional<String> hardwareFailureDescription;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
-    private final Optional<String> hardwareDivergence;
     private final Optional<Version> osVersion;
     private final Optional<Instant> firmwareVerifiedAt;
 
@@ -32,61 +30,50 @@ public class Status {
                   Optional<Version> vespaVersion,
                   Optional<DockerImage> dockerImage,
                   int failCount,
-                  Optional<String> hardwareFailureDescription,
                   boolean wantToRetire,
                   boolean wantToDeprovision,
-                  Optional<String> hardwareDivergence,
                   Optional<Version> osVersion,
                   Optional<Instant> firmwareVerifiedAt) {
-        Objects.requireNonNull(hardwareDivergence, "Hardware divergence must be non-null");
-        hardwareDivergence.ifPresent(s -> requireNonEmptyString(s, "Hardware divergence must be non-empty"));
         this.reboot = Objects.requireNonNull(generation, "Generation must be non-null");
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "Vespa version must be non-null").filter(v -> !Version.emptyVersion.equals(v));
         this.dockerImage = Objects.requireNonNull(dockerImage, "Docker image must be non-null").filter(d -> !DockerImage.EMPTY.equals(d));
         this.failCount = failCount;
-        this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription, "Hardware failure description must be non-null");
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
-        this.hardwareDivergence = hardwareDivergence;
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be non-null");
         this.firmwareVerifiedAt = Objects.requireNonNull(firmwareVerifiedAt, "Firmware check instant must be non-null");
     }
 
     /** Returns a copy of this with the reboot generation changed */
-    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns the reboot generation of this node */
     public Generation reboot() { return reboot; }
 
     /** Returns a copy of this with the vespa version changed */
-    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), dockerImage, failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     /** Returns a copy of this with the docker image changed */
-    public Status withDockerImage(DockerImage dockerImage) { return new Status(reboot, vespaVersion, Optional.of(dockerImage), failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status withDockerImage(DockerImage dockerImage) { return new Status(reboot, vespaVersion, Optional.of(dockerImage), failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns the docker image the node is running, if known */
     public Optional<DockerImage> dockerImage() { return dockerImage; }
 
-    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount + 1, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount + 1, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
-    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount - 1, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, dockerImage, failCount - 1, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
-    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, dockerImage, value, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
+    public Status setFailCount(Integer value) { return new Status(reboot, vespaVersion, dockerImage, value, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
-    public Status withHardwareFailureDescription(Optional<String> hardwareFailureDescription) { return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt); }
-
-    /** Returns the type of the last hardware failure detected on this node, or empty if none */
-    public Optional<String> hardwareFailureDescription() { return hardwareFailureDescription; }
-
     /** Returns a copy of this with the want to retire flag changed */
     public Status withWantToRetire(boolean wantToRetire) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt);
+        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt);
     }
 
     /**
@@ -99,7 +86,7 @@ public class Status {
 
     /** Returns a copy of this with the want to de-provision flag changed */
     public Status withWantToDeprovision(boolean wantToDeprovision) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt);
+        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, osVersion, firmwareVerifiedAt);
     }
 
     /**
@@ -109,16 +96,9 @@ public class Status {
         return wantToDeprovision;
     }
 
-    public Status withHardwareDivergence(Optional<String> hardwareDivergence) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, firmwareVerifiedAt);
-    }
-
-    /** Returns hardware divergence report as JSON string, if any */
-    public Optional<String> hardwareDivergence() { return  hardwareDivergence; }
-
     /** Returns a copy of this with the current OS version set to version */
     public Status withOsVersion(Version version) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, Optional.of(version), firmwareVerifiedAt);
+        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, Optional.of(version), firmwareVerifiedAt);
     }
 
     /** Returns the current OS version of this node, if any */
@@ -128,7 +108,7 @@ public class Status {
 
     /** Returns a copy of this with the firmwareVerifiedAt set to the given instant. */
     public Status withFirmwareVerifiedAt(Instant instant) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, hardwareFailureDescription, wantToRetire, wantToDeprovision, hardwareDivergence, osVersion, Optional.of(instant));
+        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, osVersion, Optional.of(instant));
     }
 
     /** Returns the last time this node had firmware that was verified to be up to date. */
@@ -138,14 +118,7 @@ public class Status {
 
     /** Returns the initial status of a newly provisioned node */
     public static Status initial() {
-        return new Status(Generation.initial(), Optional.empty(), Optional.empty(), 0, Optional.empty(), false,
-                          false, Optional.empty(), Optional.empty(), Optional.empty());
+        return new Status(Generation.initial(), Optional.empty(), Optional.empty(), 0, false,
+                          false, Optional.empty(), Optional.empty());
     }
-
-    private void requireNonEmptyString(String value, String message) {
-        Objects.requireNonNull(value, message);
-        if (value.trim().isEmpty())
-            throw new IllegalArgumentException(message + ", but was '" + value + "'");
-    }
-
 }

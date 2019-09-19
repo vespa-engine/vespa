@@ -68,11 +68,9 @@ public class NodeSerializer {
     private static final String vespaVersionKey = "vespaVersion";
     private static final String currentDockerImageKey = "currentDockerImage";
     private static final String failCountKey = "failCount";
-    private static final String hardwareFailureKey = "hardwareFailure";
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
-    private static final String hardwareDivergenceKey = "hardwareDivergence";
     private static final String osVersionKey = "osVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
     private static final String reportsKey = "reports";
@@ -137,14 +135,11 @@ public class NodeSerializer {
         node.status().vespaVersion().ifPresent(version -> object.setString(vespaVersionKey, version.toString()));
         node.status().dockerImage().ifPresent(image -> object.setString(currentDockerImageKey, image.asString()));
         object.setLong(failCountKey, node.status().failCount());
-        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString(hardwareFailureKey, failure));
         object.setBool(wantToRetireKey, node.status().wantToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
-        node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString(hardwareDivergenceKey,
-                                                                                            hardwareDivergence));
         node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
@@ -225,10 +220,8 @@ public class NodeSerializer {
                           versionFromSlime(object.field(vespaVersionKey)),
                           dockerImageFromSlime(object.field(currentDockerImageKey)),
                           (int)object.field(failCountKey).asLong(),
-                          hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
-                          removeQuotedNulls(hardwareDivergenceFromSlime(object)),
                           versionFromSlime(object.field(osVersionKey)),
                           instantFromSlime(object.field(firmwareCheckKey)));
     }
@@ -316,30 +309,10 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    private Optional<String> hardwareDivergenceFromSlime(Inspector object) {
-        if (object.field(hardwareDivergenceKey).valid()) {
-            return Optional.of(object.field(hardwareDivergenceKey).asString());
-        }
-        return Optional.empty();
-    }
-
-    // Remove when we no longer have "null" strings for this field in the node repo
-    private Optional<String> removeQuotedNulls(Optional<String> value) {
-        return value.filter(v -> !v.equals("null"));
-    }
-
-
     private Set<String> ipAddressesFromSlime(Inspector object, String key) {
         ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
         object.field(key).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
         return ipAddresses.build();
-    }
-
-    private Optional<String> hardwareFailureDescriptionFromSlime(Inspector object) {
-        if (object.field(hardwareFailureKey).valid()) {
-            return Optional.of(object.field(hardwareFailureKey).asString());
-        }
-        return Optional.empty();
     }
 
     private Optional<String> modelNameFromSlime(Inspector object) {
