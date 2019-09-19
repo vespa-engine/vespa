@@ -19,6 +19,7 @@ public class Node {
     private final int fs4port;
     final int group;
 
+    private final AtomicBoolean statusIsKnown = new AtomicBoolean(false);
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
 
@@ -45,9 +46,13 @@ public class Node {
     /** Returns the id of this group this node belongs to */
     public int group() { return group; }
 
-    public void setWorking(boolean working) {
-        this.working.lazySet(working);
-    }
+    /** Note that we know the status of this node */
+    public void setStatusIsKnown() { statusIsKnown.lazySet(true); }
+
+    /** Returns whether we know the status of this node */
+    public boolean getStatusIsKnown() { return statusIsKnown.get(); }
+
+    public void setWorking(boolean working) { this.working.lazySet(working); }
 
     /** Returns whether this node is currently responding to requests */
     public boolean isWorking() { return working.get(); }
@@ -77,4 +82,5 @@ public class Node {
 
     @Override
     public String toString() { return "search node " + hostname + ":" + fs4port + " in group " + group; }
+
 }

@@ -11,6 +11,9 @@ import java.util.concurrent.Executor;
  */
 public interface NodeManager<T> {
 
+    /** Called when we gain evidence about whether or not a node is working */
+    default void statusIsKnown(T node) { }
+
     /** Called when a failed node is working (ready for production) again */
     void working(T node);
 

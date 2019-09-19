@@ -24,7 +24,7 @@ public class ClusterMonitor<T> {
 
     private MonitorConfiguration configuration = new MonitorConfiguration();
 
-    private static Logger log=Logger.getLogger(ClusterMonitor.class.getName());
+    private static Logger log = Logger.getLogger(ClusterMonitor.class.getName());
 
     private NodeManager<T> nodeManager;
 
@@ -69,6 +69,7 @@ public class ClusterMonitor<T> {
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
     public synchronized void failed(T node, ErrorMessage error) {
+        nodeManager.statusIsKnown(node);
         BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
         boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
@@ -79,6 +80,7 @@ public class ClusterMonitor<T> {
 
     /** Called when a node responded */
     public synchronized void responded(T node) {
+        nodeManager.statusIsKnown(node);
         BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
         boolean wasFailing =! monitor.isWorking();
         monitor.responded();
