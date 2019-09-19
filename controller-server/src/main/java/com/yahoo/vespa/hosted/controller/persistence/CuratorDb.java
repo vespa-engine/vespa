@@ -13,11 +13,13 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -85,6 +87,7 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
@@ -331,9 +334,48 @@ public class CuratorDb {
         curator.delete(tenantPath(name));
     }
 
+    // -------------- Applications ---------------------------------------------
+
+    public void writeApplication(Application application) {
+        curator.set(applicationPath(TenantAndApplicationId.from(application.id())), asJson(applicationSerializer.toSlime(application)));
+        curator.set(oldApplicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
+        curator.set(instancePath(application.id()), asJson(applicationSerializer.toSlime(application)));
+    }
+
+    public Optional<Application> readApplication(ApplicationId application) {
+        return readSlime(instancePath(application)).map(applicationSerializer::fromSlime);
+    }
+
+    public List<Application> readApplications() {
+        return readApplications(ignored -> true);
+    }
+
+    public List<Application> readApplications(TenantName name) {
+        return readApplications(application -> application.tenant().equals(name));
+    }
+
+    private Stream<ApplicationId> readApplicationIds() {
+        return curator.getChildren(instanceRoot).stream().map(ApplicationId::fromSerializedForm);
+    }
+
+    private List<Application> readApplications(Predicate<ApplicationId> applicationFilter) {
+        return readApplicationIds().filter(applicationFilter)
+                                   .map(this::readApplication)
+                                   .flatMap(Optional::stream)
+                                   .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void removeApplication(ApplicationId id) {
+        // WARNING: This is part of a multi-step data move operation, so don't touch!!!
+        curator.delete(applicationPath(TenantAndApplicationId.from(id)));
+        curator.delete(oldApplicationPath(id));
+        curator.delete(instancePath(id));
+    }
+
     // -------------- Instances ---------------------------------------------
 
     public void writeInstance(Instance instance) {
+        curator.set(applicationPath(TenantAndApplicationId.from(instance.id())), asJson(instanceSerializer.toSlime(instance)));
         curator.set(oldApplicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
         curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
@@ -363,6 +405,7 @@ public class CuratorDb {
 
     public void removeInstance(ApplicationId id) {
         // WARNING: This is part of a multi-step data move operation, so don't touch!!!
+        curator.delete(applicationPath(TenantAndApplicationId.from(id)));
         curator.delete(oldApplicationPath(id));
         curator.delete(instancePath(id));
     }
@@ -600,6 +643,10 @@ public class CuratorDb {
 
     private static Path tenantPath(TenantName name) {
         return tenantRoot.append(name.value());
+    }
+
+    private static Path applicationPath(TenantAndApplicationId id) {
+        return applicationRoot.append(id.serialized());
     }
 
     private static Path oldApplicationPath(ApplicationId application) {
