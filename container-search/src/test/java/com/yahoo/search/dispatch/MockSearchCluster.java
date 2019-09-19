@@ -10,7 +10,6 @@ import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,14 +106,8 @@ public class MockSearchCluster extends SearchCluster {
     public static DispatchConfig createDispatchConfig(Node... nodes) {
         return createDispatchConfig(100.0, nodes);
     }
-    public static DispatchConfig createDispatchConfig(List<Node> nodes) {
-        return createDispatchConfig(100.0, nodes);
-    }
 
     public static DispatchConfig createDispatchConfig(double minSearchCoverage, Node... nodes) {
-        return createDispatchConfig(minSearchCoverage, Arrays.asList(nodes));
-    }
-    public static DispatchConfig createDispatchConfig(double minSearchCoverage, List<Node> nodes) {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         builder.minActivedocsPercentage(88.0);
         builder.minGroupCoverage(99.0);
