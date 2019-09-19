@@ -12,6 +12,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import javax.security.auth.x500.X500Principal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Collections.emptyList;
@@ -66,6 +67,19 @@ public class Pkcs10Csr {
                 .filter(attributes -> attributes.length > 0)
                 .map(attributes -> attributes[0])
                 .map(attribute -> Extensions.getInstance(attribute.getAttrValues().getObjectAt(0)));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pkcs10Csr pkcs10Csr = (Pkcs10Csr) o;
+        return Objects.equals(csr, pkcs10Csr.csr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(csr);
     }
 
 }
