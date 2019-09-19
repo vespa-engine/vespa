@@ -40,12 +40,12 @@ public class ConfiguredSslContextFactoryProvider extends TlsContextBasedProvider
         if (!sslConfig.enabled()) throw new IllegalStateException();
 
         PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
-        X509Certificate certificate = X509CertificateUtils.fromPem(getCertificate(sslConfig));
+        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(getCertificate(sslConfig));
         List<X509Certificate> caCertificates = getCaCertificates(sslConfig)
                 .map(X509CertificateUtils::certificateListFromPem)
                 .orElse(List.of());
         PeerAuthentication peerAuthentication = toPeerAuthentication(sslConfig.clientAuth());
-        return new DefaultTlsContext(List.of(certificate), privateKey, caCertificates, null, null, peerAuthentication);
+        return new DefaultTlsContext(certificates, privateKey, caCertificates, null, null, peerAuthentication);
     }
 
     private static void validateConfig(ConnectorConfig.Ssl config) {
