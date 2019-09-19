@@ -29,10 +29,6 @@ public class XMLField extends DocsumField {
 
     @Override
     public Object convert(Inspector value) {
-        /* In Vespa 6 the backend will send an XML-formatted string to represent
-         * positions data.  This will change in next version to sending an object
-         * or an array of objects instead, suitable for the PositionsData class.
-         */
         if (value.type() == Type.OBJECT || value.type() == Type.ARRAY) {
             return new PositionsData(value);
         }
