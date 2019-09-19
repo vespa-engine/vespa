@@ -35,11 +35,14 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.persistence.OldMockCuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -770,6 +773,38 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
+    }
+
+
+    @Test
+    public void testInstanceDataMigration() {
+        MockCuratorDb newDb = new MockCuratorDb();
+        OldMockCuratorDb oldDb = new OldMockCuratorDb(newDb.curator());
+
+        Instance instance1 = new Instance(ApplicationId.from("tenant1", "application1", "instance1"), Instant.ofEpochMilli(1));
+        Instance instance2 = new Instance(ApplicationId.from("tenant2", "application2", "instance2"), Instant.ofEpochMilli(2));
+
+        oldDb.writeInstance(instance1);
+        newDb.writeInstance(instance2);
+
+        assertEquals(instance1, oldDb.readInstance(instance1.id()).orElseThrow());
+        assertEquals(instance1, newDb.readInstance(instance1.id()).orElseThrow());
+
+        assertEquals(instance2, oldDb.readInstance(instance2.id()).orElseThrow());
+        assertEquals(instance2, newDb.readInstance(instance2.id()).orElseThrow());
+
+        assertEquals(List.of(instance1, instance2), oldDb.readInstances());
+        assertEquals(List.of(instance1, instance2), newDb.readInstances());
+
+        instance1 = new Instance(instance1.id(), Instant.ofEpochMilli(3));
+        oldDb.writeInstance(instance1);
+        assertEquals(instance1, oldDb.readInstance(instance1.id()).orElseThrow());
+        assertEquals(instance1, newDb.readInstance(instance1.id()).orElseThrow());
+
+        instance2 = new Instance(instance2.id(), Instant.ofEpochMilli(4));
+        newDb.writeInstance(instance2);
+        assertEquals(instance2, oldDb.readInstance(instance2.id()).orElseThrow());
+        assertEquals(instance2, newDb.readInstance(instance2.id()).orElseThrow());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

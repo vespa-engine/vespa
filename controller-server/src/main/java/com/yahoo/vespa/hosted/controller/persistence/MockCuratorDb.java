@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.inject.Inject;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.time.Duration;
@@ -14,18 +15,27 @@ import java.time.Duration;
 @SuppressWarnings("unused") // injected
 public class MockCuratorDb extends CuratorDb {
 
+    private final MockCurator curator;
+
     @Inject
     public MockCuratorDb() {
         this("test-controller:2222");
     }
 
     public MockCuratorDb(String zooKeeperEnsembleConnectionSpec) {
-        super(new MockCurator() {
+        this(new MockCurator() {
             @Override
             public String zooKeeperEnsembleConnectionSpec() {
                 return zooKeeperEnsembleConnectionSpec;
             }
-        }, Duration.ofMillis(100));
+        });
     }
+
+    public MockCuratorDb(MockCurator curator) {
+        super(curator, Duration.ofMillis(100));
+        this.curator = curator;
+    }
+
+    public MockCurator curator() { return curator; }
 
 }
