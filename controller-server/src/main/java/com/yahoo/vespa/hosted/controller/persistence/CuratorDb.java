@@ -331,7 +331,7 @@ public class CuratorDb {
         curator.delete(tenantPath(name));
     }
 
-    // -------------- Application ---------------------------------------------
+    // -------------- Instances ---------------------------------------------
 
     public void writeInstance(Instance instance) {
         curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
@@ -339,7 +339,7 @@ public class CuratorDb {
     }
 
     public Optional<Instance> readInstance(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
+        return readSlime(instancePath(application)).map(instanceSerializer::fromSlime);
     }
 
     public List<Instance> readInstances() {
@@ -351,10 +351,7 @@ public class CuratorDb {
     }
 
     private Stream<ApplicationId> readInstanceIds() {
-        return curator.getChildren(applicationRoot).stream()
-                      .filter(id -> id.split(":").length == 3)
-                      .distinct()
-                      .map(ApplicationId::fromSerializedForm);
+        return curator.getChildren(instanceRoot).stream().map(ApplicationId::fromSerializedForm);
     }
 
     private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
