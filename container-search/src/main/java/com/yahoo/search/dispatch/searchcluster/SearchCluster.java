@@ -233,8 +233,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
         if ( localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
-            if ( ! vipStatus.isInRotation() && sufficientCoverage)
-                vipStatus.addToRotation(clusterId);
+            // VIP status does not depend on coverage
         }
         else if (usesLocalCorpusIn(group)) { // follow the status of this group
             setInRotationOnlyIf(sufficientCoverage);
