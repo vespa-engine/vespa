@@ -33,7 +33,7 @@ public class ClusterMonitor<T> {
     private volatile boolean shutdown = false;
 
     /** A map from Node to corresponding MonitoredNode */
-    private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
+    private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     public ClusterMonitor(NodeManager<T> manager) {
         nodeManager = manager;
@@ -56,8 +56,7 @@ public class ClusterMonitor<T> {
      * @param internal whether or not this node is internal to this cluster
      */
     public void add(T node, boolean internal) {
-        BaseNodeMonitor<T> monitor = new TrafficNodeMonitor<>(node, configuration, internal);
-        nodeMonitors.put(node, monitor);
+        nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));
     }
 
     /**
@@ -69,24 +68,20 @@ public class ClusterMonitor<T> {
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
     public synchronized void failed(T node, ErrorMessage error) {
-        nodeManager.statusIsKnown(node);
-        BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
-        boolean wasWorking = monitor.isWorking();
+        TrafficNodeMonitor<T> monitor = nodeMonitors.get(node);
+        Boolean wasWorking = monitor.isKnownWorking();
         monitor.failed(error);
-        if (wasWorking && !monitor.isWorking()) {
+        if (wasWorking != monitor.isKnownWorking())
             nodeManager.failed(node);
-        }
     }
 
     /** Called when a node responded */
     public synchronized void responded(T node) {
-        nodeManager.statusIsKnown(node);
-        BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
-        boolean wasFailing =! monitor.isWorking();
+        TrafficNodeMonitor<T> monitor = nodeMonitors.get(node);
+        Boolean wasWorking = monitor.isKnownWorking();
         monitor.responded();
-        if (wasFailing && monitor.isWorking()) {
+        if (wasWorking != monitor.isKnownWorking())
             nodeManager.working(monitor.getNode());
-        }
     }
 
     /**

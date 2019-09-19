@@ -54,10 +54,12 @@ public abstract class BaseNodeMonitor<T> {
 
     /**
      * Returns whether this node is currently in a state suitable
-     * for receiving traffic. As far as we know, that is
+     * for receiving traffic (default true)
      */
     public boolean isWorking() { return isWorking; }
 
+    /** @deprecated Not used */
+    @Deprecated // TODO: Remove on Vespa 8
     public boolean isQuarantined() { return isQuarantined; }
 
     /**

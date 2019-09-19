@@ -114,7 +114,8 @@ public class ClusteredConnectionTestCase {
         connection0.setInService(false);
         forcePing(myBackend);
         r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
-        assertEquals("No backends in service. Try later",r.hits().getError().getMessage());
+        System.out.println(r.hits().getError().getDetailedMessage());
+        assertEquals("No backends in service. Try later", r.hits().getError().getMessage());
 
         connection2.setInService(true);
         connection1.setInService(true);

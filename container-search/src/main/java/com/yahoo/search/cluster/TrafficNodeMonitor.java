@@ -60,9 +60,14 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
             setWorking(true,"Responds correctly");
     }
 
+    /**
+     * Returns whether this node is currently is a state suitable for receiving traffic, or null if not known
+     */
+    public Boolean isKnownWorking() { return atStartUp ? null : isWorking; }
+
     /** Thread-safely changes the state of this node if required */
-    protected synchronized void setWorking(boolean working,String explanation) {
-        if (this.isWorking==working) return; // Old news
+    protected synchronized void setWorking(boolean working, String explanation) {
+        if (this.isWorking == working) return; // Old news
 
         if (explanation==null) {
             explanation="";

@@ -95,13 +95,8 @@ public class SearchCluster implements NodeManager<Node> {
         this.pingFactory = pingFactory;
 
         for (var group : orderedGroups) {
-            for (var node : group.nodes()) {
-                // cluster monitor will only call working() when the
-                // node transitions from down to up, so we need to
-                // register the initial (working) state here:
-                working(node);
+            for (var node : group.nodes())
                 clusterMonitor.add(node, true);
-            }
         }
     }
 
@@ -199,16 +194,10 @@ public class SearchCluster implements NodeManager<Node> {
         Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
-        // Only use direct dispatch if the local search node is up
-        if ( ! localCorpusDispatchTarget.get().isWorking()) return Optional.empty();
+        // Only use direct dispatch if the local search node is not down
+        if ( localCorpusDispatchTarget.get().isWorking() == Boolean.FALSE) return Optional.empty();
 
         return localCorpusDispatchTarget;
-    }
-
-    /** Called by the cluster monitor whenever we get information (positive or negative) about a node */
-    @Override
-    public void statusIsKnown(Node node) {
-        node.setStatusIsKnown();
     }
 
     /** Called by the cluster monitor when node state changes to working */
@@ -244,7 +233,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
         if ( localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
-            if (vipStatus.isInRotation() && sufficientCoverage)
+            if ( ! vipStatus.isInRotation() && sufficientCoverage)
                 vipStatus.addToRotation(clusterId);
         }
         else if (usesLocalCorpusIn(group)) { // follow the status of this group
@@ -260,11 +249,11 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private boolean hasInformationAboutAllNodes() {
-        return nodesByHost.values().stream().allMatch(Node::getStatusIsKnown);
+        return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
     }
 
     private boolean hasWorkingNodes() {
-        return nodesByHost.values().stream().anyMatch(Node::isWorking);
+        return nodesByHost.values().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE );
     }
 
     private boolean usesLocalCorpusIn(Node node) {

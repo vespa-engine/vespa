@@ -19,13 +19,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author baldersheim
+ */
 public class SearchClusterTest {
 
     static class State {
         final String clusterId;
         final int nodesPerGroup;
         final VipStatus vipStatus;
-        final SearchCluster sc;
+        final SearchCluster searchCluster;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
         State(String clusterId, int nodesPergroup, String ... nodeNames) {
@@ -35,9 +38,6 @@ public class SearchClusterTest {
             this.clusterId = clusterId;
             this.nodesPerGroup = nodesPergroup;
             vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterId)).build(), new ClustersStatus());
-            assertFalse(vipStatus.isInRotation());
-            vipStatus.addToRotation(clusterId);
-            assertTrue(vipStatus.isInRotation());
             numDocsPerNode = new ArrayList<>(nodeNames.size());
             pingCounts = new ArrayList<>(nodeNames.size());
             List<Node> nodes = new ArrayList<>(nodeNames.size());
@@ -49,10 +49,10 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            sc = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes),nodes.size() / nodesPergroup, vipStatus);
+            searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPergroup, vipStatus);
         }
         void startMonitoring() {
-            sc.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
+            searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
         }
         private static int getMaxValue(List<AtomicInteger> list) {
             int max = list.get(0).get();
@@ -118,19 +118,25 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultUp() {
+    public void requireThatVipStatusIsDefaultDownButComesUpAfterPinging() {
         State test = new State("cluster.1", 2, "a", "b");
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
+
+        assertFalse(test.vipStatus.isInRotation());
+        test.startMonitoring();
+        test.waitOneFullPingRound();
         assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isEmpty());
     }
 
     @Test
     public void requireThatZeroDocsAreFine() {
         State test = new State("cluster.1", 2,"a", "b");
-        assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isEmpty());
-
         test.startMonitoring();
+        test.waitOneFullPingRound();
+
+        assertTrue(test.vipStatus.isInRotation());
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
+
         test.numDocsPerNode.get(0).set(-1);
         test.numDocsPerNode.get(1).set(-1);
         test.waitOneFullPingRound();
@@ -141,19 +147,25 @@ public class SearchClusterTest {
     }
 
     @Test
-    public void requireThatVipStatusIsDefaultUpWithLocalDispatch() {
+    public void requireThatVipStatusIsDefaultDownWithLocalDispatch() {
         State test = new State("cluster.1", 1, HostName.getLocalhost(), "b");
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
+
+        assertFalse(test.vipStatus.isInRotation());
+        test.startMonitoring();
+        test.waitOneFullPingRound();
         assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isPresent());
     }
 
     @Test
     public void requireThatVipStatusDownWhenLocalIsDown() {
         State test = new State("cluster.1",1,HostName.getLocalhost(), "b");
-        assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isPresent());
 
         test.startMonitoring();
+        test.waitOneFullPingRound();
+        assertTrue(test.vipStatus.isInRotation());
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isPresent());
+
         test.waitOneFullPingRound();
         assertTrue(test.vipStatus.isInRotation());
         test.numDocsPerNode.get(0).set(-1);
@@ -183,10 +195,11 @@ public class SearchClusterTest {
     private void verifyThatVipStatusDownRequireAllNodesDown(int numGroups, int nodesPerGroup) {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
         State test = new State("cluster.1", nodesPerGroup, nodeNames);
-        assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isEmpty());
-
         test.startMonitoring();
+        test.waitOneFullPingRound();
+        assertTrue(test.vipStatus.isInRotation());
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
+
         test.waitOneFullPingRound();
         assertTrue(test.vipStatus.isInRotation());
 
@@ -214,13 +227,15 @@ public class SearchClusterTest {
         }
         return nodeNames;
     }
+
     private void verifyThatVipStatusUpRequireOnlyOneOnlineNode(int numGroups, int nodesPerGroup) {
         List<String> nodeNames = generateNodeNames(numGroups, nodesPerGroup);
         State test = new State("cluster.1", nodesPerGroup, nodeNames);
-        assertTrue(test.vipStatus.isInRotation());
-        assertTrue(test.sc.localCorpusDispatchTarget().isEmpty());
-
         test.startMonitoring();
+        test.waitOneFullPingRound();
+        assertTrue(test.vipStatus.isInRotation());
+        assertTrue(test.searchCluster.localCorpusDispatchTarget().isEmpty());
+
         for (int i=0; i < test.numDocsPerNode.size()-1; i++) {
             test.numDocsPerNode.get(i).set(-1);
         }

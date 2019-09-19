@@ -54,7 +54,7 @@ public class Group {
     public int workingNodes() {
         int nodesUp = 0;
         for (Node node : nodes) {
-            if (node.isWorking()) {
+            if (node.isWorking() == Boolean.TRUE) {
                 nodesUp++;
             }
         }
@@ -64,7 +64,7 @@ public class Group {
     void aggregateActiveDocuments() {
         long activeDocumentsInGroup = 0;
         for (Node node : nodes) {
-            if (node.isWorking()) {
+            if (node.isWorking() == Boolean.TRUE) {
                 activeDocumentsInGroup += node.getActiveDocuments();
             }
         }
