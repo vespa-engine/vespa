@@ -242,7 +242,7 @@ public class SearchCluster implements NodeManager<Node> {
         else {
             if ( ! hasInformationAboutAllNodes()) return;
 
-            if (hasWorkingNodesWithDocumentsOnline())
+            if (hasWorkingNodes())
                 vipStatus.addToRotation(clusterId);
             else
                 vipStatus.removeFromRotation(clusterId);
@@ -267,8 +267,8 @@ public class SearchCluster implements NodeManager<Node> {
         return nodesByHost.values().stream().allMatch(Node::getStatusIsKnown);
     }
 
-    private boolean hasWorkingNodesWithDocumentsOnline() {
-        return nodesByHost.values().stream().anyMatch(node -> node.isWorking() && node.getActiveDocuments() > 0);
+    private boolean hasWorkingNodes() {
+        return nodesByHost.values().stream().anyMatch(Node::isWorking);
     }
 
     private boolean usesLocalCorpusIn(Node node) {
