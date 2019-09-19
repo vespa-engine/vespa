@@ -4,10 +4,8 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
-import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.junit.Test;
@@ -17,7 +15,6 @@ import java.util.List;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -39,43 +36,6 @@ public class ClusterTest {
     }
 
     @Test
-    public void requireThatSearchCoverageIsApplied() {
-        ContentCluster cluster = newContentCluster(joinLines("<search>",
-                "  <coverage>",
-                "    <minimum>0.11</minimum>",
-                "    <min-wait-after-coverage-factor>0.23</min-wait-after-coverage-factor>",
-                "    <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>",
-                "  </coverage>",
-                "</search>"));
-        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
-        for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
-            PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
-            tld.getConfig(builder);
-            PartitionsConfig config = new PartitionsConfig(builder);
-            assertEquals(11.0, config.dataset(0).minimal_searchcoverage(), 1E-6);
-            assertEquals(0.23, config.dataset(0).higher_coverage_minsearchwait(), 1E-6);
-            assertEquals(0.58, config.dataset(0).higher_coverage_maxsearchwait(), 1E-6);
-            assertEquals(2, config.dataset(0).searchablecopies());
-            assertTrue(config.dataset(0).useroundrobinforfixedrow());
-        }
-    }
-
-    @Test
-    public void requireThatDispatchTuningIsApplied()  {
-        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
-                joinLines("<tuning>",
-                        "</tuning>"));
-        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
-        for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
-            PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
-            tld.getConfig(builder);
-            PartitionsConfig config = new PartitionsConfig(builder);
-            assertEquals(2, config.dataset(0).searchablecopies());
-            assertTrue(config.dataset(0).useroundrobinforfixedrow());
-        }
-    }
-
-    @Test
     public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
                 "  <visibility-delay>2.3</visibility-delay>",
@@ -86,10 +46,6 @@ public class ClusterTest {
 
     private static ContentCluster newContentCluster(String contentSearchXml) {
         return newContentCluster(contentSearchXml, "", false);
-    }
-
-    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
-        return newContentCluster(contentSearchXml, searchNodeTuningXml, false);
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) {

@@ -186,11 +186,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
             index.setSearchCoverage(DomSearchCoverageBuilder.build(element));
             index.setDispatchSpec(DomDispatchBuilder.build(element));
-            if (index.useMultilevelDispatchSetup()) {
-                // We must validate this before we add tlds and setup the dispatch groups.
-                // This must therefore happen before the regular validate() step.
-                new MultilevelDispatchValidator(index.getClusterName(), index.getDispatchSpec(), index.getSearchNodes()).validate();
-            }
 
             // TODO: This should be cleaned up to avoid having to change code in 100 places
             // every time we add a dispatch option.
@@ -656,9 +651,6 @@ public class ContentCluster extends AbstractConfigProducer implements
         if (search.usesHierarchicDistribution() && !isHosted) {
             // validate manually configured groups
             new IndexedHierarchicDistributionValidator(search.getClusterName(), rootGroup, redundancy, search.getIndexed().getTuning().dispatch.policy).validate();
-            if (search.getIndexed().useMultilevelDispatchSetup()) {
-                throw new IllegalArgumentException("In indexed content cluster '" + search.getClusterName() + "': Using multi-level dispatch setup is not supported when using hierarchical distribution.");
-            }
         }
         new ReservedDocumentTypeNameValidator().validate(documentDefinitions);
         new GlobalDistributionValidator().validate(documentDefinitions, globallyDistributedDocuments);

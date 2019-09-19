@@ -7,13 +7,10 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -22,14 +19,12 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
-import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -38,7 +33,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1019,10 +1013,6 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getNodes().get(2).getConfigId(), is("bar/storage/2"));
         assertThat(cluster.getRootGroup().getNodes().get(3).getDistributionKey(), is(3));
         assertThat(cluster.getRootGroup().getNodes().get(3).getConfigId(), is("bar/storage/3"));
-        PartitionsConfig.Builder partBuilder = new PartitionsConfig.Builder();
-        cluster.getSearch().getIndexed().getTLDs().get(0).getConfig(partBuilder);
-        PartitionsConfig partCFg = partBuilder.build();
-        assertEquals(4, partCFg.dataset(0).searchablecopies());
     }
 
     @Test
@@ -1605,97 +1595,6 @@ public class ModelProvisioningTest {
         return modelCreatorWithMockPkg.create(false, deployState);
     }
 
-    @Test
-    public void testThatTldConfigIdsAreDeterministic() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services>" +
-                        "  <admin version='4.0'/>" +
-                        "  <container version='1.0' id='jdisc0'>" +
-                        "     <search/>" +
-                        "     <nodes count='2'/>" +
-                        "  </container>" +
-                        "  <container version='1.0' id='jdisc1'>" +
-                        "     <search/>" +
-                        "     <nodes count='2'/>" +
-                        "  </container>" +
-                        "  <content version='1.0' id='content0'>" +
-                        "     <redundancy>2</redundancy>" +
-                        "     <documents>" +
-                        "       <document type='type1' mode='index'/>" +
-                        "     </documents>" +
-                        "     <nodes count='2'/>" +
-                        "  </content>" +
-                        "  <content version='1.0' id='content1'>" +
-                        "     <redundancy>2</redundancy>" +
-                        "     <documents>" +
-                        "       <document type='type1' mode='index'/>" +
-                        "     </documents>" +
-                        "     <nodes count='2'/>" +
-                        "  </content>" +
-                        "</services>";
-
-        int numberOfHosts = 8;
-
-        {
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(numberOfHosts);
-            // Nodes used will be default0, default1, .. and so on.
-            VespaModel model = tester.createModel(services, true);
-            assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
-
-            Map<String, ContentCluster> contentClusters = model.getContentClusters();
-            assertEquals(2, contentClusters.size());
-
-            checkThatTldAndContainerRunningOnSameHostHaveSameId(
-                    model.getContainerClusters().values(),
-                    model.getContentClusters().values(),
-                    0);
-        }
-
-        {
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(numberOfHosts + 1);
-            // Start numbering nodes with index 1 and retire first node
-            // Nodes used will be default1, default2, .. and so on. Containers will start with index 1, not 0 as they are in the test above
-            VespaModel model = tester.createModel(services, true, 1, "default0");
-            assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
-
-            Map<String, ContentCluster> contentClusters = model.getContentClusters();
-            assertEquals(2, contentClusters.size());
-
-            checkThatTldAndContainerRunningOnSameHostHaveSameId(
-                    model.getContainerClusters().values(),
-                    model.getContentClusters().values(),
-                    1);
-        }
-    }
-
-    private void checkThatTldAndContainerRunningOnSameHostHaveSameId(Collection<ApplicationContainerCluster> containerClusters,
-                                                                     Collection<ContentCluster> contentClusters,
-                                                                     int startIndexForContainerIds) {
-        for (ContentCluster contentCluster : contentClusters) {
-            String contentClusterName = contentCluster.getName();
-            int i = 0;
-            for (ApplicationContainerCluster containerCluster : containerClusters) {
-                String containerClusterName = containerCluster.getName();
-                for (int j = 0; j < 2; j++) {
-                    Dispatch tld = contentCluster.getSearch().getIndexed().getTLDs().get(2 * i + j);
-                    ApplicationContainer container = containerCluster.getContainers().get(j);
-                    int containerConfigIdIndex = j + startIndexForContainerIds;
-
-                    assertEquals(container.getHostName(), tld.getHostname());
-                    assertEquals(contentClusterName + "/search/cluster." + contentClusterName + "/tlds/" +
-                                    containerClusterName + "." + containerConfigIdIndex + ".tld." + containerConfigIdIndex,
-                            tld.getConfigId());
-                    assertEquals(containerClusterName + "/" + "container." + containerConfigIdIndex,
-                            container.getConfigId());
-                }
-                i++;
-            }
-        }
-    }
-
     private int physicalMemoryPercentage(ContainerCluster cluster) {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
         cluster.getConfig(b);
@@ -1723,11 +1622,6 @@ public class ModelProvisioningTest {
          assertEquals(2, cluster.getSearchNodes().size());
          assertEquals(40, getProtonConfig(cluster, 0).hwinfo().disk().writespeed(), 0.001);
          assertEquals(40, getProtonConfig(cluster, 1).hwinfo().disk().writespeed(), 0.001);
-    }
-
-    private static Flavor createFlavorFromDiskSetting(String name, boolean fastDisk) {
-        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
-                name(name).fastDisk(fastDisk)));
     }
 
     private static ProtonConfig getProtonConfig(ContentSearchCluster cluster, int searchNodeIdx) {
@@ -1786,11 +1680,6 @@ public class ModelProvisioningTest {
     }
 
     private static long GB = 1024 * 1024 * 1024;
-
-    private static Flavor createFlavorFromMemoryAndDisk(String name, int memoryGb, int diskGb) {
-        return new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().
-                name(name).minMainMemoryAvailableGb(memoryGb).minDiskAvailableGb(diskGb)));
-    }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
