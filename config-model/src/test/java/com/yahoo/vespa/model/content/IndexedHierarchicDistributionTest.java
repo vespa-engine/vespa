@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorDistributionConfig;
-import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
@@ -21,8 +20,6 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.hamcrest.Matchers.containsString;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
-import static com.yahoo.vespa.model.search.utils.DispatchUtils.assertEngine;
-import static com.yahoo.vespa.model.search.utils.DispatchUtils.getDataset;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -35,19 +32,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class IndexedHierarchicDistributionTest {
 
-    private ContentCluster addDispatcher(ContentCluster c) {
-        MockRoot root = new MockRoot("");
-        c.getSearch().getIndexed().addTld(root.deployLogger(), new SimpleConfigProducer(root, ""), new HostResource(new Host(root, "mockhost")));
-        return c;
-    }
-
     private ContentCluster getOneGroupCluster() throws Exception {
         String groupXml = joinLines("  <group>",
                           "    <node distribution-key='0' hostalias='mockhost'/>",
                           "    <node distribution-key='1' hostalias='mockhost'/>",
                           "    <node distribution-key='2' hostalias='mockhost'/>",
                           "  </group>", "");
-        return addDispatcher(createCluster(createClusterXml(groupXml, 2, 2)));
+        return createCluster(createClusterXml(groupXml, 2, 2));
     }
 
     private String getTwoGroupsXml(String partitions) {
@@ -67,11 +58,11 @@ public class IndexedHierarchicDistributionTest {
     }
 
     private ContentCluster getTwoGroupsCluster() throws Exception {
-        return addDispatcher(createCluster(createClusterXml(getTwoGroupsXml("3|*"), 6, 6)));
+        return createCluster(createClusterXml(getTwoGroupsXml("3|*"), 6, 6));
     }
 
     private ContentCluster getTwoGroupsCluster(int redundancy, int searchableCopies, String partitions) throws Exception {
-        return addDispatcher(createCluster(createClusterXml(getTwoGroupsXml(partitions), redundancy, searchableCopies)));
+        return createCluster(createClusterXml(getTwoGroupsXml(partitions), redundancy, searchableCopies));
     }
 
     private void assertSearchNode(int expRowId, int expPartitionId, int expDistibutionKey, SearchNode node) {
@@ -98,20 +89,6 @@ public class IndexedHierarchicDistributionTest {
     }
 
     @Test
-    public void requireThatDispatcherIsCorrectWithOneGroup() throws Exception {
-        ContentCluster c = getOneGroupCluster();
-        PartitionsConfig.Dataset dataset = getDataset(c.getSearch().getIndexed().getTLDs().get(0));
-
-        assertEquals(3, dataset.numparts());
-        assertEquals(PartitionsConfig.Dataset.Querydistribution.AUTOMATIC, dataset.querydistribution());
-        List<PartitionsConfig.Dataset.Engine> engines = dataset.engine();
-        assertEquals(3, engines.size());
-        assertEngine(0, 0, engines.get(0));
-        assertEngine(0, 1, engines.get(1));
-        assertEngine(0, 2, engines.get(2));
-    }
-
-    @Test
     public void requireThatActivePerLeafGroupIsDefaultWithOneGroup() throws Exception {
         ContentCluster c = getOneGroupCluster();
         assertFalse(getStorDistributionConfig(c).active_per_leaf_group());
@@ -129,24 +106,6 @@ public class IndexedHierarchicDistributionTest {
         assertSearchNode(1, 0, 3, searchNodes.get(3));
         assertSearchNode(1, 1, 4, searchNodes.get(4));
         assertSearchNode(1, 2, 5, searchNodes.get(5));
-    }
-
-    @Test
-    public void requireThatDispatcherIsCorrectWithTwoGroups() throws Exception {
-        ContentCluster c = getTwoGroupsCluster();
-        PartitionsConfig.Dataset dataset = getDataset(c.getSearch().getIndexed().getTLDs().get(0));
-
-        assertEquals(3, dataset.numparts());
-        assertEquals(2, dataset.maxnodesdownperfixedrow());
-        assertEquals(PartitionsConfig.Dataset.Querydistribution.FIXEDROW, dataset.querydistribution());
-        List<PartitionsConfig.Dataset.Engine> engines = dataset.engine();
-        assertEquals(6, engines.size());
-        assertEngine(0, 0, engines.get(0));
-        assertEngine(1, 0, engines.get(1));
-        assertEngine(0, 1, engines.get(2));
-        assertEngine(1, 1, engines.get(3));
-        assertEngine(0, 2, engines.get(4));
-        assertEngine(1, 2, engines.get(5));
     }
 
     @Test
