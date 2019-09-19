@@ -24,6 +24,7 @@ useFdispatchByDefault bool default=false
 dispatchWithProtobuf bool default=false
 
 # Is multi-level dispatch configured for this cluster
+# Deprecated, will go away soon, NOOP
 useMultilevelDispatch bool default=false
 
 # Dispatch only to local nodes

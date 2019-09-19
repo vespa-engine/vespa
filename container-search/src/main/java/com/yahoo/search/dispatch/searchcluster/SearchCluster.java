@@ -186,17 +186,11 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     /**
-     * Returns the nodes of this cluster as an immutable map indexed by host.
-     * One host may contain multiple nodes (on different ports), so this is a multi-map.
-     */
-    public ImmutableMultimap<String, Node> nodesByHost() { return nodesByHost; }
-
-    /**
      * Returns the recipient we should dispatch queries directly to (bypassing fdispatch),
      * or empty if we should not dispatch directly.
      */
     public Optional<Node> directDispatchTarget() {
-        if ( ! directDispatchTarget.isPresent()) return Optional.empty();
+        if ( directDispatchTarget.isEmpty()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
         Group localSearchGroup = groups.get(directDispatchTarget.get().group());
@@ -229,24 +223,26 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
-        if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
-            if (sufficientCoverage) {
-                vipStatus.addToRotation(clusterId);
-            } else {
-                vipStatus.removeFromRotation(clusterId);
-            }
-        }
+        boolean isInRotation = vipStatus.isInRotation();
+        boolean hasChanged = sufficientCoverage != group.hasSufficientCoverage();
+        boolean isDirectDispatchGroupAndChange = usesDirectDispatchTo(group) && hasChanged;
         group.setHasSufficientCoverage(sufficientCoverage);
+        if ((!isInRotation || isDirectDispatchGroupAndChange) && sufficientCoverage) {
+            // We will set this cluster in rotation if
+            // - not already in rotation and one group has sufficient coverage.
+            vipStatus.addToRotation(clusterId);
+        } else if (isDirectDispatchGroupAndChange) {
+            // We will take it out of rotation if the group is mandatory (direct dispatch to this group)
+            vipStatus.removeFromRotation(clusterId);
+        }
     }
 
     private boolean usesDirectDispatchTo(Node node) {
-        if ( ! directDispatchTarget.isPresent()) return false;
-        return directDispatchTarget.get().equals(node);
+        return directDispatchTarget.isPresent() && directDispatchTarget.get().equals(node);
     }
 
     private boolean usesDirectDispatchTo(Group group) {
-        if ( ! directDispatchTarget.isPresent()) return false;
-        return directDispatchTarget.get().group() == group.id();
+        return directDispatchTarget.isPresent() && directDispatchTarget.get().group() == group.id();
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -269,26 +265,18 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    /**
-     * Update statistics after a round of issuing pings.
-     * Note that this doesn't wait for pings to return, so it will typically accumulate data from
-     * last rounds pinging, or potentially (although unlikely) some combination of new and old data.
-     */
-    @Override
-    public void pingIterationCompleted() {
+    private void pingIterationCompletedSingleGroup() {
+        Group group = groups.values().iterator().next();
+        group.aggregateActiveDocuments();
+        // With just one group sufficient coverage may not be the same as full coverage, as the
+        // group will always be marked sufficient for use.
+        updateSufficientCoverage(group, true);
+        boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
+                group.getActiveDocuments());
+        trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
+    }
+    private void pingIterationCompletedMultipleGroups() {
         int numGroups = orderedGroups.size();
-        if (numGroups == 1) {
-            Group group = groups.values().iterator().next();
-            group.aggregateActiveDocuments();
-            // With just one group sufficient coverage may not be the same as full coverage, as the
-            // group will always be marked sufficient for use.
-            updateSufficientCoverage(group, true);
-            boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
-                    group.getActiveDocuments());
-            trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
-            return;
-        }
-
         // Update active documents per group and use it to decide if the group should be active
 
         long[] activeDocumentsInGroup = new long[numGroups];
@@ -300,14 +288,39 @@ public class SearchCluster implements NodeManager<Node> {
             sumOfActiveDocuments += activeDocumentsInGroup[i];
         }
 
+        boolean anyGroupsSufficientCoverage = false;
         for (int i = 0; i < numGroups; i++) {
             Group group = orderedGroups.get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments,
-                    averageDocumentsInOtherGroups);
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
+            anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
+        }
+    }
+    private boolean areAllNodesDownInAllgroups() {
+        for(int i = 0; i < groups.size(); i++) {
+            Group group = orderedGroups.get(i);
+            if (group.workingNodes() > 0) return false;
+        }
+        return true;
+    }
+    /**
+     * Update statistics after a round of issuing pings.
+     * Note that this doesn't wait for pings to return, so it will typically accumulate data from
+     * last rounds pinging, or potentially (although unlikely) some combination of new and old data.
+     */
+    @Override
+    public void pingIterationCompleted() {
+        int numGroups = orderedGroups.size();
+        if (numGroups == 1) {
+            pingIterationCompletedSingleGroup();
+        } else {
+            pingIterationCompletedMultipleGroups();
+        }
+        if ( areAllNodesDownInAllgroups() ) {
+            vipStatus.removeFromRotation(clusterId);
         }
     }
 
@@ -381,7 +394,7 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
-        if(changed) {
+        if (changed) {
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
                 log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index,
