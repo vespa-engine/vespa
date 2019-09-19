@@ -19,8 +19,8 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -626,7 +626,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        Versions versions = controller.jobController().run(id).get().versions();
+        ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
@@ -635,12 +635,11 @@ public class InternalStepRunner implements StepRunner {
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         versions.targetPlatform().getMajor() == 6,
                                          testerFlavorFor(id, spec)
                                                  .map(NodeResources::fromLegacyName)
                                                  .orElse(zone.region().value().contains("aws-") ?
                                                          DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
-        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), versions.targetApplication());
+        byte[] testPackage = controller.applications().applicationStore().get(id.tester(), version);
         byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
@@ -688,22 +687,15 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the generated services.xml content for the tester application. */
     static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
-                              boolean isVespa6, NodeResources resources) {
+                              NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String nodes = isVespa6 ?
-                String.format(Locale.ENGLISH,
-                        "        <nodes count=\"1\" flavor=\"d-%.0f-%.0f-%.0f\" allocated-memory=\"%d%%\" />\n",
-                        Math.ceil(resources.vcpu()), Math.ceil(resources.memoryGb()), Math.ceil(resources.diskGb()), jdiscMemoryPct):
-                String.format(Locale.ENGLISH,
-                        "        <nodes count=\"1\" allocated-memory=\"%d%%\">\n" +
-                        "            <resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>\n" +
-                        "        </nodes>\n",
-                        jdiscMemoryPct, resources.vcpu(), resources.memoryGb(), resources.diskGb());
+        String resourceString = String.format(Locale.ENGLISH,
+                "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>", resources.vcpu(), resources.memoryGb(), resources.diskGb());
 
         AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
@@ -767,7 +759,9 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                nodes +
+                "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
+                "            " + resourceString + "\n" +
+                "        </nodes>\n" +
                 "    </container>\n" +
                 "</services>\n";
 
