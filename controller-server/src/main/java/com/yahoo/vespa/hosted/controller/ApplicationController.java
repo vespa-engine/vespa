@@ -159,6 +159,8 @@ public class ApplicationController {
             log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
+
+        // TODO jonmv: Do the above for applications as well when they split writes.
     }
 
     /** Returns the application with the given id, or null if it is not present */
@@ -190,13 +192,18 @@ public class ApplicationController {
     }
 
     /** Returns a snapshot of all applications */
+    public List<Application> applicationList() {
+        return curator.readApplications();
+    }
+
+    /** Returns a snapshot of all applications */
     public List<Instance> asList() {
-        return sort(curator.readInstances());
+        return curator.readInstances();
     }
 
     /** Returns all applications of a tenant */
     public List<Instance> asList(TenantName tenant) {
-        return sort(curator.readInstances(tenant));
+        return curator.readInstances(tenant);
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
@@ -877,11 +884,6 @@ public class ApplicationController {
 
     public RoutingPolicies routingPolicies() {
         return routingPolicies;
-    }
-
-    /** Sort given list of applications by application ID */
-    private static List<Instance> sort(List<Instance> instances) {
-        return instances.stream().sorted(Comparator.comparing(Instance::id)).collect(Collectors.toList());
     }
 
     /**

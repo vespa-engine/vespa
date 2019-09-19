@@ -364,6 +364,7 @@ public class CuratorDb {
 
     private List<Application> readApplications(Predicate<ApplicationId> applicationFilter) {
         return readApplicationIds().filter(applicationFilter)
+                                   .sorted()
                                    .map(this::readApplication)
                                    .flatMap(Optional::stream)
                                    .collect(Collectors.toUnmodifiableList());
@@ -402,6 +403,7 @@ public class CuratorDb {
 
     private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
         return readInstanceIds().filter(instanceFilter)
+                                .sorted()
                                 .map(this::readInstance)
                                 .flatMap(Optional::stream)
                                 .collect(Collectors.toUnmodifiableList());
