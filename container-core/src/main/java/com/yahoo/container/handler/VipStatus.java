@@ -117,9 +117,7 @@ public class VipStatus {
 
     /** Returns whether this container should receive traffic at this time */
     public boolean isInRotation() {
-        synchronized (mutex) {
-            return currentlyInRotation;
-        }
+        return currentlyInRotation;
     }
 
 }

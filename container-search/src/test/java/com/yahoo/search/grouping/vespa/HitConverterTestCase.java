@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
+import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
@@ -58,6 +59,19 @@ public class HitConverterTestCase {
         assertEquals(createGlobalId(2), ((FastHit)hit).getGlobalId());
         assertSame(ctxQuery, hit.getQuery());
         assertEquals(ctxHit.getSource(), hit.getSource());
+    }
+
+    @Test
+    public void requireThatHitTagIsCopiedFromGroupingListContext() {
+        QueryPacketData ctxTag = new QueryPacketData();
+        GroupingListHit ctxHit = context();
+        ctxHit.setQueryPacketData(ctxTag);
+
+        HitConverter converter = new HitConverter(new MySearcher(), new Query());
+        Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(ctxHit));
+        assertNotNull(hit);
+        assertTrue(hit instanceof FastHit);
+        assertSame(ctxTag, ((FastHit)hit).getQueryPacketData());
     }
 
     @Test
