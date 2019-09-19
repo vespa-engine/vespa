@@ -162,12 +162,26 @@ public class ApplicationController {
     }
 
     /** Returns the application with the given id, or null if it is not present */
+    public Optional<Application> getApplication(ApplicationId id) {
+        return curator.readApplication(id);
+    }
+
+    /** Returns the application with the given id, or null if it is not present */
     public Optional<Instance> get(ApplicationId id) {
         return curator.readInstance(id);
     }
 
     /**
      * Returns the application with the given id
+     *
+     * @throws IllegalArgumentException if it does not exist
+     */
+    public Application requireApplication(ApplicationId id) {
+        return getApplication(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
+    }
+
+    /**
+     * Returns the instance with the given id
      *
      * @throws IllegalArgumentException if it does not exist
      */
