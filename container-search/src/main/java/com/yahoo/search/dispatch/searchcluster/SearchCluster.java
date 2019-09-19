@@ -205,30 +205,52 @@ public class SearchCluster implements NodeManager<Node> {
         return localCorpusDispatchTarget;
     }
 
-    /** Used by the cluster monitor to manage node status */
+    /** Called by the cluster monitor whenever we get information (positive or negative) about a node */
+    @Override
+    public void statusIsKnown(Node node) {
+        node.setStatusIsKnown();
+    }
+
+    /** Called by the cluster monitor when node state changes to working */
     @Override
     public void working(Node node) {
         node.setWorking(true);
-
-        if (usesLocalCorpusIn(node))
-            vipStatus.addToRotation(clusterId);
+        updateVipStatusOnNodeChange(node, true);
     }
 
-    /** Used by the cluster monitor to manage node status */
+    /** Called by the cluster monitor when node state changes to failed */
     @Override
     public void failed(Node node) {
         node.setWorking(false);
-
-        if (usesLocalCorpusIn(node))
-            vipStatus.removeFromRotation(clusterId);
+        updateVipStatusOnNodeChange(node, true);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
+        if (sufficientCoverage == group.hasSufficientCoverage()) return; // no change
+
         group.setHasSufficientCoverage(sufficientCoverage);
+        updateVipStatusOnCoverageChange(group, sufficientCoverage);
+    }
 
+    private void updateVipStatusOnNodeChange(Node node, boolean working) {
+        if (usesLocalCorpusIn(node)) { // follow the status of the local corpus
+            if (working)
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
+        }
+        else {
+            if ( ! hasInformationAboutAllNodes()) return;
+
+            if (hasWorkingNodesWithDocumentsOnline())
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
+        }
+    }
+
+    private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
         boolean isInRotation = vipStatus.isInRotation();
-        boolean hasChanged = sufficientCoverage != group.hasSufficientCoverage();
-
         if (usesLocalCorpusIn(group)) { // follow the status of the local corpus
             if (sufficientCoverage)
                 vipStatus.addToRotation(clusterId);
@@ -239,6 +261,14 @@ public class SearchCluster implements NodeManager<Node> {
             if ( ! isInRotation && sufficientCoverage)
                 vipStatus.addToRotation(clusterId);
         }
+    }
+
+    private boolean hasInformationAboutAllNodes() {
+        return nodesByHost.values().stream().allMatch(Node::getStatusIsKnown);
+    }
+
+    private boolean hasWorkingNodesWithDocumentsOnline() {
+        return nodesByHost.values().stream().anyMatch(node -> node.isWorking() && node.getActiveDocuments() > 0);
     }
 
     private boolean usesLocalCorpusIn(Node node) {
@@ -252,8 +282,8 @@ public class SearchCluster implements NodeManager<Node> {
     /** Used by the cluster monitor to manage node status */
     @Override
     public void ping(Node node, Executor executor) {
-        if (pingFactory == null) // not initialized yet
-            return;
+        if (pingFactory == null) return; // not initialized yet
+
         FutureTask<Pong> futurePong = new FutureTask<>(pingFactory.createPinger(node, clusterMonitor));
         executor.execute(futurePong);
         Pong pong = getPong(futurePong, node);
@@ -276,9 +306,10 @@ public class SearchCluster implements NodeManager<Node> {
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
         boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
-                group.getActiveDocuments());
+                                                         group.getActiveDocuments());
         trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
     }
+
     private void pingIterationCompletedMultipleGroups() {
         int numGroups = orderedGroups.size();
         // Update active documents per group and use it to decide if the group should be active
@@ -303,13 +334,7 @@ public class SearchCluster implements NodeManager<Node> {
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
         }
     }
-    private boolean areAllNodesDownInAllgroups() {
-        for(int i = 0; i < groups.size(); i++) {
-            Group group = orderedGroups.get(i);
-            if (group.workingNodes() > 0) return false;
-        }
-        return true;
-    }
+
     /**
      * Update statistics after a round of issuing pings.
      * Note that this doesn't wait for pings to return, so it will typically accumulate data from
@@ -322,9 +347,6 @@ public class SearchCluster implements NodeManager<Node> {
             pingIterationCompletedSingleGroup();
         } else {
             pingIterationCompletedMultipleGroups();
-        }
-        if ( areAllNodesDownInAllgroups() ) {
-            vipStatus.removeFromRotation(clusterId);
         }
     }
 
@@ -401,11 +423,11 @@ public class SearchCluster implements NodeManager<Node> {
         if (changed) {
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)", index,
-                        group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
+                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)",
+                                             index, group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
             } else {
-                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d)", index, group.workingNodes(), groupSize(),
-                        requiredNodes));
+                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d)",
+                                                index, group.workingNodes(), groupSize(), requiredNodes));
             }
         }
     }
