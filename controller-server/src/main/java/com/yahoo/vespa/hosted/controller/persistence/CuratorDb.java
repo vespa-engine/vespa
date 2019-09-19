@@ -339,7 +339,7 @@ public class CuratorDb {
     // -------------- Instances ---------------------------------------------
 
     public void writeInstance(Instance instance) {
-        curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
+        curator.set(oldApplicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
         curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
 
@@ -368,9 +368,29 @@ public class CuratorDb {
 
     public void removeInstance(ApplicationId id) {
         // WARNING: This is part of a multi-step data move operation, so don't touch!!!
-        curator.delete(applicationPath(id));
+        curator.delete(oldApplicationPath(id));
         curator.delete(instancePath(id));
     }
+
+    /**
+     * Migration plan:
+     *
+     * Add filter for reading only Instance from old application path           MERGED
+     * Write instance to Instance and old application path                      MERGED
+     *
+     * Write Instance to instance and application and old application paths     DONE
+     * Read Instance from instance path                                         DONE
+     * Duplicate Application from Instance, with helper classes                 DONE
+     * Write Application to instance and application and old application paths  DONE
+     * Read Application from instance path                                      DONE
+     * Use Application where applicable
+     *
+     * Stop writing Instance to old application path
+     * Read Application from application path
+     *
+     * Stop writing instance part to application path, and vice versa
+     * Remove unused parts of Instance and Application
+     */
 
     // -------------- Job Runs ------------------------------------------------
 
@@ -591,7 +611,7 @@ public class CuratorDb {
         return tenantRoot.append(name.value());
     }
 
-    private static Path applicationPath(ApplicationId application) {
+    private static Path oldApplicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
     }
 
