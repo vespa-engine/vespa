@@ -635,7 +635,6 @@ public class InternalStepRunner implements StepRunner {
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         versions.targetPlatform().getMajor() == 6,
                                          testerFlavorFor(id, spec)
                                                  .map(NodeResources::fromLegacyName)
                                                  .orElse(zone.region().value().contains("aws-") ?
@@ -687,19 +686,14 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate,
-                              boolean isVespa6, NodeResources resources) {
+    static byte[] servicesXml(AthenzDomain domain, boolean useAthenzCredentials, boolean useTesterCertificate, NodeResources resources) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
         // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
-        String nodes = isVespa6 ?
-                String.format(Locale.ENGLISH,
-                        "        <nodes count=\"1\" flavor=\"d-%.0f-%.0f-%.0f\" allocated-memory=\"%d%%\" />\n",
-                        Math.ceil(resources.vcpu()), Math.ceil(resources.memoryGb()), Math.ceil(resources.diskGb()), jdiscMemoryPct):
-                String.format(Locale.ENGLISH,
+        String nodes = String.format(Locale.ENGLISH,
                         "        <nodes count=\"1\" allocated-memory=\"%d%%\">\n" +
                         "            <resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>\n" +
                         "        </nodes>\n",
