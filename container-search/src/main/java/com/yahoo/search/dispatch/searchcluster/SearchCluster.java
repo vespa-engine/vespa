@@ -302,7 +302,7 @@ public class SearchCluster implements NodeManager<Node> {
     private boolean areAllNodesDownInAllgroups() {
         for(int i = 0; i < groups.size(); i++) {
             Group group = orderedGroups.get(i);
-            if (group.workingNodes() == 0) return false;
+            if (group.workingNodes() > 0) return false;
         }
         return true;
     }
