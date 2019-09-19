@@ -584,18 +584,29 @@ SplitInconsistentStateChecker::check(StateChecker::Context& c)
 }
 
 namespace {
+
 bool containsMaintenanceNode(const std::vector<uint16_t>& ideal,
                              const StateChecker::Context& c)
 {
-    for (uint32_t i = 0; i < ideal.size(); i++) {
-        if (c.systemState.getNodeState(lib::Node(lib::NodeType::STORAGE,
-                                                    ideal[i])).getState()
-                == lib::State::MAINTENANCE)
-        {
+    for (uint16_t n : ideal) {
+        lib::Node node(lib::NodeType::STORAGE, n);
+        if (c.systemState.getNodeState(node).getState() == lib::State::MAINTENANCE) {
             return true;
         }
     }
+    return false;
+}
 
+bool ideal_node_is_unavailable_in_pending_state(const StateChecker::Context& c) {
+    if (!c.pending_cluster_state) {
+        return false;
+    }
+    for (uint16_t n : c.idealState) {
+        lib::Node node(lib::NodeType::STORAGE, n);
+        if (!c.pending_cluster_state->getNodeState(node).getState().oneOf("uir")){
+            return true;
+        }
+    }
     return false;
 }
 
@@ -715,7 +726,7 @@ private:
     uint8_t _priority;
 };
 
-MergeNodes::~MergeNodes() {}
+MergeNodes::~MergeNodes() = default;
 
 bool
 presentInIdealState(const StateChecker::Context& c, uint16_t node)
@@ -828,6 +839,9 @@ SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
         return Result::noMaintenanceNeeded();
     }
     if (containsMaintenanceNode(c.idealState, c)) {
+        return Result::noMaintenanceNeeded();
+    }
+    if (ideal_node_is_unavailable_in_pending_state(c)) {
         return Result::noMaintenanceNeeded();
     }
     if (allCopiesAreInvalid(c)) {

@@ -66,6 +66,7 @@ StateChecker::Context::Context(const DistributorComponent& c,
     : bucket(bucket_),
       siblingBucket(c.getSibling(bucket.getBucketId())),
       systemState(distributorBucketSpace.getClusterState()),
+      pending_cluster_state(c.getDistributor().pendingClusterStateOrNull(bucket_.getBucketSpace())),
       distributorConfig(c.getDistributor().getConfig()),
       distribution(distributorBucketSpace.getDistribution()),
       gcTimeCalculator(c.getDistributor().getBucketIdHasher(),
@@ -75,12 +76,11 @@ StateChecker::Context::Context(const DistributorComponent& c,
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker)
 {
-    idealState =
-        distribution.getIdealStorageNodes(systemState, bucket.getBucketId());
+    idealState = distribution.getIdealStorageNodes(systemState, bucket.getBucketId());
     unorderedIdealState.insert(idealState.begin(), idealState.end());
 }
 
-StateChecker::Context::~Context() {}
+StateChecker::Context::~Context() = default;
 
 std::string
 StateChecker::Context::toString() const
@@ -99,12 +99,7 @@ StateChecker::Context::toString() const
     return ss.str();
 }
 
-StateChecker::StateChecker()
-{
-}
-
-StateChecker::~StateChecker()
-{
-}
+StateChecker::StateChecker()  = default;
+StateChecker::~StateChecker() = default;
 
 }
