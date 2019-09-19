@@ -27,7 +27,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.logging.Logger;
@@ -110,15 +109,6 @@ public class DockerOperationsImpl implements DockerOperations {
         }
 
         addMounts(context, command);
-
-        // TODO: Enforce disk constraints
-        long minMainMemoryAvailableMb = (long) (context.node().memoryGb() * 1024);
-        if (minMainMemoryAvailableMb > 0) {
-            // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
-            // only has this much physical memory (overrides total memory reported by `free -m`).
-            // TODO: Remove after all tenants are running > 7.67
-            command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-        }
 
         logger.info("Creating new container with args: " + command);
         command.create();
@@ -286,8 +276,6 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/container-data"),
                 context.pathInNodeUnderVespaHome("var/db/vespa"),
                 context.pathInNodeUnderVespaHome("var/jdisc_container"),
-                context.pathInNodeUnderVespaHome("var/mediasearch"), // TODO: Remove when Vespa 6 is gone
-                context.pathInNodeUnderVespaHome("var/run"), // TODO: Remove - contains .pid files
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
                 context.pathInNodeUnderVespaHome("var/zookeeper") // Tenant content nodes, config server and controller

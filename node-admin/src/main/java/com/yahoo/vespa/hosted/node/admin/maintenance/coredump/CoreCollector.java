@@ -86,9 +86,7 @@ public class CoreCollector {
     }
 
     List<String> readJstack(NodeAgentContext context, Path coredumpPath, Path binPath) {
-        String[] command = isRunningVespa6(context) ?
-                new String[] {"jstack", binPath.toString(), coredumpPath.toString()} :
-                new String[] {"jhsdb", "jstack", "--exe", binPath.toString(), "--core", coredumpPath.toString()};
+        String[] command = {"jhsdb", "jstack", "--exe", binPath.toString(), "--core", coredumpPath.toString()};
 
         ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
         if (result.getExitStatus() != 0)
@@ -119,9 +117,5 @@ public class CoreCollector {
             context.log(logger, Level.WARNING, "Failed to extract backtrace", e);
         }
         return data;
-    }
-
-    private static boolean isRunningVespa6(NodeAgentContext context) {
-        return context.node().wantedVespaVersion().map(v -> v.getMajor() == 6).orElse(false);
     }
 }

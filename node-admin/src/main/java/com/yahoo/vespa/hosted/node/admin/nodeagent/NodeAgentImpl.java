@@ -293,6 +293,7 @@ public class NodeAgentImpl implements NodeAgent {
         // Even though memory can be easily changed with docker update, we need to restart the container
         // for proton to pick up the change. If/when proton could detect available memory correctly (rather than reading
         // VESPA_TOTAL_MEMORY_MB env. variable set in DockerOperation), it would be enough with a services restart
+        // TODO: Change to Vespa restart once all tenant applications are > 7.111
         ContainerResources wantedContainerResources = getContainerResources(context);
         if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
             return Optional.of("Container should be running with different memory allocation, wanted: " +
