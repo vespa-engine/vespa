@@ -100,6 +100,8 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
+    ClusterMonitor<Node> clusterMonitor() { return clusterMonitor; }
+
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
                                                                 int searchClusterSize,
                                                                 int containerClusterSize,

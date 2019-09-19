@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class ClusterMonitor<T> {
 
-    private MonitorConfiguration configuration = new MonitorConfiguration();
+    private final MonitorConfiguration configuration = new MonitorConfiguration();
 
     private static Logger log = Logger.getLogger(ClusterMonitor.class.getName());
 

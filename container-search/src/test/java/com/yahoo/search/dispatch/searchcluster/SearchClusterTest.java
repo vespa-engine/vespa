@@ -8,12 +8,17 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.MockSearchCluster;
 import com.yahoo.search.result.ErrorMessage;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertFalse;
@@ -25,6 +30,19 @@ import static org.junit.Assert.assertTrue;
 public class SearchClusterTest {
 
     static class State {
+        class MyExecutor implements Executor {
+            private final List<Runnable> list = new ArrayList<>();
+            @Override
+            public void execute(@NotNull Runnable command) {
+                list.add(command);
+            }
+            void run() {
+                for (Runnable runnable : list) {
+                    runnable.run();
+                }
+                list.clear();
+            }
+        }
         final String clusterId;
         final int nodesPerGroup;
         final VipStatus vipStatus;
@@ -54,7 +72,7 @@ public class SearchClusterTest {
         void startMonitoring() {
             searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
         }
-        private static int getMaxValue(List<AtomicInteger> list) {
+        static private int getMaxValue(List<AtomicInteger> list) {
             int max = list.get(0).get();
             for (AtomicInteger v : list) {
                 if (v.get() > max) {
@@ -72,10 +90,13 @@ public class SearchClusterTest {
             }
             return min;
         }
-        private static void waitAtLeast(int atLeast, List<AtomicInteger> list) {
+        private void waitAtLeast(int atLeast, List<AtomicInteger> list) {
             while (getMinValue(list) < atLeast) {
+                ExecutorService executor = Executors.newCachedThreadPool();
+                searchCluster.clusterMonitor().ping(executor);
+                executor.shutdown();
                 try {
-                    Thread.sleep(100);
+                    executor.awaitTermination(60, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {}
             }
         }
