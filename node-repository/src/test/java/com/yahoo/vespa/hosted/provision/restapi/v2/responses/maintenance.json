@@ -31,9 +31,6 @@
       "name": "OperatorChangeApplicationMaintainer"
     },
     {
-      "name": "OsUpgradeActivator"
-    },
-    {
       "name": "PeriodicApplicationMaintainer"
     },
     {

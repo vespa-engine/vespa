@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.common.collect.ImmutableList;
@@ -65,13 +65,6 @@ public class NodeList implements Iterable<Node> {
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
         return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
-    }
-
-    /** Returns the subset of nodes that are currently changing their Vespa version */
-    public NodeList changingVersion() {
-        return filter(node -> node.status().vespaVersion().isPresent() &&
-                              node.allocation().isPresent() &&
-                              !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
     }
 
     /** Returns the subset of nodes assigned to the given cluster */
