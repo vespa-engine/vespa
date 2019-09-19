@@ -89,7 +89,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
-    public Optional<Node> localCorpusDispatchTarget() {
+    public Optional<Node> directDispatchTarget() {
         return Optional.empty();
     }
 
