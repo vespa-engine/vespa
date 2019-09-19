@@ -77,6 +77,11 @@ public class Group {
         return this.activeDocuments.get();
     }
 
+    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
+        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
+        return previousState != hasFullCoverageNow;
+    }
+
     @Override
     public String toString() { return "search group " + id; }
 
@@ -90,8 +95,4 @@ public class Group {
         return ((Group) other).id == this.id;
     }
 
-    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
-        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
-        return previousState != hasFullCoverageNow;
-    }
 }

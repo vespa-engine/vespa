@@ -26,25 +26,25 @@ public abstract class BaseNodeMonitor<T> {
     /** The object representing the monitored node */
     protected T node;
 
-    protected boolean isWorking=true;
+    protected boolean isWorking = true;
 
     /** Whether this node is quarantined for unstability */
-    protected boolean isQuarantined=false;
+    protected boolean isQuarantined = false;
 
     /** The last time this node failed, in ms */
-    protected long failedAt=0;
+    protected long failedAt = 0;
 
     /** The last time this node responded (failed or succeeded), in ms */
-    protected long respondedAt=0;
+    protected long respondedAt = 0;
 
     /** The last time this node responded successfully */
-    protected long succeededAt=0;
+    protected long succeededAt = 0;
 
     /** The configuration of this monitor */
     protected MonitorConfiguration configuration;
 
     /** Is the node we monitor part of an internal Vespa cluster or not */
-    private boolean internal=false;
+    private boolean internal;
 
     public BaseNodeMonitor(boolean internal) {
         this.internal=internal;
