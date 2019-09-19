@@ -232,31 +232,33 @@ public class SearchCluster implements NodeManager<Node> {
         updateVipStatusOnCoverageChange(group, sufficientCoverage);
     }
 
-    private void updateVipStatusOnNodeChange(Node node, boolean nodeIsWorking) {
-        if (localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
-            if (hasInformationAboutAllNodes())
-                setInRotationOnlyIf(hasWorkingNodes());
+    private void updateVipStatusOnNodeChange(Node node, boolean working) {
+        if (usesLocalCorpusIn(node)) { // follow the status of the local corpus
+            if (working)
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
         }
-        else if (usesLocalCorpusIn(node)) { // follow the status of this node
-            setInRotationOnlyIf(nodeIsWorking);
+        else if (localCorpusDispatchTarget.isEmpty() && hasInformationAboutAllNodes()) {
+            if (hasWorkingNodes())
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
         }
     }
 
     private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
-        if ( localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
-            if (vipStatus.isInRotation() && sufficientCoverage)
+        boolean isInRotation = vipStatus.isInRotation();
+        if (usesLocalCorpusIn(group)) { // follow the status of the local corpus
+            if (sufficientCoverage)
+                vipStatus.addToRotation(clusterId);
+            else
+                vipStatus.removeFromRotation(clusterId);
+        }
+        else if ( localCorpusDispatchTarget.isEmpty()) {
+            if (isInRotation && sufficientCoverage)
                 vipStatus.addToRotation(clusterId);
         }
-        else if (usesLocalCorpusIn(group)) { // follow the status of this group
-            setInRotationOnlyIf(sufficientCoverage);
-        }
-    }
-
-    private void setInRotationOnlyIf(boolean inRotation) {
-        if (inRotation)
-            vipStatus.addToRotation(clusterId);
-        else
-            vipStatus.removeFromRotation(clusterId);
     }
 
     private boolean hasInformationAboutAllNodes() {
