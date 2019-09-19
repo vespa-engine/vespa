@@ -20,7 +20,6 @@ import net.jcip.annotations.Immutable;
  */
 @Immutable
 public class LocalProviderSpec {
-    @SuppressWarnings("unchecked")
     public static final Collection<ChainedComponentModel> searcherModels =
                     toSearcherModels(
                             com.yahoo.prelude.querytransform.CJKSearcher.class,
@@ -63,7 +62,7 @@ public class LocalProviderSpec {
     }
 
     @SafeVarargs
-    private static final Collection<ChainedComponentModel> toSearcherModels(Class<? extends Searcher>... searchers) {
+    private static Collection<ChainedComponentModel> toSearcherModels(Class<? extends Searcher>... searchers) {
         List<ChainedComponentModel> searcherModels = new ArrayList<>();
 
         for (Class<? extends Searcher> c : searchers) {

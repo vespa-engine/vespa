@@ -8,18 +8,20 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
-import com.yahoo.search.searchchain.model.federation.FederationSearcherModel.TargetSpec;
-import org.apache.commons.collections.CollectionUtils;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Defines the searcher models used in the vespa and native search chains, except for federation.
  *
  * @author Tony Vaagenes
  */
-@SuppressWarnings({"rawtypes", "deprecation", "unchecked"})
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class VespaSearchers {
     public static final Collection<ChainedComponentModel> vespaSearcherModels =
             toSearcherModels(
@@ -58,7 +60,7 @@ public class VespaSearchers {
     private static FederationSearcherModel federationSearcherModel() {
         return new FederationSearcherModel(new ComponentSpecification("federation"),
                 Dependencies.emptyDependencies(),
-                Collections.<TargetSpec>emptyList(), true);
+                Collections.emptyList(), true);
     }
 
     private static boolean allAdded(Collection<ChainedComponentModel> searcherModels, Set<ComponentId> componentIds) {
