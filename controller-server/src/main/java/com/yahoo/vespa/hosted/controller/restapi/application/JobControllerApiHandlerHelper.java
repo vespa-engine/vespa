@@ -154,9 +154,9 @@ class JobControllerApiHandlerHelper {
 
     private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Instance instance, Change change, DeploymentSteps steps) {
         VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
-        VespaVersion.Confidence targetConfidence = instance.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
-                                                                                                              : instance.deploymentSpec().upgradePolicy() == conservative ? high
-                                                                                                                                                                          : broken;
+        VespaVersion.Confidence targetConfidence = Map.of(defaultPolicy, normal,
+                                                          conservative, high)
+                                                      .getOrDefault(instance.deploymentSpec().upgradePolicy(), broken);
         for (VespaVersion version : controller.versionStatus().versions())
             if (   ! version.versionNumber().isAfter(controller.systemVersion())
                 &&   version.confidence().equalOrHigherThan(targetConfidence))
@@ -180,7 +180,7 @@ class JobControllerApiHandlerHelper {
             lastPlatformObject.setString("pending",
                                          instance.change().isEmpty()
                                                  ? "Waiting for upgrade slot"
-                                                 : "Waiting for current deployment to complete");
+                                                 : "Waiting for " + instance.change() + " to complete");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Instance instance, Change change, DeploymentSteps steps, Controller controller) {

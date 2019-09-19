@@ -3,7 +3,7 @@
     "platform": {
       "platform": "6.1",
       "at": "(ignore)",
-      "pending": "Waiting for current deployment to complete"
+      "pending": "Waiting for application change to 1.0.45-d00d to complete"
     },
     "application": {
       "application": {
