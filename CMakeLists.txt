@@ -130,6 +130,7 @@ else()
 endif()
 add_subdirectory(vsm)
 add_subdirectory(zkfacade)
+add_subdirectory(zookeeper-command-line-client)
 
 # Add any extra projects
 add_extra_projects()
