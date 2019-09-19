@@ -18,6 +18,7 @@ vespa_add_library(searchlib_common OBJECT
     location.cpp
     locationiterators.cpp
     mapnames.cpp
+    matching_elements.cpp
     packets.cpp
     partialbitvector.cpp
     resultset.cpp
@@ -28,6 +29,7 @@ vespa_add_library(searchlib_common OBJECT
     sortdata.cpp
     sortresults.cpp
     sortspec.cpp
+    struct_field_mapper.cpp
     threaded_compactable_lid_space.cpp
     tunefileinfo.cpp
     DEPENDS

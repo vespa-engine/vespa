@@ -26,6 +26,8 @@ using namespace search::grouping;
 using search::DocumentMetaData;
 using search::LidUsageStats;
 using search::FeatureSet;
+using search::StructFieldMapper;
+using search::MatchingElements;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
@@ -366,6 +368,19 @@ Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                          IAttributeContext & attrCtx, SessionManager &sessionMgr)
 {
     return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
+}
+
+MatchingElements
+Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
+                               IAttributeContext &attr_ctx, SessionManager &session_manager,
+                               const StructFieldMapper &field_mapper)
+{
+    (void) req;
+    (void) search_ctx;
+    (void) attr_ctx;
+    (void) session_manager;
+    (void) field_mapper;
+    return MatchingElements();
 }
 
 }
