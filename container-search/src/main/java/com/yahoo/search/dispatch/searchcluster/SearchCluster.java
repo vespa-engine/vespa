@@ -239,7 +239,9 @@ public class SearchCluster implements NodeManager<Node> {
             else
                 vipStatus.removeFromRotation(clusterId);
         }
-        else if (localCorpusDispatchTarget.isEmpty() && hasInformationAboutAllNodes()) {
+        else {
+            if ( ! hasInformationAboutAllNodes()) return;
+
             if (hasWorkingNodes())
                 vipStatus.addToRotation(clusterId);
             else
@@ -255,8 +257,8 @@ public class SearchCluster implements NodeManager<Node> {
             else
                 vipStatus.removeFromRotation(clusterId);
         }
-        else if ( localCorpusDispatchTarget.isEmpty()) {
-            if (isInRotation && sufficientCoverage)
+        else {
+            if ( ! isInRotation && sufficientCoverage)
                 vipStatus.addToRotation(clusterId);
         }
     }
