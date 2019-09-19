@@ -26,7 +26,6 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <finalName>vespa-zookeeper-command-line-client</finalName>
            <archive>
              <manifest>
                <mainClass>org.apache.zookeeper.ZooKeeperMain</mainClass>
