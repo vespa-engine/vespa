@@ -14,9 +14,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Map;

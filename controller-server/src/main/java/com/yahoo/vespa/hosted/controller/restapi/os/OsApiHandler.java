@@ -18,9 +18,9 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.yolean.Exceptions;
 

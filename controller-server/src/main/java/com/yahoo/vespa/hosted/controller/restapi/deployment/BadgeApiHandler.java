@@ -10,7 +10,7 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.OutputStream;

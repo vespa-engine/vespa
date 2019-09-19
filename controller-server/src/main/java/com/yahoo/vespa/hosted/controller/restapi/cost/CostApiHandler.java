@@ -8,8 +8,8 @@ import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.StringResponse;
 
 import java.time.Clock;
 import java.util.Optional;

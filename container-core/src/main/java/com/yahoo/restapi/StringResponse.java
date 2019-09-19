@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.restapi;
+package com.yahoo.restapi;
 
 import com.yahoo.container.jdisc.HttpResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author bratseth
@@ -20,7 +21,7 @@ public class StringResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream stream) throws IOException {
-        stream.write(message.getBytes("utf-8"));
+        stream.write(message.getBytes(StandardCharsets.UTF_8));
     }
 
 }

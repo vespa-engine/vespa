@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 
 /**
  * @author mpolden
