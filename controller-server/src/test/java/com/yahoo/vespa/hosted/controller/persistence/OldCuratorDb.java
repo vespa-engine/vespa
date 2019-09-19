@@ -56,16 +56,14 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
 
 /**
- * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
- * to general curator operations.
+ * Copy the current to replace this class before doing a data migration.
+ * Use old serializers too, if needed.
  *
- * @author bratseth
- * @author mpolden
  * @author jonmv
  */
-public class CuratorDb {
+public class OldCuratorDb {
 
-    private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
+    private static final Logger log = Logger.getLogger(OldCuratorDb.class.getName());
     private static final Duration deployLockTimeout = Duration.ofMinutes(30);
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
     private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
@@ -103,11 +101,11 @@ public class CuratorDb {
     private final ConcurrentHashMap<Path, Lock> locks = new ConcurrentHashMap<>();
 
     @Inject
-    public CuratorDb(Curator curator) {
+    public OldCuratorDb(Curator curator) {
         this(curator, defaultTryLockTimeout);
     }
 
-    CuratorDb(Curator curator, Duration tryLockTimeout) {
+    OldCuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
     }
@@ -339,7 +337,8 @@ public class CuratorDb {
     }
 
     public Optional<Instance> readInstance(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
+        return readSlime(instancePath(application)).or(() -> readSlime(applicationPath(application)))
+                                                   .map(instanceSerializer::fromSlime);
     }
 
     public List<Instance> readInstances() {
@@ -351,10 +350,11 @@ public class CuratorDb {
     }
 
     private Stream<ApplicationId> readInstanceIds() {
-        return curator.getChildren(applicationRoot).stream()
-                      .filter(id -> id.split(":").length == 3)
-                      .distinct()
-                      .map(ApplicationId::fromSerializedForm);
+        return Stream.concat(curator.getChildren(applicationRoot).stream()
+                                    .filter(id -> id.split(":").length == 3),
+                             curator.getChildren(instanceRoot).stream())
+                     .distinct()
+                     .map(ApplicationId::fromSerializedForm);
     }
 
     private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
