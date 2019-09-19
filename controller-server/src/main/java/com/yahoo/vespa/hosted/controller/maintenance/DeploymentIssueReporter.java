@@ -4,15 +4,13 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -52,10 +50,10 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** Returns the applications to maintain issue status for. */
-    private List<Application> applications() {
-        return ApplicationList.from(controller().applications().asList())
-                              .withProjectId()
-                              .asList();
+    private List<Instance> applications() {
+        return InstanceList.from(controller().applications().asList())
+                           .withProjectId()
+                           .asList();
     }
 
     /**
@@ -63,18 +61,18 @@ public class DeploymentIssueReporter extends Maintainer {
      * and store the issue id for the filed issues. Also, clear the issueIds of applications
      * where deployment has not failed for this amount of time.
      */
-    private void maintainDeploymentIssues(List<Application> applications) {
-        Set<ApplicationId> failingApplications = ApplicationList.from(applications)
-                .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
-                .asList().stream()
-                .map(Application::id)
-                .collect(Collectors.toSet());
+    private void maintainDeploymentIssues(List<Instance> instances) {
+        Set<ApplicationId> failingApplications = InstanceList.from(instances)
+                                                             .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
+                                                             .asList().stream()
+                                                             .map(Instance::id)
+                                                             .collect(Collectors.toSet());
 
-        for (Application application : applications)
-            if (failingApplications.contains(application.id()))
-                fileDeploymentIssueFor(application.id());
+        for (Instance instance : instances)
+            if (failingApplications.contains(instance.id()))
+                fileDeploymentIssueFor(instance.id());
             else
-                store(application.id(), null);
+                store(instance.id(), null);
     }
 
     /**
@@ -82,7 +80,7 @@ public class DeploymentIssueReporter extends Maintainer {
      * applications that have been failing the upgrade to the system version for
      * longer than the set grace period, or update this list if the issue already exists.
      */
-    private void maintainPlatformIssue(List<Application> applications) {
+    private void maintainPlatformIssue(List<Instance> instances) {
         if (controller().system() == SystemName.cd)
             return;
         
@@ -91,14 +89,14 @@ public class DeploymentIssueReporter extends Maintainer {
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
             return;
 
-        if (ApplicationList.from(applications)
-                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
-                .isEmpty())
+        if (InstanceList.from(instances)
+                        .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
+                        .isEmpty())
             return;
 
-        List<ApplicationId> failingApplications = ApplicationList.from(applications)
-                .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
-                .idList();
+        List<ApplicationId> failingApplications = InstanceList.from(instances)
+                                                              .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
+                                                              .idList();
 
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
     }
@@ -129,8 +127,8 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** Escalate issues for which there has been no activity for a certain amount of time. */
-    private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
-        applications.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
+    private void escalateInactiveDeploymentIssues(Collection<Instance> instances) {
+        instances.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
             try {
                 Tenant tenant = ownerOf(application.id());
                 deploymentIssues.escalateIfInactive(issueId,

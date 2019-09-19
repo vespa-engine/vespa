@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class Application {
+public class Instance {
 
     private final ApplicationId id;
     private final Instant createdAt;
@@ -59,8 +59,8 @@ public class Application {
     private final List<AssignedRotation> rotations;
     private final RotationStatus rotationStatus;
 
-    /** Creates an empty application */
-    public Application(ApplicationId id, Instant now) {
+    /** Creates an empty instance*/
+    public Instance(ApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
@@ -69,22 +69,22 @@ public class Application {
     }
 
     /** Used from persistence layer: Do not use */
-    public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                       List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                       Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                       List<AssignedRotation> rotations, RotationStatus rotationStatus) {
+    public Instance(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+                    List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
+                    Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                    OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
+                    List<AssignedRotation> rotations, RotationStatus rotationStatus) {
         this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
              deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
              metrics, pemDeployKey, rotations, rotationStatus);
     }
 
-    Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                List<AssignedRotation> rotations, RotationStatus rotationStatus) {
+    Instance(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+             Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
+             Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+             OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
+             List<AssignedRotation> rotations, RotationStatus rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -223,9 +223,9 @@ public class Application {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (! (o instanceof Application)) return false;
+        if (! (o instanceof Instance)) return false;
 
-        Application that = (Application) o;
+        Instance that = (Instance) o;
 
         return id.equals(that.id);
     }

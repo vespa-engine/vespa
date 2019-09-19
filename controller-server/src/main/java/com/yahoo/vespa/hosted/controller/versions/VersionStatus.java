@@ -8,10 +8,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -189,50 +189,50 @@ public class VersionStatus {
     }
 
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> applications) {
+                                                                                List<Instance> instances) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        ApplicationList applicationList = ApplicationList.from(applications)
-                                                         .hasProductionDeployment();
-        for (Application application : applicationList.asList()) {
+        InstanceList instanceList = InstanceList.from(instances)
+                                                .hasProductionDeployment();
+        for (Instance instance : instanceList.asList()) {
             // Note that each version deployed on this application in production exists
             // (ignore non-production versions)
-            for (Deployment deployment : application.productionDeployments().values()) {
+            for (Deployment deployment : instance.productionDeployments().values()) {
                 versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
             }
 
             // List versions which have failing jobs, versions which are in production, and versions for which there are running deployment jobs
 
             // Failing versions
-            JobList.from(application)
+            JobList.from(instance)
                    .failing()
                    .not().failingApplicationChange()
                    .not().failingBecause(outOfCapacity)
                    .mapToList(job -> job.lastCompleted().get().platform())
                    .forEach(version -> versionMap
                            .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                   .withFailing(application.id())));
+                                                   .withFailing(instance.id())));
 
             // Succeeding versions
-            JobList.from(application)
+            JobList.from(instance)
                    .lastSuccess().present()
                    .production()
                    .mapToList(job -> job.lastSuccess().get().platform())
                    .forEach(version -> versionMap
                            .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                   .withProduction(application.id())));
+                                                   .withProduction(instance.id())));
 
             // Deploying versions
-            JobList.from(application)
+            JobList.from(instance)
                    .upgrading()
                    .mapToList(job -> job.lastTriggered().get().platform())
                    .forEach(version -> versionMap
                            .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                   .withDeploying(application.id())));
+                                                   .withDeploying(instance.id())));
         }
         return versionMap.values();
     }

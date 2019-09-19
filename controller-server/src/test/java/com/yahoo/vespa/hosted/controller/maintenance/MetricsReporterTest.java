@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -46,10 +46,10 @@ public class MetricsReporterTest {
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // Deploy all apps successfully
-        Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
-        Application app2 = tester.createApplication("app2", "tenant1", 2, 22L);
-        Application app3 = tester.createApplication("app3", "tenant1", 3, 33L);
-        Application app4 = tester.createApplication("app4", "tenant1", 4, 44L);
+        Instance app1 = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app2 = tester.createApplication("app2", "tenant1", 2, 22L);
+        Instance app3 = tester.createApplication("app3", "tenant1", 3, 33L);
+        Instance app4 = tester.createApplication("app4", "tenant1", 4, 44L);
         tester.deployCompletely(app1, applicationPackage);
         tester.deployCompletely(app2, applicationPackage);
         tester.deployCompletely(app3, applicationPackage);
@@ -76,7 +76,7 @@ public class MetricsReporterTest {
 
         MetricsReporter reporter = createReporter(tester.controller());
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.deployCompletely(app, applicationPackage);
         reporter.maintain();
         assertEquals(Duration.ZERO, getAverageDeploymentDuration(app)); // An exceptionally fast deployment :-)
@@ -117,7 +117,7 @@ public class MetricsReporterTest {
                 .build();
 
         MetricsReporter reporter = createReporter(tester.controller());
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
 
         // Initial deployment without failures
         tester.deployCompletely(app, applicationPackage);
@@ -168,12 +168,12 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")), 3);
-        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-east-3")), 4);
-        tester.deployCompletely(application, applicationPackage);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 11L);
+        tester.configServer().generateWarnings(new DeploymentId(instance.id(), ZoneId.from("prod", "us-west-1")), 3);
+        tester.configServer().generateWarnings(new DeploymentId(instance.id(), ZoneId.from("prod", "us-east-3")), 4);
+        tester.deployCompletely(instance, applicationPackage);
         reporter.maintain();
-        assertEquals(4, getDeploymentWarnings(application));
+        assertEquals(4, getDeploymentWarnings(instance));
     }
 
     @Test
@@ -198,11 +198,11 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 11L);
         reporter.maintain();
         assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
         reporter.maintain();
         assertEquals("Deployment queues name services requests", 6, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
@@ -211,31 +211,31 @@ public class MetricsReporterTest {
         assertEquals("Queue consumed", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
     }
 
-    private Duration getAverageDeploymentDuration(Application application) {
-        return Duration.ofSeconds(getMetric(MetricsReporter.DEPLOYMENT_AVERAGE_DURATION, application).longValue());
+    private Duration getAverageDeploymentDuration(Instance instance) {
+        return Duration.ofSeconds(getMetric(MetricsReporter.DEPLOYMENT_AVERAGE_DURATION, instance).longValue());
     }
 
-    private int getDeploymentsFailingUpgrade(Application application) {
-        return getMetric(MetricsReporter.DEPLOYMENT_FAILING_UPGRADES, application).intValue();
+    private int getDeploymentsFailingUpgrade(Instance instance) {
+        return getMetric(MetricsReporter.DEPLOYMENT_FAILING_UPGRADES, instance).intValue();
     }
 
-    private int getDeploymentWarnings(Application application) {
-        return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, application).intValue();
+    private int getDeploymentWarnings(Instance instance) {
+        return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, instance).intValue();
     }
 
-    private Number getMetric(String name, Application application) {
-        return metrics.getMetric((dimensions) -> application.id().tenant().value().equals(dimensions.get("tenant")) &&
-                                                 appDimension(application).equals(dimensions.get("app")),
+    private Number getMetric(String name, Instance instance) {
+        return metrics.getMetric((dimensions) -> instance.id().tenant().value().equals(dimensions.get("tenant")) &&
+                                                 appDimension(instance).equals(dimensions.get("app")),
                                  name)
-                      .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + application.id()));
+                      .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + instance.id()));
     }
 
     private MetricsReporter createReporter(Controller controller) {
         return new MetricsReporter(controller, metrics, new JobControl(new MockCuratorDb()));
     }
 
-    private static String appDimension(Application application) {
-        return application.id().application().value() + "." + application.id().instance().value();
+    private static String appDimension(Instance instance) {
+        return instance.id().application().value() + "." + instance.id().instance().value();
     }
 
 }

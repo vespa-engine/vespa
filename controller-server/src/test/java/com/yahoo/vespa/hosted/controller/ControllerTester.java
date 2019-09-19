@@ -33,7 +33,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
+import com.yahoo.vespa.hosted.controller.persistence.InstanceSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
@@ -126,8 +126,8 @@ public final class ControllerTester {
               .ifPresent(configureFunc);
     }
 
-    public static BuildService.BuildJob buildJob(Application application, JobType jobType) {
-        return BuildService.BuildJob.of(application.id(), application.deploymentJobs().projectId().getAsLong(), jobType.jobName());
+    public static BuildService.BuildJob buildJob(Instance instance, JobType jobType) {
+        return BuildService.BuildJob.of(instance.id(), instance.deploymentJobs().projectId().getAsLong(), jobType.jobName());
     }
 
     public Controller controller() { return controller; }
@@ -157,37 +157,37 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
+    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName,
-                                       String instanceName, ZoneId zone, long projectId, Long propertyId) {
+    public Instance createAndDeploy(String tenantName, String domainName, String applicationName,
+                                    String instanceName, ZoneId zone, long projectId, Long propertyId) {
         TenantName tenant = createTenant(tenantName, domainName, propertyId);
-        Application application = createApplication(tenant, applicationName, instanceName, projectId);
-        deploy(application, zone);
-        return application;
+        Instance instance = createApplication(tenant, applicationName, instanceName, projectId);
+        deploy(instance, zone);
+        return instance;
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
+    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
         return createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
+    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
         return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
     /** Create application from slime */
-    public Application createApplication(Slime slime) {
-        ApplicationSerializer serializer = new ApplicationSerializer();
-        Application application = serializer.fromSlime(slime);
-        try (Lock lock = controller().applications().lock(application.id())) {
-            controller().applications().store(new LockedApplication(application, lock));
+    public Instance createApplication(Slime slime) {
+        InstanceSerializer serializer = new InstanceSerializer();
+        Instance instance = serializer.fromSlime(slime);
+        try (Lock lock = controller().applications().lock(instance.id())) {
+            controller().applications().store(new LockedInstance(instance, lock));
         }
-        return application;
+        return instance;
     }
 
     public ZoneId toZone(Environment environment) {
@@ -241,44 +241,44 @@ public final class ControllerTester {
                                                                 new OktaAccessToken("okta-token")));
     }
 
-    public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
+    public Instance createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockOrThrow(applicationId, lockedApplication ->
-                controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
+        controller().applications().lockOrThrow(applicationId, lockedInstance ->
+                controller().applications().store(lockedInstance.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);
     }
 
-    public void deploy(Application application, ZoneId zone) {
-        deploy(application, zone, new ApplicationPackage(new byte[0]));
+    public void deploy(Instance instance, ZoneId zone) {
+        deploy(instance, zone, new ApplicationPackage(new byte[0]));
     }
 
-    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage) {
-        deploy(application, zone, applicationPackage, false);
+    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage) {
+        deploy(instance, zone, applicationPackage, false);
     }
 
-    public void deploy(Application application, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
-        deploy(application, zone, Optional.of(applicationPackage), deployCurrentVersion);
+    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+        deploy(instance, zone, Optional.of(applicationPackage), deployCurrentVersion);
     }
 
-    public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
-        deploy(application, zone, applicationPackage, deployCurrentVersion, Optional.empty());
+    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
+        deploy(instance, zone, applicationPackage, deployCurrentVersion, Optional.empty());
     }
 
-    public void deploy(Application application, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
-        controller().applications().deploy(application.id(),
+    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
+        controller().applications().deploy(instance.id(),
                                            zone,
                                            applicationPackage,
                                            new DeployOptions(false, version, false, deployCurrentVersion));
     }
 
-    public Supplier<Application> application(ApplicationId application) {
+    public Supplier<Instance> application(ApplicationId application) {
         return () -> controller().applications().require(application);
     }
 
     /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
-    public static LockedApplication writable(Application application) {
-        return new LockedApplication(application, new Lock("/test", new MockCurator()));
+    public static LockedInstance writable(Instance instance) {
+        return new LockedInstance(instance, new Lock("/test", new MockCurator()));
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,

@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -55,11 +55,11 @@ public class RotationRepository {
     }
 
     /** Get rotation for given application */
-    public Optional<Rotation> getRotation(Application application) {
-        return application.rotations().stream()
-                          .map(AssignedRotation::rotationId)
-                          .map(allRotations::get)
-                          .findFirst();
+    public Optional<Rotation> getRotation(Instance instance) {
+        return instance.rotations().stream()
+                       .map(AssignedRotation::rotationId)
+                       .map(allRotations::get)
+                       .findFirst();
     }
 
     /** Get rotation for the given rotationId */
@@ -73,23 +73,23 @@ public class RotationRepository {
      * If a rotation is already assigned to the application, that rotation will be returned.
      * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
      *
-     * @param application The application requesting a rotation
+     * @param instance The application requesting a rotation
      * @param lock Lock which must be acquired by the caller
      */
-    public Rotation getOrAssignRotation(Application application, RotationLock lock) {
-        if (! application.rotations().isEmpty()) {
-            return allRotations.get(application.rotations().get(0).rotationId());
+    public Rotation getOrAssignRotation(Instance instance, RotationLock lock) {
+        if (! instance.rotations().isEmpty()) {
+            return allRotations.get(instance.rotations().get(0).rotationId());
         }
-        if (application.deploymentSpec().globalServiceId().isEmpty()) {
+        if (instance.deploymentSpec().globalServiceId().isEmpty()) {
             throw new IllegalArgumentException("global-service-id is not set in deployment spec");
         }
-        long productionZones = application.deploymentSpec().zones().stream()
-                                          .filter(zone -> zone.deploysTo(Environment.prod))
-                                          .count();
+        long productionZones = instance.deploymentSpec().zones().stream()
+                                       .filter(zone -> zone.deploysTo(Environment.prod))
+                                       .count();
         if (productionZones < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined");
         }
-        return findAvailableRotation(application, lock);
+        return findAvailableRotation(instance, lock);
     }
 
     /**
@@ -99,27 +99,27 @@ public class RotationRepository {
      * If rotations are not assigned, a new assignment will be created taking new rotations from the repository.
      * This method supports both global-service-id as well as the new endpoints tag.
      *
-     * @param application The application requesting rotations.
+     * @param instance The application requesting rotations.
      * @param lock Lock which by acquired by the caller
      * @return List of rotation assignments - either new or existing.
      */
-    public List<AssignedRotation> getOrAssignRotations(Application application, RotationLock lock) {
-        if (application.deploymentSpec().globalServiceId().isPresent() && ! application.deploymentSpec().endpoints().isEmpty()) {
+    public List<AssignedRotation> getOrAssignRotations(Instance instance, RotationLock lock) {
+        if (instance.deploymentSpec().globalServiceId().isPresent() && ! instance.deploymentSpec().endpoints().isEmpty()) {
             throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
         }
 
         // Support the older case of setting global-service-id
-        if (application.deploymentSpec().globalServiceId().isPresent()) {
-            final var regions = application.deploymentSpec().zones().stream()
-                    .filter(zone -> zone.environment().isProduction())
-                    .flatMap(zone -> zone.region().stream())
-                    .collect(Collectors.toSet());
+        if (instance.deploymentSpec().globalServiceId().isPresent()) {
+            final var regions = instance.deploymentSpec().zones().stream()
+                                        .filter(zone -> zone.environment().isProduction())
+                                        .flatMap(zone -> zone.region().stream())
+                                        .collect(Collectors.toSet());
 
-            final var rotation = getOrAssignRotation(application, lock);
+            final var rotation = getOrAssignRotation(instance, lock);
 
             return List.of(
                     new AssignedRotation(
-                            new ClusterSpec.Id(application.deploymentSpec().globalServiceId().get()),
+                            new ClusterSpec.Id(instance.deploymentSpec().globalServiceId().get()),
                             EndpointId.default_(),
                             rotation.id(),
                             regions
@@ -127,20 +127,20 @@ public class RotationRepository {
             );
         }
 
-        final Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(application);
-        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(application, existingAssignments, lock);
+        final Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(instance);
+        final Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(instance, existingAssignments, lock);
 
         existingAssignments.putAll(updatedAssignments);
 
         return List.copyOf(existingAssignments.values());
     }
 
-    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Application application, Map<EndpointId, AssignedRotation> existingAssignments, RotationLock lock) {
+    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(Instance instance, Map<EndpointId, AssignedRotation> existingAssignments, RotationLock lock) {
         final var availableRotations = new ArrayList<>(availableRotations(lock).values());
 
-        final var neededRotations = application.deploymentSpec().endpoints().stream()
-                .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
-                .collect(Collectors.toSet());
+        final var neededRotations = instance.deploymentSpec().endpoints().stream()
+                                            .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
+                                            .collect(Collectors.toSet());
 
         if (neededRotations.size() > availableRotations.size()) {
             throw new IllegalStateException("Hosted Vespa ran out of rotations, unable to assign rotation: need " + neededRotations.size() + ", have " + availableRotations.size());
@@ -165,17 +165,17 @@ public class RotationRepository {
                 );
     }
 
-    private Map<EndpointId, AssignedRotation> existingEndpointAssignments(Application application) {
+    private Map<EndpointId, AssignedRotation> existingEndpointAssignments(Instance instance) {
         //
         // Get the regions that has been configured for an endpoint.  Empty set if the endpoint
         // is no longer mentioned in the configuration file.
         //
         final Function<EndpointId, Set<RegionName>> configuredRegionsForEndpoint = endpointId -> {
-            return application.deploymentSpec().endpoints().stream()
-                    .filter(endpoint -> endpointId.id().equals(endpoint.endpointId()))
-                    .map(Endpoint::regions)
-                    .findFirst()
-                    .orElse(Set.of());
+            return instance.deploymentSpec().endpoints().stream()
+                           .filter(endpoint -> endpointId.id().equals(endpoint.endpointId()))
+                           .map(Endpoint::regions)
+                           .findFirst()
+                           .orElse(Set.of());
         };
 
         //
@@ -191,8 +191,8 @@ public class RotationRepository {
             );
         };
 
-        return application.rotations().stream()
-                          .collect(
+        return instance.rotations().stream()
+                       .collect(
                                   Collectors.toMap(
                                           AssignedRotation::endpointId,
                                           assignedRotationWithConfiguredRegions,
@@ -219,15 +219,15 @@ public class RotationRepository {
         return Collections.unmodifiableMap(unassignedRotations);
     }
 
-    private Rotation findAvailableRotation(Application application, RotationLock lock) {
+    private Rotation findAvailableRotation(Instance instance, RotationLock lock) {
         Map<RotationId, Rotation> availableRotations = availableRotations(lock);
         if (availableRotations.isEmpty()) {
-            throw new IllegalStateException("Unable to assign global rotation to " + application.id()
+            throw new IllegalStateException("Unable to assign global rotation to " + instance.id()
                                             + " - no rotations available");
         }
         // Return first available rotation
         RotationId rotation = availableRotations.keySet().iterator().next();
-        log.info(String.format("Offering %s to application %s", rotation, application.id()));
+        log.info(String.format("Offering %s to application %s", rotation, instance.id()));
         return allRotations.get(rotation);
     }
 

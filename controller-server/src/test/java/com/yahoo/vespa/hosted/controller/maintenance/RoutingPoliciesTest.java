@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -38,8 +38,8 @@ public class RoutingPoliciesTest {
 
     private final DeploymentTester tester = new DeploymentTester();
 
-    private final Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
-    private final Application app2 = tester.createApplication("app2", "tenant1", 1, 1L);
+    private final Instance app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+    private final Instance app2 = tester.createApplication("app2", "tenant1", 1, 1L);
 
     private final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
@@ -238,8 +238,8 @@ public class RoutingPoliciesTest {
                      tester.controller().applications().clusterEndpoints(new DeploymentId(app1.id(), zone1)));
     }
 
-    private Set<RoutingPolicy> policies(Application application) {
-        return tester.controller().curator().readRoutingPolicies(application.id());
+    private Set<RoutingPolicy> policies(Instance instance) {
+        return tester.controller().curator().readRoutingPolicies(instance.id());
     }
 
     private Set<String> recordNames() {

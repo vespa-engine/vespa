@@ -7,7 +7,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -68,7 +68,7 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testTriggerFailing() {
-        Application app = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
@@ -109,8 +109,8 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testIndependentInstances() {
-        Application instance1 = tester.createApplication("instance1", "app", "tenant", 1, 1L);
-        Application instance2 = tester.createApplication("instance2", "app", "tenant", 2, 1L);
+        Instance instance1 = tester.createApplication("instance1", "app", "tenant", 1, 1L);
+        Instance instance2 = tester.createApplication("instance2", "app", "tenant", 2, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                                                         .upgradePolicy("default")
                                                         .environment(Environment.prod)
@@ -152,7 +152,7 @@ public class DeploymentTriggerTest {
         InternalDeploymentTester iTester = new InternalDeploymentTester();
         DeploymentTester tester = iTester.tester();
 
-        Application app = iTester.app();
+        Instance app = iTester.app();
         ApplicationPackage applicationPackage = InternalDeploymentTester.applicationPackage;
 
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
@@ -213,7 +213,7 @@ public class DeploymentTriggerTest {
     public void deploymentSpecDecidesTriggerOrder() {
         TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         MockBuildService mockBuildService = tester.buildService();
-        Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
+        Instance instance = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-east-3")
@@ -222,21 +222,21 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(instance).uploadArtifact(applicationPackage).submit();
 
         // Application is deployed to all test environments and declared zones
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsWest1);
         assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
     }
 
     @Test
     public void deploymentsSpecWithDelays() {
         MockBuildService mockBuildService = tester.buildService();
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -249,11 +249,11 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(instance).uploadArtifact(applicationPackage).submit();
 
         // Test jobs pass
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.stagingTest);
         tester.deploymentTrigger().triggerReadyJobs();
 
         // No jobs have started yet, as 30 seconds have not yet passed.
@@ -263,16 +263,16 @@ public class DeploymentTriggerTest {
 
         // 30 seconds later, the first jobs may trigger.
         assertEquals(1, mockBuildService.jobs().size());
-        tester.assertRunning(productionUsWest1, application.id());
+        tester.assertRunning(productionUsWest1, instance.id());
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
         tester.clock().advance(Duration.ofMinutes(3));
         tester.deploymentTrigger().triggerReadyJobs();
         assertEquals(1, mockBuildService.jobs().size());
-        tester.assertRunning(productionUsWest1, application.id());
+        tester.assertRunning(productionUsWest1, instance.id());
 
         // us-west-1 completes
-        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, productionUsWest1);
 
         // Delayed trigger does nothing as not enough time has passed after us-west-1 completion
         tester.deploymentTrigger().triggerReadyJobs();
@@ -286,7 +286,7 @@ public class DeploymentTriggerTest {
         // 4 minutes pass, us-central-1 is triggered
         tester.clock().advance(Duration.ofMinutes(1));
         tester.deploymentTrigger().triggerReadyJobs();
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsCentral1);
         assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
@@ -297,7 +297,7 @@ public class DeploymentTriggerTest {
 
     @Test
     public void deploymentSpecWithParallelDeployments() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -307,75 +307,75 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(instance).uploadArtifact(applicationPackage).submit();
 
         // Test jobs pass
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.stagingTest);
 
         // Deploys in first region
         assertEquals(1, tester.buildService().jobs().size());
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsCentral1);
 
         // Deploys in two regions in parallel
         assertEquals(2, tester.buildService().jobs().size());
-        tester.assertRunning(productionUsEast3, application.id());
-        tester.assertRunning(productionUsWest1, application.id());
+        tester.assertRunning(productionUsEast3, instance.id());
+        tester.assertRunning(productionUsWest1, instance.id());
 
-        tester.deploy(JobType.productionUsWest1, application, applicationPackage, false);
-        tester.jobCompletion(JobType.productionUsWest1).application(application).submit();
+        tester.deploy(JobType.productionUsWest1, instance, applicationPackage, false);
+        tester.jobCompletion(JobType.productionUsWest1).application(instance).submit();
         assertEquals("One job still running.", JobType.productionUsEast3.jobName(), tester.buildService().jobs().get(0).jobName());
 
-        tester.deploy(JobType.productionUsEast3, application, applicationPackage, false);
-        tester.jobCompletion(JobType.productionUsEast3).application(application).submit();
+        tester.deploy(JobType.productionUsEast3, instance, applicationPackage, false);
+        tester.jobCompletion(JobType.productionUsEast3).application(instance).submit();
 
         // Last region completes
         assertEquals(1, tester.buildService().jobs().size());
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionEuWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionEuWest1);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
     }
 
     @Test
     public void testNoOtherChangesDuringSuspension() {
         // Application is deployed in 3 regions:
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                                                         .environment(Environment.prod)
                                                         .region("us-central-1")
                                                         .parallel("us-west-1", "us-east-3")
                                                         .build();
         tester.jobCompletion(component)
-              .application(application)
+              .application(instance)
               .uploadArtifact(applicationPackage)
               .submit();
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsEast3);
 
         // The first production zone is suspended:
-        tester.configServer().setSuspended(new DeploymentId(application.id(), JobType.productionUsCentral1.zone(tester.controller().system())), true);
+        tester.configServer().setSuspended(new DeploymentId(instance.id(), JobType.productionUsCentral1.zone(tester.controller().system())), true);
 
         // A new change needs to be pushed out, but should not go beyond the suspended zone:
         tester.jobCompletion(component)
-              .application(application)
+              .application(instance)
               .nextBuildNumber()
               .sourceRevision(new SourceRevision("repository1", "master", "cafed00d"))
               .uploadArtifact(applicationPackage)
               .submit();
-        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsCentral1);
         tester.triggerUntilQuiescence();
-        tester.assertNotRunning(JobType.productionUsEast3, application.id());
-        tester.assertNotRunning(JobType.productionUsWest1, application.id());
+        tester.assertNotRunning(JobType.productionUsEast3, instance.id());
+        tester.assertNotRunning(JobType.productionUsWest1, instance.id());
 
         // The zone is unsuspended so jobs start:
-        tester.configServer().setSuspended(new DeploymentId(application.id(), JobType.productionUsCentral1.zone(tester.controller().system())), false);
+        tester.configServer().setSuspended(new DeploymentId(instance.id(), JobType.productionUsCentral1.zone(tester.controller().system())), false);
         tester.triggerUntilQuiescence();
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
-        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, JobType.productionUsEast3);
     }
 
     @Test
@@ -385,7 +385,7 @@ public class DeploymentTriggerTest {
                 .parallel("us-east-3", "us-west-1")
                 .build();
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
 
         // Test environments pass
@@ -409,7 +409,7 @@ public class DeploymentTriggerTest {
     public void testSuccessfulDeploymentApplicationPackageChanged() {
         TenantName tenant = tester.controllerTester().createTenant("tenant1", "domain1", 1L);
         MockBuildService mockBuildService = tester.buildService();
-        Application application = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
+        Instance instance = tester.controllerTester().createApplication(tenant, "app1", "default", 1L);
         ApplicationPackage previousApplicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-east-3")
@@ -425,16 +425,16 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Component job finishes
-        tester.jobCompletion(component).application(application).uploadArtifact(newApplicationPackage).submit();
+        tester.jobCompletion(component).application(instance).uploadArtifact(newApplicationPackage).submit();
 
         // Application is deployed to all test environments and declared zones
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.systemTest);
-        tester.deploy(JobType.stagingTest, application, previousApplicationPackage, true);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsEast3);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsCentral1);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionUsWest1);
-        tester.deployAndNotify(application, newApplicationPackage, true, JobType.productionEuWest1);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.systemTest);
+        tester.deploy(JobType.stagingTest, instance, previousApplicationPackage, true);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.productionUsEast3);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(instance, newApplicationPackage, true, JobType.productionEuWest1);
         assertTrue("All jobs consumed", mockBuildService.jobs().isEmpty());
     }
 
@@ -457,7 +457,7 @@ public class DeploymentTriggerTest {
                 .region("us-central-1")
                 .region("us-east-3");
 
-        Application app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
+        Instance app = tester.createAndDeploy("app1", 1, applicationPackageBuilder.build());
 
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
 
@@ -506,7 +506,7 @@ public class DeploymentTriggerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        Application application = tester.createAndDeploy("app1", 1, applicationPackage);
+        Instance instance = tester.createAndDeploy("app1", 1, applicationPackage);
 
         // Application on (6.1, 1.0.42)
         Version v1 = Version.fromString("6.1");
@@ -514,48 +514,48 @@ public class DeploymentTriggerTest {
         // Application is mid-upgrade when block window begins, and has an outstanding change.
         Version v2 = Version.fromString("6.2");
         tester.upgradeSystem(v2);
-        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(instance).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, systemTest);
 
         // Entering block window will keep the outstanding change in place.
         tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
-        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        assertEquals(BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
-                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
-        assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
+        tester.deployAndNotify(instance, applicationPackage, true, productionUsWest1);
+        assertEquals(BuildJob.defaultBuildNumber, tester.application(instance.id()).deploymentJobs().jobStatus()
+                                                        .get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(instance.id()).outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.readyJobTrigger().maintain();
         // Platform upgrade keeps rolling, since it has already deployed in a production zone, and tests for the new revision have also started.
         assertEquals(3, tester.buildService().jobs().size());
-        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, true, productionUsEast3);
         assertEquals(2, tester.buildService().jobs().size());
 
         // Upgrade is done, and oustanding change rolls out when block window ends.
-        assertEquals(Change.empty(), tester.application(application.id()).change());
-        assertFalse(tester.application(application.id()).change().hasTargets());
-        assertTrue(tester.application(application.id()).outstandingChange().hasTargets());
+        assertEquals(Change.empty(), tester.application(instance.id()).change());
+        assertFalse(tester.application(instance.id()).change().hasTargets());
+        assertTrue(tester.application(instance.id()).outstandingChange().hasTargets());
 
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
+        tester.deployAndNotify(instance, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(instance, applicationPackage, true, systemTest);
         tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.application(application.id()).change().hasTargets());
-        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
+        assertTrue(tester.application(instance.id()).change().hasTargets());
+        assertFalse(tester.application(instance.id()).outstandingChange().hasTargets());
 
         tester.readyJobTrigger().run();
-        tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(instance, applicationPackage, true, productionUsEast3);
 
-        assertFalse(tester.application(application.id()).change().hasTargets());
-        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
+        assertFalse(tester.application(instance.id()).change().hasTargets());
+        assertFalse(tester.application(instance.id()).outstandingChange().hasTargets());
     }
 
     @Test
     public void testJobPause() {
-        Application app = tester.createAndDeploy("app", 3, "default");
+        Instance app = tester.createAndDeploy("app", 3, "default");
         tester.upgradeSystem(new Version("9.8.7"));
 
         tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
@@ -589,7 +589,7 @@ public class DeploymentTriggerTest {
         ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
                                                                  Duration.ofHours(1),
                                                                  new JobControl(tester.controllerTester().curator()));
-        Application app = tester.createAndDeploy("default0", 3, "default");
+        Instance app = tester.createAndDeploy("default0", 3, "default");
         // Store that we are upgrading but don't start the system-tests job
         tester.controller().applications().lockOrThrow(app.id(), locked -> {
             tester.controller().applications().store(locked.withChange(Change.of(Version.fromString("6.2"))));
@@ -602,58 +602,58 @@ public class DeploymentTriggerTest {
 
     @Test
     public void applicationVersionIsNotDowngraded() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Supplier<Application> app = () -> tester.application(application.id());
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Instance> app = () -> tester.application(instance.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .region("eu-west-1")
                 .build();
 
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         // productionUsCentral1 fails after deployment, causing a mismatch between deployed and successful state.
-        tester.completeDeploymentWithError(application, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
+        tester.completeDeploymentWithError(instance, applicationPackage, BuildJob.defaultBuildNumber + 1, productionUsCentral1);
 
         // deployAndNotify doesn't actually deploy if the job fails, so we need to do that manually.
-        tester.deployAndNotify(application, false, productionUsCentral1);
-        tester.deploy(productionUsCentral1, application, Optional.empty(), false);
+        tester.deployAndNotify(instance, false, productionUsCentral1);
+        tester.deploy(productionUsCentral1, instance, Optional.empty(), false);
 
         ApplicationVersion appVersion1 = ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
         // Verify the application change is not removed when change is cancelled.
-        tester.deploymentTrigger().cancelChange(application.id(), PLATFORM);
+        tester.deploymentTrigger().cancelChange(instance.id(), PLATFORM);
         assertEquals(Change.of(appVersion1), app.get().change());
 
         // Now cancel the change as is done through the web API.
-        tester.deploymentTrigger().cancelChange(application.id(), ALL);
+        tester.deploymentTrigger().cancelChange(instance.id(), ALL);
         assertEquals(Change.empty(), app.get().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
         Version version1 = new Version("6.2");
         tester.upgradeSystem(version1);
-        tester.jobCompletion(productionUsCentral1).application(application).unsuccessful().submit();
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, false, productionUsCentral1);
+        tester.jobCompletion(productionUsCentral1).application(instance).unsuccessful().submit();
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, false, productionUsCentral1);
 
         // The last job has a different target, and the tests need to run again.
         // These may now start, since the first job has been triggered once, and thus is verified already.
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Finally, the two production jobs complete, in order.
-        tester.deployAndNotify(application, true, productionUsCentral1);
-        tester.deployAndNotify(application, true, productionEuWest1);
+        tester.deployAndNotify(instance, true, productionUsCentral1);
+        tester.deployAndNotify(instance, true, productionEuWest1);
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
 
     @Test
     public void stepIsCompletePreciselyWhenItShouldBe() {
-        Application application1 = tester.createApplication("app1", "tenant1", 1, 1L);
-        Application application2 = tester.createApplication("app2", "tenant2", 2, 2L);
-        Supplier<Application> app1 = () -> tester.application(application1.id());
+        Instance instance1 = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance2 = tester.createApplication("app2", "tenant2", 2, 2L);
+        Supplier<Instance> app1 = () -> tester.application(instance1.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -663,23 +663,23 @@ public class DeploymentTriggerTest {
         // System upgrades to version0 and applications deploy on that version
         Version version0 = Version.fromString("7.0");
         tester.upgradeSystem(version0);
-        tester.deployCompletely(application1, applicationPackage);
-        tester.deployCompletely(application2, applicationPackage);
+        tester.deployCompletely(instance1, applicationPackage);
+        tester.deployCompletely(instance2, applicationPackage);
 
         // version1 is released and application1 skips upgrading to that version
         Version version1 = Version.fromString("7.1");
         tester.upgradeSystem(version1);
         // Deploy application2 to keep this version present in the system
-        tester.deployCompletely(application2, applicationPackage);
-        tester.applications().deploymentTrigger().cancelChange(application1.id(), ALL);
+        tester.deployCompletely(instance2, applicationPackage);
+        tester.applications().deploymentTrigger().cancelChange(instance1.id(), ALL);
         tester.buildService().clear(); // Clear stale build jobs for cancelled change
 
         // version2 is released and application1 starts upgrading
         Version version2 = Version.fromString("7.2");
         tester.upgradeSystem(version2);
-        tester.completeUpgradeWithError(application1, version2, applicationPackage, productionUsCentral1);
-        tester.deploy(productionUsCentral1, application1, applicationPackage);
-        tester.deployAndNotify(application1, applicationPackage, false, productionUsCentral1);
+        tester.completeUpgradeWithError(instance1, version2, applicationPackage, productionUsCentral1);
+        tester.deploy(productionUsCentral1, instance1, applicationPackage);
+        tester.deployAndNotify(instance1, applicationPackage, false, productionUsCentral1);
         assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
 
         // version2 becomes broken and upgrade targets latest non-broken
@@ -687,34 +687,34 @@ public class DeploymentTriggerTest {
         tester.computeVersionStatus();
         tester.upgrader().maintain(); // Cancel upgrades to broken version
         assertEquals("Change becomes latest non-broken version", Change.of(version1), app1.get().change());
-        tester.deployAndNotify(application1, applicationPackage, false, productionUsCentral1);
+        tester.deployAndNotify(instance1, applicationPackage, false, productionUsCentral1);
         Instant triggered = app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
         tester.clock().advance(Duration.ofHours(1));
 
         // version1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
-        tester.deployAndNotify(application1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, stagingTest);
         assertEquals(triggered, app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
-        tester.deployAndNotify(application1, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(instance1, applicationPackage, false, productionEuWest1);
 
         //Eagerly triggered system and staging tests complete.
-        tester.deployAndNotify(application1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application1, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, stagingTest);
 
         // Roll out a new application version, which gives a dual change -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
-        tester.jobCompletion(component).application(application1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(application1, applicationPackage, false, productionEuWest1);
-        tester.deployAndNotify(application1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application1, applicationPackage, true, stagingTest);
+        tester.jobCompletion(component).application(instance1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(instance1, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(instance1, applicationPackage, true, systemTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, stagingTest);
 
-        tester.assertRunning(productionUsCentral1, application1.id());
+        tester.assertRunning(productionUsCentral1, instance1.id());
         assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
         assertEquals(42, app1.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
         assertNotEquals(triggered, app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
-        tester.deployAndNotify(application1, applicationPackage, false, productionUsCentral1);
-        tester.deploy(productionUsCentral1, application1, applicationPackage);
+        tester.deployAndNotify(instance1, applicationPackage, false, productionUsCentral1);
+        tester.deploy(productionUsCentral1, instance1, applicationPackage);
         assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
         assertEquals(43, app1.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
 
@@ -722,67 +722,67 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
         tester.readyJobTrigger().maintain();
         // Failing job is not retried as change has been deployed
-        tester.assertNotRunning(productionUsCentral1, application1.id());
+        tester.assertNotRunning(productionUsCentral1, instance1.id());
 
         // Last job has a different deployment target, so tests need to run again.
-        tester.deployAndNotify(application1, true, systemTest);
-        tester.deployAndNotify(application1, true, stagingTest);
-        tester.deployAndNotify(application1, applicationPackage, true, productionEuWest1);
+        tester.deployAndNotify(instance1, true, systemTest);
+        tester.deployAndNotify(instance1, true, stagingTest);
+        tester.deployAndNotify(instance1, applicationPackage, true, productionEuWest1);
         assertFalse(app1.get().change().hasTargets());
         assertFalse(app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
 
     @Test
     public void eachDeployTargetIsTested() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Supplier<Application> app = () -> tester.application(application.id());
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Instance> app = () -> tester.application(instance.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .parallel("eu-west-1", "us-east-3")
                 .build();
         // Application version 42 and platform version 6.1.
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         // Success in first prod zone, change cancelled between triggering and deployment to two parallel zones.
         // One of the parallel zones get a deployment, but both fail their jobs.
         Version v1 = new Version("6.1");
         Version v2 = new Version("6.2");
         tester.upgradeSystem(v2);
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deploymentTrigger().cancelChange(application.id(), PLATFORM);
-        tester.deploy(productionEuWest1, application, applicationPackage);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deploymentTrigger().cancelChange(instance.id(), PLATFORM);
+        tester.deploy(productionEuWest1, instance, applicationPackage);
         assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main)).version());
         assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main)).version());
 
         // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
-        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.jobCompletion(component).application(instance).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         Version firstTested = app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform();
         assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
 
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Tests are not re-triggered, because the deployments that were tested have not yet been triggered on the tested versions.
         assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         assertEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
 
          // Finish old runs of the production jobs, which fail.
-        tester.deployAndNotify(application, applicationPackage, false, productionEuWest1);
-        tester.deployAndNotify(application, applicationPackage, false, productionUsEast3);
+        tester.deployAndNotify(instance, applicationPackage, false, productionEuWest1);
+        tester.deployAndNotify(instance, applicationPackage, false, productionUsEast3);
         tester.triggerUntilQuiescence();
 
         // New upgrade is already tested for one of the jobs, which has now been triggered, and tests may run for the other job.
         assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         assertNotEquals(firstTested, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Both jobs fail again, and must be re-triggered -- this is ok, as they are both already triggered on their current targets.
-        tester.deployAndNotify(application, false, productionEuWest1);
-        tester.deployAndNotify(application, false, productionUsEast3);
-        tester.deployAndNotify(application, true, productionUsEast3);
-        tester.deployAndNotify(application, true, productionEuWest1);
+        tester.deployAndNotify(instance, false, productionEuWest1);
+        tester.deployAndNotify(instance, false, productionUsEast3);
+        tester.deployAndNotify(instance, true, productionUsEast3);
+        tester.deployAndNotify(instance, true, productionEuWest1);
         assertFalse(app.get().change().hasTargets());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
@@ -790,98 +790,98 @@ public class DeploymentTriggerTest {
 
     @Test
     public void eachDifferentUpgradeCombinationIsTested() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Supplier<Application> app = () -> tester.application(application.id());
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
+        Supplier<Instance> app = () -> tester.application(instance.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("eu-west-1", "us-east-3")
                 .build();
         // Application version 42 and platform version 6.1.
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         // Application partially upgrades, then a new version is released.
         Version v1 = new Version("6.1");
         Version v2 = new Version("6.2");
         tester.upgradeSystem(v2);
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionUsCentral1);
-        tester.deployAndNotify(application, true, productionEuWest1);
-        tester.deployAndNotify(application, false, productionUsEast3);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionUsCentral1);
+        tester.deployAndNotify(instance, true, productionEuWest1);
+        tester.deployAndNotify(instance, false, productionUsEast3);
         assertEquals(v2, app.get().deployments().get(ZoneId.from("prod", "us-central-1")).version());
         assertEquals(v2, app.get().deployments().get(ZoneId.from("prod", "eu-west-1")).version());
         assertEquals(v1, app.get().deployments().get(ZoneId.from("prod", "us-east-3")).version());
 
         Version v3 = new Version("6.3");
         tester.upgradeSystem(v3);
-        tester.deployAndNotify(application, false, productionUsEast3);
+        tester.deployAndNotify(instance, false, productionUsEast3);
 
         // See that sources for staging are: first v2, then v1.
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
         assertEquals(v2, app.get().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().sourcePlatform().get());
-        tester.deployAndNotify(application, true, productionUsCentral1);
+        tester.deployAndNotify(instance, true, productionUsCentral1);
         assertEquals(v1, app.get().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionEuWest1);
-        tester.deployAndNotify(application, true, productionUsEast3);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionEuWest1);
+        tester.deployAndNotify(instance, true, productionUsEast3);
     }
 
     @Test
     public void retriesFailingJobs() {
-        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        Instance instance = tester.createApplication("app1", "tenant1", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .build();
 
         // Deploy completely on default application and platform versions
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployCompletely(instance, applicationPackage);
 
         // New application change is deployed and fails in system-test for a while
-        tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(application, false, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
+        tester.jobCompletion(component).application(instance).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(instance, false, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
 
         // Retries immediately in the first minute after failing
         tester.clock().advance(Duration.ofSeconds(59));
-        tester.jobCompletion(systemTest).application(application).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(instance).unsuccessful().submit();
         tester.readyJobTrigger().maintain();
-        tester.assertRunning(systemTest, application.id());
+        tester.assertRunning(systemTest, instance.id());
 
         // Stops immediate retry after failing for 1 minute
         tester.clock().advance(Duration.ofSeconds(1));
-        tester.jobCompletion(systemTest).application(application).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(instance).unsuccessful().submit();
         tester.readyJobTrigger().maintain();
-        tester.assertNotRunning(systemTest, application.id());
+        tester.assertNotRunning(systemTest, instance.id());
 
         // Retries after 10 minutes since previous completion as we failed within the last hour
         tester.clock().advance(Duration.ofMinutes(10).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
-        tester.assertRunning(systemTest, application.id());
+        tester.assertRunning(systemTest, instance.id());
 
         // Retries less frequently after 1 hour of failure
         tester.clock().advance(Duration.ofMinutes(50));
-        tester.jobCompletion(systemTest).application(application).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(instance).unsuccessful().submit();
         tester.readyJobTrigger().maintain();
-        tester.assertNotRunning(systemTest, application.id());
+        tester.assertNotRunning(systemTest, instance.id());
 
         // Retries after two hours pass since last completion
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1)));
         tester.readyJobTrigger().maintain();
-        tester.assertRunning(systemTest, application.id());
+        tester.assertRunning(systemTest, instance.id());
 
         // Still fails and is not retried
-        tester.jobCompletion(systemTest).application(application).unsuccessful().submit();
+        tester.jobCompletion(systemTest).application(instance).unsuccessful().submit();
         tester.readyJobTrigger().maintain();
-        tester.assertNotRunning(systemTest, application.id());
+        tester.assertNotRunning(systemTest, instance.id());
 
         // Another application change is deployed and fixes system-test. Change is triggered immediately as target changes
-        tester.jobCompletion(component).application(application).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(application, true, systemTest);
-        tester.deployAndNotify(application, true, stagingTest);
-        tester.deployAndNotify(application, true, productionUsCentral1);
+        tester.jobCompletion(component).application(instance).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(instance, true, systemTest);
+        tester.deployAndNotify(instance, true, stagingTest);
+        tester.deployAndNotify(instance, true, productionUsCentral1);
         assertTrue("Deployment completed", tester.buildService().jobs().isEmpty());
     }
 
@@ -895,7 +895,7 @@ public class DeploymentTriggerTest {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
@@ -954,7 +954,7 @@ public class DeploymentTriggerTest {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Instance app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
@@ -988,7 +988,7 @@ public class DeploymentTriggerTest {
     @Test
     public void testUpdatesFailingJobStatus() {
         // Setup application
-        Application app = tester.createApplication("app1", "foo", 1, 1L);
+        Instance app = tester.createApplication("app1", "foo", 1, 1L);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -1058,7 +1058,7 @@ public class DeploymentTriggerTest {
                 .build();
         Version version1 = tester.controller().versionStatus().systemVersion().get().versionNumber();
 
-        Application app1 = tester.createApplication("application1", "tenant1", 1, 1L);
+        Instance app1 = tester.createApplication("application1", "tenant1", 1, 1L);
 
         // First deployment: An application change
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
@@ -1124,9 +1124,9 @@ public class DeploymentTriggerTest {
         long project1 = 1;
         long project2 = 2;
         long project3 = 3;
-        Application app1 = tester.createApplication("app1", "tenant1", project1, 1L);
-        Application app2 = tester.createApplication("app2", "tenant2", project2, 1L);
-        Application app3 = tester.createApplication("app3", "tenant3", project3, 1L);
+        Instance app1 = tester.createApplication("app1", "tenant1", project1, 1L);
+        Instance app2 = tester.createApplication("app2", "tenant2", project2, 1L);
+        Instance app3 = tester.createApplication("app3", "tenant3", project3, 1L);
         MockBuildService mockBuildService = tester.buildService();
 
         // all applications: system-test completes successfully with some time in between, to determine trigger order.

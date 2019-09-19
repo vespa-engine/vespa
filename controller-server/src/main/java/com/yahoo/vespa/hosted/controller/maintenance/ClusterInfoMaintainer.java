@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -72,13 +72,13 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
-                DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
+        for (Instance instance : controller().applications().asList()) {
+            for (Deployment deployment : instance.deployments().values()) {
+                DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
                 try {
                     var nodes = nodeRepository.list(deploymentId.zoneId(), deploymentId.applicationId());
                     Map<ClusterSpec.Id, ClusterInfo> clusterInfo = getClusterInfo(nodes);
-                    controller().applications().lockIfPresent(application.id(), lockedApplication ->
+                    controller().applications().lockIfPresent(instance.id(), lockedApplication ->
                         controller.applications().store(lockedApplication.withClusterInfo(deployment.zone(), clusterInfo)));
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Failing getting cluster information for " + deploymentId, e);

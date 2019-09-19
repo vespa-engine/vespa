@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.yolean.Exceptions;
@@ -23,15 +23,15 @@ public class DeploymentExpirer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : controller().applications().asList()) {
-            for (Deployment deployment : application.deployments().values()) {
+        for (Instance instance : controller().applications().asList()) {
+            for (Deployment deployment : instance.deployments().values()) {
                 if (!isExpired(deployment)) continue;
 
                 try {
-                    log.log(Level.INFO, "Expiring deployment of " + application.id() + " in " + deployment.zone());
-                    controller().applications().deactivate(application.id(), deployment.zone());
+                    log.log(Level.INFO, "Expiring deployment of " + instance.id() + " in " + deployment.zone());
+                    controller().applications().deactivate(instance.id(), deployment.zone());
                 } catch (Exception e) {
-                    log.log(Level.WARNING, "Could not expire " + deployment + " of " + application +
+                    log.log(Level.WARNING, "Could not expire " + deployment + " of " + instance +
                                            ": " + Exceptions.toMessageString(e) + ". Retrying in " +
                                            maintenanceInterval());
                 }

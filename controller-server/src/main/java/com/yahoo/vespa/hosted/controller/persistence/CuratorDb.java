@@ -13,7 +13,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -50,6 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -73,6 +74,7 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
+    private static final Path instanceRoot = root.append("instances");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
@@ -83,7 +85,7 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
@@ -331,33 +333,43 @@ public class CuratorDb {
 
     // -------------- Application ---------------------------------------------
 
-    public void writeApplication(Application application) {
-        curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
+    public void writeInstance(Instance instance) {
+        curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
+        curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
     }
 
-    public Optional<Application> readApplication(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
+    public Optional<Instance> readInstance(ApplicationId application) {
+        return readSlime(instancePath(application)).or(() -> readSlime(applicationPath(application)))
+                                                   .map(instanceSerializer::fromSlime);
     }
 
-    public List<Application> readApplications() {
-        return readApplications(ignored -> true);
+    public List<Instance> readInstances() {
+        return readInstances(ignored -> true);
     }
 
-    public List<Application> readApplications(TenantName name) {
-        return readApplications(application -> application.tenant().equals(name));
+    public List<Instance> readInstances(TenantName name) {
+        return readInstances(application -> application.tenant().equals(name));
     }
 
-    private List<Application> readApplications(Predicate<ApplicationId> applicationFilter) {
-        return curator.getChildren(applicationRoot).stream()
-                      .map(ApplicationId::fromSerializedForm)
-                      .filter(applicationFilter)
-                      .map(this::readApplication)
-                      .flatMap(Optional::stream)
-                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    private Stream<ApplicationId> readInstanceIds() {
+        return Stream.concat(curator.getChildren(applicationRoot).stream()
+                                    .filter(id -> id.split(":").length == 3),
+                             curator.getChildren(instanceRoot).stream())
+                     .distinct()
+                     .map(ApplicationId::fromSerializedForm);
     }
 
-    public void removeApplication(ApplicationId application) {
-        curator.delete(applicationPath(application));
+    private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
+        return readInstanceIds().filter(instanceFilter)
+                                .map(this::readInstance)
+                                .flatMap(Optional::stream)
+                                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void removeInstance(ApplicationId id) {
+        // WARNING: This is part of a multi-step data move operation, so don't touch!!!
+        curator.delete(applicationPath(id));
+        curator.delete(instancePath(id));
     }
 
     // -------------- Job Runs ------------------------------------------------
@@ -577,6 +589,10 @@ public class CuratorDb {
 
     private static Path applicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
+    }
+
+    private static Path instancePath(ApplicationId id) {
+        return instanceRoot.append(id.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {
