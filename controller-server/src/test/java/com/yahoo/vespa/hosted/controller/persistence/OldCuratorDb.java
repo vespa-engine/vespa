@@ -56,11 +56,9 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
 
 /**
- * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
- * to general curator operations.
+ * Copy the current to replace this class before doing a data migration.
+ * Use old serializers too, if needed.
  *
- * @author bratseth
- * @author mpolden
  * @author jonmv
  */
 public class OldCuratorDb {
