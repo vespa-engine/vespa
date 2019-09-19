@@ -265,26 +265,18 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    /**
-     * Update statistics after a round of issuing pings.
-     * Note that this doesn't wait for pings to return, so it will typically accumulate data from
-     * last rounds pinging, or potentially (although unlikely) some combination of new and old data.
-     */
-    @Override
-    public void pingIterationCompleted() {
+    private void pingIterationCompletedSingleGroup() {
+        Group group = groups.values().iterator().next();
+        group.aggregateActiveDocuments();
+        // With just one group sufficient coverage may not be the same as full coverage, as the
+        // group will always be marked sufficient for use.
+        updateSufficientCoverage(group, true);
+        boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
+                group.getActiveDocuments());
+        trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
+    }
+    private void pingIterationCompletedMultipleGroups() {
         int numGroups = orderedGroups.size();
-        if (numGroups == 1) {
-            Group group = groups.values().iterator().next();
-            group.aggregateActiveDocuments();
-            // With just one group sufficient coverage may not be the same as full coverage, as the
-            // group will always be marked sufficient for use.
-            updateSufficientCoverage(group, true);
-            boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
-                    group.getActiveDocuments());
-            trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
-            return;
-        }
-
         // Update active documents per group and use it to decide if the group should be active
 
         long[] activeDocumentsInGroup = new long[numGroups];
@@ -306,9 +298,28 @@ public class SearchCluster implements NodeManager<Node> {
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
         }
-        if ( ! anyGroupsSufficientCoverage && (sumOfActiveDocuments == 0)) {
-            // If no groups have sufficient coverage (0 might be sufficient)
-            // and there are no documents in any groups, then we are down.
+    }
+    private boolean areAllNodesDownInAllgroups() {
+        for(int i = 0; i < groups.size(); i++) {
+            Group group = orderedGroups.get(i);
+            if (group.workingNodes() == 0) return false;
+        }
+        return true;
+    }
+    /**
+     * Update statistics after a round of issuing pings.
+     * Note that this doesn't wait for pings to return, so it will typically accumulate data from
+     * last rounds pinging, or potentially (although unlikely) some combination of new and old data.
+     */
+    @Override
+    public void pingIterationCompleted() {
+        int numGroups = orderedGroups.size();
+        if (numGroups == 1) {
+            pingIterationCompletedSingleGroup();
+        } else {
+            pingIterationCompletedMultipleGroups();
+        }
+        if ( areAllNodesDownInAllgroups() ) {
             vipStatus.removeFromRotation(clusterId);
         }
     }
