@@ -36,6 +36,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     @Override
     public void failed(ErrorMessage error) {
         respondedAt = now();
+        atStartUp = false;
 
         if (error.getCode() == Error.BACKEND_COMMUNICATION_ERROR.code) {
             setWorking(false, "Connection failure: " + error.toString());

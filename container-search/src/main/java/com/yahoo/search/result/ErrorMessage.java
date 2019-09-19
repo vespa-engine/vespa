@@ -103,7 +103,6 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
 
     /** Creates an error indicating that there was a general error communicating with a backend service. */
     public static ErrorMessage createBackendCommunicationError(String detailedMessage) {
-        if (1==1) throw new RuntimeException();
         return new ErrorMessage(BACKEND_COMMUNICATION_ERROR.code, "Backend communication error", detailedMessage);
     }
 
