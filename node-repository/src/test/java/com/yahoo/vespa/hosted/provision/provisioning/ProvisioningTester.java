@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -156,15 +156,11 @@ public class ProvisioningTester {
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
     }
 
-    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), version, false);
+    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()), Version.fromString("6.42"), false);
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity, 1, true);
         activate(application, hostSpecs);
-    }
-
-    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
-        prepareAndActivateInfraApplication(application, nodeType, Version.fromString("6.42"));
     }
 
     public void deactivate(ApplicationId applicationId) {
