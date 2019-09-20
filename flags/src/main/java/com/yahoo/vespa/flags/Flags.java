@@ -134,12 +134,6 @@ public class Flags {
             "Takes effect on next iteration of HostProvisionMaintainer.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
-            "use-https-load-balancer-upstream", false,
-            "Use https between load balancer and upstream containers",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundStringFlag CONFIGSERVER_RPC_AUTHORIZER = defineStringFlag(
             "configserver-rpc-authorizer", "enforce",
             "Configserver RPC authorizer. Allowed values: ['disable', 'log-only', 'enforce']",
