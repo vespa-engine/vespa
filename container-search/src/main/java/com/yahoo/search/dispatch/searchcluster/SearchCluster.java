@@ -95,15 +95,12 @@ public class SearchCluster implements NodeManager<Node> {
         this.pingFactory = pingFactory;
 
         for (var group : orderedGroups) {
-            for (var node : group.nodes()) {
-                // cluster monitor will only call working() when the
-                // node transitions from down to up, so we need to
-                // register the initial (working) state here:
-                working(node);
+            for (var node : group.nodes())
                 clusterMonitor.add(node, true);
-            }
         }
     }
+
+    ClusterMonitor<Node> clusterMonitor() { return clusterMonitor; }
 
     private static Optional<Node> findLocalCorpusDispatchTarget(String selfHostname,
                                                                 int searchClusterSize,
@@ -199,30 +196,27 @@ public class SearchCluster implements NodeManager<Node> {
         Group localSearchGroup = groups.get(localCorpusDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
-        // Only use direct dispatch if the local search node is up
-        if ( ! localCorpusDispatchTarget.get().isWorking()) return Optional.empty();
+        // Only use direct dispatch if the local search node is not down
+        if ( localCorpusDispatchTarget.get().isWorking() == Boolean.FALSE) return Optional.empty();
 
         return localCorpusDispatchTarget;
     }
 
-    /** Called by the cluster monitor whenever we get information (positive or negative) about a node */
-    @Override
-    public void statusIsKnown(Node node) {
-        node.setStatusIsKnown();
+    private void updateWorkingState(Node node, boolean isWorking) {
+        node.setWorking(isWorking);
+        updateVipStatusOnNodeChange(node, isWorking);
     }
 
     /** Called by the cluster monitor when node state changes to working */
     @Override
     public void working(Node node) {
-        node.setWorking(true);
-        updateVipStatusOnNodeChange(node, true);
+        updateWorkingState(node, true);
     }
 
     /** Called by the cluster monitor when node state changes to failed */
     @Override
     public void failed(Node node) {
-        node.setWorking(false);
-        updateVipStatusOnNodeChange(node, true);
+        updateWorkingState(node, false);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
@@ -232,41 +226,38 @@ public class SearchCluster implements NodeManager<Node> {
         updateVipStatusOnCoverageChange(group, sufficientCoverage);
     }
 
-    private void updateVipStatusOnNodeChange(Node node, boolean working) {
-        if (usesLocalCorpusIn(node)) { // follow the status of the local corpus
-            if (working)
-                vipStatus.addToRotation(clusterId);
-            else
-                vipStatus.removeFromRotation(clusterId);
+    private void updateVipStatusOnNodeChange(Node node, boolean nodeIsWorking) {
+        if (localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
+            if (hasInformationAboutAllNodes())
+                setInRotationOnlyIf(hasWorkingNodes());
         }
-        else if (localCorpusDispatchTarget.isEmpty() && hasInformationAboutAllNodes()) {
-            if (hasWorkingNodes())
-                vipStatus.addToRotation(clusterId);
-            else
-                vipStatus.removeFromRotation(clusterId);
+        else if (usesLocalCorpusIn(node)) { // follow the status of this node
+            setInRotationOnlyIf(nodeIsWorking);
         }
     }
 
     private void updateVipStatusOnCoverageChange(Group group, boolean sufficientCoverage) {
-        boolean isInRotation = vipStatus.isInRotation();
-        if (usesLocalCorpusIn(group)) { // follow the status of the local corpus
-            if (sufficientCoverage)
-                vipStatus.addToRotation(clusterId);
-            else
-                vipStatus.removeFromRotation(clusterId);
+        if ( localCorpusDispatchTarget.isEmpty()) { // consider entire cluster
+            // VIP status does not depend on coverage
         }
-        else if ( localCorpusDispatchTarget.isEmpty()) {
-            if (isInRotation && sufficientCoverage)
-                vipStatus.addToRotation(clusterId);
+        else if (usesLocalCorpusIn(group)) { // follow the status of this group
+            setInRotationOnlyIf(sufficientCoverage);
         }
+    }
+
+    private void setInRotationOnlyIf(boolean inRotation) {
+        if (inRotation)
+            vipStatus.addToRotation(clusterId);
+        else
+            vipStatus.removeFromRotation(clusterId);
     }
 
     private boolean hasInformationAboutAllNodes() {
-        return nodesByHost.values().stream().allMatch(Node::getStatusIsKnown);
+        return nodesByHost.values().stream().allMatch(node -> node.isWorking() != null);
     }
 
     private boolean hasWorkingNodes() {
-        return nodesByHost.values().stream().anyMatch(Node::isWorking);
+        return nodesByHost.values().stream().anyMatch(node -> node.isWorking() != Boolean.FALSE );
     }
 
     private boolean usesLocalCorpusIn(Node node) {

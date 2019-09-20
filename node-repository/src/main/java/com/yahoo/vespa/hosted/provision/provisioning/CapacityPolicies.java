@@ -6,10 +6,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.JacksonFlag;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -23,11 +19,12 @@ import java.util.Optional;
 public class CapacityPolicies {
 
     private final Zone zone;
-    private final JacksonFlag<com.yahoo.vespa.flags.custom.NodeResources> defaultResourcesFlag;
+    /* Deployments must match 1-to-1 the advertised resources of a physical host */
+    private final boolean isUsingAdvertisedResources;
 
-    public CapacityPolicies(Zone zone, FlagSource flagSource) {
+    public CapacityPolicies(Zone zone) {
         this.zone = zone;
-        this.defaultResourcesFlag = Flags.DEFAULT_RESOURCES.bindTo(flagSource);
+        this.isUsingAdvertisedResources = zone.region().value().contains("aws-");
     }
 
     public int decideSize(Capacity requestedCapacity, ClusterSpec.Type clusterType) {
@@ -46,9 +43,7 @@ public class CapacityPolicies {
     public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
         if (requestedResources.isPresent()) assertMinimumResources(requestedResources.get(), cluster);
 
-        NodeResources resources = requestedResources
-                .or(() -> flagNodeResources(cluster.type()))
-                .orElse(defaultNodeResources(cluster.type()));
+        NodeResources resources = requestedResources.orElse(defaultNodeResources(cluster.type()));
 
         // Allow slow disks in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
@@ -71,16 +66,16 @@ public class CapacityPolicies {
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
     }
 
-    private Optional<NodeResources> flagNodeResources(ClusterSpec.Type clusterType) {
-        return Optional.ofNullable(defaultResourcesFlag.with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name()).value())
-                .map(r -> new NodeResources(r.vcpu(), r.memoryGb(), r.diskGb(), r.bandwidthGbps(), NodeResources.DiskSpeed.valueOf(r.diskSpeed())));
-    }
-
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
-        if (clusterType == ClusterSpec.Type.admin)
-            return new NodeResources(0.5, 2, 50, 0.3);
+        if (clusterType == ClusterSpec.Type.admin) {
+            return isUsingAdvertisedResources ?
+                    new NodeResources(0.5, 4, 50, 0.3) :
+                    new NodeResources(0.5, 2, 50, 0.3);
+        }
 
-        return new NodeResources(1.5, 8, 50, 0.3);
+        return isUsingAdvertisedResources ?
+                new NodeResources(2.0, 8, 50, 0.3) :
+                new NodeResources(1.5, 8, 50, 0.3);
     }
 
     /**

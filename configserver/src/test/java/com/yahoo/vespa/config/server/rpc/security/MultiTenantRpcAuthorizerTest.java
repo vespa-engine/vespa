@@ -148,7 +148,7 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request fileRequest = createFileRequest(new FileReference("other-file-reference"));
 
-        exceptionRule.expectMessage("Peer is not allowed to access file other-file-reference");
+        exceptionRule.expectMessage("Peer is not allowed to access file reference other-file-reference. Peer is owned by mytenant.myapplication. File references owned by this application: [file 'myfilereference']");
         exceptionRule.expectCause(instanceOf(AuthorizationException.class));
 
         authorizer.authorizeFileRequest(fileRequest)
@@ -168,7 +168,7 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request configRequest = createConfigRequest(new ConfigKey<>("name", "configid", "namespace"), HOSTNAME);
 
-        exceptionRule.expectMessage("Peer is not allowed to access config for owned by mytenant.myapplication. Peer is owned by malice.malice-app");
+        exceptionRule.expectMessage("Peer is not allowed to access config owned by mytenant.myapplication. Peer is owned by malice.malice-app");
         exceptionRule.expectCause(instanceOf(AuthorizationException.class));
 
         authorizer.authorizeConfigRequest(configRequest)

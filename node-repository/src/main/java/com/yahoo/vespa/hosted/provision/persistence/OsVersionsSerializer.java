@@ -29,9 +29,11 @@ public class OsVersionsSerializer {
     public static byte[] toJson(Map<NodeType, OsVersion> versions) {
         var slime = new Slime();
         var object = slime.setObject();
-        // TODO(mpolden): Write active status here once all readers can handle it
-        versions.forEach((nodeType, osVersion) -> object.setString(NodeSerializer.toString(nodeType),
-                                                                   osVersion.version().toFullString()));
+        versions.forEach((nodeType, osVersion) -> {
+            var versionObject = object.setObject(NodeSerializer.toString(nodeType));
+            versionObject.setString(VERSION_FIELD, osVersion.version().toFullString());
+            versionObject.setBool(ACTIVE_FIELD, osVersion.active());
+        });
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
@@ -45,11 +47,11 @@ public class OsVersionsSerializer {
         inspector.traverse((ObjectTraverser) (key, value) -> {
             Version version;
             boolean active;
-            // TODO(mpolden): Remove fallback after next version
             if (value.type() == Type.OBJECT) {
                 version = Version.fromString(value.field(VERSION_FIELD).asString());
                 active = value.field(ACTIVE_FIELD).asBool();
             } else {
+                // TODO(mpolden): Remove support for legacy format after September 2019
                 version = Version.fromString(value.asString());
                 active = true;
             }

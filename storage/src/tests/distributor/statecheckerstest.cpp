@@ -158,6 +158,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
     struct CheckerParams {
         std::string _bucketInfo;
         std::string _clusterState {"distributor:1 storage:2"};
+        std::string _pending_cluster_state;
         std::string _expect;
         static const PendingMessage NO_OP_BLOCKER;
         const PendingMessage* _blockerMessage {&NO_OP_BLOCKER};
@@ -180,6 +181,10 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         }
         CheckerParams& clusterState(const std::string& state) {
             _clusterState = state;
+            return *this;
+        }
+        CheckerParams& pending_cluster_state(const std::string& state) {
+            _pending_cluster_state = state;
             return *this;
         }
         CheckerParams& blockerMessage(const PendingMessage& blocker) {
@@ -208,6 +213,11 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         addNodesToBucketDB(bid, params._bucketInfo);
         setRedundancy(params._redundancy);
         enableDistributorClusterState(params._clusterState);
+        if (!params._pending_cluster_state.empty()) {
+            auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(params._pending_cluster_state));
+            _distributor->onDown(cmd);
+            tick(); // Trigger command processing and pending state setup.
+        }
         NodeMaintenanceStatsTracker statsTracker;
         StateChecker::Context c(
                 getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker, makeDocumentBucket(bid));
@@ -640,10 +650,8 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
     runAndVerify<SynchronizeAndMoveStateChecker>(
         CheckerParams().expect(
                 "[Synchronizing buckets with different checksums "
-                "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,"
-                    "active=false,ready=false), "
-                "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,"
-                    "active=false,ready=false)] "
+                "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
+                "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)] "
                 "(scheduling pri MEDIUM)")
             .bucketInfo("0=1,1=2")
             .includeSchedulingPriority(true));
@@ -698,12 +706,9 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
     runAndVerify<SynchronizeAndMoveStateChecker>(
         CheckerParams()
             .expect("[Synchronizing buckets with different checksums "
-                    "node(idx=0,crc=0x3,docs=3/3,bytes=3/3,trusted=false,"
-                        "active=false,ready=false), "
-                    "node(idx=1,crc=0x3,docs=3/3,bytes=3/3,trusted=false,"
-                        "active=false,ready=false), "
-                    "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,"
-                        "active=false,ready=false)]")
+                    "node(idx=0,crc=0x3,docs=3/3,bytes=3/3,trusted=false,active=false,ready=false), "
+                    "node(idx=1,crc=0x3,docs=3/3,bytes=3/3,trusted=false,active=false,ready=false), "
+                    "node(idx=2,crc=0x0,docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]")
             .bucketInfo("0=3,1=3,2=0")
             .clusterState("distributor:1 storage:3"));
 
@@ -712,14 +717,10 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
     runAndVerify<SynchronizeAndMoveStateChecker>(
         CheckerParams()
             .expect("[Synchronizing buckets with different checksums "
-                    "node(idx=0,crc=0x2,docs=3/3,bytes=4/4,trusted=false,"
-                        "active=false,ready=false), "
-                    "node(idx=1,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false,ready=false), "
-                    "node(idx=2,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false,ready=false), "
-                    "node(idx=3,crc=0x1,docs=2/2,bytes=3/3,trusted=true,"
-                        "active=false,ready=false)] "
+                    "node(idx=0,crc=0x2,docs=3/3,bytes=4/4,trusted=false,active=false,ready=false), "
+                    "node(idx=1,crc=0x1,docs=2/2,bytes=3/3,trusted=true,active=false,ready=false), "
+                    "node(idx=2,crc=0x1,docs=2/2,bytes=3/3,trusted=true,active=false,ready=false), "
+                    "node(idx=3,crc=0x1,docs=2/2,bytes=3/3,trusted=true,active=false,ready=false)] "
                     "(pri 120) (scheduling pri MEDIUM)")
             .bucketInfo("0=2/3/4,1=1/2/3/t,2=1/2/3/t,3=1/2/3/t")
             .clusterState("distributor:1 storage:5")
@@ -748,6 +749,25 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
             .expect("NO OPERATIONS GENERATED")
             .bucketInfo("1=0/0/1")
             .clusterState("distributor:1 storage:4"));
+}
+
+// Upon entering a cluster state transition edge the distributor will
+// prune all replicas from its DB that are on nodes that are unavailable
+// in the _pending_ state. As long as this state is pending, the _current_
+// state will include these nodes as available. But since replicas for
+// the unavailable node(s) have been pruned away, started merges that
+// involve these nodes as part of their chain are doomed to fail.
+TEST_F(StateCheckersTest, do_not_schedule_merges_when_included_node_is_unavailable_in_pending_state) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+            CheckerParams()
+                .expect("NO OPERATIONS GENERATED")
+                .redundancy(3)
+                .bucketInfo("1=1,2=1") // Node 0 pruned from DB since it's s:m in state 2
+                .clusterState("version:1 distributor:2 storage:3")
+                // We change the distributor set as well as the content node set. Just setting a node
+                // into maintenance does not trigger a pending state since it does not require any
+                // bucket info fetches from any of the nodes.
+                .pending_cluster_state("version:2 distributor:1 storage:3 .0.s:m"));
 }
 
 TEST_F(StateCheckersTest, do_not_merge_inconsistently_split_buckets) {

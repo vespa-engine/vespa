@@ -64,6 +64,7 @@ public:
 
         // Common
         const lib::ClusterState& systemState;
+        const lib::ClusterState* pending_cluster_state; // nullptr if no state is pending.
         const DistributorConfiguration& distributorConfig;
         const lib::Distribution& distribution;
 

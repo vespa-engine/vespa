@@ -57,7 +57,7 @@ class AttributeConverter implements IntermediateOperation.AttributeMap {
         if (attributeMap.containsKey(key)) {
             AttrValue attrValue = attributeMap.get(key);
             if (attrValue.getValueCase() == AttrValue.ValueCase.TENSOR) {
-                return Optional.of(new TensorValue(TensorConverter.toVespaTensor(attrValue.getTensor(), type.type())));
+                return Optional.of(new TensorValue(TensorConverter.toVespaTensor(attrValue.getTensor(), type)));
             }
         }
         return get(key);

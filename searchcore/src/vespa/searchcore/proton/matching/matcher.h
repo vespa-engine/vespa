@@ -10,6 +10,8 @@
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -49,6 +51,8 @@ private:
     using DocsumRequest = search::engine::DocsumRequest;
     using Properties = search::fef::Properties;
     using my_clock = std::chrono::steady_clock;
+    using StructFieldMapper = search::StructFieldMapper;
+    using MatchingElements = search::MatchingElements;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
     search::fef::RankSetup::SP    _rankSetup;
@@ -154,6 +158,22 @@ public:
     search::FeatureSet::SP
     getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                     IAttributeContext & attrCtx, SessionManager &sessionManager);
+
+    /**
+     * Perform partial matching for the documents in the given docsum request
+     * to identify which struct field elements the query matched.
+     *
+     * @param req the docsum request
+     * @param search_ctx abstract view of searchable data
+     * @param attr_ctx abstract view of attribute data
+     * @param session_manager multilevel grouping session and query cache
+     * @param field_mapper knows which fields to collect information
+     *                     about and how they relate to each other
+     * @return matching elements
+     **/
+    MatchingElements get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
+                                           IAttributeContext &attr_ctx, SessionManager &session_manager,
+                                           const StructFieldMapper &field_mapper);
 
     /**
      * @return true if this rankprofile has summary-features enabled

@@ -20,7 +20,6 @@ import java.util.Optional;
 public class Const extends IntermediateOperation {
 
     private final AttributeMap attributeMap;
-    private OrderedTensorType standardNamingType;  // using standard naming convention: d0, d1, ...
 
     public Const(String modelName,
                  String nodeName,
@@ -30,7 +29,6 @@ public class Const extends IntermediateOperation {
         super(modelName, nodeName, inputs);
         this.attributeMap = attributeMap;
         this.type = type.rename(vespaName() + "_");
-        standardNamingType = OrderedTensorType.standardType(type);
         setConstantValue(value());
     }
 
@@ -55,13 +53,7 @@ public class Const extends IntermediateOperation {
         } else {
             expressionNode = new ReferenceNode(Reference.simple("constant", vespaName()));
         }
-        TensorFunction output = new TensorFunctionNode.TensorFunctionExpressionNode(expressionNode);
-        if ( ! standardNamingType.equals(type)) {
-            List<String> renameFrom = standardNamingType.dimensionNames();
-            List<String> renameTo = type.dimensionNames();
-            output = new Rename(output, renameFrom, renameTo);
-        }
-        return output;
+        return new TensorFunctionNode.TensorFunctionExpressionNode(expressionNode);
     }
 
     /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */

@@ -13,6 +13,7 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.metrics.MetricsPresentationConfig;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -81,33 +82,47 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
             @Override
             protected Iterable<ByteBuffer> responseContent() {
-                return Collections.singleton(ByteBuffer.wrap(buildMetricOutput()));
+                return Collections.singleton(ByteBuffer.wrap(buildMetricOutput(request.getUri().getQuery())));
             }
         }.dispatch(handler);
 
         return null;
     }
 
-    private byte[] buildMetricOutput() {
+    private byte[] buildMetricOutput(String query) {
         try {
-            String output = getStatusPacket() + getAllMetricsPackets() + "\n";
+            if (query != null && query.equals("array-formatted")) {
+                return getMetricsArray();
+            }
+            String output = jsonToString(getStatusPacket()) + getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JSONException e) {
             throw new RuntimeException("Bad JSON construction.", e);
         }
     }
 
+    private byte[] getMetricsArray() throws JSONException {
+        JSONObject root = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.put(getStatusPacket());
+        getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis())
+                .forEach(jsonArray::put);
+        root.put("metrics", jsonArray);
+        return jsonToString(root)
+                .getBytes(StandardCharsets.UTF_8);
+    }
+
     /**
      * Exactly one status packet is added to the response.
      */
-    private String getStatusPacket() throws JSONException {
+    private JSONObject getStatusPacket() throws JSONException {
         JSONObject packet = new JSONObjectWithLegibleException();
         packet.put(APPLICATION_KEY, applicationName);
 
         StateMonitor.Status status = monitor.status();
         packet.put(STATUS_CODE_KEY, status.ordinal());
         packet.put(STATUS_MSG_KEY, status.name());
-        return jsonToString(packet);
+        return packet;
     }
 
     private String jsonToString(JSONObject jsonObject) throws JSONException {

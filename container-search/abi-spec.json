@@ -2048,7 +2048,6 @@
       "abstract"
     ],
     "methods": [
-      "public void statusIsKnown(java.lang.Object)",
       "public abstract void working(java.lang.Object)",
       "public abstract void failed(java.lang.Object)",
       "public abstract void ping(java.lang.Object, java.util.concurrent.Executor)",
@@ -2081,6 +2080,7 @@
       "public java.lang.Object getNode()",
       "public void failed(com.yahoo.search.result.ErrorMessage)",
       "public void responded()",
+      "public java.lang.Boolean isKnownWorking()",
       "protected synchronized void setWorking(boolean, java.lang.String)"
     ],
     "fields": []

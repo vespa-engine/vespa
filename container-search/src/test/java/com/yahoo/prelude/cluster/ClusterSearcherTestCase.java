@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.IndexFacts;
@@ -264,8 +265,7 @@ public class ClusterSearcherTestCase {
         Set<String> documentTypes = new LinkedHashSet<>(docTypesList);
         ClusterSearcher cluster = new ClusterSearcher(documentTypes);
         try {
-            cluster.addBackendSearcher(new MyMockSearcher(
-                    expectAttributePrefetch));
+            cluster.addBackendSearcher(new MyMockSearcher(expectAttributePrefetch));
             cluster.setValidRankProfile("default", documentTypes);
             cluster.addValidRankProfile("testprofile", "type1");
             return new Execution(cluster, Execution.Context.createContextStub());
@@ -513,19 +513,23 @@ public class ClusterSearcherTestCase {
         assertEquals(3, result.getTotalHitCount());
     }
 
-    private static ClusterSearcher createSearcher(Double maxQueryTimeout,
-                                                  Double maxQueryCacheTimeout) {
+    private static ClusterSearcher createSearcher(String clusterName, Double maxQueryTimeout, Double maxQueryCacheTimeout,
+                                                  boolean streamingMode, VipStatus vipStatus)
+    {
         QrSearchersConfig.Builder qrSearchersConfig = new QrSearchersConfig.Builder();
-        QrSearchersConfig.Searchcluster.Builder searchClusterConfig =
-                new QrSearchersConfig.Searchcluster.Builder().name("test-cluster");
+        QrSearchersConfig.Searchcluster.Builder searchClusterConfig = new QrSearchersConfig.Searchcluster.Builder();
+        searchClusterConfig.name(clusterName);
+        if (streamingMode) {
+            searchClusterConfig.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.STREAMING);
+            searchClusterConfig.searchdef("streaming_sd");
+        }
         qrSearchersConfig.searchcluster(searchClusterConfig);
-        QrSearchersConfig.Searchcluster.Dispatcher.Builder dispatcherConfig =
-                new QrSearchersConfig.Searchcluster.Dispatcher.Builder();
+        QrSearchersConfig.Searchcluster.Dispatcher.Builder dispatcherConfig = new QrSearchersConfig.Searchcluster.Dispatcher.Builder();
         dispatcherConfig.host("localhost");
         dispatcherConfig.port(0);
         searchClusterConfig.dispatcher(dispatcherConfig);
 
-        ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder().clusterName("test-cluster");
+        ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder().clusterName(clusterName);
         if (maxQueryTimeout != null)
             clusterConfig.maxQueryTimeout(maxQueryTimeout);
         if (maxQueryCacheTimeout != null)
@@ -543,7 +547,7 @@ public class ClusterSearcherTestCase {
                                    Statistics.nullImplementation,
                                    new MockMetric(),
                                    new FS4ResourcePool(new QrConfig.Builder().build()),
-                                   new VipStatus());
+                                   vipStatus);
     }
 
     private static ClusterInfoConfig createClusterInfoConfig() {
@@ -558,13 +562,24 @@ public class ClusterSearcherTestCase {
         Execution exec;
         Query query;
         QueryTimeoutFixture(Double maxQueryTimeout, Double maxQueryCacheTimeout) {
-            searcher = createSearcher(maxQueryTimeout, maxQueryCacheTimeout);
+            String clusterName = "test-cluster";
+            VipStatus vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterName)).build(), new ClustersStatus());
+            searcher = createSearcher(clusterName, maxQueryTimeout, maxQueryCacheTimeout, false, vipStatus);
             exec = new Execution(searcher, Execution.Context.createContextStub());
             query = new Query("?query=hello&restrict=type1");
         }
         void search() {
             searcher.search(query, exec);
         }
+    }
+
+    @Test
+    public void testThatVipStatusIsSetUpForStreamingSearch() {
+        String clusterName = "test-cluster";
+        VipStatus vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterName)).build(), new ClustersStatus());
+        assertFalse(vipStatus.isInRotation());
+        ClusterSearcher searcher = createSearcher(clusterName, 1.0, 10.0, true, vipStatus);
+        assertTrue(vipStatus.isInRotation());
     }
 
     @Test

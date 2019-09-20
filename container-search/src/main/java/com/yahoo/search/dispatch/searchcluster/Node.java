@@ -46,16 +46,15 @@ public class Node {
     /** Returns the id of this group this node belongs to */
     public int group() { return group; }
 
-    /** Note that we know the status of this node */
-    public void setStatusIsKnown() { statusIsKnown.lazySet(true); }
+    public void setWorking(boolean working) {
+        this.statusIsKnown.lazySet(true);
+        this.working.lazySet(working);
+    }
 
-    /** Returns whether we know the status of this node */
-    public boolean getStatusIsKnown() { return statusIsKnown.get(); }
-
-    public void setWorking(boolean working) { this.working.lazySet(working); }
-
-    /** Returns whether this node is currently responding to requests */
-    public boolean isWorking() { return working.get(); }
+    /** Returns whether this node is currently responding to requests, or null if status is not known */
+    public Boolean isWorking() {
+        return statusIsKnown.get() ? working.get() : null;
+    }
 
     /** Updates the active documents on this node */
     public void setActiveDocuments(long activeDocuments) {

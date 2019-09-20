@@ -46,12 +46,12 @@ public class TensorConverter {
         return builder.build();
     }
 
-    static Tensor toVespaTensor(TensorProto tensorProto, TensorType type) {
-        IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type);
+    static Tensor toVespaTensor(TensorProto tensorProto, OrderedTensorType type) {
         Values values = readValuesOf(tensorProto);
-        if (values.size() == 0) // Might be stored as "tensor_content" instead
-            return toVespaTensor(readTensorContentOf(tensorProto));
-
+        if (values.size() == 0) { // Might be stored as "tensor_content" instead
+            return toVespaTensor(readTensorContentOf(tensorProto), type);
+        }
+        IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type.type());
         for (int i = 0; i < values.size(); ++i)
             builder.cellByDirectIndex(i, values.get(i));
         return builder.build();

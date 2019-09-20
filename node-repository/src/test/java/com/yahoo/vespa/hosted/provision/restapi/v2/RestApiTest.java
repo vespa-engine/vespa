@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.application.Networking;
@@ -8,7 +8,11 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
+import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
@@ -17,6 +21,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -680,7 +685,7 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
                        400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting target OS version for config nodes is unsupported\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Node type 'config' does not support OS upgrades\"}");
 
         // Attempt to downgrade OS
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -730,6 +735,11 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"osVersion\": \"7.5.2\"}"),
                                    Request.Method.PATCH),
                        "{\"message\":\"Set osVersion to 7.5.2 for nodes of type host\"}");
+
+        // Activate target
+        var nodeRepository = (NodeRepository) container.components().getComponent(MockNodeRepository.class.getName());
+        var osUpgradeActivator = new OsUpgradeActivator(nodeRepository, Duration.ofDays(1));
+        osUpgradeActivator.run();
 
         // Other node type does not return wanted OS version
         Response r = container.handleRequest(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"));
