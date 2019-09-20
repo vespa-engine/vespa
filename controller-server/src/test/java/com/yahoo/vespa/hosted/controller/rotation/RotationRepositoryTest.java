@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.rotation;
 
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -50,19 +51,21 @@ public class RotationRepositoryTest {
 
     private DeploymentTester tester;
     private RotationRepository repository;
+    private Application application;
     private Instance instance;
     
     @Before
     public void before() {
         tester = new DeploymentTester(new ControllerTester(rotationsConfig));
         repository = tester.controller().applications().rotationRepository();
-        instance = tester.createApplication("app1", "tenant1", 11L, 1L);
+        application = tester.createApplication("app1", "tenant1", 11L, 1L);
+        instance = tester.instance(application.id());
     }
 
     @Test
     public void assigns_and_reuses_rotation() {
         // Deploying assigns a rotation
-        tester.deployCompletely(instance, applicationPackage);
+        tester.deployCompletely(application, applicationPackage);
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         instance = tester.applications().require(instance.id());
@@ -81,7 +84,7 @@ public class RotationRepositoryTest {
                 .region("us-west-1")
                 .searchDefinition("search foo { }") // Update application package so there is something to deploy
                 .build();
-        tester.deployCompletely(instance, applicationPackage, 43);
+        tester.deployCompletely(application, applicationPackage, 43);
         assertEquals(List.of(expected.id()), rotationIds(tester.applications().require(instance.id()).rotations()));
     }
     
@@ -89,13 +92,13 @@ public class RotationRepositoryTest {
     public void strips_whitespace_in_rotation_fqdn() {
         DeploymentTester tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
         RotationRepository repository = tester.controller().applications().rotationRepository();
-        Instance instance = tester.createApplication("app2", "tenant2", 22L,
-                                                     2L);
-        tester.deployCompletely(instance, applicationPackage);
-        instance = tester.applications().require(instance.id());
+        Application application2 = tester.createApplication("app2", "tenant2", 22L, 2L);
+
+        tester.deployCompletely(application2, applicationPackage);
+        Instance instance2 = tester.applications().require(application2.id());
 
         try (RotationLock lock = repository.lock()) {
-            Rotation rotation = repository.getOrAssignRotation(instance, lock);
+            Rotation rotation = repository.getOrAssignRotation(instance2, lock);
             Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
             assertEquals(assignedRotation, rotation);
         }
@@ -104,19 +107,17 @@ public class RotationRepositoryTest {
     @Test
     public void out_of_rotations() {
         // Assigns 1 rotation
-        tester.deployCompletely(instance, applicationPackage);
+        tester.deployCompletely(application, applicationPackage);
 
         // Assigns 1 more
-        Instance instance2 = tester.createApplication("app2", "tenant2", 22L,
-                                                      2L);
-        tester.deployCompletely(instance2, applicationPackage);
+        Application application2 = tester.createApplication("app2", "tenant2", 22L, 2L);
+        tester.deployCompletely(application2, applicationPackage);
 
         // We're now out of rotations
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("no rotations available");
-        Instance instance3 = tester.createApplication("app3", "tenant3", 33L,
-                                                      3L);
-        tester.deployCompletely(instance3, applicationPackage);
+        Application application3 = tester.createApplication("app3", "tenant3", 33L, 3L);
+        tester.deployCompletely(application3, applicationPackage);
     }
 
     @Test
@@ -125,11 +126,10 @@ public class RotationRepositoryTest {
                 .globalServiceId("foo")
                 .region("us-east-3")
                 .build();
-        Instance instance = tester.createApplication("app2", "tenant2", 22L,
-                                                     2L);
+        Application application2 = tester.createApplication("app2", "tenant2", 22L, 2L);
         thrown.expect(RuntimeException.class);
         thrown.expectMessage("less than 2 prod zones are defined");
-        tester.deployCompletely(instance, applicationPackage);
+        tester.deployCompletely(application2, applicationPackage);
     }
 
     @Test
@@ -138,9 +138,8 @@ public class RotationRepositoryTest {
                 .region("us-east-3")
                 .region("us-west-1")
                 .build();
-        tester.deployCompletely(instance, applicationPackage);
-        Instance app = tester.applications().require(instance.id());
-        assertTrue(app.rotations().isEmpty());
+        tester.deployCompletely(application, applicationPackage);
+        assertTrue(tester.instance(application.id()).rotations().isEmpty());
     }
 
     @Test
@@ -150,11 +149,10 @@ public class RotationRepositoryTest {
                 .region("us-east-3")
                 .region("us-west-1")
                 .build();
-        Instance instance = tester.createApplication("app2", "tenant2", 22L,
-                                                     2L);
-        tester.deployCompletely(instance, applicationPackage);
-        assertEquals(List.of(new RotationId("foo-1")), rotationIds(tester.applications().require(instance.id()).rotations()));
-        assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/", tester.applications().require(instance.id())
+        Application application2 = tester.createApplication("app2", "tenant2", 22L, 2L);
+        tester.deployCompletely(application2, applicationPackage);
+        assertEquals(List.of(new RotationId("foo-1")), rotationIds(tester.instance(application2.id()).rotations()));
+        assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/", tester.instance(application2.id())
                 .endpointsIn(SystemName.cd).main().get().url().toString());
     }
 

@@ -21,6 +21,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
@@ -1238,12 +1239,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(new AthenzDomain("another.domain"), "service"), true);
 
-        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
         controllerTester.jobCompletion(JobType.component)
-                        .application(instance.id())
+                        .application(application.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1270,12 +1271,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
-        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                        .application(instance.id())
+                        .application(application.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1367,12 +1368,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), false);
 
-        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                        .application(instance.id())
+                        .application(application.id())
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1404,12 +1405,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
-        Instance instance = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, instance);
+        Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
+        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                .application(instance.id())
+                .application(application.id())
                 .projectId(screwdriverProjectId)
                 .uploadArtifact(applicationPackage)
                 .submit();
@@ -1430,7 +1431,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
         tester.computeVersionStatus();
         long projectId = 1;
-        Instance app = controllerTester.createApplication();
+        Application app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -1442,7 +1443,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
-        controllerTester.deploy(app, applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app.id(), applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
         // Notifying about job started not by the controller fails
@@ -1482,7 +1483,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.containerTester().computeVersionStatus();
 
         long projectId = 1;
-        Instance app = controllerTester.createApplication();
+        Application app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -1494,9 +1495,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
 
-        controllerTester.deploy(app, applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app.id(), applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
-        controllerTester.deploy(app, applicationPackage, STAGING_ZONE);
+        controllerTester.deploy(app.id(), applicationPackage, STAGING_ZONE);
         job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
@@ -1511,7 +1512,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void applicationWithRoutingPolicy() {
-        Instance app = controllerTester.createApplication();
+        Application app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")

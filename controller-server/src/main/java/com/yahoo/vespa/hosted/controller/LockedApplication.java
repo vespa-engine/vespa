@@ -96,8 +96,8 @@ public class LockedApplication {
     }
 
     /** Returns a read-only copy of this */
-    public Instance get() {
-        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
+    public Application get() {
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, change,
                             outstandingChange, ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
                             rotations, rotationStatus);
     }

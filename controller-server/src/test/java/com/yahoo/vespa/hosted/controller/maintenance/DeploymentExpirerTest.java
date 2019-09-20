@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -33,11 +34,14 @@ public class DeploymentExpirerTest {
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
                                                           new JobControl(new MockCuratorDb()));
-        Instance devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
-        Instance prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
+        Application devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
+        Application prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
+
+        Instance devInstance = tester.instance(devApp.id());
+        Instance prodInstance = tester.instance(prodApp.id());
 
         // Deploy dev
-        tester.controllerTester().deploy(devApp, tester.controllerTester().toZone(Environment.dev));
+        tester.controllerTester().deploy(devInstance.id(), tester.controllerTester().toZone(Environment.dev));
 
         // Deploy prod
         ApplicationPackage prodAppPackage = new ApplicationPackageBuilder()
@@ -45,19 +49,19 @@ public class DeploymentExpirerTest {
                 .build();
         tester.deployCompletely(prodApp, prodAppPackage);
 
-        assertEquals(1, permanentDeployments(devApp).size());
-        assertEquals(1, permanentDeployments(prodApp).size());
+        assertEquals(1, permanentDeployments(devInstance).size());
+        assertEquals(1, permanentDeployments(prodInstance).size());
 
         // Not expired at first
         expirer.maintain();
-        assertEquals(1, permanentDeployments(devApp).size());
-        assertEquals(1, permanentDeployments(prodApp).size());
+        assertEquals(1, permanentDeployments(devInstance).size());
+        assertEquals(1, permanentDeployments(prodInstance).size());
 
         // The dev application is removed
         tester.clock().advance(Duration.ofDays(15));
         expirer.maintain();
-        assertEquals(0, permanentDeployments(devApp).size());
-        assertEquals(1, permanentDeployments(prodApp).size());
+        assertEquals(0, permanentDeployments(devInstance).size());
+        assertEquals(1, permanentDeployments(prodInstance).size());
     }
 
     private List<Deployment> permanentDeployments(Instance instance) {

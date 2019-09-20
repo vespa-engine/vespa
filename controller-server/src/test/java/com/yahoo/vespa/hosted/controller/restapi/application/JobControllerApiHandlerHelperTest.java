@@ -55,7 +55,7 @@ public class JobControllerApiHandlerHelperTest {
 
         // Revision 1 gets deployed everywhere.
         ApplicationVersion revision1 = tester.deployNewSubmission();
-        assertEquals(2, tester.app().deploymentJobs().projectId().getAsLong());
+        assertEquals(2, tester.instance().deploymentJobs().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.
@@ -80,9 +80,9 @@ public class JobControllerApiHandlerHelperTest {
         tester.cloud().set(FAILURE);
         tester.runner().run();
         assertEquals(testFailure, tester.jobs().last(appId, productionUsWest1).get().status());
-        assertEquals(revision2, tester.app().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
-        assertEquals(revision1, tester.app().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
-        assertEquals(revision2, tester.app().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision2, tester.instance().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision1, tester.instance().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision2, tester.instance().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
 
         tester.clock().advance(Duration.ofMillis(1000));
 
@@ -149,7 +149,7 @@ public class JobControllerApiHandlerHelperTest {
         var region = "us-west-1";
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();
         // Deploy directly to production zone, like integration tests.
-        tester.tester().controller().applications().deploy(tester.app().id(), ZoneId.from("prod", region),
+        tester.tester().controller().applications().deploy(tester.instance().id(), ZoneId.from("prod", region),
                                                            Optional.of(applicationPackage),
                                                            new DeployOptions(true, Optional.empty(),
                                                                              false, false));

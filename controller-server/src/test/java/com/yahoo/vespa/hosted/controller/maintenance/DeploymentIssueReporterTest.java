@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -78,24 +79,24 @@ public class DeploymentIssueReporterTest {
         tester.controllerTester().createTenant("tenant3", "domain3", 1L, contact);
 
         // Create and deploy one application for each of three tenants.
-        Instance app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
-        Instance app2 = tester.createApplication("application2", "tenant2", projectId2, propertyId2);
-        Instance app3 = tester.createApplication("application3", "tenant3", projectId3, propertyId3);
+        Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
+        Application app2 = tester.createApplication("application2", "tenant2", projectId2, propertyId2);
+        Application app3 = tester.createApplication("application3", "tenant3", projectId3, propertyId3);
 
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
         // apps 1 and 3 have one failure each.
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app1, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app1, applicationPackage, false, stagingTest);
+        tester.deployAndNotify(app1.id(), applicationPackage, true, systemTest);
+        tester.deployAndNotify(app1.id(), applicationPackage, false, stagingTest);
 
         // app2 is successful, but will fail later.
         tester.deployCompletely(app2, canaryPackage);
 
         tester.jobCompletion(component).application(app3).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app3, applicationPackage, true, systemTest);
-        tester.deployAndNotify(app3, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(app3, applicationPackage, false, productionUsWest1);
+        tester.deployAndNotify(app3.id(), applicationPackage, true, systemTest);
+        tester.deployAndNotify(app3.id(), applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app3.id(), applicationPackage, false, productionUsWest1);
 
         reporter.maintain();
         reporter.maintain();
@@ -130,7 +131,7 @@ public class DeploymentIssueReporterTest {
 
 
         // app3 fixes their problems, but the ticket for app3 is left open; see the resolved ticket is not escalated when another escalation period has passed.
-        tester.deployAndNotify(app3, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(app3.id(), applicationPackage, true, productionUsWest1);
         tester.clock().advance(maxInactivity.plus(Duration.ofDays(1)));
 
         reporter.maintain();
@@ -142,7 +143,7 @@ public class DeploymentIssueReporterTest {
 
         // app3 now has a new failure past max failure age; see that a new issue is filed.
         tester.jobCompletion(component).application(app3).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app3, applicationPackage, false, systemTest);
+        tester.deployAndNotify(app3.id(), applicationPackage, false, systemTest);
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
 
         reporter.maintain();

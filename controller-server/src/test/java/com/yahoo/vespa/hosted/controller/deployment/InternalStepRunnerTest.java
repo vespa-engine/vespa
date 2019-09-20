@@ -90,7 +90,7 @@ public class InternalStepRunnerTest {
     @Test
     public void canSwitchFromScrewdriverAndBackAgain() {
         // Deploys a default application package with default build number.
-        tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage);
+        tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage);
         tester.setEndpoints(appId, JobType.productionUsCentral1.zone(system()));
         tester.setEndpoints(appId, JobType.productionUsWest1.zone(system()));
         tester.setEndpoints(appId, JobType.productionUsEast3.zone(system()));
@@ -106,11 +106,11 @@ public class InternalStepRunnerTest {
 
         tester.jobs().unregister(appId);
         try {
-            tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
+            tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
             throw new IllegalStateException("Component job should get even again with build numbers to produce a change.");
         }
         catch (AssertionError expected) { }
-        tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 2);
+        tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 2);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class InternalStepRunnerTest {
         tester.configServer().setVersion(appId, zone, version);
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
-        assertEquals(version, tester.tester().application(appId).deployments().get(zone).version());
+        assertEquals(version, tester.tester().instance(appId).deployments().get(zone).version());
 
         try {
             tester.jobs().deploy(appId, JobType.productionApNortheast1, Optional.empty(), applicationPackage);

@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -38,8 +39,10 @@ public class RoutingPoliciesTest {
 
     private final DeploymentTester tester = new DeploymentTester();
 
-    private final Instance app1 = tester.createApplication("app1", "tenant1", 1, 1L);
-    private final Instance app2 = tester.createApplication("app2", "tenant1", 1, 1L);
+    private final Application app1 = tester.createApplication("app1", "tenant1", 1, 1L);
+    private final Application app2 = tester.createApplication("app2", "tenant1", 1, 1L);
+    private final Instance instance1 = tester.instance(app1.id());
+    private final Instance instance2 = tester.instance(app2.id());
 
     private final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private final ZoneId zone2 = ZoneId.from("prod", "us-central-1");
@@ -152,12 +155,12 @@ public class RoutingPoliciesTest {
                 "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
-        assertEquals(4, policies(app1).size());
+        assertEquals(4, policies(instance1).size());
 
         // Next deploy does nothing
         tester.deployCompletely(app1, applicationPackage, ++buildNumber);
         assertEquals(expectedRecords, recordNames());
-        assertEquals(4, policies(app1).size());
+        assertEquals(4, policies(instance1).size());
 
         // Add 1 cluster in each zone and deploy
         provisionLoadBalancers(clustersPerZone + 1, app1.id(), zone1, zone2);
@@ -171,7 +174,7 @@ public class RoutingPoliciesTest {
                 "c2.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
-        assertEquals(6, policies(app1).size());
+        assertEquals(6, policies(instance1).size());
 
         // Deploy another application
         provisionLoadBalancers(clustersPerZone, app2.id(), zone1, zone2);
@@ -189,7 +192,7 @@ public class RoutingPoliciesTest {
                 "c1.app2.tenant1.us-west-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, recordNames());
-        assertEquals(4, policies(app2).size());
+        assertEquals(4, policies(instance2).size());
 
         // Deploy removes cluster from app1
         provisionLoadBalancers(clustersPerZone, app1.id(), zone1, zone2);
