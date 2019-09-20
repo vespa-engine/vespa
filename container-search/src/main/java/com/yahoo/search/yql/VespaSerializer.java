@@ -90,6 +90,7 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
+import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.UriItem;
@@ -645,6 +646,7 @@ public class VespaSerializer {
     }
 
     private static class SameElementSerializer extends Serializer {
+
         @Override
         void onExit(StringBuilder destination, Item item) { }
 
@@ -654,7 +656,6 @@ public class VespaSerializer {
         }
 
         static boolean serialize(StringBuilder destination, Item item, boolean includeField) {
-
             SameElementItem sameElement = (SameElementItem) item;
 
             if (includeField) {
@@ -669,10 +670,11 @@ public class VespaSerializer {
                 Item current = sameElement.getItem(i);
                 if (current instanceof WordItem) {
                     new WordSerializer().serialize(destination, current);
+                } else if (current instanceof IntItem) {
+                    new NumberSerializer().serialize(destination, current);
                 } else {
-                    throw new IllegalArgumentException(
-                            "Serializing of " + current.getClass().getSimpleName()
-                                    + " in same_element is not implemented, please report this as a bug.");
+                    throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
+                                                       " in same_element is not implemented, please report this as a bug.");
                 }
             }
             destination.append(')');
