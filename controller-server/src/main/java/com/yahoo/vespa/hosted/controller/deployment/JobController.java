@@ -12,6 +12,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.LockedInstance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
@@ -26,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -281,7 +283,7 @@ public class JobController {
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision, String authorEmail, long projectId,
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
-        controller.applications().lockOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally())
                 application = registered(application);
 
@@ -309,17 +311,20 @@ public class JobController {
     }
 
     /** Registers the given application, copying necessary application packages, and returns the modified version. */
-    private LockedInstance registered(LockedInstance application) {
-                // TODO jvenstad: Remove when there are no more SDv3 pipelines.
-                // Copy all current packages to the new application store
-                application.get().productionDeployments().values().stream()
-                           .map(Deployment::applicationVersion)
-                           .distinct()
-                           .forEach(appVersion -> {
-                               byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                               controller.applications().applicationStore().put(application.get().id(), appVersion, content);
-                           });
-                // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
+    private LockedApplication registered(LockedApplication application) {
+        controller.applications().asList(TenantAndApplicationId.from(application.get().id())).stream()
+                  .map(Instance::id)
+                  .forEach(id -> controller.applications().lockOrThrow(id, instance ->
+                          // TODO jvenstad: Remove when everyone has migrated off SDv3 pipelines. Real soon now!
+                          // Copy all current packages to the new application store
+                          instance.get().productionDeployments().values().stream()
+                                  .map(Deployment::applicationVersion)
+                                  .distinct()
+                                  .forEach(appVersion -> {
+                                      byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
+                                      controller.applications().applicationStore().put(application.get().id(), appVersion, content);
+                                  })));
+        // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
         return application.withChange(application.get().change().withoutPlatform().withoutApplication())
                           .withBuiltInternally(true);
     }
@@ -346,7 +351,7 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        controller.applications().lockOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally())
                 controller.applications().store(registered(application));
         });
