@@ -127,7 +127,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                     }
                     throw new AuthorizationException(
                             String.format(
-                                    "Peer is not allowed to access config for owned by %s. Peer is owned by %s",
+                                    "Peer is not allowed to access config owned by %s. Peer is owned by %s",
                                     resolvedApplication.toShortString(), peerOwner.toShortString()));
                 }
             default:
@@ -149,7 +149,9 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                 if (filesOwnedByApplication.contains(requestedFile)) {
                     return; // allowed to access
                 }
-                throw new AuthorizationException(String.format("Peer is not allowed to access file %s. Peer is owned by %s", requestedFile.value(), peerOwner.toShortString()));
+                throw new AuthorizationException(
+                        String.format("Peer is not allowed to access file reference %s. Peer is owned by %s. File references owned by this application: %s",
+                                      requestedFile.value(), peerOwner.toShortString(), filesOwnedByApplication));
             default:
                 throw new AuthorizationException(String.format("'%s' nodes are not allowed to access files", peerIdentity.nodeType()));
         }
