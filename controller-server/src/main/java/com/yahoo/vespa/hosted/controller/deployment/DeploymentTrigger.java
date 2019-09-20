@@ -201,7 +201,7 @@ public class DeploymentTrigger {
         catch (RuntimeException e) {
             log.log(LogLevel.WARNING, "Exception triggering " + job + ": " + e);
             if (e instanceof NoSuchElementException || e instanceof IllegalArgumentException)
-                applications().lockOrThrow(job.applicationId(), application ->
+                applications().lockApplicationOrThrow(job.applicationId(), application ->
                         applications().store(application.withProjectId(OptionalLong.empty())));
             return false;
         }

@@ -103,27 +103,6 @@ public class LockedInstance {
                             rotations, rotationStatus);
     }
 
-    public LockedInstance withBuiltInternally(boolean builtInternally) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs.withBuiltInternally(builtInternally), change, outstandingChange,
-                                  ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                  rotations, rotationStatus);
-    }
-
-    public LockedInstance withProjectId(OptionalLong projectId) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs.withProjectId(projectId), change, outstandingChange,
-                                  ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                  rotations, rotationStatus);
-    }
-
-    public LockedInstance withDeploymentIssueId(IssueId issueId) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs.with(issueId), change, outstandingChange,
-                                  ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                  rotations, rotationStatus);
-    }
-
     public LockedInstance withJobPause(JobType jobType, OptionalLong pausedUntil) {
         return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                   deploymentJobs.withPause(jobType, pausedUntil), change, outstandingChange,
@@ -195,19 +174,6 @@ public class LockedInstance {
                                   deploymentJobs.without(jobType), change, outstandingChange,
                                   ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
                                   rotations, rotationStatus);
-    }
-
-    public LockedInstance with(DeploymentSpec deploymentSpec) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange,
-                                  ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                  rotations, rotationStatus);
-    }
-
-    public LockedInstance with(ValidationOverrides validationOverrides) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                  metrics, pemDeployKey, rotations, rotationStatus);
     }
 
     public LockedInstance withChange(Change change) {

@@ -681,7 +681,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
-        tester.controller().applications().lockOrThrow(id, application ->
+        tester.controller().applications().lockApplicationOrThrow(id, application ->
                 tester.controller().applications().store(application.withDeploymentIssueId(IssueId.from("123"))
                                                                     .withOwnershipIssueId(IssueId.from("321"))
                                                                     .withOwner(User.from("owner-username"))));

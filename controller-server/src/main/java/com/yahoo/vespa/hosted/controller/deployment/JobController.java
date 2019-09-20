@@ -13,7 +13,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedApplication;
-import com.yahoo.vespa.hosted.controller.LockedInstance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
@@ -388,7 +387,7 @@ public class JobController {
 
     /** Unregisters the given application and makes all associated data eligible for garbage collection. */
     public void unregister(ApplicationId id) {
-        controller.applications().lockIfPresent(id, application -> {
+        controller.applications().lockApplicationIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
             jobs(id).forEach(type -> last(id, type).ifPresent(last -> abort(last.id())));
         });
