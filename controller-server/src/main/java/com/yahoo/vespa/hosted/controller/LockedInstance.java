@@ -188,27 +188,6 @@ public class LockedInstance {
                                   metrics, pemDeployKey, rotations, rotationStatus);
     }
 
-    public LockedInstance withOwnershipIssueId(IssueId issueId) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, Optional.ofNullable(issueId), owner,
-                                  majorVersion, metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
-    public LockedInstance withOwner(User owner) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, ownershipIssueId,
-                                  Optional.ofNullable(owner), majorVersion, metrics, pemDeployKey,
-                                  rotations, rotationStatus);
-    }
-
-    /** Set a major version for this, or set to null to remove any major version override */
-    public LockedInstance withMajorVersion(Integer majorVersion) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, ownershipIssueId, owner,
-                                     majorVersion == null ? OptionalInt.empty() : OptionalInt.of(majorVersion),
-                                  metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
     public LockedInstance with(ApplicationMetrics metrics) {
         return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                   deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
