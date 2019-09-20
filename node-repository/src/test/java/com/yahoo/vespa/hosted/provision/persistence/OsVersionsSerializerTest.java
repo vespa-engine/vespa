@@ -9,14 +9,13 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author mpolden
  */
 public class OsVersionsSerializerTest {
 
-    // TODO(mpolden): Remove once no longer supported
     @Test
     public void legacy_format() {
         var json = "{\"host\":\"1.2.3\",\"proxyhost\":\"4.5.6\",\"confighost\":\"7.8.9\"}";
@@ -33,28 +32,14 @@ public class OsVersionsSerializerTest {
     }
 
     @Test
-    public void read_future_format() {
-        var json = "{\n" +
-                   "  \"host\": {\n" +
-                   "    \"version\": \"1.2.3\",\n" +
-                   "    \"active\": false\n" +
-                   "  " +
-                   "},\n" +
-                   "  \"proxyhost\": {\n" +
-                   "    \"version\": \"4.5.6\",\n" +
-                   "    \"active\": true\n" +
-                   "  },\n" +
-                   "  \"confighost\": {\n" +
-                   "    \"version\": \"7.8.9\",\n" +
-                   "    \"active\": true\n" +
-                   "  }\n" +
-                   "}";
-        var versions = OsVersionsSerializer.fromJson(json.getBytes(StandardCharsets.UTF_8));
-        assertEquals(Map.of(
-                NodeType.host, new OsVersion(Version.fromString("1.2.3"), false),
-                NodeType.proxyhost, new OsVersion(Version.fromString("4.5.6"), true),
+    public void serialization() {
+        var versions = Map.of(
+                NodeType.host, new OsVersion(Version.fromString("1.2.3"), true),
+                NodeType.proxyhost, new OsVersion(Version.fromString("4.5.6"), false),
                 NodeType.confighost, new OsVersion(Version.fromString("7.8.9"), true)
-        ), versions);
+        );
+        var serialized = OsVersionsSerializer.fromJson(OsVersionsSerializer.toJson(versions));
+        assertEquals(serialized, versions);
     }
 
 }
