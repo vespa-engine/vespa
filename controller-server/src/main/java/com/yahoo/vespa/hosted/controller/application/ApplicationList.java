@@ -164,11 +164,6 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
     }
 
-    /** Returns the subset of applications that have at least one assigned rotation */
-    public ApplicationList hasRotation() {
-        return listOf(list.stream().filter(a -> !a.rotations().isEmpty()));
-    }
-
     /**
      * Returns the subset of applications that hasn't pinned to an an earlier major version than the given one.
      *

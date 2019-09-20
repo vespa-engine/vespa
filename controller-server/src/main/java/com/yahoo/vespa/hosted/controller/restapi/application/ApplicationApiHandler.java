@@ -347,7 +347,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse application(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), getApplication(tenantName, applicationName, instanceName), request);
+        toSlime(slime.setObject(), getInstance(tenantName, applicationName, instanceName),
+                getApplication(tenantName, applicationName, instanceName), request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -381,7 +382,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(messageBuilder.toString());
     }
 
-    private Instance getApplication(String tenantName, String applicationName, String instanceName) {
+    private Application getApplication(String tenantName, String applicationName, String instanceName) {
+        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
+        return controller.applications().getApplication(applicationId)
+                         .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
+    }
+
+    private Instance getInstance(String tenantName, String applicationName, String instanceName) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         return controller.applications().get(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
@@ -471,22 +478,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(type.jobName() + " for " + id + " paused for " + DeploymentTrigger.maxPause);
     }
 
-    private void toSlime(Cursor object, Application application, HttpRequest request) {
-        object.setString("tenant", application.id().tenant().value());
-        object.setString("application", application.id().application().value());
-        object.setString("instance", application.id().instance().value());
+    private void toSlime(Cursor object, Instance instance, Application application, HttpRequest request) {
+        object.setString("tenant", instance.id().tenant().value());
+        object.setString("application", instance.id().application().value());
+        object.setString("instance", instance.id().instance().value());
         object.setString("deployments", withPath("/application/v4" +
-                                                 "/tenant/" + application.id().tenant().value() +
-                                                 "/application/" + application.id().application().value() +
-                                                 "/instance/" + application.id().instance().value() + "/job/",
+                                                 "/tenant/" + instance.id().tenant().value() +
+                                                 "/application/" + instance.id().application().value() +
+                                                 "/instance/" + instance.id().instance().value() + "/job/",
                                                  request.getUri()).toString());
 
-        application.deploymentJobs().statusOf(JobType.component)
+        instance.deploymentJobs().statusOf(JobType.component)
                 .flatMap(JobStatus::lastSuccess)
                 .map(run -> run.application().source())
                 .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
 
-        application.deploymentJobs().projectId()
+        instance.deploymentJobs().projectId()
                 .ifPresent(id -> object.setLong("projectId", id));
 
         // Currently deploying change
@@ -501,8 +508,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Jobs sorted according to deployment spec
         List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                              .steps(application.deploymentSpec())
-                                              .sortedJobs(application.deploymentJobs().jobStatus().values());
+                .steps(application.deploymentSpec())
+                .sortedJobs(instance.deploymentJobs().jobStatus().values());
 
         object.setBool("deployedInternally", application.deploymentJobs().deployedInternally());
         Cursor deploymentsArray = object.setArray("deploymentJobs");
@@ -537,150 +544,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        application.endpointsIn(controller.system())
-                .scope(Endpoint.Scope.global)
-                .legacy(false) // Hide legacy names
-                .asList().stream()
-                .map(Endpoint::url)
-                .map(URI::toString)
-                .forEach(globalRotationsArray::addString);
-
-        application.rotations().stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst()
-                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-
-        // Per-cluster rotations
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(application.id());
-        for (RoutingPolicy policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalRotationsArray::addString);
-        }
-
-        // Deployments sorted according to deployment spec
-        List<Deployment> deployments = controller.applications().deploymentTrigger()
-                                                 .steps(application.deploymentSpec())
-                                                 .sortedDeployments(application.deployments().values());
-        Cursor instancesArray = object.setArray("instances");
-        for (Deployment deployment : deployments) {
-            Cursor deploymentObject = instancesArray.addObject();
-
-            // Rotation status for this deployment
-            if (deployment.zone().environment() == Environment.prod) {
-                //  0 rotations: No fields written
-                //  1 rotation : Write legacy field and endpointStatus field
-                // >1 rotation : Write only endpointStatus field
-                if (application.rotations().size() == 1) {
-                    // TODO(mpolden): Stop writing this field once clients stop expecting it
-                    toSlime(application.rotationStatus().of(application.rotations().get(0).rotationId(), deployment),
-                            deploymentObject);
-                }
-                if (!application.rotations().isEmpty()) {
-                    toSlime(application.rotations(), application.rotationStatus(), deployment, deploymentObject);
-                }
-            }
-
-            if (recurseOverDeployments(request)) // List full deployment information when recursive.
-                toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
-            else {
-                deploymentObject.setString("environment", deployment.zone().environment().value());
-                deploymentObject.setString("region", deployment.zone().region().value());
-                deploymentObject.setString("instance", application.id().instance().value()); // pointless
-                deploymentObject.setString("url", withPath(request.getUri().getPath() +
-                                                           "/environment/" + deployment.zone().environment().value() +
-                                                           "/region/" + deployment.zone().region().value() +
-                                                           ( request.getUri().getPath().contains("/instance/") ? "" : "/instance/" + application.id().instance().value()),
-                                                           request.getUri()).toString());
-            }
-        }
-
-        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
-
-        // Metrics
-        Cursor metricsObject = object.setObject("metrics");
-        metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
-        metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
-
-        // Activity
-        Cursor activity = object.setObject("activity");
-        application.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried", instant.toEpochMilli()));
-        application.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten", instant.toEpochMilli()));
-        application.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
-        application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
-
-        application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
-        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
-        application.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
-    }
-
-    private void toSlime(Cursor object, Instance instance, HttpRequest request) {
-        object.setString("tenant", instance.id().tenant().value());
-        object.setString("application", instance.id().application().value());
-        object.setString("instance", instance.id().instance().value());
-        object.setString("deployments", withPath("/application/v4" +
-                                                 "/tenant/" + instance.id().tenant().value() +
-                                                 "/application/" + instance.id().application().value() +
-                                                 "/instance/" + instance.id().instance().value() + "/job/",
-                                                 request.getUri()).toString());
-
-        instance.deploymentJobs().statusOf(JobType.component)
-                .flatMap(JobStatus::lastSuccess)
-                .map(run -> run.application().source())
-                .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
-
-        instance.deploymentJobs().projectId()
-                .ifPresent(id -> object.setLong("projectId", id));
-
-        // Currently deploying change
-        if ( ! instance.change().isEmpty()) {
-            toSlime(object.setObject("deploying"), instance.change());
-        }
-
-        // Outstanding change
-        if ( ! instance.outstandingChange().isEmpty()) {
-            toSlime(object.setObject("outstandingChange"), instance.outstandingChange());
-        }
-
-        // Jobs sorted according to deployment spec
-        List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                .steps(instance.deploymentSpec())
-                .sortedJobs(instance.deploymentJobs().jobStatus().values());
-
-        object.setBool("deployedInternally", instance.deploymentJobs().deployedInternally());
-        Cursor deploymentsArray = object.setArray("deploymentJobs");
-        for (JobStatus job : jobStatus) {
-            Cursor jobObject = deploymentsArray.addObject();
-            jobObject.setString("type", job.type().jobName());
-            jobObject.setBool("success", job.isSuccess());
-
-            job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
-            job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
-            job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
-            job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
-        }
-
-        // Change blockers
-        Cursor changeBlockers = object.setArray("changeBlockers");
-        instance.deploymentSpec().changeBlocker().forEach(changeBlocker -> {
-            Cursor changeBlockerObject = changeBlockers.addObject();
-            changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
-            changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
-            changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
-            Cursor days = changeBlockerObject.setArray("days");
-            changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
-            Cursor hours = changeBlockerObject.setArray("hours");
-            changeBlocker.window().hours().forEach(hours::addLong);
-        });
-
-        // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", compileVersion(instance.id()).toFullString());
-
-        instance.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
-
-        // Rotation
-        Cursor globalRotationsArray = object.setArray("globalRotations");
         instance.endpointsIn(controller.system())
                 .scope(Endpoint.Scope.global)
                 .legacy(false) // Hide legacy names
@@ -705,7 +568,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
-                .steps(instance.deploymentSpec())
+                .steps(application.deploymentSpec())
                 .sortedDeployments(instance.deployments().values());
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
@@ -744,8 +607,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
-        metricsObject.setDouble("queryServiceQuality", instance.metrics().queryServiceQuality());
-        metricsObject.setDouble("writeServiceQuality", instance.metrics().writeServiceQuality());
+        metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
+        metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
 
         // Activity
         Cursor activity = object.setObject("activity");
@@ -754,9 +617,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         instance.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
         instance.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
-        instance.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
-        instance.owner().ifPresent(owner -> object.setString("owner", owner.username()));
-        instance.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
+        application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
+        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
+        application.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
     private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
@@ -1448,7 +1311,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         for (Instance instance : controller.applications().asList(tenant.name())) {
             if ( ! instance.id().instance().isTester()) {
                 if (recurseOverApplications(request))
-                    toSlime(applicationArray.addObject(), instance, request);
+                    toSlime(applicationArray.addObject(),
+                            instance,
+                            getApplication(instance.id().tenant().value(),
+                                           instance.id().application().value(),
+                                           instance.id().instance().value()),
+                            request);
                 else
                     toSlime(instance, applicationArray.addObject(), request);
             }

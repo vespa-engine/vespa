@@ -200,20 +200,6 @@ public class Application {
         return rotations;
     }
 
-    /** Returns the default global endpoints for this in given system - for a given endpoint ID */
-    public EndpointList endpointsIn(SystemName system, EndpointId endpointId) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        return EndpointList.create(id, endpointId, system);
-    }
-
-    /** Returns the default global endpoints for this in given system */
-    public EndpointList endpointsIn(SystemName system) {
-        if (rotations.isEmpty()) return EndpointList.EMPTY;
-        final var endpointStream = rotations.stream()
-                .flatMap(rotation -> EndpointList.create(id, rotation.endpointId(), system).asList().stream());
-        return EndpointList.of(endpointStream);
-    }
-
     public Optional<String> pemDeployKey() { return pemDeployKey; }
 
     /** Returns the status of the global rotation(s) assigned to this */
