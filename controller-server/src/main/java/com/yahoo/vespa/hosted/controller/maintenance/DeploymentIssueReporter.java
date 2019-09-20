@@ -142,7 +142,7 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     private void store(ApplicationId id, IssueId issueId) {
-        controller().applications().lockIfPresent(id, application ->
+        controller().applications().lockApplicationIfPresent(id, application ->
                 controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
 
