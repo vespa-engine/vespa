@@ -37,10 +37,10 @@ public class DeploymentMetricsMaintainerTest {
     @Test
     public void updates_metrics() {
         var application = tester.createApplication("app1", "tenant1", 123L, 1L);
-        deploy(application, Version.fromString("7.1"));
+        deploy(application.id(), Version.fromString("7.1"));
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Supplier<Instance> app = () -> tester.application(application.id());
+        Supplier<Instance> app = () -> tester.instance(application.id());
         Supplier<Deployment> deployment = () -> app.get().deployments().values().stream().findFirst().get();
 
         // No metrics gathered yet
@@ -51,7 +51,7 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Only get application metrics for old version
-        deploy(app.get(), Version.fromString("6.3.3"));
+        deploy(application.id(), Version.fromString("6.3.3"));
         maintainer.maintain();
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
@@ -60,7 +60,7 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Metrics are gathered and saved to application
-        deploy(app.get(), Version.fromString("7.5.5"));
+        deploy(application.id(), Version.fromString("7.5.5"));
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
                               ClusterMetrics.FEED_PER_SECOND, 2D,
                               ClusterMetrics.DOCUMENT_COUNT, 3D,
@@ -127,8 +127,8 @@ public class DeploymentMetricsMaintainerTest {
         return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
     }
 
-    private void deploy(Instance instance, Version version) {
-        tester.controllerTester().deploy(instance,
+    private void deploy(ApplicationId id, Version version) {
+        tester.controllerTester().deploy(id,
                                          ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
                                          Optional.of(new ApplicationPackage(new byte[0])),
                                          false,

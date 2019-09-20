@@ -57,6 +57,7 @@ import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -195,14 +196,24 @@ public class ApplicationController {
         return curator.readApplications();
     }
 
-    /** Returns a snapshot of all applications */
+    /** Returns all applications of a tenant */
+    public List<Application> applicationList(TenantName tenant) {
+        return curator.readApplications(tenant);
+    }
+
+    /** Returns a snapshot of all instances */
     public List<Instance> asList() {
         return curator.readInstances();
     }
 
-    /** Returns all applications of a tenant */
+    /** Returns all instances of a tenant */
     public List<Instance> asList(TenantName tenant) {
         return curator.readInstances(tenant);
+    }
+
+    /** Returns all instances of an application */
+    public List<Instance> asList(TenantAndApplicationId id) {
+        return curator.readInstances(id);
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
@@ -211,12 +222,13 @@ public class ApplicationController {
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Version oldestInstalledPlatform(ApplicationId id) {
-        return get(id).flatMap(application -> application.productionDeployments().keySet().stream()
-                                                         .flatMap(zone -> configServer.nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
-                                                         .map(Node::currentVersion)
-                                                         .filter(version -> ! version.isEmpty())
-                                                         .min(naturalOrder()))
-                      .orElse(controller.systemVersion());
+        return asList(TenantAndApplicationId.from(id)).stream()
+                                                      .flatMap(instance -> instance.productionDeployments().keySet().stream()
+                                                                                   .flatMap(zone -> configServer.nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
+                                                                                   .map(Node::currentVersion)
+                                                                                   .filter(version -> ! version.isEmpty()))
+                                                      .min(naturalOrder())
+                                                      .orElse(controller.systemVersion());
     }
 
     /** Change the global endpoint status for given deployment */
@@ -255,7 +267,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Instance createApplication(ApplicationId id, Optional<Credentials> credentials) {
+    public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
         try (Lock lock = lock(id)) {
@@ -277,7 +289,7 @@ public class ApplicationController {
                 if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
-            LockedInstance application = new LockedInstance(new Instance(id, clock.instant()), lock);
+            LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
             log.info("Created " + application);
             return application.get();
@@ -754,6 +766,15 @@ public class ApplicationController {
      *
      * @param application a locked application to store
      */
+    public void store(LockedApplication application) {
+        curator.writeApplication(application.get());
+    }
+
+    /**
+     * Replace any previous version of this application by this instance
+     *
+     * @param application a locked application to store
+     */
     public void store(LockedInstance application) {
         curator.writeInstance(application.get());
     }
@@ -764,9 +785,21 @@ public class ApplicationController {
      * @param applicationId ID of the application to lock and get.
      * @param action Function which acts on the locked application.
      */
+    public void lockApplicationIfPresent(ApplicationId applicationId, Consumer<LockedApplication> action) {
+        try (Lock lock = lock(applicationId)) {
+            getApplication(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
+        }
+    }
+
+    /**
+     * Acquire a locked instance to modify and store, if there is an instance with the given id.
+     *
+     * @param applicationId ID of the instance to lock and get.
+     * @param action Function which acts on the locked instance.
+     */
     public void lockIfPresent(ApplicationId applicationId, Consumer<LockedInstance> action) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId).map(application -> new LockedInstance(application, lock)).ifPresent(action);
+            get(applicationId).map(instance -> new LockedInstance(instance, lock)).ifPresent(action);
         }
     }
 
@@ -776,6 +809,19 @@ public class ApplicationController {
      * @param applicationId ID of the application to lock and require.
      * @param action Function which acts on the locked application.
      * @throws IllegalArgumentException when application does not exist.
+     */
+    public void lockApplicationOrThrow(ApplicationId applicationId, Consumer<LockedApplication> action) {
+        try (Lock lock = lock(applicationId)) {
+            action.accept(new LockedApplication(requireApplication(applicationId), lock));
+        }
+    }
+
+    /**
+     * Acquire a locked instance to modify and store, or throw an exception if no instance has the given id.
+     *
+     * @param applicationId ID of the instance to lock and require.
+     * @param action Function which acts on the locked instance.
+     * @throws IllegalArgumentException when instance does not exist.
      */
     public void lockOrThrow(ApplicationId applicationId, Consumer<LockedInstance> action) {
         try (Lock lock = lock(applicationId)) {

@@ -126,8 +126,11 @@ public final class ControllerTester {
               .ifPresent(configureFunc);
     }
 
-    public static BuildService.BuildJob buildJob(Instance instance, JobType jobType) {
-        return BuildService.BuildJob.of(instance.id(), instance.deploymentJobs().projectId().getAsLong(), jobType.jobName());
+    public static BuildService.BuildJob buildJob(ApplicationId id, JobType jobType) {
+        if (jobType == JobType.component)
+            throw new AssertionError("Not supposed to happen");
+
+        return BuildService.BuildJob.of(id, 0, jobType.jobName());
     }
 
     public Controller controller() { return controller; }
@@ -157,27 +160,24 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
-        return createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
+        createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName,
+    public void createAndDeploy(String tenantName, String domainName, String applicationName,
                                     String instanceName, ZoneId zone, long projectId, Long propertyId) {
-        TenantName tenant = createTenant(tenantName, domainName, propertyId);
-        Instance instance = createApplication(tenant, applicationName, instanceName, projectId);
-        deploy(instance, zone);
-        return instance;
+        throw new AssertionError("Not supposed to use this");
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
-        return createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
+        createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
-        return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
+        createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
     /** Create application from slime */
@@ -241,32 +241,32 @@ public final class ControllerTester {
                                                                 new OktaAccessToken("okta-token")));
     }
 
-    public Instance createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
+    public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
         controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockOrThrow(applicationId, lockedInstance ->
-                controller().applications().store(lockedInstance.withProjectId(OptionalLong.of(projectId))));
-        return controller().applications().require(applicationId);
+        controller().applications().lockApplicationOrThrow(applicationId, application ->
+                controller().applications().store(application.withProjectId(OptionalLong.of(projectId))));
+        return controller().applications().requireApplication(applicationId);
     }
 
-    public void deploy(Instance instance, ZoneId zone) {
-        deploy(instance, zone, new ApplicationPackage(new byte[0]));
+    public void deploy(ApplicationId id, ZoneId zone) {
+        deploy(id, zone, new ApplicationPackage(new byte[0]));
     }
 
-    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage) {
-        deploy(instance, zone, applicationPackage, false);
+    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage) {
+        deploy(id, zone, applicationPackage, false);
     }
 
-    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
-        deploy(instance, zone, Optional.of(applicationPackage), deployCurrentVersion);
+    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+        deploy(id, zone, Optional.of(applicationPackage), deployCurrentVersion);
     }
 
-    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
-        deploy(instance, zone, applicationPackage, deployCurrentVersion, Optional.empty());
+    public void deploy(ApplicationId id, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
+        deploy(id, zone, applicationPackage, deployCurrentVersion, Optional.empty());
     }
 
-    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
-        controller().applications().deploy(instance.id(),
+    public void deploy(ApplicationId id, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
+        controller().applications().deploy(id,
                                            zone,
                                            applicationPackage,
                                            new DeployOptions(false, version, false, deployCurrentVersion));

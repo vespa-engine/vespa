@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -51,10 +51,10 @@ public class BuildJob {
         return this;
     }
 
-    public BuildJob application(Instance instance) {
-        this.applicationId = instance.id();
-        if (instance.deploymentJobs().projectId().isPresent()) {
-            this.projectId = instance.deploymentJobs().projectId().getAsLong();
+    public BuildJob application(Application application) {
+        this.applicationId = application.id();
+        if (application.deploymentJobs().projectId().isPresent()) {
+            this.projectId = application.deploymentJobs().projectId().getAsLong();
         }
         return this;
     }

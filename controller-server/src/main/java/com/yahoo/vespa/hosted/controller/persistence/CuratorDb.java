@@ -355,6 +355,7 @@ public class CuratorDb {
     }
 
     private Stream<ApplicationId> readApplicationIds() {
+        // TODO jonmv: Filter on number of parts in id when reading from applicationRoot again.
         return curator.getChildren(instanceRoot).stream().map(ApplicationId::fromSerializedForm);
     }
 
@@ -390,7 +391,12 @@ public class CuratorDb {
     }
 
     public List<Instance> readInstances(TenantName name) {
-        return readInstances(application -> application.tenant().equals(name));
+        return readInstances(instance -> instance.tenant().equals(name));
+    }
+
+    public List<Instance> readInstances(TenantAndApplicationId id) {
+        return readInstances(instance ->    instance.tenant().equals(id.tenant())
+                                         && instance.application().equals(id.application()));
     }
 
     private Stream<ApplicationId> readInstanceIds() {
@@ -426,7 +432,7 @@ public class CuratorDb {
      * Use Application where applicable
      *
      * Stop writing Instance to old application path
-     * Read Application from application path
+     * Read Application and Instance parts from respective paths
      *
      * Stop writing instance part to application path, and vice versa
      * Remove unused parts of Instance and Application

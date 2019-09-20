@@ -11,6 +11,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -86,7 +87,8 @@ public class InternalDeploymentTester {
     public ConfigServerMock configServer() { return tester.configServer(); }
     public ApplicationController applications() { return tester.applications(); }
     public ManualClock clock() { return tester.clock(); }
-    public Instance app() { return tester.application(appId); }
+    public Application application() { return tester.application(appId); }
+    public Instance instance() { return tester.instance(appId); }
 
     public InternalDeploymentTester() {
         tester = new DeploymentTester();
@@ -145,10 +147,10 @@ public class InternalDeploymentTester {
     public ApplicationVersion deployNewSubmission() {
         ApplicationVersion applicationVersion = newSubmission();
 
-        assertFalse(app().deployments().values().stream()
-                         .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
-        assertEquals(applicationVersion, app().change().application().get());
-        assertFalse(app().change().platform().isPresent());
+        assertFalse(instance().deployments().values().stream()
+                              .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
+        assertEquals(applicationVersion, instance().change().application().get());
+        assertFalse(instance().change().platform().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
@@ -164,18 +166,18 @@ public class InternalDeploymentTester {
      */
     public void deployNewPlatform(Version version) {
         tester.upgradeSystem(version);
-        assertFalse(app().deployments().values().stream()
-                         .anyMatch(deployment -> deployment.version().equals(version)));
-        assertEquals(version, app().change().platform().get());
-        assertFalse(app().change().application().isPresent());
+        assertFalse(instance().deployments().values().stream()
+                              .anyMatch(deployment -> deployment.version().equals(version)));
+        assertEquals(version, instance().change().platform().get());
+        assertFalse(instance().change().application().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsCentral1);
         runJob(JobType.productionUsWest1);
         runJob(JobType.productionUsEast3);
-        assertTrue(app().productionDeployments().values().stream()
-                        .allMatch(deployment -> deployment.version().equals(version)));
+        assertTrue(instance().productionDeployments().values().stream()
+                             .allMatch(deployment -> deployment.version().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
                          .list(JobType.productionAwsUsEast1a.zone(tester.controller().system()), appId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
@@ -185,7 +187,7 @@ public class InternalDeploymentTester {
         assertTrue(tester.configServer().nodeRepository()
                          .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
-        assertFalse(app().change().hasTargets());
+        assertFalse(instance().change().hasTargets());
     }
 
     /**
@@ -253,10 +255,10 @@ public class InternalDeploymentTester {
         runner.run();
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
-        assertEquals(type.isProduction(), app().deployments().containsKey(zone));
+        assertEquals(type.isProduction(), instance().deployments().containsKey(zone));
         assertTrue(tester.configServer().nodeRepository().list(zone, testerId.id()).isEmpty());
 
-        if ( ! app().deployments().containsKey(zone))
+        if ( ! instance().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
         routing.removeEndpoints(new DeploymentId(testerId.id(), zone));
     }
@@ -277,7 +279,7 @@ public class InternalDeploymentTester {
      * Creates and submits a new application, and then starts the job of the given type.
      */
     public RunId newRun(JobType type) {
-        assertFalse(app().deploymentJobs().deployedInternally()); // Use this only once per test.
+        assertFalse(instance().deploymentJobs().deployedInternally()); // Use this only once per test.
         newSubmission();
         tester.readyJobTrigger().maintain();
 

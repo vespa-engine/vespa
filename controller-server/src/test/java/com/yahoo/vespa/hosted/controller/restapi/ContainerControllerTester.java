@@ -11,7 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -64,11 +64,11 @@ public class ContainerControllerTester {
     /** Returns the wrapped generic container tester */
     public ContainerTester containerTester() { return containerTester; }
 
-    public Instance createApplication() {
+    public Application createApplication() {
         return createApplication("domain1","tenant1", "application1", "default");
     }
 
-    public Instance createApplication(String athensDomain, String tenant, String application, String instance) {
+    public Application createApplication(String athensDomain, String tenant, String application, String instance) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
         AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
         AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
@@ -82,15 +82,14 @@ public class ContainerControllerTester {
         return controller().applications().createApplication(app, Optional.of(credentials));
     }
 
-    public Instance deploy(Instance instance, ApplicationPackage applicationPackage, ZoneId zone) {
-        controller().applications().deploy(instance.id(), zone, Optional.of(applicationPackage),
+    public void deploy(ApplicationId id, ApplicationPackage applicationPackage, ZoneId zone) {
+        controller().applications().deploy(id, zone, Optional.of(applicationPackage),
                                            new DeployOptions(false, Optional.empty(), false, false));
-        return instance;
     }
 
-    public void deployCompletely(Instance instance, ApplicationPackage applicationPackage, long projectId,
+    public void deployCompletely(Application application, ApplicationPackage applicationPackage, long projectId,
                                  boolean failStaging) {
-        jobCompletion(JobType.component).application(instance)
+        jobCompletion(JobType.component).application(application)
                                         .projectId(projectId)
                                         .uploadArtifact(applicationPackage)
                                         .submit();
@@ -99,14 +98,14 @@ public class ContainerControllerTester {
         for (var job : steps.jobs()) {
             if (!succeeding) return;
             var zone = job.zone(controller().system());
-            deploy(instance, applicationPackage, zone);
+            deploy(application.id(), applicationPackage, zone);
             if (failStaging && zone.environment() == Environment.staging) {
                 succeeding = false;
             }
             if (zone.environment().isTest()) {
-                controller().applications().deactivate(instance.id(), zone);
+                controller().applications().deactivate(application.id(), zone);
             }
-            jobCompletion(job).application(instance).success(succeeding).projectId(projectId).submit();
+            jobCompletion(job).application(application).success(succeeding).projectId(projectId).submit();
         }
     }
 
@@ -128,13 +127,13 @@ public class ContainerControllerTester {
     /*
      * Authorize action on tenantDomain/application for a given screwdriverId
      */
-    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, Instance instance) {
+    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, ApplicationId id) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
 
         mock.getSetup()
                 .domains.get(tenantDomain)
-                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(instance.id().application().value()))
+                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()))
                 .addRoleMember(action, HostedAthenzIdentities.from(screwdriverId));
     }
 
