@@ -47,20 +47,18 @@ import static java.util.stream.Collectors.toList;
 public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     private final URI ztsUrl;
-    private final AthenzIdentity identity;
 
-    public DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, SSLContext sslContext) {
-        this(ztsUrl, identity, () -> sslContext);
+    public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
+        this(ztsUrl, () -> sslContext);
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
-        this(ztsUrl, identityProvider.identity(), identityProvider::getIdentitySslContext);
+        this(ztsUrl, identityProvider::getIdentitySslContext);
     }
 
-    private DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
+    private DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier) {
         super("vespa-zts-client", sslContextSupplier, ZtsClientException::new);
         this.ztsUrl = addTrailingSlash(ztsUrl);
-        this.identity = identity;
     }
 
     @Override

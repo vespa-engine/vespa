@@ -182,7 +182,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                         .withTrustStore(trustStorePath, KeyStoreType.JKS)
                         .build();
         try {
-            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, context.identity(), containerIdentitySslContext)) {
+            try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentitySslContext)) {
                 InstanceIdentity instanceIdentity =
                         ztsClient.refreshInstance(
                                 configserverIdentity,
