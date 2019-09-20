@@ -168,7 +168,7 @@ public class ApplicationController {
         return curator.readApplication(id);
     }
 
-    /** Returns the application with the given id, or null if it is not present */
+    /** Returns the instance with the given id, or null if it is not present */
     public Optional<Instance> get(ApplicationId id) {
         return curator.readInstance(id);
     }
@@ -314,6 +314,7 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
+        // TODO jonmv: Change this to create instances on demand.
         Tenant tenant = controller.tenants().require(applicationId.tenant());
         if (tenant.type() == Tenant.Type.user && get(applicationId).isEmpty())
             createApplication(applicationId, Optional.empty());
@@ -327,7 +328,7 @@ public class ApplicationController {
 
             try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
                  Lock oldLock = lock(applicationId)) {
-                LockedInstance application = new LockedInstance(require(applicationId), lock);
+                LockedInstance instance = new LockedInstance(require(applicationId), lock);
 
                 boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
                 boolean preferOldestVersion = options.deployCurrentVersion;
@@ -344,7 +345,7 @@ public class ApplicationController {
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
                                              .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
-                    Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
+                    Optional<JobStatus> job = Optional.ofNullable(instance.get().deploymentJobs().jobStatus().get(jobType));
                     if (   job.isEmpty()
                         || job.get().lastTriggered().isEmpty()
                         || job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
@@ -355,32 +356,32 @@ public class ApplicationController {
                     applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
                                                              : triggered.application();
 
-                    applicationPackage = getApplicationPackage(application.get(), applicationVersion);
+                    applicationPackage = getApplicationPackage(instance.get(), applicationVersion);
                     applicationPackage = withTesterCertificate(applicationPackage, applicationId, jobType);
-                    validateRun(application.get(), zone, platformVersion, applicationVersion);
+                    validateRun(instance.get(), zone, platformVersion, applicationVersion);
                 }
 
                 // TODO jonmv: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
                 verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
                 // Assign and register endpoints
-                application = withRotation(application, zone);
-                endpoints = registerEndpointsInDns(application.get(), zone);
+                instance = withRotation(instance, zone);
+                endpoints = registerEndpointsInDns(instance.get(), zone);
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Get application certificate (provisions a new certificate if missing)
                     List<? extends ZoneApi> zones = controller.zoneRegistry().zones().all().zones();
-                    applicationCertificate = getApplicationCertificate(application.get());
+                    applicationCertificate = getApplicationCertificate(instance.get());
                 } else {
                     applicationCertificate = Optional.empty();
                 }
 
                 // Update application with information from application package
                 if (   ! preferOldestVersion
-                    && ! application.get().deploymentJobs().deployedInternally()
+                    && ! instance.get().deploymentJobs().deployedInternally()
                     && ! zone.environment().isManuallyDeployed())
                     // TODO(jvenstad): Store only on submissions
-                    storeWithUpdatedConfig(application, applicationPackage);
+                    storeWithUpdatedConfig(instance, applicationPackage);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -388,8 +389,8 @@ public class ApplicationController {
             ActivateResult result = deploy(applicationId, applicationPackage, zone, options, endpoints,
                                            applicationCertificate.orElse(null));
 
-            lockOrThrow(applicationId, application ->
-                    store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
+            lockOrThrow(applicationId, instance ->
+                    store(instance.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
                                                         warningsFrom(result))));
             return result;
         }

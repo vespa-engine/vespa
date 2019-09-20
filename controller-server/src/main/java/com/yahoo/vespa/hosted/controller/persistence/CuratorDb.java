@@ -433,11 +433,12 @@ public class CuratorDb {
      * Duplicate Application from Instance, with helper classes                 DONE
      * Write Application to instance and application and old application paths  DONE
      * Read Application from instance path                                      DONE
-     * Use Application where applicable
+     * Use Application where applicable                                         D
      * Lock instances and application on same level: tenant + application       DONE
      *
      * Stop writing Instance to old application path
      * Read Application and Instance parts from respective paths
+     * Stop locking instance and applications on instance level:
      *
      * Stop writing instance part to application path, and vice versa
      * Remove unused parts of Instance and Application
