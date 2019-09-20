@@ -123,77 +123,12 @@ public class LockedApplication {
                                      rotations, rotationStatus);
     }
 
-    public LockedApplication withJobPause(JobType jobType, OptionalLong pausedUntil) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs.withPause(jobType, pausedUntil), change, outstandingChange,
-                                     ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                     rotations, rotationStatus);
-    }
-
     public LockedApplication withJobCompletion(long projectId, JobType jobType) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs.withProjectId(jobType == JobType.component ? OptionalLong.of(projectId)
                                                                                                : deploymentJobs.projectId()),
                                      change, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
                                      pemDeployKey, rotations, rotationStatus);
-    }
-
-    public LockedApplication withJobTriggering(JobType jobType, JobStatus.JobRun job) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs.withTriggering(jobType, job), change, outstandingChange,
-                                     ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                     rotations, rotationStatus);
-    }
-
-    public LockedApplication withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
-                                               Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings) {
-        // Use info from previous deployment if available, otherwise create a new one.
-        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
-                                                                                      version, instant));
-        Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
-                                                  previousDeployment.clusterUtils(),
-                                                  previousDeployment.clusterInfo(),
-                                                  previousDeployment.metrics().with(warnings),
-                                                  previousDeployment.activity());
-        return with(newDeployment);
-    }
-
-    public LockedApplication withClusterUtilization(ZoneId zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterUtils(clusterUtilization));
-    }
-
-    public LockedApplication withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterInfo(clusterInfo));
-
-    }
-
-    public LockedApplication recordActivityAt(Instant instant, ZoneId zone) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;
-        return with(deployment.recordActivityAt(instant));
-    }
-
-    public LockedApplication with(ZoneId zone, DeploymentMetrics deploymentMetrics) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withMetrics(deploymentMetrics));
-    }
-
-    public LockedApplication withoutDeploymentIn(ZoneId zone) {
-        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
-        deployments.remove(zone);
-        return with(deployments);
-    }
-
-    public LockedApplication withoutDeploymentJob(JobType jobType) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs.without(jobType), change, outstandingChange,
-                                     ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
-                                     rotations, rotationStatus);
     }
 
     public LockedApplication with(DeploymentSpec deploymentSpec) {
@@ -243,37 +178,6 @@ public class LockedApplication {
     }
 
     public LockedApplication with(ApplicationMetrics metrics) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                     metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
-    public LockedApplication withPemDeployKey(String pemDeployKey) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                     metrics, Optional.ofNullable(pemDeployKey), rotations, rotationStatus);
-    }
-
-    public LockedApplication with(List<AssignedRotation> assignedRotations) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                     metrics, pemDeployKey, assignedRotations, rotationStatus);
-    }
-
-    public LockedApplication with(RotationStatus rotationStatus) {
-        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                     metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
-    /** Don't expose non-leaf sub-objects. */
-    private LockedApplication with(Deployment deployment) {
-        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
-        deployments.put(deployment.zone(), deployment);
-        return with(deployments);
-    }
-
-    private LockedApplication with(Map<ZoneId, Deployment> deployments) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
                                      deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
                                      metrics, pemDeployKey, rotations, rotationStatus);
