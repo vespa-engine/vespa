@@ -434,6 +434,7 @@ public class CuratorDb {
      * Write Application to instance and application and old application paths  DONE
      * Read Application from instance path                                      DONE
      * Use Application where applicable
+     * Lock instances and application on same level: tenant + application       DONE
      *
      * Stop writing Instance to old application path
      * Read Application and Instance parts from respective paths

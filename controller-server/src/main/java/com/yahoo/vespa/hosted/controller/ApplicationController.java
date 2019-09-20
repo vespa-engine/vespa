@@ -788,7 +788,8 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      */
     public void lockApplicationIfPresent(ApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
+             Lock oldLock = lock(applicationId)) {
             getApplication(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
@@ -814,7 +815,8 @@ public class ApplicationController {
      * @throws IllegalArgumentException when application does not exist.
      */
     public void lockApplicationOrThrow(ApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
+             Lock oldLock = lock(applicationId)) {
             action.accept(new LockedApplication(requireApplication(applicationId), lock));
         }
     }
