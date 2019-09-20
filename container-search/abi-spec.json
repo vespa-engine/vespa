@@ -2080,6 +2080,7 @@
       "public java.lang.Object getNode()",
       "public void failed(com.yahoo.search.result.ErrorMessage)",
       "public void responded()",
+      "public java.lang.Boolean isKnownWorking()",
       "protected synchronized void setWorking(boolean, java.lang.String)"
     ],
     "fields": []

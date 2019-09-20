@@ -139,7 +139,7 @@ public class Dispatcher extends AbstractComponent {
         return invoker;
     }
 
-    // build invoker based on searchpath
+    /** Builds an invoker based on searchpath */
     private Optional<SearchInvoker> getSearchPathInvoker(Query query, VespaBackEndSearcher searcher) {
         String searchPath = query.getModel().getSearchPath();
         if (searchPath == null) return Optional.empty();
@@ -156,7 +156,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     private Optional<SearchInvoker> getInternalInvoker(Query query, VespaBackEndSearcher searcher) {
-        Optional<Node> directNode = searchCluster.directDispatchTarget();
+        Optional<Node> directNode = searchCluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching directly to ", node);
@@ -202,4 +202,5 @@ public class Dispatcher extends AbstractComponent {
             metric.add(INTERNAL_METRIC, 1, metricContext);
         }
     }
+
 }
