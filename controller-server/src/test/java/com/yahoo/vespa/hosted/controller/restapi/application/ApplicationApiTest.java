@@ -345,7 +345,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Set major version to 7\"}");
 
         // PATCH in a pem deploy key
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
                                       .data("{\"pemDeployKey\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
                               "{\"message\":\"Set pem deploy key to -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
@@ -362,7 +362,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Set major version to empty\"}");
 
         // PATCH in removal of the pem deploy key
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
                                       .data("{\"pemDeployKey\":null}"),
                               "{\"message\":\"Set pem deploy key to empty\"}");

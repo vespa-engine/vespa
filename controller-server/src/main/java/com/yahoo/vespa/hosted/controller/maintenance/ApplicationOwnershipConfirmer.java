@@ -108,7 +108,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                     .forEach(application -> {
                     IssueId ownershipIssueId = application.ownershipIssueId().get();
                     ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
-                        controller().applications().lockIfPresent(application.id(), lockedApplication ->
+                        controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
                                 controller().applications().store(lockedApplication.withOwner(owner)));
                     });
                 });
@@ -130,7 +130,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     protected void store(IssueId issueId, ApplicationId applicationId) {
-        controller().applications().lockIfPresent(applicationId, application ->
+        controller().applications().lockApplicationIfPresent(applicationId, application ->
                 controller().applications().store(application.withOwnershipIssueId(issueId)));
     }
 }

@@ -64,6 +64,7 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
@@ -248,7 +249,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePATCH(Path path, HttpRequest request) {
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -350,24 +351,31 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse patchApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+    private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
-        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, instanceName), application -> {
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
             Inspector majorVersionField = requestObject.field("majorVersion");
             if (majorVersionField.valid()) {
                 Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int) majorVersionField.asLong();
                 application = application.withMajorVersion(majorVersion);
                 messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
             }
+            controller.applications().store(application);
+        });
+        return new MessageResponse(messageBuilder.toString());
+    }
 
+    private HttpResponse patchApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+        Inspector requestObject = toSlime(request.getData()).get();
+        StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
+        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, instanceName), application -> {
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
                 String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();
                 application = application.withPemDeployKey(pemDeployKey);
                 messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
             }
-
             controller.applications().store(application);
         });
         return new MessageResponse(messageBuilder.toString());

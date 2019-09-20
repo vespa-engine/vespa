@@ -958,7 +958,7 @@ public class UpgraderTest {
         // Setup applications
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
         Application default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
-        tester.applications().lockOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
+        tester.applications().lockApplicationOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
         assertEquals(OptionalInt.of(6), tester.applications().get(default0.id()).get().majorVersion());
 
         // New major version is released
@@ -1285,7 +1285,7 @@ public class UpgraderTest {
         tester.upgradeSystem(version2);
 
         // App 2 is allowed on new major and upgrades
-        tester.controller().applications().lockIfPresent(app2.id(), app -> tester.applications().store(app.withMajorVersion(7)));
+        tester.controller().applications().lockApplicationIfPresent(app2.id(), app -> tester.applications().store(app.withMajorVersion(7)));
         tester.upgrader().maintain();
         assertEquals(version2, tester.controller().applications().require(app2.id()).change().platform().get());
 

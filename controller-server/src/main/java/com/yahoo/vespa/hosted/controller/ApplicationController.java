@@ -819,6 +819,23 @@ public class ApplicationController {
     /**
      * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
      *
+     * WARNING: Uses only the "default" instance.
+     *
+     * @param applicationId ID of the application to lock and require.
+     * @param action Function which acts on the locked application.
+     * @throws IllegalArgumentException when application does not exist.
+     */
+    public void lockApplicationOrThrow(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
+        ApplicationId instanceId = applicationId.defaultInstance();
+        try (Lock lock = lock(applicationId);
+             Lock oldLock = lock(instanceId)) {
+            action.accept(new LockedApplication(requireApplication(instanceId), lock));
+        }
+    }
+
+    /**
+     * Acquire a locked application to modify and store, or throw an exception if no application has the given id.
+     *
      * @param applicationId ID of the application to lock and require.
      * @param action Function which acts on the locked application.
      * @throws IllegalArgumentException when application does not exist.
