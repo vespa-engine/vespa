@@ -8,6 +8,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Report;
+import com.yahoo.vespa.hosted.provision.node.Reports;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -17,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,22 +37,8 @@ import static org.mockito.Mockito.when;
  */
 public class NodeFailerTest {
 
-    @Test
-    public void fail_nodes_with_hardware_failure_if_allowed_to_be_down() {
-        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
-        String hostWithHwFailure = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
-
-        // Set hardware failure to the parent and all its children
-        tester.nodeRepository.getNodes().stream()
-                .filter(node -> node.parentHostname().map(parent -> parent.equals(hostWithHwFailure))
-                        .orElse(node.hostname().equals(hostWithHwFailure)))
-                .forEach(node -> {
-            Node updatedNode = node.with(node.status().withHardwareFailureDescription(Optional.of("HW failure")));
-            tester.nodeRepository.write(updatedNode, () -> {});
-        });
-
-        testNodeFailingWith(tester, hostWithHwFailure);
-    }
+    private static final Report badTotalMemorySizeReport = Report.basicReport(
+            "badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
 
     @Test
     public void fail_nodes_with_severe_reports_if_allowed_to_be_down() {
@@ -60,7 +46,6 @@ public class NodeFailerTest {
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
 
         // Set failure report to the parent and all its children.
-        Report badTotalMemorySizeReport = Report.basicReport("badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
         tester.nodeRepository.getNodes().stream()
                 .filter(node -> node.hostname().equals(hostWithFailureReports))
                 .forEach(node -> {
@@ -214,8 +199,8 @@ public class NodeFailerTest {
         // Hardware failures are detected on two ready nodes, which are then failed
         Node readyFail1 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(2);
         Node readyFail2 = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(3);
-        tester.nodeRepository.write(readyFail1.with(readyFail1.status().withHardwareFailureDescription(Optional.of("memory_mcelog"))), () -> {});
-        tester.nodeRepository.write(readyFail2.with(readyFail2.status().withHardwareFailureDescription(Optional.of("disk_smart"))), () -> {});
+        tester.nodeRepository.write(readyFail1.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
+        tester.nodeRepository.write(readyFail2.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
         assertEquals(4, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         tester.failer.run();
         assertEquals(2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
@@ -510,14 +495,11 @@ public class NodeFailerTest {
         Node readyNode = tester.createReadyNodes(1).get(0);
 
         tester.failer.run();
-
         assertEquals(Node.State.ready, readyNode.state());
 
-        tester.nodeRepository.write(readyNode.with(readyNode.status()
-                .withHardwareDivergence(Optional.of("{\"specVerificationReport\":{\"actualIpv6Connection\":false}}"))), () -> {});
+        tester.nodeRepository.write(readyNode.with(new Reports().withReport(badTotalMemorySizeReport)), () -> {});
 
         tester.failer.run();
-
         assertEquals(1, tester.nodeRepository.getNodes(Node.State.failed).size());
     }
 

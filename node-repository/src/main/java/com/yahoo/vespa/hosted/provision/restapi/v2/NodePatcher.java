@@ -41,7 +41,6 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
  */
 public class NodePatcher {
 
-    private static final String HARDWARE_FAILURE_DESCRIPTION = "hardwareFailureDescription";
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
 
@@ -96,7 +95,6 @@ public class NodePatcher {
 
     private List<Node> applyFieldRecursive(List<Node> childNodes, String name, Inspector value) {
         switch (name) {
-            case HARDWARE_FAILURE_DESCRIPTION:
             case WANT_TO_RETIRE:
             case WANT_TO_DEPROVISION:
                 return childNodes.stream()
@@ -129,8 +127,6 @@ public class NodePatcher {
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
-            case HARDWARE_FAILURE_DESCRIPTION:
-                return node.with(node.status().withHardwareFailureDescription(removeQuotedNulls(asOptionalString(value))));
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -141,8 +137,6 @@ public class NodePatcher {
                 return node.withWantToRetire(asBoolean(value), Agent.operator, clock.instant());
             case WANT_TO_DEPROVISION :
                 return node.with(node.status().withWantToDeprovision(asBoolean(value)));
-            case "hardwareDivergence" :
-                return node.with(node.status().withHardwareDivergence(removeQuotedNulls(asOptionalString(value))));
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :
@@ -187,7 +181,6 @@ public class NodePatcher {
         });
 
         return node.with(reportsBuilder.build());
-
     }
 
     private Set<String> asStringSet(Inspector field) {

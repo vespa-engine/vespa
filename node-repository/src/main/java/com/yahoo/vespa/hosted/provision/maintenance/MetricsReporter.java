@@ -122,8 +122,7 @@ public class MetricsReporter extends Maintainer {
 
         metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
-        metric.set("hardwareFailure", node.status().hardwareFailureDescription().isPresent() ? 1 : 0, context);
-        metric.set("hardwareDivergence", node.status().hardwareDivergence().isPresent() ? 1 : 0, context);
+        metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
 
         orchestrator.apply(new HostName(node.hostname()))
                     .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN ? 1 : 0)

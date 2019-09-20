@@ -36,8 +36,6 @@
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.45.0",
   "failCount": 1,
-  "hardwareFailure": true,
-  "hardwareFailureDescription": "memory_mcelog",
   "wantToRetire": true,
   "wantToDeprovision": true,
   "history": [

@@ -33,7 +33,6 @@
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "failCount": 0,
-  "hardwareFailure": false,
   "wantToRetire": false,
   "wantToDeprovision": false,
   "history": [
@@ -62,6 +61,5 @@
     "127.0.6.1",
     "::6:1"
   ],
-  "additionalIpAddresses": [],
-  "hardwareDivergence": "{\"actualCpuCores\":2}"
+  "additionalIpAddresses": []
 }

@@ -164,10 +164,6 @@ public class NodeFailer extends Maintainer {
         for (Node node : nodeRepository().getNodes(Node.State.ready)) {
             if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
                 nodesByFailureReason.put(node, "Not receiving config requests from node");
-            } else if (node.status().hardwareFailureDescription().isPresent()) {
-                nodesByFailureReason.put(node, "Node has hardware failure");
-            } else if (node.status().hardwareDivergence().isPresent()) {
-                nodesByFailureReason.put(node, "Node has hardware divergence");
             } else {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
                 List<String> failureReports = reasonsToFailParentHost(hostNode);
@@ -211,18 +207,14 @@ public class NodeFailer extends Maintainer {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             } else if (hostSuspended(node, activeNodes)) {
-                if (node.status().hardwareFailureDescription().isPresent()) {
-                    nodesByFailureReason.put(node, "Node has hardware failure: " + node.status().hardwareFailureDescription().get());
-                } else {
-                    Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
-                    if (hostNode.type().isDockerHost()) {
-                        List<String> failureReports = reasonsToFailParentHost(hostNode);
-                        if (failureReports.size() > 0) {
-                            if (hostNode.equals(node)) {
-                                nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
-                            } else {
-                                nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
-                            }
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
+                if (hostNode.type().isDockerHost()) {
+                    List<String> failureReports = reasonsToFailParentHost(hostNode);
+                    if (failureReports.size() > 0) {
+                        if (hostNode.equals(node)) {
+                            nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                        } else {
+                            nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
                         }
                     }
                 }
@@ -241,10 +233,6 @@ public class NodeFailer extends Maintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        if (node.status().hardwareFailureDescription().isPresent() || node.status().hardwareDivergence().isPresent()) {
-            return true;
-        }
-
         Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.getNode(parent)).orElse(node);
         return reasonsToFailParentHost(hostNode).size() > 0;
     }

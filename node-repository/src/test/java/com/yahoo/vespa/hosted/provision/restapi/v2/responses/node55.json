@@ -16,7 +16,6 @@
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,
   "failCount": 0,
-  "hardwareFailure": false,
   "wantToRetire": true,
   "wantToDeprovision": true,
   "history": [

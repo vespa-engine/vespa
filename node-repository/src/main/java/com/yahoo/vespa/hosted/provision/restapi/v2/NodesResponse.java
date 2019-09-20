@@ -180,14 +180,11 @@ class NodesResponse extends HttpResponse {
         node.status().vespaVersion().ifPresent(version -> object.setString("vespaVersion", version.toFullString()));
         currentDockerImage(node).ifPresent(dockerImage -> object.setString("currentDockerImage", dockerImage.asString()));
         object.setLong("failCount", node.status().failCount());
-        object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());
-        node.status().hardwareFailureDescription().ifPresent(failure -> object.setString("hardwareFailureDescription", failure));
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.ipAddressPool().asSet(), object.setArray("additionalIpAddresses"));
-        node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
     }

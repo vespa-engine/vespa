@@ -35,7 +35,6 @@
   "currentOsVersion": "7.5.2",
   "wantedOsVersion": "7.5.2",
   "failCount": 0,
-  "hardwareFailure": false,
   "wantToRetire": false,
   "wantToDeprovision": false,
   "history": [

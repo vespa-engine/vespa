@@ -54,12 +54,6 @@ public class NodeRepositoryNode {
     private String wantedOsVersion;
     @JsonProperty("failCount")
     private Integer failCount;
-    @JsonProperty("hardwareFailure")
-    private Boolean hardwareFailure;
-    @JsonProperty("hardwareFailureDescription")
-    private String hardwareFailureDescription;
-    @JsonProperty("hardwareDivergence")
-    private String hardwareDivergence;
     @JsonProperty("environment")
     private NodeEnvironment environment;
     @JsonProperty("type")
@@ -241,30 +235,6 @@ public class NodeRepositoryNode {
         this.failCount = failCount;
     }
 
-    public Boolean getHardwareFailure() {
-        return hardwareFailure;
-    }
-
-    public void setHardwareFailure(Boolean hardwareFailure) {
-        this.hardwareFailure = hardwareFailure;
-    }
-
-    public String getHardwareFailureDescription() {
-        return hardwareFailureDescription;
-    }
-
-    public void setHardwareDivergence(String hardwareDivergence) {
-        this.hardwareDivergence = hardwareDivergence;
-    }
-
-    public String getHardwareDivergence() {
-        return hardwareDivergence;
-    }
-
-    public void setHardwareFailureDescription(String hardwareFailureDescription) {
-        this.hardwareFailureDescription = hardwareFailureDescription;
-    }
-
     public NodeEnvironment getEnvironment() {
         return environment;
     }
@@ -442,9 +412,6 @@ public class NodeRepositoryNode {
                ", currentOsVersion='" + currentOsVersion + '\'' +
                ", wantedOsVersion='" + wantedOsVersion + '\'' +
                ", failCount=" + failCount +
-               ", hardwareFailure=" + hardwareFailure +
-               ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
-               ", hardwareDivergence='" + hardwareDivergence + '\'' +
                ", environment=" + environment +
                ", type=" + type +
                ", wantedDockerImage='" + wantedDockerImage + '\'' +
