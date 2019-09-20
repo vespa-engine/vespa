@@ -63,9 +63,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         }
     }
 
-    /**
-     * Pinging a node, called from ClusterMonitor
-     */
+    /** Pinging a node, called from ClusterMonitor */
     @Override
     public final void ping(T p, Executor executor) {
         log(LogLevel.FINE, "Sending ping to: ", p);
@@ -149,9 +147,10 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         do {
             // The loop is in case there are other searchers available able to produce results
             if (connection == null)
-                return search(query, execution, ErrorMessage
-                        .createNoBackendsInService("No in node could handle " + query + " according to " +
-                                                   hasher + " in " + this));
+                return search(query,
+                              execution,
+                              ErrorMessage.createNoBackendsInService("No in node could handle " + query +
+                                                                     " according to " + hasher + " in " + this));
             if (timedOut(query))
                 return new Result(query, ErrorMessage.createTimeout("No time left for searching"));
 
@@ -189,7 +188,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     }
 
     /**
-     * This is called (instead of search(quer,execution,connextion) to handle
+     * This is called (instead of search(query, execution, connection) to handle
      * searches where no (suitable) backend was available. The default
      * implementation returns an error result.
      */
@@ -198,7 +197,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     }
 
     /**
-     * Call search(Query,Execution,T) and handle any exceptions returned which
+     * Call search(Query, Execution, T) and handle any exceptions returned which
      * we do not want to propagate upwards By default this catches all runtime
      * exceptions and puts them into the result
      */
@@ -214,13 +213,12 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         }
 
         if (result == null)
-            result = new Result(query, ErrorMessage
-                    .createBackendCommunicationError("No result returned in " + this +
-                                                     " from " + connection + " for " + query));
+            result = new Result(query, ErrorMessage.createBackendCommunicationError("No result returned in " + this +
+                                                                                    " from " + connection + " for " + query));
 
         if (result.hits().getError() != null) {
             log(LogLevel.FINE, "FAILED: ", query);
-        } else if (!result.isCached()) {
+        } else if ( ! result.isCached()) {
             log(LogLevel.FINE, "WORKING: ", query);
         } else {
             log(LogLevel.FINE, "CACHE HIT: ", query);
@@ -243,15 +241,13 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         T connection = nodes.select(code, 0);
         if (connection != null) {
             if (timedOut(query)) {
-                result.hits().addError(
-                        ErrorMessage.createTimeout("No time left to get summaries for " + result));
+                result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries for " + result));
             } else {
                 // query.setTimeout(getNodeTimeout(query));
                 doFill(connection, result, summaryClass, execution);
             }
         } else {
-            result.hits().addError(
-                    ErrorMessage.createNoBackendsInService("Could not fill '" + result + "' in '" + this + "'"));
+            result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill '" + result + "' in '" + this + "'"));
         }
     }
 
@@ -259,10 +255,8 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         try {
             fill(result, summaryClass, execution, connection);
         } catch (RuntimeException e) {
-            result.hits().addError(
-                    ErrorMessage
-                            .createBackendCommunicationError("Error filling " + result + " from " + connection + ": " +
-                                                             Exceptions.toMessageString(e)));
+            result.hits().addError(ErrorMessage.createBackendCommunicationError("Error filling " + result + " from " + connection + ": " +
+                                                                                Exceptions.toMessageString(e)));
         }
         if (result.hits().getError() != null) {
             log(LogLevel.FINE, "FAILED: ", result.getQuery());

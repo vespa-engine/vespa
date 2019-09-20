@@ -98,14 +98,13 @@ public class Hasher<T> {
      * and determines how often this node will be selected compared
      * to the other nodes
      */
-    public synchronized void add(T node,int load) {
-        assert(nodes != null);
-        if(!nodes.hasNode(node)) {
+    public synchronized void add(T node, int load) {
+        if ( ! nodes.hasNode(node)) {
             NodeFactor<T>[] oldNodes = nodes.nodes;
             @SuppressWarnings("unchecked")
-            NodeFactor<T>[] newNodes = (NodeFactor<T>[]) new NodeFactor[oldNodes.length+ 1];
-            System.arraycopy(oldNodes,0,newNodes,0,oldNodes.length);
-            newNodes[newNodes.length-1] = new NodeFactor<>(node, load);
+            NodeFactor<T>[] newNodes = (NodeFactor<T>[]) new NodeFactor[oldNodes.length + 1];
+            System.arraycopy(oldNodes, 0, newNodes, 0, oldNodes.length);
+            newNodes[newNodes.length - 1] = new NodeFactor<>(node, load);
 
             //Atomic switch due to volatile
             nodes = new NodeList<>(newNodes);
@@ -114,7 +113,7 @@ public class Hasher<T> {
 
     /** Removes a node */
     public synchronized void remove(T node) {
-        if( nodes.hasNode(node)) {
+        if (nodes.hasNode(node)) {
             NodeFactor<T>[] oldNodes = nodes.nodes;
             @SuppressWarnings("unchecked")
             NodeFactor<T>[] newNodes = (NodeFactor<T>[]) new NodeFactor[oldNodes.length - 1];
@@ -128,10 +127,9 @@ public class Hasher<T> {
         }
     }
 
-    /**
-     * Returns a list of nodes that are up.
-     */
+    /** Returns a list of nodes that are up.*/
     public NodeList<T> getNodes() {
         return nodes;
     }
+
 }
