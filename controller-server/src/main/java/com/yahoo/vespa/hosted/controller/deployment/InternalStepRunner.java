@@ -349,7 +349,12 @@ public class InternalStepRunner implements StepRunner {
 
         for (URI endpoint : endpoints.get(zoneId).values()) {
             URI workingEndpoint = controller.jobController().withWorkingSchemeAndPort(endpoint, id);
-            if ( ! controller.jobController().cloud().ready(workingEndpoint)) {
+
+            boolean ready = id.instance().isTester() ?
+                    controller.jobController().cloud().testerReady(workingEndpoint)
+                    : controller.jobController().cloud().ready(workingEndpoint);
+
+            if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + workingEndpoint);
                 return false;
             }
@@ -450,7 +455,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
 
-        if ( ! controller.jobController().cloud().ready(testerEndpoint.get())) {
+        if ( ! controller.jobController().cloud().testerReady(testerEndpoint.get())) {
             logger.log(WARNING, "Tester container went bad!");
             return Optional.of(error);
         }
@@ -480,7 +485,7 @@ public class InternalStepRunner implements StepRunner {
                 logger.log(INFO, "Tester certificate expired before tests could complete.");
                 return Optional.of(aborted);
             }
-        };
+        }
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if ( ! testerEndpoint.isPresent()) {

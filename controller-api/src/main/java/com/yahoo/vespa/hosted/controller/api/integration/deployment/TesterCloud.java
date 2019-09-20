@@ -25,6 +25,9 @@ public interface TesterCloud {
     /** Returns whether the container is ready to serve. */
     boolean ready(URI endpointUrl);
 
+    /** Returns whether the test container is ready to serve */
+    boolean testerReady(URI endpointUrl);
+
     /** Returns whether the given URL is registered in DNS. */
     boolean exists(URI endpointUrl);
 

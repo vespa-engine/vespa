@@ -39,7 +39,12 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public boolean ready(URI resterUrl) {
+    public boolean ready(URI testerUrl) {
+        return true;
+    }
+
+    @Override
+    public boolean testerReady(URI testerUrl) {
         return true;
     }
 
